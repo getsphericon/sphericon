@@ -30,6 +30,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
 	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/ent/frequencycap"
 	"github.com/getsphericon/sphericon/ent/heldorderevent"
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/identitysecret"
@@ -50,6 +51,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendcaplimiter"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
+	"github.com/getsphericon/sphericon/ent/sendingwindow"
 	"github.com/getsphericon/sphericon/ent/starttoken"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
@@ -1685,6 +1687,54 @@ func ScopedEntities() []*ScopedEntity {
 			},
 		},
 		{
+			Kind:         Kinds["FrequencyCap"],
+			Name:         "FrequencyCap",
+			Wrapper:      reflect.TypeFor[*FrequencyCapScoped](),
+			AuditActions: []string{},
+			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
+				return c.FrequencyCap.Query().Where(frequencycap.WorkspaceID(ws)).Order(Asc(frequencycap.FieldID)).IDs(ctx)
+			},
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.FrequencyCap().Get(ctx, id)
+			},
+			Touch: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.FrequencyCap().UpdateOneID(id).Exec(ctx)
+			},
+			BulkTouch: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.FrequencyCap().Update().Where(frequencycap.ID(id)).Save(ctx)
+			},
+			Delete: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.FrequencyCap().DeleteOneID(id).Exec(ctx)
+			},
+			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.FrequencyCap().Delete().Where(frequencycap.ID(id)).Exec(ctx)
+			},
+			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
+				src, err := s.c.FrequencyCap.Get(ctx, id)
+				if err != nil {
+					return 0, err
+				}
+				_ = remap
+				b := s.FrequencyCap().Create()
+				b.SetChannel(src.Channel)
+				if src.Country != nil {
+					b.SetCountry(*src.Country)
+				}
+				if src.MaxMessages != nil {
+					b.SetMaxMessages(*src.MaxMessages)
+				}
+				if src.PeriodMinutes != nil {
+					b.SetPeriodMinutes(*src.PeriodMinutes)
+				}
+				created, err := b.Save(ctx)
+				if err != nil {
+					return 0, err
+				}
+				return created.WorkspaceID, nil
+			},
+			Refs: []ScopedRef{},
+		},
+		{
 			Kind:         Kinds["HeldOrderEvent"],
 			Name:         "HeldOrderEvent",
 			Wrapper:      reflect.TypeFor[*HeldOrderEventScoped](),
@@ -2929,6 +2979,90 @@ func ScopedEntities() []*ScopedEntity {
 				}
 				if src.DmarcFoundAt != nil {
 					b.SetDmarcFoundAt(*src.DmarcFoundAt)
+				}
+				created, err := b.Save(ctx)
+				if err != nil {
+					return 0, err
+				}
+				return created.WorkspaceID, nil
+			},
+			Refs: []ScopedRef{},
+		},
+		{
+			Kind:         Kinds["SendingWindow"],
+			Name:         "SendingWindow",
+			Wrapper:      reflect.TypeFor[*SendingWindowScoped](),
+			AuditActions: []string{},
+			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
+				return c.SendingWindow.Query().Where(sendingwindow.WorkspaceID(ws)).Order(Asc(sendingwindow.FieldID)).IDs(ctx)
+			},
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.SendingWindow().Get(ctx, id)
+			},
+			Touch: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.SendingWindow().UpdateOneID(id).Exec(ctx)
+			},
+			BulkTouch: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.SendingWindow().Update().Where(sendingwindow.ID(id)).Save(ctx)
+			},
+			Delete: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.SendingWindow().DeleteOneID(id).Exec(ctx)
+			},
+			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.SendingWindow().Delete().Where(sendingwindow.ID(id)).Exec(ctx)
+			},
+			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
+				src, err := s.c.SendingWindow.Get(ctx, id)
+				if err != nil {
+					return 0, err
+				}
+				_ = remap
+				b := s.SendingWindow().Create()
+				b.SetChannel(src.Channel)
+				if src.Country != nil {
+					b.SetCountry(*src.Country)
+				}
+				if src.MondayOpens != nil {
+					b.SetMondayOpens(*src.MondayOpens)
+				}
+				if src.MondayCloses != nil {
+					b.SetMondayCloses(*src.MondayCloses)
+				}
+				if src.TuesdayOpens != nil {
+					b.SetTuesdayOpens(*src.TuesdayOpens)
+				}
+				if src.TuesdayCloses != nil {
+					b.SetTuesdayCloses(*src.TuesdayCloses)
+				}
+				if src.WednesdayOpens != nil {
+					b.SetWednesdayOpens(*src.WednesdayOpens)
+				}
+				if src.WednesdayCloses != nil {
+					b.SetWednesdayCloses(*src.WednesdayCloses)
+				}
+				if src.ThursdayOpens != nil {
+					b.SetThursdayOpens(*src.ThursdayOpens)
+				}
+				if src.ThursdayCloses != nil {
+					b.SetThursdayCloses(*src.ThursdayCloses)
+				}
+				if src.FridayOpens != nil {
+					b.SetFridayOpens(*src.FridayOpens)
+				}
+				if src.FridayCloses != nil {
+					b.SetFridayCloses(*src.FridayCloses)
+				}
+				if src.SaturdayOpens != nil {
+					b.SetSaturdayOpens(*src.SaturdayOpens)
+				}
+				if src.SaturdayCloses != nil {
+					b.SetSaturdayCloses(*src.SaturdayCloses)
+				}
+				if src.SundayOpens != nil {
+					b.SetSundayOpens(*src.SundayOpens)
+				}
+				if src.SundayCloses != nil {
+					b.SetSundayCloses(*src.SundayCloses)
 				}
 				created, err := b.Save(ctx)
 				if err != nil {

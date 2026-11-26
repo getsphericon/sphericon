@@ -43,6 +43,7 @@ import "../common/rules.tsp";
 import "../common/segments.tsp";
 import "../common/suppressions.tsp";
 import "../common/workspaces.tsp";
+import "../common/sending-rules.tsp";
 import "../common/permissions.tsp";
 import "../common/signup-items.tsp";
 import "./resources/consent.tsp";

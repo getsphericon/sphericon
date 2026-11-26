@@ -30,6 +30,7 @@ import (
 	engagementtracking "github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	orders "github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	brandkits "github.com/getsphericon/sphericon/internal/domain/content/brandkits"
+	workspaces "github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	auditlog "github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
 	automations "github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	broadcasts "github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
@@ -1145,6 +1146,28 @@ func (c *ConverterImpl) EventToExport(source *ent.Event) external.ContactExportE
 	}
 	return externalapiContactExportEvent
 }
+func (c *ConverterImpl) FrequencyCapChannelToResource(source channels.Channel) external.FrequencyCapChannel {
+	var externalapiFrequencyCapChannel external.FrequencyCapChannel
+	switch source {
+	case channels.Email:
+		externalapiFrequencyCapChannel = external.FrequencyCapChannelEmail
+	case channels.SMS:
+		externalapiFrequencyCapChannel = external.FrequencyCapChannelSMS
+	case channels.Telegram:
+		externalapiFrequencyCapChannel = external.FrequencyCapChannelTelegram
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiFrequencyCapChannel
+}
+func (c *ConverterImpl) FrequencyCapToResource(source workspaces.FrequencyCap) external.FrequencyCap {
+	var externalapiFrequencyCap external.FrequencyCap
+	externalapiFrequencyCap.Channel = c.FrequencyCapChannelToResource(source.Channel)
+	externalapiFrequencyCap.Country = nilCountryCode(source.Country)
+	externalapiFrequencyCap.MaxMessages = nilFrequencyCapMaxMessages(source.MaxMessages)
+	externalapiFrequencyCap.PeriodMinutes = nilFrequencyCapPeriodMinutes(source.PeriodMinutes)
+	return externalapiFrequencyCap
+}
 func (c *ConverterImpl) HoldReasonToResource(source holdreason.Reason) external.HoldReason {
 	var externalapiHoldReason external.HoldReason
 	switch source {
@@ -1784,6 +1807,49 @@ func (c *ConverterImpl) SendingDomainsListPage(source pagination.Page[external.S
 	externalapiSendingDomainsListOK.TotalItems = count(source.TotalItems)
 	externalapiSendingDomainsListOK.TotalPages = count(source.TotalPages)
 	return &externalapiSendingDomainsListOK
+}
+func (c *ConverterImpl) SendingRulesToResource(source workspaces.SendingRules) external.SendingRules {
+	var externalapiSendingRules external.SendingRules
+	externalapiSendingRules.FrequencyCaps = make([]external.FrequencyCap, len(source.FrequencyCaps))
+	for i := 0; i < len(source.FrequencyCaps); i++ {
+		externalapiSendingRules.FrequencyCaps[i] = c.FrequencyCapToResource(source.FrequencyCaps[i])
+	}
+	externalapiSendingRules.SendingWindows = make([]external.SendingWindow, len(source.SendingWindows))
+	for j := 0; j < len(source.SendingWindows); j++ {
+		externalapiSendingRules.SendingWindows[j] = c.SendingWindowToResource(source.SendingWindows[j])
+	}
+	return externalapiSendingRules
+}
+func (c *ConverterImpl) SendingWindowChannelToResource(source channels.Channel) external.SendingWindowChannel {
+	var externalapiSendingWindowChannel external.SendingWindowChannel
+	switch source {
+	case channels.Email:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	case channels.SMS:
+		externalapiSendingWindowChannel = external.SendingWindowChannelSMS
+	case channels.Telegram:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiSendingWindowChannel
+}
+func (c *ConverterImpl) SendingWindowHoursToResource(source workspaces.OpenHours) external.SendingWindowHours {
+	var externalapiSendingWindowHours external.SendingWindowHours
+	externalapiSendingWindowHours.Day = c.WeekdayToResource(source.Day)
+	externalapiSendingWindowHours.OpensAt = minuteOfDay(source.OpensAt)
+	externalapiSendingWindowHours.ClosesAt = minuteOfDay(source.ClosesAt)
+	return externalapiSendingWindowHours
+}
+func (c *ConverterImpl) SendingWindowToResource(source workspaces.SendingWindow) external.SendingWindow {
+	var externalapiSendingWindow external.SendingWindow
+	externalapiSendingWindow.Channel = c.SendingWindowChannelToResource(source.Channel)
+	externalapiSendingWindow.Country = nilCountryCode(source.Country)
+	externalapiSendingWindow.Hours = make([]external.SendingWindowHours, len(source.Hours))
+	for i := 0; i < len(source.Hours); i++ {
+		externalapiSendingWindow.Hours[i] = c.SendingWindowHoursToResource(source.Hours[i])
+	}
+	return externalapiSendingWindow
 }
 func (c *ConverterImpl) SesConfigToResource(source integrations.RedactedSES) external.SesConfig {
 	var externalapiSesConfig external.SesConfig
@@ -2429,6 +2495,7 @@ func (c *ConverterImpl) WorkspaceToResource(source *ent.Workspace) external.Work
 		externalapiWorkspaceResource.EngagementTrackingDefault = c.EngagementTrackingDecisionToResource((*source).EngagementTrackingDefault)
 		externalapiWorkspaceResource.Timezone = workspaceTimezone((*source).Timezone)
 		// externalapiWorkspaceResource.SendCap: ignore
+		// externalapiWorkspaceResource.SendingRules: ignore
 		externalapiWorkspaceResource.Revision = revision((*source).Revision)
 	}
 	return externalapiWorkspaceResource

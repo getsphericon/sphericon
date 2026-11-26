@@ -108,6 +108,8 @@ func (s AuditAction) Validate() error {
 		return nil
 	case "workspace.send_cap_change":
 		return nil
+	case "workspace.sending_rules_change":
+		return nil
 	case "contact.import":
 		return nil
 	case "audit_log.export":

@@ -35,6 +35,7 @@ const names: Record<AnyAuditAction, string> = {
   'workspace.abuse_exempt': 'Exempted the workspace from the abuse detector',
   'workspace.abuse_unexempt': 'Ended the exemption from the abuse detector',
   'workspace.send_cap_change': 'Changed the Send cap',
+  'workspace.sending_rules_change': 'Changed the sending rules',
   'contact.import': 'Imported contacts',
   'audit_log.export': 'Exported the audit log',
   'webhook_endpoint.test': 'Sent a test event to a webhook endpoint',

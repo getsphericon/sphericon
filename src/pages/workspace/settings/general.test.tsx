@@ -5,6 +5,7 @@ import {
   handleSiteWorkspacesDelete,
   handleSiteWorkspacesGet,
   handleSiteWorkspacesGetRevenueSettings,
+  handleSiteWorkspacesGetSendingRules,
   handleSiteWorkspacesLeave,
   handleSiteWorkspacesList,
   handleSiteWorkspacesSetTimezone,
@@ -26,6 +27,10 @@ const revenueSettings = handleSiteWorkspacesGetRevenueSettings({
   body: { reportingCurrency: null, attributionWindowDays: 5, revision: 1 },
 })
 
+const sendingRules = handleSiteWorkspacesGetSendingRules({
+  body: { frequencyCaps: [], sendingWindows: [], revision: 1 },
+})
+
 const workspace: SiteWorkspaceResource = {
   ...workspacePayload(),
   postalAddress: '',
@@ -36,6 +41,7 @@ test('renames the workspace', async () => {
   const puts: string[] = []
   worker.use(
     revenueSettings,
+    sendingRules,
     handleSiteWorkspacesList({ body: [workspace] }),
     handleSiteWorkspacesGet({ body: workspace }),
     handleSiteWorkspacesUpdate(async ({ request }) => {
@@ -59,6 +65,7 @@ test('renames the workspace', async () => {
 test('without workspace:update the name is read-only', async () => {
   worker.use(
     revenueSettings,
+    sendingRules,
     handleSiteWorkspacesList({ body: [{ ...workspace, role: 'member', permissions: [] }] }),
     handleSiteWorkspacesGet({ body: { ...workspace, role: 'member', permissions: [] } }),
   )
@@ -72,6 +79,7 @@ test('workspace:timezone sets the time zone', async () => {
   const bodies: string[] = []
   worker.use(
     revenueSettings,
+    sendingRules,
     handleSiteWorkspacesList({ body: [workspace] }),
     handleSiteWorkspacesGet({ body: workspace }),
     handleSiteWorkspacesSetTimezone(async ({ request }) => {
@@ -95,6 +103,7 @@ test('workspace:timezone sets the time zone', async () => {
 test('without workspace:timezone the time zone is read-only', async () => {
   worker.use(
     revenueSettings,
+    sendingRules,
     handleSiteWorkspacesList({
       body: [{ ...workspace, role: 'member', permissions: ['workspace:update'] }],
     }),
@@ -111,6 +120,7 @@ test('without workspace:timezone the time zone is read-only', async () => {
 test('shows an error alert when the workspaces fail to load', async () => {
   worker.use(
     revenueSettings,
+    sendingRules,
     handleSiteWorkspacesList(() => problem(500, { detail: 'boom' })),
   )
   const { screen } = await renderWithRouter(<GeneralPage />, GENERAL_ROUTE)
@@ -122,6 +132,7 @@ test('workspace:delete deletes the workspace only after typing its name', async 
   const posts: string[] = []
   worker.use(
     revenueSettings,
+    sendingRules,
     handleSiteWorkspacesList({ body: [workspace] }),
     handleSiteWorkspacesGet({ body: workspace }),
     handleSiteWorkspacesDelete(async ({ request }) => {
@@ -153,6 +164,7 @@ test('workspace:delete deletes the workspace only after typing its name', async 
 test('without workspace:delete the workspace can be left but not deleted', async () => {
   worker.use(
     revenueSettings,
+    sendingRules,
     handleSiteWorkspacesList({
       body: [{ ...workspace, role: 'admin', permissions: ['workspace:update'] }],
     }),
@@ -173,6 +185,7 @@ test('leaves the workspace after confirmation', async () => {
   let left = false
   worker.use(
     revenueSettings,
+    sendingRules,
     handleSiteWorkspacesList({ body: [{ ...workspace, role: 'member', permissions: [] }] }),
     handleSiteWorkspacesGet({ body: { ...workspace, role: 'member', permissions: [] } }),
     handleSiteWorkspacesLeave(() => {
@@ -193,6 +206,7 @@ test('leaves the workspace after confirmation', async () => {
 test('keeps the workspace and says why when the only owner tries to leave', async () => {
   worker.use(
     revenueSettings,
+    sendingRules,
     handleSiteWorkspacesList({ body: [workspace] }),
     handleSiteWorkspacesGet({ body: workspace }),
     handleSiteWorkspacesLeave(() =>
@@ -229,6 +243,7 @@ test('two sections of one Workspace save in turn, and only the one changed elsew
   const refused: unknown[] = []
   worker.use(
     revenueSettings,
+    sendingRules,
     handleSiteWorkspacesList(() => HttpResponse.json([stored])),
     handleSiteWorkspacesGet(() => HttpResponse.json(stored)),
     handleSiteWorkspacesUpdate(async ({ request }) => {

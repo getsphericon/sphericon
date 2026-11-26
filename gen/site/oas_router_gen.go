@@ -147,7 +147,7 @@ var (
 	rn246AllowedHeaders = map[string]string{
 		"PUT": "Content-Type",
 	}
-	rn256AllowedHeaders = map[string]string{
+	rn258AllowedHeaders = map[string]string{
 		"PUT": "Content-Type",
 	}
 	rn89AllowedHeaders = map[string]string{
@@ -177,7 +177,7 @@ var (
 	rn97AllowedHeaders = map[string]string{
 		"PUT": "Content-Type",
 	}
-	rn258AllowedHeaders = map[string]string{
+	rn260AllowedHeaders = map[string]string{
 		"PUT": "Content-Type",
 	}
 	rn115AllowedHeaders = map[string]string{
@@ -216,7 +216,7 @@ var (
 	rn172AllowedHeaders = map[string]string{
 		"POST": "Content-Type",
 	}
-	rn250AllowedHeaders = map[string]string{
+	rn252AllowedHeaders = map[string]string{
 		"PUT": "Content-Type",
 	}
 	rn186AllowedHeaders = map[string]string{
@@ -231,6 +231,9 @@ var (
 	rn190AllowedHeaders = map[string]string{
 		"POST": "Content-Type",
 	}
+	rn250AllowedHeaders = map[string]string{
+		"PUT": "Content-Type",
+	}
 	rn204AllowedHeaders = map[string]string{
 		"POST": "Content-Type",
 	}
@@ -240,7 +243,7 @@ var (
 	rn219AllowedHeaders = map[string]string{
 		"PUT": "Content-Type",
 	}
-	rn259AllowedHeaders = map[string]string{
+	rn261AllowedHeaders = map[string]string{
 		"PUT": "Content-Type",
 	}
 	rn220AllowedHeaders = map[string]string{
@@ -3546,7 +3549,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 											default:
 												s.notAllowed(w, r, notAllowedParams{
 													allowedMethods: "PUT",
-													allowedHeaders: rn256AllowedHeaders,
+													allowedHeaders: rn258AllowedHeaders,
 													acceptPost:     "",
 													acceptPatch:    "",
 												})
@@ -4309,7 +4312,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									default:
 										s.notAllowed(w, r, notAllowedParams{
 											allowedMethods: "PUT",
-											allowedHeaders: rn258AllowedHeaders,
+											allowedHeaders: rn260AllowedHeaders,
 											acceptPost:     "",
 											acceptPatch:    "",
 										})
@@ -5349,7 +5352,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 										default:
 											s.notAllowed(w, r, notAllowedParams{
 												allowedMethods: "DELETE,PUT",
-												allowedHeaders: rn250AllowedHeaders,
+												allowedHeaders: rn252AllowedHeaders,
 												acceptPost:     "",
 												acceptPatch:    "",
 											})
@@ -5564,70 +5567,41 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 									}
 
-								case 'n': // Prefix: "nding-domains"
+								case 'n': // Prefix: "nding-"
 
-									if l := len("nding-domains"); len(elem) >= l && elem[0:l] == "nding-domains" {
+									if l := len("nding-"); len(elem) >= l && elem[0:l] == "nding-" {
 										elem = elem[l:]
 									} else {
 										break
 									}
 
 									if len(elem) == 0 {
-										switch r.Method {
-										case "GET":
-											s.handleSiteSendingDomainsListRequest([1]string{
-												args[0],
-											}, elemIsEscaped, w, r)
-										case "POST":
-											s.handleSiteSendingDomainsCreateRequest([1]string{
-												args[0],
-											}, elemIsEscaped, w, r)
-										default:
-											s.notAllowed(w, r, notAllowedParams{
-												allowedMethods: "GET,POST",
-												allowedHeaders: rn190AllowedHeaders,
-												acceptPost:     "application/json",
-												acceptPatch:    "",
-											})
-										}
-
-										return
+										break
 									}
 									switch elem[0] {
-									case '/': // Prefix: "/"
+									case 'd': // Prefix: "domains"
 
-										if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+										if l := len("domains"); len(elem) >= l && elem[0:l] == "domains" {
 											elem = elem[l:]
 										} else {
 											break
 										}
 
-										// Param: "id"
-										// Match until "/"
-										idx := strings.IndexByte(elem, '/')
-										if idx < 0 {
-											idx = len(elem)
-										}
-										args[1] = elem[:idx]
-										elem = elem[idx:]
-
 										if len(elem) == 0 {
 											switch r.Method {
-											case "DELETE":
-												s.handleSiteSendingDomainsDeleteRequest([2]string{
-													args[0],
-													args[1],
-												}, elemIsEscaped, w, r)
 											case "GET":
-												s.handleSiteSendingDomainsGetRequest([2]string{
+												s.handleSiteSendingDomainsListRequest([1]string{
 													args[0],
-													args[1],
+												}, elemIsEscaped, w, r)
+											case "POST":
+												s.handleSiteSendingDomainsCreateRequest([1]string{
+													args[0],
 												}, elemIsEscaped, w, r)
 											default:
 												s.notAllowed(w, r, notAllowedParams{
-													allowedMethods: "DELETE,GET",
-													allowedHeaders: nil,
-													acceptPost:     "",
+													allowedMethods: "GET,POST",
+													allowedHeaders: rn190AllowedHeaders,
+													acceptPost:     "application/json",
 													acceptPatch:    "",
 												})
 											}
@@ -5635,25 +5609,38 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 											return
 										}
 										switch elem[0] {
-										case '/': // Prefix: "/verify"
+										case '/': // Prefix: "/"
 
-											if l := len("/verify"); len(elem) >= l && elem[0:l] == "/verify" {
+											if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
 												elem = elem[l:]
 											} else {
 												break
 											}
 
+											// Param: "id"
+											// Match until "/"
+											idx := strings.IndexByte(elem, '/')
+											if idx < 0 {
+												idx = len(elem)
+											}
+											args[1] = elem[:idx]
+											elem = elem[idx:]
+
 											if len(elem) == 0 {
-												// Leaf node.
 												switch r.Method {
-												case "POST":
-													s.handleSiteSendingDomainsVerifyRequest([2]string{
+												case "DELETE":
+													s.handleSiteSendingDomainsDeleteRequest([2]string{
+														args[0],
+														args[1],
+													}, elemIsEscaped, w, r)
+												case "GET":
+													s.handleSiteSendingDomainsGetRequest([2]string{
 														args[0],
 														args[1],
 													}, elemIsEscaped, w, r)
 												default:
 													s.notAllowed(w, r, notAllowedParams{
-														allowedMethods: "POST",
+														allowedMethods: "DELETE,GET",
 														allowedHeaders: nil,
 														acceptPost:     "",
 														acceptPatch:    "",
@@ -5662,7 +5649,68 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 												return
 											}
+											switch elem[0] {
+											case '/': // Prefix: "/verify"
 
+												if l := len("/verify"); len(elem) >= l && elem[0:l] == "/verify" {
+													elem = elem[l:]
+												} else {
+													break
+												}
+
+												if len(elem) == 0 {
+													// Leaf node.
+													switch r.Method {
+													case "POST":
+														s.handleSiteSendingDomainsVerifyRequest([2]string{
+															args[0],
+															args[1],
+														}, elemIsEscaped, w, r)
+													default:
+														s.notAllowed(w, r, notAllowedParams{
+															allowedMethods: "POST",
+															allowedHeaders: nil,
+															acceptPost:     "",
+															acceptPatch:    "",
+														})
+													}
+
+													return
+												}
+
+											}
+
+										}
+
+									case 'r': // Prefix: "rules"
+
+										if l := len("rules"); len(elem) >= l && elem[0:l] == "rules" {
+											elem = elem[l:]
+										} else {
+											break
+										}
+
+										if len(elem) == 0 {
+											// Leaf node.
+											switch r.Method {
+											case "GET":
+												s.handleSiteWorkspacesGetSendingRulesRequest([1]string{
+													args[0],
+												}, elemIsEscaped, w, r)
+											case "PUT":
+												s.handleSiteWorkspacesReplaceSendingRulesRequest([1]string{
+													args[0],
+												}, elemIsEscaped, w, r)
+											default:
+												s.notAllowed(w, r, notAllowedParams{
+													allowedMethods: "GET,PUT",
+													allowedHeaders: rn250AllowedHeaders,
+													acceptPost:     "",
+													acceptPatch:    "",
+												})
+											}
+
+											return
 										}
 
 									}
@@ -5941,7 +5989,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									default:
 										s.notAllowed(w, r, notAllowedParams{
 											allowedMethods: "PUT",
-											allowedHeaders: rn259AllowedHeaders,
+											allowedHeaders: rn261AllowedHeaders,
 											acceptPost:     "",
 											acceptPatch:    "",
 										})
@@ -11570,98 +11618,85 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 
 									}
 
-								case 'n': // Prefix: "nding-domains"
+								case 'n': // Prefix: "nding-"
 
-									if l := len("nding-domains"); len(elem) >= l && elem[0:l] == "nding-domains" {
+									if l := len("nding-"); len(elem) >= l && elem[0:l] == "nding-" {
 										elem = elem[l:]
 									} else {
 										break
 									}
 
 									if len(elem) == 0 {
-										switch method {
-										case "GET":
-											r.name = SiteSendingDomainsListOperation
-											r.summary = ""
-											r.operationID = "SiteSendingDomains_list"
-											r.operationGroup = ""
-											r.pathPattern = "/workspaces/{workspaceId}/sending-domains"
-											r.args = args
-											r.count = 1
-											return r, true
-										case "POST":
-											r.name = SiteSendingDomainsCreateOperation
-											r.summary = ""
-											r.operationID = "SiteSendingDomains_create"
-											r.operationGroup = ""
-											r.pathPattern = "/workspaces/{workspaceId}/sending-domains"
-											r.args = args
-											r.count = 1
-											return r, true
-										default:
-											return
-										}
+										break
 									}
 									switch elem[0] {
-									case '/': // Prefix: "/"
+									case 'd': // Prefix: "domains"
 
-										if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+										if l := len("domains"); len(elem) >= l && elem[0:l] == "domains" {
 											elem = elem[l:]
 										} else {
 											break
 										}
 
-										// Param: "id"
-										// Match until "/"
-										idx := strings.IndexByte(elem, '/')
-										if idx < 0 {
-											idx = len(elem)
-										}
-										args[1] = elem[:idx]
-										elem = elem[idx:]
-
 										if len(elem) == 0 {
 											switch method {
-											case "DELETE":
-												r.name = SiteSendingDomainsDeleteOperation
-												r.summary = ""
-												r.operationID = "SiteSendingDomains_delete"
-												r.operationGroup = ""
-												r.pathPattern = "/workspaces/{workspaceId}/sending-domains/{id}"
-												r.args = args
-												r.count = 2
-												return r, true
 											case "GET":
-												r.name = SiteSendingDomainsGetOperation
+												r.name = SiteSendingDomainsListOperation
 												r.summary = ""
-												r.operationID = "SiteSendingDomains_get"
+												r.operationID = "SiteSendingDomains_list"
 												r.operationGroup = ""
-												r.pathPattern = "/workspaces/{workspaceId}/sending-domains/{id}"
+												r.pathPattern = "/workspaces/{workspaceId}/sending-domains"
 												r.args = args
-												r.count = 2
+												r.count = 1
+												return r, true
+											case "POST":
+												r.name = SiteSendingDomainsCreateOperation
+												r.summary = ""
+												r.operationID = "SiteSendingDomains_create"
+												r.operationGroup = ""
+												r.pathPattern = "/workspaces/{workspaceId}/sending-domains"
+												r.args = args
+												r.count = 1
 												return r, true
 											default:
 												return
 											}
 										}
 										switch elem[0] {
-										case '/': // Prefix: "/verify"
+										case '/': // Prefix: "/"
 
-											if l := len("/verify"); len(elem) >= l && elem[0:l] == "/verify" {
+											if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
 												elem = elem[l:]
 											} else {
 												break
 											}
 
+											// Param: "id"
+											// Match until "/"
+											idx := strings.IndexByte(elem, '/')
+											if idx < 0 {
+												idx = len(elem)
+											}
+											args[1] = elem[:idx]
+											elem = elem[idx:]
+
 											if len(elem) == 0 {
-												// Leaf node.
 												switch method {
-												case "POST":
-													r.name = SiteSendingDomainsVerifyOperation
+												case "DELETE":
+													r.name = SiteSendingDomainsDeleteOperation
 													r.summary = ""
-													r.operationID = "SiteSendingDomains_verify"
+													r.operationID = "SiteSendingDomains_delete"
 													r.operationGroup = ""
-													r.pathPattern = "/workspaces/{workspaceId}/sending-domains/{id}/verify"
+													r.pathPattern = "/workspaces/{workspaceId}/sending-domains/{id}"
+													r.args = args
+													r.count = 2
+													return r, true
+												case "GET":
+													r.name = SiteSendingDomainsGetOperation
+													r.summary = ""
+													r.operationID = "SiteSendingDomains_get"
+													r.operationGroup = ""
+													r.pathPattern = "/workspaces/{workspaceId}/sending-domains/{id}"
 													r.args = args
 													r.count = 2
 													return r, true
@@ -11669,7 +11704,68 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 													return
 												}
 											}
+											switch elem[0] {
+											case '/': // Prefix: "/verify"
 
+												if l := len("/verify"); len(elem) >= l && elem[0:l] == "/verify" {
+													elem = elem[l:]
+												} else {
+													break
+												}
+
+												if len(elem) == 0 {
+													// Leaf node.
+													switch method {
+													case "POST":
+														r.name = SiteSendingDomainsVerifyOperation
+														r.summary = ""
+														r.operationID = "SiteSendingDomains_verify"
+														r.operationGroup = ""
+														r.pathPattern = "/workspaces/{workspaceId}/sending-domains/{id}/verify"
+														r.args = args
+														r.count = 2
+														return r, true
+													default:
+														return
+													}
+												}
+
+											}
+
+										}
+
+									case 'r': // Prefix: "rules"
+
+										if l := len("rules"); len(elem) >= l && elem[0:l] == "rules" {
+											elem = elem[l:]
+										} else {
+											break
+										}
+
+										if len(elem) == 0 {
+											// Leaf node.
+											switch method {
+											case "GET":
+												r.name = SiteWorkspacesGetSendingRulesOperation
+												r.summary = ""
+												r.operationID = "SiteWorkspaces_getSendingRules"
+												r.operationGroup = ""
+												r.pathPattern = "/workspaces/{workspaceId}/sending-rules"
+												r.args = args
+												r.count = 1
+												return r, true
+											case "PUT":
+												r.name = SiteWorkspacesReplaceSendingRulesOperation
+												r.summary = ""
+												r.operationID = "SiteWorkspaces_replaceSendingRules"
+												r.operationGroup = ""
+												r.pathPattern = "/workspaces/{workspaceId}/sending-rules"
+												r.args = args
+												r.count = 1
+												return r, true
+											default:
+												return
+											}
 										}
 
 									}

@@ -9133,6 +9133,94 @@
         "x-required-permissions": ["sending_domains:manage"]
       }
     },
+    "/workspaces/{workspaceId}/sending-rules": {
+      "get": {
+        "operationId": "SiteWorkspaces_getSendingRules",
+        "description": "Read the Workspace's sending rules (ADR 0134, ADR 0137): its Frequency caps and its Sending\nwindows. Open to every member.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteSendingRulesResource"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the\nstatus is the response's and the body's `status`, and `code` tells apart the answers a client\nbranches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the\nrate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's\n`retryAfter` is the wait for a client that reads only the body. Every operation declares it,\nas the `default` response (ADR 0103).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Workspaces"],
+        "x-required-permissions": []
+      },
+      "put": {
+        "operationId": "SiteWorkspaces_replaceSendingRules",
+        "description": "Replace the Workspace's sending rules as a whole (Owner and Admin only): its Frequency caps and\nits Sending windows. Only a person changes them, here: neither `/api` nor MCP does. 422 for a\nwindow that never opens in a week, a window on a Channel that has none, a country on a Channel\nother than a phone's, a cap with a maximum and no period or the reverse, or two caps or windows\nfor one Channel and country. A change is recorded as an Audit entry; a replacement that changes\nnothing records none.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteSendingRulesResource"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the\nstatus is the response's and the body's `status`, and `code` tells apart the answers a client\nbranches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the\nrate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's\n`retryAfter` is the wait for a client that reads only the body. Every operation declares it,\nas the `default` response (ADR 0103).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Workspaces"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteReplaceSendingRulesInput"
+              }
+            }
+          }
+        },
+        "x-required-permissions": ["workspace:update"]
+      }
+    },
     "/workspaces/{workspaceId}/setup-checklist": {
       "get": {
         "operationId": "SiteSetupChecklist_get",
@@ -11454,6 +11542,7 @@
           "workspace.abuse_exempt",
           "workspace.abuse_unexempt",
           "workspace.send_cap_change",
+          "workspace.sending_rules_change",
           "contact.import",
           "audit_log.export",
           "webhook_endpoint.test",
@@ -15835,6 +15924,116 @@
         "description": "A test of one property of the Event or line a filter is about, its key in a field of its own,\nso a key holding a dot is one key. It names no subject: a filter tests the one object it is\nabout.",
         "additionalProperties": false
       },
+      "FrequencyCap": {
+        "type": "object",
+        "required": ["channel", "country", "maxMessages", "periodMinutes"],
+        "properties": {
+          "channel": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FrequencyCapChannel"
+              }
+            ],
+            "description": "The Channel it counts on"
+          },
+          "country": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CountryCode"
+              }
+            ],
+            "nullable": true,
+            "description": "The country of the numbers it is for, on a phone Channel only; null for every Destination on\nthe Channel"
+          },
+          "maxMessages": {
+            "type": "integer",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FrequencyCapMaxMessages"
+              }
+            ],
+            "nullable": true,
+            "description": "The most marketing messages one Destination receives in the period; null removes the cap"
+          },
+          "periodMinutes": {
+            "type": "integer",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FrequencyCapPeriodMinutes"
+              }
+            ],
+            "nullable": true,
+            "description": "The rolling period in minutes; null exactly when the maximum is"
+          }
+        },
+        "description": "One of the Workspace's Frequency caps (ADR 0137): at most `maxMessages` marketing messages to one\nDestination on the Channel per rolling `periodMinutes`. A cap with a country is for the numbers of\nthat country and outranks the Channel's own; one with no maximum removes the cap there. Every\nBroadcast and Automation message counts; Transactional messages and Test sends do not."
+      },
+      "FrequencyCapChannel": {
+        "type": "string",
+        "enum": ["email", "sms", "telegram"],
+        "description": "A Channel a Frequency cap counts marketing messages on (ADR 0137)"
+      },
+      "FrequencyCapInput": {
+        "type": "object",
+        "required": ["channel", "country", "maxMessages", "periodMinutes"],
+        "properties": {
+          "channel": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FrequencyCapChannel"
+              }
+            ],
+            "description": "The Channel it counts on"
+          },
+          "country": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CountryCode"
+              }
+            ],
+            "nullable": true,
+            "description": "The country of the numbers it is for, on a phone Channel only; null for every Destination on\nthe Channel"
+          },
+          "maxMessages": {
+            "type": "integer",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FrequencyCapMaxMessages"
+              }
+            ],
+            "nullable": true,
+            "description": "The most marketing messages one Destination receives in the period; null removes the cap"
+          },
+          "periodMinutes": {
+            "type": "integer",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FrequencyCapPeriodMinutes"
+              }
+            ],
+            "nullable": true,
+            "description": "The rolling period in minutes; null exactly when the maximum is"
+          }
+        },
+        "description": "A Frequency cap as a replacement of the rules names it",
+        "additionalProperties": false
+      },
+      "FrequencyCapMaxMessages": {
+        "type": "integer",
+        "format": "int32",
+        "minimum": 1,
+        "maximum": 1000,
+        "description": "The most marketing messages one Destination receives in a Frequency cap's period"
+      },
+      "FrequencyCapPeriodMinutes": {
+        "type": "integer",
+        "format": "int32",
+        "minimum": 1,
+        "maximum": 10080,
+        "description": "A Frequency cap's rolling period in minutes: one minute to seven days"
+      },
       "GrantableScope": {
         "type": "string",
         "enum": [
@@ -16287,6 +16486,13 @@
         "type": "string",
         "enum": ["broadcast", "automation"],
         "description": "What sends the message a message's System event is about"
+      },
+      "MinuteOfDay": {
+        "type": "integer",
+        "format": "int32",
+        "minimum": 0,
+        "maximum": 1440,
+        "description": "A minute of the day: 0 is midnight at its start, 1440 midnight at its end"
       },
       "MomentOperator": {
         "type": "string",
@@ -17954,6 +18160,161 @@
           }
         },
         "description": "Sending domain (ADR 0010). sphericon generates the DKIM keypair; the caller publishes the\nDKIM TXT record. The private key is never returned. `verified` is re-checked in the\nbackground: the domain loses it (`verificationLostAt`) if the DNS record disappears."
+      },
+      "SendingRules": {
+        "type": "object",
+        "required": ["frequencyCaps", "sendingWindows"],
+        "properties": {
+          "frequencyCaps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FrequencyCap"
+            },
+            "description": "The Frequency caps"
+          },
+          "sendingWindows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SendingWindow"
+            },
+            "description": "The Sending windows"
+          }
+        },
+        "description": "The Workspace's sending rules: its Frequency caps and its Sending windows. A new Workspace has\nthree marketing texts per 1440 minutes on SMS and an SMS window of 8:00 to 20:00 every day. The\nWorkspace answers for its compliance: the app keeps no table of laws, and the defaults are not\nlegal advice."
+      },
+      "SendingWindow": {
+        "type": "object",
+        "required": ["channel", "country", "hours"],
+        "properties": {
+          "channel": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SendingWindowChannel"
+              }
+            ],
+            "description": "The Channel it holds"
+          },
+          "country": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CountryCode"
+              }
+            ],
+            "nullable": true,
+            "description": "The country of the numbers it is for; null for every number on the Channel"
+          },
+          "hours": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SendingWindowHours"
+            },
+            "description": "The hours it is open, at most one entry per day"
+          }
+        },
+        "description": "One of the Workspace's Sending windows (ADR 0134): the hours of each day of the week, in the\nrecipient's local time, in which a marketing message on the Channel may go out; a day it does not\nlist stays closed. A window with a country is for the numbers of that country and outranks the\nChannel's own. It opens at least once a week."
+      },
+      "SendingWindowChannel": {
+        "type": "string",
+        "enum": ["sms"],
+        "description": "A Channel a Sending window holds (ADR 0134): only SMS, since email and Telegram go out at any\nhour"
+      },
+      "SendingWindowHours": {
+        "type": "object",
+        "required": ["day", "opensAt", "closesAt"],
+        "properties": {
+          "day": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Weekday"
+              }
+            ],
+            "description": "The day, in the recipient's local time"
+          },
+          "opensAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MinuteOfDay"
+              }
+            ],
+            "description": "The minute of the day it opens"
+          },
+          "closesAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MinuteOfDay"
+              }
+            ],
+            "description": "The minute of the day it closes, after it opens"
+          }
+        },
+        "description": "The hours a Sending window is open on one day of the week, in the recipient's local time"
+      },
+      "SendingWindowHoursInput": {
+        "type": "object",
+        "required": ["day", "opensAt", "closesAt"],
+        "properties": {
+          "day": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Weekday"
+              }
+            ],
+            "description": "The day, in the recipient's local time"
+          },
+          "opensAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MinuteOfDay"
+              }
+            ],
+            "description": "The minute of the day it opens"
+          },
+          "closesAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MinuteOfDay"
+              }
+            ],
+            "description": "The minute of the day it closes, after it opens"
+          }
+        },
+        "description": "A day's hours of a Sending window as a replacement of the rules names them",
+        "additionalProperties": false
+      },
+      "SendingWindowInput": {
+        "type": "object",
+        "required": ["channel", "country", "hours"],
+        "properties": {
+          "channel": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SendingWindowChannel"
+              }
+            ],
+            "description": "The Channel it holds"
+          },
+          "country": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CountryCode"
+              }
+            ],
+            "nullable": true,
+            "description": "The country of the numbers it is for; null for every number on the Channel"
+          },
+          "hours": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SendingWindowHoursInput"
+            },
+            "maxItems": 7,
+            "description": "The hours it is open, at most one entry per day; it must open at least once a week"
+          }
+        },
+        "description": "A Sending window as a replacement of the rules names it",
+        "additionalProperties": false
       },
       "SentByLeaf": {
         "type": "object",
@@ -22339,6 +22700,38 @@
         "description": "Proof of the User's password (or a fresh provider login or Passkey check), for regenerating Recovery codes",
         "additionalProperties": false
       },
+      "SiteReplaceSendingRulesInput": {
+        "type": "object",
+        "required": ["revision", "frequencyCaps", "sendingWindows"],
+        "properties": {
+          "revision": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Revision"
+              }
+            ],
+            "description": "The Workspace's `revision` the change was made on (ADR 0119): the one it was read with"
+          },
+          "frequencyCaps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FrequencyCapInput"
+            },
+            "maxItems": 300,
+            "description": "Every Frequency cap, at most one per Channel and country"
+          },
+          "sendingWindows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SendingWindowInput"
+            },
+            "maxItems": 300,
+            "description": "Every Sending window, at most one per Channel and country"
+          }
+        },
+        "description": "Replace the Workspace's sending rules as a whole: a cap or a window left out is removed",
+        "additionalProperties": false
+      },
       "SiteReportPeriod": {
         "type": "object",
         "required": ["from", "to"],
@@ -22799,6 +23192,35 @@
           }
         },
         "description": "The Complaint and Bounce rates of one Sending domain over a window"
+      },
+      "SiteSendingRulesResource": {
+        "type": "object",
+        "required": ["frequencyCaps", "sendingWindows", "revision"],
+        "properties": {
+          "frequencyCaps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FrequencyCap"
+            },
+            "description": "The Frequency caps"
+          },
+          "sendingWindows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SendingWindow"
+            },
+            "description": "The Sending windows"
+          },
+          "revision": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Revision"
+              }
+            ],
+            "description": "The Workspace's revision this answer shows (ADR 0119): a replacement of the rules names it"
+          }
+        },
+        "description": "The Workspace's sending rules as /site shows them (ADR 0134, ADR 0137), with the Workspace's\nrevision. Every member reads them."
       },
       "SiteSetConfirmedOptInInput": {
         "type": "object",

@@ -42,7 +42,8 @@ func NewCreation(newPublicID func() string) *Creation {
 
 // CreateIn writes a new Workspace named name in tx, with a Workspace id the creation draws (again
 // when the one drawn is taken, a fault after publicIDAttempts draws), a fresh collect key and the
-// Send cap it starts with (ADR 0067; nil for none), and its standing beside it (ADR 0168). Only the creation of a Workspace with its Owner
+// Send cap it starts with (ADR 0067; nil for none), its standing beside it (ADR 0168) and the
+// sending rules it starts with (ADR 0134, ADR 0137: the SMS Frequency cap and Sending window). Only the creation of a Workspace with its Owner
 // calls it (memberships.CreateWorkspaceIn): a Workspace is reached through its Memberships, so one
 // without its Owner is unreachable.
 func (c *Creation) CreateIn(ctx context.Context, tx *ent.Client, name string, sendCap *int) (*ent.Workspace, error) {
@@ -73,6 +74,9 @@ func (c *Creation) CreateIn(ctx context.Context, tx *ent.Client, name string, se
 			err := tx.WorkspaceStanding.Create().SetWorkspaceID(id).
 				OnConflictColumns(workspacestanding.FieldWorkspaceID).DoNothing().Exec(ctx)
 			if _, err := db.Inserted(err); err != nil {
+				return nil, err
+			}
+			if err := writeStartingRulesIn(ctx, tx, id); err != nil {
 				return nil, err
 			}
 			return tx.Workspace.Get(ctx, id)

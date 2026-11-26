@@ -92,8 +92,11 @@ const (
 	ActionWorkspaceAbuseUnexempt      = "workspace.abuse_unexempt"
 	// ActionWorkspaceSendCapChange: a Staff member set, changed or cleared the Send cap (ADR 0067).
 	ActionWorkspaceSendCapChange = "workspace.send_cap_change"
-	ActionContactImport          = "contact.import"
-	ActionAuditLogExport         = "audit_log.export"
+	// ActionWorkspaceSendingRulesChange: an Owner or Admin replaced the Frequency caps and the
+	// Sending windows (ADR 0134, ADR 0137); the diff names each list that changed.
+	ActionWorkspaceSendingRulesChange = "workspace.sending_rules_change"
+	ActionContactImport               = "contact.import"
+	ActionAuditLogExport              = "audit_log.export"
 	// ActionWebhookEndpointTest: a sample event was sent to a Webhook endpoint (ADR 0039): no row changes.
 	ActionWebhookEndpointTest = "webhook_endpoint.test"
 )
@@ -126,6 +129,7 @@ var ExplicitAuditActions = []string{
 	ActionWorkspaceAbuseExempt,
 	ActionWorkspaceAbuseUnexempt,
 	ActionWorkspaceSendCapChange,
+	ActionWorkspaceSendingRulesChange,
 	ActionContactImport,
 	ActionAuditLogExport,
 	ActionWebhookEndpointTest,

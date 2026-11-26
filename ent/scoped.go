@@ -36,6 +36,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
 	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/ent/frequencycap"
 	"github.com/getsphericon/sphericon/ent/heldorderevent"
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/identitysecret"
@@ -58,6 +59,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendcaplimiter"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
+	"github.com/getsphericon/sphericon/ent/sendingwindow"
 	"github.com/getsphericon/sphericon/ent/starttoken"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
@@ -556,6 +558,22 @@ func (s *Scoped) verifyEvent(ctx context.Context, ids []int64) error {
 	return nil
 }
 
+// verifyFrequencyCap fails with ErrNotInWorkspace unless every id is a FrequencyCap of the Workspace.
+func (s *Scoped) verifyFrequencyCap(ctx context.Context, ids []int64) error {
+	ids = uniqueIDs(ids)
+	if len(ids) == 0 {
+		return nil
+	}
+	n, err := s.c.FrequencyCap.Query().Where(s.inFrequencyCap(frequencycap.IDIn(ids...))...).Count(ctx)
+	if err != nil {
+		return err
+	}
+	if n != len(ids) {
+		return fmt.Errorf("FrequencyCap: %w", ErrNotInWorkspace)
+	}
+	return nil
+}
+
 // verifyHeldOrderEvent fails with ErrNotInWorkspace unless every id is a HeldOrderEvent of the Workspace.
 func (s *Scoped) verifyHeldOrderEvent(ctx context.Context, ids []int64) error {
 	ids = uniqueIDs(ids)
@@ -872,6 +890,22 @@ func (s *Scoped) verifySendingDomain(ctx context.Context, ids []int64) error {
 	}
 	if n != len(ids) {
 		return fmt.Errorf("SendingDomain: %w", ErrNotInWorkspace)
+	}
+	return nil
+}
+
+// verifySendingWindow fails with ErrNotInWorkspace unless every id is a SendingWindow of the Workspace.
+func (s *Scoped) verifySendingWindow(ctx context.Context, ids []int64) error {
+	ids = uniqueIDs(ids)
+	if len(ids) == 0 {
+		return nil
+	}
+	n, err := s.c.SendingWindow.Query().Where(s.inSendingWindow(sendingwindow.IDIn(ids...))...).Count(ctx)
+	if err != nil {
+		return err
+	}
+	if n != len(ids) {
+		return fmt.Errorf("SendingWindow: %w", ErrNotInWorkspace)
 	}
 	return nil
 }
@@ -33964,6 +33998,927 @@ const (
 	RoleOf_EventScopedUpdate_Exec   = RoleStep
 )
 
+// FrequencyCapScoped reaches FrequencyCap entities of one Workspace.
+type FrequencyCapScoped struct{ s *Scoped }
+
+// FrequencyCap returns the FrequencyCap entities of the Workspace.
+func (s *Scoped) FrequencyCap() *FrequencyCapScoped { return &FrequencyCapScoped{s: s} }
+
+const (
+	TypeOf_FrequencyCapScoped             = TypeWrapper
+	EntityOf_FrequencyCapScoped           = "FrequencyCap"
+	RoleOf_Scoped_FrequencyCap            = RoleNone
+	RoleOf_FrequencyCapScoped_Query       = RoleRead
+	RoleOf_FrequencyCapScoped_Get         = RoleRead
+	RoleOf_FrequencyCapScoped_DeleteOneID = RoleStart
+	RoleOf_FrequencyCapScoped_UpdateOneID = RoleStart
+	RoleOf_FrequencyCapScoped_Delete      = RoleStart
+	RoleOf_FrequencyCapScoped_Create      = RoleStart
+	RoleOf_FrequencyCapScoped_CreateBulk  = RoleStart
+	RoleOf_FrequencyCapScoped_Update      = RoleStart
+)
+
+// inFrequencyCap confines predicates of FrequencyCap rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inFrequencyCap(ps ...predicate.FrequencyCap) []predicate.FrequencyCap {
+	return append([]predicate.FrequencyCap{frequencycap.WorkspaceID(s.ws)}, ps...)
+}
+
+// Query returns a FrequencyCap query already confined to the Workspace.
+func (t *FrequencyCapScoped) Query() *FrequencyCapQuery {
+	return t.s.c.FrequencyCap.Query().Where(t.s.inFrequencyCap()...)
+}
+
+// Get returns the FrequencyCap with the id; a row of another Workspace is not found.
+func (t *FrequencyCapScoped) Get(ctx context.Context, id int64) (*FrequencyCap, error) {
+	return t.Query().Where(frequencycap.ID(id)).Only(ctx)
+}
+
+// writeFrequencyCap runs a write of FrequencyCap rows: run builds it on the client of the scope it is
+// given and executes it, and reaches no other client. The
+// entity is not audited, so run gets the scope itself.
+func (s *Scoped) writeFrequencyCap(ctx context.Context, verb string, where []predicate.FrequencyCap, unchanged unchangedRows, run func(s *Scoped) ([]int64, error)) error {
+	_, _, _ = verb, where, unchanged
+	_, err := run(s)
+	return err
+}
+
+// checkFrequencyCap verifies every reference the mutations set against the Workspace of s, one query per
+// reference for all of them.
+func (s *Scoped) checkFrequencyCap(ctx context.Context, ms ...*FrequencyCapMutation) error {
+	return nil
+}
+
+// FrequencyCapScopedDeleteOne deletes one FrequencyCap: it keeps the row's id and its fences, and builds the
+// ent delete on the client the delete runs on.
+type FrequencyCapScopedDeleteOne struct {
+	s     *Scoped
+	id    int64
+	where []predicate.FrequencyCap
+}
+
+// DeleteOneID deletes the FrequencyCap with the id; a row of another Workspace is not found.
+func (t *FrequencyCapScoped) DeleteOneID(id int64) *FrequencyCapScopedDeleteOne {
+	return &FrequencyCapScopedDeleteOne{s: t.s, id: id}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *FrequencyCapScopedDeleteOne) Where(ps ...predicate.FrequencyCap) *FrequencyCapScopedDeleteOne {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+const (
+	TypeOf_FrequencyCapScopedDeleteOne       = TypeScopedDelete
+	EntityOf_FrequencyCapScopedDeleteOne     = "FrequencyCap"
+	RoleOf_FrequencyCapScopedDeleteOne_Where = RoleStep
+	RoleOf_FrequencyCapScopedDeleteOne_Exec  = RoleStep
+)
+
+// Exec deletes the row; a missing row is a NotFoundError.
+func (x *FrequencyCapScopedDeleteOne) Exec(ctx context.Context) error {
+	where := x.s.inFrequencyCap(x.where...)
+	return x.s.writeFrequencyCap(ctx, "delete", append([]predicate.FrequencyCap{frequencycap.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
+		return nil, s.c.FrequencyCap.DeleteOneID(x.id).Where(where...).Exec(ctx)
+	})
+}
+
+// FrequencyCapScopedDelete deletes the FrequencyCap rows of one Workspace that match its predicates, which it
+// keeps until the delete is built on the client it runs on.
+type FrequencyCapScopedDelete struct {
+	s     *Scoped
+	where []predicate.FrequencyCap
+}
+
+// Delete deletes the FrequencyCap entities of the Workspace that match the predicates.
+func (t *FrequencyCapScoped) Delete() *FrequencyCapScopedDelete {
+	return &FrequencyCapScopedDelete{s: t.s}
+}
+
+// Where appends predicates the rows must match.
+func (x *FrequencyCapScopedDelete) Where(ps ...predicate.FrequencyCap) *FrequencyCapScopedDelete {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+const (
+	TypeOf_FrequencyCapScopedDelete       = TypeScopedDelete
+	EntityOf_FrequencyCapScopedDelete     = "FrequencyCap"
+	RoleOf_FrequencyCapScopedDelete_Where = RoleStep
+	RoleOf_FrequencyCapScopedDelete_Exec  = RoleStep
+)
+
+// Exec deletes the rows and returns how many were deleted.
+func (x *FrequencyCapScopedDelete) Exec(ctx context.Context) (int, error) {
+	where := x.s.inFrequencyCap(x.where...)
+	var n int
+	err := x.s.writeFrequencyCap(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		var err error
+		n, err = s.c.FrequencyCap.Delete().Where(where...).Exec(ctx)
+		return nil, err
+	})
+	return written(n, err)
+}
+
+// ---------------------------------------------------------------- create
+
+// FrequencyCapScopedCreate creates a FrequencyCap of one Workspace. It has no way to name a Workspace: it
+// keeps what its setters set and builds the ent create, in its Workspace, on the client the create
+// runs on.
+type FrequencyCapScopedCreate struct {
+	s   *Scoped
+	set []func(*FrequencyCapCreate)
+}
+
+// Create starts a FrequencyCap in the Workspace.
+func (t *FrequencyCapScoped) Create() *FrequencyCapScopedCreate {
+	return &FrequencyCapScopedCreate{s: t.s}
+}
+
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *FrequencyCapScopedCreate) raw(s *Scoped) *FrequencyCapCreate {
+	b := s.c.FrequencyCap.Create().SetWorkspaceID(s.ws)
+	for _, set := range x.set {
+		set(b)
+	}
+	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *FrequencyCapScopedCreate) build(ctx context.Context, s *Scoped) (*FrequencyCapCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkFrequencyCap(ctx, b.Mutation()))
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (x *FrequencyCapScopedCreate) SetCreatedAt(v time.Time) *FrequencyCapScopedCreate {
+	x.set = append(x.set, func(b *FrequencyCapCreate) { b.SetCreatedAt(v) })
+	return x
+}
+
+const RoleOf_FrequencyCapScopedCreate_SetCreatedAt = RoleStep
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (x *FrequencyCapScopedCreate) SetNillableCreatedAt(v *time.Time) *FrequencyCapScopedCreate {
+	if v != nil {
+		x.SetCreatedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_FrequencyCapScopedCreate_SetNillableCreatedAt = RoleStep
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *FrequencyCapScopedCreate) SetUpdatedAt(v time.Time) *FrequencyCapScopedCreate {
+	x.set = append(x.set, func(b *FrequencyCapCreate) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_FrequencyCapScopedCreate_SetUpdatedAt = RoleStep
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (x *FrequencyCapScopedCreate) SetNillableUpdatedAt(v *time.Time) *FrequencyCapScopedCreate {
+	if v != nil {
+		x.SetUpdatedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_FrequencyCapScopedCreate_SetNillableUpdatedAt = RoleStep
+
+// SetChannel sets the "channel" field.
+func (x *FrequencyCapScopedCreate) SetChannel(v channels.Channel) *FrequencyCapScopedCreate {
+	x.set = append(x.set, func(b *FrequencyCapCreate) { b.SetChannel(v) })
+	return x
+}
+
+const RoleOf_FrequencyCapScopedCreate_SetChannel = RoleStep
+
+// SetCountry sets the "country" field.
+func (x *FrequencyCapScopedCreate) SetCountry(v string) *FrequencyCapScopedCreate {
+	x.set = append(x.set, func(b *FrequencyCapCreate) { b.SetCountry(v) })
+	return x
+}
+
+const RoleOf_FrequencyCapScopedCreate_SetCountry = RoleStep
+
+// SetNillableCountry sets the "country" field if the given value is not nil.
+func (x *FrequencyCapScopedCreate) SetNillableCountry(v *string) *FrequencyCapScopedCreate {
+	if v != nil {
+		x.SetCountry(*v)
+	}
+	return x
+}
+
+const RoleOf_FrequencyCapScopedCreate_SetNillableCountry = RoleStep
+
+// SetMaxMessages sets the "max_messages" field.
+func (x *FrequencyCapScopedCreate) SetMaxMessages(v int) *FrequencyCapScopedCreate {
+	x.set = append(x.set, func(b *FrequencyCapCreate) { b.SetMaxMessages(v) })
+	return x
+}
+
+const RoleOf_FrequencyCapScopedCreate_SetMaxMessages = RoleStep
+
+// SetNillableMaxMessages sets the "max_messages" field if the given value is not nil.
+func (x *FrequencyCapScopedCreate) SetNillableMaxMessages(v *int) *FrequencyCapScopedCreate {
+	if v != nil {
+		x.SetMaxMessages(*v)
+	}
+	return x
+}
+
+const RoleOf_FrequencyCapScopedCreate_SetNillableMaxMessages = RoleStep
+
+// SetPeriodMinutes sets the "period_minutes" field.
+func (x *FrequencyCapScopedCreate) SetPeriodMinutes(v int) *FrequencyCapScopedCreate {
+	x.set = append(x.set, func(b *FrequencyCapCreate) { b.SetPeriodMinutes(v) })
+	return x
+}
+
+const RoleOf_FrequencyCapScopedCreate_SetPeriodMinutes = RoleStep
+
+// SetNillablePeriodMinutes sets the "period_minutes" field if the given value is not nil.
+func (x *FrequencyCapScopedCreate) SetNillablePeriodMinutes(v *int) *FrequencyCapScopedCreate {
+	if v != nil {
+		x.SetPeriodMinutes(*v)
+	}
+	return x
+}
+
+const RoleOf_FrequencyCapScopedCreate_SetNillablePeriodMinutes = RoleStep
+
+const (
+	TypeOf_FrequencyCapScopedCreate                        = TypeScopedCreate
+	EntityOf_FrequencyCapScopedCreate                      = "FrequencyCap"
+	RoleOf_FrequencyCapScopedCreate_Save                   = RoleStep
+	RoleOf_FrequencyCapScopedCreate_Exec                   = RoleStep
+	RoleOf_FrequencyCapScopedCreate_OnConflictColumns      = RoleStart
+	RoleOf_FrequencyCapScopedCreate_OnConflictColumnsWhere = RoleStart
+)
+
+// Save verifies the references against the Workspace, then creates the FrequencyCap.
+func (x *FrequencyCapScopedCreate) Save(ctx context.Context) (*FrequencyCap, error) {
+	var created *FrequencyCap
+	err := x.s.writeFrequencyCap(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if created, err = b.Save(ctx); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+	return written(created, err)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *FrequencyCapScopedCreate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- create bulk
+
+// FrequencyCapScopedCreateBulk creates several FrequencyCap entities of one Workspace at once.
+type FrequencyCapScopedCreateBulk struct {
+	s  *Scoped
+	xs []*FrequencyCapScopedCreate
+}
+
+// CreateBulk batches creates started on this Workspace.
+func (t *FrequencyCapScoped) CreateBulk(xs ...*FrequencyCapScopedCreate) *FrequencyCapScopedCreateBulk {
+	return &FrequencyCapScopedCreateBulk{s: t.s, xs: xs}
+}
+
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *FrequencyCapScopedCreateBulk) refuseForeign() error {
+	for _, x := range b.xs {
+		if x.s.ws != b.s.ws {
+			return fmt.Errorf("FrequencyCap: builder of another scope: %w", ErrNotInWorkspace)
+		}
+	}
+	return nil
+}
+
+// build makes the ent bulk create on the client of s, every create of it in the Workspace, and
+// verifies the references of all of them, one query per reference rather than one per row.
+func (b *FrequencyCapScopedCreateBulk) build(ctx context.Context, s *Scoped) (*FrequencyCapCreateBulk, error) {
+	builders := make([]*FrequencyCapCreate, len(b.xs))
+	ms := make([]*FrequencyCapMutation, len(b.xs))
+	for i, x := range b.xs {
+		builders[i] = x.raw(s)
+		ms[i] = builders[i].Mutation()
+	}
+	if err := s.checkFrequencyCap(ctx, ms...); err != nil {
+		return nil, err
+	}
+	return s.c.FrequencyCap.CreateBulk(builders...), nil
+}
+
+// Save verifies every builder's references, then creates the FrequencyCap entities.
+func (b *FrequencyCapScopedCreateBulk) Save(ctx context.Context) ([]*FrequencyCap, error) {
+	if err := b.refuseForeign(); err != nil {
+		return nil, err
+	}
+	var created []*FrequencyCap
+	err := b.s.writeFrequencyCap(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		raw, err := b.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if created, err = raw.Save(ctx); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+	return written(created, err)
+}
+
+// Exec is like Save, discarding the entities.
+func (b *FrequencyCapScopedCreateBulk) Exec(ctx context.Context) error {
+	_, err := b.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_FrequencyCapScopedCreateBulk                   = TypeScopedCreate
+	EntityOf_FrequencyCapScopedCreateBulk                 = "FrequencyCap"
+	RoleOf_FrequencyCapScopedCreateBulk_Save              = RoleStep
+	RoleOf_FrequencyCapScopedCreateBulk_Exec              = RoleStep
+	RoleOf_FrequencyCapScopedCreateBulk_OnConflictColumns = RoleStart
+)
+
+// ---------------------------------------------------------------- upsert
+
+// FrequencyCapScopedUpsert is the "ON CONFLICT ... DO UPDATE" setter. It cannot move a row to
+// another Workspace or point a reference at a value that was not verified on create.
+type FrequencyCapScopedUpsert struct{ u *sql.UpdateSet }
+
+const (
+	TypeOf_FrequencyCapScopedUpsert   = TypeScopedUpsert
+	EntityOf_FrequencyCapScopedUpsert = "FrequencyCap"
+)
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *FrequencyCapScopedUpsert) SetUpdatedAt(v time.Time) *FrequencyCapScopedUpsert {
+	u.u.Set(frequencycap.FieldUpdatedAt, v)
+	return u
+}
+
+const RoleOf_FrequencyCapScopedUpsert_SetUpdatedAt = RoleStep
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *FrequencyCapScopedUpsert) UpdateUpdatedAt() *FrequencyCapScopedUpsert {
+	u.u.SetExcluded(frequencycap.FieldUpdatedAt)
+	return u
+}
+
+const RoleOf_FrequencyCapScopedUpsert_UpdateUpdatedAt = RoleStep
+
+// SetMaxMessages sets the "max_messages" field.
+func (u *FrequencyCapScopedUpsert) SetMaxMessages(v int) *FrequencyCapScopedUpsert {
+	u.u.Set(frequencycap.FieldMaxMessages, v)
+	return u
+}
+
+const RoleOf_FrequencyCapScopedUpsert_SetMaxMessages = RoleStep
+
+// AddMaxMessages adds v to the "max_messages" field.
+func (u *FrequencyCapScopedUpsert) AddMaxMessages(v int) *FrequencyCapScopedUpsert {
+	u.u.Add(frequencycap.FieldMaxMessages, v)
+	return u
+}
+
+const RoleOf_FrequencyCapScopedUpsert_AddMaxMessages = RoleStep
+
+// UpdateMaxMessages sets the "max_messages" field to the value that was provided on create.
+func (u *FrequencyCapScopedUpsert) UpdateMaxMessages() *FrequencyCapScopedUpsert {
+	u.u.SetExcluded(frequencycap.FieldMaxMessages)
+	return u
+}
+
+const RoleOf_FrequencyCapScopedUpsert_UpdateMaxMessages = RoleStep
+
+// ClearMaxMessages clears the value of the "max_messages" field.
+func (u *FrequencyCapScopedUpsert) ClearMaxMessages() *FrequencyCapScopedUpsert {
+	u.u.SetNull(frequencycap.FieldMaxMessages)
+	return u
+}
+
+const RoleOf_FrequencyCapScopedUpsert_ClearMaxMessages = RoleStep
+
+// SetPeriodMinutes sets the "period_minutes" field.
+func (u *FrequencyCapScopedUpsert) SetPeriodMinutes(v int) *FrequencyCapScopedUpsert {
+	u.u.Set(frequencycap.FieldPeriodMinutes, v)
+	return u
+}
+
+const RoleOf_FrequencyCapScopedUpsert_SetPeriodMinutes = RoleStep
+
+// AddPeriodMinutes adds v to the "period_minutes" field.
+func (u *FrequencyCapScopedUpsert) AddPeriodMinutes(v int) *FrequencyCapScopedUpsert {
+	u.u.Add(frequencycap.FieldPeriodMinutes, v)
+	return u
+}
+
+const RoleOf_FrequencyCapScopedUpsert_AddPeriodMinutes = RoleStep
+
+// UpdatePeriodMinutes sets the "period_minutes" field to the value that was provided on create.
+func (u *FrequencyCapScopedUpsert) UpdatePeriodMinutes() *FrequencyCapScopedUpsert {
+	u.u.SetExcluded(frequencycap.FieldPeriodMinutes)
+	return u
+}
+
+const RoleOf_FrequencyCapScopedUpsert_UpdatePeriodMinutes = RoleStep
+
+// ClearPeriodMinutes clears the value of the "period_minutes" field.
+func (u *FrequencyCapScopedUpsert) ClearPeriodMinutes() *FrequencyCapScopedUpsert {
+	u.u.SetNull(frequencycap.FieldPeriodMinutes)
+	return u
+}
+
+const RoleOf_FrequencyCapScopedUpsert_ClearPeriodMinutes = RoleStep
+
+// conflictOptions confines the DO UPDATE part to rows of the Workspace.
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *FrequencyCapScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
+		sql.ConflictColumns(columns...),
+		sql.UpdateWhere(sql.EQ(frequencycap.FieldWorkspaceID, t.s.ws)),
+	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
+}
+
+// FrequencyCapScopedUpsertOne is the "upsert" of one FrequencyCap: the create it was started on, which a setter
+// called later still changes, and what to do on a conflict.
+type FrequencyCapScopedUpsertOne struct {
+	x        *FrequencyCapScopedCreate
+	conflict []sql.ConflictOption
+	set      []func(*FrequencyCapUpsertOne)
+	// doNothing: the conflict action is DO NOTHING (the only upsert an audited entity allows).
+	doNothing bool
+}
+
+const (
+	TypeOf_FrequencyCapScopedUpsertOne                 = TypeScopedUpsert
+	EntityOf_FrequencyCapScopedUpsertOne               = "FrequencyCap"
+	RoleOf_FrequencyCapScopedUpsertOne_UpdateNewValues = RoleStep
+	RoleOf_FrequencyCapScopedUpsertOne_Ignore          = RoleStep
+	RoleOf_FrequencyCapScopedUpsertOne_DoNothing       = RoleStep
+	RoleOf_FrequencyCapScopedUpsertOne_Update          = RoleStep
+	RoleOf_FrequencyCapScopedUpsertOne_Exec            = RoleStep
+	RoleOf_FrequencyCapScopedUpsertOne_ID              = RoleStep
+)
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (x *FrequencyCapScopedCreate) OnConflictColumns(columns ...string) *FrequencyCapScopedUpsertOne {
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *FrequencyCapScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *FrequencyCapScopedUpsertOne {
+	return &FrequencyCapScopedUpsertOne{x: x, conflict: (&FrequencyCapScoped{s: x.s}).conflictOptions(columns, target)}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *FrequencyCapScopedUpsertOne) UpdateNewValues() *FrequencyCapScopedUpsertOne {
+	u.set = append(u.set, func(r *FrequencyCapUpsertOne) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *FrequencyCapScopedUpsertOne) Ignore() *FrequencyCapScopedUpsertOne {
+	u.set = append(u.set, func(r *FrequencyCapUpsertOne) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *FrequencyCapScopedUpsertOne) DoNothing() *FrequencyCapScopedUpsertOne {
+	u.set = append(u.set, func(r *FrequencyCapUpsertOne) { r.DoNothing() })
+	u.doNothing = true
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *FrequencyCapScopedUpsertOne) Update(set func(*FrequencyCapScopedUpsert)) *FrequencyCapScopedUpsertOne {
+	u.set = append(u.set, func(r *FrequencyCapUpsertOne) {
+		r.Update(func(s *FrequencyCapUpsert) { set(&FrequencyCapScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// build makes the ent upsert on the client of s and verifies the create's references.
+func (u *FrequencyCapScopedUpsertOne) build(ctx context.Context, s *Scoped) (*FrequencyCapUpsertOne, error) {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
+		return nil, err
+	}
+	r := b.OnConflict(u.conflict...)
+	for _, set := range u.set {
+		set(r)
+	}
+	return r, nil
+}
+
+// Exec verifies the references, then executes the upsert.
+func (u *FrequencyCapScopedUpsertOne) Exec(ctx context.Context) error {
+	_, err := u.ID(ctx)
+	return err
+}
+
+// ID is like Exec, returning the inserted or updated id.
+func (u *FrequencyCapScopedUpsertOne) ID(ctx context.Context) (int64, error) {
+	var id int64
+	err := u.x.s.writeFrequencyCap(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		r, err := u.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if id, err = r.ID(ctx); err != nil {
+			return nil, err
+		}
+		return []int64{id}, nil
+	})
+	return written(id, err)
+}
+
+// FrequencyCapScopedUpsertBulk is the "upsert" of several FrequencyCap entities.
+type FrequencyCapScopedUpsertBulk struct {
+	b       *FrequencyCapScopedCreateBulk
+	t       *FrequencyCapScoped
+	columns []string
+	set     []func(*FrequencyCapUpsertBulk)
+}
+
+const (
+	TypeOf_FrequencyCapScopedUpsertBulk                 = TypeScopedUpsert
+	EntityOf_FrequencyCapScopedUpsertBulk               = "FrequencyCap"
+	RoleOf_FrequencyCapScopedUpsertBulk_UpdateNewValues = RoleStep
+	RoleOf_FrequencyCapScopedUpsertBulk_Ignore          = RoleStep
+	RoleOf_FrequencyCapScopedUpsertBulk_DoNothing       = RoleStep
+	RoleOf_FrequencyCapScopedUpsertBulk_Update          = RoleStep
+	RoleOf_FrequencyCapScopedUpsertBulk_Exec            = RoleStep
+)
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (b *FrequencyCapScopedCreateBulk) OnConflictColumns(columns ...string) *FrequencyCapScopedUpsertBulk {
+	return &FrequencyCapScopedUpsertBulk{b: b, t: &FrequencyCapScoped{s: b.s}, columns: columns}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *FrequencyCapScopedUpsertBulk) UpdateNewValues() *FrequencyCapScopedUpsertBulk {
+	u.set = append(u.set, func(r *FrequencyCapUpsertBulk) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *FrequencyCapScopedUpsertBulk) Ignore() *FrequencyCapScopedUpsertBulk {
+	u.set = append(u.set, func(r *FrequencyCapUpsertBulk) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *FrequencyCapScopedUpsertBulk) DoNothing() *FrequencyCapScopedUpsertBulk {
+	u.set = append(u.set, func(r *FrequencyCapUpsertBulk) { r.DoNothing() })
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *FrequencyCapScopedUpsertBulk) Update(set func(*FrequencyCapScopedUpsert)) *FrequencyCapScopedUpsertBulk {
+	u.set = append(u.set, func(r *FrequencyCapUpsertBulk) {
+		r.Update(func(s *FrequencyCapUpsert) { set(&FrequencyCapScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// Exec verifies every builder's references, then executes the upsert.
+func (u *FrequencyCapScopedUpsertBulk) Exec(ctx context.Context) error {
+	if err := u.b.refuseForeign(); err != nil {
+		return err
+	}
+	return u.b.s.writeFrequencyCap(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		raw, err := u.b.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
+		for _, set := range u.set {
+			set(r)
+		}
+		return nil, r.Exec(ctx)
+	})
+}
+
+// ---------------------------------------------------------------- update
+
+// FrequencyCapScopedUpdateOne updates one FrequencyCap. It has no way to move the row to another Workspace: it
+// keeps the row's id, its fences and what its setters set, and builds the ent update on the client
+// the update runs on.
+type FrequencyCapScopedUpdateOne struct {
+	s     *Scoped
+	id    int64
+	where []predicate.FrequencyCap
+	set   []func(*FrequencyCapUpdateOne)
+}
+
+// UpdateOneID updates the FrequencyCap with the id; a row of another Workspace is not found.
+func (t *FrequencyCapScoped) UpdateOneID(id int64) *FrequencyCapScopedUpdateOne {
+	return &FrequencyCapScopedUpdateOne{s: t.s, id: id}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *FrequencyCapScopedUpdateOne) Where(ps ...predicate.FrequencyCap) *FrequencyCapScopedUpdateOne {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *FrequencyCapScopedUpdateOne) SetUpdatedAt(v time.Time) *FrequencyCapScopedUpdateOne {
+	x.set = append(x.set, func(b *FrequencyCapUpdateOne) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_FrequencyCapScopedUpdateOne_SetUpdatedAt = RoleStep
+
+// SetMaxMessages sets the "max_messages" field.
+func (x *FrequencyCapScopedUpdateOne) SetMaxMessages(v int) *FrequencyCapScopedUpdateOne {
+	x.set = append(x.set, func(b *FrequencyCapUpdateOne) { b.SetMaxMessages(v) })
+	return x
+}
+
+const RoleOf_FrequencyCapScopedUpdateOne_SetMaxMessages = RoleStep
+
+// SetNillableMaxMessages sets the "max_messages" field if the given value is not nil.
+func (x *FrequencyCapScopedUpdateOne) SetNillableMaxMessages(v *int) *FrequencyCapScopedUpdateOne {
+	if v != nil {
+		x.SetMaxMessages(*v)
+	}
+	return x
+}
+
+const RoleOf_FrequencyCapScopedUpdateOne_SetNillableMaxMessages = RoleStep
+
+// AddMaxMessages adds value to the "max_messages" field.
+func (x *FrequencyCapScopedUpdateOne) AddMaxMessages(v int) *FrequencyCapScopedUpdateOne {
+	x.set = append(x.set, func(b *FrequencyCapUpdateOne) { b.AddMaxMessages(v) })
+	return x
+}
+
+const RoleOf_FrequencyCapScopedUpdateOne_AddMaxMessages = RoleStep
+
+// ClearMaxMessages clears the value of the "max_messages" field.
+func (x *FrequencyCapScopedUpdateOne) ClearMaxMessages() *FrequencyCapScopedUpdateOne {
+	x.set = append(x.set, func(b *FrequencyCapUpdateOne) { b.ClearMaxMessages() })
+	return x
+}
+
+const RoleOf_FrequencyCapScopedUpdateOne_ClearMaxMessages = RoleStep
+
+// SetPeriodMinutes sets the "period_minutes" field.
+func (x *FrequencyCapScopedUpdateOne) SetPeriodMinutes(v int) *FrequencyCapScopedUpdateOne {
+	x.set = append(x.set, func(b *FrequencyCapUpdateOne) { b.SetPeriodMinutes(v) })
+	return x
+}
+
+const RoleOf_FrequencyCapScopedUpdateOne_SetPeriodMinutes = RoleStep
+
+// SetNillablePeriodMinutes sets the "period_minutes" field if the given value is not nil.
+func (x *FrequencyCapScopedUpdateOne) SetNillablePeriodMinutes(v *int) *FrequencyCapScopedUpdateOne {
+	if v != nil {
+		x.SetPeriodMinutes(*v)
+	}
+	return x
+}
+
+const RoleOf_FrequencyCapScopedUpdateOne_SetNillablePeriodMinutes = RoleStep
+
+// AddPeriodMinutes adds value to the "period_minutes" field.
+func (x *FrequencyCapScopedUpdateOne) AddPeriodMinutes(v int) *FrequencyCapScopedUpdateOne {
+	x.set = append(x.set, func(b *FrequencyCapUpdateOne) { b.AddPeriodMinutes(v) })
+	return x
+}
+
+const RoleOf_FrequencyCapScopedUpdateOne_AddPeriodMinutes = RoleStep
+
+// ClearPeriodMinutes clears the value of the "period_minutes" field.
+func (x *FrequencyCapScopedUpdateOne) ClearPeriodMinutes() *FrequencyCapScopedUpdateOne {
+	x.set = append(x.set, func(b *FrequencyCapUpdateOne) { b.ClearPeriodMinutes() })
+	return x
+}
+
+const RoleOf_FrequencyCapScopedUpdateOne_ClearPeriodMinutes = RoleStep
+
+// Save verifies the references against the Workspace, then updates the FrequencyCap.
+func (x *FrequencyCapScopedUpdateOne) Save(ctx context.Context) (*FrequencyCap, error) {
+	return x.save(ctx, "update", skipUnchanged)
+}
+
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *FrequencyCapScopedUpdateOne) build(ctx context.Context, s *Scoped) (*FrequencyCapUpdateOne, error) {
+	b := s.c.FrequencyCap.UpdateOneID(x.id).Where(s.inFrequencyCap(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkFrequencyCap(ctx, b.Mutation()))
+}
+
+// save is Save under a verb, doing with an unchanged row what unchanged says.
+func (x *FrequencyCapScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*FrequencyCap, error) {
+	where := x.s.inFrequencyCap(x.where...)
+	var updated *FrequencyCap
+	err := x.s.writeFrequencyCap(ctx, verb, append([]predicate.FrequencyCap{frequencycap.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		updated, err = b.Save(ctx)
+		return nil, err
+	})
+	return written(updated, err)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *FrequencyCapScopedUpdateOne) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_FrequencyCapScopedUpdateOne       = TypeScopedUpdate
+	EntityOf_FrequencyCapScopedUpdateOne     = "FrequencyCap"
+	RoleOf_FrequencyCapScopedUpdateOne_Where = RoleStep
+	RoleOf_FrequencyCapScopedUpdateOne_Save  = RoleStep
+	RoleOf_FrequencyCapScopedUpdateOne_Exec  = RoleStep
+)
+
+// FrequencyCapScopedUpdate is a conditional bulk update of one Workspace: it keeps its predicates and
+// what its setters and modifiers set, and builds the ent update on the client the update runs on.
+type FrequencyCapScopedUpdate struct {
+	s     *Scoped
+	where []predicate.FrequencyCap
+	set   []func(*FrequencyCapUpdate)
+	// modErr is set when a Modify modifier tried to assign workspace_id.
+	modErr error
+}
+
+// Update updates the FrequencyCap entities of the Workspace that match the predicates.
+func (t *FrequencyCapScoped) Update() *FrequencyCapScopedUpdate {
+	return &FrequencyCapScopedUpdate{s: t.s}
+}
+
+// Where appends predicates the rows must match.
+func (x *FrequencyCapScopedUpdate) Where(ps ...predicate.FrequencyCap) *FrequencyCapScopedUpdate {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+// Modify adds a statement modifier for computed assignments the typed setters cannot
+// express (SET col = LEAST(col + ..., ...)). A modifier gets assignment-only access
+// (ScopedAssign), so it cannot widen the Workspace predicate; an assignment to
+// workspace_id is refused: each modifier is probed against a scratch statement here, and
+// Save fails with ErrWorkspaceAssign.
+func (x *FrequencyCapScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *FrequencyCapScopedUpdate {
+	for _, m := range modifiers {
+		probe := &ScopedAssign{u: sql.Update(frequencycap.Table)}
+		m(probe)
+		if probe.workspace {
+			x.modErr = ErrWorkspaceAssign
+		}
+		x.set = append(x.set, func(b *FrequencyCapUpdate) {
+			b.Modify(func(u *sql.UpdateBuilder) { m(&ScopedAssign{u: u}) })
+		})
+	}
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *FrequencyCapScopedUpdate) SetUpdatedAt(v time.Time) *FrequencyCapScopedUpdate {
+	x.set = append(x.set, func(b *FrequencyCapUpdate) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_FrequencyCapScopedUpdate_SetUpdatedAt = RoleStep
+
+// SetMaxMessages sets the "max_messages" field.
+func (x *FrequencyCapScopedUpdate) SetMaxMessages(v int) *FrequencyCapScopedUpdate {
+	x.set = append(x.set, func(b *FrequencyCapUpdate) { b.SetMaxMessages(v) })
+	return x
+}
+
+const RoleOf_FrequencyCapScopedUpdate_SetMaxMessages = RoleStep
+
+// SetNillableMaxMessages sets the "max_messages" field if the given value is not nil.
+func (x *FrequencyCapScopedUpdate) SetNillableMaxMessages(v *int) *FrequencyCapScopedUpdate {
+	if v != nil {
+		x.SetMaxMessages(*v)
+	}
+	return x
+}
+
+const RoleOf_FrequencyCapScopedUpdate_SetNillableMaxMessages = RoleStep
+
+// AddMaxMessages adds value to the "max_messages" field.
+func (x *FrequencyCapScopedUpdate) AddMaxMessages(v int) *FrequencyCapScopedUpdate {
+	x.set = append(x.set, func(b *FrequencyCapUpdate) { b.AddMaxMessages(v) })
+	return x
+}
+
+const RoleOf_FrequencyCapScopedUpdate_AddMaxMessages = RoleStep
+
+// ClearMaxMessages clears the value of the "max_messages" field.
+func (x *FrequencyCapScopedUpdate) ClearMaxMessages() *FrequencyCapScopedUpdate {
+	x.set = append(x.set, func(b *FrequencyCapUpdate) { b.ClearMaxMessages() })
+	return x
+}
+
+const RoleOf_FrequencyCapScopedUpdate_ClearMaxMessages = RoleStep
+
+// SetPeriodMinutes sets the "period_minutes" field.
+func (x *FrequencyCapScopedUpdate) SetPeriodMinutes(v int) *FrequencyCapScopedUpdate {
+	x.set = append(x.set, func(b *FrequencyCapUpdate) { b.SetPeriodMinutes(v) })
+	return x
+}
+
+const RoleOf_FrequencyCapScopedUpdate_SetPeriodMinutes = RoleStep
+
+// SetNillablePeriodMinutes sets the "period_minutes" field if the given value is not nil.
+func (x *FrequencyCapScopedUpdate) SetNillablePeriodMinutes(v *int) *FrequencyCapScopedUpdate {
+	if v != nil {
+		x.SetPeriodMinutes(*v)
+	}
+	return x
+}
+
+const RoleOf_FrequencyCapScopedUpdate_SetNillablePeriodMinutes = RoleStep
+
+// AddPeriodMinutes adds value to the "period_minutes" field.
+func (x *FrequencyCapScopedUpdate) AddPeriodMinutes(v int) *FrequencyCapScopedUpdate {
+	x.set = append(x.set, func(b *FrequencyCapUpdate) { b.AddPeriodMinutes(v) })
+	return x
+}
+
+const RoleOf_FrequencyCapScopedUpdate_AddPeriodMinutes = RoleStep
+
+// ClearPeriodMinutes clears the value of the "period_minutes" field.
+func (x *FrequencyCapScopedUpdate) ClearPeriodMinutes() *FrequencyCapScopedUpdate {
+	x.set = append(x.set, func(b *FrequencyCapUpdate) { b.ClearPeriodMinutes() })
+	return x
+}
+
+const RoleOf_FrequencyCapScopedUpdate_ClearPeriodMinutes = RoleStep
+
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *FrequencyCapScopedUpdate) build(ctx context.Context, s *Scoped) (*FrequencyCapUpdate, error) {
+	b := s.c.FrequencyCap.Update().Where(s.inFrequencyCap(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkFrequencyCap(ctx, b.Mutation()))
+}
+
+// Save verifies the references against the Workspace, then updates the rows and
+// returns how many changed.
+func (x *FrequencyCapScopedUpdate) Save(ctx context.Context) (int, error) {
+	if x.modErr != nil {
+		return 0, x.modErr
+	}
+	where := x.s.inFrequencyCap(x.where...)
+	var n int
+	err := x.s.writeFrequencyCap(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		n, err = b.Save(ctx)
+		return nil, err
+	})
+	return written(n, err)
+}
+
+// Exec is like Save, discarding the count.
+func (x *FrequencyCapScopedUpdate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_FrequencyCapScopedUpdate        = TypeScopedUpdate
+	EntityOf_FrequencyCapScopedUpdate      = "FrequencyCap"
+	RoleOf_FrequencyCapScopedUpdate_Where  = RoleStep
+	RoleOf_FrequencyCapScopedUpdate_Modify = RoleStep
+	RoleOf_FrequencyCapScopedUpdate_Save   = RoleStep
+	RoleOf_FrequencyCapScopedUpdate_Exec   = RoleStep
+)
+
 // HeldOrderEventScoped reaches HeldOrderEvent entities of one Workspace.
 type HeldOrderEventScoped struct{ s *Scoped }
 
@@ -60835,6 +61790,2343 @@ const (
 	RoleOf_SendingDomainScopedUpdate_Modify = RoleStep
 	RoleOf_SendingDomainScopedUpdate_Save   = RoleStep
 	RoleOf_SendingDomainScopedUpdate_Exec   = RoleStep
+)
+
+// SendingWindowScoped reaches SendingWindow entities of one Workspace.
+type SendingWindowScoped struct{ s *Scoped }
+
+// SendingWindow returns the SendingWindow entities of the Workspace.
+func (s *Scoped) SendingWindow() *SendingWindowScoped { return &SendingWindowScoped{s: s} }
+
+const (
+	TypeOf_SendingWindowScoped             = TypeWrapper
+	EntityOf_SendingWindowScoped           = "SendingWindow"
+	RoleOf_Scoped_SendingWindow            = RoleNone
+	RoleOf_SendingWindowScoped_Query       = RoleRead
+	RoleOf_SendingWindowScoped_Get         = RoleRead
+	RoleOf_SendingWindowScoped_DeleteOneID = RoleStart
+	RoleOf_SendingWindowScoped_UpdateOneID = RoleStart
+	RoleOf_SendingWindowScoped_Delete      = RoleStart
+	RoleOf_SendingWindowScoped_Create      = RoleStart
+	RoleOf_SendingWindowScoped_CreateBulk  = RoleStart
+	RoleOf_SendingWindowScoped_Update      = RoleStart
+)
+
+// inSendingWindow confines predicates of SendingWindow rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inSendingWindow(ps ...predicate.SendingWindow) []predicate.SendingWindow {
+	return append([]predicate.SendingWindow{sendingwindow.WorkspaceID(s.ws)}, ps...)
+}
+
+// Query returns a SendingWindow query already confined to the Workspace.
+func (t *SendingWindowScoped) Query() *SendingWindowQuery {
+	return t.s.c.SendingWindow.Query().Where(t.s.inSendingWindow()...)
+}
+
+// Get returns the SendingWindow with the id; a row of another Workspace is not found.
+func (t *SendingWindowScoped) Get(ctx context.Context, id int64) (*SendingWindow, error) {
+	return t.Query().Where(sendingwindow.ID(id)).Only(ctx)
+}
+
+// writeSendingWindow runs a write of SendingWindow rows: run builds it on the client of the scope it is
+// given and executes it, and reaches no other client. The
+// entity is not audited, so run gets the scope itself.
+func (s *Scoped) writeSendingWindow(ctx context.Context, verb string, where []predicate.SendingWindow, unchanged unchangedRows, run func(s *Scoped) ([]int64, error)) error {
+	_, _, _ = verb, where, unchanged
+	_, err := run(s)
+	return err
+}
+
+// checkSendingWindow verifies every reference the mutations set against the Workspace of s, one query per
+// reference for all of them.
+func (s *Scoped) checkSendingWindow(ctx context.Context, ms ...*SendingWindowMutation) error {
+	return nil
+}
+
+// SendingWindowScopedDeleteOne deletes one SendingWindow: it keeps the row's id and its fences, and builds the
+// ent delete on the client the delete runs on.
+type SendingWindowScopedDeleteOne struct {
+	s     *Scoped
+	id    int64
+	where []predicate.SendingWindow
+}
+
+// DeleteOneID deletes the SendingWindow with the id; a row of another Workspace is not found.
+func (t *SendingWindowScoped) DeleteOneID(id int64) *SendingWindowScopedDeleteOne {
+	return &SendingWindowScopedDeleteOne{s: t.s, id: id}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *SendingWindowScopedDeleteOne) Where(ps ...predicate.SendingWindow) *SendingWindowScopedDeleteOne {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+const (
+	TypeOf_SendingWindowScopedDeleteOne       = TypeScopedDelete
+	EntityOf_SendingWindowScopedDeleteOne     = "SendingWindow"
+	RoleOf_SendingWindowScopedDeleteOne_Where = RoleStep
+	RoleOf_SendingWindowScopedDeleteOne_Exec  = RoleStep
+)
+
+// Exec deletes the row; a missing row is a NotFoundError.
+func (x *SendingWindowScopedDeleteOne) Exec(ctx context.Context) error {
+	where := x.s.inSendingWindow(x.where...)
+	return x.s.writeSendingWindow(ctx, "delete", append([]predicate.SendingWindow{sendingwindow.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
+		return nil, s.c.SendingWindow.DeleteOneID(x.id).Where(where...).Exec(ctx)
+	})
+}
+
+// SendingWindowScopedDelete deletes the SendingWindow rows of one Workspace that match its predicates, which it
+// keeps until the delete is built on the client it runs on.
+type SendingWindowScopedDelete struct {
+	s     *Scoped
+	where []predicate.SendingWindow
+}
+
+// Delete deletes the SendingWindow entities of the Workspace that match the predicates.
+func (t *SendingWindowScoped) Delete() *SendingWindowScopedDelete {
+	return &SendingWindowScopedDelete{s: t.s}
+}
+
+// Where appends predicates the rows must match.
+func (x *SendingWindowScopedDelete) Where(ps ...predicate.SendingWindow) *SendingWindowScopedDelete {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+const (
+	TypeOf_SendingWindowScopedDelete       = TypeScopedDelete
+	EntityOf_SendingWindowScopedDelete     = "SendingWindow"
+	RoleOf_SendingWindowScopedDelete_Where = RoleStep
+	RoleOf_SendingWindowScopedDelete_Exec  = RoleStep
+)
+
+// Exec deletes the rows and returns how many were deleted.
+func (x *SendingWindowScopedDelete) Exec(ctx context.Context) (int, error) {
+	where := x.s.inSendingWindow(x.where...)
+	var n int
+	err := x.s.writeSendingWindow(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		var err error
+		n, err = s.c.SendingWindow.Delete().Where(where...).Exec(ctx)
+		return nil, err
+	})
+	return written(n, err)
+}
+
+// ---------------------------------------------------------------- create
+
+// SendingWindowScopedCreate creates a SendingWindow of one Workspace. It has no way to name a Workspace: it
+// keeps what its setters set and builds the ent create, in its Workspace, on the client the create
+// runs on.
+type SendingWindowScopedCreate struct {
+	s   *Scoped
+	set []func(*SendingWindowCreate)
+}
+
+// Create starts a SendingWindow in the Workspace.
+func (t *SendingWindowScoped) Create() *SendingWindowScopedCreate {
+	return &SendingWindowScopedCreate{s: t.s}
+}
+
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *SendingWindowScopedCreate) raw(s *Scoped) *SendingWindowCreate {
+	b := s.c.SendingWindow.Create().SetWorkspaceID(s.ws)
+	for _, set := range x.set {
+		set(b)
+	}
+	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *SendingWindowScopedCreate) build(ctx context.Context, s *Scoped) (*SendingWindowCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkSendingWindow(ctx, b.Mutation()))
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (x *SendingWindowScopedCreate) SetCreatedAt(v time.Time) *SendingWindowScopedCreate {
+	x.set = append(x.set, func(b *SendingWindowCreate) { b.SetCreatedAt(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedCreate_SetCreatedAt = RoleStep
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (x *SendingWindowScopedCreate) SetNillableCreatedAt(v *time.Time) *SendingWindowScopedCreate {
+	if v != nil {
+		x.SetCreatedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingWindowScopedCreate_SetNillableCreatedAt = RoleStep
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *SendingWindowScopedCreate) SetUpdatedAt(v time.Time) *SendingWindowScopedCreate {
+	x.set = append(x.set, func(b *SendingWindowCreate) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedCreate_SetUpdatedAt = RoleStep
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (x *SendingWindowScopedCreate) SetNillableUpdatedAt(v *time.Time) *SendingWindowScopedCreate {
+	if v != nil {
+		x.SetUpdatedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingWindowScopedCreate_SetNillableUpdatedAt = RoleStep
+
+// SetChannel sets the "channel" field.
+func (x *SendingWindowScopedCreate) SetChannel(v channels.Channel) *SendingWindowScopedCreate {
+	x.set = append(x.set, func(b *SendingWindowCreate) { b.SetChannel(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedCreate_SetChannel = RoleStep
+
+// SetCountry sets the "country" field.
+func (x *SendingWindowScopedCreate) SetCountry(v string) *SendingWindowScopedCreate {
+	x.set = append(x.set, func(b *SendingWindowCreate) { b.SetCountry(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedCreate_SetCountry = RoleStep
+
+// SetNillableCountry sets the "country" field if the given value is not nil.
+func (x *SendingWindowScopedCreate) SetNillableCountry(v *string) *SendingWindowScopedCreate {
+	if v != nil {
+		x.SetCountry(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingWindowScopedCreate_SetNillableCountry = RoleStep
+
+// SetMondayOpens sets the "monday_opens" field.
+func (x *SendingWindowScopedCreate) SetMondayOpens(v int) *SendingWindowScopedCreate {
+	x.set = append(x.set, func(b *SendingWindowCreate) { b.SetMondayOpens(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedCreate_SetMondayOpens = RoleStep
+
+// SetNillableMondayOpens sets the "monday_opens" field if the given value is not nil.
+func (x *SendingWindowScopedCreate) SetNillableMondayOpens(v *int) *SendingWindowScopedCreate {
+	if v != nil {
+		x.SetMondayOpens(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingWindowScopedCreate_SetNillableMondayOpens = RoleStep
+
+// SetMondayCloses sets the "monday_closes" field.
+func (x *SendingWindowScopedCreate) SetMondayCloses(v int) *SendingWindowScopedCreate {
+	x.set = append(x.set, func(b *SendingWindowCreate) { b.SetMondayCloses(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedCreate_SetMondayCloses = RoleStep
+
+// SetNillableMondayCloses sets the "monday_closes" field if the given value is not nil.
+func (x *SendingWindowScopedCreate) SetNillableMondayCloses(v *int) *SendingWindowScopedCreate {
+	if v != nil {
+		x.SetMondayCloses(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingWindowScopedCreate_SetNillableMondayCloses = RoleStep
+
+// SetTuesdayOpens sets the "tuesday_opens" field.
+func (x *SendingWindowScopedCreate) SetTuesdayOpens(v int) *SendingWindowScopedCreate {
+	x.set = append(x.set, func(b *SendingWindowCreate) { b.SetTuesdayOpens(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedCreate_SetTuesdayOpens = RoleStep
+
+// SetNillableTuesdayOpens sets the "tuesday_opens" field if the given value is not nil.
+func (x *SendingWindowScopedCreate) SetNillableTuesdayOpens(v *int) *SendingWindowScopedCreate {
+	if v != nil {
+		x.SetTuesdayOpens(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingWindowScopedCreate_SetNillableTuesdayOpens = RoleStep
+
+// SetTuesdayCloses sets the "tuesday_closes" field.
+func (x *SendingWindowScopedCreate) SetTuesdayCloses(v int) *SendingWindowScopedCreate {
+	x.set = append(x.set, func(b *SendingWindowCreate) { b.SetTuesdayCloses(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedCreate_SetTuesdayCloses = RoleStep
+
+// SetNillableTuesdayCloses sets the "tuesday_closes" field if the given value is not nil.
+func (x *SendingWindowScopedCreate) SetNillableTuesdayCloses(v *int) *SendingWindowScopedCreate {
+	if v != nil {
+		x.SetTuesdayCloses(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingWindowScopedCreate_SetNillableTuesdayCloses = RoleStep
+
+// SetWednesdayOpens sets the "wednesday_opens" field.
+func (x *SendingWindowScopedCreate) SetWednesdayOpens(v int) *SendingWindowScopedCreate {
+	x.set = append(x.set, func(b *SendingWindowCreate) { b.SetWednesdayOpens(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedCreate_SetWednesdayOpens = RoleStep
+
+// SetNillableWednesdayOpens sets the "wednesday_opens" field if the given value is not nil.
+func (x *SendingWindowScopedCreate) SetNillableWednesdayOpens(v *int) *SendingWindowScopedCreate {
+	if v != nil {
+		x.SetWednesdayOpens(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingWindowScopedCreate_SetNillableWednesdayOpens = RoleStep
+
+// SetWednesdayCloses sets the "wednesday_closes" field.
+func (x *SendingWindowScopedCreate) SetWednesdayCloses(v int) *SendingWindowScopedCreate {
+	x.set = append(x.set, func(b *SendingWindowCreate) { b.SetWednesdayCloses(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedCreate_SetWednesdayCloses = RoleStep
+
+// SetNillableWednesdayCloses sets the "wednesday_closes" field if the given value is not nil.
+func (x *SendingWindowScopedCreate) SetNillableWednesdayCloses(v *int) *SendingWindowScopedCreate {
+	if v != nil {
+		x.SetWednesdayCloses(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingWindowScopedCreate_SetNillableWednesdayCloses = RoleStep
+
+// SetThursdayOpens sets the "thursday_opens" field.
+func (x *SendingWindowScopedCreate) SetThursdayOpens(v int) *SendingWindowScopedCreate {
+	x.set = append(x.set, func(b *SendingWindowCreate) { b.SetThursdayOpens(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedCreate_SetThursdayOpens = RoleStep
+
+// SetNillableThursdayOpens sets the "thursday_opens" field if the given value is not nil.
+func (x *SendingWindowScopedCreate) SetNillableThursdayOpens(v *int) *SendingWindowScopedCreate {
+	if v != nil {
+		x.SetThursdayOpens(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingWindowScopedCreate_SetNillableThursdayOpens = RoleStep
+
+// SetThursdayCloses sets the "thursday_closes" field.
+func (x *SendingWindowScopedCreate) SetThursdayCloses(v int) *SendingWindowScopedCreate {
+	x.set = append(x.set, func(b *SendingWindowCreate) { b.SetThursdayCloses(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedCreate_SetThursdayCloses = RoleStep
+
+// SetNillableThursdayCloses sets the "thursday_closes" field if the given value is not nil.
+func (x *SendingWindowScopedCreate) SetNillableThursdayCloses(v *int) *SendingWindowScopedCreate {
+	if v != nil {
+		x.SetThursdayCloses(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingWindowScopedCreate_SetNillableThursdayCloses = RoleStep
+
+// SetFridayOpens sets the "friday_opens" field.
+func (x *SendingWindowScopedCreate) SetFridayOpens(v int) *SendingWindowScopedCreate {
+	x.set = append(x.set, func(b *SendingWindowCreate) { b.SetFridayOpens(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedCreate_SetFridayOpens = RoleStep
+
+// SetNillableFridayOpens sets the "friday_opens" field if the given value is not nil.
+func (x *SendingWindowScopedCreate) SetNillableFridayOpens(v *int) *SendingWindowScopedCreate {
+	if v != nil {
+		x.SetFridayOpens(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingWindowScopedCreate_SetNillableFridayOpens = RoleStep
+
+// SetFridayCloses sets the "friday_closes" field.
+func (x *SendingWindowScopedCreate) SetFridayCloses(v int) *SendingWindowScopedCreate {
+	x.set = append(x.set, func(b *SendingWindowCreate) { b.SetFridayCloses(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedCreate_SetFridayCloses = RoleStep
+
+// SetNillableFridayCloses sets the "friday_closes" field if the given value is not nil.
+func (x *SendingWindowScopedCreate) SetNillableFridayCloses(v *int) *SendingWindowScopedCreate {
+	if v != nil {
+		x.SetFridayCloses(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingWindowScopedCreate_SetNillableFridayCloses = RoleStep
+
+// SetSaturdayOpens sets the "saturday_opens" field.
+func (x *SendingWindowScopedCreate) SetSaturdayOpens(v int) *SendingWindowScopedCreate {
+	x.set = append(x.set, func(b *SendingWindowCreate) { b.SetSaturdayOpens(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedCreate_SetSaturdayOpens = RoleStep
+
+// SetNillableSaturdayOpens sets the "saturday_opens" field if the given value is not nil.
+func (x *SendingWindowScopedCreate) SetNillableSaturdayOpens(v *int) *SendingWindowScopedCreate {
+	if v != nil {
+		x.SetSaturdayOpens(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingWindowScopedCreate_SetNillableSaturdayOpens = RoleStep
+
+// SetSaturdayCloses sets the "saturday_closes" field.
+func (x *SendingWindowScopedCreate) SetSaturdayCloses(v int) *SendingWindowScopedCreate {
+	x.set = append(x.set, func(b *SendingWindowCreate) { b.SetSaturdayCloses(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedCreate_SetSaturdayCloses = RoleStep
+
+// SetNillableSaturdayCloses sets the "saturday_closes" field if the given value is not nil.
+func (x *SendingWindowScopedCreate) SetNillableSaturdayCloses(v *int) *SendingWindowScopedCreate {
+	if v != nil {
+		x.SetSaturdayCloses(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingWindowScopedCreate_SetNillableSaturdayCloses = RoleStep
+
+// SetSundayOpens sets the "sunday_opens" field.
+func (x *SendingWindowScopedCreate) SetSundayOpens(v int) *SendingWindowScopedCreate {
+	x.set = append(x.set, func(b *SendingWindowCreate) { b.SetSundayOpens(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedCreate_SetSundayOpens = RoleStep
+
+// SetNillableSundayOpens sets the "sunday_opens" field if the given value is not nil.
+func (x *SendingWindowScopedCreate) SetNillableSundayOpens(v *int) *SendingWindowScopedCreate {
+	if v != nil {
+		x.SetSundayOpens(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingWindowScopedCreate_SetNillableSundayOpens = RoleStep
+
+// SetSundayCloses sets the "sunday_closes" field.
+func (x *SendingWindowScopedCreate) SetSundayCloses(v int) *SendingWindowScopedCreate {
+	x.set = append(x.set, func(b *SendingWindowCreate) { b.SetSundayCloses(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedCreate_SetSundayCloses = RoleStep
+
+// SetNillableSundayCloses sets the "sunday_closes" field if the given value is not nil.
+func (x *SendingWindowScopedCreate) SetNillableSundayCloses(v *int) *SendingWindowScopedCreate {
+	if v != nil {
+		x.SetSundayCloses(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingWindowScopedCreate_SetNillableSundayCloses = RoleStep
+
+const (
+	TypeOf_SendingWindowScopedCreate                        = TypeScopedCreate
+	EntityOf_SendingWindowScopedCreate                      = "SendingWindow"
+	RoleOf_SendingWindowScopedCreate_Save                   = RoleStep
+	RoleOf_SendingWindowScopedCreate_Exec                   = RoleStep
+	RoleOf_SendingWindowScopedCreate_OnConflictColumns      = RoleStart
+	RoleOf_SendingWindowScopedCreate_OnConflictColumnsWhere = RoleStart
+)
+
+// Save verifies the references against the Workspace, then creates the SendingWindow.
+func (x *SendingWindowScopedCreate) Save(ctx context.Context) (*SendingWindow, error) {
+	var created *SendingWindow
+	err := x.s.writeSendingWindow(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if created, err = b.Save(ctx); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+	return written(created, err)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *SendingWindowScopedCreate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- create bulk
+
+// SendingWindowScopedCreateBulk creates several SendingWindow entities of one Workspace at once.
+type SendingWindowScopedCreateBulk struct {
+	s  *Scoped
+	xs []*SendingWindowScopedCreate
+}
+
+// CreateBulk batches creates started on this Workspace.
+func (t *SendingWindowScoped) CreateBulk(xs ...*SendingWindowScopedCreate) *SendingWindowScopedCreateBulk {
+	return &SendingWindowScopedCreateBulk{s: t.s, xs: xs}
+}
+
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *SendingWindowScopedCreateBulk) refuseForeign() error {
+	for _, x := range b.xs {
+		if x.s.ws != b.s.ws {
+			return fmt.Errorf("SendingWindow: builder of another scope: %w", ErrNotInWorkspace)
+		}
+	}
+	return nil
+}
+
+// build makes the ent bulk create on the client of s, every create of it in the Workspace, and
+// verifies the references of all of them, one query per reference rather than one per row.
+func (b *SendingWindowScopedCreateBulk) build(ctx context.Context, s *Scoped) (*SendingWindowCreateBulk, error) {
+	builders := make([]*SendingWindowCreate, len(b.xs))
+	ms := make([]*SendingWindowMutation, len(b.xs))
+	for i, x := range b.xs {
+		builders[i] = x.raw(s)
+		ms[i] = builders[i].Mutation()
+	}
+	if err := s.checkSendingWindow(ctx, ms...); err != nil {
+		return nil, err
+	}
+	return s.c.SendingWindow.CreateBulk(builders...), nil
+}
+
+// Save verifies every builder's references, then creates the SendingWindow entities.
+func (b *SendingWindowScopedCreateBulk) Save(ctx context.Context) ([]*SendingWindow, error) {
+	if err := b.refuseForeign(); err != nil {
+		return nil, err
+	}
+	var created []*SendingWindow
+	err := b.s.writeSendingWindow(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		raw, err := b.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if created, err = raw.Save(ctx); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+	return written(created, err)
+}
+
+// Exec is like Save, discarding the entities.
+func (b *SendingWindowScopedCreateBulk) Exec(ctx context.Context) error {
+	_, err := b.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_SendingWindowScopedCreateBulk                   = TypeScopedCreate
+	EntityOf_SendingWindowScopedCreateBulk                 = "SendingWindow"
+	RoleOf_SendingWindowScopedCreateBulk_Save              = RoleStep
+	RoleOf_SendingWindowScopedCreateBulk_Exec              = RoleStep
+	RoleOf_SendingWindowScopedCreateBulk_OnConflictColumns = RoleStart
+)
+
+// ---------------------------------------------------------------- upsert
+
+// SendingWindowScopedUpsert is the "ON CONFLICT ... DO UPDATE" setter. It cannot move a row to
+// another Workspace or point a reference at a value that was not verified on create.
+type SendingWindowScopedUpsert struct{ u *sql.UpdateSet }
+
+const (
+	TypeOf_SendingWindowScopedUpsert   = TypeScopedUpsert
+	EntityOf_SendingWindowScopedUpsert = "SendingWindow"
+)
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *SendingWindowScopedUpsert) SetUpdatedAt(v time.Time) *SendingWindowScopedUpsert {
+	u.u.Set(sendingwindow.FieldUpdatedAt, v)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_SetUpdatedAt = RoleStep
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *SendingWindowScopedUpsert) UpdateUpdatedAt() *SendingWindowScopedUpsert {
+	u.u.SetExcluded(sendingwindow.FieldUpdatedAt)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_UpdateUpdatedAt = RoleStep
+
+// SetMondayOpens sets the "monday_opens" field.
+func (u *SendingWindowScopedUpsert) SetMondayOpens(v int) *SendingWindowScopedUpsert {
+	u.u.Set(sendingwindow.FieldMondayOpens, v)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_SetMondayOpens = RoleStep
+
+// AddMondayOpens adds v to the "monday_opens" field.
+func (u *SendingWindowScopedUpsert) AddMondayOpens(v int) *SendingWindowScopedUpsert {
+	u.u.Add(sendingwindow.FieldMondayOpens, v)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_AddMondayOpens = RoleStep
+
+// UpdateMondayOpens sets the "monday_opens" field to the value that was provided on create.
+func (u *SendingWindowScopedUpsert) UpdateMondayOpens() *SendingWindowScopedUpsert {
+	u.u.SetExcluded(sendingwindow.FieldMondayOpens)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_UpdateMondayOpens = RoleStep
+
+// ClearMondayOpens clears the value of the "monday_opens" field.
+func (u *SendingWindowScopedUpsert) ClearMondayOpens() *SendingWindowScopedUpsert {
+	u.u.SetNull(sendingwindow.FieldMondayOpens)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_ClearMondayOpens = RoleStep
+
+// SetMondayCloses sets the "monday_closes" field.
+func (u *SendingWindowScopedUpsert) SetMondayCloses(v int) *SendingWindowScopedUpsert {
+	u.u.Set(sendingwindow.FieldMondayCloses, v)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_SetMondayCloses = RoleStep
+
+// AddMondayCloses adds v to the "monday_closes" field.
+func (u *SendingWindowScopedUpsert) AddMondayCloses(v int) *SendingWindowScopedUpsert {
+	u.u.Add(sendingwindow.FieldMondayCloses, v)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_AddMondayCloses = RoleStep
+
+// UpdateMondayCloses sets the "monday_closes" field to the value that was provided on create.
+func (u *SendingWindowScopedUpsert) UpdateMondayCloses() *SendingWindowScopedUpsert {
+	u.u.SetExcluded(sendingwindow.FieldMondayCloses)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_UpdateMondayCloses = RoleStep
+
+// ClearMondayCloses clears the value of the "monday_closes" field.
+func (u *SendingWindowScopedUpsert) ClearMondayCloses() *SendingWindowScopedUpsert {
+	u.u.SetNull(sendingwindow.FieldMondayCloses)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_ClearMondayCloses = RoleStep
+
+// SetTuesdayOpens sets the "tuesday_opens" field.
+func (u *SendingWindowScopedUpsert) SetTuesdayOpens(v int) *SendingWindowScopedUpsert {
+	u.u.Set(sendingwindow.FieldTuesdayOpens, v)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_SetTuesdayOpens = RoleStep
+
+// AddTuesdayOpens adds v to the "tuesday_opens" field.
+func (u *SendingWindowScopedUpsert) AddTuesdayOpens(v int) *SendingWindowScopedUpsert {
+	u.u.Add(sendingwindow.FieldTuesdayOpens, v)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_AddTuesdayOpens = RoleStep
+
+// UpdateTuesdayOpens sets the "tuesday_opens" field to the value that was provided on create.
+func (u *SendingWindowScopedUpsert) UpdateTuesdayOpens() *SendingWindowScopedUpsert {
+	u.u.SetExcluded(sendingwindow.FieldTuesdayOpens)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_UpdateTuesdayOpens = RoleStep
+
+// ClearTuesdayOpens clears the value of the "tuesday_opens" field.
+func (u *SendingWindowScopedUpsert) ClearTuesdayOpens() *SendingWindowScopedUpsert {
+	u.u.SetNull(sendingwindow.FieldTuesdayOpens)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_ClearTuesdayOpens = RoleStep
+
+// SetTuesdayCloses sets the "tuesday_closes" field.
+func (u *SendingWindowScopedUpsert) SetTuesdayCloses(v int) *SendingWindowScopedUpsert {
+	u.u.Set(sendingwindow.FieldTuesdayCloses, v)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_SetTuesdayCloses = RoleStep
+
+// AddTuesdayCloses adds v to the "tuesday_closes" field.
+func (u *SendingWindowScopedUpsert) AddTuesdayCloses(v int) *SendingWindowScopedUpsert {
+	u.u.Add(sendingwindow.FieldTuesdayCloses, v)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_AddTuesdayCloses = RoleStep
+
+// UpdateTuesdayCloses sets the "tuesday_closes" field to the value that was provided on create.
+func (u *SendingWindowScopedUpsert) UpdateTuesdayCloses() *SendingWindowScopedUpsert {
+	u.u.SetExcluded(sendingwindow.FieldTuesdayCloses)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_UpdateTuesdayCloses = RoleStep
+
+// ClearTuesdayCloses clears the value of the "tuesday_closes" field.
+func (u *SendingWindowScopedUpsert) ClearTuesdayCloses() *SendingWindowScopedUpsert {
+	u.u.SetNull(sendingwindow.FieldTuesdayCloses)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_ClearTuesdayCloses = RoleStep
+
+// SetWednesdayOpens sets the "wednesday_opens" field.
+func (u *SendingWindowScopedUpsert) SetWednesdayOpens(v int) *SendingWindowScopedUpsert {
+	u.u.Set(sendingwindow.FieldWednesdayOpens, v)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_SetWednesdayOpens = RoleStep
+
+// AddWednesdayOpens adds v to the "wednesday_opens" field.
+func (u *SendingWindowScopedUpsert) AddWednesdayOpens(v int) *SendingWindowScopedUpsert {
+	u.u.Add(sendingwindow.FieldWednesdayOpens, v)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_AddWednesdayOpens = RoleStep
+
+// UpdateWednesdayOpens sets the "wednesday_opens" field to the value that was provided on create.
+func (u *SendingWindowScopedUpsert) UpdateWednesdayOpens() *SendingWindowScopedUpsert {
+	u.u.SetExcluded(sendingwindow.FieldWednesdayOpens)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_UpdateWednesdayOpens = RoleStep
+
+// ClearWednesdayOpens clears the value of the "wednesday_opens" field.
+func (u *SendingWindowScopedUpsert) ClearWednesdayOpens() *SendingWindowScopedUpsert {
+	u.u.SetNull(sendingwindow.FieldWednesdayOpens)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_ClearWednesdayOpens = RoleStep
+
+// SetWednesdayCloses sets the "wednesday_closes" field.
+func (u *SendingWindowScopedUpsert) SetWednesdayCloses(v int) *SendingWindowScopedUpsert {
+	u.u.Set(sendingwindow.FieldWednesdayCloses, v)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_SetWednesdayCloses = RoleStep
+
+// AddWednesdayCloses adds v to the "wednesday_closes" field.
+func (u *SendingWindowScopedUpsert) AddWednesdayCloses(v int) *SendingWindowScopedUpsert {
+	u.u.Add(sendingwindow.FieldWednesdayCloses, v)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_AddWednesdayCloses = RoleStep
+
+// UpdateWednesdayCloses sets the "wednesday_closes" field to the value that was provided on create.
+func (u *SendingWindowScopedUpsert) UpdateWednesdayCloses() *SendingWindowScopedUpsert {
+	u.u.SetExcluded(sendingwindow.FieldWednesdayCloses)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_UpdateWednesdayCloses = RoleStep
+
+// ClearWednesdayCloses clears the value of the "wednesday_closes" field.
+func (u *SendingWindowScopedUpsert) ClearWednesdayCloses() *SendingWindowScopedUpsert {
+	u.u.SetNull(sendingwindow.FieldWednesdayCloses)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_ClearWednesdayCloses = RoleStep
+
+// SetThursdayOpens sets the "thursday_opens" field.
+func (u *SendingWindowScopedUpsert) SetThursdayOpens(v int) *SendingWindowScopedUpsert {
+	u.u.Set(sendingwindow.FieldThursdayOpens, v)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_SetThursdayOpens = RoleStep
+
+// AddThursdayOpens adds v to the "thursday_opens" field.
+func (u *SendingWindowScopedUpsert) AddThursdayOpens(v int) *SendingWindowScopedUpsert {
+	u.u.Add(sendingwindow.FieldThursdayOpens, v)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_AddThursdayOpens = RoleStep
+
+// UpdateThursdayOpens sets the "thursday_opens" field to the value that was provided on create.
+func (u *SendingWindowScopedUpsert) UpdateThursdayOpens() *SendingWindowScopedUpsert {
+	u.u.SetExcluded(sendingwindow.FieldThursdayOpens)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_UpdateThursdayOpens = RoleStep
+
+// ClearThursdayOpens clears the value of the "thursday_opens" field.
+func (u *SendingWindowScopedUpsert) ClearThursdayOpens() *SendingWindowScopedUpsert {
+	u.u.SetNull(sendingwindow.FieldThursdayOpens)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_ClearThursdayOpens = RoleStep
+
+// SetThursdayCloses sets the "thursday_closes" field.
+func (u *SendingWindowScopedUpsert) SetThursdayCloses(v int) *SendingWindowScopedUpsert {
+	u.u.Set(sendingwindow.FieldThursdayCloses, v)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_SetThursdayCloses = RoleStep
+
+// AddThursdayCloses adds v to the "thursday_closes" field.
+func (u *SendingWindowScopedUpsert) AddThursdayCloses(v int) *SendingWindowScopedUpsert {
+	u.u.Add(sendingwindow.FieldThursdayCloses, v)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_AddThursdayCloses = RoleStep
+
+// UpdateThursdayCloses sets the "thursday_closes" field to the value that was provided on create.
+func (u *SendingWindowScopedUpsert) UpdateThursdayCloses() *SendingWindowScopedUpsert {
+	u.u.SetExcluded(sendingwindow.FieldThursdayCloses)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_UpdateThursdayCloses = RoleStep
+
+// ClearThursdayCloses clears the value of the "thursday_closes" field.
+func (u *SendingWindowScopedUpsert) ClearThursdayCloses() *SendingWindowScopedUpsert {
+	u.u.SetNull(sendingwindow.FieldThursdayCloses)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_ClearThursdayCloses = RoleStep
+
+// SetFridayOpens sets the "friday_opens" field.
+func (u *SendingWindowScopedUpsert) SetFridayOpens(v int) *SendingWindowScopedUpsert {
+	u.u.Set(sendingwindow.FieldFridayOpens, v)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_SetFridayOpens = RoleStep
+
+// AddFridayOpens adds v to the "friday_opens" field.
+func (u *SendingWindowScopedUpsert) AddFridayOpens(v int) *SendingWindowScopedUpsert {
+	u.u.Add(sendingwindow.FieldFridayOpens, v)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_AddFridayOpens = RoleStep
+
+// UpdateFridayOpens sets the "friday_opens" field to the value that was provided on create.
+func (u *SendingWindowScopedUpsert) UpdateFridayOpens() *SendingWindowScopedUpsert {
+	u.u.SetExcluded(sendingwindow.FieldFridayOpens)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_UpdateFridayOpens = RoleStep
+
+// ClearFridayOpens clears the value of the "friday_opens" field.
+func (u *SendingWindowScopedUpsert) ClearFridayOpens() *SendingWindowScopedUpsert {
+	u.u.SetNull(sendingwindow.FieldFridayOpens)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_ClearFridayOpens = RoleStep
+
+// SetFridayCloses sets the "friday_closes" field.
+func (u *SendingWindowScopedUpsert) SetFridayCloses(v int) *SendingWindowScopedUpsert {
+	u.u.Set(sendingwindow.FieldFridayCloses, v)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_SetFridayCloses = RoleStep
+
+// AddFridayCloses adds v to the "friday_closes" field.
+func (u *SendingWindowScopedUpsert) AddFridayCloses(v int) *SendingWindowScopedUpsert {
+	u.u.Add(sendingwindow.FieldFridayCloses, v)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_AddFridayCloses = RoleStep
+
+// UpdateFridayCloses sets the "friday_closes" field to the value that was provided on create.
+func (u *SendingWindowScopedUpsert) UpdateFridayCloses() *SendingWindowScopedUpsert {
+	u.u.SetExcluded(sendingwindow.FieldFridayCloses)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_UpdateFridayCloses = RoleStep
+
+// ClearFridayCloses clears the value of the "friday_closes" field.
+func (u *SendingWindowScopedUpsert) ClearFridayCloses() *SendingWindowScopedUpsert {
+	u.u.SetNull(sendingwindow.FieldFridayCloses)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_ClearFridayCloses = RoleStep
+
+// SetSaturdayOpens sets the "saturday_opens" field.
+func (u *SendingWindowScopedUpsert) SetSaturdayOpens(v int) *SendingWindowScopedUpsert {
+	u.u.Set(sendingwindow.FieldSaturdayOpens, v)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_SetSaturdayOpens = RoleStep
+
+// AddSaturdayOpens adds v to the "saturday_opens" field.
+func (u *SendingWindowScopedUpsert) AddSaturdayOpens(v int) *SendingWindowScopedUpsert {
+	u.u.Add(sendingwindow.FieldSaturdayOpens, v)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_AddSaturdayOpens = RoleStep
+
+// UpdateSaturdayOpens sets the "saturday_opens" field to the value that was provided on create.
+func (u *SendingWindowScopedUpsert) UpdateSaturdayOpens() *SendingWindowScopedUpsert {
+	u.u.SetExcluded(sendingwindow.FieldSaturdayOpens)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_UpdateSaturdayOpens = RoleStep
+
+// ClearSaturdayOpens clears the value of the "saturday_opens" field.
+func (u *SendingWindowScopedUpsert) ClearSaturdayOpens() *SendingWindowScopedUpsert {
+	u.u.SetNull(sendingwindow.FieldSaturdayOpens)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_ClearSaturdayOpens = RoleStep
+
+// SetSaturdayCloses sets the "saturday_closes" field.
+func (u *SendingWindowScopedUpsert) SetSaturdayCloses(v int) *SendingWindowScopedUpsert {
+	u.u.Set(sendingwindow.FieldSaturdayCloses, v)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_SetSaturdayCloses = RoleStep
+
+// AddSaturdayCloses adds v to the "saturday_closes" field.
+func (u *SendingWindowScopedUpsert) AddSaturdayCloses(v int) *SendingWindowScopedUpsert {
+	u.u.Add(sendingwindow.FieldSaturdayCloses, v)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_AddSaturdayCloses = RoleStep
+
+// UpdateSaturdayCloses sets the "saturday_closes" field to the value that was provided on create.
+func (u *SendingWindowScopedUpsert) UpdateSaturdayCloses() *SendingWindowScopedUpsert {
+	u.u.SetExcluded(sendingwindow.FieldSaturdayCloses)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_UpdateSaturdayCloses = RoleStep
+
+// ClearSaturdayCloses clears the value of the "saturday_closes" field.
+func (u *SendingWindowScopedUpsert) ClearSaturdayCloses() *SendingWindowScopedUpsert {
+	u.u.SetNull(sendingwindow.FieldSaturdayCloses)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_ClearSaturdayCloses = RoleStep
+
+// SetSundayOpens sets the "sunday_opens" field.
+func (u *SendingWindowScopedUpsert) SetSundayOpens(v int) *SendingWindowScopedUpsert {
+	u.u.Set(sendingwindow.FieldSundayOpens, v)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_SetSundayOpens = RoleStep
+
+// AddSundayOpens adds v to the "sunday_opens" field.
+func (u *SendingWindowScopedUpsert) AddSundayOpens(v int) *SendingWindowScopedUpsert {
+	u.u.Add(sendingwindow.FieldSundayOpens, v)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_AddSundayOpens = RoleStep
+
+// UpdateSundayOpens sets the "sunday_opens" field to the value that was provided on create.
+func (u *SendingWindowScopedUpsert) UpdateSundayOpens() *SendingWindowScopedUpsert {
+	u.u.SetExcluded(sendingwindow.FieldSundayOpens)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_UpdateSundayOpens = RoleStep
+
+// ClearSundayOpens clears the value of the "sunday_opens" field.
+func (u *SendingWindowScopedUpsert) ClearSundayOpens() *SendingWindowScopedUpsert {
+	u.u.SetNull(sendingwindow.FieldSundayOpens)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_ClearSundayOpens = RoleStep
+
+// SetSundayCloses sets the "sunday_closes" field.
+func (u *SendingWindowScopedUpsert) SetSundayCloses(v int) *SendingWindowScopedUpsert {
+	u.u.Set(sendingwindow.FieldSundayCloses, v)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_SetSundayCloses = RoleStep
+
+// AddSundayCloses adds v to the "sunday_closes" field.
+func (u *SendingWindowScopedUpsert) AddSundayCloses(v int) *SendingWindowScopedUpsert {
+	u.u.Add(sendingwindow.FieldSundayCloses, v)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_AddSundayCloses = RoleStep
+
+// UpdateSundayCloses sets the "sunday_closes" field to the value that was provided on create.
+func (u *SendingWindowScopedUpsert) UpdateSundayCloses() *SendingWindowScopedUpsert {
+	u.u.SetExcluded(sendingwindow.FieldSundayCloses)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_UpdateSundayCloses = RoleStep
+
+// ClearSundayCloses clears the value of the "sunday_closes" field.
+func (u *SendingWindowScopedUpsert) ClearSundayCloses() *SendingWindowScopedUpsert {
+	u.u.SetNull(sendingwindow.FieldSundayCloses)
+	return u
+}
+
+const RoleOf_SendingWindowScopedUpsert_ClearSundayCloses = RoleStep
+
+// conflictOptions confines the DO UPDATE part to rows of the Workspace.
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *SendingWindowScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
+		sql.ConflictColumns(columns...),
+		sql.UpdateWhere(sql.EQ(sendingwindow.FieldWorkspaceID, t.s.ws)),
+	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
+}
+
+// SendingWindowScopedUpsertOne is the "upsert" of one SendingWindow: the create it was started on, which a setter
+// called later still changes, and what to do on a conflict.
+type SendingWindowScopedUpsertOne struct {
+	x        *SendingWindowScopedCreate
+	conflict []sql.ConflictOption
+	set      []func(*SendingWindowUpsertOne)
+	// doNothing: the conflict action is DO NOTHING (the only upsert an audited entity allows).
+	doNothing bool
+}
+
+const (
+	TypeOf_SendingWindowScopedUpsertOne                 = TypeScopedUpsert
+	EntityOf_SendingWindowScopedUpsertOne               = "SendingWindow"
+	RoleOf_SendingWindowScopedUpsertOne_UpdateNewValues = RoleStep
+	RoleOf_SendingWindowScopedUpsertOne_Ignore          = RoleStep
+	RoleOf_SendingWindowScopedUpsertOne_DoNothing       = RoleStep
+	RoleOf_SendingWindowScopedUpsertOne_Update          = RoleStep
+	RoleOf_SendingWindowScopedUpsertOne_Exec            = RoleStep
+	RoleOf_SendingWindowScopedUpsertOne_ID              = RoleStep
+)
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (x *SendingWindowScopedCreate) OnConflictColumns(columns ...string) *SendingWindowScopedUpsertOne {
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *SendingWindowScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *SendingWindowScopedUpsertOne {
+	return &SendingWindowScopedUpsertOne{x: x, conflict: (&SendingWindowScoped{s: x.s}).conflictOptions(columns, target)}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *SendingWindowScopedUpsertOne) UpdateNewValues() *SendingWindowScopedUpsertOne {
+	u.set = append(u.set, func(r *SendingWindowUpsertOne) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *SendingWindowScopedUpsertOne) Ignore() *SendingWindowScopedUpsertOne {
+	u.set = append(u.set, func(r *SendingWindowUpsertOne) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *SendingWindowScopedUpsertOne) DoNothing() *SendingWindowScopedUpsertOne {
+	u.set = append(u.set, func(r *SendingWindowUpsertOne) { r.DoNothing() })
+	u.doNothing = true
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *SendingWindowScopedUpsertOne) Update(set func(*SendingWindowScopedUpsert)) *SendingWindowScopedUpsertOne {
+	u.set = append(u.set, func(r *SendingWindowUpsertOne) {
+		r.Update(func(s *SendingWindowUpsert) { set(&SendingWindowScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// build makes the ent upsert on the client of s and verifies the create's references.
+func (u *SendingWindowScopedUpsertOne) build(ctx context.Context, s *Scoped) (*SendingWindowUpsertOne, error) {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
+		return nil, err
+	}
+	r := b.OnConflict(u.conflict...)
+	for _, set := range u.set {
+		set(r)
+	}
+	return r, nil
+}
+
+// Exec verifies the references, then executes the upsert.
+func (u *SendingWindowScopedUpsertOne) Exec(ctx context.Context) error {
+	_, err := u.ID(ctx)
+	return err
+}
+
+// ID is like Exec, returning the inserted or updated id.
+func (u *SendingWindowScopedUpsertOne) ID(ctx context.Context) (int64, error) {
+	var id int64
+	err := u.x.s.writeSendingWindow(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		r, err := u.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if id, err = r.ID(ctx); err != nil {
+			return nil, err
+		}
+		return []int64{id}, nil
+	})
+	return written(id, err)
+}
+
+// SendingWindowScopedUpsertBulk is the "upsert" of several SendingWindow entities.
+type SendingWindowScopedUpsertBulk struct {
+	b       *SendingWindowScopedCreateBulk
+	t       *SendingWindowScoped
+	columns []string
+	set     []func(*SendingWindowUpsertBulk)
+}
+
+const (
+	TypeOf_SendingWindowScopedUpsertBulk                 = TypeScopedUpsert
+	EntityOf_SendingWindowScopedUpsertBulk               = "SendingWindow"
+	RoleOf_SendingWindowScopedUpsertBulk_UpdateNewValues = RoleStep
+	RoleOf_SendingWindowScopedUpsertBulk_Ignore          = RoleStep
+	RoleOf_SendingWindowScopedUpsertBulk_DoNothing       = RoleStep
+	RoleOf_SendingWindowScopedUpsertBulk_Update          = RoleStep
+	RoleOf_SendingWindowScopedUpsertBulk_Exec            = RoleStep
+)
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (b *SendingWindowScopedCreateBulk) OnConflictColumns(columns ...string) *SendingWindowScopedUpsertBulk {
+	return &SendingWindowScopedUpsertBulk{b: b, t: &SendingWindowScoped{s: b.s}, columns: columns}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *SendingWindowScopedUpsertBulk) UpdateNewValues() *SendingWindowScopedUpsertBulk {
+	u.set = append(u.set, func(r *SendingWindowUpsertBulk) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *SendingWindowScopedUpsertBulk) Ignore() *SendingWindowScopedUpsertBulk {
+	u.set = append(u.set, func(r *SendingWindowUpsertBulk) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *SendingWindowScopedUpsertBulk) DoNothing() *SendingWindowScopedUpsertBulk {
+	u.set = append(u.set, func(r *SendingWindowUpsertBulk) { r.DoNothing() })
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *SendingWindowScopedUpsertBulk) Update(set func(*SendingWindowScopedUpsert)) *SendingWindowScopedUpsertBulk {
+	u.set = append(u.set, func(r *SendingWindowUpsertBulk) {
+		r.Update(func(s *SendingWindowUpsert) { set(&SendingWindowScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// Exec verifies every builder's references, then executes the upsert.
+func (u *SendingWindowScopedUpsertBulk) Exec(ctx context.Context) error {
+	if err := u.b.refuseForeign(); err != nil {
+		return err
+	}
+	return u.b.s.writeSendingWindow(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		raw, err := u.b.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
+		for _, set := range u.set {
+			set(r)
+		}
+		return nil, r.Exec(ctx)
+	})
+}
+
+// ---------------------------------------------------------------- update
+
+// SendingWindowScopedUpdateOne updates one SendingWindow. It has no way to move the row to another Workspace: it
+// keeps the row's id, its fences and what its setters set, and builds the ent update on the client
+// the update runs on.
+type SendingWindowScopedUpdateOne struct {
+	s     *Scoped
+	id    int64
+	where []predicate.SendingWindow
+	set   []func(*SendingWindowUpdateOne)
+}
+
+// UpdateOneID updates the SendingWindow with the id; a row of another Workspace is not found.
+func (t *SendingWindowScoped) UpdateOneID(id int64) *SendingWindowScopedUpdateOne {
+	return &SendingWindowScopedUpdateOne{s: t.s, id: id}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *SendingWindowScopedUpdateOne) Where(ps ...predicate.SendingWindow) *SendingWindowScopedUpdateOne {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *SendingWindowScopedUpdateOne) SetUpdatedAt(v time.Time) *SendingWindowScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingWindowUpdateOne) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_SetUpdatedAt = RoleStep
+
+// SetMondayOpens sets the "monday_opens" field.
+func (x *SendingWindowScopedUpdateOne) SetMondayOpens(v int) *SendingWindowScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingWindowUpdateOne) { b.SetMondayOpens(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_SetMondayOpens = RoleStep
+
+// SetNillableMondayOpens sets the "monday_opens" field if the given value is not nil.
+func (x *SendingWindowScopedUpdateOne) SetNillableMondayOpens(v *int) *SendingWindowScopedUpdateOne {
+	if v != nil {
+		x.SetMondayOpens(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_SetNillableMondayOpens = RoleStep
+
+// AddMondayOpens adds value to the "monday_opens" field.
+func (x *SendingWindowScopedUpdateOne) AddMondayOpens(v int) *SendingWindowScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingWindowUpdateOne) { b.AddMondayOpens(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_AddMondayOpens = RoleStep
+
+// ClearMondayOpens clears the value of the "monday_opens" field.
+func (x *SendingWindowScopedUpdateOne) ClearMondayOpens() *SendingWindowScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingWindowUpdateOne) { b.ClearMondayOpens() })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_ClearMondayOpens = RoleStep
+
+// SetMondayCloses sets the "monday_closes" field.
+func (x *SendingWindowScopedUpdateOne) SetMondayCloses(v int) *SendingWindowScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingWindowUpdateOne) { b.SetMondayCloses(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_SetMondayCloses = RoleStep
+
+// SetNillableMondayCloses sets the "monday_closes" field if the given value is not nil.
+func (x *SendingWindowScopedUpdateOne) SetNillableMondayCloses(v *int) *SendingWindowScopedUpdateOne {
+	if v != nil {
+		x.SetMondayCloses(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_SetNillableMondayCloses = RoleStep
+
+// AddMondayCloses adds value to the "monday_closes" field.
+func (x *SendingWindowScopedUpdateOne) AddMondayCloses(v int) *SendingWindowScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingWindowUpdateOne) { b.AddMondayCloses(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_AddMondayCloses = RoleStep
+
+// ClearMondayCloses clears the value of the "monday_closes" field.
+func (x *SendingWindowScopedUpdateOne) ClearMondayCloses() *SendingWindowScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingWindowUpdateOne) { b.ClearMondayCloses() })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_ClearMondayCloses = RoleStep
+
+// SetTuesdayOpens sets the "tuesday_opens" field.
+func (x *SendingWindowScopedUpdateOne) SetTuesdayOpens(v int) *SendingWindowScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingWindowUpdateOne) { b.SetTuesdayOpens(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_SetTuesdayOpens = RoleStep
+
+// SetNillableTuesdayOpens sets the "tuesday_opens" field if the given value is not nil.
+func (x *SendingWindowScopedUpdateOne) SetNillableTuesdayOpens(v *int) *SendingWindowScopedUpdateOne {
+	if v != nil {
+		x.SetTuesdayOpens(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_SetNillableTuesdayOpens = RoleStep
+
+// AddTuesdayOpens adds value to the "tuesday_opens" field.
+func (x *SendingWindowScopedUpdateOne) AddTuesdayOpens(v int) *SendingWindowScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingWindowUpdateOne) { b.AddTuesdayOpens(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_AddTuesdayOpens = RoleStep
+
+// ClearTuesdayOpens clears the value of the "tuesday_opens" field.
+func (x *SendingWindowScopedUpdateOne) ClearTuesdayOpens() *SendingWindowScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingWindowUpdateOne) { b.ClearTuesdayOpens() })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_ClearTuesdayOpens = RoleStep
+
+// SetTuesdayCloses sets the "tuesday_closes" field.
+func (x *SendingWindowScopedUpdateOne) SetTuesdayCloses(v int) *SendingWindowScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingWindowUpdateOne) { b.SetTuesdayCloses(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_SetTuesdayCloses = RoleStep
+
+// SetNillableTuesdayCloses sets the "tuesday_closes" field if the given value is not nil.
+func (x *SendingWindowScopedUpdateOne) SetNillableTuesdayCloses(v *int) *SendingWindowScopedUpdateOne {
+	if v != nil {
+		x.SetTuesdayCloses(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_SetNillableTuesdayCloses = RoleStep
+
+// AddTuesdayCloses adds value to the "tuesday_closes" field.
+func (x *SendingWindowScopedUpdateOne) AddTuesdayCloses(v int) *SendingWindowScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingWindowUpdateOne) { b.AddTuesdayCloses(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_AddTuesdayCloses = RoleStep
+
+// ClearTuesdayCloses clears the value of the "tuesday_closes" field.
+func (x *SendingWindowScopedUpdateOne) ClearTuesdayCloses() *SendingWindowScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingWindowUpdateOne) { b.ClearTuesdayCloses() })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_ClearTuesdayCloses = RoleStep
+
+// SetWednesdayOpens sets the "wednesday_opens" field.
+func (x *SendingWindowScopedUpdateOne) SetWednesdayOpens(v int) *SendingWindowScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingWindowUpdateOne) { b.SetWednesdayOpens(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_SetWednesdayOpens = RoleStep
+
+// SetNillableWednesdayOpens sets the "wednesday_opens" field if the given value is not nil.
+func (x *SendingWindowScopedUpdateOne) SetNillableWednesdayOpens(v *int) *SendingWindowScopedUpdateOne {
+	if v != nil {
+		x.SetWednesdayOpens(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_SetNillableWednesdayOpens = RoleStep
+
+// AddWednesdayOpens adds value to the "wednesday_opens" field.
+func (x *SendingWindowScopedUpdateOne) AddWednesdayOpens(v int) *SendingWindowScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingWindowUpdateOne) { b.AddWednesdayOpens(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_AddWednesdayOpens = RoleStep
+
+// ClearWednesdayOpens clears the value of the "wednesday_opens" field.
+func (x *SendingWindowScopedUpdateOne) ClearWednesdayOpens() *SendingWindowScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingWindowUpdateOne) { b.ClearWednesdayOpens() })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_ClearWednesdayOpens = RoleStep
+
+// SetWednesdayCloses sets the "wednesday_closes" field.
+func (x *SendingWindowScopedUpdateOne) SetWednesdayCloses(v int) *SendingWindowScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingWindowUpdateOne) { b.SetWednesdayCloses(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_SetWednesdayCloses = RoleStep
+
+// SetNillableWednesdayCloses sets the "wednesday_closes" field if the given value is not nil.
+func (x *SendingWindowScopedUpdateOne) SetNillableWednesdayCloses(v *int) *SendingWindowScopedUpdateOne {
+	if v != nil {
+		x.SetWednesdayCloses(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_SetNillableWednesdayCloses = RoleStep
+
+// AddWednesdayCloses adds value to the "wednesday_closes" field.
+func (x *SendingWindowScopedUpdateOne) AddWednesdayCloses(v int) *SendingWindowScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingWindowUpdateOne) { b.AddWednesdayCloses(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_AddWednesdayCloses = RoleStep
+
+// ClearWednesdayCloses clears the value of the "wednesday_closes" field.
+func (x *SendingWindowScopedUpdateOne) ClearWednesdayCloses() *SendingWindowScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingWindowUpdateOne) { b.ClearWednesdayCloses() })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_ClearWednesdayCloses = RoleStep
+
+// SetThursdayOpens sets the "thursday_opens" field.
+func (x *SendingWindowScopedUpdateOne) SetThursdayOpens(v int) *SendingWindowScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingWindowUpdateOne) { b.SetThursdayOpens(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_SetThursdayOpens = RoleStep
+
+// SetNillableThursdayOpens sets the "thursday_opens" field if the given value is not nil.
+func (x *SendingWindowScopedUpdateOne) SetNillableThursdayOpens(v *int) *SendingWindowScopedUpdateOne {
+	if v != nil {
+		x.SetThursdayOpens(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_SetNillableThursdayOpens = RoleStep
+
+// AddThursdayOpens adds value to the "thursday_opens" field.
+func (x *SendingWindowScopedUpdateOne) AddThursdayOpens(v int) *SendingWindowScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingWindowUpdateOne) { b.AddThursdayOpens(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_AddThursdayOpens = RoleStep
+
+// ClearThursdayOpens clears the value of the "thursday_opens" field.
+func (x *SendingWindowScopedUpdateOne) ClearThursdayOpens() *SendingWindowScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingWindowUpdateOne) { b.ClearThursdayOpens() })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_ClearThursdayOpens = RoleStep
+
+// SetThursdayCloses sets the "thursday_closes" field.
+func (x *SendingWindowScopedUpdateOne) SetThursdayCloses(v int) *SendingWindowScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingWindowUpdateOne) { b.SetThursdayCloses(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_SetThursdayCloses = RoleStep
+
+// SetNillableThursdayCloses sets the "thursday_closes" field if the given value is not nil.
+func (x *SendingWindowScopedUpdateOne) SetNillableThursdayCloses(v *int) *SendingWindowScopedUpdateOne {
+	if v != nil {
+		x.SetThursdayCloses(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_SetNillableThursdayCloses = RoleStep
+
+// AddThursdayCloses adds value to the "thursday_closes" field.
+func (x *SendingWindowScopedUpdateOne) AddThursdayCloses(v int) *SendingWindowScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingWindowUpdateOne) { b.AddThursdayCloses(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_AddThursdayCloses = RoleStep
+
+// ClearThursdayCloses clears the value of the "thursday_closes" field.
+func (x *SendingWindowScopedUpdateOne) ClearThursdayCloses() *SendingWindowScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingWindowUpdateOne) { b.ClearThursdayCloses() })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_ClearThursdayCloses = RoleStep
+
+// SetFridayOpens sets the "friday_opens" field.
+func (x *SendingWindowScopedUpdateOne) SetFridayOpens(v int) *SendingWindowScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingWindowUpdateOne) { b.SetFridayOpens(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_SetFridayOpens = RoleStep
+
+// SetNillableFridayOpens sets the "friday_opens" field if the given value is not nil.
+func (x *SendingWindowScopedUpdateOne) SetNillableFridayOpens(v *int) *SendingWindowScopedUpdateOne {
+	if v != nil {
+		x.SetFridayOpens(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_SetNillableFridayOpens = RoleStep
+
+// AddFridayOpens adds value to the "friday_opens" field.
+func (x *SendingWindowScopedUpdateOne) AddFridayOpens(v int) *SendingWindowScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingWindowUpdateOne) { b.AddFridayOpens(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_AddFridayOpens = RoleStep
+
+// ClearFridayOpens clears the value of the "friday_opens" field.
+func (x *SendingWindowScopedUpdateOne) ClearFridayOpens() *SendingWindowScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingWindowUpdateOne) { b.ClearFridayOpens() })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_ClearFridayOpens = RoleStep
+
+// SetFridayCloses sets the "friday_closes" field.
+func (x *SendingWindowScopedUpdateOne) SetFridayCloses(v int) *SendingWindowScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingWindowUpdateOne) { b.SetFridayCloses(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_SetFridayCloses = RoleStep
+
+// SetNillableFridayCloses sets the "friday_closes" field if the given value is not nil.
+func (x *SendingWindowScopedUpdateOne) SetNillableFridayCloses(v *int) *SendingWindowScopedUpdateOne {
+	if v != nil {
+		x.SetFridayCloses(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_SetNillableFridayCloses = RoleStep
+
+// AddFridayCloses adds value to the "friday_closes" field.
+func (x *SendingWindowScopedUpdateOne) AddFridayCloses(v int) *SendingWindowScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingWindowUpdateOne) { b.AddFridayCloses(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_AddFridayCloses = RoleStep
+
+// ClearFridayCloses clears the value of the "friday_closes" field.
+func (x *SendingWindowScopedUpdateOne) ClearFridayCloses() *SendingWindowScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingWindowUpdateOne) { b.ClearFridayCloses() })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_ClearFridayCloses = RoleStep
+
+// SetSaturdayOpens sets the "saturday_opens" field.
+func (x *SendingWindowScopedUpdateOne) SetSaturdayOpens(v int) *SendingWindowScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingWindowUpdateOne) { b.SetSaturdayOpens(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_SetSaturdayOpens = RoleStep
+
+// SetNillableSaturdayOpens sets the "saturday_opens" field if the given value is not nil.
+func (x *SendingWindowScopedUpdateOne) SetNillableSaturdayOpens(v *int) *SendingWindowScopedUpdateOne {
+	if v != nil {
+		x.SetSaturdayOpens(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_SetNillableSaturdayOpens = RoleStep
+
+// AddSaturdayOpens adds value to the "saturday_opens" field.
+func (x *SendingWindowScopedUpdateOne) AddSaturdayOpens(v int) *SendingWindowScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingWindowUpdateOne) { b.AddSaturdayOpens(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_AddSaturdayOpens = RoleStep
+
+// ClearSaturdayOpens clears the value of the "saturday_opens" field.
+func (x *SendingWindowScopedUpdateOne) ClearSaturdayOpens() *SendingWindowScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingWindowUpdateOne) { b.ClearSaturdayOpens() })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_ClearSaturdayOpens = RoleStep
+
+// SetSaturdayCloses sets the "saturday_closes" field.
+func (x *SendingWindowScopedUpdateOne) SetSaturdayCloses(v int) *SendingWindowScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingWindowUpdateOne) { b.SetSaturdayCloses(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_SetSaturdayCloses = RoleStep
+
+// SetNillableSaturdayCloses sets the "saturday_closes" field if the given value is not nil.
+func (x *SendingWindowScopedUpdateOne) SetNillableSaturdayCloses(v *int) *SendingWindowScopedUpdateOne {
+	if v != nil {
+		x.SetSaturdayCloses(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_SetNillableSaturdayCloses = RoleStep
+
+// AddSaturdayCloses adds value to the "saturday_closes" field.
+func (x *SendingWindowScopedUpdateOne) AddSaturdayCloses(v int) *SendingWindowScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingWindowUpdateOne) { b.AddSaturdayCloses(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_AddSaturdayCloses = RoleStep
+
+// ClearSaturdayCloses clears the value of the "saturday_closes" field.
+func (x *SendingWindowScopedUpdateOne) ClearSaturdayCloses() *SendingWindowScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingWindowUpdateOne) { b.ClearSaturdayCloses() })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_ClearSaturdayCloses = RoleStep
+
+// SetSundayOpens sets the "sunday_opens" field.
+func (x *SendingWindowScopedUpdateOne) SetSundayOpens(v int) *SendingWindowScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingWindowUpdateOne) { b.SetSundayOpens(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_SetSundayOpens = RoleStep
+
+// SetNillableSundayOpens sets the "sunday_opens" field if the given value is not nil.
+func (x *SendingWindowScopedUpdateOne) SetNillableSundayOpens(v *int) *SendingWindowScopedUpdateOne {
+	if v != nil {
+		x.SetSundayOpens(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_SetNillableSundayOpens = RoleStep
+
+// AddSundayOpens adds value to the "sunday_opens" field.
+func (x *SendingWindowScopedUpdateOne) AddSundayOpens(v int) *SendingWindowScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingWindowUpdateOne) { b.AddSundayOpens(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_AddSundayOpens = RoleStep
+
+// ClearSundayOpens clears the value of the "sunday_opens" field.
+func (x *SendingWindowScopedUpdateOne) ClearSundayOpens() *SendingWindowScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingWindowUpdateOne) { b.ClearSundayOpens() })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_ClearSundayOpens = RoleStep
+
+// SetSundayCloses sets the "sunday_closes" field.
+func (x *SendingWindowScopedUpdateOne) SetSundayCloses(v int) *SendingWindowScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingWindowUpdateOne) { b.SetSundayCloses(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_SetSundayCloses = RoleStep
+
+// SetNillableSundayCloses sets the "sunday_closes" field if the given value is not nil.
+func (x *SendingWindowScopedUpdateOne) SetNillableSundayCloses(v *int) *SendingWindowScopedUpdateOne {
+	if v != nil {
+		x.SetSundayCloses(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_SetNillableSundayCloses = RoleStep
+
+// AddSundayCloses adds value to the "sunday_closes" field.
+func (x *SendingWindowScopedUpdateOne) AddSundayCloses(v int) *SendingWindowScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingWindowUpdateOne) { b.AddSundayCloses(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_AddSundayCloses = RoleStep
+
+// ClearSundayCloses clears the value of the "sunday_closes" field.
+func (x *SendingWindowScopedUpdateOne) ClearSundayCloses() *SendingWindowScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingWindowUpdateOne) { b.ClearSundayCloses() })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdateOne_ClearSundayCloses = RoleStep
+
+// Save verifies the references against the Workspace, then updates the SendingWindow.
+func (x *SendingWindowScopedUpdateOne) Save(ctx context.Context) (*SendingWindow, error) {
+	return x.save(ctx, "update", skipUnchanged)
+}
+
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *SendingWindowScopedUpdateOne) build(ctx context.Context, s *Scoped) (*SendingWindowUpdateOne, error) {
+	b := s.c.SendingWindow.UpdateOneID(x.id).Where(s.inSendingWindow(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkSendingWindow(ctx, b.Mutation()))
+}
+
+// save is Save under a verb, doing with an unchanged row what unchanged says.
+func (x *SendingWindowScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*SendingWindow, error) {
+	where := x.s.inSendingWindow(x.where...)
+	var updated *SendingWindow
+	err := x.s.writeSendingWindow(ctx, verb, append([]predicate.SendingWindow{sendingwindow.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		updated, err = b.Save(ctx)
+		return nil, err
+	})
+	return written(updated, err)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *SendingWindowScopedUpdateOne) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_SendingWindowScopedUpdateOne       = TypeScopedUpdate
+	EntityOf_SendingWindowScopedUpdateOne     = "SendingWindow"
+	RoleOf_SendingWindowScopedUpdateOne_Where = RoleStep
+	RoleOf_SendingWindowScopedUpdateOne_Save  = RoleStep
+	RoleOf_SendingWindowScopedUpdateOne_Exec  = RoleStep
+)
+
+// SendingWindowScopedUpdate is a conditional bulk update of one Workspace: it keeps its predicates and
+// what its setters and modifiers set, and builds the ent update on the client the update runs on.
+type SendingWindowScopedUpdate struct {
+	s     *Scoped
+	where []predicate.SendingWindow
+	set   []func(*SendingWindowUpdate)
+	// modErr is set when a Modify modifier tried to assign workspace_id.
+	modErr error
+}
+
+// Update updates the SendingWindow entities of the Workspace that match the predicates.
+func (t *SendingWindowScoped) Update() *SendingWindowScopedUpdate {
+	return &SendingWindowScopedUpdate{s: t.s}
+}
+
+// Where appends predicates the rows must match.
+func (x *SendingWindowScopedUpdate) Where(ps ...predicate.SendingWindow) *SendingWindowScopedUpdate {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+// Modify adds a statement modifier for computed assignments the typed setters cannot
+// express (SET col = LEAST(col + ..., ...)). A modifier gets assignment-only access
+// (ScopedAssign), so it cannot widen the Workspace predicate; an assignment to
+// workspace_id is refused: each modifier is probed against a scratch statement here, and
+// Save fails with ErrWorkspaceAssign.
+func (x *SendingWindowScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *SendingWindowScopedUpdate {
+	for _, m := range modifiers {
+		probe := &ScopedAssign{u: sql.Update(sendingwindow.Table)}
+		m(probe)
+		if probe.workspace {
+			x.modErr = ErrWorkspaceAssign
+		}
+		x.set = append(x.set, func(b *SendingWindowUpdate) {
+			b.Modify(func(u *sql.UpdateBuilder) { m(&ScopedAssign{u: u}) })
+		})
+	}
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *SendingWindowScopedUpdate) SetUpdatedAt(v time.Time) *SendingWindowScopedUpdate {
+	x.set = append(x.set, func(b *SendingWindowUpdate) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_SetUpdatedAt = RoleStep
+
+// SetMondayOpens sets the "monday_opens" field.
+func (x *SendingWindowScopedUpdate) SetMondayOpens(v int) *SendingWindowScopedUpdate {
+	x.set = append(x.set, func(b *SendingWindowUpdate) { b.SetMondayOpens(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_SetMondayOpens = RoleStep
+
+// SetNillableMondayOpens sets the "monday_opens" field if the given value is not nil.
+func (x *SendingWindowScopedUpdate) SetNillableMondayOpens(v *int) *SendingWindowScopedUpdate {
+	if v != nil {
+		x.SetMondayOpens(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_SetNillableMondayOpens = RoleStep
+
+// AddMondayOpens adds value to the "monday_opens" field.
+func (x *SendingWindowScopedUpdate) AddMondayOpens(v int) *SendingWindowScopedUpdate {
+	x.set = append(x.set, func(b *SendingWindowUpdate) { b.AddMondayOpens(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_AddMondayOpens = RoleStep
+
+// ClearMondayOpens clears the value of the "monday_opens" field.
+func (x *SendingWindowScopedUpdate) ClearMondayOpens() *SendingWindowScopedUpdate {
+	x.set = append(x.set, func(b *SendingWindowUpdate) { b.ClearMondayOpens() })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_ClearMondayOpens = RoleStep
+
+// SetMondayCloses sets the "monday_closes" field.
+func (x *SendingWindowScopedUpdate) SetMondayCloses(v int) *SendingWindowScopedUpdate {
+	x.set = append(x.set, func(b *SendingWindowUpdate) { b.SetMondayCloses(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_SetMondayCloses = RoleStep
+
+// SetNillableMondayCloses sets the "monday_closes" field if the given value is not nil.
+func (x *SendingWindowScopedUpdate) SetNillableMondayCloses(v *int) *SendingWindowScopedUpdate {
+	if v != nil {
+		x.SetMondayCloses(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_SetNillableMondayCloses = RoleStep
+
+// AddMondayCloses adds value to the "monday_closes" field.
+func (x *SendingWindowScopedUpdate) AddMondayCloses(v int) *SendingWindowScopedUpdate {
+	x.set = append(x.set, func(b *SendingWindowUpdate) { b.AddMondayCloses(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_AddMondayCloses = RoleStep
+
+// ClearMondayCloses clears the value of the "monday_closes" field.
+func (x *SendingWindowScopedUpdate) ClearMondayCloses() *SendingWindowScopedUpdate {
+	x.set = append(x.set, func(b *SendingWindowUpdate) { b.ClearMondayCloses() })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_ClearMondayCloses = RoleStep
+
+// SetTuesdayOpens sets the "tuesday_opens" field.
+func (x *SendingWindowScopedUpdate) SetTuesdayOpens(v int) *SendingWindowScopedUpdate {
+	x.set = append(x.set, func(b *SendingWindowUpdate) { b.SetTuesdayOpens(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_SetTuesdayOpens = RoleStep
+
+// SetNillableTuesdayOpens sets the "tuesday_opens" field if the given value is not nil.
+func (x *SendingWindowScopedUpdate) SetNillableTuesdayOpens(v *int) *SendingWindowScopedUpdate {
+	if v != nil {
+		x.SetTuesdayOpens(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_SetNillableTuesdayOpens = RoleStep
+
+// AddTuesdayOpens adds value to the "tuesday_opens" field.
+func (x *SendingWindowScopedUpdate) AddTuesdayOpens(v int) *SendingWindowScopedUpdate {
+	x.set = append(x.set, func(b *SendingWindowUpdate) { b.AddTuesdayOpens(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_AddTuesdayOpens = RoleStep
+
+// ClearTuesdayOpens clears the value of the "tuesday_opens" field.
+func (x *SendingWindowScopedUpdate) ClearTuesdayOpens() *SendingWindowScopedUpdate {
+	x.set = append(x.set, func(b *SendingWindowUpdate) { b.ClearTuesdayOpens() })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_ClearTuesdayOpens = RoleStep
+
+// SetTuesdayCloses sets the "tuesday_closes" field.
+func (x *SendingWindowScopedUpdate) SetTuesdayCloses(v int) *SendingWindowScopedUpdate {
+	x.set = append(x.set, func(b *SendingWindowUpdate) { b.SetTuesdayCloses(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_SetTuesdayCloses = RoleStep
+
+// SetNillableTuesdayCloses sets the "tuesday_closes" field if the given value is not nil.
+func (x *SendingWindowScopedUpdate) SetNillableTuesdayCloses(v *int) *SendingWindowScopedUpdate {
+	if v != nil {
+		x.SetTuesdayCloses(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_SetNillableTuesdayCloses = RoleStep
+
+// AddTuesdayCloses adds value to the "tuesday_closes" field.
+func (x *SendingWindowScopedUpdate) AddTuesdayCloses(v int) *SendingWindowScopedUpdate {
+	x.set = append(x.set, func(b *SendingWindowUpdate) { b.AddTuesdayCloses(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_AddTuesdayCloses = RoleStep
+
+// ClearTuesdayCloses clears the value of the "tuesday_closes" field.
+func (x *SendingWindowScopedUpdate) ClearTuesdayCloses() *SendingWindowScopedUpdate {
+	x.set = append(x.set, func(b *SendingWindowUpdate) { b.ClearTuesdayCloses() })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_ClearTuesdayCloses = RoleStep
+
+// SetWednesdayOpens sets the "wednesday_opens" field.
+func (x *SendingWindowScopedUpdate) SetWednesdayOpens(v int) *SendingWindowScopedUpdate {
+	x.set = append(x.set, func(b *SendingWindowUpdate) { b.SetWednesdayOpens(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_SetWednesdayOpens = RoleStep
+
+// SetNillableWednesdayOpens sets the "wednesday_opens" field if the given value is not nil.
+func (x *SendingWindowScopedUpdate) SetNillableWednesdayOpens(v *int) *SendingWindowScopedUpdate {
+	if v != nil {
+		x.SetWednesdayOpens(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_SetNillableWednesdayOpens = RoleStep
+
+// AddWednesdayOpens adds value to the "wednesday_opens" field.
+func (x *SendingWindowScopedUpdate) AddWednesdayOpens(v int) *SendingWindowScopedUpdate {
+	x.set = append(x.set, func(b *SendingWindowUpdate) { b.AddWednesdayOpens(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_AddWednesdayOpens = RoleStep
+
+// ClearWednesdayOpens clears the value of the "wednesday_opens" field.
+func (x *SendingWindowScopedUpdate) ClearWednesdayOpens() *SendingWindowScopedUpdate {
+	x.set = append(x.set, func(b *SendingWindowUpdate) { b.ClearWednesdayOpens() })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_ClearWednesdayOpens = RoleStep
+
+// SetWednesdayCloses sets the "wednesday_closes" field.
+func (x *SendingWindowScopedUpdate) SetWednesdayCloses(v int) *SendingWindowScopedUpdate {
+	x.set = append(x.set, func(b *SendingWindowUpdate) { b.SetWednesdayCloses(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_SetWednesdayCloses = RoleStep
+
+// SetNillableWednesdayCloses sets the "wednesday_closes" field if the given value is not nil.
+func (x *SendingWindowScopedUpdate) SetNillableWednesdayCloses(v *int) *SendingWindowScopedUpdate {
+	if v != nil {
+		x.SetWednesdayCloses(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_SetNillableWednesdayCloses = RoleStep
+
+// AddWednesdayCloses adds value to the "wednesday_closes" field.
+func (x *SendingWindowScopedUpdate) AddWednesdayCloses(v int) *SendingWindowScopedUpdate {
+	x.set = append(x.set, func(b *SendingWindowUpdate) { b.AddWednesdayCloses(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_AddWednesdayCloses = RoleStep
+
+// ClearWednesdayCloses clears the value of the "wednesday_closes" field.
+func (x *SendingWindowScopedUpdate) ClearWednesdayCloses() *SendingWindowScopedUpdate {
+	x.set = append(x.set, func(b *SendingWindowUpdate) { b.ClearWednesdayCloses() })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_ClearWednesdayCloses = RoleStep
+
+// SetThursdayOpens sets the "thursday_opens" field.
+func (x *SendingWindowScopedUpdate) SetThursdayOpens(v int) *SendingWindowScopedUpdate {
+	x.set = append(x.set, func(b *SendingWindowUpdate) { b.SetThursdayOpens(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_SetThursdayOpens = RoleStep
+
+// SetNillableThursdayOpens sets the "thursday_opens" field if the given value is not nil.
+func (x *SendingWindowScopedUpdate) SetNillableThursdayOpens(v *int) *SendingWindowScopedUpdate {
+	if v != nil {
+		x.SetThursdayOpens(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_SetNillableThursdayOpens = RoleStep
+
+// AddThursdayOpens adds value to the "thursday_opens" field.
+func (x *SendingWindowScopedUpdate) AddThursdayOpens(v int) *SendingWindowScopedUpdate {
+	x.set = append(x.set, func(b *SendingWindowUpdate) { b.AddThursdayOpens(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_AddThursdayOpens = RoleStep
+
+// ClearThursdayOpens clears the value of the "thursday_opens" field.
+func (x *SendingWindowScopedUpdate) ClearThursdayOpens() *SendingWindowScopedUpdate {
+	x.set = append(x.set, func(b *SendingWindowUpdate) { b.ClearThursdayOpens() })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_ClearThursdayOpens = RoleStep
+
+// SetThursdayCloses sets the "thursday_closes" field.
+func (x *SendingWindowScopedUpdate) SetThursdayCloses(v int) *SendingWindowScopedUpdate {
+	x.set = append(x.set, func(b *SendingWindowUpdate) { b.SetThursdayCloses(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_SetThursdayCloses = RoleStep
+
+// SetNillableThursdayCloses sets the "thursday_closes" field if the given value is not nil.
+func (x *SendingWindowScopedUpdate) SetNillableThursdayCloses(v *int) *SendingWindowScopedUpdate {
+	if v != nil {
+		x.SetThursdayCloses(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_SetNillableThursdayCloses = RoleStep
+
+// AddThursdayCloses adds value to the "thursday_closes" field.
+func (x *SendingWindowScopedUpdate) AddThursdayCloses(v int) *SendingWindowScopedUpdate {
+	x.set = append(x.set, func(b *SendingWindowUpdate) { b.AddThursdayCloses(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_AddThursdayCloses = RoleStep
+
+// ClearThursdayCloses clears the value of the "thursday_closes" field.
+func (x *SendingWindowScopedUpdate) ClearThursdayCloses() *SendingWindowScopedUpdate {
+	x.set = append(x.set, func(b *SendingWindowUpdate) { b.ClearThursdayCloses() })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_ClearThursdayCloses = RoleStep
+
+// SetFridayOpens sets the "friday_opens" field.
+func (x *SendingWindowScopedUpdate) SetFridayOpens(v int) *SendingWindowScopedUpdate {
+	x.set = append(x.set, func(b *SendingWindowUpdate) { b.SetFridayOpens(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_SetFridayOpens = RoleStep
+
+// SetNillableFridayOpens sets the "friday_opens" field if the given value is not nil.
+func (x *SendingWindowScopedUpdate) SetNillableFridayOpens(v *int) *SendingWindowScopedUpdate {
+	if v != nil {
+		x.SetFridayOpens(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_SetNillableFridayOpens = RoleStep
+
+// AddFridayOpens adds value to the "friday_opens" field.
+func (x *SendingWindowScopedUpdate) AddFridayOpens(v int) *SendingWindowScopedUpdate {
+	x.set = append(x.set, func(b *SendingWindowUpdate) { b.AddFridayOpens(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_AddFridayOpens = RoleStep
+
+// ClearFridayOpens clears the value of the "friday_opens" field.
+func (x *SendingWindowScopedUpdate) ClearFridayOpens() *SendingWindowScopedUpdate {
+	x.set = append(x.set, func(b *SendingWindowUpdate) { b.ClearFridayOpens() })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_ClearFridayOpens = RoleStep
+
+// SetFridayCloses sets the "friday_closes" field.
+func (x *SendingWindowScopedUpdate) SetFridayCloses(v int) *SendingWindowScopedUpdate {
+	x.set = append(x.set, func(b *SendingWindowUpdate) { b.SetFridayCloses(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_SetFridayCloses = RoleStep
+
+// SetNillableFridayCloses sets the "friday_closes" field if the given value is not nil.
+func (x *SendingWindowScopedUpdate) SetNillableFridayCloses(v *int) *SendingWindowScopedUpdate {
+	if v != nil {
+		x.SetFridayCloses(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_SetNillableFridayCloses = RoleStep
+
+// AddFridayCloses adds value to the "friday_closes" field.
+func (x *SendingWindowScopedUpdate) AddFridayCloses(v int) *SendingWindowScopedUpdate {
+	x.set = append(x.set, func(b *SendingWindowUpdate) { b.AddFridayCloses(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_AddFridayCloses = RoleStep
+
+// ClearFridayCloses clears the value of the "friday_closes" field.
+func (x *SendingWindowScopedUpdate) ClearFridayCloses() *SendingWindowScopedUpdate {
+	x.set = append(x.set, func(b *SendingWindowUpdate) { b.ClearFridayCloses() })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_ClearFridayCloses = RoleStep
+
+// SetSaturdayOpens sets the "saturday_opens" field.
+func (x *SendingWindowScopedUpdate) SetSaturdayOpens(v int) *SendingWindowScopedUpdate {
+	x.set = append(x.set, func(b *SendingWindowUpdate) { b.SetSaturdayOpens(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_SetSaturdayOpens = RoleStep
+
+// SetNillableSaturdayOpens sets the "saturday_opens" field if the given value is not nil.
+func (x *SendingWindowScopedUpdate) SetNillableSaturdayOpens(v *int) *SendingWindowScopedUpdate {
+	if v != nil {
+		x.SetSaturdayOpens(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_SetNillableSaturdayOpens = RoleStep
+
+// AddSaturdayOpens adds value to the "saturday_opens" field.
+func (x *SendingWindowScopedUpdate) AddSaturdayOpens(v int) *SendingWindowScopedUpdate {
+	x.set = append(x.set, func(b *SendingWindowUpdate) { b.AddSaturdayOpens(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_AddSaturdayOpens = RoleStep
+
+// ClearSaturdayOpens clears the value of the "saturday_opens" field.
+func (x *SendingWindowScopedUpdate) ClearSaturdayOpens() *SendingWindowScopedUpdate {
+	x.set = append(x.set, func(b *SendingWindowUpdate) { b.ClearSaturdayOpens() })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_ClearSaturdayOpens = RoleStep
+
+// SetSaturdayCloses sets the "saturday_closes" field.
+func (x *SendingWindowScopedUpdate) SetSaturdayCloses(v int) *SendingWindowScopedUpdate {
+	x.set = append(x.set, func(b *SendingWindowUpdate) { b.SetSaturdayCloses(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_SetSaturdayCloses = RoleStep
+
+// SetNillableSaturdayCloses sets the "saturday_closes" field if the given value is not nil.
+func (x *SendingWindowScopedUpdate) SetNillableSaturdayCloses(v *int) *SendingWindowScopedUpdate {
+	if v != nil {
+		x.SetSaturdayCloses(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_SetNillableSaturdayCloses = RoleStep
+
+// AddSaturdayCloses adds value to the "saturday_closes" field.
+func (x *SendingWindowScopedUpdate) AddSaturdayCloses(v int) *SendingWindowScopedUpdate {
+	x.set = append(x.set, func(b *SendingWindowUpdate) { b.AddSaturdayCloses(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_AddSaturdayCloses = RoleStep
+
+// ClearSaturdayCloses clears the value of the "saturday_closes" field.
+func (x *SendingWindowScopedUpdate) ClearSaturdayCloses() *SendingWindowScopedUpdate {
+	x.set = append(x.set, func(b *SendingWindowUpdate) { b.ClearSaturdayCloses() })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_ClearSaturdayCloses = RoleStep
+
+// SetSundayOpens sets the "sunday_opens" field.
+func (x *SendingWindowScopedUpdate) SetSundayOpens(v int) *SendingWindowScopedUpdate {
+	x.set = append(x.set, func(b *SendingWindowUpdate) { b.SetSundayOpens(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_SetSundayOpens = RoleStep
+
+// SetNillableSundayOpens sets the "sunday_opens" field if the given value is not nil.
+func (x *SendingWindowScopedUpdate) SetNillableSundayOpens(v *int) *SendingWindowScopedUpdate {
+	if v != nil {
+		x.SetSundayOpens(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_SetNillableSundayOpens = RoleStep
+
+// AddSundayOpens adds value to the "sunday_opens" field.
+func (x *SendingWindowScopedUpdate) AddSundayOpens(v int) *SendingWindowScopedUpdate {
+	x.set = append(x.set, func(b *SendingWindowUpdate) { b.AddSundayOpens(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_AddSundayOpens = RoleStep
+
+// ClearSundayOpens clears the value of the "sunday_opens" field.
+func (x *SendingWindowScopedUpdate) ClearSundayOpens() *SendingWindowScopedUpdate {
+	x.set = append(x.set, func(b *SendingWindowUpdate) { b.ClearSundayOpens() })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_ClearSundayOpens = RoleStep
+
+// SetSundayCloses sets the "sunday_closes" field.
+func (x *SendingWindowScopedUpdate) SetSundayCloses(v int) *SendingWindowScopedUpdate {
+	x.set = append(x.set, func(b *SendingWindowUpdate) { b.SetSundayCloses(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_SetSundayCloses = RoleStep
+
+// SetNillableSundayCloses sets the "sunday_closes" field if the given value is not nil.
+func (x *SendingWindowScopedUpdate) SetNillableSundayCloses(v *int) *SendingWindowScopedUpdate {
+	if v != nil {
+		x.SetSundayCloses(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_SetNillableSundayCloses = RoleStep
+
+// AddSundayCloses adds value to the "sunday_closes" field.
+func (x *SendingWindowScopedUpdate) AddSundayCloses(v int) *SendingWindowScopedUpdate {
+	x.set = append(x.set, func(b *SendingWindowUpdate) { b.AddSundayCloses(v) })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_AddSundayCloses = RoleStep
+
+// ClearSundayCloses clears the value of the "sunday_closes" field.
+func (x *SendingWindowScopedUpdate) ClearSundayCloses() *SendingWindowScopedUpdate {
+	x.set = append(x.set, func(b *SendingWindowUpdate) { b.ClearSundayCloses() })
+	return x
+}
+
+const RoleOf_SendingWindowScopedUpdate_ClearSundayCloses = RoleStep
+
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *SendingWindowScopedUpdate) build(ctx context.Context, s *Scoped) (*SendingWindowUpdate, error) {
+	b := s.c.SendingWindow.Update().Where(s.inSendingWindow(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkSendingWindow(ctx, b.Mutation()))
+}
+
+// Save verifies the references against the Workspace, then updates the rows and
+// returns how many changed.
+func (x *SendingWindowScopedUpdate) Save(ctx context.Context) (int, error) {
+	if x.modErr != nil {
+		return 0, x.modErr
+	}
+	where := x.s.inSendingWindow(x.where...)
+	var n int
+	err := x.s.writeSendingWindow(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		n, err = b.Save(ctx)
+		return nil, err
+	})
+	return written(n, err)
+}
+
+// Exec is like Save, discarding the count.
+func (x *SendingWindowScopedUpdate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_SendingWindowScopedUpdate        = TypeScopedUpdate
+	EntityOf_SendingWindowScopedUpdate      = "SendingWindow"
+	RoleOf_SendingWindowScopedUpdate_Where  = RoleStep
+	RoleOf_SendingWindowScopedUpdate_Modify = RoleStep
+	RoleOf_SendingWindowScopedUpdate_Save   = RoleStep
+	RoleOf_SendingWindowScopedUpdate_Exec   = RoleStep
 )
 
 // StartTokenScoped reaches StartToken entities of one Workspace.

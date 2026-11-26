@@ -81,3 +81,21 @@ func TestExternalWorkspaceCarriesConfirmedOptIn(t *testing.T) {
 	assert.False(t, before.RequireConfirmedOptIn)
 	assert.True(t, after.RequireConfirmedOptIn)
 }
+
+// An agent reads the Workspace's sending rules (ADR 0134, ADR 0137) to explain a marketing message
+// that waits or is skipped; only a person changes them, in the console.
+func TestExternalWorkspaceCarriesItsSendingRules(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	ws := workspaceOf(t, env)
+
+	wantCap := externalapi.FrequencyCap{Channel: externalapi.FrequencyCapChannelSMS, Country: externalapi.NilCountryCode{Null: true},
+		MaxMessages: externalapi.NewNilFrequencyCapMaxMessages(3), PeriodMinutes: externalapi.NewNilFrequencyCapPeriodMinutes(1440)}
+	assert.Equal(t, []externalapi.FrequencyCap{wantCap}, ws.SendingRules.FrequencyCaps)
+	require.Len(t, ws.SendingRules.SendingWindows, 1)
+	window := ws.SendingRules.SendingWindows[0]
+	assert.Equal(t, externalapi.SendingWindowChannelSMS, window.Channel)
+	assert.True(t, window.Country.Null)
+	assert.Len(t, window.Hours, 7)
+	assert.Equal(t, externalapi.SendingWindowHours{Day: externalapi.WeekdayMonday, OpensAt: 480, ClosesAt: 1200}, window.Hours[0])
+}

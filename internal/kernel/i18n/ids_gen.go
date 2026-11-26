@@ -190,6 +190,7 @@ var (
 	ErrorsEventRejected                                   = ID{key: "errors.event_rejected"}
 	ErrorsExportCursorInvalid                             = ID{key: "errors.export_cursor_invalid"}
 	ErrorsFeedCursorInvalid                               = ID{key: "errors.feed_cursor_invalid"}
+	ErrorsFrequencyCapPeriod                              = ID{key: "errors.frequency_cap_period"}
 	ErrorsHoldActionUrlInvalid                            = ID{key: "errors.hold_action_url_invalid"}
 	ErrorsHoldExpiryInPast                                = ID{key: "errors.hold_expiry_in_past"}
 	ErrorsHoldTooLong                                     = ID{key: "errors.hold_too_long"}
@@ -339,10 +340,17 @@ var (
 	ErrorsSendingDomainInvalid                            = ID{key: "errors.sending_domain_invalid"}
 	ErrorsSendingDomainNotFound                           = ID{key: "errors.sending_domain_not_found"}
 	ErrorsSendingHeld                                     = ID{key: "errors.sending_held"}
+	ErrorsSendingRuleChannelUnknown                       = ID{key: "errors.sending_rule_channel_unknown"}
+	ErrorsSendingRuleCountryOffPhone                      = ID{key: "errors.sending_rule_country_off_phone"}
+	ErrorsSendingRuleRepeated                             = ID{key: "errors.sending_rule_repeated"}
 	ErrorsSendingSourceAutomationUnknown                  = ID{key: "errors.sending_source_automation_unknown"}
 	ErrorsSendingSourceInvalid                            = ID{key: "errors.sending_source_invalid"}
 	ErrorsSendingSourceSms                                = ID{key: "errors.sending_source_sms"}
 	ErrorsSendingSourceTelegram                           = ID{key: "errors.sending_source_telegram"}
+	ErrorsSendingWindowChannel                            = ID{key: "errors.sending_window_channel"}
+	ErrorsSendingWindowDayRepeated                        = ID{key: "errors.sending_window_day_repeated"}
+	ErrorsSendingWindowHours                              = ID{key: "errors.sending_window_hours"}
+	ErrorsSendingWindowNeverOpens                         = ID{key: "errors.sending_window_never_opens"}
 	ErrorsServiceCredentialInactive                       = ID{key: "errors.service_credential_inactive"}
 	ErrorsServiceCredentialInvalid                        = ID{key: "errors.service_credential_invalid"}
 	ErrorsServiceCredentialNotFound                       = ID{key: "errors.service_credential_not_found"}
