@@ -30,6 +30,7 @@ import {
   testId,
   workspace,
 } from '../../test/payloads.ts'
+import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
@@ -133,10 +134,12 @@ function select(screen: Screen, region: string, label: string) {
   return panel(screen, region).getByLabelText(label, { exact: true }).first()
 }
 
-// Picks the option of the Select.
+// Picks the option of the Select, once it is listed: a Custom field's, once the catalogue is read.
 async function pick(screen: Screen, input: ReturnType<typeof select>, option: string) {
   await input.click()
-  await screen.getByRole('option', { name: option }).click()
+  const listed = screen.getByRole('option', { name: option })
+  await expect.element(listed).toBeVisible()
+  await listed.click()
 }
 
 test('switching the Trigger to a date hides the Entry policy, cooldown and key, and saves the date alone', async () => {
@@ -365,4 +368,49 @@ test('a Save stopped on a date Trigger whose panel is closed opens it, showing t
     .element(panel(screen, 'Trigger').getByText('This field is required').first())
     .toBeVisible()
   expect(saved()).toEqual([])
+})
+
+// The server refuses a Custom field the catalogue holds with another type since the editor read
+// it; the refusal names the Step and is placed at its location in the request (ADR 0126).
+test("a refused save shows the error on the Wait until's node and in its properties", async () => {
+  const refusal = `invalid step: step ${stepId(22)} (wait_until): the Custom field "trial_ends_at" is a string, not a datetime`
+  const { screen } = await editing(EVENT, [TAG, ...WAITS.slice(1)])
+  worker.use(
+    handleSiteAutomationsUpdate(() =>
+      problem(422, {
+        title: 'Unprocessable Entity',
+        detail: refusal,
+        errors: { 'steps.steps.1': [refusal] },
+      }),
+    ),
+  )
+
+  await save(screen)
+
+  await expect.element(panel(screen, 'Wait until').getByText(refusal)).toBeVisible()
+  // On the Wait until's node, and in its panel.
+  expect(screen.getByText(refusal).elements()).toHaveLength(2)
+  await expect.element(screen.getByText('Failed to save automation')).not.toBeInTheDocument()
+})
+
+test("a refused save shows the error on the date Trigger's node and in its properties", async () => {
+  const refusal = 'invalid trigger: the Workspace has no Custom field "renews_at"'
+  const { screen } = await editing(
+    { ...DATE_TRIGGER, field: { kind: 'customField', key: 'trial_ends_at' } },
+    [TAG],
+  )
+  worker.use(
+    handleSiteAutomationsUpdate(() =>
+      problem(422, {
+        title: 'Unprocessable Entity',
+        detail: refusal,
+        errors: { trigger: [refusal] },
+      }),
+    ),
+  )
+
+  await save(screen)
+
+  await expect.element(panel(screen, 'Trigger').getByText(refusal)).toBeVisible()
+  expect(screen.getByText(refusal).elements()).toHaveLength(2)
 })

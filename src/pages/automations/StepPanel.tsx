@@ -1,5 +1,6 @@
 import {
   ActionIcon,
+  Alert,
   CloseButton,
   Fieldset,
   Group,
@@ -90,6 +91,7 @@ export function StepPanel({
   selected,
   editable,
   validatorRef,
+  refusal,
   onTrigger,
   onStep,
   forks,
@@ -100,6 +102,8 @@ export function StepPanel({
   selected: string
   editable: boolean
   validatorRef: StepValidator
+  // Why the last Save was refused over what is selected, as the server said it.
+  refusal: string | null
   onTrigger: (patch: Partial<TriggerDraft>) => void
   onStep: (step: EditedStep) => void
   forks: ForkControls
@@ -145,6 +149,11 @@ export function StepPanel({
             <CloseButton aria-label={t(($) => $.automations.closePanel)} onClick={onClose} />
           </Group>
         </Group>
+        {refusal !== null && (
+          <Alert color="red" mb="md">
+            {refusal}
+          </Alert>
+        )}
         <Fieldset disabled={!editable} variant="unstyled" m={0} miw={0}>
           {step === undefined ? (
             <TriggerPanel
