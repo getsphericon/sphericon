@@ -214,7 +214,7 @@ func overCap(req Request, sts frequencycap.Standings, targets []target, now time
 	return capOutcome{}, fmt.Errorf("outbound: no Frequency cap Outcome for kind %q", req.Kind())
 }
 
-// placeFrees is when a send that has waited since since (zero: its wait begins at now) has a place
+// placeFrees is when a send whose wait began at since (zero: it begins at now) has a place
 // at one of targets, each over its cap: the earliest of their release moments, each no later than
 // one period of its cap after the wait began. A moment not after now is the bound reached.
 func placeFrees(sts frequencycap.Standings, targets []target, since, now time.Time) time.Time {
