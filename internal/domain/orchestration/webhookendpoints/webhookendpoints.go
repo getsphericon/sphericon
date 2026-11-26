@@ -153,11 +153,11 @@ func (m *Module) TestSend(ctx context.Context, s *ent.Scoped, id int64, eventTyp
 	rec := &statusRecorder{Doer: m.client}
 	sendErr := webhook.Send(ctx, rec, e.WebhookEndpoint.URL, e.Secret, eventType, deliveryID, body, m.now())
 	var res TestResult
-	var delivery *webhook.DeliveryError
+	delivery, delivered := errors.AsType[*webhook.DeliveryError](sendErr)
 	switch {
 	case sendErr == nil:
 		res = TestResult{Delivered: true, Status: rec.status}
-	case errors.As(sendErr, &delivery):
+	case delivered:
 		res = TestResult{Kind: delivery.Kind, Status: delivery.Status}
 	default:
 		return TestResult{}, sendErr // an unusable secret, not a delivery outcome

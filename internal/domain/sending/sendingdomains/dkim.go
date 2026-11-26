@@ -9,7 +9,6 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"net"
 	"slices"
 	"strings"
 
@@ -115,7 +114,7 @@ func (n *DNS) VerifyDKIM(ctx context.Context, d *ent.SendingDomain) (bool, error
 	// search suffixes, which can turn a SERVFAIL into a misleading "not found".
 	records, err := n.lookup(ctx, host+".")
 	if err != nil {
-		if dnsIsNotFound(err) {
+		if domainname.NotFound(err) {
 			return false, nil
 		}
 		return false, fmt.Errorf("lookup %s: %w", host, err)
@@ -142,9 +141,4 @@ func dkimPublicPart(txt string) string {
 		}
 	}
 	return ""
-}
-
-func dnsIsNotFound(err error) bool {
-	var dnsErr *net.DNSError
-	return errors.As(err, &dnsErr) && dnsErr.IsNotFound
 }

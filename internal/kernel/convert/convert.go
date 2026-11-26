@@ -52,8 +52,7 @@ func Ptr[T any, O getter[T]](o O) *T {
 // PtrVia(o, c.SignupSource).
 func PtrVia[S any, T any, O getter[S]](o O, f func(S) T) *T {
 	if v, ok := o.Get(); ok {
-		t := f(v)
-		return &t
+		return new(f(v))
 	}
 	return nil
 }
@@ -62,8 +61,7 @@ func PtrVia[S any, T any, O getter[S]](o O, f func(S) T) *T {
 // down to *int64, the type ent's Nillable setters take.
 func Int64Ptr[T ~int64, O getter[T]](o O) *int64 {
 	if v, ok := o.Get(); ok {
-		n := int64(v)
-		return &n
+		return new(int64(v))
 	}
 	return nil
 }
@@ -72,8 +70,7 @@ func Int64Ptr[T ~int64, O getter[T]](o O) *int64 {
 // TimeZoneName scalar) down to *string, the type ent's Nillable setters take.
 func StringPtr[T ~string, O getter[T]](o O) *string {
 	if v, ok := o.Get(); ok {
-		s := string(v)
-		return &s
+		return new(string(v))
 	}
 	return nil
 }
@@ -200,8 +197,7 @@ func NilVia[N any, S any, T any, P interface {
 	if v == nil {
 		return Nil[N, T, P](nil)
 	}
-	t := f(*v)
-	return Nil[N, T, P](&t)
+	return Nil[N, T, P](new(f(*v)))
 }
 
 // setter is implemented by the pointer to every ogen Opt*/OptNil*/Nil* value type.
@@ -229,8 +225,7 @@ func OptVia[O any, S any, T any, P setter[O, T]](v *S, f func(S) T) O {
 		var o O
 		return o
 	}
-	t := f(*v)
-	return Opt[O, T, P](&t)
+	return Opt[O, T, P](new(f(*v)))
 }
 
 // OptNonZero is the ogen Opt* or OptNil* value O of v, absent when v is its zero value: an empty
@@ -294,8 +289,7 @@ func Int32Ptr(v *int) *int32 {
 	if v == nil {
 		return nil
 	}
-	n := narrow.Int32(*v)
-	return &n
+	return new(narrow.Int32(*v))
 }
 
 // WholeSeconds is d in whole seconds, nil when there is no duration.
@@ -303,6 +297,5 @@ func WholeSeconds(d *time.Duration) *int64 {
 	if d == nil {
 		return nil
 	}
-	seconds := int64(d.Seconds())
-	return &seconds
+	return new(int64(d.Seconds()))
 }

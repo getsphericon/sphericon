@@ -266,10 +266,6 @@ func NewInternal(cfg *config.Config, tlsAsk http.Handler, limiter *ratelimit.Lim
 	return chi.Chain(recoverer, requestID, accessLog, clientip.New(cfg.TrustedProxyCIDRs).Middleware, limiter.Middleware, middleware.Timeout(requestTimeout), bodyLimit(cfg.BodyLimits), noNUL).Handler(mux), nil
 }
 
-func writeProblem(ctx context.Context, w http.ResponseWriter, status int, detail string) {
-	problem.Write(ctx, w, status, problem.Body(status, detail))
-}
-
 // --- cross-cutting net/http middleware ---
 //
 // chi supplies the chain and the timeout. recoverer and requestID stay ours:

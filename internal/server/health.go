@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"net/http"
 	"time"
+
+	"github.com/getsphericon/sphericon/internal/api/problem"
 )
 
 // healthzHandler is a liveness probe: it returns 200 as long as the process is
@@ -37,7 +39,7 @@ func readyzHandler(db *sql.DB) http.Handler {
 		ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
 		defer cancel()
 		if err := db.PingContext(ctx); err != nil {
-			writeProblem(r.Context(), w, http.StatusServiceUnavailable, "database unreachable")
+			problem.WriteDetail(r.Context(), w, http.StatusServiceUnavailable, "database unreachable")
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")

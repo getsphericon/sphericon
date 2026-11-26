@@ -22,7 +22,7 @@ func TestAnAutomationTriggeredByATelegramMessageEnrollsItsSender(t *testing.T) {
 	bot := env.AcmeTelegram(t)
 	env.BindTelegram(t, bot, fixtures.ContactLiamID, 4101, 1000)
 
-	env.PostTelegramUpdate(t, bot, `{"update_id":1,"message":{"message_id":1,"date":1767225600,"chat":{"id":4101,"type":"private"},"from":{"id":4101,"is_bot":false},"text":"hi"}}`)
+	env.PostTelegramUpdate(t, bot, testhelper.TelegramMessage(1, 4101, "hi"))
 	onlyEnvelope(t, env, systemevent.TelegramReceived)
 	triggers := triggersOn(t, env, systemevent.TelegramReceived)
 	require.Len(t, triggers, 1)

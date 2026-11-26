@@ -94,18 +94,12 @@ func optLock(c Converter, l instancestates.Lock) staffapi.OptStaffInstanceTeleme
 
 // optDefaultSendCap is the default Send cap, absent on an Instance that has no Send caps.
 func optDefaultSendCap(c Converter, d *instancestates.DefaultSendCap) staffapi.OptStaffDefaultSendCap {
-	if d == nil {
-		return staffapi.OptStaffDefaultSendCap{}
-	}
-	return staffapi.NewOptStaffDefaultSendCap(c.DefaultSendCapToResource(*d))
+	return convert.OptVia[staffapi.OptStaffDefaultSendCap](d, c.DefaultSendCapToResource)
 }
 
 // nilMaxPerDay renders a Send cap: null when there is none.
 func nilMaxPerDay(v *int) staffapi.NilMaxPerDay {
-	if v == nil {
-		return staffapi.NilMaxPerDay{Null: true}
-	}
-	return staffapi.NewNilMaxPerDay(staffapi.MaxPerDay(narrow.Int32(*v)))
+	return convert.NilVia[staffapi.NilMaxPerDay](v, func(n int) staffapi.MaxPerDay { return staffapi.MaxPerDay(narrow.Int32(n)) })
 }
 
 // instanceAuditDiff is an entry's stored diff as the contract's object.
@@ -118,8 +112,5 @@ func optDraft(d *string) staffapi.OptLegalDocumentMarkdown {
 }
 
 func optVersion(c Converter, v *signupitems.Version) staffapi.OptStaffLegalDocumentVersion {
-	if v == nil {
-		return staffapi.OptStaffLegalDocumentVersion{}
-	}
-	return staffapi.NewOptStaffLegalDocumentVersion(c.VersionToResource(*v))
+	return convert.OptVia[staffapi.OptStaffLegalDocumentVersion](v, c.VersionToResource)
 }

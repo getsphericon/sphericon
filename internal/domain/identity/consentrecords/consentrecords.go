@@ -140,8 +140,8 @@ func (m *Module) Write(ctx context.Context, tx *ent.Client, userID int64, consen
 	if len(consents.Entries) == 0 {
 		return nil
 	}
-	ip := optional(clientip.FromContext(ctx))
-	userAgent := optional(clientip.UserAgentFromContext(ctx))
+	ip := lo.EmptyableToPtr(clientip.FromContext(ctx))
+	userAgent := lo.EmptyableToPtr(clientip.UserAgentFromContext(ctx))
 	builders := make([]*ent.ConsentRecordCreate, len(consents.Entries))
 	for i, e := range consents.Entries {
 		builders[i] = tx.ConsentRecord.Create().
@@ -153,13 +153,6 @@ func (m *Module) Write(ctx context.Context, tx *ent.Client, userID int64, consen
 			SetNillableUserAgent(userAgent)
 	}
 	return tx.ConsentRecord.CreateBulk(builders...).Exec(ctx)
-}
-
-func optional(s string) *string {
-	if s == "" {
-		return nil
-	}
-	return &s
 }
 
 // Record is a User's current answer to one Sign-up item: its latest Consent record.

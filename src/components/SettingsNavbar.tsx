@@ -14,7 +14,6 @@ import {
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
-import { siteWorkspacesListOptions } from '../generated/site/@tanstack/react-query.gen.ts'
 import { Route as overviewRoute } from '../routes/workspaces/$workspaceId/index.tsx'
 import { Route as apiKeysRoute } from '../routes/workspaces/$workspaceId/settings/api-keys.tsx'
 import { Route as auditLogRoute } from '../routes/workspaces/$workspaceId/settings/audit-log.tsx'
@@ -26,6 +25,7 @@ import { Route as teamRoute } from '../routes/workspaces/$workspaceId/settings/t
 import { Route as trackingRoute } from '../routes/workspaces/$workspaceId/settings/tracking.tsx'
 import { Route as webhooksRoute } from '../routes/workspaces/$workspaceId/settings/webhooks.tsx'
 import { can } from '../utils/permissions.ts'
+import { workspaceOptions } from '../utils/workspace.ts'
 import { NavLinkLink } from './RouterLink.tsx'
 
 // SettingsNavbar is the sidebar of the workspace settings area: a way back to the
@@ -33,8 +33,7 @@ import { NavLinkLink } from './RouterLink.tsx'
 // current only on itself.
 export function SettingsNavbar({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
-  const workspaces = useQuery(siteWorkspacesListOptions())
-  const workspace = workspaces.data?.find((w) => w.id === workspaceId)
+  const { data: workspace } = useQuery(workspaceOptions(workspaceId))
 
   const pages = [
     {

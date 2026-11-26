@@ -294,11 +294,7 @@ type Inputs interface {
 
 // smsConsentIn is the SMS consent a batch item carries, nil when it carries none.
 func smsConsentIn(c Inputs, o externalapi.OptConsentEvidence) *confirmations.Evidence {
-	v, ok := o.Get()
-	if !ok {
-		return nil
-	}
-	return new(c.ConsentEvidence(v))
+	return convert.PtrVia(o, c.ConsentEvidence)
 }
 
 // engagementTrackingIn is the Engagement tracking consent a batch item carries, none when it
@@ -314,11 +310,7 @@ func engagementTrackingIn(c Inputs, o externalapi.OptContactEngagementTrackingIn
 // engagementTrackingObservationIn is the observation of one Destination a batch item carries, nil
 // when it carries none.
 func engagementTrackingObservationIn(c Inputs, o externalapi.OptEngagementTrackingObservationInput) *engagementtracking.Observation {
-	v, ok := o.Get()
-	if !ok {
-		return nil
-	}
-	return new(c.EngagementTrackingObservation(v))
+	return convert.PtrVia(o, c.EngagementTrackingObservation)
 }
 
 // goverter:context backfill
@@ -821,11 +813,7 @@ func broadcastContentPatch(c Inputs, o externalapi.OptBroadcastContentInput) (br
 
 // broadcastChannelPtrIn is the Channel a list is narrowed to: nil for every Channel.
 func broadcastChannelPtrIn(c Inputs, o externalapi.OptBroadcastChannel) *channels.Channel {
-	v, ok := o.Get()
-	if !ok {
-		return nil
-	}
-	return new(c.BroadcastChannel(v))
+	return convert.PtrVia(o, c.BroadcastChannel)
 }
 
 // errUnknownProvider: a config whose kind the contract does not know, which the decoder never

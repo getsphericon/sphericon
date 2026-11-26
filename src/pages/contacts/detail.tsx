@@ -27,7 +27,6 @@ import {
   siteContactsDeleteMutation,
   siteContactsGetOptions,
   siteEventsListOptions,
-  siteWorkspacesListOptions,
   siteConfirmationRequestsCreateMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteContactResource } from '../../generated/site/types.gen.ts'
@@ -45,6 +44,7 @@ import { contactFullName, contactIdentifier, contactName } from '../../utils/con
 import { countryName } from '../../utils/countries.ts'
 import { can } from '../../utils/permissions.ts'
 import { formatPhone } from '../../utils/phone.ts'
+import { workspaceOptions } from '../../utils/workspace.ts'
 import { SmsSection } from './SmsSection.tsx'
 import { TelegramSection } from './TelegramSection.tsx'
 import { TrackingSection } from './TrackingSection.tsx'
@@ -104,8 +104,7 @@ function ContactActions({
   const navigate = useNavigate()
   const confirm = useConfirmation()
   const notify = useNotify()
-  const workspaces = useQuery(siteWorkspacesListOptions())
-  const workspace = workspaces.data?.find((w) => w.id === workspaceId)
+  const { data: workspace } = useQuery(workspaceOptions(workspaceId))
   // Erasure is irreversible, so it is offered only with contacts:erase, and exporting only
   // with contacts:export (the API refuses everyone else with 403).
   const canErase = can(workspace, 'contacts:erase')

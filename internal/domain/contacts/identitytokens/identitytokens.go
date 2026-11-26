@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/identitysecret"
@@ -125,18 +126,11 @@ func (m *Module) Verify(ctx context.Context, s *ent.Scoped, token string) (Proof
 	if c.ExpiresAt.After(now.Add(MaxLifetime + leeway)) {
 		return Proof{}, ErrTokenInvalid
 	}
-	p := Proof{SubjectID: present(c.Subject), Email: present(c.Email), Phone: present(c.Phone)}
+	p := Proof{SubjectID: lo.EmptyableToPtr(c.Subject), Email: lo.EmptyableToPtr(c.Email), Phone: lo.EmptyableToPtr(c.Phone)}
 	if p.SubjectID == nil && p.Email == nil && p.Phone == nil {
 		return Proof{}, ErrTokenInvalid
 	}
 	return p, nil
-}
-
-func present(v string) *string {
-	if v == "" {
-		return nil
-	}
-	return &v
 }
 
 // generate is a new Identity secret: 32 random bytes under a prefix that secret scanners can match.

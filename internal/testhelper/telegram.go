@@ -138,9 +138,7 @@ func (env *TestEnv) BindTelegram(t *testing.T, bot TelegramBot, contactID, userI
 	require.NoError(t, err)
 	u, err := url.Parse(link.URL)
 	require.NoError(t, err)
-	env.PostTelegramUpdate(t, bot, fmt.Sprintf(
-		`{"update_id":%d,"message":{"message_id":%d,"date":1767225600,"chat":{"id":%d,"type":"private"},"from":{"id":%d,"is_bot":false,"first_name":"P"},"text":%q}}`,
-		updateID, updateID, userID, userID, "/start "+u.Query().Get("start")))
+	env.PostTelegramUpdate(t, bot, TelegramMessage(updateID, userID, "/start "+u.Query().Get("start")))
 }
 
 // MakeDefaultTelegram makes the bot the default Telegram Integration of Acme: the one a merge tag
@@ -155,7 +153,21 @@ func (env *TestEnv) StartTelegram(t *testing.T, bot TelegramBot, updateID, from 
 	t.Helper()
 	u, err := url.Parse(link)
 	require.NoError(t, err)
-	update := fmt.Sprintf(`{"update_id":%d,"message":{"message_id":%d,"date":1767225600,"chat":{"id":%d,"type":"private"},"from":{"id":%d,"is_bot":false,"first_name":"P"},"text":%q}}`,
-		updateID, updateID, from, from, "/start "+u.Query().Get("start"))
+	update := TelegramMessage(updateID, from, "/start "+u.Query().Get("start"))
 	require.Equal(t, http.StatusOK, env.PostTelegramUpdate(t, bot, update).Code)
 }
+
+// TelegramMessage is the update Telegram posts when person `from` writes text to the bot in their
+// private chat, whose id is theirs; the message id is the update's.
+func TelegramMessage(updateID, from int64, text string) string {
+	return TelegramMessageAt(updateID, from, telegramDate, text)
+}
+
+// TelegramMessageAt is TelegramMessage sent at date (Unix seconds).
+func TelegramMessageAt(updateID, from, date int64, text string) string {
+	return fmt.Sprintf(`{"update_id":%d,"message":{"message_id":%d,"date":%d,"chat":{"id":%d,"type":"private"},"from":{"id":%d,"is_bot":false,"first_name":"P"},"text":%q}}`,
+		updateID, updateID, date, from, from, text)
+}
+
+// telegramDate is the moment of a TelegramMessage: 2026-01-01T00:00:00Z.
+const telegramDate = 1767225600

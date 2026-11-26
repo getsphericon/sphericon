@@ -8,14 +8,12 @@ import { CenteredEmptyState } from '../../components/CenteredEmptyState.tsx'
 import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
 import { TableSkeleton } from '../../components/Skeletons.tsx'
-import {
-  siteCustomFieldsListOptions,
-  siteWorkspacesListOptions,
-} from '../../generated/site/@tanstack/react-query.gen.ts'
+import { siteCustomFieldsListOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteCustomFieldResource } from '../../generated/site/types.gen.ts'
 import { Route as customFieldsRoute } from '../../routes/workspaces/$workspaceId/custom-fields/index.tsx'
 import { can } from '../../utils/permissions.ts'
 import type { FieldColumn } from '../../utils/tableColumns.ts'
+import { workspaceOptions } from '../../utils/workspace.ts'
 import { customFieldEditor } from './customFieldEditor.ts'
 
 // The catalogue is small and the server returns it whole (the segment builder needs all of it),
@@ -24,11 +22,8 @@ import { customFieldEditor } from './customFieldEditor.ts'
 export function CustomFieldsListPage() {
   const { t } = useTranslation()
   const { workspaceId } = customFieldsRoute.useParams()
-  const workspaces = useQuery(siteWorkspacesListOptions())
-  const canManage = can(
-    workspaces.data?.find((w) => w.id === workspaceId),
-    'custom_fields:manage',
-  )
+  const { data: workspace } = useQuery(workspaceOptions(workspaceId))
+  const canManage = can(workspace, 'custom_fields:manage')
 
   return (
     <Stack flex={1}>

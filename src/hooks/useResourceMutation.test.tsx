@@ -29,10 +29,14 @@ function Harness({
   fetches,
   invalidate,
   onDone,
+  refused = false,
+  rereadOnError,
 }: {
   fetches: Fetches
   invalidate?: QueryKey[] | false
   onDone?: () => void
+  refused?: boolean
+  rereadOnError?: boolean
 }) {
   useQuery({ queryKey: segmentsKey, queryFn: fetches.segments })
   useQuery({ queryKey: templatesKey, queryFn: fetches.templates })
@@ -40,9 +44,11 @@ function Harness({
   const save = useResourceMutation({
     mutation: {
       mutationKey: siteSegmentsUpdateMutationKey(),
-      mutationFn: async () => Promise.resolve('saved'),
+      mutationFn: async () =>
+        refused ? Promise.reject(new Error('refused')) : Promise.resolve('saved'),
     },
     ...(invalidate === undefined ? {} : { invalidate }),
+    ...(rereadOnError === undefined ? {} : { rereadOnError }),
     errorTitle: 'Error',
     ...(onDone ? { onDone } : {}),
   })
@@ -99,4 +105,30 @@ test('invalidate false refreshes nothing', async () => {
 
   await expect.poll(() => onDone).toHaveBeenCalledTimes(1)
   expect(fetches.segments).toHaveBeenCalledTimes(1)
+})
+
+test('a refused mutation refreshes nothing', async () => {
+  const fetches = fetchSpies()
+  const screen = await renderWithProviders(<Harness fetches={fetches} refused />)
+  await expect.poll(() => fetches.tags).toHaveBeenCalledTimes(1)
+
+  await screen.getByRole('button', { name: SAVE }).click()
+
+  await expect.element(screen.getByText('Error')).toBeVisible()
+  expect(fetches.segments).toHaveBeenCalledTimes(1)
+})
+
+test('rereadOnError refreshes on a refusal what a success would, and still says why', async () => {
+  const fetches = fetchSpies()
+  const screen = await renderWithProviders(
+    <Harness fetches={fetches} invalidate={[templatesKey]} refused rereadOnError />,
+  )
+  await expect.poll(() => fetches.tags).toHaveBeenCalledTimes(1)
+
+  await screen.getByRole('button', { name: SAVE }).click()
+
+  await expect.poll(() => fetches.segments).toHaveBeenCalledTimes(2)
+  await expect.poll(() => fetches.templates).toHaveBeenCalledTimes(2)
+  expect(fetches.tags).toHaveBeenCalledTimes(1)
+  await expect.element(screen.getByText('Error')).toBeVisible()
 })

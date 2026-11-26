@@ -144,13 +144,13 @@ func requireToken(auth Authenticator, metadataURL string, next http.Handler) htt
 		token, ok := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
 		if !ok || token == "" {
 			challenge(w, "")
-			problem.Write(r.Context(), w, http.StatusUnauthorized, problem.Body(http.StatusUnauthorized, "missing bearer token"))
+			problem.WriteDetail(r.Context(), w, http.StatusUnauthorized, "missing bearer token")
 			return
 		}
 		if _, err := auth.Authenticate(r.Context(), externalapi.BearerAuth{Token: token}); err != nil {
 			if errors.Is(err, apiauth.ErrUnauthorized) {
 				challenge(w, `error="invalid_token"`)
-				problem.Write(r.Context(), w, http.StatusUnauthorized, problem.Body(http.StatusUnauthorized, "invalid bearer token"))
+				problem.WriteDetail(r.Context(), w, http.StatusUnauthorized, "invalid bearer token")
 				return
 			}
 			// A rate limit, or a valid credential refused for a reason of its own (a Connection

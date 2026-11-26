@@ -118,15 +118,7 @@ func runJob(t *testing.T, env *testhelper.TestEnv, cfg *config.Config, srvAddr, 
 	require.NoError(t, err)
 	_, err = inserter.Insert(ctx, jobs.SendNoticeArgs{EventID: "label-policy", To: contactEmail, Subject: "Policy", Text: "Policy"}, nil)
 	require.NoError(t, err)
-	require.Eventually(t, func() bool {
-		msgs := mail.Messages()
-		for i := range msgs {
-			if msgs[i].To == contactEmail {
-				return true
-			}
-		}
-		return false
-	}, 10*time.Second, 50*time.Millisecond)
+	require.Eventually(t, func() bool { return len(mail.To(contactEmail)) > 0 }, 10*time.Second, 50*time.Millisecond)
 	require.Eventually(t, func() bool { return exposes(t, srvAddr, "river_") }, 10*time.Second, 50*time.Millisecond)
 
 	// A domain event's job, which carries the event's Workspace and Contact address in its args. A

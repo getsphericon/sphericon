@@ -3,11 +3,11 @@ import { useQuery } from '@tanstack/react-query'
 import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { siteWorkspacesListOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SmsBroadcastContent } from '../../generated/site/types.gen.ts'
 import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
 import { CONTACT_TAGS, UNSUBSCRIBE_URL_TAG } from '../../utils/mergeTags.ts'
 import { measureSms, smsLimitOf, tooLongForSms } from '../../utils/smsParts.ts'
+import { workspaceOptions } from '../../utils/workspace.ts'
 
 // SmsContent is an SMS's Message content: the text, and whether its links go out as short tracked
 // links (ADR 0083).
@@ -32,8 +32,7 @@ const NO_TAGS: readonly string[] = []
 export function SmsContentEditor({ value, onChange, extraTags = NO_TAGS }: Props) {
   const { t } = useTranslation()
   const { workspaceId } = workspaceRoute.useParams()
-  const workspacesQuery = useQuery(siteWorkspacesListOptions())
-  const workspace = workspacesQuery.data?.find((w) => w.id === workspaceId)
+  const { data: workspace } = useQuery(workspaceOptions(workspaceId))
   const linkLength = workspace?.shortLinkLength ?? 0
   const field = useRef<HTMLTextAreaElement>(null)
   const tags = [...CONTACT_TAGS, ...extraTags, UNSUBSCRIBE_URL_TAG]

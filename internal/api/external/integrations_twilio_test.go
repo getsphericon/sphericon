@@ -60,8 +60,9 @@ func TestExternalTwilioIntegrationLifecycle(t *testing.T) {
 	assert.Equal(t, key.SID, cfg.ApiKeySid.Value)
 	assert.Equal(t, externalapi.SmsFromKindNumber, cfg.FromKind)
 	assert.JSONEq(t, `"********"`, string(read.Params["auth_token"]))
-	assert.NotContains(t, readBody(t, read), key.Secret)
-	assert.NotContains(t, readBody(t, read), account.AuthToken)
+	written := testhelper.JSONOf(t, read)
+	assert.NotContains(t, written, key.Secret)
+	assert.NotContains(t, written, account.AuthToken)
 
 	rotated, err := c.IntegrationsUpdate(t.Context(), &externalapi.UpdateIntegrationInput{Revision: externalapi.Revision(env.IntegrationRevision(t.Context(), t, int64(row.ID))), Params: authToken("rotatedauthtoken")},
 		externalapi.IntegrationsUpdateParams{ID: row.ID})
@@ -71,12 +72,4 @@ func TestExternalTwilioIntegrationLifecycle(t *testing.T) {
 
 	err = c.IntegrationsDelete(t.Context(), externalapi.IntegrationsDeleteParams{ID: row.ID})
 	require.NoError(t, err)
-}
-
-// readBody is the resource as the API writes it.
-func readBody(t *testing.T, r *externalapi.IntegrationResource) string {
-	t.Helper()
-	b, err := r.MarshalJSON()
-	require.NoError(t, err)
-	return string(b)
 }

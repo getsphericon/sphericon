@@ -18,13 +18,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// startUpdate is the update Telegram posts when person `from` presses Start on a link: a private
-// chat whose id is the user's.
-func startUpdate(updateID, from int64, text string) string {
-	return fmt.Sprintf(`{"update_id":%d,"message":{"message_id":%d,"date":1767225600,"chat":{"id":%d,"type":"private"},"from":{"id":%d,"is_bot":false,"first_name":"P"},"text":%q}}`,
-		updateID, updateID, from, from, text)
-}
-
 // issue issues a start link for the Contact on the bot (the default bot when it is nil) and
 // returns the token in it and the resource.
 func issue(t *testing.T, c *externalapi.Client, contactID int64, integrationID *int64) (string, *externalapi.TelegramStartLinkResource) {
@@ -62,8 +55,8 @@ func TestAStartLinkBindsTheChatToItsContact(t *testing.T) {
 	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 
 	token, link := issue(t, c, fixtures.ContactBobID, onBot(bot))
-	posted := env.PostTelegramUpdate(t, bot, startUpdate(900, 555, "/start "+token))
-	redelivered := env.PostTelegramUpdate(t, bot, startUpdate(900, 555, "/start "+token))
+	posted := env.PostTelegramUpdate(t, bot, testhelper.TelegramMessage(900, 555, "/start "+token))
+	redelivered := env.PostTelegramUpdate(t, bot, testhelper.TelegramMessage(900, 555, "/start "+token))
 
 	assert.Equal(t, "https://t.me/"+testhelper.AcmeTelegramUsername+"?start="+token, link.URL)
 	assert.Regexp(t, `^[A-Za-z0-9_-]{1,64}$`, token)
@@ -96,7 +89,7 @@ func TestAStartLinkLapsesAfterThirtyDays(t *testing.T) {
 	assert.WithinDuration(t, now.Add(30*24*time.Hour), time.Time(link.ExpiresAt), time.Second)
 
 	now = now.Add(30*24*time.Hour + time.Minute)
-	env.PostTelegramUpdate(t, bot, startUpdate(901, 556, "/start "+token))
+	env.PostTelegramUpdate(t, bot, testhelper.TelegramMessage(901, 556, "/start "+token))
 
 	assert.Empty(t, bindingsOf(t, env, "556"))
 	assert.Zero(t, env.QueuedCount(t, systemevent.TelegramBound, nil))
@@ -108,8 +101,8 @@ func TestAStartLinkWorksOnce(t *testing.T) {
 	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 	token, _ := issue(t, c, fixtures.ContactBobID, onBot(bot))
 
-	env.PostTelegramUpdate(t, bot, startUpdate(902, 557, "/start "+token))
-	env.PostTelegramUpdate(t, bot, startUpdate(903, 558, "/start "+token))
+	env.PostTelegramUpdate(t, bot, testhelper.TelegramMessage(902, 557, "/start "+token))
+	env.PostTelegramUpdate(t, bot, testhelper.TelegramMessage(903, 558, "/start "+token))
 
 	assert.Empty(t, bindingsOf(t, env, "558"), "the second chat to use the token binds nothing")
 	assert.Equal(t, 1, env.QueuedCount(t, systemevent.TelegramBound, nil))
@@ -123,7 +116,7 @@ func TestAnotherBotsStartLinkBindsNothing(t *testing.T) {
 	firstID := int64(first.Integration.ID)
 	token, _ := issue(t, c, fixtures.ContactBobID, &firstID)
 
-	env.PostTelegramUpdate(t, second, startUpdate(904, 559, "/start "+token))
+	env.PostTelegramUpdate(t, second, testhelper.TelegramMessage(904, 559, "/start "+token))
 
 	assert.Empty(t, bindingsOf(t, env, "559"))
 	assert.Zero(t, env.QueuedCount(t, systemevent.TelegramBound, nil))
@@ -133,8 +126,8 @@ func TestABareStartBindsNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 	bot := env.AcmeTelegram(t)
 
-	env.PostTelegramUpdate(t, bot, startUpdate(905, 560, "/start"))
-	env.PostTelegramUpdate(t, bot, startUpdate(906, 560, "/start not-a-token"))
+	env.PostTelegramUpdate(t, bot, testhelper.TelegramMessage(905, 560, "/start"))
+	env.PostTelegramUpdate(t, bot, testhelper.TelegramMessage(906, 560, "/start not-a-token"))
 
 	assert.Empty(t, bindingsOf(t, env, "560"))
 	assert.Zero(t, env.QueuedCount(t, systemevent.TelegramBound, nil))
@@ -161,8 +154,8 @@ func TestAChatThatStartsWithAnotherContactsTokenMovesToThatContact(t *testing.T)
 	bobs, _ := issue(t, c, fixtures.ContactBobID, onBot(bot))
 	carols, _ := issue(t, c, fixtures.ContactCarolID, onBot(bot))
 
-	env.PostTelegramUpdate(t, bot, startUpdate(908, 562, "/start "+bobs))
-	env.PostTelegramUpdate(t, bot, startUpdate(909, 562, "/start "+carols))
+	env.PostTelegramUpdate(t, bot, testhelper.TelegramMessage(908, 562, "/start "+bobs))
+	env.PostTelegramUpdate(t, bot, testhelper.TelegramMessage(909, 562, "/start "+carols))
 
 	assert.Equal(t, []string{fmt.Sprintf("contact:%d", fixtures.ContactCarolID)}, bindingsOf(t, env, "562"))
 	byBob := map[string]any{"contactId": fixtures.ContactBobID}

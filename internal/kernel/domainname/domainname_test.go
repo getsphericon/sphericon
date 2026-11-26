@@ -1,6 +1,9 @@
 package domainname_test
 
 import (
+	"errors"
+	"fmt"
+	"net"
 	"regexp"
 	"strings"
 	"testing"
@@ -41,4 +44,25 @@ func TestNormalizeExamples(t *testing.T) {
 		_, ok := domainname.Normalize(raw)
 		assert.False(t, ok, raw)
 	}
+}
+
+// A missing record is an answer, wrapped or not; a resolver that timed out or failed gave none.
+func TestNotFoundIsOnlyADefiniteAnswer(t *testing.T) {
+	missing := &net.DNSError{Err: "no such host", Name: "example.com", IsNotFound: true}
+	wrapped := fmt.Errorf("lookup: %w", missing)
+	timedOut := &net.DNSError{Err: "i/o timeout", Name: "example.com", IsNotFound: true, IsTimeout: true}
+	failed := &net.DNSError{Err: "server misbehaving", Name: "example.com", IsTemporary: true}
+	other := errors.New("refused")
+
+	answers := map[string]bool{
+		"missing":   domainname.NotFound(missing),
+		"wrapped":   domainname.NotFound(wrapped),
+		"timed out": domainname.NotFound(timedOut),
+		"failed":    domainname.NotFound(failed),
+		"other":     domainname.NotFound(other),
+		"no error":  domainname.NotFound(nil),
+	}
+
+	want := map[string]bool{"missing": true, "wrapped": true, "timed out": false, "failed": false, "other": false, "no error": false}
+	assert.Equal(t, want, answers)
 }

@@ -25,9 +25,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"math"
 	"reflect"
-	"sort"
+	"slices"
 
 	"github.com/osteele/liquid/expressions"
 	"github.com/osteele/liquid/render"
@@ -376,11 +377,7 @@ func makeIterator(value any) iterable {
 
 // keysOf iterates a map of the bindings as the library iterates one: by its pairs, in key order.
 func keysOf(m map[string]any) iterable {
-	keys := make([]string, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
+	keys := slices.Sorted(maps.Keys(m))
 	pairs := make([][]any, len(keys))
 	for i, k := range keys {
 		pairs[i] = []any{k, m[k]}

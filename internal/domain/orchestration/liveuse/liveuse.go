@@ -119,9 +119,7 @@ func (e *Error) Error() string {
 
 // As reports the refusal an error carries, if it is one.
 func As(err error) (*Error, bool) {
-	var e *Error
-	ok := errors.As(err, &e)
-	return e, ok
+	return errors.AsType[*Error](err)
 }
 
 // Send is one send of Live use (ADR 0099): who sends, on which Channel, and the route it takes.

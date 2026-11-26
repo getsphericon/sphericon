@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/rulefiring"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
@@ -41,17 +40,6 @@ func fireAndRun(t *testing.T, env *testhelper.TestEnv, contactID int64, action, 
 	return env.DB.RuleFiring.GetX(ctx, fired[0])
 }
 
-func tagsOf(t *testing.T, env *testhelper.TestEnv, contactID int64) []string {
-	t.Helper()
-	names, err := env.DB.Tag.Query().
-		Where(tag.HasContactsWith(contact.ID(contactID))).
-		Order(ent.Asc(tag.FieldName)).
-		Select(tag.FieldName).
-		Strings(context.Background())
-	require.NoError(t, err)
-	return names
-}
-
 func resultsOf(t *testing.T, f *ent.RuleFiring) []rules.Result {
 	t.Helper()
 	results, err := rules.DecodeResults(f.Results)
@@ -64,7 +52,7 @@ func TestRuleActionAppliesATag(t *testing.T) {
 
 	f := runFiring(t, env, fixtures.RuleFiringPendingID)
 
-	assert.Equal(t, []string{"rule-clicked"}, tagsOf(t, env, fixtures.ContactBobID))
+	assert.Equal(t, []string{"rule-clicked"}, tagNames(t, env, fixtures.ContactBobID))
 	assert.Equal(t, []rules.Result{{Type: ruleaction.ApplyTag, Status: rules.Succeeded}}, resultsOf(t, f))
 	assert.NotNil(t, f.CompletedAt)
 }
@@ -75,7 +63,7 @@ func TestRuleActionsRunInOrder(t *testing.T) {
 	// RuleMultiTrigger applies rule-multi, then removes vip: Alice starts with vip and newsletter.
 	f := runFiring(t, env, fixtures.RuleFiringMultiPendingID)
 
-	assert.Equal(t, []string{"newsletter", "rule-multi"}, tagsOf(t, env, fixtures.ContactAliceID))
+	assert.Equal(t, []string{"newsletter", "rule-multi"}, tagNames(t, env, fixtures.ContactAliceID))
 	assert.Equal(t, []rules.Result{
 		{Type: ruleaction.ApplyTag, Status: rules.Succeeded},
 		{Type: ruleaction.RemoveTag, Status: rules.Succeeded},
@@ -87,7 +75,7 @@ func TestOneFailedRuleActionDoesNotStopTheNext(t *testing.T) {
 
 	f := runFiring(t, env, fixtures.RuleFiringFailThenTagPendingID)
 
-	assert.Equal(t, []string{"rule-after-failure"}, tagsOf(t, env, fixtures.ContactBobID))
+	assert.Equal(t, []string{"rule-after-failure"}, tagNames(t, env, fixtures.ContactBobID))
 	results := resultsOf(t, f)
 	require.Len(t, results, 2)
 	assert.Equal(t, rules.Failed, results[0].Status)
@@ -106,7 +94,7 @@ func TestRunningAFinishedFiringAgainChangesNothing(t *testing.T) {
 	err := rules.New(env.Cipher, env.Bus, nil, time.Now).RunActions(ctx, s, f.ID, ruleRunners(env))
 
 	require.NoError(t, err)
-	assert.Empty(t, tagsOf(t, env, fixtures.ContactBobID), "the Action did not run a second time")
+	assert.Empty(t, tagNames(t, env, fixtures.ContactBobID), "the Action did not run a second time")
 	assert.Len(t, resultsOf(t, env.DB.RuleFiring.GetX(ctx, f.ID)), 1)
 }
 

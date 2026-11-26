@@ -20,7 +20,7 @@ func TestAFiringRunsTheLiveVersionNotTheDraft(t *testing.T) {
 
 	fireAndRun(t, env, fixtures.ContactBobID, "rule_click", "evt-live")
 
-	assert.Equal(t, []string{"rule-clicked"}, tagsOf(t, env, fixtures.ContactBobID))
+	assert.Equal(t, []string{"rule-clicked"}, tagNames(t, env, fixtures.ContactBobID))
 }
 
 func TestAfterPublishTheNextFiringRunsTheNewVersion(t *testing.T) {
@@ -30,7 +30,7 @@ func TestAfterPublishTheNextFiringRunsTheNewVersion(t *testing.T) {
 
 	f := fireAndRun(t, env, fixtures.ContactBobID, "rule_click", "evt-published")
 
-	assert.Equal(t, []string{"rule-clicked-v2"}, tagsOf(t, env, fixtures.ContactBobID))
+	assert.Equal(t, []string{"rule-clicked-v2"}, tagNames(t, env, fixtures.ContactBobID))
 	assert.EqualValues(t, fixtures.RuleTagClickedDraftVersionID, f.VersionID)
 }
 
@@ -46,5 +46,5 @@ func TestAFiringInProgressKeepsTheVersionItBeganWith(t *testing.T) {
 
 	require.NoError(t, m.RunActions(ctx, s, fixtures.RuleFiringPendingID, ruleRunners(env)))
 
-	assert.Equal(t, []string{"rule-clicked"}, tagsOf(t, env, fixtures.ContactBobID))
+	assert.Equal(t, []string{"rule-clicked"}, tagNames(t, env, fixtures.ContactBobID))
 }

@@ -23,7 +23,7 @@ func Create(ctx context.Context, dsn string) (string, error) {
 	return admin(dsn, func(adminDB *sql.DB, dbName, ident string) (string, error) {
 		// raw sql: CREATE DATABASE is a server command with an identifier, not a table operation.
 		if _, err := adminDB.ExecContext(ctx, "CREATE DATABASE "+ident); err != nil {
-			if pgErr := new(pgconn.PgError); errors.As(err, &pgErr) && pgErr.Code == pgerrcode.DuplicateDatabase {
+			if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == pgerrcode.DuplicateDatabase {
 				return fmt.Sprintf("database %s already exists, skipping", strconv.Quote(dbName)), nil
 			}
 			return "", fmt.Errorf("create database: %w", err)

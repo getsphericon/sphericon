@@ -115,8 +115,8 @@ func (m *Module) ExecuteHTTP(ctx context.Context, s *ent.Scoped, in ExecuteHTTPI
 // failureDetail is what the Firing records of a failed call: the closed kind, the status and the
 // first 1 KiB of the receiver's answer. It never carries the URL, which is a secret.
 func failureDetail(err error) string {
-	var d *webhook.DeliveryError
-	if !errors.As(err, &d) {
+	d, ok := errors.AsType[*webhook.DeliveryError](err)
+	if !ok {
 		return string(webhook.KindNetwork)
 	}
 	if d.Kind != webhook.KindHTTPStatus {
