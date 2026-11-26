@@ -7,7 +7,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
+	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages/engagement"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
@@ -71,6 +73,17 @@ func refuseTracking(t *testing.T, env *testhelper.TestEnv) {
 	env.PerformEnqueuedJobs(t, jobs.TrackingWithdrawalArgs{})
 }
 
+// dontTrack turns Acme's Engagement tracking default to dont_track, so Alice's address, which
+// granted nothing, is not tracked (ADR 0120).
+func dontTrack(t *testing.T, env *testhelper.TestEnv) {
+	t.Helper()
+	s := env.DB.Scoped(fixtures.AcmeID)
+	w, err := s.Workspace(t.Context())
+	require.NoError(t, err)
+	_, err = testhelper.Module[*workspaces.Module](env).SetEngagementTrackingDefault(t.Context(), s, w.Revision, workspace.EngagementTrackingDefaultDontTrack)
+	require.NoError(t, err)
+}
+
 // sentMessageOf is the message the Enrollment's run of the send Step left.
 func sentMessageOf(t *testing.T, env *testhelper.TestEnv, runID int64, step automationstep.ID) int64 {
 	t.Helper()
@@ -118,20 +131,24 @@ func TestABranchOnTheEnrollmentsOwnEmailReadsItsOpen(t *testing.T) {
 			auto := publishedBranching(t, env, fixtures.AcmeID, email, b.step)
 			runID := enrollIn(t, env, fixtures.AcmeID, auto.ID, fixtures.ContactAliceID)
 			stepper := stepperOf(env, resolvingTo(&fakeSender{}))
-			require.True(t, env.RunNextStep(t, stepper), "the email Step ran")
-			tc.after(t, env, sentMessageOf(t, env, runID, email.ID))
+			ran := env.RunNextStep(t, stepper)
+			require.True(t, ran, "the email Step ran")
+			messageID := sentMessageOf(t, env, runID, email.ID)
+			tc.after(t, env, messageID)
+			want := tc.took(b)
 
 			env.RunQueuedSteps(t, stepper)
 
 			rec := recordOf(t, env, runID, b.step.ID)
-			assert.Equal(t, tc.took(b), tookPath(rec))
+			took := tookPath(rec)
+			assert.Equal(t, want, took)
 			assert.Equal(t, map[automationstep.ID]conditiontree.Truth{b.opened: tc.truth}, rec.PathOutcomes)
 		})
 	}
 }
 
 // The test is unknown, never false, when the message went out untracked (the address refused
-// tracking before the send), when the send Step was skipped (the address is suppressed), and when
+// tracking before the send, or the Workspace tracks no address that granted nothing), when the send Step was skipped (the address is suppressed), and when
 // the Enrollment never passed the send Step (it sits on a path of an earlier Branch the Enrollment
 // did not take).
 func TestABranchOnAMessageTheEnrollmentWasNotSentTrackedTakesUnknown(t *testing.T) {
@@ -141,6 +158,9 @@ func TestABranchOnAMessageTheEnrollmentWasNotSentTrackedTakesUnknown(t *testing.
 		steps  func(email automationstep.Step, b openedBranch) []automationstep.Step
 	}{
 		{"sent untracked", refuseTracking, func(email automationstep.Step, b openedBranch) []automationstep.Step {
+			return []automationstep.Step{email, b.step}
+		}},
+		{"sent untracked by the Workspace's dont_track default", dontTrack, func(email automationstep.Step, b openedBranch) []automationstep.Step {
 			return []automationstep.Step{email, b.step}
 		}},
 		{"skipped", func(t *testing.T, env *testhelper.TestEnv) {
@@ -170,7 +190,8 @@ func TestABranchOnAMessageTheEnrollmentWasNotSentTrackedTakesUnknown(t *testing.
 			env.RunQueuedSteps(t, stepperOf(env, resolvingTo(&fakeSender{})))
 
 			rec := recordOf(t, env, runID, b.step.ID)
-			assert.Equal(t, b.unknown, tookPath(rec))
+			took := tookPath(rec)
+			assert.Equal(t, b.unknown, took)
 			assert.Equal(t, map[automationstep.ID]conditiontree.Truth{b.opened: conditiontree.TruthUnknown}, rec.PathOutcomes)
 		})
 	}

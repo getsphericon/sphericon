@@ -38,7 +38,7 @@ type OutcomesInput struct {
 	ContactID  int64
 	Conditions []conditiontree.Branch
 	Properties map[string]any
-	Messages   map[automationstep.ID]Message
+	Messages   map[automationstep.ID]SentMessage
 }
 
 // Outcomes reads what each Condition of in is for its Contact, on its live data, in the order

@@ -377,7 +377,7 @@ func (m *StepExecution) branch(ctx context.Context, s *ent.Scoped, run *ent.Auto
 // its opened and clicked are its stamps of the first human open and click, which no machine sets
 // (ADR 0053). A Step that sent the Enrollment no message (it was skipped, or the Enrollment never
 // passed it) is absent, and so read unknown. None when the Branch tests no message of its own.
-func messagesOf(ctx context.Context, s *ent.Scoped, runID int64, b automationstep.Branch) (map[automationstep.ID]condition.Message, error) {
+func messagesOf(ctx context.Context, s *ent.Scoped, runID int64, b automationstep.Branch) (map[automationstep.ID]condition.SentMessage, error) {
 	var steps []automationstep.ID
 	for _, c := range b.Conditions() {
 		for _, test := range condition.StepMessageTests(c.Group) {
@@ -387,18 +387,17 @@ func messagesOf(ctx context.Context, s *ent.Scoped, runID int64, b automationste
 	if len(steps) == 0 {
 		return nil, nil
 	}
+	named := lo.Uniq(steps)
 	sent, err := s.OutboundMessage().Query().
-		Where(outboundmessage.AutomationRunID(runID), outboundmessage.AutomationStepIDIn(lo.Uniq(steps)...)).
+		Where(outboundmessage.AutomationRunID(runID), outboundmessage.AutomationStepIDIn(named...)).
 		All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("read the messages the branch tests: %w", err)
 	}
-	out := make(map[automationstep.ID]condition.Message, len(sent))
+	out := make(map[automationstep.ID]condition.SentMessage, len(sent))
 	for _, msg := range sent {
-		if msg.AutomationStepID == nil {
-			continue
-		}
-		out[*msg.AutomationStepID] = condition.Message{
+		// The query names a Step, so every message it reads has one.
+		out[lo.FromPtr(msg.AutomationStepID)] = condition.SentMessage{
 			Tracked: msg.Status == outboundmessage.StatusSent && engagementtracking.IsTracked(msg),
 			Opened:  msg.OpenedAt != nil,
 			Clicked: msg.ClickedAt != nil,

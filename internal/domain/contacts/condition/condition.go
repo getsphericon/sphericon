@@ -197,7 +197,7 @@ type compiler struct {
 	trigger json.RawMessage
 	// messages is what a Branch's tests of the Enrollment's own messages read, by the send Step
 	// that sent each (ADR 0122); nil where none is read, as in a check, which reads them unknown.
-	messages map[automationstep.ID]Message
+	messages map[automationstep.ID]SentMessage
 }
 
 func (c *compiler) group(ctx context.Context, g group) (predicate.Contact, error) {
@@ -453,16 +453,16 @@ func (c *compiler) event(ctx context.Context, l eventCountLeaf) (predicate.Conta
 	}), nil
 }
 
-// Message is what a Branch reads of the message a send Step sent to the Enrollment (ADR 0122):
+// SentMessage is what a Branch reads of the message a send Step sent to the Enrollment (ADR 0122):
 // whether it is tracked (it went out tracked and its tracking was not withdrawn since, ADR 0120),
 // and whether its first human open and click are stamped. A Step that sent the Enrollment no message
 // (it was skipped, or the Enrollment never passed it) has none.
-type Message struct {
+type SentMessage struct {
 	Tracked, Opened, Clicked bool
 }
 
 // stamped reports whether the engagement e is stamped on the message.
-func (m Message) stamped(e conditiontree.Engagement) bool {
+func (m SentMessage) stamped(e conditiontree.Engagement) bool {
 	switch e {
 	case conditiontree.MessageOpened:
 		return m.Opened

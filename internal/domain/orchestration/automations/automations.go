@@ -366,7 +366,8 @@ func checkStepMessages(steps automationstep.Path) error {
 		if !ok {
 			continue
 		}
-		before := lo.KeyBy(automationstep.Before(steps, st.ID), func(s *automationstep.Step) automationstep.ID { return s.ID })
+		passed := automationstep.Before(steps, st.ID)
+		before := lo.KeyBy(passed, func(s *automationstep.Step) automationstep.ID { return s.ID })
 		for i, p := range b.Paths {
 			for _, test := range condition.StepMessageTests(p.Condition.Group) {
 				if why := messageProblem(before[test.Step], test); why != "" {

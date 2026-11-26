@@ -26,7 +26,7 @@ func stepMessage(step automationstep.ID, engagement string) leaf {
 }
 
 // outcomesOf reads the Conditions for Ann, the Enrollment's messages being messages.
-func outcomesOf(t *testing.T, messages map[automationstep.ID]condition.Message, conds ...conditiontree.Branch) []conditiontree.Truth {
+func outcomesOf(t *testing.T, messages map[automationstep.ID]condition.SentMessage, conds ...conditiontree.Branch) []conditiontree.Truth {
 	t.Helper()
 	env := testhelper.Setup(t)
 	got, err := condition.New(time.Now).Outcomes(t.Context(), env.DB.Scoped(fixtures.MassiveID), condition.OutcomesInput{ContactID: ann, Conditions: conds, Messages: messages})
@@ -46,7 +46,7 @@ func TestAStepMessageTestIsKnownOnlyForATrackedMessage(t *testing.T) {
 		branchOf(stepMessage(reminder, "clicked")),
 		branchOf(stepMessage("0b7e3c6a-35a4-4c1e-9a52-9d1f1a7e0003", "opened")),
 	}
-	messages := map[automationstep.ID]condition.Message{
+	messages := map[automationstep.ID]condition.SentMessage{
 		welcome:  {Tracked: true, Opened: true},
 		reminder: {Tracked: false, Opened: true, Clicked: true},
 	}
@@ -69,7 +69,7 @@ func TestAnUnknownStepMessageTestComposesByKleenesRules(t *testing.T) {
 		branchOf(groupOf(conditiontree.Or, false, stepMessage(welcome, "opened"), attribute("first_name", text("eq", "Ann")))),
 		branchOf(stepMessage(welcome, "opened"), attribute("first_name", text("eq", "Ann"))),
 	}
-	messages := map[automationstep.ID]condition.Message{welcome: {Tracked: false}}
+	messages := map[automationstep.ID]condition.SentMessage{welcome: {Tracked: false}}
 
 	got := outcomesOf(t, messages, conds...)
 
