@@ -425,6 +425,8 @@ function SecurityStatus({ codeMutations }: { codeMutations: CodeMutations }) {
 // app, see the Recovery codes once, regenerate them, or disable the factor.
 export function SecurityPage() {
   const { t } = useTranslation()
+  // Why linking a provider account did not succeed, set by the server's callback.
+  const { error: linkError } = securityRoute.useSearch()
   const { codes, dismiss, codeMutations } = useRecoveryCodes()
 
   return (
@@ -455,7 +457,7 @@ export function SecurityPage() {
 
       <Passkeys returnTo={securityRoute.to} />
 
-      <LinkedIdentities returnTo={securityRoute.to} />
+      <LinkedIdentities returnTo={securityRoute.to} linkError={linkError} />
     </Stack>
   )
 }
