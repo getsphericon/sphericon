@@ -79,12 +79,14 @@ type PathFigures struct {
 // StepFigures is what one send Step sent and skipped over every version of the Automation that had
 // it: a skip moves the Enrollment on (ADR 0081), so the report shows each Step's skips, by their
 // Skipped reason, and the active Enrollments whose send there waits now, by the cause of its latest
-// Deferral (ADR 0178). Both name every reason and cause of the closed lists.
+// Deferral (ADR 0178). Both name every reason and cause of the closed lists. SingleZone counts the
+// sent messages a Sending window judged by a single zone (ADR 0134).
 type StepFigures struct {
 	StepID          automationstep.ID
 	Sent, Skipped   int
 	SkippedByReason []skipreason.Count
 	WaitingByCause  []deferralcause.Count
+	SingleZone      int
 }
 
 // VersionStepFigures is StepFigures for one send Step of one version; Version is the version's
@@ -95,6 +97,7 @@ type VersionStepFigures struct {
 	Sent, Skipped   int
 	SkippedByReason []skipreason.Count
 	WaitingByCause  []deferralcause.Count
+	SingleZone      int
 }
 
 // ReportOf counts, leaving out machine engagement (ADR 0053), the `email.opened` Events and the click Events
@@ -239,18 +242,20 @@ type versionStep struct {
 	stepID    automationstep.ID
 }
 
-// sentSkipped is what a send Step sent and skipped, its skips by reason, and the active Enrollments
-// whose send waits there now by cause.
+// sentSkipped is what a send Step sent and skipped, its skips by reason, the active Enrollments
+// whose send waits there now by cause, and the sent messages a Sending window judged by a single
+// zone.
 type sentSkipped struct {
-	sent, skipped int
-	skippedBy     map[skipreason.Reason]int
-	waiting       map[deferralcause.Cause]int
+	sent, skipped, singleZone int
+	skippedBy                 map[skipreason.Reason]int
+	waiting                   map[deferralcause.Cause]int
 }
 
 // add adds o's counts to c's.
 func (c *sentSkipped) add(o *sentSkipped) {
 	c.sent += o.sent
 	c.skipped += o.skipped
+	c.singleZone += o.singleZone
 	for r, n := range o.skippedBy {
 		c.skip(r, n)
 	}
@@ -288,7 +293,7 @@ func addPruned(ctx context.Context, s *ent.Scoped, id int64, report *Report, sen
 		report.Complained += f.Complained
 		report.Captured += f.Captured
 		c := countsOf(sent, versionStep{versionID: f.VersionID, stepID: f.StepID})
-		c.add(&sentSkipped{sent: f.Sent, skipped: f.Skipped, skippedBy: map[skipreason.Reason]int{
+		c.add(&sentSkipped{sent: f.Sent, skipped: f.Skipped, singleZone: f.SingleZone, skippedBy: map[skipreason.Reason]int{
 			skipreason.Suppressed:             f.SkippedSuppressed,
 			skipreason.UnsubscribedEverything: f.SkippedUnsubscribedEverything,
 			skipreason.UnsubscribedSource:     f.SkippedUnsubscribedSource,
@@ -321,6 +326,7 @@ func sentByStep(ctx context.Context, s *ent.Scoped, id int64) (map[versionStep]*
 		Status    outboundmessage.Status `json:"status"`
 		Reason    *skipreason.Reason     `json:"skipped_reason"`
 		Count     int                    `json:"count"`
+		Single    int                    `json:"single_zone"`
 	}
 	err := s.OutboundMessage().Query().
 		Where(
@@ -328,7 +334,7 @@ func sentByStep(ctx context.Context, s *ent.Scoped, id int64) (map[versionStep]*
 			outboundmessage.StatusIn(outboundmessage.StatusSent, outboundmessage.StatusSkipped),
 		).
 		GroupBy(outboundmessage.FieldAutomationVersionID, outboundmessage.FieldAutomationStepID, outboundmessage.FieldStatus, outboundmessage.FieldSkippedReason).
-		Aggregate(ent.Count()).
+		Aggregate(ent.Count(), aggregates.CountTrue(outboundmessage.FieldWindowSingleZone, "single_zone")).
 		Scan(ctx, &rows)
 	if err != nil {
 		return nil, err
@@ -338,6 +344,7 @@ func sentByStep(ctx context.Context, s *ent.Scoped, id int64) (map[versionStep]*
 		c := countsOf(sent, versionStep{versionID: r.VersionID, stepID: r.StepID})
 		if r.Status == outboundmessage.StatusSent {
 			c.sent += r.Count
+			c.singleZone += r.Single
 			continue
 		}
 		c.skipped += r.Count
@@ -399,7 +406,7 @@ func stepFiguresOf(ctx context.Context, s *ent.Scoped, id int64, sent map[versio
 		for k, c := range sent {
 			if k.versionID == v.ID {
 				figures = append(figures, VersionStepFigures{
-					Version: v.Version, StepID: k.stepID, Sent: c.sent, Skipped: c.skipped,
+					Version: v.Version, StepID: k.stepID, Sent: c.sent, Skipped: c.skipped, SingleZone: c.singleZone,
 					SkippedByReason: skipreason.Counts(c.skippedBy), WaitingByCause: deferralcause.Counts(c.waiting),
 				})
 			}
@@ -427,7 +434,7 @@ func stepFiguresOf(ctx context.Context, s *ent.Scoped, id int64, sent map[versio
 	report.Steps = lo.Map(order, func(stepID automationstep.ID, _ int) StepFigures {
 		sum := sums[stepID]
 		return StepFigures{
-			StepID: stepID, Sent: sum.sent, Skipped: sum.skipped,
+			StepID: stepID, Sent: sum.sent, Skipped: sum.skipped, SingleZone: sum.singleZone,
 			SkippedByReason: skipreason.Counts(sum.skippedBy), WaitingByCause: deferralcause.Counts(sum.waiting),
 		}
 	})

@@ -291,6 +291,20 @@ func (_u *OutboundMessageUpdate) ClearDeferralCause() *OutboundMessageUpdate {
 	return _u
 }
 
+// SetWindowSingleZone sets the "window_single_zone" field.
+func (_u *OutboundMessageUpdate) SetWindowSingleZone(v bool) *OutboundMessageUpdate {
+	_u.mutation.SetWindowSingleZone(v)
+	return _u
+}
+
+// SetNillableWindowSingleZone sets the "window_single_zone" field if the given value is not nil.
+func (_u *OutboundMessageUpdate) SetNillableWindowSingleZone(v *bool) *OutboundMessageUpdate {
+	if v != nil {
+		_u.SetWindowSingleZone(*v)
+	}
+	return _u
+}
+
 // SetClaimedAt sets the "claimed_at" field.
 func (_u *OutboundMessageUpdate) SetClaimedAt(v time.Time) *OutboundMessageUpdate {
 	_u.mutation.SetClaimedAt(v)
@@ -1059,6 +1073,9 @@ func (_u *OutboundMessageUpdate) sqlSave(ctx context.Context) (_node int, err er
 	if _u.mutation.DeferralCauseCleared() {
 		_spec.ClearField(outboundmessage.FieldDeferralCause, field.TypeEnum)
 	}
+	if value, ok := _u.mutation.WindowSingleZone(); ok {
+		_spec.SetField(outboundmessage.FieldWindowSingleZone, field.TypeBool, value)
+	}
 	if value, ok := _u.mutation.ClaimedAt(); ok {
 		_spec.SetField(outboundmessage.FieldClaimedAt, field.TypeTime, value)
 	}
@@ -1765,6 +1782,20 @@ func (_u *OutboundMessageUpdateOne) SetNillableDeferralCause(v *deferralcause.Ca
 // ClearDeferralCause clears the value of the "deferral_cause" field.
 func (_u *OutboundMessageUpdateOne) ClearDeferralCause() *OutboundMessageUpdateOne {
 	_u.mutation.ClearDeferralCause()
+	return _u
+}
+
+// SetWindowSingleZone sets the "window_single_zone" field.
+func (_u *OutboundMessageUpdateOne) SetWindowSingleZone(v bool) *OutboundMessageUpdateOne {
+	_u.mutation.SetWindowSingleZone(v)
+	return _u
+}
+
+// SetNillableWindowSingleZone sets the "window_single_zone" field if the given value is not nil.
+func (_u *OutboundMessageUpdateOne) SetNillableWindowSingleZone(v *bool) *OutboundMessageUpdateOne {
+	if v != nil {
+		_u.SetWindowSingleZone(*v)
+	}
 	return _u
 }
 
@@ -2565,6 +2596,9 @@ func (_u *OutboundMessageUpdateOne) sqlSave(ctx context.Context) (_node *Outboun
 	}
 	if _u.mutation.DeferralCauseCleared() {
 		_spec.ClearField(outboundmessage.FieldDeferralCause, field.TypeEnum)
+	}
+	if value, ok := _u.mutation.WindowSingleZone(); ok {
+		_spec.SetField(outboundmessage.FieldWindowSingleZone, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.ClaimedAt(); ok {
 		_spec.SetField(outboundmessage.FieldClaimedAt, field.TypeTime, value)

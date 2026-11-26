@@ -379,6 +379,7 @@ type Converter interface {
 	// goverter:map Figures.Complained ComplainedCount
 	// goverter:map Figures.Captured CapturedCount
 	// goverter:map Figures.Untracked UntrackedCount
+	// goverter:map Figures.SingleZone SingleZoneCount
 	// goverter:map Figures.OpenRate OpenRate
 	// goverter:map Figures.ClickRate ClickRate
 	// goverter:map Figures.SkippedByReason SkippedByReason

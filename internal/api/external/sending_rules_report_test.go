@@ -100,3 +100,20 @@ func unfencedStepper(env *testhelper.TestEnv) *automations.StepExecution {
 	}
 	return automations.NewStepExecution(env.Bus, env.OutboundModule(), testhelper.Module[*contacts.Module](env), unfenced, env.Cipher, nil, time.Now)
 }
+
+// An SMS Broadcast's report counts the sends a Sending window judged by a single zone (ADR 0134):
+// the Spring sale's one text went to a Los Angeles number, in one zone. An email Broadcast has no
+// window and no such count.
+func TestExternalBroadcastReportCountsTheSendsJudgedByASingleZone(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	c := env.ExternalScoped(t, apitokens.ScopeBroadcastsRead)
+
+	sms, err := c.BroadcastsReport(ctx, externalapi.BroadcastsReportParams{ID: entityIDString(fixtures.BroadcastSmsSentID)})
+	require.NoError(t, err)
+	email, err := c.BroadcastsReport(ctx, externalapi.BroadcastsReportParams{ID: entityIDString(fixtures.BroadcastSendingID)})
+	require.NoError(t, err)
+
+	assert.Equal(t, externalapi.NewNilInt32(1), sms.SingleZoneCount)
+	assert.True(t, email.SingleZoneCount.Null)
+}

@@ -97,5 +97,6 @@ func TestExternalWorkspaceCarriesItsSendingRules(t *testing.T) {
 	assert.Equal(t, externalapi.SendingWindowChannelSMS, window.Channel)
 	assert.True(t, window.Country.Null)
 	assert.Len(t, window.Hours, 7)
-	assert.Equal(t, externalapi.SendingWindowHours{Day: externalapi.WeekdayMonday, OpensAt: 480, ClosesAt: 1200}, window.Hours[0])
+	assert.Equal(t, externalapi.SendingWindowHours{Day: externalapi.WeekdayMonday, OpensAt: 0, ClosesAt: 1440}, window.Hours[0],
+		"Acme's window in the fixtures is open all day")
 }

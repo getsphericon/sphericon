@@ -11,6 +11,10 @@
 //   - Send-eligibility of each target, fail-closed: a target it forbids is dropped, and when none is
 //     left the send is Skipped (final for that destination), recorded as a decided message under
 //     the Request's idempotency key with no claim taken first;
+//   - the Sending window of a marketing text (sendingwindow, ADR 0134): outside it the send is a
+//     Deferral until it opens in every zone the recipient may be in, recording nothing, and when no
+//     moment of the week is open in all of them it is Skipped with no_local_time, recorded as a
+//     decided message;
 //   - claim: the Outbound message row is taken before the provider is called, under
 //     the Request's idempotency key, with a lease against racing retries; a new claim of a
 //     marketing message is checked against the Frequency cap of each target and written with its
@@ -59,6 +63,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
+	"github.com/getsphericon/sphericon/internal/domain/sending/sendingwindow"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
@@ -294,6 +299,8 @@ type Module struct {
 	consents *engagementtracking.Module
 	// caps holds the Destination locks of a claim and its count (ADR 0178).
 	caps *frequencycap.Module
+	// windows reads the Sending window of a marketing text (stateless, built by New).
+	windows *sendingwindow.Module
 }
 
 // TrackingHosts names the host a Workspace's links are built on: its current Tracking domain
@@ -382,6 +389,7 @@ func New(bus *events.Bus, hs *holds.Holds, senders Senders, tracker *messagetoke
 		buckets: providerlimit.NewBuckets(bus.WithinAuditTx, now), limits: mods.Limits,
 		standing: mods.Standing, chats: mods.Chats,
 		eligibility: eligibility.New(), contacts: mods.Contacts, consents: mods.Consents, caps: mods.Caps,
+		windows: sendingwindow.New(),
 	}
 	m.channels = map[channels.Channel]channel{channels.Email: emailChannel{m: m}, channels.Telegram: telegramChannel{m: m}, channels.SMS: smsChannel{m: m}}
 	return m
@@ -447,6 +455,10 @@ type Request struct {
 	// digest is what a Transactional request with the caller's key asked for (requestDigest); ""
 	// for every other send. Only Transactional sets it.
 	digest string
+
+	// window is what the Sending window said of the send at this attempt, which its message keeps
+	// (whether a single zone judged it). Only Send sets it, once it has read the window.
+	window sendingwindow.Judgement
 }
 
 // Kind is the surface that asked for the send: its Ref's.
@@ -561,10 +573,15 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 		return m.skipUnclaimed(ctx, s, req, dest, g, existing, skip)
 	}
 
-	// The Sending window and the Frequency cap sit here, between Send-eligibility and the claim
-	// (ADR 0178): under the lock of each Destination a cap holds, a target over its cap is dropped and
-	// a new claim is written to the rest with its count; with none left, the send is Skipped, or
-	// an Automation's deferred until a place frees (claimNew, overCap).
+	// The Sending window, after Send-eligibility and before the Frequency cap (ADR 0134, ADR 0178).
+	if stop, err := m.window(ctx, s, &req, dest, g, existing, eligible); stop != nil {
+		return *stop, err
+	}
+
+	// The Frequency cap sits here, before the claim (ADR 0178): under the lock of each Destination a
+	// cap holds, a target over its cap is dropped and a new claim is written to the rest with its
+	// count; with none left, the send is Skipped, or an Automation's deferred until a place frees
+	// (claimNew, overCap).
 	c, replay, err := m.claim(ctx, s, req, dest, g, existing, eligible)
 	if err != nil {
 		return Result{}, err
@@ -645,6 +662,50 @@ func renderedSubject(rendered any) string {
 		return email.Subject
 	}
 	return ""
+}
+
+// window reads the Sending window for req (judgeWindow) and keeps what it said on req, for its
+// message. It is read on every attempt, a claim left behind included, so no text goes out at night.
+// Outside the window the send waits for it to open in every zone the recipient may be in: the
+// Result is a Deferral until then, which writes nothing and leaves any row under the key to the
+// attempt that sends. With no moment of the week open in all of them the Result is a Skipped,
+// recorded as one decided before the claim. A STOP or anything else that came while it waited is
+// read again from the top when it opens, and the Frequency cap only then. The Result is nil when the
+// send goes on, and the zero one with an error.
+func (m *Module) window(ctx context.Context, s *ent.Scoped, req *Request, dest string, g gateResult, existing *ent.OutboundMessage, eligible []target) (*Result, error) {
+	judged, err := m.judgeWindow(ctx, s, *req, eligible)
+	if err != nil {
+		return &Result{}, err
+	}
+	req.window = judged
+	if judged.NoLocalTime() {
+		res, err := m.skipUnclaimed(ctx, s, *req, dest, g, existing, skipreason.NoLocalTime)
+		return &res, err
+	}
+	if !judged.Open {
+		return &Result{Outcome: Deferral, Cause: deferralcause.SendingWindow, Until: judged.Opens}, nil
+	}
+	return nil, nil
+}
+
+// judgeWindow reads the Sending window for req at now (ADR 0134): a message that may wait
+// (recipientLimitsOf) is judged by the window of its Channel that holds its number, the one target a
+// text has, and by the Contact's time zone; a Channel no window holds is open. Any other message is
+// open whatever the hour.
+func (m *Module) judgeWindow(ctx context.Context, s *ent.Scoped, req Request, targets []target) (sendingwindow.Judgement, error) {
+	limits, err := recipientLimitsOf(req.Kind())
+	if err != nil || !limits.waits {
+		return sendingwindow.Judgement{Open: true}, err
+	}
+	rule, err := m.windows.Rule(ctx, s, req.Channel())
+	if err != nil {
+		return sendingwindow.Judgement{}, err
+	}
+	var zone *string
+	if req.Contact != nil {
+		zone = req.Contact.TimeZone
+	}
+	return rule.Judge(targets[0].dest, zone, m.now())
 }
 
 // recipients is the targets of req that Send-eligibility allows, read only: those its Channel

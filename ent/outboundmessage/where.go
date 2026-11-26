@@ -114,6 +114,11 @@ func DeferredSince(v time.Time) predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldEQ(FieldDeferredSince, v))
 }
 
+// WindowSingleZone applies equality check predicate on the "window_single_zone" field. It's identical to WindowSingleZoneEQ.
+func WindowSingleZone(v bool) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldEQ(FieldWindowSingleZone, v))
+}
+
 // ClaimedAt applies equality check predicate on the "claimed_at" field. It's identical to ClaimedAtEQ.
 func ClaimedAt(v time.Time) predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldEQ(FieldClaimedAt, v))
@@ -1013,6 +1018,16 @@ func DeferralCauseIsNil() predicate.OutboundMessage {
 // DeferralCauseNotNil applies the NotNil predicate on the "deferral_cause" field.
 func DeferralCauseNotNil() predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldNotNull(FieldDeferralCause))
+}
+
+// WindowSingleZoneEQ applies the EQ predicate on the "window_single_zone" field.
+func WindowSingleZoneEQ(v bool) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldEQ(FieldWindowSingleZone, v))
+}
+
+// WindowSingleZoneNEQ applies the NEQ predicate on the "window_single_zone" field.
+func WindowSingleZoneNEQ(v bool) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNEQ(FieldWindowSingleZone, v))
 }
 
 // ClaimedAtEQ applies the EQ predicate on the "claimed_at" field.

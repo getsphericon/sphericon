@@ -124,8 +124,9 @@ func TestExternalContactsExportMembersCoverEveryStoredColumn(t *testing.T) {
 		// The rendered subject (#899) is kept for the feeds only: #899 leaves the export as it was.
 		outboundmessage.FieldSubject,
 		// Since when and why a send waited (ADR 0178) is the pace of the Workspace's sending, nothing
-		// about the person, as a recipient's deferral is.
-		outboundmessage.FieldDeferredSince, outboundmessage.FieldDeferralCause)
+		// about the person, as a recipient's deferral is; so is how the Sending window judged it (ADR
+		// 0134), which the number already exported decides.
+		outboundmessage.FieldDeferredSince, outboundmessage.FieldDeferralCause, outboundmessage.FieldWindowSingleZone)
 	covered(reflect.TypeFor[externalapi.ContactExportBroadcastRecipient](), broadcastrecipient.Columns,
 		"workspace_id", "contact_id", "updated_at", "outbound_message_id", "deferred_until", broadcastrecipient.FieldDeferralCause)
 }

@@ -402,6 +402,7 @@ type Converter interface {
 	// goverter:map Complained ComplainedCount
 	// goverter:map Captured CapturedCount
 	// goverter:map Untracked UntrackedCount
+	// goverter:map SingleZone SingleZoneCount
 	BroadcastStatsToResource(source broadcasts.Figures) siteapi.SiteBroadcastStats
 
 	// goverter:map Processed ProcessedCount

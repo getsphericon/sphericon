@@ -137,6 +137,11 @@ func SkippedFrequencyCap(v int) predicate.AutomationFigure {
 	return predicate.AutomationFigure(sql.FieldEQ(FieldSkippedFrequencyCap, v))
 }
 
+// SingleZone applies equality check predicate on the "single_zone" field. It's identical to SingleZoneEQ.
+func SingleZone(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldEQ(FieldSingleZone, v))
+}
+
 // Delivered applies equality check predicate on the "delivered" field. It's identical to DeliveredEQ.
 func Delivered(v int) predicate.AutomationFigure {
 	return predicate.AutomationFigure(sql.FieldEQ(FieldDelivered, v))
@@ -779,6 +784,46 @@ func SkippedFrequencyCapLT(v int) predicate.AutomationFigure {
 // SkippedFrequencyCapLTE applies the LTE predicate on the "skipped_frequency_cap" field.
 func SkippedFrequencyCapLTE(v int) predicate.AutomationFigure {
 	return predicate.AutomationFigure(sql.FieldLTE(FieldSkippedFrequencyCap, v))
+}
+
+// SingleZoneEQ applies the EQ predicate on the "single_zone" field.
+func SingleZoneEQ(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldEQ(FieldSingleZone, v))
+}
+
+// SingleZoneNEQ applies the NEQ predicate on the "single_zone" field.
+func SingleZoneNEQ(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldNEQ(FieldSingleZone, v))
+}
+
+// SingleZoneIn applies the In predicate on the "single_zone" field.
+func SingleZoneIn(vs ...int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldIn(FieldSingleZone, vs...))
+}
+
+// SingleZoneNotIn applies the NotIn predicate on the "single_zone" field.
+func SingleZoneNotIn(vs ...int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldNotIn(FieldSingleZone, vs...))
+}
+
+// SingleZoneGT applies the GT predicate on the "single_zone" field.
+func SingleZoneGT(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldGT(FieldSingleZone, v))
+}
+
+// SingleZoneGTE applies the GTE predicate on the "single_zone" field.
+func SingleZoneGTE(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldGTE(FieldSingleZone, v))
+}
+
+// SingleZoneLT applies the LT predicate on the "single_zone" field.
+func SingleZoneLT(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldLT(FieldSingleZone, v))
+}
+
+// SingleZoneLTE applies the LTE predicate on the "single_zone" field.
+func SingleZoneLTE(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldLTE(FieldSingleZone, v))
 }
 
 // DeliveredEQ applies the EQ predicate on the "delivered" field.

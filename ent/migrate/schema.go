@@ -218,6 +218,7 @@ var (
 		{Name: "skipped_contact_erased", Type: field.TypeInt, Default: 0},
 		{Name: "skipped_no_local_time", Type: field.TypeInt, Default: 0},
 		{Name: "skipped_frequency_cap", Type: field.TypeInt, Default: 0},
+		{Name: "single_zone", Type: field.TypeInt, Default: 0},
 		{Name: "delivered", Type: field.TypeInt, Default: 0},
 		{Name: "bounced", Type: field.TypeInt, Default: 0},
 		{Name: "complained", Type: field.TypeInt, Default: 0},
@@ -234,19 +235,19 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "automation_figures_automations_automation",
-				Columns:    []*schema.Column{AutomationFiguresColumns[18]},
+				Columns:    []*schema.Column{AutomationFiguresColumns[19]},
 				RefColumns: []*schema.Column{AutomationsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "automation_figures_automation_versions_version",
-				Columns:    []*schema.Column{AutomationFiguresColumns[19]},
+				Columns:    []*schema.Column{AutomationFiguresColumns[20]},
 				RefColumns: []*schema.Column{AutomationVersionsColumns[0]},
 				OnDelete:   schema.Restrict,
 			},
 			{
 				Symbol:     "automation_figures_workspaces_automation_figures",
-				Columns:    []*schema.Column{AutomationFiguresColumns[20]},
+				Columns:    []*schema.Column{AutomationFiguresColumns[21]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -255,12 +256,12 @@ var (
 			{
 				Name:    "automation_figures_workspace_automation_version_step",
 				Unique:  true,
-				Columns: []*schema.Column{AutomationFiguresColumns[20], AutomationFiguresColumns[18], AutomationFiguresColumns[19], AutomationFiguresColumns[3]},
+				Columns: []*schema.Column{AutomationFiguresColumns[21], AutomationFiguresColumns[19], AutomationFiguresColumns[20], AutomationFiguresColumns[3]},
 			},
 			{
 				Name:    "automation_figures_workspace_id_version_id",
 				Unique:  false,
-				Columns: []*schema.Column{AutomationFiguresColumns[20], AutomationFiguresColumns[19]},
+				Columns: []*schema.Column{AutomationFiguresColumns[21], AutomationFiguresColumns[20]},
 			},
 		},
 	}
@@ -833,6 +834,7 @@ var (
 		{Name: "skipped_contact_erased", Type: field.TypeInt, Default: 0},
 		{Name: "skipped_no_local_time", Type: field.TypeInt, Default: 0},
 		{Name: "skipped_frequency_cap", Type: field.TypeInt, Default: 0},
+		{Name: "single_zone", Type: field.TypeInt, Default: 0},
 		{Name: "pruned_at", Type: field.TypeTime, Nullable: true},
 		{Name: "broadcast_id", Type: field.TypeInt64},
 		{Name: "workspace_id", Type: field.TypeInt64},
@@ -845,13 +847,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "broadcast_figures_broadcasts_figures",
-				Columns:    []*schema.Column{BroadcastFiguresColumns[27]},
+				Columns:    []*schema.Column{BroadcastFiguresColumns[28]},
 				RefColumns: []*schema.Column{BroadcastsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "broadcast_figures_workspaces_broadcast_figures",
-				Columns:    []*schema.Column{BroadcastFiguresColumns[28]},
+				Columns:    []*schema.Column{BroadcastFiguresColumns[29]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -860,7 +862,7 @@ var (
 			{
 				Name:    "broadcast_figures_workspace_id_broadcast_id",
 				Unique:  true,
-				Columns: []*schema.Column{BroadcastFiguresColumns[28], BroadcastFiguresColumns[27]},
+				Columns: []*schema.Column{BroadcastFiguresColumns[29], BroadcastFiguresColumns[28]},
 			},
 		},
 	}
@@ -2371,6 +2373,7 @@ var (
 		{Name: "failure", Type: field.TypeString, Nullable: true},
 		{Name: "deferred_since", Type: field.TypeTime, Nullable: true},
 		{Name: "deferral_cause", Type: field.TypeEnum, Nullable: true, Enums: []string{"provider_limit", "send_cap", "provider", "sending_window", "frequency_cap"}},
+		{Name: "window_single_zone", Type: field.TypeBool, Default: false},
 		{Name: "claimed_at", Type: field.TypeTime},
 		{Name: "sent_at", Type: field.TypeTime, Nullable: true},
 		{Name: "delivered_at", Type: field.TypeTime, Nullable: true},
@@ -2406,55 +2409,55 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "outbound_messages_broadcasts_broadcast",
-				Columns:    []*schema.Column{OutboundMessagesColumns[33]},
+				Columns:    []*schema.Column{OutboundMessagesColumns[34]},
 				RefColumns: []*schema.Column{BroadcastsColumns[0]},
 				OnDelete:   schema.Restrict,
 			},
 			{
 				Symbol:     "outbound_messages_automations_automation",
-				Columns:    []*schema.Column{OutboundMessagesColumns[34]},
+				Columns:    []*schema.Column{OutboundMessagesColumns[35]},
 				RefColumns: []*schema.Column{AutomationsColumns[0]},
 				OnDelete:   schema.Restrict,
 			},
 			{
 				Symbol:     "outbound_messages_automation_versions_automation_version",
-				Columns:    []*schema.Column{OutboundMessagesColumns[35]},
+				Columns:    []*schema.Column{OutboundMessagesColumns[36]},
 				RefColumns: []*schema.Column{AutomationVersionsColumns[0]},
 				OnDelete:   schema.Restrict,
 			},
 			{
 				Symbol:     "outbound_messages_integrations_integration",
-				Columns:    []*schema.Column{OutboundMessagesColumns[36]},
+				Columns:    []*schema.Column{OutboundMessagesColumns[37]},
 				RefColumns: []*schema.Column{IntegrationsColumns[0]},
 				OnDelete:   schema.Restrict,
 			},
 			{
 				Symbol:     "outbound_messages_broadcast_recipients_broadcast_recipient",
-				Columns:    []*schema.Column{OutboundMessagesColumns[37]},
+				Columns:    []*schema.Column{OutboundMessagesColumns[38]},
 				RefColumns: []*schema.Column{BroadcastRecipientsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "outbound_messages_automation_runs_automation_run",
-				Columns:    []*schema.Column{OutboundMessagesColumns[38]},
+				Columns:    []*schema.Column{OutboundMessagesColumns[39]},
 				RefColumns: []*schema.Column{AutomationRunsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "outbound_messages_contacts_contact",
-				Columns:    []*schema.Column{OutboundMessagesColumns[39]},
+				Columns:    []*schema.Column{OutboundMessagesColumns[40]},
 				RefColumns: []*schema.Column{ContactsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "outbound_messages_email_templates_template",
-				Columns:    []*schema.Column{OutboundMessagesColumns[40]},
+				Columns:    []*schema.Column{OutboundMessagesColumns[41]},
 				RefColumns: []*schema.Column{EmailTemplatesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "outbound_messages_workspaces_outbound_messages",
-				Columns:    []*schema.Column{OutboundMessagesColumns[41]},
+				Columns:    []*schema.Column{OutboundMessagesColumns[42]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -2463,12 +2466,12 @@ var (
 			{
 				Name:    "outbound_messages_workspace_id_idempotency_key",
 				Unique:  true,
-				Columns: []*schema.Column{OutboundMessagesColumns[41], OutboundMessagesColumns[4]},
+				Columns: []*schema.Column{OutboundMessagesColumns[42], OutboundMessagesColumns[4]},
 			},
 			{
 				Name:    "outboundmessage_workspace_id_kind_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[41], OutboundMessagesColumns[3], OutboundMessagesColumns[1]},
+				Columns: []*schema.Column{OutboundMessagesColumns[42], OutboundMessagesColumns[3], OutboundMessagesColumns[1]},
 			},
 			{
 				Name:    "outbound_messages_kind_created_at",
@@ -2478,27 +2481,27 @@ var (
 			{
 				Name:    "outboundmessage_workspace_id_integration_id_sent_at",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[41], OutboundMessagesColumns[36], OutboundMessagesColumns[17]},
+				Columns: []*schema.Column{OutboundMessagesColumns[42], OutboundMessagesColumns[37], OutboundMessagesColumns[18]},
 			},
 			{
 				Name:    "outboundmessage_workspace_id_sending_domain_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[41], OutboundMessagesColumns[9], OutboundMessagesColumns[1]},
+				Columns: []*schema.Column{OutboundMessagesColumns[42], OutboundMessagesColumns[9], OutboundMessagesColumns[1]},
 			},
 			{
 				Name:    "outbound_messages_workspace_id_provider_message_id",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[41], OutboundMessagesColumns[10]},
+				Columns: []*schema.Column{OutboundMessagesColumns[42], OutboundMessagesColumns[10]},
 			},
 			{
 				Name:    "outboundmessage_workspace_id_updated_at_id",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[41], OutboundMessagesColumns[2], OutboundMessagesColumns[0]},
+				Columns: []*schema.Column{OutboundMessagesColumns[42], OutboundMessagesColumns[2], OutboundMessagesColumns[0]},
 			},
 			{
 				Name:    "outboundmessage_workspace_id_destination_id",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[41], OutboundMessagesColumns[6], OutboundMessagesColumns[0]},
+				Columns: []*schema.Column{OutboundMessagesColumns[42], OutboundMessagesColumns[6], OutboundMessagesColumns[0]},
 			},
 			{
 				Name:    "outboundmessage_destinations",
@@ -2512,52 +2515,52 @@ var (
 			{
 				Name:    "outbound_messages_workspace_id_contact_id",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[41], OutboundMessagesColumns[39]},
+				Columns: []*schema.Column{OutboundMessagesColumns[42], OutboundMessagesColumns[40]},
 			},
 			{
 				Name:    "outboundmessage_workspace_id_broadcast_id_status",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[41], OutboundMessagesColumns[33], OutboundMessagesColumns[11]},
+				Columns: []*schema.Column{OutboundMessagesColumns[42], OutboundMessagesColumns[34], OutboundMessagesColumns[11]},
 			},
 			{
 				Name:    "outbound_messages_workspace_id_broadcast_recipient_id",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[41], OutboundMessagesColumns[37]},
+				Columns: []*schema.Column{OutboundMessagesColumns[42], OutboundMessagesColumns[38]},
 			},
 			{
 				Name:    "outbound_messages_broadcast_id",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[33]},
+				Columns: []*schema.Column{OutboundMessagesColumns[34]},
 			},
 			{
 				Name:    "outbound_messages_integration_id",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[36]},
+				Columns: []*schema.Column{OutboundMessagesColumns[37]},
 			},
 			{
 				Name:    "outbound_messages_workspace_id_automation_id",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[41], OutboundMessagesColumns[34]},
+				Columns: []*schema.Column{OutboundMessagesColumns[42], OutboundMessagesColumns[35]},
 			},
 			{
 				Name:    "outbound_messages_workspace_id_automation_run_id",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[41], OutboundMessagesColumns[38]},
+				Columns: []*schema.Column{OutboundMessagesColumns[42], OutboundMessagesColumns[39]},
 			},
 			{
 				Name:    "outbound_messages_workspace_id_automation_version_id",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[41], OutboundMessagesColumns[35]},
+				Columns: []*schema.Column{OutboundMessagesColumns[42], OutboundMessagesColumns[36]},
 			},
 			{
 				Name:    "outbound_messages_workspace_id_template_id",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[41], OutboundMessagesColumns[40]},
+				Columns: []*schema.Column{OutboundMessagesColumns[42], OutboundMessagesColumns[41]},
 			},
 			{
 				Name:    "outbound_messages_workspace_id_sent_at_broadcast",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[41], OutboundMessagesColumns[17]},
+				Columns: []*schema.Column{OutboundMessagesColumns[42], OutboundMessagesColumns[18]},
 				Annotation: &entsql.IndexAnnotation{
 					Where: "broadcast_recipient_id IS NOT NULL",
 				},

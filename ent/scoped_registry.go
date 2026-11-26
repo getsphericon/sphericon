@@ -371,6 +371,7 @@ func ScopedEntities() []*ScopedEntity {
 				b.SetSkippedContactErased(src.SkippedContactErased)
 				b.SetSkippedNoLocalTime(src.SkippedNoLocalTime)
 				b.SetSkippedFrequencyCap(src.SkippedFrequencyCap)
+				b.SetSingleZone(src.SingleZone)
 				b.SetDelivered(src.Delivered)
 				b.SetBounced(src.Bounced)
 				b.SetComplained(src.Complained)
@@ -1014,6 +1015,7 @@ func ScopedEntities() []*ScopedEntity {
 				b.SetSkippedContactErased(src.SkippedContactErased)
 				b.SetSkippedNoLocalTime(src.SkippedNoLocalTime)
 				b.SetSkippedFrequencyCap(src.SkippedFrequencyCap)
+				b.SetSingleZone(src.SingleZone)
 				if src.PrunedAt != nil {
 					b.SetPrunedAt(*src.PrunedAt)
 				}
@@ -2471,6 +2473,7 @@ func ScopedEntities() []*ScopedEntity {
 				if src.DeferralCause != nil {
 					b.SetDeferralCause(*src.DeferralCause)
 				}
+				b.SetWindowSingleZone(src.WindowSingleZone)
 				b.SetClaimedAt(src.ClaimedAt)
 				if src.SentAt != nil {
 					b.SetSentAt(*src.SentAt)

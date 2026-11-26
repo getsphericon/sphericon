@@ -767,6 +767,7 @@ func (c *ConverterImpl) BroadcastStatsToResource(source broadcasts.Figures) site
 			siteapiSiteBroadcastStats.WaitingByCause[j] = c.deferralcauseCountToSiteapiDeferralCauseCount(source.WaitingByCause[j])
 		}
 	}
+	siteapiSiteBroadcastStats.SingleZoneCount = nilInt32(source.SingleZone)
 	siteapiSiteBroadcastStats.FailedCount = count(source.Failed)
 	siteapiSiteBroadcastStats.PendingCount = count(source.Pending)
 	siteapiSiteBroadcastStats.CancelledCount = count(source.Cancelled)
@@ -3608,6 +3609,7 @@ func (c *ConverterImpl) automationsStepFiguresToSiteapiAutomationStepFigures(sou
 			siteapiAutomationStepFigures.WaitingByCause[j] = c.deferralcauseCountToSiteapiDeferralCauseCount(source.WaitingByCause[j])
 		}
 	}
+	siteapiAutomationStepFigures.SingleZone = count(source.SingleZone)
 	return siteapiAutomationStepFigures
 }
 func (c *ConverterImpl) automationsVersionStepFiguresToSiteapiAutomationVersionStepFigures(source automations.VersionStepFigures) site.AutomationVersionStepFigures {
@@ -3628,6 +3630,7 @@ func (c *ConverterImpl) automationsVersionStepFiguresToSiteapiAutomationVersionS
 			siteapiAutomationVersionStepFigures.WaitingByCause[j] = c.deferralcauseCountToSiteapiDeferralCauseCount(source.WaitingByCause[j])
 		}
 	}
+	siteapiAutomationVersionStepFigures.SingleZone = count(source.SingleZone)
 	return siteapiAutomationVersionStepFigures
 }
 func (c *ConverterImpl) automationsWaitUntilFiguresToSiteapiAutomationWaitUntilFigures(source automations.WaitUntilFigures) site.AutomationWaitUntilFigures {

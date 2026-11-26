@@ -66,6 +66,9 @@ func (BroadcastFigure) Fields() []ent.Field {
 		field.Int("skipped_contact_erased").NonNegative().Default(0).Immutable(),
 		field.Int("skipped_no_local_time").NonNegative().Default(0).Immutable(),
 		field.Int("skipped_frequency_cap").NonNegative().Default(0).Immutable(),
+		// The sent messages a Sending window judged by a single zone (ADR 0134). 0 on a row frozen
+		// before they were kept.
+		field.Int("single_zone").NonNegative().Default(0).Immutable(),
 		// When the last of the Broadcast's recipients and messages was deleted; nil while the prune
 		// is still under way.
 		field.Time("pruned_at").

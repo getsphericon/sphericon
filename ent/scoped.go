@@ -5480,6 +5480,24 @@ func (x *AutomationFigureScopedCreate) SetNillableSkippedFrequencyCap(v *int) *A
 
 const RoleOf_AutomationFigureScopedCreate_SetNillableSkippedFrequencyCap = RoleStep
 
+// SetSingleZone sets the "single_zone" field.
+func (x *AutomationFigureScopedCreate) SetSingleZone(v int) *AutomationFigureScopedCreate {
+	x.set = append(x.set, func(b *AutomationFigureCreate) { b.SetSingleZone(v) })
+	return x
+}
+
+const RoleOf_AutomationFigureScopedCreate_SetSingleZone = RoleStep
+
+// SetNillableSingleZone sets the "single_zone" field if the given value is not nil.
+func (x *AutomationFigureScopedCreate) SetNillableSingleZone(v *int) *AutomationFigureScopedCreate {
+	if v != nil {
+		x.SetSingleZone(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationFigureScopedCreate_SetNillableSingleZone = RoleStep
+
 // SetDelivered sets the "delivered" field.
 func (x *AutomationFigureScopedCreate) SetDelivered(v int) *AutomationFigureScopedCreate {
 	x.set = append(x.set, func(b *AutomationFigureCreate) { b.SetDelivered(v) })
@@ -5936,6 +5954,30 @@ func (u *AutomationFigureScopedUpsert) UpdateSkippedFrequencyCap() *AutomationFi
 }
 
 const RoleOf_AutomationFigureScopedUpsert_UpdateSkippedFrequencyCap = RoleStep
+
+// SetSingleZone sets the "single_zone" field.
+func (u *AutomationFigureScopedUpsert) SetSingleZone(v int) *AutomationFigureScopedUpsert {
+	u.u.Set(automationfigure.FieldSingleZone, v)
+	return u
+}
+
+const RoleOf_AutomationFigureScopedUpsert_SetSingleZone = RoleStep
+
+// AddSingleZone adds v to the "single_zone" field.
+func (u *AutomationFigureScopedUpsert) AddSingleZone(v int) *AutomationFigureScopedUpsert {
+	u.u.Add(automationfigure.FieldSingleZone, v)
+	return u
+}
+
+const RoleOf_AutomationFigureScopedUpsert_AddSingleZone = RoleStep
+
+// UpdateSingleZone sets the "single_zone" field to the value that was provided on create.
+func (u *AutomationFigureScopedUpsert) UpdateSingleZone() *AutomationFigureScopedUpsert {
+	u.u.SetExcluded(automationfigure.FieldSingleZone)
+	return u
+}
+
+const RoleOf_AutomationFigureScopedUpsert_UpdateSingleZone = RoleStep
 
 // SetDelivered sets the "delivered" field.
 func (u *AutomationFigureScopedUpsert) SetDelivered(v int) *AutomationFigureScopedUpsert {
@@ -6500,6 +6542,32 @@ func (x *AutomationFigureScopedUpdateOne) AddSkippedFrequencyCap(v int) *Automat
 
 const RoleOf_AutomationFigureScopedUpdateOne_AddSkippedFrequencyCap = RoleStep
 
+// SetSingleZone sets the "single_zone" field.
+func (x *AutomationFigureScopedUpdateOne) SetSingleZone(v int) *AutomationFigureScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationFigureUpdateOne) { b.SetSingleZone(v) })
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdateOne_SetSingleZone = RoleStep
+
+// SetNillableSingleZone sets the "single_zone" field if the given value is not nil.
+func (x *AutomationFigureScopedUpdateOne) SetNillableSingleZone(v *int) *AutomationFigureScopedUpdateOne {
+	if v != nil {
+		x.SetSingleZone(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdateOne_SetNillableSingleZone = RoleStep
+
+// AddSingleZone adds value to the "single_zone" field.
+func (x *AutomationFigureScopedUpdateOne) AddSingleZone(v int) *AutomationFigureScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationFigureUpdateOne) { b.AddSingleZone(v) })
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdateOne_AddSingleZone = RoleStep
+
 // SetDelivered sets the "delivered" field.
 func (x *AutomationFigureScopedUpdateOne) SetDelivered(v int) *AutomationFigureScopedUpdateOne {
 	x.set = append(x.set, func(b *AutomationFigureUpdateOne) { b.SetDelivered(v) })
@@ -6954,6 +7022,32 @@ func (x *AutomationFigureScopedUpdate) AddSkippedFrequencyCap(v int) *Automation
 }
 
 const RoleOf_AutomationFigureScopedUpdate_AddSkippedFrequencyCap = RoleStep
+
+// SetSingleZone sets the "single_zone" field.
+func (x *AutomationFigureScopedUpdate) SetSingleZone(v int) *AutomationFigureScopedUpdate {
+	x.set = append(x.set, func(b *AutomationFigureUpdate) { b.SetSingleZone(v) })
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdate_SetSingleZone = RoleStep
+
+// SetNillableSingleZone sets the "single_zone" field if the given value is not nil.
+func (x *AutomationFigureScopedUpdate) SetNillableSingleZone(v *int) *AutomationFigureScopedUpdate {
+	if v != nil {
+		x.SetSingleZone(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdate_SetNillableSingleZone = RoleStep
+
+// AddSingleZone adds value to the "single_zone" field.
+func (x *AutomationFigureScopedUpdate) AddSingleZone(v int) *AutomationFigureScopedUpdate {
+	x.set = append(x.set, func(b *AutomationFigureUpdate) { b.AddSingleZone(v) })
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdate_AddSingleZone = RoleStep
 
 // SetDelivered sets the "delivered" field.
 func (x *AutomationFigureScopedUpdate) SetDelivered(v int) *AutomationFigureScopedUpdate {
@@ -19975,6 +20069,24 @@ func (x *BroadcastFigureScopedCreate) SetNillableSkippedFrequencyCap(v *int) *Br
 }
 
 const RoleOf_BroadcastFigureScopedCreate_SetNillableSkippedFrequencyCap = RoleStep
+
+// SetSingleZone sets the "single_zone" field.
+func (x *BroadcastFigureScopedCreate) SetSingleZone(v int) *BroadcastFigureScopedCreate {
+	x.set = append(x.set, func(b *BroadcastFigureCreate) { b.SetSingleZone(v) })
+	return x
+}
+
+const RoleOf_BroadcastFigureScopedCreate_SetSingleZone = RoleStep
+
+// SetNillableSingleZone sets the "single_zone" field if the given value is not nil.
+func (x *BroadcastFigureScopedCreate) SetNillableSingleZone(v *int) *BroadcastFigureScopedCreate {
+	if v != nil {
+		x.SetSingleZone(*v)
+	}
+	return x
+}
+
+const RoleOf_BroadcastFigureScopedCreate_SetNillableSingleZone = RoleStep
 
 // SetPrunedAt sets the "pruned_at" field.
 func (x *BroadcastFigureScopedCreate) SetPrunedAt(v time.Time) *BroadcastFigureScopedCreate {
@@ -50137,6 +50249,24 @@ func (x *OutboundMessageScopedCreate) SetNillableDeferralCause(v *deferralcause.
 
 const RoleOf_OutboundMessageScopedCreate_SetNillableDeferralCause = RoleStep
 
+// SetWindowSingleZone sets the "window_single_zone" field.
+func (x *OutboundMessageScopedCreate) SetWindowSingleZone(v bool) *OutboundMessageScopedCreate {
+	x.set = append(x.set, func(b *OutboundMessageCreate) { b.SetWindowSingleZone(v) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedCreate_SetWindowSingleZone = RoleStep
+
+// SetNillableWindowSingleZone sets the "window_single_zone" field if the given value is not nil.
+func (x *OutboundMessageScopedCreate) SetNillableWindowSingleZone(v *bool) *OutboundMessageScopedCreate {
+	if v != nil {
+		x.SetWindowSingleZone(*v)
+	}
+	return x
+}
+
+const RoleOf_OutboundMessageScopedCreate_SetNillableWindowSingleZone = RoleStep
+
 // SetClaimedAt sets the "claimed_at" field.
 func (x *OutboundMessageScopedCreate) SetClaimedAt(v time.Time) *OutboundMessageScopedCreate {
 	x.set = append(x.set, func(b *OutboundMessageCreate) { b.SetClaimedAt(v) })
@@ -51061,6 +51191,22 @@ func (u *OutboundMessageScopedUpsert) ClearDeferralCause() *OutboundMessageScope
 }
 
 const RoleOf_OutboundMessageScopedUpsert_ClearDeferralCause = RoleStep
+
+// SetWindowSingleZone sets the "window_single_zone" field.
+func (u *OutboundMessageScopedUpsert) SetWindowSingleZone(v bool) *OutboundMessageScopedUpsert {
+	u.u.Set(outboundmessage.FieldWindowSingleZone, v)
+	return u
+}
+
+const RoleOf_OutboundMessageScopedUpsert_SetWindowSingleZone = RoleStep
+
+// UpdateWindowSingleZone sets the "window_single_zone" field to the value that was provided on create.
+func (u *OutboundMessageScopedUpsert) UpdateWindowSingleZone() *OutboundMessageScopedUpsert {
+	u.u.SetExcluded(outboundmessage.FieldWindowSingleZone)
+	return u
+}
+
+const RoleOf_OutboundMessageScopedUpsert_UpdateWindowSingleZone = RoleStep
 
 // SetClaimedAt sets the "claimed_at" field.
 func (u *OutboundMessageScopedUpsert) SetClaimedAt(v time.Time) *OutboundMessageScopedUpsert {
@@ -52056,6 +52202,24 @@ func (x *OutboundMessageScopedUpdateOne) ClearDeferralCause() *OutboundMessageSc
 }
 
 const RoleOf_OutboundMessageScopedUpdateOne_ClearDeferralCause = RoleStep
+
+// SetWindowSingleZone sets the "window_single_zone" field.
+func (x *OutboundMessageScopedUpdateOne) SetWindowSingleZone(v bool) *OutboundMessageScopedUpdateOne {
+	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.SetWindowSingleZone(v) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdateOne_SetWindowSingleZone = RoleStep
+
+// SetNillableWindowSingleZone sets the "window_single_zone" field if the given value is not nil.
+func (x *OutboundMessageScopedUpdateOne) SetNillableWindowSingleZone(v *bool) *OutboundMessageScopedUpdateOne {
+	if v != nil {
+		x.SetWindowSingleZone(*v)
+	}
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdateOne_SetNillableWindowSingleZone = RoleStep
 
 // SetClaimedAt sets the "claimed_at" field.
 func (x *OutboundMessageScopedUpdateOne) SetClaimedAt(v time.Time) *OutboundMessageScopedUpdateOne {
@@ -53245,6 +53409,24 @@ func (x *OutboundMessageScopedUpdate) ClearDeferralCause() *OutboundMessageScope
 }
 
 const RoleOf_OutboundMessageScopedUpdate_ClearDeferralCause = RoleStep
+
+// SetWindowSingleZone sets the "window_single_zone" field.
+func (x *OutboundMessageScopedUpdate) SetWindowSingleZone(v bool) *OutboundMessageScopedUpdate {
+	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.SetWindowSingleZone(v) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdate_SetWindowSingleZone = RoleStep
+
+// SetNillableWindowSingleZone sets the "window_single_zone" field if the given value is not nil.
+func (x *OutboundMessageScopedUpdate) SetNillableWindowSingleZone(v *bool) *OutboundMessageScopedUpdate {
+	if v != nil {
+		x.SetWindowSingleZone(*v)
+	}
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdate_SetNillableWindowSingleZone = RoleStep
 
 // SetClaimedAt sets the "claimed_at" field.
 func (x *OutboundMessageScopedUpdate) SetClaimedAt(v time.Time) *OutboundMessageScopedUpdate {

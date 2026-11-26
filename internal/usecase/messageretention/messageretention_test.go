@@ -101,6 +101,11 @@ func TestPruneMessagesKeepsEveryReportsFigures(t *testing.T) {
 	require.NotEmpty(t, beforeFigures)
 	require.True(t, lo.SomeBy(lo.Values(beforeStats), func(st broadcasts.Stats) bool { return len(st.SkippedBy) > 0 }),
 		"a finished Broadcast has messages Skipped by reason, which its frozen figures keep (ADR 0178)")
+	require.True(t, lo.SomeBy(lo.Values(beforeStats), func(st broadcasts.Stats) bool { return st.SingleZone > 0 }),
+		"a finished Broadcast has sends a Sending window judged by a single zone, which its frozen figures keep (ADR 0134)")
+	require.True(t, lo.SomeBy(lo.Values(beforeFigures), func(f automationFigures) bool {
+		return lo.SomeBy(f.Steps, func(st automations.StepFigures) bool { return st.SingleZone > 0 })
+	}), "an Automation has sends a Sending window judged by a single zone, which its pruned figures keep")
 
 	// Batches of one and a budget of three: every loop of the prune turns, and every run stops
 	// before its Workspace's work is done and the next one continues from what is left.

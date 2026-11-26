@@ -60,6 +60,27 @@ func TestTheBroadcastFiguresCountTheSkippedByReasonAndTheWaitingByCause(t *testi
 	assert.Equal(t, waitingFor(map[siteapi.DeferralCause]int32{siteapi.DeferralCauseSendCap: 1}), got.Stats.WaitingByCause)
 }
 
+// The sends a Sending window judged by a single zone (ADR 0134): Lacuna's Greeting texts Bea, whose
+// Boston number is in New York's zone alone. An email Broadcast has no window, and no such count.
+func TestAnSMSBroadcastsFiguresCountTheSendsJudgedByASingleZone(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	env.LacunaTwilio(t)
+	require.NoError(t, env.SendBroadcastThrough(t, env.OutboundModule(), fixtures.BroadcastLacunaSmsGreetingID))
+
+	sms, err := env.SiteActor(t, fixtures.LacunaOwnerLenaEmail).SiteBroadcastsGet(ctx, siteapi.SiteBroadcastsGetParams{
+		WorkspaceId: fixtures.LacunaPublicID, ID: siteapi.EntityId(fixtures.BroadcastLacunaSmsGreetingID),
+	})
+	require.NoError(t, err)
+	email, err := env.SiteActor(t, fixtures.MemberMaryEmail).SiteBroadcastsGet(ctx, siteapi.SiteBroadcastsGetParams{
+		WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(fixtures.BroadcastSendingID),
+	})
+	require.NoError(t, err)
+
+	assert.Equal(t, siteapi.NewNilInt32(1), sms.Stats.SingleZoneCount)
+	assert.True(t, email.Stats.SingleZoneCount.Null)
+}
+
 // A Broadcast no longer sending has no Recipient waiting: one deferred when it failed waits for
 // nothing, and every cause reads zero.
 func TestAFinishedBroadcastHasNoneWaiting(t *testing.T) {

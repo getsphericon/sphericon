@@ -260,6 +260,27 @@ func (_u *AutomationFigureUpdate) AddSkippedFrequencyCap(v int) *AutomationFigur
 	return _u
 }
 
+// SetSingleZone sets the "single_zone" field.
+func (_u *AutomationFigureUpdate) SetSingleZone(v int) *AutomationFigureUpdate {
+	_u.mutation.ResetSingleZone()
+	_u.mutation.SetSingleZone(v)
+	return _u
+}
+
+// SetNillableSingleZone sets the "single_zone" field if the given value is not nil.
+func (_u *AutomationFigureUpdate) SetNillableSingleZone(v *int) *AutomationFigureUpdate {
+	if v != nil {
+		_u.SetSingleZone(*v)
+	}
+	return _u
+}
+
+// AddSingleZone adds value to the "single_zone" field.
+func (_u *AutomationFigureUpdate) AddSingleZone(v int) *AutomationFigureUpdate {
+	_u.mutation.AddSingleZone(v)
+	return _u
+}
+
 // SetDelivered sets the "delivered" field.
 func (_u *AutomationFigureUpdate) SetDelivered(v int) *AutomationFigureUpdate {
 	_u.mutation.ResetDelivered()
@@ -448,6 +469,11 @@ func (_u *AutomationFigureUpdate) check() error {
 			return &ValidationError{Name: "skipped_frequency_cap", err: fmt.Errorf(`ent: validator failed for field "AutomationFigure.skipped_frequency_cap": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.SingleZone(); ok {
+		if err := automationfigure.SingleZoneValidator(v); err != nil {
+			return &ValidationError{Name: "single_zone", err: fmt.Errorf(`ent: validator failed for field "AutomationFigure.single_zone": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Delivered(); ok {
 		if err := automationfigure.DeliveredValidator(v); err != nil {
 			return &ValidationError{Name: "delivered", err: fmt.Errorf(`ent: validator failed for field "AutomationFigure.delivered": %w`, err)}
@@ -560,6 +586,12 @@ func (_u *AutomationFigureUpdate) sqlSave(ctx context.Context) (_node int, err e
 	}
 	if value, ok := _u.mutation.AddedSkippedFrequencyCap(); ok {
 		_spec.AddField(automationfigure.FieldSkippedFrequencyCap, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.SingleZone(); ok {
+		_spec.SetField(automationfigure.FieldSingleZone, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedSingleZone(); ok {
+		_spec.AddField(automationfigure.FieldSingleZone, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.Delivered(); ok {
 		_spec.SetField(automationfigure.FieldDelivered, field.TypeInt, value)
@@ -866,6 +898,27 @@ func (_u *AutomationFigureUpdateOne) AddSkippedFrequencyCap(v int) *AutomationFi
 	return _u
 }
 
+// SetSingleZone sets the "single_zone" field.
+func (_u *AutomationFigureUpdateOne) SetSingleZone(v int) *AutomationFigureUpdateOne {
+	_u.mutation.ResetSingleZone()
+	_u.mutation.SetSingleZone(v)
+	return _u
+}
+
+// SetNillableSingleZone sets the "single_zone" field if the given value is not nil.
+func (_u *AutomationFigureUpdateOne) SetNillableSingleZone(v *int) *AutomationFigureUpdateOne {
+	if v != nil {
+		_u.SetSingleZone(*v)
+	}
+	return _u
+}
+
+// AddSingleZone adds value to the "single_zone" field.
+func (_u *AutomationFigureUpdateOne) AddSingleZone(v int) *AutomationFigureUpdateOne {
+	_u.mutation.AddSingleZone(v)
+	return _u
+}
+
 // SetDelivered sets the "delivered" field.
 func (_u *AutomationFigureUpdateOne) SetDelivered(v int) *AutomationFigureUpdateOne {
 	_u.mutation.ResetDelivered()
@@ -1067,6 +1120,11 @@ func (_u *AutomationFigureUpdateOne) check() error {
 			return &ValidationError{Name: "skipped_frequency_cap", err: fmt.Errorf(`ent: validator failed for field "AutomationFigure.skipped_frequency_cap": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.SingleZone(); ok {
+		if err := automationfigure.SingleZoneValidator(v); err != nil {
+			return &ValidationError{Name: "single_zone", err: fmt.Errorf(`ent: validator failed for field "AutomationFigure.single_zone": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Delivered(); ok {
 		if err := automationfigure.DeliveredValidator(v); err != nil {
 			return &ValidationError{Name: "delivered", err: fmt.Errorf(`ent: validator failed for field "AutomationFigure.delivered": %w`, err)}
@@ -1196,6 +1254,12 @@ func (_u *AutomationFigureUpdateOne) sqlSave(ctx context.Context) (_node *Automa
 	}
 	if value, ok := _u.mutation.AddedSkippedFrequencyCap(); ok {
 		_spec.AddField(automationfigure.FieldSkippedFrequencyCap, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.SingleZone(); ok {
+		_spec.SetField(automationfigure.FieldSingleZone, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedSingleZone(); ok {
+		_spec.AddField(automationfigure.FieldSingleZone, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.Delivered(); ok {
 		_spec.SetField(automationfigure.FieldDelivered, field.TypeInt, value)

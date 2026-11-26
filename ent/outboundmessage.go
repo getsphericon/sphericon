@@ -65,6 +65,8 @@ type OutboundMessage struct {
 	DeferredSince *time.Time `json:"deferred_since,omitempty"`
 	// DeferralCause holds the value of the "deferral_cause" field.
 	DeferralCause *deferralcause.Cause `json:"deferral_cause,omitempty"`
+	// WindowSingleZone holds the value of the "window_single_zone" field.
+	WindowSingleZone bool `json:"window_single_zone,omitempty"`
 	// ClaimedAt holds the value of the "claimed_at" field.
 	ClaimedAt time.Time `json:"claimed_at,omitempty"`
 	// SentAt holds the value of the "sent_at" field.
@@ -272,7 +274,7 @@ func (*OutboundMessage) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case outboundmessage.FieldDestinations:
 			values[i] = new([]byte)
-		case outboundmessage.FieldCaptured, outboundmessage.FieldTracked:
+		case outboundmessage.FieldWindowSingleZone, outboundmessage.FieldCaptured, outboundmessage.FieldTracked:
 			values[i] = new(sql.NullBool)
 		case outboundmessage.FieldID, outboundmessage.FieldWorkspaceID, outboundmessage.FieldContactID, outboundmessage.FieldBroadcastID, outboundmessage.FieldBroadcastRecipientID, outboundmessage.FieldAutomationID, outboundmessage.FieldAutomationRunID, outboundmessage.FieldAutomationVersionID, outboundmessage.FieldIntegrationID, outboundmessage.FieldTemplateID:
 			values[i] = new(sql.NullInt64)
@@ -412,6 +414,12 @@ func (_m *OutboundMessage) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.DeferralCause = new(deferralcause.Cause)
 				*_m.DeferralCause = deferralcause.Cause(value.String)
+			}
+		case outboundmessage.FieldWindowSingleZone:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field window_single_zone", values[i])
+			} else if value.Valid {
+				_m.WindowSingleZone = value.Bool
 			}
 		case outboundmessage.FieldClaimedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -735,6 +743,9 @@ func (_m *OutboundMessage) String() string {
 		builder.WriteString("deferral_cause=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
+	builder.WriteString(", ")
+	builder.WriteString("window_single_zone=")
+	builder.WriteString(fmt.Sprintf("%v", _m.WindowSingleZone))
 	builder.WriteString(", ")
 	builder.WriteString("claimed_at=")
 	builder.WriteString(_m.ClaimedAt.Format(time.ANSIC))

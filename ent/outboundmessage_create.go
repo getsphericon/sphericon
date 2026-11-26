@@ -243,6 +243,20 @@ func (_c *OutboundMessageCreate) SetNillableDeferralCause(v *deferralcause.Cause
 	return _c
 }
 
+// SetWindowSingleZone sets the "window_single_zone" field.
+func (_c *OutboundMessageCreate) SetWindowSingleZone(v bool) *OutboundMessageCreate {
+	_c.mutation.SetWindowSingleZone(v)
+	return _c
+}
+
+// SetNillableWindowSingleZone sets the "window_single_zone" field if the given value is not nil.
+func (_c *OutboundMessageCreate) SetNillableWindowSingleZone(v *bool) *OutboundMessageCreate {
+	if v != nil {
+		_c.SetWindowSingleZone(*v)
+	}
+	return _c
+}
+
 // SetClaimedAt sets the "claimed_at" field.
 func (_c *OutboundMessageCreate) SetClaimedAt(v time.Time) *OutboundMessageCreate {
 	_c.mutation.SetClaimedAt(v)
@@ -711,6 +725,10 @@ func (_c *OutboundMessageCreate) defaults() {
 		v := outboundmessage.DefaultStatus
 		_c.mutation.SetStatus(v)
 	}
+	if _, ok := _c.mutation.WindowSingleZone(); !ok {
+		v := outboundmessage.DefaultWindowSingleZone
+		_c.mutation.SetWindowSingleZone(v)
+	}
 	if _, ok := _c.mutation.ClaimedAt(); !ok {
 		v := outboundmessage.DefaultClaimedAt()
 		_c.mutation.SetClaimedAt(v)
@@ -777,6 +795,9 @@ func (_c *OutboundMessageCreate) check() error {
 		if err := outboundmessage.DeferralCauseValidator(v); err != nil {
 			return &ValidationError{Name: "deferral_cause", err: fmt.Errorf(`ent: validator failed for field "OutboundMessage.deferral_cause": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.WindowSingleZone(); !ok {
+		return &ValidationError{Name: "window_single_zone", err: errors.New(`ent: missing required field "OutboundMessage.window_single_zone"`)}
 	}
 	if _, ok := _c.mutation.ClaimedAt(); !ok {
 		return &ValidationError{Name: "claimed_at", err: errors.New(`ent: missing required field "OutboundMessage.claimed_at"`)}
@@ -882,6 +903,10 @@ func (_c *OutboundMessageCreate) createSpec() (*OutboundMessage, *sqlgraph.Creat
 	if value, ok := _c.mutation.DeferralCause(); ok {
 		_spec.SetField(outboundmessage.FieldDeferralCause, field.TypeEnum, value)
 		_node.DeferralCause = &value
+	}
+	if value, ok := _c.mutation.WindowSingleZone(); ok {
+		_spec.SetField(outboundmessage.FieldWindowSingleZone, field.TypeBool, value)
+		_node.WindowSingleZone = value
 	}
 	if value, ok := _c.mutation.ClaimedAt(); ok {
 		_spec.SetField(outboundmessage.FieldClaimedAt, field.TypeTime, value)
@@ -1413,6 +1438,18 @@ func (u *OutboundMessageUpsert) UpdateDeferralCause() *OutboundMessageUpsert {
 // ClearDeferralCause clears the value of the "deferral_cause" field.
 func (u *OutboundMessageUpsert) ClearDeferralCause() *OutboundMessageUpsert {
 	u.SetNull(outboundmessage.FieldDeferralCause)
+	return u
+}
+
+// SetWindowSingleZone sets the "window_single_zone" field.
+func (u *OutboundMessageUpsert) SetWindowSingleZone(v bool) *OutboundMessageUpsert {
+	u.Set(outboundmessage.FieldWindowSingleZone, v)
+	return u
+}
+
+// UpdateWindowSingleZone sets the "window_single_zone" field to the value that was provided on create.
+func (u *OutboundMessageUpsert) UpdateWindowSingleZone() *OutboundMessageUpsert {
+	u.SetExcluded(outboundmessage.FieldWindowSingleZone)
 	return u
 }
 
@@ -2135,6 +2172,20 @@ func (u *OutboundMessageUpsertOne) UpdateDeferralCause() *OutboundMessageUpsertO
 func (u *OutboundMessageUpsertOne) ClearDeferralCause() *OutboundMessageUpsertOne {
 	return u.Update(func(s *OutboundMessageUpsert) {
 		s.ClearDeferralCause()
+	})
+}
+
+// SetWindowSingleZone sets the "window_single_zone" field.
+func (u *OutboundMessageUpsertOne) SetWindowSingleZone(v bool) *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.SetWindowSingleZone(v)
+	})
+}
+
+// UpdateWindowSingleZone sets the "window_single_zone" field to the value that was provided on create.
+func (u *OutboundMessageUpsertOne) UpdateWindowSingleZone() *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.UpdateWindowSingleZone()
 	})
 }
 
@@ -3089,6 +3140,20 @@ func (u *OutboundMessageUpsertBulk) UpdateDeferralCause() *OutboundMessageUpsert
 func (u *OutboundMessageUpsertBulk) ClearDeferralCause() *OutboundMessageUpsertBulk {
 	return u.Update(func(s *OutboundMessageUpsert) {
 		s.ClearDeferralCause()
+	})
+}
+
+// SetWindowSingleZone sets the "window_single_zone" field.
+func (u *OutboundMessageUpsertBulk) SetWindowSingleZone(v bool) *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.SetWindowSingleZone(v)
+	})
+}
+
+// UpdateWindowSingleZone sets the "window_single_zone" field to the value that was provided on create.
+func (u *OutboundMessageUpsertBulk) UpdateWindowSingleZone() *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.UpdateWindowSingleZone()
 	})
 }
 
