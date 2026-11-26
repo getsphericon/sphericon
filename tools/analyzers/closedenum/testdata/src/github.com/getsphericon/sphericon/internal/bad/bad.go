@@ -6,10 +6,10 @@ import (
 )
 
 func withDefault(c channels.Channel) string {
-	switch c { // want `rule 19: the switch on channels.Channel has a default clause`
+	switch c {
 	case channels.Email:
 		return "mail"
-	default:
+	default: // want `rule 19: the switch on channels.Channel has a default clause`
 		return "other"
 	}
 }
@@ -23,10 +23,10 @@ func missing(c channels.Channel) string {
 }
 
 func derived(m medium.Medium) string {
-	switch m { // want `rule 19: the switch on channels.Channel has a default clause`
+	switch m {
 	case medium.Email:
 		return "mail"
-	default:
+	default: // want `rule 19: the switch on channels.Channel has a default clause`
 		return "other"
 	}
 }

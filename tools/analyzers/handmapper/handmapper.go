@@ -56,7 +56,7 @@ var (
 
 func run(pass *analysis.Pass) (any, error) {
 	registered := registeredHelpers(pass)
-	skipped := skippedFiles(pass)
+	skipped := analysisx.SkippedFiles(pass)
 	insp, err := analysisx.Inspector(pass)
 	if err != nil {
 		return nil, err
@@ -246,17 +246,6 @@ func isModuleInput(self *types.Package, n *types.Named) bool {
 	}
 	_, isStruct := n.Underlying().(*types.Struct)
 	return isStruct
-}
-
-// skippedFiles tells whether a position stands in a file that is not API code: a test file or a
-// generated one. Each file of the pass is classified once.
-func skippedFiles(pass *analysis.Pass) func(token.Pos) bool {
-	skipped := make(map[*token.File]bool, len(pass.Files))
-	for _, f := range pass.Files {
-		tf := pass.Fset.File(f.FileStart)
-		skipped[tf] = strings.HasSuffix(tf.Name(), "_test.go") || ast.IsGenerated(f)
-	}
-	return func(pos token.Pos) bool { return skipped[pass.Fset.File(pos)] }
 }
 
 // viaConverter is the set of functions of the package that map through a goverter converter: they

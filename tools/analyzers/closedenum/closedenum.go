@@ -73,8 +73,9 @@ func run(pass *analysis.Pass) (any, error) {
 		return nil, err
 	}
 	exportDerived(pass, insp)
+	skipped := analysisx.SkippedFiles(pass)
 	for n := range insp.PreorderSeq((*ast.SwitchStmt)(nil), (*ast.CompositeLit)(nil)) {
-		if skipped(pass, n) {
+		if skipped(n.Pos()) {
 			continue
 		}
 		switch n := n.(type) {
@@ -117,19 +118,6 @@ func exportDerived(pass *analysis.Pass, insp *inspector.Inspector) {
 	}
 }
 
-// skipped holds for a node in a generated file or a test file.
-func skipped(pass *analysis.Pass, n ast.Node) bool {
-	if analysisx.InTestFile(pass, n.Pos()) {
-		return true
-	}
-	for _, f := range pass.Files {
-		if f.FileStart <= n.Pos() && n.Pos() < f.FileEnd {
-			return ast.IsGenerated(f)
-		}
-	}
-	return false
-}
-
 // checkSwitch reports a switch over a closed enum that has a default clause or leaves a member out.
 func checkSwitch(pass *analysis.Pass, sw *ast.SwitchStmt) {
 	if sw.Tag == nil {
@@ -146,7 +134,7 @@ func checkSwitch(pass *analysis.Pass, sw *ast.SwitchStmt) {
 			continue
 		}
 		if clause.List == nil {
-			rule.Report(pass, sw.Pos(), 19,
+			rule.Report(pass, clause.Pos(), 19,
 				fmt.Sprintf("the switch on %s has a default clause, which a new member would take unnoticed", e.Name),
 				"drop the default and name every member in a case, a member the switch does not apply to in a case that says what happens to it (an error, a refusal, nothing); a value outside the set is handled after the switch")
 			return
@@ -213,7 +201,7 @@ func enumOf(pass *analysis.Pass, t types.Type) (Enum, bool) {
 	}
 	obj := named.Obj()
 	for _, e := range enums {
-		if obj.Pkg() != nil && obj.Pkg().Path() == e.path && obj.Name() == e.name {
+		if analysisx.IsNamed(named, e.path, e.name) {
 			return listed(obj), true
 		}
 	}

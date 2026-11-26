@@ -237,6 +237,7 @@ func clickOn(dest string) func(e engaged, machine bool, at time.Time) events.Dom
 		case channels.SMS:
 			return new(events.SmsClicked(click))
 		case channels.Email:
+			// An email click is the Email engagement below, as is a value outside the set.
 		}
 		return e.engagement(systemevent.EmailClicked, dest, machine, at)
 	}

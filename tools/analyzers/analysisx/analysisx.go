@@ -30,6 +30,17 @@ func InTestFile(pass *analysis.Pass, pos token.Pos) bool {
 	return strings.HasSuffix(pass.Fset.File(pos).Name(), "_test.go")
 }
 
+// SkippedFiles tells whether a position stands in a test file or a generated one, the files an
+// analyzer of product code does not read. Each file of the pass is classified once.
+func SkippedFiles(pass *analysis.Pass) func(token.Pos) bool {
+	skipped := make(map[*token.File]bool, len(pass.Files))
+	for _, f := range pass.Files {
+		tf := pass.Fset.File(f.FileStart)
+		skipped[tf] = strings.HasSuffix(tf.Name(), "_test.go") || ast.IsGenerated(f)
+	}
+	return func(pos token.Pos) bool { return skipped[pass.Fset.File(pos)] }
+}
+
 // IsNamed reports whether t, under any alias, is the named type name of the package at path.
 func IsNamed(t types.Type, path, name string) bool {
 	named, ok := types.Unalias(t).(*types.Named)

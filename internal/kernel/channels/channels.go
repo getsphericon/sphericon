@@ -5,11 +5,10 @@ package channels
 
 // Channel identifies a delivery medium.
 //
-// It is a closed enum of the analyzer closedenum (rule 19 of docs/standards/review-rules.md): every
-// switch on a Channel names every Channel and has no default, and every map literal keyed by one
-// lists every Channel. A new Channel is added by adding its constant here and to all, then following
-// the lint errors, which name each switch and map that does not handle it, and those of
-// `mise run generate`, where goverter maps a Channel to the contract's enums.
+// It is a closed enum (rule 19 of docs/standards/review-rules.md). A new Channel is added by adding
+// its constant, then following the lint errors, which name each switch and map that does not handle
+// it (rank below among them), and those of `mise run generate`, where goverter maps a Channel to the
+// contract's enums.
 type Channel string
 
 const (
@@ -22,14 +21,20 @@ const (
 	Telegram Channel = "telegram"
 )
 
-// all is every Channel, in the order the columns list them.
-var all = []Channel{Email, Telegram, SMS}
+// rank is every Channel with its place in the order the columns list them.
+var rank = map[Channel]int{Email: 0, Telegram: 1, SMS: 2}
 
 // Values is every Channel as a string, for the ent enum columns typed with it.
 func (Channel) Values() []string {
-	values := make([]string, len(all))
-	for i, c := range all {
+	values := make([]string, len(rank))
+	for c, i := range rank {
 		values[i] = string(c)
 	}
 	return values
+}
+
+// Valid reports whether c is a Channel: one a stored or signed value may name.
+func (c Channel) Valid() bool {
+	_, ok := rank[c]
+	return ok
 }
