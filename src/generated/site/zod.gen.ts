@@ -2653,8 +2653,9 @@ export const zSiteVerifyEmailInput = z.strictObject({
  * for the key value had not passed) or `enrollment_ceiling` (the keyed automation's contact had 10
  * active enrollments, or 10 begun in a day). An occurrence of a date Trigger (ADR 0126) is skipped as
  * `active_enrollment` (an enrollment of the contact was active at its moment), `missed` (it was
- * reached 24 hours late or more) or `send_locked` (its date was last written through a Connection
- * without mcp:send; a later write of the date may still enroll it within 24 hours).
+ * reached 24 hours late or more while its date was already set at its moment) or `send_locked` (its
+ * date was set through a Connection without mcp:send; a later write of another date may still
+ * enroll it within 24 hours).
  */
 export const zSkippedEntryReason = z.enum([
   'no_enrollment_key',

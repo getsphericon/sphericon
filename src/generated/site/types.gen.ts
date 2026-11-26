@@ -722,14 +722,15 @@ export type AutomationSkippedCounts = {
    */
   enrollmentCeiling: number;
   /**
-   * Occurrences of a date Trigger (ADR 0126) the scheduler reached 24 hours late or more, which
-   * enroll no one
+   * Occurrences of a date Trigger (ADR 0126) the scheduler reached 24 hours late or more while
+   * their date was already set at their moment, which enroll no one; a date set after its
+   * occurrence counts nothing
    */
   missed: number;
   /**
-   * Occurrences of a date Trigger whose date was last written through a Connection without
-   * mcp:send, which enroll no one while it stays so; a later write of the date may still enroll the
-   * same occurrence within 24 hours, which then counts as entered too
+   * Occurrences of a date Trigger whose date was set through a Connection without mcp:send, which
+   * enroll no one while it stays so; a later write of another date may still enroll the same
+   * occurrence within 24 hours, which then counts as entered too
    */
   sendLocked: number;
 };
@@ -9085,8 +9086,9 @@ export type SiteWorkspaceTimezoneInput = {
  * for the key value had not passed) or `enrollment_ceiling` (the keyed automation's contact had 10
  * active enrollments, or 10 begun in a day). An occurrence of a date Trigger (ADR 0126) is skipped as
  * `active_enrollment` (an enrollment of the contact was active at its moment), `missed` (it was
- * reached 24 hours late or more) or `send_locked` (its date was last written through a Connection
- * without mcp:send; a later write of the date may still enroll it within 24 hours).
+ * reached 24 hours late or more while its date was already set at its moment) or `send_locked` (its
+ * date was set through a Connection without mcp:send; a later write of another date may still
+ * enroll it within 24 hours).
  */
 export const SkippedEntryReason = {
   NO_ENROLLMENT_KEY: 'no_enrollment_key',
@@ -9110,8 +9112,9 @@ export const SkippedEntryReason = {
  * for the key value had not passed) or `enrollment_ceiling` (the keyed automation's contact had 10
  * active enrollments, or 10 begun in a day). An occurrence of a date Trigger (ADR 0126) is skipped as
  * `active_enrollment` (an enrollment of the contact was active at its moment), `missed` (it was
- * reached 24 hours late or more) or `send_locked` (its date was last written through a Connection
- * without mcp:send; a later write of the date may still enroll it within 24 hours).
+ * reached 24 hours late or more while its date was already set at its moment) or `send_locked` (its
+ * date was set through a Connection without mcp:send; a later write of another date may still
+ * enroll it within 24 hours).
  */
 export type SkippedEntryReason = typeof SkippedEntryReason[keyof typeof SkippedEntryReason];
 

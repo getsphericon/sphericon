@@ -6745,12 +6745,12 @@
           "missed": {
             "type": "integer",
             "format": "int32",
-            "description": "Occurrences of a date Trigger (ADR 0126) the scheduler reached 24 hours late or more, which\nenroll no one"
+            "description": "Occurrences of a date Trigger (ADR 0126) the scheduler reached 24 hours late or more while\ntheir date was already set at their moment, which enroll no one; a date set after its\noccurrence counts nothing"
           },
           "sendLocked": {
             "type": "integer",
             "format": "int32",
-            "description": "Occurrences of a date Trigger whose date was last written through a Connection without\nmcp:send, which enroll no one while it stays so; a later write of the date may still enroll the\nsame occurrence within 24 hours, which then counts as entered too"
+            "description": "Occurrences of a date Trigger whose date was set through a Connection without mcp:send, which\nenroll no one while it stays so; a later write of another date may still enroll the same\noccurrence within 24 hours, which then counts as entered too"
           }
         },
         "description": "How many entries into an automation were skipped, by reason"
@@ -15239,7 +15239,7 @@
           "missed",
           "send_locked"
         ],
-        "description": "Why an entry into an automation was skipped, by the first entry check that refused it (ADR 0127,\nADR 0165), in their order: `no_enrollment_key` (the automation has an Enrollment key and the\ntriggering Event lacks its property), `cycle` (the chain of events that caused it already passed\nthrough the automation), `active_enrollment` (the triggering Event occurred while an enrollment\nof the contact for the key value was active, or one is active still), `once` (the contact had an\nenrollment for the key value in the automation before, under the `once` entry policy),\n`cooldown` (under `again`, the cooldown from the beginning of the contact's previous enrollment\nfor the key value had not passed) or `enrollment_ceiling` (the keyed automation's contact had 10\nactive enrollments, or 10 begun in a day). An occurrence of a date Trigger (ADR 0126) is skipped as\n`active_enrollment` (an enrollment of the contact was active at its moment), `missed` (it was\nreached 24 hours late or more) or `send_locked` (its date was last written through a Connection\nwithout mcp:send; a later write of the date may still enroll it within 24 hours)."
+        "description": "Why an entry into an automation was skipped, by the first entry check that refused it (ADR 0127,\nADR 0165), in their order: `no_enrollment_key` (the automation has an Enrollment key and the\ntriggering Event lacks its property), `cycle` (the chain of events that caused it already passed\nthrough the automation), `active_enrollment` (the triggering Event occurred while an enrollment\nof the contact for the key value was active, or one is active still), `once` (the contact had an\nenrollment for the key value in the automation before, under the `once` entry policy),\n`cooldown` (under `again`, the cooldown from the beginning of the contact's previous enrollment\nfor the key value had not passed) or `enrollment_ceiling` (the keyed automation's contact had 10\nactive enrollments, or 10 begun in a day). An occurrence of a date Trigger (ADR 0126) is skipped as\n`active_enrollment` (an enrollment of the contact was active at its moment), `missed` (it was\nreached 24 hours late or more while its date was already set at its moment) or `send_locked` (its\ndate was set through a Connection without mcp:send; a later write of another date may still\nenroll it within 24 hours)."
       },
       "SkippedEntryResource": {
         "type": "object",

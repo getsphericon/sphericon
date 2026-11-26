@@ -2676,12 +2676,13 @@ type AutomationSkippedCounts struct {
 	NoEnrollmentKey int32 `json:"noEnrollmentKey"`
 	// Entries of a contact that had 10 active enrollments in the keyed automation, or 10 begun in a day.
 	EnrollmentCeiling int32 `json:"enrollmentCeiling"`
-	// Occurrences of a date Trigger (ADR 0126) the scheduler reached 24 hours late or more, which enroll
-	// no one.
+	// Occurrences of a date Trigger (ADR 0126) the scheduler reached 24 hours late or more while their
+	// date was already set at their moment, which enroll no one; a date set after its occurrence counts
+	// nothing.
 	Missed int32 `json:"missed"`
-	// Occurrences of a date Trigger whose date was last written through a Connection without mcp:send,
-	// which enroll no one while it stays so; a later write of the date may still enroll the same
-	// occurrence within 24 hours, which then counts as entered too.
+	// Occurrences of a date Trigger whose date was set through a Connection without mcp:send, which enroll
+	// no one while it stays so; a later write of another date may still enroll the same occurrence within
+	// 24 hours, which then counts as entered too.
 	SendLocked int32 `json:"sendLocked"`
 }
 
@@ -27945,9 +27946,9 @@ func (s *SkippedEntriesListOK) SetTotalPages(val int32) {
 // cooldown from the beginning of the contact's previous enrollment for the key value had not passed)
 // or `enrollment_ceiling` (the keyed automation's contact had 10 active enrollments, or 10 begun in a
 // day). An occurrence of a date Trigger (ADR 0126) is skipped as `active_enrollment` (an enrollment of
-// the contact was active at its moment), `missed` (it was reached 24 hours late or more) or
-// `send_locked` (its date was last written through a Connection without mcp:send; a later write of the
-// date may still enroll it within 24 hours).
+// the contact was active at its moment), `missed` (it was reached 24 hours late or more while its date
+// was already set at its moment) or `send_locked` (its date was set through a Connection without
+// mcp:send; a later write of another date may still enroll it within 24 hours).
 // Ref: #/components/schemas/SkippedEntryReason
 type SkippedEntryReason string
 

@@ -918,13 +918,14 @@ model AutomationSkippedCounts {
    * day */
   enrollmentCeiling: int32;
 
-  /** Occurrences of a date Trigger (ADR 0126) the scheduler reached 24 hours late or more, which
-   * enroll no one */
+  /** Occurrences of a date Trigger (ADR 0126) the scheduler reached 24 hours late or more while
+   * their date was already set at their moment, which enroll no one; a date set after its
+   * occurrence counts nothing */
   missed: int32;
 
-  /** Occurrences of a date Trigger whose date was last written through a Connection without
-   * mcp:send, which enroll no one while it stays so; a later write of the date may still enroll the
-   * same occurrence within 24 hours, which then counts as entered too */
+  /** Occurrences of a date Trigger whose date was set through a Connection without mcp:send, which
+   * enroll no one while it stays so; a later write of another date may still enroll the same
+   * occurrence within 24 hours, which then counts as entered too */
   sendLocked: int32;
 }
 
