@@ -935,7 +935,7 @@ type Failure struct {
 // FailRecipient ends a Broadcast recipient's send as Failed with cause, for a recipient that
 // can never go out: its Contact has no address, or its last attempt failed. Every recipient
 // ends with exactly one Outbound message (ADR 0015), so this records one even when no attempt
-// ever claimed the key. It is idempotent: a message already final is replayed, not rewritten
+// ever claimed the key, with the recipient's wait (ADR 0178). It is idempotent: a message already final is replayed, not rewritten
 // (a send that reached the provider stays Sent).
 //
 // A live claim is another attempt that may still reach the provider, so nothing is failed and
@@ -958,6 +958,7 @@ func (m *Module) FailRecipient(ctx context.Context, s *ent.Scoped, f Failure) (R
 			SetStatus(outboundmessage.StatusFailed).
 			SetFailure(cause.Error())
 		ref.stamp(create)
+		recipientWaited(rec).stamp(create)
 		if rec.ContactID != 0 {
 			create.SetContactID(rec.ContactID)
 		}

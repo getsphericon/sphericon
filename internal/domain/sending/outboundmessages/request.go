@@ -69,8 +69,14 @@ func BroadcastRecipient(b *ent.Broadcast, rec *ent.BroadcastRecipient, c *ent.Co
 		Track:         true,
 		Ref:           BroadcastRef{BroadcastID: b.ID, RecipientID: rec.ID},
 		IntegrationID: b.IntegrationID,
-		Waited:        Waited{Since: lo.FromPtr(rec.DeferredSince), Cause: lo.FromPtr(rec.DeferralCause)},
+		Waited:        recipientWaited(rec),
 	}, nil
+}
+
+// recipientWaited is how a Broadcast recipient has waited so far: since its first Deferral, for
+// the cause of its latest.
+func recipientWaited(rec *ent.BroadcastRecipient) Waited {
+	return Waited{Since: lo.FromPtr(rec.DeferredSince), Cause: lo.FromPtr(rec.DeferralCause)}
 }
 
 // Waited is how a send has waited at its place before this attempt (ADR 0178): since when, the

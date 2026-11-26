@@ -165,7 +165,8 @@ func TestAnAutomationSendThatLosesTheLastPlaceIsDeferred(t *testing.T) {
 func TestAnAttemptBehindTheLockTakesTheDecisionAnotherMadeUnderItsKey(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.Committed())
 	capEmail(t, env, 1)
-	require.Equal(t, outboundmessages.Sent, sendTo(t, env.OutboundModule(), env, marketing(t, env, "reread:seed", fixtures.ContactAliceID)).Outcome)
+	seed := sendTo(t, env.OutboundModule(), env, marketing(t, env, "reread:seed", fixtures.ContactAliceID))
+	require.Equal(t, outboundmessages.Sent, seed.Outcome)
 	key := postgres.DestinationKey(frequencycap.LockKind, fixtures.AcmeID, string(channels.Email), fixtures.ContactAliceEmail)
 	stepID := automationstep.ID("6e2c8a5f-3b7d-5cae-d4a6-3b5c7d9e1f26")
 	pastItsBound := outboundmessages.Waited{Since: time.Now().Add(-48 * time.Hour), Cause: deferralcause.FrequencyCap}

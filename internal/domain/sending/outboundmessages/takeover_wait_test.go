@@ -2,6 +2,7 @@ package outboundmessages_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -51,4 +52,25 @@ func TestAClaimTakenOverKeepsTheWaitOfTheAttemptThatTookIt(t *testing.T) {
 	require.NotNil(t, msg.DeferredSince, "the claim took the wait of the attempt that holds it")
 	assert.True(t, since.Equal(*msg.DeferredSince), "since when: %s", msg.DeferredSince)
 	assert.Equal(t, deferralcause.SendCap, lo.FromPtr(msg.DeferralCause))
+}
+
+// A Broadcast recipient that waited and is then given up before anything was claimed for it keeps
+// its wait on the Failed message, as a decided send does (ADR 0178).
+func TestARecipientGivenUpBeforeAClaimKeepsItsWait(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	since := time.Now().Add(-3 * time.Hour).Truncate(time.Microsecond)
+	id := env.PlaceRecipient(ctx, fixtures.BroadcastSendingID, fixtures.ContactAliceID)
+	env.DB.BroadcastRecipient.UpdateOneID(id).SetDeferredSince(since).SetDeferralCause(deferralcause.ProviderLimit).
+		SetDeferredUntil(time.Now()).ExecX(ctx)
+	rec := env.DB.BroadcastRecipient.GetX(ctx, id)
+
+	res, err := newModule(env, time.Now).FailRecipient(ctx, acme(env), outboundmessages.Failure{Recipient: rec, Cause: errors.New("content did not render")})
+
+	require.NoError(t, err)
+	assert.Equal(t, outboundmessages.Failed, res.Outcome)
+	msg := env.DB.OutboundMessage.GetX(ctx, res.MessageID)
+	require.NotNil(t, msg.DeferredSince)
+	assert.True(t, since.Equal(*msg.DeferredSince), "since when: %s", msg.DeferredSince)
+	assert.Equal(t, deferralcause.ProviderLimit, lo.FromPtr(msg.DeferralCause))
 }
