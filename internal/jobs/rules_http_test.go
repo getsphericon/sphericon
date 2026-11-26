@@ -90,7 +90,7 @@ func TestAnHTTPActionIsPendingWhileTheActionsAfterItRun(t *testing.T) {
 	assert.Equal(t, rules.Result{Type: ruleaction.HTTP, Status: rules.Pending}, results[0])
 	assert.Equal(t, rules.Succeeded, results[1].Status, "the next Action does not wait for the call")
 	assert.Nil(t, f.CompletedAt, "the Firing finishes when the call is recorded")
-	assert.Equal(t, []string{"after-hook"}, tagsOf(t, env, fixtures.ContactQuahogQuinnID))
+	assert.Equal(t, []string{"after-hook"}, tagNames(t, env, fixtures.ContactQuahogQuinnID))
 	assert.Empty(t, rcv.received(), "the Actions job makes no call")
 	assert.Equal(t, []map[string]any{{"firing_id": float64(fixtures.RuleFiringQuahogHookToRunID), "index": float64(0), jobkind.WorkspaceArg: float64(fixtures.QuahogID)}}, env.JobsOf(t, rules.HTTPArgs{}.Kind()))
 }

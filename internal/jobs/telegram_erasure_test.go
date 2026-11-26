@@ -1,7 +1,6 @@
 package jobs_test
 
 import (
-	"fmt"
 	"net/http"
 	"testing"
 	"time"
@@ -31,12 +30,6 @@ import (
 
 // Erasing a Contact removes its Telegram data and keeps its refusal (ADR 0021, #962).
 
-// sayTG is the update Telegram posts when `from` writes text to the bot in a private chat.
-func sayTG(updateID, from int64, text string) string {
-	return fmt.Sprintf(`{"update_id":%d,"message":{"message_id":%d,"date":1767225600,"chat":{"id":%d,"type":"private"},"from":{"id":%d,"is_bot":false,"first_name":"P"},"text":%q}}`,
-		updateID, updateID, from, from, text)
-}
-
 func eraseContact(t *testing.T, env *testhelper.TestEnv, contactID int64) {
 	t.Helper()
 	require.NoError(t, contacterasure.New(env.Bus, testhelper.Module[*broadcasts.Module](env), testhelper.Module[*contacts.Module](env), testhelper.Module[*unsubscribes.Module](env), testhelper.Module[*bindings.Chats](env), testhelper.Module[*engagementtracking.Module](env), testhelper.Module[*outboundmessages.Module](env), testhelper.Module[*orders.Module](env), time.Now).Erase(t.Context(), env.DB.Scoped(fixtures.AcmeID),
@@ -51,8 +44,8 @@ func TestErasingABoundContactRemovesTheStampOfItsReturn(t *testing.T) {
 	bot := env.AcmeTelegram(t)
 	const user = 801002
 	env.BindTelegram(t, bot, fixtures.ContactTelegramErasableID, user, 1)
-	require.Equal(t, http.StatusOK, env.PostTelegramUpdate(t, bot, sayTG(2, user, "STOP")).Code)
-	require.Equal(t, http.StatusOK, env.PostTelegramUpdate(t, bot, sayTG(3, user, "/start")).Code)
+	require.Equal(t, http.StatusOK, env.PostTelegramUpdate(t, bot, testhelper.TelegramMessage(2, user, "STOP")).Code)
+	require.Equal(t, http.StatusOK, env.PostTelegramUpdate(t, bot, testhelper.TelegramMessage(3, user, "/start")).Code)
 
 	eraseContact(t, env, fixtures.ContactTelegramErasableID)
 
@@ -78,7 +71,7 @@ func TestErasingABoundContactRemovesItsTelegramDataAndKeepsItsOptOut(t *testing.
 
 	sent, clicked, bound := int64(fixtures.EventTelegramErasableSentID), int64(fixtures.EventTelegramErasableClickedID), int64(fixtures.EventTelegramErasableBoundID)
 	received, otherReceived := int64(fixtures.EventTelegramErasableReceivedID), int64(fixtures.EventTelegramBystanderReceivedID)
-	require.Equal(t, http.StatusOK, env.PostTelegramUpdate(t, bot, sayTG(2, user, "STOP")).Code)
+	require.Equal(t, http.StatusOK, env.PostTelegramUpdate(t, bot, testhelper.TelegramMessage(2, user, "STOP")).Code)
 
 	eraseContact(t, env, fixtures.ContactTelegramErasableID)
 

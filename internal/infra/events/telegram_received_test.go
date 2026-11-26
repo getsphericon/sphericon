@@ -18,12 +18,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// say is the update Telegram posts when `from` writes text to the bot in a private chat.
-func say(updateID, from int64, text string) string {
-	return fmt.Sprintf(`{"update_id":%d,"message":{"message_id":%d,"date":1767225600,"chat":{"id":%d,"type":"private"},"from":{"id":%d,"is_bot":false,"first_name":"P"},"text":%q}}`,
-		updateID, updateID, from, from, text)
-}
-
 // liamsChat is the Telegram user whose private chat with Acme's fixture bot is bound to Liam
 // (BindingLiam).
 var liamsChat = lo.Must(strconv.ParseInt(fixtures.BindingLiamDestination, 10, 64))
@@ -32,8 +26,8 @@ func TestAMessageFromABoundContactIsRecordedAsReceived(t *testing.T) {
 	env := testhelper.Setup(t)
 	bot := env.AcmeTelegram(t)
 
-	posted := env.PostTelegramUpdate(t, bot, say(1, liamsChat, "Where is my order?"))
-	redelivered := env.PostTelegramUpdate(t, bot, say(1, liamsChat, "Where is my order?"))
+	posted := env.PostTelegramUpdate(t, bot, testhelper.TelegramMessage(1, liamsChat, "Where is my order?"))
+	redelivered := env.PostTelegramUpdate(t, bot, testhelper.TelegramMessage(1, liamsChat, "Where is my order?"))
 
 	assert.Equal(t, 200, posted.Code)
 	assert.Equal(t, 200, redelivered.Code)
@@ -52,7 +46,7 @@ func TestAReceivedTextIsCutAtOneKiB(t *testing.T) {
 	// "é" is two bytes: 600 of them are 1200 bytes, and the cut falls between two characters.
 	long := strings.Repeat("é", 600)
 
-	env.PostTelegramUpdate(t, bot, say(2, liamsChat, long))
+	env.PostTelegramUpdate(t, bot, testhelper.TelegramMessage(2, liamsChat, long))
 
 	got := env.QueuedMessages(t, systemevent.TelegramReceived)
 	require.Len(t, got, 1)
@@ -64,7 +58,7 @@ func TestAMessageFromAnUnknownSenderRecordsNothing(t *testing.T) {
 	bot := env.AcmeTelegram(t)
 	contacts := env.DB.Contact.Query().CountX(t.Context())
 
-	posted := env.PostTelegramUpdate(t, bot, say(3, 9999, "hello?"))
+	posted := env.PostTelegramUpdate(t, bot, testhelper.TelegramMessage(3, 9999, "hello?"))
 
 	assert.Equal(t, 200, posted.Code)
 	assert.Zero(t, env.QueuedCount(t, systemevent.TelegramReceived, nil))
@@ -76,7 +70,7 @@ func TestAMessageOnAnotherBotIsNotTheBoundContactsWords(t *testing.T) {
 	env.AcmeTelegram(t)
 	other := env.AcmeSecondTelegram(t)
 
-	env.PostTelegramUpdate(t, other, say(4, liamsChat, "hi"))
+	env.PostTelegramUpdate(t, other, testhelper.TelegramMessage(4, liamsChat, "hi"))
 
 	assert.Zero(t, env.QueuedCount(t, systemevent.TelegramReceived, nil))
 }
@@ -85,9 +79,9 @@ func TestACommandWithItsOwnMeaningIsNotReceived(t *testing.T) {
 	env := testhelper.Setup(t)
 	bot := env.AcmeTelegram(t)
 
-	env.PostTelegramUpdate(t, bot, say(5, liamsChat, "/start"))
-	env.PostTelegramUpdate(t, bot, say(6, liamsChat, "/start@"+testhelper.AcmeTelegramUsername+" abc"))
-	env.PostTelegramUpdate(t, bot, say(7, liamsChat, "/STOP"))
+	env.PostTelegramUpdate(t, bot, testhelper.TelegramMessage(5, liamsChat, "/start"))
+	env.PostTelegramUpdate(t, bot, testhelper.TelegramMessage(6, liamsChat, "/start@"+testhelper.AcmeTelegramUsername+" abc"))
+	env.PostTelegramUpdate(t, bot, testhelper.TelegramMessage(7, liamsChat, "/STOP"))
 
 	assert.Zero(t, env.QueuedCount(t, systemevent.TelegramReceived, nil))
 }
@@ -96,7 +90,7 @@ func TestAnotherCommandIsReceivedLikeAnyText(t *testing.T) {
 	env := testhelper.Setup(t)
 	bot := env.AcmeTelegram(t)
 
-	env.PostTelegramUpdate(t, bot, say(8, liamsChat, "/help me"))
+	env.PostTelegramUpdate(t, bot, testhelper.TelegramMessage(8, liamsChat, "/help me"))
 
 	assert.Equal(t, 1, env.QueuedCount(t, systemevent.TelegramReceived, map[string]any{"text": "/help me"}))
 }
@@ -106,7 +100,7 @@ func TestAnotherCommandIsReceivedLikeAnyText(t *testing.T) {
 func TestAReceivedEventTriggersAutomationsAndReachesWebhooks(t *testing.T) {
 	env := testhelper.Setup(t)
 	bot := env.AcmeTelegram(t)
-	env.PostTelegramUpdate(t, bot, say(9, liamsChat, "yes please"))
+	env.PostTelegramUpdate(t, bot, testhelper.TelegramMessage(9, liamsChat, "yes please"))
 	envelopes := env.QueuedEnvelopes(t, systemevent.TelegramReceived)
 	require.Len(t, envelopes, 1)
 	env.DB.WebhookEndpoint.UpdateOneID(fixtures.WebhookCodebasicsID).SetEventTypes([]string{systemevent.TelegramReceived}).ExecX(t.Context())

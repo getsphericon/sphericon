@@ -177,14 +177,7 @@ func TestClientRunsAnEnqueuedWelcomeJob(t *testing.T) {
 	require.NoError(t, e.client.Start(ctx))
 	t.Cleanup(func() { cleanup.Report("stop the job client", e.client.Stop(context.Background())) })
 
-	require.Eventually(t, func() bool {
-		for _, m := range e.SystemMail.Messages() {
-			if m.To == "runtime@example.com" {
-				return true
-			}
-		}
-		return false
-	}, 10*time.Second, 50*time.Millisecond)
+	require.Eventually(t, func() bool { return len(e.SystemMail.To("runtime@example.com")) > 0 }, 10*time.Second, 50*time.Millisecond)
 }
 
 func TestDispatchFansOutToMatchingEnabledEndpoints(t *testing.T) {

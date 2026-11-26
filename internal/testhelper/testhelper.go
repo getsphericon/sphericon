@@ -75,6 +75,7 @@ import (
 	dbcleanerpg "github.com/mokevnin/dbcleaner/v2/postgres"
 	ht "github.com/ogen-go/ogen/http"
 	"github.com/peterldowns/pgtestdb"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/mod/sumdb/dirhash"
 )
@@ -608,6 +609,11 @@ func (s *CapturingSender) Messages() []messaging.EmailMessage {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return append([]messaging.EmailMessage(nil), s.sent...)
+}
+
+// To is the captured sends to address, as Messages reads them.
+func (s *CapturingSender) To(address string) []messaging.EmailMessage {
+	return lo.Filter(s.Messages(), func(m messaging.EmailMessage, _ int) bool { return m.To == address })
 }
 
 // SystemFrom is the From address of the test Instance's System sender.

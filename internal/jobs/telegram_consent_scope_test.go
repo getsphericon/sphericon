@@ -20,12 +20,12 @@ import (
 func TestTelegramObservationIdentityIsIndependentForEachBotAndWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 	botA, botB, otherWorkspace := env.AcmeTelegram(t), env.AcmeSecondTelegram(t), env.LacunaTelegram(t)
-	for _, update := range []string{said(1, optOutUser, "/stop"), said(2, optOutUser, "/start")} {
+	for _, update := range []string{testhelper.TelegramMessage(1, optOutUser, "/stop"), testhelper.TelegramMessage(2, optOutUser, "/start")} {
 		reply := env.PostTelegramUpdate(t, botA, update)
 		require.Equal(t, http.StatusOK, reply.Code)
 	}
 	for _, bot := range []testhelper.TelegramBot{botB, otherWorkspace} {
-		reply := env.PostTelegramUpdate(t, bot, said(1, optOutUser, "/stop"))
+		reply := env.PostTelegramUpdate(t, bot, testhelper.TelegramMessage(1, optOutUser, "/stop"))
 		require.Equal(t, http.StatusOK, reply.Code)
 	}
 	for _, workspaceID := range []int64{fixtures.AcmeID, fixtures.LacunaID} {
@@ -39,7 +39,7 @@ func TestTelegramResumePreservesASourceScopedOptOut(t *testing.T) {
 	env := testhelper.Setup(t)
 	bot := env.LacunaTelegram(t)
 	// Sid's fixture opt-out covers Broadcasts, independently of the Channel-wide stop.
-	for _, update := range []string{said(1, 77407, "/stop"), said(2, 77407, "/start"), said(1, 77407, "/stop")} {
+	for _, update := range []string{testhelper.TelegramMessage(1, 77407, "/stop"), testhelper.TelegramMessage(2, 77407, "/start"), testhelper.TelegramMessage(1, 77407, "/stop")} {
 		reply := env.PostTelegramUpdate(t, bot, update)
 		require.Equal(t, http.StatusOK, reply.Code)
 	}
@@ -62,7 +62,7 @@ func TestTelegramStopFansOutToTheMessageAndVisitorOwnersOnlyOnTransitions(t *tes
 		SetContactID(fixtures.ContactLiamID).SetDestination(fixtures.BindingEmmaPhoneDestination).
 		SetIntegrationID(int64(botA.Integration.ID)).SetProviderMessageID("77").ExecX(t.Context())
 	user := mustInt(t, fixtures.BindingEmmaPhoneDestination)
-	for _, update := range []string{pressed(1, user, 77, "cb-1", "unsubscribe"), pressed(2, user, 77, "cb-2", "unsubscribe"), said(3, user, "/start"), pressed(2, user, 77, "cb-2", "unsubscribe")} {
+	for _, update := range []string{pressed(1, user, 77, "cb-1", "unsubscribe"), pressed(2, user, 77, "cb-2", "unsubscribe"), testhelper.TelegramMessage(3, user, "/start"), pressed(2, user, 77, "cb-2", "unsubscribe")} {
 		reply := env.PostTelegramUpdate(t, botA, update)
 		require.Equal(t, http.StatusOK, reply.Code)
 	}

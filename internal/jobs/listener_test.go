@@ -57,17 +57,6 @@ func TestAListeningClientWorksAJobInsertedElsewhereAtOnce(t *testing.T) {
 	_, err = elsewhere.Insert(ctx, jobs.SendNoticeArgs{EventID: "01LISTENED", To: "listened@example.com", Subject: "Welcome", Text: "Listened"}, nil)
 	require.NoError(t, err)
 
-	require.Eventually(t, func() bool { return sentTo(mail, "listened@example.com") }, 2*time.Second, 20*time.Millisecond,
+	require.Eventually(t, func() bool { return len(mail.To("listened@example.com")) > 0 }, 2*time.Second, 20*time.Millisecond,
 		"worked well before the listener's fallback poll")
-}
-
-// sentTo reports whether the sender sent a message to the address.
-func sentTo(mail *testhelper.CapturingSender, to string) bool {
-	msgs := mail.Messages()
-	for i := range msgs {
-		if msgs[i].To == to {
-			return true
-		}
-	}
-	return false
 }

@@ -100,9 +100,9 @@ func TestAMessageFromAVisitorsChatIsNobodysEvenAfterAClaimedIdentify(t *testing.
 	env.MakeDefaultTelegram(t, bot)
 	env.StartTelegram(t, bot, 3, 6003, startLink(t, env, "dev-received").URL)
 
-	env.PostTelegramUpdate(t, bot, `{"update_id":4,"message":{"message_id":4,"date":1767225600,"chat":{"id":6003,"type":"private"},"from":{"id":6003,"is_bot":false},"text":"before"}}`)
+	env.PostTelegramUpdate(t, bot, testhelper.TelegramMessage(4, 6003, "before"))
 	identify(t, env, "dev-received", "received.person@example.com")
-	env.PostTelegramUpdate(t, bot, `{"update_id":5,"message":{"message_id":5,"date":1767225600,"chat":{"id":6003,"type":"private"},"from":{"id":6003,"is_bot":false},"text":"after"}}`)
+	env.PostTelegramUpdate(t, bot, testhelper.TelegramMessage(5, 6003, "after"))
 
 	assert.Zero(t, env.QueuedCount(t, systemevent.TelegramReceived, nil))
 }
