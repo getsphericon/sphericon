@@ -425,6 +425,10 @@ type Request struct {
 	// goes on.
 	Stopped SourceStop
 
+	// Waited is how the send has waited at its place before this attempt, which its Outbound
+	// message keeps once decided (ADR 0178); the zero value for a send that has not waited.
+	Waited Waited
+
 	// digest is what a Transactional request with the caller's key asked for (requestDigest); ""
 	// for every other send. Only Transactional sets it.
 	digest string

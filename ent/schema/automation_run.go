@@ -12,6 +12,7 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
+	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 )
 
 // AutomationRun is one contact's progress through an Automation, an Enrollment. A Contact may have
@@ -33,6 +34,7 @@ func (AutomationRun) Annotations() []schema.Annotation {
 	a.Checks["automation_runs_entry_check"] = "num_nonnulls(trigger_source_id, firing_id, occurrence) <= 1"
 	a.Checks["automation_runs_chain_check"] = jsonCheck("chain", "array")
 	a.Checks["automation_runs_ordinal_check"] = "ordinal >= 1"
+	a.Checks["automation_runs_deferral_check"] = "(deferred_since IS NULL) = (deferral_cause IS NULL)"
 	return []schema.Annotation{a}
 }
 
@@ -150,8 +152,23 @@ func (AutomationRun) Fields() []ent.Field {
 			GoType(automationstep.ID("")).
 			Optional().
 			Nillable(),
+		// When the wait the Enrollment stands on is due: a wait Step's due moment, or, while its send
+		// Step is deferred, when the send is tried again (ADR 0178).
 		field.Time("resume_at").
 			Annotations(Attribute("the wake-up time of a waiting run, written with its status by its machine")).
+			Optional().
+			Nillable(),
+		// Since when and why the send of the Step it stands on waits (ADR 0178): the moment of the
+		// first Deferral at the Step, kept by every later one, and the cause of the latest. Both
+		// are cleared by the write that moves the Enrollment off the Step, and are null while its
+		// send is not deferred (automation_runs_deferral_check).
+		field.Time("deferred_since").
+			Annotations(Attribute("records since when the send of the current Step waits; set by its Deferral, cleared by the move off the Step")).
+			Optional().
+			Nillable(),
+		field.Enum("deferral_cause").
+			GoType(deferralcause.Cause("")).
+			Annotations(Attribute("records why the send of the current Step waits; set by its Deferral, cleared by the move off the Step")).
 			Optional().
 			Nillable(),
 		// Why a failed enrollment failed, set by an HTTP step (ADR 0039): the closed error

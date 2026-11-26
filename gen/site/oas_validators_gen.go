@@ -4111,6 +4111,23 @@ func (s DateTriggerKind) Validate() error {
 	}
 }
 
+func (s DeferralCause) Validate() error {
+	switch s {
+	case "provider_limit":
+		return nil
+	case "send_cap":
+		return nil
+	case "provider":
+		return nil
+	case "sending_window":
+		return nil
+	case "frequency_cap":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s *DnsRecord) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -5000,6 +5017,24 @@ func (s *EnrollmentResource) Validate() error {
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
 			Name:  "occurrence",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.DeferralCause.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "deferralCause",
 			Error: err,
 		})
 	}

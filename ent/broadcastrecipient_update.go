@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 )
 
 // BroadcastRecipientUpdate is the builder for updating BroadcastRecipient entities.
@@ -103,6 +104,26 @@ func (_u *BroadcastRecipientUpdate) SetNillableDeferredUntil(v *time.Time) *Broa
 // ClearDeferredUntil clears the value of the "deferred_until" field.
 func (_u *BroadcastRecipientUpdate) ClearDeferredUntil() *BroadcastRecipientUpdate {
 	_u.mutation.ClearDeferredUntil()
+	return _u
+}
+
+// SetDeferralCause sets the "deferral_cause" field.
+func (_u *BroadcastRecipientUpdate) SetDeferralCause(v deferralcause.Cause) *BroadcastRecipientUpdate {
+	_u.mutation.SetDeferralCause(v)
+	return _u
+}
+
+// SetNillableDeferralCause sets the "deferral_cause" field if the given value is not nil.
+func (_u *BroadcastRecipientUpdate) SetNillableDeferralCause(v *deferralcause.Cause) *BroadcastRecipientUpdate {
+	if v != nil {
+		_u.SetDeferralCause(*v)
+	}
+	return _u
+}
+
+// ClearDeferralCause clears the value of the "deferral_cause" field.
+func (_u *BroadcastRecipientUpdate) ClearDeferralCause() *BroadcastRecipientUpdate {
+	_u.mutation.ClearDeferralCause()
 	return _u
 }
 
@@ -202,6 +223,11 @@ func (_u *BroadcastRecipientUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *BroadcastRecipientUpdate) check() error {
+	if v, ok := _u.mutation.DeferralCause(); ok {
+		if err := broadcastrecipient.DeferralCauseValidator(v); err != nil {
+			return &ValidationError{Name: "deferral_cause", err: fmt.Errorf(`ent: validator failed for field "BroadcastRecipient.deferral_cause": %w`, err)}
+		}
+	}
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "BroadcastRecipient.workspace"`)
 	}
@@ -237,6 +263,12 @@ func (_u *BroadcastRecipientUpdate) sqlSave(ctx context.Context) (_node int, err
 	}
 	if _u.mutation.DeferredUntilCleared() {
 		_spec.ClearField(broadcastrecipient.FieldDeferredUntil, field.TypeTime)
+	}
+	if value, ok := _u.mutation.DeferralCause(); ok {
+		_spec.SetField(broadcastrecipient.FieldDeferralCause, field.TypeEnum, value)
+	}
+	if _u.mutation.DeferralCauseCleared() {
+		_spec.ClearField(broadcastrecipient.FieldDeferralCause, field.TypeEnum)
 	}
 	if value, ok := _u.mutation.UnsubscribedAt(); ok {
 		_spec.SetField(broadcastrecipient.FieldUnsubscribedAt, field.TypeTime, value)
@@ -427,6 +459,26 @@ func (_u *BroadcastRecipientUpdateOne) ClearDeferredUntil() *BroadcastRecipientU
 	return _u
 }
 
+// SetDeferralCause sets the "deferral_cause" field.
+func (_u *BroadcastRecipientUpdateOne) SetDeferralCause(v deferralcause.Cause) *BroadcastRecipientUpdateOne {
+	_u.mutation.SetDeferralCause(v)
+	return _u
+}
+
+// SetNillableDeferralCause sets the "deferral_cause" field if the given value is not nil.
+func (_u *BroadcastRecipientUpdateOne) SetNillableDeferralCause(v *deferralcause.Cause) *BroadcastRecipientUpdateOne {
+	if v != nil {
+		_u.SetDeferralCause(*v)
+	}
+	return _u
+}
+
+// ClearDeferralCause clears the value of the "deferral_cause" field.
+func (_u *BroadcastRecipientUpdateOne) ClearDeferralCause() *BroadcastRecipientUpdateOne {
+	_u.mutation.ClearDeferralCause()
+	return _u
+}
+
 // SetUnsubscribedAt sets the "unsubscribed_at" field.
 func (_u *BroadcastRecipientUpdateOne) SetUnsubscribedAt(v time.Time) *BroadcastRecipientUpdateOne {
 	_u.mutation.SetUnsubscribedAt(v)
@@ -536,6 +588,11 @@ func (_u *BroadcastRecipientUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *BroadcastRecipientUpdateOne) check() error {
+	if v, ok := _u.mutation.DeferralCause(); ok {
+		if err := broadcastrecipient.DeferralCauseValidator(v); err != nil {
+			return &ValidationError{Name: "deferral_cause", err: fmt.Errorf(`ent: validator failed for field "BroadcastRecipient.deferral_cause": %w`, err)}
+		}
+	}
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "BroadcastRecipient.workspace"`)
 	}
@@ -588,6 +645,12 @@ func (_u *BroadcastRecipientUpdateOne) sqlSave(ctx context.Context) (_node *Broa
 	}
 	if _u.mutation.DeferredUntilCleared() {
 		_spec.ClearField(broadcastrecipient.FieldDeferredUntil, field.TypeTime)
+	}
+	if value, ok := _u.mutation.DeferralCause(); ok {
+		_spec.SetField(broadcastrecipient.FieldDeferralCause, field.TypeEnum, value)
+	}
+	if _u.mutation.DeferralCauseCleared() {
+		_spec.ClearField(broadcastrecipient.FieldDeferralCause, field.TypeEnum)
 	}
 	if value, ok := _u.mutation.UnsubscribedAt(); ok {
 		_spec.SetField(broadcastrecipient.FieldUnsubscribedAt, field.TypeTime, value)

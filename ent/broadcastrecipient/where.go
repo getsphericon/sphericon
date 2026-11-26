@@ -8,6 +8,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 )
 
 // ID filters vertices based on their ID field.
@@ -288,6 +289,46 @@ func DeferredUntilIsNil() predicate.BroadcastRecipient {
 // DeferredUntilNotNil applies the NotNil predicate on the "deferred_until" field.
 func DeferredUntilNotNil() predicate.BroadcastRecipient {
 	return predicate.BroadcastRecipient(sql.FieldNotNull(FieldDeferredUntil))
+}
+
+// DeferralCauseEQ applies the EQ predicate on the "deferral_cause" field.
+func DeferralCauseEQ(v deferralcause.Cause) predicate.BroadcastRecipient {
+	vc := v
+	return predicate.BroadcastRecipient(sql.FieldEQ(FieldDeferralCause, vc))
+}
+
+// DeferralCauseNEQ applies the NEQ predicate on the "deferral_cause" field.
+func DeferralCauseNEQ(v deferralcause.Cause) predicate.BroadcastRecipient {
+	vc := v
+	return predicate.BroadcastRecipient(sql.FieldNEQ(FieldDeferralCause, vc))
+}
+
+// DeferralCauseIn applies the In predicate on the "deferral_cause" field.
+func DeferralCauseIn(vs ...deferralcause.Cause) predicate.BroadcastRecipient {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.BroadcastRecipient(sql.FieldIn(FieldDeferralCause, v...))
+}
+
+// DeferralCauseNotIn applies the NotIn predicate on the "deferral_cause" field.
+func DeferralCauseNotIn(vs ...deferralcause.Cause) predicate.BroadcastRecipient {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.BroadcastRecipient(sql.FieldNotIn(FieldDeferralCause, v...))
+}
+
+// DeferralCauseIsNil applies the IsNil predicate on the "deferral_cause" field.
+func DeferralCauseIsNil() predicate.BroadcastRecipient {
+	return predicate.BroadcastRecipient(sql.FieldIsNull(FieldDeferralCause))
+}
+
+// DeferralCauseNotNil applies the NotNil predicate on the "deferral_cause" field.
+func DeferralCauseNotNil() predicate.BroadcastRecipient {
+	return predicate.BroadcastRecipient(sql.FieldNotNull(FieldDeferralCause))
 }
 
 // UnsubscribedAtEQ applies the EQ predicate on the "unsubscribed_at" field.

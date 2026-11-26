@@ -3,10 +3,12 @@
 package broadcastrecipient
 
 import (
+	"fmt"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 )
 
 const (
@@ -26,6 +28,8 @@ const (
 	FieldContactID = "contact_id"
 	// FieldDeferredUntil holds the string denoting the deferred_until field in the database.
 	FieldDeferredUntil = "deferred_until"
+	// FieldDeferralCause holds the string denoting the deferral_cause field in the database.
+	FieldDeferralCause = "deferral_cause"
 	// FieldUnsubscribedAt holds the string denoting the unsubscribed_at field in the database.
 	FieldUnsubscribedAt = "unsubscribed_at"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
@@ -68,6 +72,7 @@ var Columns = []string{
 	FieldBroadcastID,
 	FieldContactID,
 	FieldDeferredUntil,
+	FieldDeferralCause,
 	FieldUnsubscribedAt,
 }
 
@@ -89,6 +94,16 @@ var (
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
 )
+
+// DeferralCauseValidator is a validator for the "deferral_cause" field enum values. It is called by the builders before save.
+func DeferralCauseValidator(dc deferralcause.Cause) error {
+	switch dc {
+	case "provider_limit", "send_cap", "provider", "sending_window", "frequency_cap":
+		return nil
+	default:
+		return fmt.Errorf("broadcastrecipient: invalid enum value for deferral_cause field: %q", dc)
+	}
+}
 
 // OrderOption defines the ordering options for the BroadcastRecipient queries.
 type OrderOption func(*sql.Selector)
@@ -126,6 +141,11 @@ func ByContactID(opts ...sql.OrderTermOption) OrderOption {
 // ByDeferredUntil orders the results by the deferred_until field.
 func ByDeferredUntil(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDeferredUntil, opts...).ToFunc()
+}
+
+// ByDeferralCause orders the results by the deferral_cause field.
+func ByDeferralCause(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDeferralCause, opts...).ToFunc()
 }
 
 // ByUnsubscribedAt orders the results by the unsubscribed_at field.

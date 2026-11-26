@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
+	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 )
 
 // AutomationRunCreate is the builder for creating a AutomationRun entity.
@@ -239,6 +240,34 @@ func (_c *AutomationRunCreate) SetNillableResumeAt(v *time.Time) *AutomationRunC
 	return _c
 }
 
+// SetDeferredSince sets the "deferred_since" field.
+func (_c *AutomationRunCreate) SetDeferredSince(v time.Time) *AutomationRunCreate {
+	_c.mutation.SetDeferredSince(v)
+	return _c
+}
+
+// SetNillableDeferredSince sets the "deferred_since" field if the given value is not nil.
+func (_c *AutomationRunCreate) SetNillableDeferredSince(v *time.Time) *AutomationRunCreate {
+	if v != nil {
+		_c.SetDeferredSince(*v)
+	}
+	return _c
+}
+
+// SetDeferralCause sets the "deferral_cause" field.
+func (_c *AutomationRunCreate) SetDeferralCause(v deferralcause.Cause) *AutomationRunCreate {
+	_c.mutation.SetDeferralCause(v)
+	return _c
+}
+
+// SetNillableDeferralCause sets the "deferral_cause" field if the given value is not nil.
+func (_c *AutomationRunCreate) SetNillableDeferralCause(v *deferralcause.Cause) *AutomationRunCreate {
+	if v != nil {
+		_c.SetDeferralCause(*v)
+	}
+	return _c
+}
+
 // SetFailureKind sets the "failure_kind" field.
 func (_c *AutomationRunCreate) SetFailureKind(v automationrun.FailureKind) *AutomationRunCreate {
 	_c.mutation.SetFailureKind(v)
@@ -406,6 +435,11 @@ func (_c *AutomationRunCreate) check() error {
 	if _, ok := _c.mutation.Ordinal(); !ok {
 		return &ValidationError{Name: "ordinal", err: errors.New(`ent: missing required field "AutomationRun.ordinal"`)}
 	}
+	if v, ok := _c.mutation.DeferralCause(); ok {
+		if err := automationrun.DeferralCauseValidator(v); err != nil {
+			return &ValidationError{Name: "deferral_cause", err: fmt.Errorf(`ent: validator failed for field "AutomationRun.deferral_cause": %w`, err)}
+		}
+	}
 	if v, ok := _c.mutation.FailureKind(); ok {
 		if err := automationrun.FailureKindValidator(v); err != nil {
 			return &ValidationError{Name: "failure_kind", err: fmt.Errorf(`ent: validator failed for field "AutomationRun.failure_kind": %w`, err)}
@@ -511,6 +545,14 @@ func (_c *AutomationRunCreate) createSpec() (*AutomationRun, *sqlgraph.CreateSpe
 	if value, ok := _c.mutation.ResumeAt(); ok {
 		_spec.SetField(automationrun.FieldResumeAt, field.TypeTime, value)
 		_node.ResumeAt = &value
+	}
+	if value, ok := _c.mutation.DeferredSince(); ok {
+		_spec.SetField(automationrun.FieldDeferredSince, field.TypeTime, value)
+		_node.DeferredSince = &value
+	}
+	if value, ok := _c.mutation.DeferralCause(); ok {
+		_spec.SetField(automationrun.FieldDeferralCause, field.TypeEnum, value)
+		_node.DeferralCause = &value
 	}
 	if value, ok := _c.mutation.FailureKind(); ok {
 		_spec.SetField(automationrun.FieldFailureKind, field.TypeEnum, value)
@@ -784,6 +826,42 @@ func (u *AutomationRunUpsert) UpdateResumeAt() *AutomationRunUpsert {
 // ClearResumeAt clears the value of the "resume_at" field.
 func (u *AutomationRunUpsert) ClearResumeAt() *AutomationRunUpsert {
 	u.SetNull(automationrun.FieldResumeAt)
+	return u
+}
+
+// SetDeferredSince sets the "deferred_since" field.
+func (u *AutomationRunUpsert) SetDeferredSince(v time.Time) *AutomationRunUpsert {
+	u.Set(automationrun.FieldDeferredSince, v)
+	return u
+}
+
+// UpdateDeferredSince sets the "deferred_since" field to the value that was provided on create.
+func (u *AutomationRunUpsert) UpdateDeferredSince() *AutomationRunUpsert {
+	u.SetExcluded(automationrun.FieldDeferredSince)
+	return u
+}
+
+// ClearDeferredSince clears the value of the "deferred_since" field.
+func (u *AutomationRunUpsert) ClearDeferredSince() *AutomationRunUpsert {
+	u.SetNull(automationrun.FieldDeferredSince)
+	return u
+}
+
+// SetDeferralCause sets the "deferral_cause" field.
+func (u *AutomationRunUpsert) SetDeferralCause(v deferralcause.Cause) *AutomationRunUpsert {
+	u.Set(automationrun.FieldDeferralCause, v)
+	return u
+}
+
+// UpdateDeferralCause sets the "deferral_cause" field to the value that was provided on create.
+func (u *AutomationRunUpsert) UpdateDeferralCause() *AutomationRunUpsert {
+	u.SetExcluded(automationrun.FieldDeferralCause)
+	return u
+}
+
+// ClearDeferralCause clears the value of the "deferral_cause" field.
+func (u *AutomationRunUpsert) ClearDeferralCause() *AutomationRunUpsert {
+	u.SetNull(automationrun.FieldDeferralCause)
 	return u
 }
 
@@ -1069,6 +1147,48 @@ func (u *AutomationRunUpsertOne) UpdateResumeAt() *AutomationRunUpsertOne {
 func (u *AutomationRunUpsertOne) ClearResumeAt() *AutomationRunUpsertOne {
 	return u.Update(func(s *AutomationRunUpsert) {
 		s.ClearResumeAt()
+	})
+}
+
+// SetDeferredSince sets the "deferred_since" field.
+func (u *AutomationRunUpsertOne) SetDeferredSince(v time.Time) *AutomationRunUpsertOne {
+	return u.Update(func(s *AutomationRunUpsert) {
+		s.SetDeferredSince(v)
+	})
+}
+
+// UpdateDeferredSince sets the "deferred_since" field to the value that was provided on create.
+func (u *AutomationRunUpsertOne) UpdateDeferredSince() *AutomationRunUpsertOne {
+	return u.Update(func(s *AutomationRunUpsert) {
+		s.UpdateDeferredSince()
+	})
+}
+
+// ClearDeferredSince clears the value of the "deferred_since" field.
+func (u *AutomationRunUpsertOne) ClearDeferredSince() *AutomationRunUpsertOne {
+	return u.Update(func(s *AutomationRunUpsert) {
+		s.ClearDeferredSince()
+	})
+}
+
+// SetDeferralCause sets the "deferral_cause" field.
+func (u *AutomationRunUpsertOne) SetDeferralCause(v deferralcause.Cause) *AutomationRunUpsertOne {
+	return u.Update(func(s *AutomationRunUpsert) {
+		s.SetDeferralCause(v)
+	})
+}
+
+// UpdateDeferralCause sets the "deferral_cause" field to the value that was provided on create.
+func (u *AutomationRunUpsertOne) UpdateDeferralCause() *AutomationRunUpsertOne {
+	return u.Update(func(s *AutomationRunUpsert) {
+		s.UpdateDeferralCause()
+	})
+}
+
+// ClearDeferralCause clears the value of the "deferral_cause" field.
+func (u *AutomationRunUpsertOne) ClearDeferralCause() *AutomationRunUpsertOne {
+	return u.Update(func(s *AutomationRunUpsert) {
+		s.ClearDeferralCause()
 	})
 }
 
@@ -1530,6 +1650,48 @@ func (u *AutomationRunUpsertBulk) UpdateResumeAt() *AutomationRunUpsertBulk {
 func (u *AutomationRunUpsertBulk) ClearResumeAt() *AutomationRunUpsertBulk {
 	return u.Update(func(s *AutomationRunUpsert) {
 		s.ClearResumeAt()
+	})
+}
+
+// SetDeferredSince sets the "deferred_since" field.
+func (u *AutomationRunUpsertBulk) SetDeferredSince(v time.Time) *AutomationRunUpsertBulk {
+	return u.Update(func(s *AutomationRunUpsert) {
+		s.SetDeferredSince(v)
+	})
+}
+
+// UpdateDeferredSince sets the "deferred_since" field to the value that was provided on create.
+func (u *AutomationRunUpsertBulk) UpdateDeferredSince() *AutomationRunUpsertBulk {
+	return u.Update(func(s *AutomationRunUpsert) {
+		s.UpdateDeferredSince()
+	})
+}
+
+// ClearDeferredSince clears the value of the "deferred_since" field.
+func (u *AutomationRunUpsertBulk) ClearDeferredSince() *AutomationRunUpsertBulk {
+	return u.Update(func(s *AutomationRunUpsert) {
+		s.ClearDeferredSince()
+	})
+}
+
+// SetDeferralCause sets the "deferral_cause" field.
+func (u *AutomationRunUpsertBulk) SetDeferralCause(v deferralcause.Cause) *AutomationRunUpsertBulk {
+	return u.Update(func(s *AutomationRunUpsert) {
+		s.SetDeferralCause(v)
+	})
+}
+
+// UpdateDeferralCause sets the "deferral_cause" field to the value that was provided on create.
+func (u *AutomationRunUpsertBulk) UpdateDeferralCause() *AutomationRunUpsertBulk {
+	return u.Update(func(s *AutomationRunUpsert) {
+		s.UpdateDeferralCause()
+	})
+}
+
+// ClearDeferralCause clears the value of the "deferral_cause" field.
+func (u *AutomationRunUpsertBulk) ClearDeferralCause() *AutomationRunUpsertBulk {
+	return u.Update(func(s *AutomationRunUpsert) {
+		s.ClearDeferralCause()
 	})
 }
 

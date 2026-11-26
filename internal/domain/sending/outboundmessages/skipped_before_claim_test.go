@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -172,4 +173,28 @@ func TestASkippedDecisionOfAStoppedSourceWritesNoRow(t *testing.T) {
 	assert.Equal(t, outboundmessages.Withdrawn, res.Outcome)
 	n := env.DB.OutboundMessage.Query().Where(outboundmessage.WorkspaceID(fixtures.AcmeID), outboundmessage.IdempotencyKey(req.Key)).CountX(t.Context())
 	assert.Zero(t, n)
+}
+
+// A send Skipped before the claim keeps, like any decided message, since when and why it waited at
+// its place (ADR 0178): an Automation step's send that a Deferral had held, to a Contact with no
+// address.
+func TestASendSkippedBeforeTheClaimKeepsItsWait(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	s := env.DB.Scoped(fixtures.AcmeID)
+	automation := env.DB.Automation.GetX(ctx, fixtures.AutomationWelcomeSeriesID)
+	run := env.DB.AutomationRun.GetX(ctx, fixtures.AutomationRunWelcomeCompletedID)
+	c := env.DB.Contact.GetX(ctx, fixtures.ContactJobsNoEmailID)
+	since := time.Date(2030, time.March, 4, 10, 0, 0, 0, time.UTC)
+	req := outboundmessages.AutomationStep(automation, run, "6f0e7a52-3d0e-5c3b-9d55-0a4f2f6c1b11", nil, c,
+		outboundmessages.EmailContent{Subject: "Hi", Body: htmlBody}, outboundmessages.Waited{Since: since, Cause: deferralcause.SendCap})
+
+	res, err := newModule(env, time.Now).Send(ctx, s, req)
+
+	require.NoError(t, err)
+	assert.Equal(t, skipreason.NoDestination, res.SkippedReason)
+	msg := env.DB.OutboundMessage.GetX(ctx, res.MessageID)
+	require.NotNil(t, msg.DeferredSince)
+	assert.True(t, since.Equal(*msg.DeferredSince), "since when it waited")
+	assert.Equal(t, deferralcause.SendCap, lo.FromPtr(msg.DeferralCause), "why")
 }

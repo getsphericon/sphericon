@@ -102,6 +102,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
+	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
@@ -6841,6 +6842,8 @@ type AutomationRunMutation struct {
 	ended_at          *time.Time
 	current_step_id   *automationstep.ID
 	resume_at         *time.Time
+	deferred_since    *time.Time
+	deferral_cause    *deferralcause.Cause
 	failure_kind      *automationrun.FailureKind
 	failure_status    *int
 	addfailure_status *int
@@ -7822,6 +7825,104 @@ func (m *AutomationRunMutation) ResetResumeAt() {
 	delete(m.clearedFields, automationrun.FieldResumeAt)
 }
 
+// SetDeferredSince sets the "deferred_since" field.
+func (m *AutomationRunMutation) SetDeferredSince(t time.Time) {
+	m.deferred_since = &t
+}
+
+// DeferredSince returns the value of the "deferred_since" field in the mutation.
+func (m *AutomationRunMutation) DeferredSince() (r time.Time, exists bool) {
+	v := m.deferred_since
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDeferredSince returns the old "deferred_since" field's value of the AutomationRun entity.
+// If the AutomationRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationRunMutation) OldDeferredSince(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDeferredSince is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDeferredSince requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDeferredSince: %w", err)
+	}
+	return oldValue.DeferredSince, nil
+}
+
+// ClearDeferredSince clears the value of the "deferred_since" field.
+func (m *AutomationRunMutation) ClearDeferredSince() {
+	m.deferred_since = nil
+	m.clearedFields[automationrun.FieldDeferredSince] = struct{}{}
+}
+
+// DeferredSinceCleared returns if the "deferred_since" field was cleared in this mutation.
+func (m *AutomationRunMutation) DeferredSinceCleared() bool {
+	_, ok := m.clearedFields[automationrun.FieldDeferredSince]
+	return ok
+}
+
+// ResetDeferredSince resets all changes to the "deferred_since" field.
+func (m *AutomationRunMutation) ResetDeferredSince() {
+	m.deferred_since = nil
+	delete(m.clearedFields, automationrun.FieldDeferredSince)
+}
+
+// SetDeferralCause sets the "deferral_cause" field.
+func (m *AutomationRunMutation) SetDeferralCause(d deferralcause.Cause) {
+	m.deferral_cause = &d
+}
+
+// DeferralCause returns the value of the "deferral_cause" field in the mutation.
+func (m *AutomationRunMutation) DeferralCause() (r deferralcause.Cause, exists bool) {
+	v := m.deferral_cause
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDeferralCause returns the old "deferral_cause" field's value of the AutomationRun entity.
+// If the AutomationRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationRunMutation) OldDeferralCause(ctx context.Context) (v *deferralcause.Cause, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDeferralCause is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDeferralCause requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDeferralCause: %w", err)
+	}
+	return oldValue.DeferralCause, nil
+}
+
+// ClearDeferralCause clears the value of the "deferral_cause" field.
+func (m *AutomationRunMutation) ClearDeferralCause() {
+	m.deferral_cause = nil
+	m.clearedFields[automationrun.FieldDeferralCause] = struct{}{}
+}
+
+// DeferralCauseCleared returns if the "deferral_cause" field was cleared in this mutation.
+func (m *AutomationRunMutation) DeferralCauseCleared() bool {
+	_, ok := m.clearedFields[automationrun.FieldDeferralCause]
+	return ok
+}
+
+// ResetDeferralCause resets all changes to the "deferral_cause" field.
+func (m *AutomationRunMutation) ResetDeferralCause() {
+	m.deferral_cause = nil
+	delete(m.clearedFields, automationrun.FieldDeferralCause)
+}
+
 // SetFailureKind sets the "failure_kind" field.
 func (m *AutomationRunMutation) SetFailureKind(ak automationrun.FailureKind) {
 	m.failure_kind = &ak
@@ -8159,7 +8260,7 @@ func (m *AutomationRunMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *AutomationRunMutation) Fields() []string {
-	fields := make([]string, 0, 22)
+	fields := make([]string, 0, 24)
 	if m.created_at != nil {
 		fields = append(fields, automationrun.FieldCreatedAt)
 	}
@@ -8217,6 +8318,12 @@ func (m *AutomationRunMutation) Fields() []string {
 	if m.resume_at != nil {
 		fields = append(fields, automationrun.FieldResumeAt)
 	}
+	if m.deferred_since != nil {
+		fields = append(fields, automationrun.FieldDeferredSince)
+	}
+	if m.deferral_cause != nil {
+		fields = append(fields, automationrun.FieldDeferralCause)
+	}
 	if m.failure_kind != nil {
 		fields = append(fields, automationrun.FieldFailureKind)
 	}
@@ -8272,6 +8379,10 @@ func (m *AutomationRunMutation) Field(name string) (ent.Value, bool) {
 		return m.CurrentStepID()
 	case automationrun.FieldResumeAt:
 		return m.ResumeAt()
+	case automationrun.FieldDeferredSince:
+		return m.DeferredSince()
+	case automationrun.FieldDeferralCause:
+		return m.DeferralCause()
 	case automationrun.FieldFailureKind:
 		return m.FailureKind()
 	case automationrun.FieldFailureStatus:
@@ -8325,6 +8436,10 @@ func (m *AutomationRunMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldCurrentStepID(ctx)
 	case automationrun.FieldResumeAt:
 		return m.OldResumeAt(ctx)
+	case automationrun.FieldDeferredSince:
+		return m.OldDeferredSince(ctx)
+	case automationrun.FieldDeferralCause:
+		return m.OldDeferralCause(ctx)
 	case automationrun.FieldFailureKind:
 		return m.OldFailureKind(ctx)
 	case automationrun.FieldFailureStatus:
@@ -8473,6 +8588,20 @@ func (m *AutomationRunMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetResumeAt(v)
 		return nil
+	case automationrun.FieldDeferredSince:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDeferredSince(v)
+		return nil
+	case automationrun.FieldDeferralCause:
+		v, ok := value.(deferralcause.Cause)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDeferralCause(v)
+		return nil
 	case automationrun.FieldFailureKind:
 		v, ok := value.(automationrun.FailureKind)
 		if !ok {
@@ -8590,6 +8719,12 @@ func (m *AutomationRunMutation) ClearedFields() []string {
 	if m.FieldCleared(automationrun.FieldResumeAt) {
 		fields = append(fields, automationrun.FieldResumeAt)
 	}
+	if m.FieldCleared(automationrun.FieldDeferredSince) {
+		fields = append(fields, automationrun.FieldDeferredSince)
+	}
+	if m.FieldCleared(automationrun.FieldDeferralCause) {
+		fields = append(fields, automationrun.FieldDeferralCause)
+	}
 	if m.FieldCleared(automationrun.FieldFailureKind) {
 		fields = append(fields, automationrun.FieldFailureKind)
 	}
@@ -8639,6 +8774,12 @@ func (m *AutomationRunMutation) ClearField(name string) error {
 		return nil
 	case automationrun.FieldResumeAt:
 		m.ClearResumeAt()
+		return nil
+	case automationrun.FieldDeferredSince:
+		m.ClearDeferredSince()
+		return nil
+	case automationrun.FieldDeferralCause:
+		m.ClearDeferralCause()
 		return nil
 	case automationrun.FieldFailureKind:
 		m.ClearFailureKind()
@@ -8713,6 +8854,12 @@ func (m *AutomationRunMutation) ResetField(name string) error {
 		return nil
 	case automationrun.FieldResumeAt:
 		m.ResetResumeAt()
+		return nil
+	case automationrun.FieldDeferredSince:
+		m.ResetDeferredSince()
+		return nil
+	case automationrun.FieldDeferralCause:
+		m.ResetDeferralCause()
 		return nil
 	case automationrun.FieldFailureKind:
 		m.ResetFailureKind()
@@ -19356,6 +19503,7 @@ type BroadcastRecipientMutation struct {
 	created_at       *time.Time
 	updated_at       *time.Time
 	deferred_until   *time.Time
+	deferral_cause   *deferralcause.Cause
 	unsubscribed_at  *time.Time
 	clearedFields    map[string]struct{}
 	workspace        *int64
@@ -19715,6 +19863,55 @@ func (m *BroadcastRecipientMutation) ResetDeferredUntil() {
 	delete(m.clearedFields, broadcastrecipient.FieldDeferredUntil)
 }
 
+// SetDeferralCause sets the "deferral_cause" field.
+func (m *BroadcastRecipientMutation) SetDeferralCause(d deferralcause.Cause) {
+	m.deferral_cause = &d
+}
+
+// DeferralCause returns the value of the "deferral_cause" field in the mutation.
+func (m *BroadcastRecipientMutation) DeferralCause() (r deferralcause.Cause, exists bool) {
+	v := m.deferral_cause
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDeferralCause returns the old "deferral_cause" field's value of the BroadcastRecipient entity.
+// If the BroadcastRecipient object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BroadcastRecipientMutation) OldDeferralCause(ctx context.Context) (v *deferralcause.Cause, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDeferralCause is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDeferralCause requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDeferralCause: %w", err)
+	}
+	return oldValue.DeferralCause, nil
+}
+
+// ClearDeferralCause clears the value of the "deferral_cause" field.
+func (m *BroadcastRecipientMutation) ClearDeferralCause() {
+	m.deferral_cause = nil
+	m.clearedFields[broadcastrecipient.FieldDeferralCause] = struct{}{}
+}
+
+// DeferralCauseCleared returns if the "deferral_cause" field was cleared in this mutation.
+func (m *BroadcastRecipientMutation) DeferralCauseCleared() bool {
+	_, ok := m.clearedFields[broadcastrecipient.FieldDeferralCause]
+	return ok
+}
+
+// ResetDeferralCause resets all changes to the "deferral_cause" field.
+func (m *BroadcastRecipientMutation) ResetDeferralCause() {
+	m.deferral_cause = nil
+	delete(m.clearedFields, broadcastrecipient.FieldDeferralCause)
+}
+
 // SetUnsubscribedAt sets the "unsubscribed_at" field.
 func (m *BroadcastRecipientMutation) SetUnsubscribedAt(t time.Time) {
 	m.unsubscribed_at = &t
@@ -19879,7 +20076,7 @@ func (m *BroadcastRecipientMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BroadcastRecipientMutation) Fields() []string {
-	fields := make([]string, 0, 7)
+	fields := make([]string, 0, 8)
 	if m.created_at != nil {
 		fields = append(fields, broadcastrecipient.FieldCreatedAt)
 	}
@@ -19897,6 +20094,9 @@ func (m *BroadcastRecipientMutation) Fields() []string {
 	}
 	if m.deferred_until != nil {
 		fields = append(fields, broadcastrecipient.FieldDeferredUntil)
+	}
+	if m.deferral_cause != nil {
+		fields = append(fields, broadcastrecipient.FieldDeferralCause)
 	}
 	if m.unsubscribed_at != nil {
 		fields = append(fields, broadcastrecipient.FieldUnsubscribedAt)
@@ -19921,6 +20121,8 @@ func (m *BroadcastRecipientMutation) Field(name string) (ent.Value, bool) {
 		return m.ContactID()
 	case broadcastrecipient.FieldDeferredUntil:
 		return m.DeferredUntil()
+	case broadcastrecipient.FieldDeferralCause:
+		return m.DeferralCause()
 	case broadcastrecipient.FieldUnsubscribedAt:
 		return m.UnsubscribedAt()
 	}
@@ -19944,6 +20146,8 @@ func (m *BroadcastRecipientMutation) OldField(ctx context.Context, name string) 
 		return m.OldContactID(ctx)
 	case broadcastrecipient.FieldDeferredUntil:
 		return m.OldDeferredUntil(ctx)
+	case broadcastrecipient.FieldDeferralCause:
+		return m.OldDeferralCause(ctx)
 	case broadcastrecipient.FieldUnsubscribedAt:
 		return m.OldUnsubscribedAt(ctx)
 	}
@@ -19997,6 +20201,13 @@ func (m *BroadcastRecipientMutation) SetField(name string, value ent.Value) erro
 		}
 		m.SetDeferredUntil(v)
 		return nil
+	case broadcastrecipient.FieldDeferralCause:
+		v, ok := value.(deferralcause.Cause)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDeferralCause(v)
+		return nil
 	case broadcastrecipient.FieldUnsubscribedAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -20043,6 +20254,9 @@ func (m *BroadcastRecipientMutation) ClearedFields() []string {
 	if m.FieldCleared(broadcastrecipient.FieldDeferredUntil) {
 		fields = append(fields, broadcastrecipient.FieldDeferredUntil)
 	}
+	if m.FieldCleared(broadcastrecipient.FieldDeferralCause) {
+		fields = append(fields, broadcastrecipient.FieldDeferralCause)
+	}
 	if m.FieldCleared(broadcastrecipient.FieldUnsubscribedAt) {
 		fields = append(fields, broadcastrecipient.FieldUnsubscribedAt)
 	}
@@ -20065,6 +20279,9 @@ func (m *BroadcastRecipientMutation) ClearField(name string) error {
 		return nil
 	case broadcastrecipient.FieldDeferredUntil:
 		m.ClearDeferredUntil()
+		return nil
+	case broadcastrecipient.FieldDeferralCause:
+		m.ClearDeferralCause()
 		return nil
 	case broadcastrecipient.FieldUnsubscribedAt:
 		m.ClearUnsubscribedAt()
@@ -20094,6 +20311,9 @@ func (m *BroadcastRecipientMutation) ResetField(name string) error {
 		return nil
 	case broadcastrecipient.FieldDeferredUntil:
 		m.ResetDeferredUntil()
+		return nil
+	case broadcastrecipient.FieldDeferralCause:
+		m.ResetDeferralCause()
 		return nil
 	case broadcastrecipient.FieldUnsubscribedAt:
 		m.ResetUnsubscribedAt()
@@ -50549,6 +50769,8 @@ type OutboundMessageMutation struct {
 	status                     *outboundmessage.Status
 	skipped_reason             *skipreason.Reason
 	failure                    *string
+	deferred_since             *time.Time
+	deferral_cause             *deferralcause.Cause
 	claimed_at                 *time.Time
 	sent_at                    *time.Time
 	delivered_at               *time.Time
@@ -51355,6 +51577,104 @@ func (m *OutboundMessageMutation) FailureCleared() bool {
 func (m *OutboundMessageMutation) ResetFailure() {
 	m.failure = nil
 	delete(m.clearedFields, outboundmessage.FieldFailure)
+}
+
+// SetDeferredSince sets the "deferred_since" field.
+func (m *OutboundMessageMutation) SetDeferredSince(t time.Time) {
+	m.deferred_since = &t
+}
+
+// DeferredSince returns the value of the "deferred_since" field in the mutation.
+func (m *OutboundMessageMutation) DeferredSince() (r time.Time, exists bool) {
+	v := m.deferred_since
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDeferredSince returns the old "deferred_since" field's value of the OutboundMessage entity.
+// If the OutboundMessage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OutboundMessageMutation) OldDeferredSince(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDeferredSince is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDeferredSince requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDeferredSince: %w", err)
+	}
+	return oldValue.DeferredSince, nil
+}
+
+// ClearDeferredSince clears the value of the "deferred_since" field.
+func (m *OutboundMessageMutation) ClearDeferredSince() {
+	m.deferred_since = nil
+	m.clearedFields[outboundmessage.FieldDeferredSince] = struct{}{}
+}
+
+// DeferredSinceCleared returns if the "deferred_since" field was cleared in this mutation.
+func (m *OutboundMessageMutation) DeferredSinceCleared() bool {
+	_, ok := m.clearedFields[outboundmessage.FieldDeferredSince]
+	return ok
+}
+
+// ResetDeferredSince resets all changes to the "deferred_since" field.
+func (m *OutboundMessageMutation) ResetDeferredSince() {
+	m.deferred_since = nil
+	delete(m.clearedFields, outboundmessage.FieldDeferredSince)
+}
+
+// SetDeferralCause sets the "deferral_cause" field.
+func (m *OutboundMessageMutation) SetDeferralCause(d deferralcause.Cause) {
+	m.deferral_cause = &d
+}
+
+// DeferralCause returns the value of the "deferral_cause" field in the mutation.
+func (m *OutboundMessageMutation) DeferralCause() (r deferralcause.Cause, exists bool) {
+	v := m.deferral_cause
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDeferralCause returns the old "deferral_cause" field's value of the OutboundMessage entity.
+// If the OutboundMessage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OutboundMessageMutation) OldDeferralCause(ctx context.Context) (v *deferralcause.Cause, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDeferralCause is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDeferralCause requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDeferralCause: %w", err)
+	}
+	return oldValue.DeferralCause, nil
+}
+
+// ClearDeferralCause clears the value of the "deferral_cause" field.
+func (m *OutboundMessageMutation) ClearDeferralCause() {
+	m.deferral_cause = nil
+	m.clearedFields[outboundmessage.FieldDeferralCause] = struct{}{}
+}
+
+// DeferralCauseCleared returns if the "deferral_cause" field was cleared in this mutation.
+func (m *OutboundMessageMutation) DeferralCauseCleared() bool {
+	_, ok := m.clearedFields[outboundmessage.FieldDeferralCause]
+	return ok
+}
+
+// ResetDeferralCause resets all changes to the "deferral_cause" field.
+func (m *OutboundMessageMutation) ResetDeferralCause() {
+	m.deferral_cause = nil
+	delete(m.clearedFields, outboundmessage.FieldDeferralCause)
 }
 
 // SetClaimedAt sets the "claimed_at" field.
@@ -52825,7 +53145,7 @@ func (m *OutboundMessageMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *OutboundMessageMutation) Fields() []string {
-	fields := make([]string, 0, 39)
+	fields := make([]string, 0, 41)
 	if m.created_at != nil {
 		fields = append(fields, outboundmessage.FieldCreatedAt)
 	}
@@ -52870,6 +53190,12 @@ func (m *OutboundMessageMutation) Fields() []string {
 	}
 	if m.failure != nil {
 		fields = append(fields, outboundmessage.FieldFailure)
+	}
+	if m.deferred_since != nil {
+		fields = append(fields, outboundmessage.FieldDeferredSince)
+	}
+	if m.deferral_cause != nil {
+		fields = append(fields, outboundmessage.FieldDeferralCause)
 	}
 	if m.claimed_at != nil {
 		fields = append(fields, outboundmessage.FieldClaimedAt)
@@ -52981,6 +53307,10 @@ func (m *OutboundMessageMutation) Field(name string) (ent.Value, bool) {
 		return m.SkippedReason()
 	case outboundmessage.FieldFailure:
 		return m.Failure()
+	case outboundmessage.FieldDeferredSince:
+		return m.DeferredSince()
+	case outboundmessage.FieldDeferralCause:
+		return m.DeferralCause()
 	case outboundmessage.FieldClaimedAt:
 		return m.ClaimedAt()
 	case outboundmessage.FieldSentAt:
@@ -53068,6 +53398,10 @@ func (m *OutboundMessageMutation) OldField(ctx context.Context, name string) (en
 		return m.OldSkippedReason(ctx)
 	case outboundmessage.FieldFailure:
 		return m.OldFailure(ctx)
+	case outboundmessage.FieldDeferredSince:
+		return m.OldDeferredSince(ctx)
+	case outboundmessage.FieldDeferralCause:
+		return m.OldDeferralCause(ctx)
 	case outboundmessage.FieldClaimedAt:
 		return m.OldClaimedAt(ctx)
 	case outboundmessage.FieldSentAt:
@@ -53229,6 +53563,20 @@ func (m *OutboundMessageMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetFailure(v)
+		return nil
+	case outboundmessage.FieldDeferredSince:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDeferredSince(v)
+		return nil
+	case outboundmessage.FieldDeferralCause:
+		v, ok := value.(deferralcause.Cause)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDeferralCause(v)
 		return nil
 	case outboundmessage.FieldClaimedAt:
 		v, ok := value.(time.Time)
@@ -53455,6 +53803,12 @@ func (m *OutboundMessageMutation) ClearedFields() []string {
 	if m.FieldCleared(outboundmessage.FieldFailure) {
 		fields = append(fields, outboundmessage.FieldFailure)
 	}
+	if m.FieldCleared(outboundmessage.FieldDeferredSince) {
+		fields = append(fields, outboundmessage.FieldDeferredSince)
+	}
+	if m.FieldCleared(outboundmessage.FieldDeferralCause) {
+		fields = append(fields, outboundmessage.FieldDeferralCause)
+	}
 	if m.FieldCleared(outboundmessage.FieldSentAt) {
 		fields = append(fields, outboundmessage.FieldSentAt)
 	}
@@ -53555,6 +53909,12 @@ func (m *OutboundMessageMutation) ClearField(name string) error {
 		return nil
 	case outboundmessage.FieldFailure:
 		m.ClearFailure()
+		return nil
+	case outboundmessage.FieldDeferredSince:
+		m.ClearDeferredSince()
+		return nil
+	case outboundmessage.FieldDeferralCause:
+		m.ClearDeferralCause()
 		return nil
 	case outboundmessage.FieldSentAt:
 		m.ClearSentAt()
@@ -53671,6 +54031,12 @@ func (m *OutboundMessageMutation) ResetField(name string) error {
 		return nil
 	case outboundmessage.FieldFailure:
 		m.ResetFailure()
+		return nil
+	case outboundmessage.FieldDeferredSince:
+		m.ResetDeferredSince()
+		return nil
+	case outboundmessage.FieldDeferralCause:
+		m.ResetDeferralCause()
 		return nil
 	case outboundmessage.FieldClaimedAt:
 		m.ResetClaimedAt()

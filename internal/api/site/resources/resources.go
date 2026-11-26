@@ -182,6 +182,7 @@ import (
 // goverter:extend optAbuseWarning
 // goverter:extend optTrackingReason
 // goverter:extend optSkippedReason
+// goverter:extend optDeferralCause
 // goverter:extend timestampOf
 // goverter:extend tagNames
 // goverter:extend auditDiff
@@ -886,6 +887,8 @@ type Converter interface {
 	// goverter:enum:transform value
 	SkippedReasonToResource(source skipreason.Reason) siteapi.SkippedReason
 	// goverter:enum:transform value
+	DeferralCauseToResource(source deferralcause.Cause) siteapi.DeferralCause
+	// goverter:enum:transform value
 	TrackingStateToResource(source trackingdomain.State) siteapi.TrackingState
 	// goverter:enum:transform value
 	TrackingDomainRoleToResource(source trackingdomain.Role) siteapi.TrackingDomainRole
@@ -1473,6 +1476,11 @@ func optTrackingReason(c Converter, v *trackingdomain.Reason) siteapi.OptTrackin
 // optSkippedReason is absent on every message but a skipped one.
 func optSkippedReason(c Converter, v *skipreason.Reason) siteapi.OptNilSkippedReason {
 	return convert.OptVia[siteapi.OptNilSkippedReason](v, c.SkippedReasonToResource)
+}
+
+// optDeferralCause is absent on everything that does not wait.
+func optDeferralCause(c Converter, v *deferralcause.Cause) siteapi.OptDeferralCause {
+	return convert.OptVia[siteapi.OptDeferralCause](v, c.DeferralCauseToResource)
 }
 
 // tagNames lists the names of a contact's loaded tags, in the order they were read.

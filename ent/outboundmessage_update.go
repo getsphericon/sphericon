@@ -26,6 +26,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 )
 
@@ -246,6 +247,46 @@ func (_u *OutboundMessageUpdate) SetNillableFailure(v *string) *OutboundMessageU
 // ClearFailure clears the value of the "failure" field.
 func (_u *OutboundMessageUpdate) ClearFailure() *OutboundMessageUpdate {
 	_u.mutation.ClearFailure()
+	return _u
+}
+
+// SetDeferredSince sets the "deferred_since" field.
+func (_u *OutboundMessageUpdate) SetDeferredSince(v time.Time) *OutboundMessageUpdate {
+	_u.mutation.SetDeferredSince(v)
+	return _u
+}
+
+// SetNillableDeferredSince sets the "deferred_since" field if the given value is not nil.
+func (_u *OutboundMessageUpdate) SetNillableDeferredSince(v *time.Time) *OutboundMessageUpdate {
+	if v != nil {
+		_u.SetDeferredSince(*v)
+	}
+	return _u
+}
+
+// ClearDeferredSince clears the value of the "deferred_since" field.
+func (_u *OutboundMessageUpdate) ClearDeferredSince() *OutboundMessageUpdate {
+	_u.mutation.ClearDeferredSince()
+	return _u
+}
+
+// SetDeferralCause sets the "deferral_cause" field.
+func (_u *OutboundMessageUpdate) SetDeferralCause(v deferralcause.Cause) *OutboundMessageUpdate {
+	_u.mutation.SetDeferralCause(v)
+	return _u
+}
+
+// SetNillableDeferralCause sets the "deferral_cause" field if the given value is not nil.
+func (_u *OutboundMessageUpdate) SetNillableDeferralCause(v *deferralcause.Cause) *OutboundMessageUpdate {
+	if v != nil {
+		_u.SetDeferralCause(*v)
+	}
+	return _u
+}
+
+// ClearDeferralCause clears the value of the "deferral_cause" field.
+func (_u *OutboundMessageUpdate) ClearDeferralCause() *OutboundMessageUpdate {
+	_u.mutation.ClearDeferralCause()
 	return _u
 }
 
@@ -884,6 +925,11 @@ func (_u *OutboundMessageUpdate) check() error {
 			return &ValidationError{Name: "skipped_reason", err: fmt.Errorf(`ent: validator failed for field "OutboundMessage.skipped_reason": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.DeferralCause(); ok {
+		if err := outboundmessage.DeferralCauseValidator(v); err != nil {
+			return &ValidationError{Name: "deferral_cause", err: fmt.Errorf(`ent: validator failed for field "OutboundMessage.deferral_cause": %w`, err)}
+		}
+	}
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "OutboundMessage.workspace"`)
 	}
@@ -963,6 +1009,18 @@ func (_u *OutboundMessageUpdate) sqlSave(ctx context.Context) (_node int, err er
 	}
 	if _u.mutation.FailureCleared() {
 		_spec.ClearField(outboundmessage.FieldFailure, field.TypeString)
+	}
+	if value, ok := _u.mutation.DeferredSince(); ok {
+		_spec.SetField(outboundmessage.FieldDeferredSince, field.TypeTime, value)
+	}
+	if _u.mutation.DeferredSinceCleared() {
+		_spec.ClearField(outboundmessage.FieldDeferredSince, field.TypeTime)
+	}
+	if value, ok := _u.mutation.DeferralCause(); ok {
+		_spec.SetField(outboundmessage.FieldDeferralCause, field.TypeEnum, value)
+	}
+	if _u.mutation.DeferralCauseCleared() {
+		_spec.ClearField(outboundmessage.FieldDeferralCause, field.TypeEnum)
 	}
 	if value, ok := _u.mutation.ClaimedAt(); ok {
 		_spec.SetField(outboundmessage.FieldClaimedAt, field.TypeTime, value)
@@ -1585,6 +1643,46 @@ func (_u *OutboundMessageUpdateOne) SetNillableFailure(v *string) *OutboundMessa
 // ClearFailure clears the value of the "failure" field.
 func (_u *OutboundMessageUpdateOne) ClearFailure() *OutboundMessageUpdateOne {
 	_u.mutation.ClearFailure()
+	return _u
+}
+
+// SetDeferredSince sets the "deferred_since" field.
+func (_u *OutboundMessageUpdateOne) SetDeferredSince(v time.Time) *OutboundMessageUpdateOne {
+	_u.mutation.SetDeferredSince(v)
+	return _u
+}
+
+// SetNillableDeferredSince sets the "deferred_since" field if the given value is not nil.
+func (_u *OutboundMessageUpdateOne) SetNillableDeferredSince(v *time.Time) *OutboundMessageUpdateOne {
+	if v != nil {
+		_u.SetDeferredSince(*v)
+	}
+	return _u
+}
+
+// ClearDeferredSince clears the value of the "deferred_since" field.
+func (_u *OutboundMessageUpdateOne) ClearDeferredSince() *OutboundMessageUpdateOne {
+	_u.mutation.ClearDeferredSince()
+	return _u
+}
+
+// SetDeferralCause sets the "deferral_cause" field.
+func (_u *OutboundMessageUpdateOne) SetDeferralCause(v deferralcause.Cause) *OutboundMessageUpdateOne {
+	_u.mutation.SetDeferralCause(v)
+	return _u
+}
+
+// SetNillableDeferralCause sets the "deferral_cause" field if the given value is not nil.
+func (_u *OutboundMessageUpdateOne) SetNillableDeferralCause(v *deferralcause.Cause) *OutboundMessageUpdateOne {
+	if v != nil {
+		_u.SetDeferralCause(*v)
+	}
+	return _u
+}
+
+// ClearDeferralCause clears the value of the "deferral_cause" field.
+func (_u *OutboundMessageUpdateOne) ClearDeferralCause() *OutboundMessageUpdateOne {
+	_u.mutation.ClearDeferralCause()
 	return _u
 }
 
@@ -2236,6 +2334,11 @@ func (_u *OutboundMessageUpdateOne) check() error {
 			return &ValidationError{Name: "skipped_reason", err: fmt.Errorf(`ent: validator failed for field "OutboundMessage.skipped_reason": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.DeferralCause(); ok {
+		if err := outboundmessage.DeferralCauseValidator(v); err != nil {
+			return &ValidationError{Name: "deferral_cause", err: fmt.Errorf(`ent: validator failed for field "OutboundMessage.deferral_cause": %w`, err)}
+		}
+	}
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "OutboundMessage.workspace"`)
 	}
@@ -2332,6 +2435,18 @@ func (_u *OutboundMessageUpdateOne) sqlSave(ctx context.Context) (_node *Outboun
 	}
 	if _u.mutation.FailureCleared() {
 		_spec.ClearField(outboundmessage.FieldFailure, field.TypeString)
+	}
+	if value, ok := _u.mutation.DeferredSince(); ok {
+		_spec.SetField(outboundmessage.FieldDeferredSince, field.TypeTime, value)
+	}
+	if _u.mutation.DeferredSinceCleared() {
+		_spec.ClearField(outboundmessage.FieldDeferredSince, field.TypeTime)
+	}
+	if value, ok := _u.mutation.DeferralCause(); ok {
+		_spec.SetField(outboundmessage.FieldDeferralCause, field.TypeEnum, value)
+	}
+	if _u.mutation.DeferralCauseCleared() {
+		_spec.ClearField(outboundmessage.FieldDeferralCause, field.TypeEnum)
 	}
 	if value, ok := _u.mutation.ClaimedAt(); ok {
 		_spec.SetField(outboundmessage.FieldClaimedAt, field.TypeTime, value)

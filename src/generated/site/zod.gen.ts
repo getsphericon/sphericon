@@ -5117,6 +5117,8 @@ export const zEnrollmentResource = z.object({
   occurrence: z.exactOptional(zEnrollmentOccurrence),
   currentStepId: z.exactOptional(zStepId),
   resumeAt: z.exactOptional(zTimestamp),
+  deferredSince: z.exactOptional(zTimestamp),
+  deferralCause: z.exactOptional(zDeferralCause),
   failure: z.exactOptional(zEnrollmentFailure),
   createdAt: zTimestamp,
   updatedAt: zTimestamp
