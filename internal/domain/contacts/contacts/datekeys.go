@@ -8,6 +8,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contactdate"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 	"github.com/getsphericon/sphericon/internal/kernel/localcalendar"
@@ -18,6 +19,12 @@ import (
 // (datetrigger.Holder.Keys), with when the write that set the key was made and whether it came
 // through a Connection without mcp:send (ADR 0132 as amended by ADR 0126). Every writer of a
 // Contact keeps them from the row it wrote, in its transaction (keepDates).
+
+// The unique constraint of a Contact's dates (ADR 0106): no client can break it.
+var _ = db.Declare(
+	db.Fault("contact_dates_field_contact",
+		"a Contact's one row per date field is written by keepDates alone, which deletes a field's row before it writes another, in the transaction of the Contact's write"),
+)
 
 // DatesOf is what the Contact holds of the dates (datetrigger.Holder): its birthday and its Custom
 // field values, nothing for a Contact not made yet. Every reader of a Contact's dates takes them

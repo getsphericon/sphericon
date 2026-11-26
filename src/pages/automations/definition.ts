@@ -653,7 +653,7 @@ function branchInput(step: BranchStep): AutomationStepInput | null {
 
 // A part of a flow as Save sends it (`sends`), or as the editor holds the part (`holds`) while it is
 // not one to save, which tells one such flow from another.
-export type Sendable<Input, Draft> = { sends: Input } | { holds: Draft }
+type Sendable<Input, Draft> = { sends: Input } | { holds: Draft }
 
 // A flow's definition: the Trigger, its exit and goal events and the root path, each Step and path
 // with its id. `filterIncomplete` says a filter of the Trigger, an exit or the goal is still being
