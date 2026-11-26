@@ -2251,6 +2251,10 @@ const (
 	ExpiredTokenPrefix = "expiredtok01"
 	// ExpiredTokenSecret is from fixtures/api_tokens.
 	ExpiredTokenSecret = "expired-token-secret-0000000000000000000"
+	// FrequencyCapAcmeSMSID is from fixtures/frequency_caps.
+	FrequencyCapAcmeSMSID = 1001
+	// FrequencyCapLacunaSMSID is from fixtures/frequency_caps.
+	FrequencyCapLacunaSMSID = 1096
 	// FreshLoginAttemptEmail is from fixtures/auth_attempts.
 	FreshLoginAttemptEmail = "fresh@attempts.test"
 	// FreshLoginAttemptID is from fixtures/auth_attempts.
@@ -4037,6 +4041,10 @@ const (
 	SendingDomainVerifiedDomain = "mail.acme.com"
 	// SendingDomainVerifiedID is from fixtures/sending_domains.
 	SendingDomainVerifiedID = 1
+	// SendingWindowAcmeSMSID is from fixtures/sending_windows.
+	SendingWindowAcmeSMSID = 1001
+	// SendingWindowLacunaSMSID is from fixtures/sending_windows.
+	SendingWindowLacunaSMSID = 1096
 	// ServiceCredentialDomainsReaderID is from fixtures/service_credentials.
 	ServiceCredentialDomainsReaderID = 7101
 	// ServiceCredentialDomainsReaderName is from fixtures/service_credentials.

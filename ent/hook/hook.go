@@ -369,6 +369,18 @@ func (f EventReceiptFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.EventReceiptMutation", m)
 }
 
+// The FrequencyCapFunc type is an adapter to allow the use of ordinary
+// function as FrequencyCap mutator.
+type FrequencyCapFunc func(context.Context, *ent.FrequencyCapMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f FrequencyCapFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.FrequencyCapMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.FrequencyCapMutation", m)
+}
+
 // The HeldOrderEventFunc type is an adapter to allow the use of ordinary
 // function as HeldOrderEvent mutator.
 type HeldOrderEventFunc func(context.Context, *ent.HeldOrderEventMutation) (ent.Value, error)
@@ -763,6 +775,18 @@ func (f SendingDomainFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Valu
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SendingDomainMutation", m)
+}
+
+// The SendingWindowFunc type is an adapter to allow the use of ordinary
+// function as SendingWindow mutator.
+type SendingWindowFunc func(context.Context, *ent.SendingWindowMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f SendingWindowFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.SendingWindowMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SendingWindowMutation", m)
 }
 
 // The ServiceCredentialFunc type is an adapter to allow the use of ordinary

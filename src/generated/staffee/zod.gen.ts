@@ -50,6 +50,7 @@ export const zAuditAction = z.enum([
   'workspace.abuse_exempt',
   'workspace.abuse_unexempt',
   'workspace.send_cap_change',
+  'workspace.sending_rules_change',
   'contact.import',
   'audit_log.export',
   'webhook_endpoint.test',

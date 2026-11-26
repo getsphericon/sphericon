@@ -5458,7 +5458,7 @@
     "/workspace": {
       "get": {
         "operationId": "Workspace_get",
-        "description": "Read the Workspace the token acts in: its name, postal address, confirmed opt-in, Engagement tracking default, time zone and Send cap. Read\nthe postal address before arming marketing email: an empty one refuses it, and only a person\ncan set it. Read the Send cap to explain a slow send or to plan one: a send larger than what\nremains of it in the last 24 hours goes out over more than a day. Read confirmed opt-in to know\nwhether a Contact needs a Confirmation before email reaches it. Read the Engagement tracking\ndefault to know whether a Destination with no consent recorded is tracked. Read-only: no\noperation changes the Send cap, the postal address, confirmed opt-in or the Engagement tracking\ndefault.",
+        "description": "Read the Workspace the token acts in: its name, postal address, confirmed opt-in, Engagement tracking default, time zone, Send cap and sending rules. Read\nthe postal address before arming marketing email: an empty one refuses it, and only a person\ncan set it. Read the Send cap to explain a slow send or to plan one: a send larger than what\nremains of it in the last 24 hours goes out over more than a day. Read confirmed opt-in to know\nwhether a Contact needs a Confirmation before email reaches it. Read the Engagement tracking\ndefault to know whether a Destination with no consent recorded is tracked. Read the sending\nrules to explain a marketing message that waits or is skipped: a Frequency cap limits the\nmarketing messages one Destination receives per period, and a Sending window the hours a\nmarketing text goes out in the recipient's local time. Read-only: no operation changes the Send\ncap, the postal address, confirmed opt-in, the Engagement tracking default or the sending\nrules.",
         "parameters": [],
         "responses": {
           "200": {
@@ -6060,6 +6060,7 @@
           "workspace.abuse_exempt",
           "workspace.abuse_unexempt",
           "workspace.send_cap_change",
+          "workspace.sending_rules_change",
           "contact.import",
           "audit_log.export",
           "webhook_endpoint.test",
@@ -12508,6 +12509,70 @@
         "description": "A test of one property of the Event or line a filter is about, its key in a field of its own,\nso a key holding a dot is one key. It names no subject: a filter tests the one object it is\nabout.",
         "additionalProperties": false
       },
+      "FrequencyCap": {
+        "type": "object",
+        "required": ["channel", "country", "maxMessages", "periodMinutes"],
+        "properties": {
+          "channel": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FrequencyCapChannel"
+              }
+            ],
+            "description": "The Channel it counts on"
+          },
+          "country": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CountryCode"
+              }
+            ],
+            "nullable": true,
+            "description": "The country of the numbers it is for, on a phone Channel only; null for every Destination on\nthe Channel"
+          },
+          "maxMessages": {
+            "type": "integer",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FrequencyCapMaxMessages"
+              }
+            ],
+            "nullable": true,
+            "description": "The most marketing messages one Destination receives in the period; null removes the cap"
+          },
+          "periodMinutes": {
+            "type": "integer",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FrequencyCapPeriodMinutes"
+              }
+            ],
+            "nullable": true,
+            "description": "The rolling period in minutes; null exactly when the maximum is"
+          }
+        },
+        "description": "One of the Workspace's Frequency caps (ADR 0137): at most `maxMessages` marketing messages to one\nDestination on the Channel per rolling `periodMinutes`. A cap with a country is for the numbers of\nthat country and outranks the Channel's own; one with no maximum removes the cap there. Every\nBroadcast and Automation message counts; Transactional messages and Test sends do not."
+      },
+      "FrequencyCapChannel": {
+        "type": "string",
+        "enum": ["email", "sms", "telegram"],
+        "description": "A Channel a Frequency cap counts marketing messages on (ADR 0137)"
+      },
+      "FrequencyCapMaxMessages": {
+        "type": "integer",
+        "format": "int32",
+        "minimum": 1,
+        "maximum": 1000,
+        "description": "The most marketing messages one Destination receives in a Frequency cap's period"
+      },
+      "FrequencyCapPeriodMinutes": {
+        "type": "integer",
+        "format": "int32",
+        "minimum": 1,
+        "maximum": 10080,
+        "description": "A Frequency cap's rolling period in minutes: one minute to seven days"
+      },
       "GrantableScope": {
         "type": "string",
         "enum": [
@@ -13141,6 +13206,13 @@
         "type": "string",
         "enum": ["broadcast", "automation"],
         "description": "What sends the message a message's System event is about"
+      },
+      "MinuteOfDay": {
+        "type": "integer",
+        "format": "int32",
+        "minimum": 0,
+        "maximum": 1440,
+        "description": "A minute of the day: 0 is midnight at its start, 1440 midnight at its end"
       },
       "MomentOperator": {
         "type": "string",
@@ -15168,6 +15240,95 @@
           }
         },
         "description": "Sending domain (ADR 0010). sphericon generates the DKIM keypair; the caller publishes the\nDKIM TXT record. The private key is never returned. `verified` is re-checked in the\nbackground: the domain loses it (`verificationLostAt`) if the DNS record disappears."
+      },
+      "SendingRules": {
+        "type": "object",
+        "required": ["frequencyCaps", "sendingWindows"],
+        "properties": {
+          "frequencyCaps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FrequencyCap"
+            },
+            "description": "The Frequency caps"
+          },
+          "sendingWindows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SendingWindow"
+            },
+            "description": "The Sending windows"
+          }
+        },
+        "description": "The Workspace's sending rules: its Frequency caps and its Sending windows. A new Workspace has\nthree marketing texts per 1440 minutes on SMS and an SMS window of 8:00 to 20:00 every day. The\nWorkspace answers for its compliance: the app keeps no table of laws, and the defaults are not\nlegal advice."
+      },
+      "SendingWindow": {
+        "type": "object",
+        "required": ["channel", "country", "hours"],
+        "properties": {
+          "channel": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SendingWindowChannel"
+              }
+            ],
+            "description": "The Channel it holds"
+          },
+          "country": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CountryCode"
+              }
+            ],
+            "nullable": true,
+            "description": "The country of the numbers it is for; null for every number on the Channel"
+          },
+          "hours": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SendingWindowHours"
+            },
+            "description": "The hours it is open, at most one entry per day"
+          }
+        },
+        "description": "One of the Workspace's Sending windows (ADR 0134): the hours of each day of the week, in the\nrecipient's local time, in which a marketing message on the Channel may go out; a day it does not\nlist stays closed. A window with a country is for the numbers of that country and outranks the\nChannel's own. It opens at least once a week."
+      },
+      "SendingWindowChannel": {
+        "type": "string",
+        "enum": ["sms"],
+        "description": "A Channel a Sending window holds (ADR 0134): only SMS, since email and Telegram go out at any\nhour"
+      },
+      "SendingWindowHours": {
+        "type": "object",
+        "required": ["day", "opensAt", "closesAt"],
+        "properties": {
+          "day": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Weekday"
+              }
+            ],
+            "description": "The day, in the recipient's local time"
+          },
+          "opensAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MinuteOfDay"
+              }
+            ],
+            "description": "The minute of the day it opens"
+          },
+          "closesAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MinuteOfDay"
+              }
+            ],
+            "description": "The minute of the day it closes, after it opens"
+          }
+        },
+        "description": "The hours a Sending window is open on one day of the week, in the recipient's local time"
       },
       "SentByLeaf": {
         "type": "object",
@@ -18114,6 +18275,7 @@
           "requireConfirmedOptIn",
           "engagementTrackingDefault",
           "timezone",
+          "sendingRules",
           "revision"
         ],
         "properties": {
@@ -18164,6 +18326,14 @@
             ],
             "nullable": true,
             "description": "The Send cap the platform set on the Workspace, with its sends over the last 24 hours; null\nwhen no Send cap applies"
+          },
+          "sendingRules": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SendingRules"
+              }
+            ],
+            "description": "The Workspace's sending rules (ADR 0134, ADR 0137): its Frequency caps and its Sending windows.\nRead-only: only a person changes them, in the console's Workspace settings."
           },
           "revision": {
             "allOf": [

@@ -209,6 +209,7 @@ export const AuditAction = {
   WORKSPACE_ABUSE_EXEMPT: 'workspace.abuse_exempt',
   WORKSPACE_ABUSE_UNEXEMPT: 'workspace.abuse_unexempt',
   WORKSPACE_SEND_CAP_CHANGE: 'workspace.send_cap_change',
+  WORKSPACE_SENDING_RULES_CHANGE: 'workspace.sending_rules_change',
   CONTACT_IMPORT: 'contact.import',
   AUDIT_LOG_EXPORT: 'audit_log.export',
   WEBHOOK_ENDPOINT_TEST: 'webhook_endpoint.test',
@@ -3359,6 +3360,79 @@ export type FilterPropertyLeafInput = {
 };
 
 /**
+ * One of the Workspace's Frequency caps (ADR 0137): at most `maxMessages` marketing messages to one
+ * Destination on the Channel per rolling `periodMinutes`. A cap with a country is for the numbers of
+ * that country and outranks the Channel's own; one with no maximum removes the cap there. Every
+ * Broadcast and Automation message counts; Transactional messages and Test sends do not.
+ */
+export type FrequencyCap = {
+  /**
+   * The Channel it counts on
+   */
+  channel: FrequencyCapChannel;
+  /**
+   * The country of the numbers it is for, on a phone Channel only; null for every Destination on
+   * the Channel
+   */
+  country: CountryCode | null;
+  /**
+   * The most marketing messages one Destination receives in the period; null removes the cap
+   */
+  maxMessages: FrequencyCapMaxMessages | null;
+  /**
+   * The rolling period in minutes; null exactly when the maximum is
+   */
+  periodMinutes: FrequencyCapPeriodMinutes | null;
+};
+
+/**
+ * A Channel a Frequency cap counts marketing messages on (ADR 0137)
+ */
+export const FrequencyCapChannel = {
+  EMAIL: 'email',
+  SMS: 'sms',
+  TELEGRAM: 'telegram'
+} as const;
+
+/**
+ * A Channel a Frequency cap counts marketing messages on (ADR 0137)
+ */
+export type FrequencyCapChannel = typeof FrequencyCapChannel[keyof typeof FrequencyCapChannel];
+
+/**
+ * A Frequency cap as a replacement of the rules names it
+ */
+export type FrequencyCapInput = {
+  /**
+   * The Channel it counts on
+   */
+  channel: FrequencyCapChannel;
+  /**
+   * The country of the numbers it is for, on a phone Channel only; null for every Destination on
+   * the Channel
+   */
+  country: CountryCode | null;
+  /**
+   * The most marketing messages one Destination receives in the period; null removes the cap
+   */
+  maxMessages: FrequencyCapMaxMessages | null;
+  /**
+   * The rolling period in minutes; null exactly when the maximum is
+   */
+  periodMinutes: FrequencyCapPeriodMinutes | null;
+};
+
+/**
+ * The most marketing messages one Destination receives in a Frequency cap's period
+ */
+export type FrequencyCapMaxMessages = number;
+
+/**
+ * A Frequency cap's rolling period in minutes: one minute to seven days
+ */
+export type FrequencyCapPeriodMinutes = number;
+
+/**
  * Scopes an OAuth client may be granted without any extra opt-in: the external
  * API's read/write vocabulary. Token management scopes are deliberately absent,
  * so a connector can never mint further credentials.
@@ -3691,6 +3765,11 @@ export const MessageSender = { BROADCAST: 'broadcast', AUTOMATION: 'automation' 
  * What sends the message a message's System event is about
  */
 export type MessageSender = typeof MessageSender[keyof typeof MessageSender];
+
+/**
+ * A minute of the day: 0 is midnight at its start, 1440 midnight at its end
+ */
+export type MinuteOfDay = number;
 
 /**
  * Which side of `at` a moment is on: before is strictly earlier, after is at or later, so the two
@@ -4893,6 +4972,110 @@ export type SendingDomainResource = {
    * Last update timestamp
    */
   updatedAt: Timestamp;
+};
+
+/**
+ * The Workspace's sending rules: its Frequency caps and its Sending windows. A new Workspace has
+ * three marketing texts per 1440 minutes on SMS and an SMS window of 8:00 to 20:00 every day. The
+ * Workspace answers for its compliance: the app keeps no table of laws, and the defaults are not
+ * legal advice.
+ */
+export type SendingRules = {
+  /**
+   * The Frequency caps
+   */
+  frequencyCaps: Array<FrequencyCap>;
+  /**
+   * The Sending windows
+   */
+  sendingWindows: Array<SendingWindow>;
+};
+
+/**
+ * One of the Workspace's Sending windows (ADR 0134): the hours of each day of the week, in the
+ * recipient's local time, in which a marketing message on the Channel may go out; a day it does not
+ * list stays closed. A window with a country is for the numbers of that country and outranks the
+ * Channel's own. It opens at least once a week.
+ */
+export type SendingWindow = {
+  /**
+   * The Channel it holds
+   */
+  channel: SendingWindowChannel;
+  /**
+   * The country of the numbers it is for; null for every number on the Channel
+   */
+  country: CountryCode | null;
+  /**
+   * The hours it is open, at most one entry per day
+   */
+  hours: Array<SendingWindowHours>;
+};
+
+/**
+ * A Channel a Sending window holds (ADR 0134): only SMS, since email and Telegram go out at any
+ * hour
+ */
+export const SendingWindowChannel = { SMS: 'sms' } as const;
+
+/**
+ * A Channel a Sending window holds (ADR 0134): only SMS, since email and Telegram go out at any
+ * hour
+ */
+export type SendingWindowChannel = typeof SendingWindowChannel[keyof typeof SendingWindowChannel];
+
+/**
+ * The hours a Sending window is open on one day of the week, in the recipient's local time
+ */
+export type SendingWindowHours = {
+  /**
+   * The day, in the recipient's local time
+   */
+  day: Weekday;
+  /**
+   * The minute of the day it opens
+   */
+  opensAt: MinuteOfDay;
+  /**
+   * The minute of the day it closes, after it opens
+   */
+  closesAt: MinuteOfDay;
+};
+
+/**
+ * A day's hours of a Sending window as a replacement of the rules names them
+ */
+export type SendingWindowHoursInput = {
+  /**
+   * The day, in the recipient's local time
+   */
+  day: Weekday;
+  /**
+   * The minute of the day it opens
+   */
+  opensAt: MinuteOfDay;
+  /**
+   * The minute of the day it closes, after it opens
+   */
+  closesAt: MinuteOfDay;
+};
+
+/**
+ * A Sending window as a replacement of the rules names it
+ */
+export type SendingWindowInput = {
+  /**
+   * The Channel it holds
+   */
+  channel: SendingWindowChannel;
+  /**
+   * The country of the numbers it is for; null for every number on the Channel
+   */
+  country: CountryCode | null;
+  /**
+   * The hours it is open, at most one entry per day; it must open at least once a week
+   */
+  hours: Array<SendingWindowHoursInput>;
 };
 
 /**
@@ -7982,6 +8165,24 @@ export type SiteRecoveryCodesInput = {
 };
 
 /**
+ * Replace the Workspace's sending rules as a whole: a cap or a window left out is removed
+ */
+export type SiteReplaceSendingRulesInput = {
+  /**
+   * The Workspace's `revision` the change was made on (ADR 0119): the one it was read with
+   */
+  revision: Revision;
+  /**
+   * Every Frequency cap, at most one per Channel and country
+   */
+  frequencyCaps: Array<FrequencyCapInput>;
+  /**
+   * Every Sending window, at most one per Channel and country
+   */
+  sendingWindows: Array<SendingWindowInput>;
+};
+
+/**
  * The Report days a period of a report runs over, spread into each period model
  */
 export type SiteReportPeriod = {
@@ -8297,6 +8498,25 @@ export type SiteSendingDomainRates = {
    * Hard bounces over sent
    */
   bounceRate: RateTriple;
+};
+
+/**
+ * The Workspace's sending rules as /site shows them (ADR 0134, ADR 0137), with the Workspace's
+ * revision. Every member reads them.
+ */
+export type SiteSendingRulesResource = {
+  /**
+   * The Frequency caps
+   */
+  frequencyCaps: Array<FrequencyCap>;
+  /**
+   * The Sending windows
+   */
+  sendingWindows: Array<SendingWindow>;
+  /**
+   * The Workspace's revision this answer shows (ADR 0119): a replacement of the rules names it
+   */
+  revision: Revision;
 };
 
 /**
@@ -18663,6 +18883,70 @@ export type SiteSendingDomainsVerifyResponses = {
 };
 
 export type SiteSendingDomainsVerifyResponse = SiteSendingDomainsVerifyResponses[keyof SiteSendingDomainsVerifyResponses];
+
+export type SiteWorkspacesGetSendingRulesData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/sending-rules';
+};
+
+export type SiteWorkspacesGetSendingRulesErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SiteWorkspacesGetSendingRulesError = SiteWorkspacesGetSendingRulesErrors[keyof SiteWorkspacesGetSendingRulesErrors];
+
+export type SiteWorkspacesGetSendingRulesResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteSendingRulesResource;
+};
+
+export type SiteWorkspacesGetSendingRulesResponse = SiteWorkspacesGetSendingRulesResponses[keyof SiteWorkspacesGetSendingRulesResponses];
+
+export type SiteWorkspacesReplaceSendingRulesData = {
+  body: SiteReplaceSendingRulesInput;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/sending-rules';
+};
+
+export type SiteWorkspacesReplaceSendingRulesErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SiteWorkspacesReplaceSendingRulesError = SiteWorkspacesReplaceSendingRulesErrors[keyof SiteWorkspacesReplaceSendingRulesErrors];
+
+export type SiteWorkspacesReplaceSendingRulesResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteSendingRulesResource;
+};
+
+export type SiteWorkspacesReplaceSendingRulesResponse = SiteWorkspacesReplaceSendingRulesResponses[keyof SiteWorkspacesReplaceSendingRulesResponses];
 
 export type SiteSetupChecklistGetData = {
   body?: never;

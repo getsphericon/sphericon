@@ -158,6 +158,7 @@ const (
 	AuditActionWorkspaceAbuseExempt        AuditAction = "workspace.abuse_exempt"
 	AuditActionWorkspaceAbuseUnexempt      AuditAction = "workspace.abuse_unexempt"
 	AuditActionWorkspaceSendCapChange      AuditAction = "workspace.send_cap_change"
+	AuditActionWorkspaceSendingRulesChange AuditAction = "workspace.sending_rules_change"
 	AuditActionContactImport               AuditAction = "contact.import"
 	AuditActionAuditLogExport              AuditAction = "audit_log.export"
 	AuditActionWebhookEndpointTest         AuditAction = "webhook_endpoint.test"
@@ -252,6 +253,7 @@ func (AuditAction) AllValues() []AuditAction {
 		AuditActionWorkspaceAbuseExempt,
 		AuditActionWorkspaceAbuseUnexempt,
 		AuditActionWorkspaceSendCapChange,
+		AuditActionWorkspaceSendingRulesChange,
 		AuditActionContactImport,
 		AuditActionAuditLogExport,
 		AuditActionWebhookEndpointTest,
@@ -372,6 +374,8 @@ func (s AuditAction) MarshalText() ([]byte, error) {
 	case AuditActionWorkspaceAbuseUnexempt:
 		return []byte(s), nil
 	case AuditActionWorkspaceSendCapChange:
+		return []byte(s), nil
+	case AuditActionWorkspaceSendingRulesChange:
 		return []byte(s), nil
 	case AuditActionContactImport:
 		return []byte(s), nil
@@ -584,6 +588,9 @@ func (s *AuditAction) UnmarshalText(data []byte) error {
 		return nil
 	case AuditActionWorkspaceSendCapChange:
 		*s = AuditActionWorkspaceSendCapChange
+		return nil
+	case AuditActionWorkspaceSendingRulesChange:
+		*s = AuditActionWorkspaceSendingRulesChange
 		return nil
 	case AuditActionContactImport:
 		*s = AuditActionContactImport

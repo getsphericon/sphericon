@@ -1587,6 +1587,38 @@ var (
 			},
 		},
 	}
+	// FrequencyCapsColumns holds the columns for the "frequency_caps" table.
+	FrequencyCapsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email", "telegram", "sms"}},
+		{Name: "country", Type: field.TypeString, Nullable: true},
+		{Name: "max_messages", Type: field.TypeInt, Nullable: true},
+		{Name: "period_minutes", Type: field.TypeInt, Nullable: true},
+		{Name: "workspace_id", Type: field.TypeInt64},
+	}
+	// FrequencyCapsTable holds the schema information for the "frequency_caps" table.
+	FrequencyCapsTable = &schema.Table{
+		Name:       "frequency_caps",
+		Columns:    FrequencyCapsColumns,
+		PrimaryKey: []*schema.Column{FrequencyCapsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "frequency_caps_workspaces_frequency_caps",
+				Columns:    []*schema.Column{FrequencyCapsColumns[7]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "frequency_caps_workspace_channel_country",
+				Unique:  true,
+				Columns: []*schema.Column{FrequencyCapsColumns[7], FrequencyCapsColumns[3], FrequencyCapsColumns[4]},
+			},
+		},
+	}
 	// HeldOrderEventsColumns holds the columns for the "held_order_events" table.
 	HeldOrderEventsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -3014,6 +3046,50 @@ var (
 			},
 		},
 	}
+	// SendingWindowsColumns holds the columns for the "sending_windows" table.
+	SendingWindowsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email", "telegram", "sms"}},
+		{Name: "country", Type: field.TypeString, Nullable: true},
+		{Name: "monday_opens", Type: field.TypeInt, Nullable: true},
+		{Name: "monday_closes", Type: field.TypeInt, Nullable: true},
+		{Name: "tuesday_opens", Type: field.TypeInt, Nullable: true},
+		{Name: "tuesday_closes", Type: field.TypeInt, Nullable: true},
+		{Name: "wednesday_opens", Type: field.TypeInt, Nullable: true},
+		{Name: "wednesday_closes", Type: field.TypeInt, Nullable: true},
+		{Name: "thursday_opens", Type: field.TypeInt, Nullable: true},
+		{Name: "thursday_closes", Type: field.TypeInt, Nullable: true},
+		{Name: "friday_opens", Type: field.TypeInt, Nullable: true},
+		{Name: "friday_closes", Type: field.TypeInt, Nullable: true},
+		{Name: "saturday_opens", Type: field.TypeInt, Nullable: true},
+		{Name: "saturday_closes", Type: field.TypeInt, Nullable: true},
+		{Name: "sunday_opens", Type: field.TypeInt, Nullable: true},
+		{Name: "sunday_closes", Type: field.TypeInt, Nullable: true},
+		{Name: "workspace_id", Type: field.TypeInt64},
+	}
+	// SendingWindowsTable holds the schema information for the "sending_windows" table.
+	SendingWindowsTable = &schema.Table{
+		Name:       "sending_windows",
+		Columns:    SendingWindowsColumns,
+		PrimaryKey: []*schema.Column{SendingWindowsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "sending_windows_workspaces_sending_windows",
+				Columns:    []*schema.Column{SendingWindowsColumns[19]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "sending_windows_workspace_channel_country",
+				Unique:  true,
+				Columns: []*schema.Column{SendingWindowsColumns[19], SendingWindowsColumns[3], SendingWindowsColumns[4]},
+			},
+		},
+	}
 	// ServiceCredentialsColumns holds the columns for the "service_credentials" table.
 	ServiceCredentialsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -3759,6 +3835,7 @@ var (
 		EventsTable,
 		EventJournalEntriesTable,
 		EventReceiptsTable,
+		FrequencyCapsTable,
 		HeldOrderEventsTable,
 		HoldsTable,
 		IdentitySecretsTable,
@@ -3792,6 +3869,7 @@ var (
 		SegmentsTable,
 		SendCapLimitersTable,
 		SendingDomainsTable,
+		SendingWindowsTable,
 		ServiceCredentialsTable,
 		SignupItemsTable,
 		SignupSurveyResponsesTable,
@@ -4079,6 +4157,18 @@ func init() {
 	EventReceiptsTable.Annotation = &entsql.Annotation{
 		Table: "event_receipts",
 	}
+	FrequencyCapsTable.ForeignKeys[0].RefTable = WorkspacesTable
+	FrequencyCapsTable.Annotation = &entsql.Annotation{
+		Table: "frequency_caps",
+	}
+	FrequencyCapsTable.Annotation.Checks = map[string]string{
+		"frequency_caps_cap_check":            "(max_messages IS NULL) = (period_minutes IS NULL)",
+		"frequency_caps_channel_check":        "channel IN ('email', 'telegram', 'sms')",
+		"frequency_caps_country_check":        "country IS NULL OR channel = 'sms'",
+		"frequency_caps_country_format":       "country ~ '^[A-Z]{2}$'",
+		"frequency_caps_max_messages_check":   "max_messages >= 1",
+		"frequency_caps_period_minutes_check": "period_minutes BETWEEN 1 AND 10080",
+	}
 	HeldOrderEventsTable.ForeignKeys[0].RefTable = WorkspacesTable
 	HeldOrderEventsTable.Annotation = &entsql.Annotation{
 		Table: "held_order_events",
@@ -4293,6 +4383,23 @@ func init() {
 	SendingDomainsTable.Annotation.Checks = map[string]string{
 		"sending_domains_domain_format":           "domain ~ '^[a-z0-9-]+(\\.[a-z0-9-]+)+$'",
 		"sending_domains_verification_lost_check": "verification_lost_at IS NULL OR verified_at IS NOT NULL",
+	}
+	SendingWindowsTable.ForeignKeys[0].RefTable = WorkspacesTable
+	SendingWindowsTable.Annotation = &entsql.Annotation{
+		Table: "sending_windows",
+	}
+	SendingWindowsTable.Annotation.Checks = map[string]string{
+		"sending_windows_channel_check":       "channel IN ('email', 'telegram', 'sms')",
+		"sending_windows_country_format":      "country ~ '^[A-Z]{2}$'",
+		"sending_windows_friday_check":        "(friday_opens IS NULL) = (friday_closes IS NULL) AND friday_opens >= 0 AND friday_opens < friday_closes AND friday_closes <= 1440",
+		"sending_windows_monday_check":        "(monday_opens IS NULL) = (monday_closes IS NULL) AND monday_opens >= 0 AND monday_opens < monday_closes AND monday_closes <= 1440",
+		"sending_windows_opens_check":         "monday_opens IS NOT NULL OR tuesday_opens IS NOT NULL OR wednesday_opens IS NOT NULL OR thursday_opens IS NOT NULL OR friday_opens IS NOT NULL OR saturday_opens IS NOT NULL OR sunday_opens IS NOT NULL",
+		"sending_windows_phone_channel_check": "channel = 'sms'",
+		"sending_windows_saturday_check":      "(saturday_opens IS NULL) = (saturday_closes IS NULL) AND saturday_opens >= 0 AND saturday_opens < saturday_closes AND saturday_closes <= 1440",
+		"sending_windows_sunday_check":        "(sunday_opens IS NULL) = (sunday_closes IS NULL) AND sunday_opens >= 0 AND sunday_opens < sunday_closes AND sunday_closes <= 1440",
+		"sending_windows_thursday_check":      "(thursday_opens IS NULL) = (thursday_closes IS NULL) AND thursday_opens >= 0 AND thursday_opens < thursday_closes AND thursday_closes <= 1440",
+		"sending_windows_tuesday_check":       "(tuesday_opens IS NULL) = (tuesday_closes IS NULL) AND tuesday_opens >= 0 AND tuesday_opens < tuesday_closes AND tuesday_closes <= 1440",
+		"sending_windows_wednesday_check":     "(wednesday_opens IS NULL) = (wednesday_closes IS NULL) AND wednesday_opens >= 0 AND wednesday_opens < wednesday_closes AND wednesday_closes <= 1440",
 	}
 	ServiceCredentialsTable.Annotation = &entsql.Annotation{
 		Table: "service_credentials",

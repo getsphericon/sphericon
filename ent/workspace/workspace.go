@@ -117,6 +117,10 @@ const (
 	EdgeSendCapLimiters = "send_cap_limiters"
 	// EdgeHolds holds the string denoting the holds edge name in mutations.
 	EdgeHolds = "holds"
+	// EdgeFrequencyCaps holds the string denoting the frequency_caps edge name in mutations.
+	EdgeFrequencyCaps = "frequency_caps"
+	// EdgeSendingWindows holds the string denoting the sending_windows edge name in mutations.
+	EdgeSendingWindows = "sending_windows"
 	// EdgeBroadcasts holds the string denoting the broadcasts edge name in mutations.
 	EdgeBroadcasts = "broadcasts"
 	// EdgeBroadcastRecipients holds the string denoting the broadcast_recipients edge name in mutations.
@@ -348,6 +352,20 @@ const (
 	HoldsInverseTable = "holds"
 	// HoldsColumn is the table column denoting the holds relation/edge.
 	HoldsColumn = "workspace_id"
+	// FrequencyCapsTable is the table that holds the frequency_caps relation/edge.
+	FrequencyCapsTable = "frequency_caps"
+	// FrequencyCapsInverseTable is the table name for the FrequencyCap entity.
+	// It exists in this package in order to avoid circular dependency with the "frequencycap" package.
+	FrequencyCapsInverseTable = "frequency_caps"
+	// FrequencyCapsColumn is the table column denoting the frequency_caps relation/edge.
+	FrequencyCapsColumn = "workspace_id"
+	// SendingWindowsTable is the table that holds the sending_windows relation/edge.
+	SendingWindowsTable = "sending_windows"
+	// SendingWindowsInverseTable is the table name for the SendingWindow entity.
+	// It exists in this package in order to avoid circular dependency with the "sendingwindow" package.
+	SendingWindowsInverseTable = "sending_windows"
+	// SendingWindowsColumn is the table column denoting the sending_windows relation/edge.
+	SendingWindowsColumn = "workspace_id"
 	// BroadcastsTable is the table that holds the broadcasts relation/edge.
 	BroadcastsTable = "broadcasts"
 	// BroadcastsInverseTable is the table name for the Broadcast entity.
@@ -1196,6 +1214,34 @@ func ByHolds(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// ByFrequencyCapsCount orders the results by frequency_caps count.
+func ByFrequencyCapsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newFrequencyCapsStep(), opts...)
+	}
+}
+
+// ByFrequencyCaps orders the results by frequency_caps terms.
+func ByFrequencyCaps(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newFrequencyCapsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// BySendingWindowsCount orders the results by sending_windows count.
+func BySendingWindowsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newSendingWindowsStep(), opts...)
+	}
+}
+
+// BySendingWindows orders the results by sending_windows terms.
+func BySendingWindows(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newSendingWindowsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByBroadcastsCount orders the results by broadcasts count.
 func ByBroadcastsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -1823,6 +1869,20 @@ func newHoldsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(HoldsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, HoldsTable, HoldsColumn),
+	)
+}
+func newFrequencyCapsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(FrequencyCapsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, FrequencyCapsTable, FrequencyCapsColumn),
+	)
+}
+func newSendingWindowsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(SendingWindowsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, SendingWindowsTable, SendingWindowsColumn),
 	)
 }
 func newBroadcastsStep() *sqlgraph.Step {

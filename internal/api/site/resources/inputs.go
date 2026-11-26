@@ -110,6 +110,10 @@ import (
 // goverter:extend maxPerDayPtrIn
 // goverter:extend currencyCodePtrIn
 // goverter:extend attributionWindowDaysPtrIn
+// goverter:extend nilCountryIn
+// goverter:extend frequencyCapMaxMessagesIn
+// goverter:extend frequencyCapPeriodMinutesIn
+// goverter:extend minuteOfDayIn
 // goverter:extend integrationConfigIn
 // goverter:extend integrationConfigPatch
 // goverter:extend int32ToInt
@@ -177,6 +181,15 @@ type Inputs interface {
 	// goverter:enum:map EngagementTrackingDecisionDontTrack EngagementTrackingDefaultDontTrack
 	EngagementTrackingDefaultIn(source siteapi.EngagementTrackingDecision) workspace.EngagementTrackingDefault
 	RevenueSettingsSet(source *siteapi.SiteUpdateRevenueSettingsInput) workspaces.SetRevenueSettingsInput
+	// The whole of the Workspace's sending rules (ADR 0134, ADR 0137).
+	SendingRulesReplace(source *siteapi.SiteReplaceSendingRulesInput) workspaces.ReplaceSendingRulesInput
+	FrequencyCapIn(source siteapi.FrequencyCapInput) workspaces.FrequencyCap
+	SendingWindowIn(source siteapi.SendingWindowInput) workspaces.SendingWindow
+	SendingWindowHoursIn(source siteapi.SendingWindowHoursInput) workspaces.OpenHours
+	// goverter:enum:transform value
+	FrequencyCapChannelIn(source siteapi.FrequencyCapChannel) channels.Channel
+	// goverter:enum:transform value
+	SendingWindowChannelIn(source siteapi.SendingWindowChannel) channels.Channel
 	ConfirmationEmailSet(source *siteapi.SiteUpdateConfirmationEmailInput) workspaces.SetConfirmationEmailInput
 	// goverter:map Enabled On
 	ConfirmedOptInSet(source *siteapi.SiteSetConfirmedOptInInput) workspaceview.SetConfirmedOptInInput
@@ -430,10 +443,18 @@ func nilStringPtrIn(o siteapi.OptNilString) *string                   { return c
 func nilEmailPtrIn(o siteapi.OptNilEmailAddress) *string              { return convert.StringPtr(o) }
 func nilTimeZonePtrIn(o siteapi.OptNilTimeZoneName) *string           { return convert.StringPtr(o) }
 func nilCountryPtrIn(o siteapi.OptNilCountryCode) *string             { return convert.StringPtr(o) }
-func nilLocalePtrIn(o siteapi.OptNilLocaleTag) *string                { return convert.StringPtr(o) }
-func nilImageURLPtrIn(o siteapi.OptNilImageUrl) *string               { return convert.StringPtr(o) }
-func nilDatePtrIn(o siteapi.OptNilDate) *time.Time                    { return convert.Ptr(o) }
-func nilEntityIDPtrIn(o siteapi.OptNilEntityId) *int64                { return convert.Int64Ptr(o) }
+func nilCountryIn(o siteapi.NilCountryCode) *string                   { return convert.StringPtr(o) }
+func frequencyCapMaxMessagesIn(o siteapi.NilFrequencyCapMaxMessages) *int {
+	return intPtr(o)
+}
+func frequencyCapPeriodMinutesIn(o siteapi.NilFrequencyCapPeriodMinutes) *int {
+	return intPtr(o)
+}
+func minuteOfDayIn(v siteapi.MinuteOfDay) int           { return int(v) }
+func nilLocalePtrIn(o siteapi.OptNilLocaleTag) *string  { return convert.StringPtr(o) }
+func nilImageURLPtrIn(o siteapi.OptNilImageUrl) *string { return convert.StringPtr(o) }
+func nilDatePtrIn(o siteapi.OptNilDate) *time.Time      { return convert.Ptr(o) }
+func nilEntityIDPtrIn(o siteapi.OptNilEntityId) *int64  { return convert.Int64Ptr(o) }
 
 // requiredNilEntityIDPtrIn is a field the body must carry whose null is a choice of its own (a
 // Broadcast's audience, null for all contacts): nil for null, else the id.

@@ -314,6 +314,48 @@ model SiteUpdateRevenueSettingsInput {
   attributionWindowDays?: AttributionWindowDays;
 }
 
+/** The Workspace's sending rules as /site shows them (ADR 0134, ADR 0137), with the Workspace's
+ * revision. Every member reads them. */
+model SiteSendingRulesResource {
+  ...SendingRules;
+
+  /** The Workspace's revision this answer shows (ADR 0119): a replacement of the rules names it */
+  revision: Revision;
+}
+
+/** A Frequency cap as a replacement of the rules names it */
+model FrequencyCapInput is FrequencyCap;
+
+/** A day's hours of a Sending window as a replacement of the rules names them */
+model SendingWindowHoursInput is SendingWindowHours;
+
+/** A Sending window as a replacement of the rules names it */
+model SendingWindowInput {
+  /** The Channel it holds */
+  channel: SendingWindowChannel;
+
+  /** The country of the numbers it is for; null for every number on the Channel */
+  country: CountryCode | null;
+
+  /** The hours it is open, at most one entry per day; it must open at least once a week */
+  @maxItems(7)
+  hours: SendingWindowHoursInput[];
+}
+
+/** Replace the Workspace's sending rules as a whole: a cap or a window left out is removed */
+model SiteReplaceSendingRulesInput {
+  /** The Workspace's `revision` the change was made on (ADR 0119): the one it was read with */
+  revision: Revision;
+
+  /** Every Frequency cap, at most one per Channel and country */
+  @maxItems(300)
+  frequencyCaps: FrequencyCapInput[];
+
+  /** Every Sending window, at most one per Channel and country */
+  @maxItems(300)
+  sendingWindows: SendingWindowInput[];
+}
+
 @route("/workspaces")
 @tag("Site Workspaces")
 namespace SiteWorkspaces {
@@ -510,6 +552,29 @@ namespace SiteWorkspaces {
     @path workspaceId: WorkspaceId,
     @body body: SiteUpdateRevenueSettingsInput,
   ): SiteRevenueSettingsResource | Problem;
+
+  /** Read the Workspace's sending rules (ADR 0134, ADR 0137): its Frequency caps and its Sending
+   * windows. Open to every member. */
+  @get
+  @route("/{workspaceId}/sending-rules")
+  @requiresPermissions(#[])
+  op getSendingRules(@path workspaceId: WorkspaceId):
+    | SiteSendingRulesResource
+    | Problem;
+
+  /** Replace the Workspace's sending rules as a whole (Owner and Admin only): its Frequency caps and
+   * its Sending windows. Only a person changes them, here: neither `/api` nor MCP does. 422 for a
+   * window that never opens in a week, a window on a Channel that has none, a country on a Channel
+   * other than a phone's, a cap with a maximum and no period or the reverse, or two caps or windows
+   * for one Channel and country. A change is recorded as an Audit entry; a replacement that changes
+   * nothing records none. */
+  @put
+  @route("/{workspaceId}/sending-rules")
+  @requiresPermissions(#[Permission.workspaceUpdate])
+  op replaceSendingRules(
+    @path workspaceId: WorkspaceId,
+    @body body: SiteReplaceSendingRulesInput,
+  ): SiteSendingRulesResource | Problem;
 }
 
 /** The longest text the SMS provider sends (Twilio: 1,600 characters in GSM-7, 700 in UCS-2) */

@@ -45,6 +45,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/eventjournalentry"
 	"github.com/getsphericon/sphericon/ent/eventreceipt"
+	"github.com/getsphericon/sphericon/ent/frequencycap"
 	"github.com/getsphericon/sphericon/ent/heldorderevent"
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/identitysecret"
@@ -78,6 +79,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendcaplimiter"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
+	"github.com/getsphericon/sphericon/ent/sendingwindow"
 	"github.com/getsphericon/sphericon/ent/servicecredential"
 	"github.com/getsphericon/sphericon/ent/signupitem"
 	"github.com/getsphericon/sphericon/ent/signupsurveyresponse"
@@ -167,6 +169,8 @@ type Client struct {
 	EventJournalEntry *EventJournalEntryClient
 	// EventReceipt is the client for interacting with the EventReceipt builders.
 	EventReceipt *EventReceiptClient
+	// FrequencyCap is the client for interacting with the FrequencyCap builders.
+	FrequencyCap *FrequencyCapClient
 	// HeldOrderEvent is the client for interacting with the HeldOrderEvent builders.
 	HeldOrderEvent *HeldOrderEventClient
 	// Hold is the client for interacting with the Hold builders.
@@ -233,6 +237,8 @@ type Client struct {
 	SendCapLimiter *SendCapLimiterClient
 	// SendingDomain is the client for interacting with the SendingDomain builders.
 	SendingDomain *SendingDomainClient
+	// SendingWindow is the client for interacting with the SendingWindow builders.
+	SendingWindow *SendingWindowClient
 	// ServiceCredential is the client for interacting with the ServiceCredential builders.
 	ServiceCredential *ServiceCredentialClient
 	// SignupItem is the client for interacting with the SignupItem builders.
@@ -314,6 +320,7 @@ func (c *Client) init() {
 	c.Event = NewEventClient(c.config)
 	c.EventJournalEntry = NewEventJournalEntryClient(c.config)
 	c.EventReceipt = NewEventReceiptClient(c.config)
+	c.FrequencyCap = NewFrequencyCapClient(c.config)
 	c.HeldOrderEvent = NewHeldOrderEventClient(c.config)
 	c.Hold = NewHoldClient(c.config)
 	c.IdentitySecret = NewIdentitySecretClient(c.config)
@@ -347,6 +354,7 @@ func (c *Client) init() {
 	c.Segment = NewSegmentClient(c.config)
 	c.SendCapLimiter = NewSendCapLimiterClient(c.config)
 	c.SendingDomain = NewSendingDomainClient(c.config)
+	c.SendingWindow = NewSendingWindowClient(c.config)
 	c.ServiceCredential = NewServiceCredentialClient(c.config)
 	c.SignupItem = NewSignupItemClient(c.config)
 	c.SignupSurveyResponse = NewSignupSurveyResponseClient(c.config)
@@ -489,6 +497,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Event:                      NewEventClient(cfg),
 		EventJournalEntry:          NewEventJournalEntryClient(cfg),
 		EventReceipt:               NewEventReceiptClient(cfg),
+		FrequencyCap:               NewFrequencyCapClient(cfg),
 		HeldOrderEvent:             NewHeldOrderEventClient(cfg),
 		Hold:                       NewHoldClient(cfg),
 		IdentitySecret:             NewIdentitySecretClient(cfg),
@@ -522,6 +531,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Segment:                    NewSegmentClient(cfg),
 		SendCapLimiter:             NewSendCapLimiterClient(cfg),
 		SendingDomain:              NewSendingDomainClient(cfg),
+		SendingWindow:              NewSendingWindowClient(cfg),
 		ServiceCredential:          NewServiceCredentialClient(cfg),
 		SignupItem:                 NewSignupItemClient(cfg),
 		SignupSurveyResponse:       NewSignupSurveyResponseClient(cfg),
@@ -591,6 +601,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Event:                      NewEventClient(cfg),
 		EventJournalEntry:          NewEventJournalEntryClient(cfg),
 		EventReceipt:               NewEventReceiptClient(cfg),
+		FrequencyCap:               NewFrequencyCapClient(cfg),
 		HeldOrderEvent:             NewHeldOrderEventClient(cfg),
 		Hold:                       NewHoldClient(cfg),
 		IdentitySecret:             NewIdentitySecretClient(cfg),
@@ -624,6 +635,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Segment:                    NewSegmentClient(cfg),
 		SendCapLimiter:             NewSendCapLimiterClient(cfg),
 		SendingDomain:              NewSendingDomainClient(cfg),
+		SendingWindow:              NewSendingWindowClient(cfg),
 		ServiceCredential:          NewServiceCredentialClient(cfg),
 		SignupItem:                 NewSignupItemClient(cfg),
 		SignupSurveyResponse:       NewSignupSurveyResponseClient(cfg),
@@ -680,7 +692,7 @@ func (c *Client) Use(hooks ...Hook) {
 		c.Confirmation, c.ConsentRecord, c.ConsentStamp, c.Contact, c.ContactDate,
 		c.ContactTag, c.CustomField, c.DefaultSendCap, c.EmailTemplate,
 		c.EngagementTrackingConsent, c.Erasure, c.Event, c.EventJournalEntry,
-		c.EventReceipt, c.HeldOrderEvent, c.Hold, c.IdentitySecret,
+		c.EventReceipt, c.FrequencyCap, c.HeldOrderEvent, c.Hold, c.IdentitySecret,
 		c.InstanceAuditEntry, c.InstanceState, c.Integration,
 		c.IntegrationProviderState, c.Invitation, c.JoinDomain, c.LegalDocumentDraft,
 		c.LegalDocumentVersion, c.Membership, c.OAuthClient, c.OAuthCode,
@@ -688,11 +700,11 @@ func (c *Client) Use(hooks ...Hook) {
 		c.PasskeyChallenge, c.PendingSignup, c.PrivateRelayRange, c.ProviderLimiter,
 		c.RecoveryCode, c.Rule, c.RuleFiring, c.RuleVersion, c.RuleVersionTrigger,
 		c.SchemaState, c.SecondFactor, c.Segment, c.SendCapLimiter, c.SendingDomain,
-		c.ServiceCredential, c.SignupItem, c.SignupSurveyResponse, c.StaffMember,
-		c.StartToken, c.Suppression, c.Tag, c.TrackedLink, c.TrackingDomain,
-		c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User, c.UserIdentity,
-		c.UserTombstone, c.Visitor, c.WebhookEndpoint, c.WebhookEndpointHealth,
-		c.Workspace, c.WorkspaceStanding,
+		c.SendingWindow, c.ServiceCredential, c.SignupItem, c.SignupSurveyResponse,
+		c.StaffMember, c.StartToken, c.Suppression, c.Tag, c.TrackedLink,
+		c.TrackingDomain, c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User,
+		c.UserIdentity, c.UserTombstone, c.Visitor, c.WebhookEndpoint,
+		c.WebhookEndpointHealth, c.Workspace, c.WorkspaceStanding,
 	} {
 		n.Use(hooks...)
 	}
@@ -709,7 +721,7 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.Confirmation, c.ConsentRecord, c.ConsentStamp, c.Contact, c.ContactDate,
 		c.ContactTag, c.CustomField, c.DefaultSendCap, c.EmailTemplate,
 		c.EngagementTrackingConsent, c.Erasure, c.Event, c.EventJournalEntry,
-		c.EventReceipt, c.HeldOrderEvent, c.Hold, c.IdentitySecret,
+		c.EventReceipt, c.FrequencyCap, c.HeldOrderEvent, c.Hold, c.IdentitySecret,
 		c.InstanceAuditEntry, c.InstanceState, c.Integration,
 		c.IntegrationProviderState, c.Invitation, c.JoinDomain, c.LegalDocumentDraft,
 		c.LegalDocumentVersion, c.Membership, c.OAuthClient, c.OAuthCode,
@@ -717,11 +729,11 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.PasskeyChallenge, c.PendingSignup, c.PrivateRelayRange, c.ProviderLimiter,
 		c.RecoveryCode, c.Rule, c.RuleFiring, c.RuleVersion, c.RuleVersionTrigger,
 		c.SchemaState, c.SecondFactor, c.Segment, c.SendCapLimiter, c.SendingDomain,
-		c.ServiceCredential, c.SignupItem, c.SignupSurveyResponse, c.StaffMember,
-		c.StartToken, c.Suppression, c.Tag, c.TrackedLink, c.TrackingDomain,
-		c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User, c.UserIdentity,
-		c.UserTombstone, c.Visitor, c.WebhookEndpoint, c.WebhookEndpointHealth,
-		c.Workspace, c.WorkspaceStanding,
+		c.SendingWindow, c.ServiceCredential, c.SignupItem, c.SignupSurveyResponse,
+		c.StaffMember, c.StartToken, c.Suppression, c.Tag, c.TrackedLink,
+		c.TrackingDomain, c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User,
+		c.UserIdentity, c.UserTombstone, c.Visitor, c.WebhookEndpoint,
+		c.WebhookEndpointHealth, c.Workspace, c.WorkspaceStanding,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -790,6 +802,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.EventJournalEntry.mutate(ctx, m)
 	case *EventReceiptMutation:
 		return c.EventReceipt.mutate(ctx, m)
+	case *FrequencyCapMutation:
+		return c.FrequencyCap.mutate(ctx, m)
 	case *HeldOrderEventMutation:
 		return c.HeldOrderEvent.mutate(ctx, m)
 	case *HoldMutation:
@@ -856,6 +870,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.SendCapLimiter.mutate(ctx, m)
 	case *SendingDomainMutation:
 		return c.SendingDomain.mutate(ctx, m)
+	case *SendingWindowMutation:
+		return c.SendingWindow.mutate(ctx, m)
 	case *ServiceCredentialMutation:
 		return c.ServiceCredential.mutate(ctx, m)
 	case *SignupItemMutation:
@@ -6030,6 +6046,155 @@ func (c *EventReceiptClient) mutate(ctx context.Context, m *EventReceiptMutation
 		return (&EventReceiptDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown EventReceipt mutation op: %q", m.Op())
+	}
+}
+
+// FrequencyCapClient is a client for the FrequencyCap schema.
+type FrequencyCapClient struct {
+	config
+}
+
+// NewFrequencyCapClient returns a client for the FrequencyCap from the given config.
+func NewFrequencyCapClient(c config) *FrequencyCapClient {
+	return &FrequencyCapClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `frequencycap.Hooks(f(g(h())))`.
+func (c *FrequencyCapClient) Use(hooks ...Hook) {
+	c.hooks.FrequencyCap = append(c.hooks.FrequencyCap, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `frequencycap.Intercept(f(g(h())))`.
+func (c *FrequencyCapClient) Intercept(interceptors ...Interceptor) {
+	c.inters.FrequencyCap = append(c.inters.FrequencyCap, interceptors...)
+}
+
+// Create returns a builder for creating a FrequencyCap entity.
+func (c *FrequencyCapClient) Create() *FrequencyCapCreate {
+	mutation := newFrequencyCapMutation(c.config, OpCreate)
+	return &FrequencyCapCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of FrequencyCap entities.
+func (c *FrequencyCapClient) CreateBulk(builders ...*FrequencyCapCreate) *FrequencyCapCreateBulk {
+	return &FrequencyCapCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *FrequencyCapClient) MapCreateBulk(slice any, setFunc func(*FrequencyCapCreate, int)) *FrequencyCapCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &FrequencyCapCreateBulk{err: fmt.Errorf("calling to FrequencyCapClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*FrequencyCapCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &FrequencyCapCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for FrequencyCap.
+func (c *FrequencyCapClient) Update() *FrequencyCapUpdate {
+	mutation := newFrequencyCapMutation(c.config, OpUpdate)
+	return &FrequencyCapUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *FrequencyCapClient) UpdateOne(_m *FrequencyCap) *FrequencyCapUpdateOne {
+	mutation := newFrequencyCapMutation(c.config, OpUpdateOne, withFrequencyCap(_m))
+	return &FrequencyCapUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *FrequencyCapClient) UpdateOneID(id int64) *FrequencyCapUpdateOne {
+	mutation := newFrequencyCapMutation(c.config, OpUpdateOne, withFrequencyCapID(id))
+	return &FrequencyCapUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for FrequencyCap.
+func (c *FrequencyCapClient) Delete() *FrequencyCapDelete {
+	mutation := newFrequencyCapMutation(c.config, OpDelete)
+	return &FrequencyCapDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *FrequencyCapClient) DeleteOne(_m *FrequencyCap) *FrequencyCapDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *FrequencyCapClient) DeleteOneID(id int64) *FrequencyCapDeleteOne {
+	builder := c.Delete().Where(frequencycap.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &FrequencyCapDeleteOne{builder}
+}
+
+// Query returns a query builder for FrequencyCap.
+func (c *FrequencyCapClient) Query() *FrequencyCapQuery {
+	return &FrequencyCapQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeFrequencyCap},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a FrequencyCap entity by its id.
+func (c *FrequencyCapClient) Get(ctx context.Context, id int64) (*FrequencyCap, error) {
+	return c.Query().Where(frequencycap.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *FrequencyCapClient) GetX(ctx context.Context, id int64) *FrequencyCap {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryWorkspace queries the workspace edge of a FrequencyCap.
+func (c *FrequencyCapClient) QueryWorkspace(_m *FrequencyCap) *WorkspaceQuery {
+	query := (&WorkspaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(frequencycap.Table, frequencycap.FieldID, id),
+			sqlgraph.To(workspace.Table, workspace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, frequencycap.WorkspaceTable, frequencycap.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *FrequencyCapClient) Hooks() []Hook {
+	return c.hooks.FrequencyCap
+}
+
+// Interceptors returns the client interceptors.
+func (c *FrequencyCapClient) Interceptors() []Interceptor {
+	return c.inters.FrequencyCap
+}
+
+func (c *FrequencyCapClient) mutate(ctx context.Context, m *FrequencyCapMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&FrequencyCapCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&FrequencyCapUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&FrequencyCapUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&FrequencyCapDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown FrequencyCap mutation op: %q", m.Op())
 	}
 }
 
@@ -11590,6 +11755,155 @@ func (c *SendingDomainClient) mutate(ctx context.Context, m *SendingDomainMutati
 	}
 }
 
+// SendingWindowClient is a client for the SendingWindow schema.
+type SendingWindowClient struct {
+	config
+}
+
+// NewSendingWindowClient returns a client for the SendingWindow from the given config.
+func NewSendingWindowClient(c config) *SendingWindowClient {
+	return &SendingWindowClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `sendingwindow.Hooks(f(g(h())))`.
+func (c *SendingWindowClient) Use(hooks ...Hook) {
+	c.hooks.SendingWindow = append(c.hooks.SendingWindow, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `sendingwindow.Intercept(f(g(h())))`.
+func (c *SendingWindowClient) Intercept(interceptors ...Interceptor) {
+	c.inters.SendingWindow = append(c.inters.SendingWindow, interceptors...)
+}
+
+// Create returns a builder for creating a SendingWindow entity.
+func (c *SendingWindowClient) Create() *SendingWindowCreate {
+	mutation := newSendingWindowMutation(c.config, OpCreate)
+	return &SendingWindowCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of SendingWindow entities.
+func (c *SendingWindowClient) CreateBulk(builders ...*SendingWindowCreate) *SendingWindowCreateBulk {
+	return &SendingWindowCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *SendingWindowClient) MapCreateBulk(slice any, setFunc func(*SendingWindowCreate, int)) *SendingWindowCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &SendingWindowCreateBulk{err: fmt.Errorf("calling to SendingWindowClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*SendingWindowCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &SendingWindowCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for SendingWindow.
+func (c *SendingWindowClient) Update() *SendingWindowUpdate {
+	mutation := newSendingWindowMutation(c.config, OpUpdate)
+	return &SendingWindowUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *SendingWindowClient) UpdateOne(_m *SendingWindow) *SendingWindowUpdateOne {
+	mutation := newSendingWindowMutation(c.config, OpUpdateOne, withSendingWindow(_m))
+	return &SendingWindowUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *SendingWindowClient) UpdateOneID(id int64) *SendingWindowUpdateOne {
+	mutation := newSendingWindowMutation(c.config, OpUpdateOne, withSendingWindowID(id))
+	return &SendingWindowUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for SendingWindow.
+func (c *SendingWindowClient) Delete() *SendingWindowDelete {
+	mutation := newSendingWindowMutation(c.config, OpDelete)
+	return &SendingWindowDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *SendingWindowClient) DeleteOne(_m *SendingWindow) *SendingWindowDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *SendingWindowClient) DeleteOneID(id int64) *SendingWindowDeleteOne {
+	builder := c.Delete().Where(sendingwindow.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &SendingWindowDeleteOne{builder}
+}
+
+// Query returns a query builder for SendingWindow.
+func (c *SendingWindowClient) Query() *SendingWindowQuery {
+	return &SendingWindowQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeSendingWindow},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a SendingWindow entity by its id.
+func (c *SendingWindowClient) Get(ctx context.Context, id int64) (*SendingWindow, error) {
+	return c.Query().Where(sendingwindow.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *SendingWindowClient) GetX(ctx context.Context, id int64) *SendingWindow {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryWorkspace queries the workspace edge of a SendingWindow.
+func (c *SendingWindowClient) QueryWorkspace(_m *SendingWindow) *WorkspaceQuery {
+	query := (&WorkspaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(sendingwindow.Table, sendingwindow.FieldID, id),
+			sqlgraph.To(workspace.Table, workspace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, sendingwindow.WorkspaceTable, sendingwindow.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *SendingWindowClient) Hooks() []Hook {
+	return c.hooks.SendingWindow
+}
+
+// Interceptors returns the client interceptors.
+func (c *SendingWindowClient) Interceptors() []Interceptor {
+	return c.inters.SendingWindow
+}
+
+func (c *SendingWindowClient) mutate(ctx context.Context, m *SendingWindowMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&SendingWindowCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&SendingWindowUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&SendingWindowUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&SendingWindowDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown SendingWindow mutation op: %q", m.Op())
+	}
+}
+
 // ServiceCredentialClient is a client for the ServiceCredential schema.
 type ServiceCredentialClient struct {
 	config
@@ -15020,6 +15334,38 @@ func (c *WorkspaceClient) QueryHolds(_m *Workspace) *HoldQuery {
 	return query
 }
 
+// QueryFrequencyCaps queries the frequency_caps edge of a Workspace.
+func (c *WorkspaceClient) QueryFrequencyCaps(_m *Workspace) *FrequencyCapQuery {
+	query := (&FrequencyCapClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, id),
+			sqlgraph.To(frequencycap.Table, frequencycap.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.FrequencyCapsTable, workspace.FrequencyCapsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QuerySendingWindows queries the sending_windows edge of a Workspace.
+func (c *WorkspaceClient) QuerySendingWindows(_m *Workspace) *SendingWindowQuery {
+	query := (&SendingWindowClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, id),
+			sqlgraph.To(sendingwindow.Table, sendingwindow.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.SendingWindowsTable, workspace.SendingWindowsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryBroadcasts queries the broadcasts edge of a Workspace.
 func (c *WorkspaceClient) QueryBroadcasts(_m *Workspace) *BroadcastQuery {
 	query := (&BroadcastClient{config: c.config}).Query()
@@ -15747,18 +16093,18 @@ type (
 		BroadcastFigure, BroadcastRecipient, CapturedMessage, Confirmation,
 		ConsentRecord, ConsentStamp, Contact, ContactDate, ContactTag, CustomField,
 		DefaultSendCap, EmailTemplate, EngagementTrackingConsent, Erasure, Event,
-		EventJournalEntry, EventReceipt, HeldOrderEvent, Hold, IdentitySecret,
-		InstanceAuditEntry, InstanceState, Integration, IntegrationProviderState,
-		Invitation, JoinDomain, LegalDocumentDraft, LegalDocumentVersion, Membership,
-		OAuthClient, OAuthCode, OAuthRefreshToken, Order, OrderMovement,
-		OutboundMessage, Passkey, PasskeyChallenge, PendingSignup, PrivateRelayRange,
-		ProviderLimiter, RecoveryCode, Rule, RuleFiring, RuleVersion,
-		RuleVersionTrigger, SchemaState, SecondFactor, Segment, SendCapLimiter,
-		SendingDomain, ServiceCredential, SignupItem, SignupSurveyResponse,
-		StaffMember, StartToken, Suppression, Tag, TrackedLink, TrackingDomain,
-		TrackingHostChange, Unsubscribe, Usage, User, UserIdentity, UserTombstone,
-		Visitor, WebhookEndpoint, WebhookEndpointHealth, Workspace,
-		WorkspaceStanding []ent.Hook
+		EventJournalEntry, EventReceipt, FrequencyCap, HeldOrderEvent, Hold,
+		IdentitySecret, InstanceAuditEntry, InstanceState, Integration,
+		IntegrationProviderState, Invitation, JoinDomain, LegalDocumentDraft,
+		LegalDocumentVersion, Membership, OAuthClient, OAuthCode, OAuthRefreshToken,
+		Order, OrderMovement, OutboundMessage, Passkey, PasskeyChallenge,
+		PendingSignup, PrivateRelayRange, ProviderLimiter, RecoveryCode, Rule,
+		RuleFiring, RuleVersion, RuleVersionTrigger, SchemaState, SecondFactor,
+		Segment, SendCapLimiter, SendingDomain, SendingWindow, ServiceCredential,
+		SignupItem, SignupSurveyResponse, StaffMember, StartToken, Suppression, Tag,
+		TrackedLink, TrackingDomain, TrackingHostChange, Unsubscribe, Usage, User,
+		UserIdentity, UserTombstone, Visitor, WebhookEndpoint, WebhookEndpointHealth,
+		Workspace, WorkspaceStanding []ent.Hook
 	}
 	inters struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationFigure,
@@ -15767,18 +16113,18 @@ type (
 		BroadcastFigure, BroadcastRecipient, CapturedMessage, Confirmation,
 		ConsentRecord, ConsentStamp, Contact, ContactDate, ContactTag, CustomField,
 		DefaultSendCap, EmailTemplate, EngagementTrackingConsent, Erasure, Event,
-		EventJournalEntry, EventReceipt, HeldOrderEvent, Hold, IdentitySecret,
-		InstanceAuditEntry, InstanceState, Integration, IntegrationProviderState,
-		Invitation, JoinDomain, LegalDocumentDraft, LegalDocumentVersion, Membership,
-		OAuthClient, OAuthCode, OAuthRefreshToken, Order, OrderMovement,
-		OutboundMessage, Passkey, PasskeyChallenge, PendingSignup, PrivateRelayRange,
-		ProviderLimiter, RecoveryCode, Rule, RuleFiring, RuleVersion,
-		RuleVersionTrigger, SchemaState, SecondFactor, Segment, SendCapLimiter,
-		SendingDomain, ServiceCredential, SignupItem, SignupSurveyResponse,
-		StaffMember, StartToken, Suppression, Tag, TrackedLink, TrackingDomain,
-		TrackingHostChange, Unsubscribe, Usage, User, UserIdentity, UserTombstone,
-		Visitor, WebhookEndpoint, WebhookEndpointHealth, Workspace,
-		WorkspaceStanding []ent.Interceptor
+		EventJournalEntry, EventReceipt, FrequencyCap, HeldOrderEvent, Hold,
+		IdentitySecret, InstanceAuditEntry, InstanceState, Integration,
+		IntegrationProviderState, Invitation, JoinDomain, LegalDocumentDraft,
+		LegalDocumentVersion, Membership, OAuthClient, OAuthCode, OAuthRefreshToken,
+		Order, OrderMovement, OutboundMessage, Passkey, PasskeyChallenge,
+		PendingSignup, PrivateRelayRange, ProviderLimiter, RecoveryCode, Rule,
+		RuleFiring, RuleVersion, RuleVersionTrigger, SchemaState, SecondFactor,
+		Segment, SendCapLimiter, SendingDomain, SendingWindow, ServiceCredential,
+		SignupItem, SignupSurveyResponse, StaffMember, StartToken, Suppression, Tag,
+		TrackedLink, TrackingDomain, TrackingHostChange, Unsubscribe, Usage, User,
+		UserIdentity, UserTombstone, Visitor, WebhookEndpoint, WebhookEndpointHealth,
+		Workspace, WorkspaceStanding []ent.Interceptor
 	}
 )
 

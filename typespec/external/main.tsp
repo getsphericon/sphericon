@@ -43,6 +43,7 @@ import "../common/rules.tsp";
 import "../common/segments.tsp";
 import "../common/suppressions.tsp";
 import "../common/workspaces.tsp";
+import "../common/sending-rules.tsp";
 import "./resources/contacts.tsp";
 import "./resources/segments.tsp";
 import "./resources/tags.tsp";

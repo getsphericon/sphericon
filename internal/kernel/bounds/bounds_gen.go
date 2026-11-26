@@ -103,6 +103,45 @@ const (
 	CountryCodePattern = `^[A-Z]{2}$`
 )
 
+// FrequencyCapMaxMessages is the most marketing messages a Frequency cap lets one Destination receive in its period.
+// From site FrequencyCapMaxMessages.
+const (
+	FrequencyCapMaxMessagesMin = 1
+	FrequencyCapMaxMessagesMax = 1000
+)
+
+// FrequencyCapPeriodMinutes is a Frequency cap's rolling period in minutes.
+// From site FrequencyCapPeriodMinutes.
+const (
+	FrequencyCapPeriodMinutesMin = 1
+	FrequencyCapPeriodMinutesMax = 10080
+)
+
+// MinuteOfDay is a minute of the day a Sending window opens or closes at.
+// From site MinuteOfDay.
+const (
+	MinuteOfDayMin = 0
+	MinuteOfDayMax = 1440
+)
+
+// FrequencyCaps is how many Frequency caps a Workspace has.
+// From site SiteReplaceSendingRulesInput.frequencyCaps.
+const (
+	FrequencyCapsMaxItems = 300
+)
+
+// SendingWindows is how many Sending windows a Workspace has.
+// From site SiteReplaceSendingRulesInput.sendingWindows.
+const (
+	SendingWindowsMaxItems = 300
+)
+
+// SendingWindowHours is how many days of the week a Sending window lists its hours for.
+// From site SendingWindowInput.hours.
+const (
+	SendingWindowHoursMaxItems = 7
+)
+
 // ImageURL is the https URL of an image, a Contact's avatar.
 // From site ImageUrl.
 const (
@@ -403,7 +442,16 @@ var Owners = map[string][]string{
 	"ContactCityMaxLength":               {"Contact"},
 	"LocaleTagMaxLength":                 {"Contact"},
 	"LocaleTagPattern":                   {"Contact"},
-	"CountryCodePattern":                 {"Contact"},
+	"CountryCodePattern":                 {"Contact", "FrequencyCap", "SendingWindow"},
+	"FrequencyCapMaxMessagesMin":         {"FrequencyCap"},
+	"FrequencyCapMaxMessagesMax":         {"FrequencyCap"},
+	"FrequencyCapPeriodMinutesMin":       {"FrequencyCap"},
+	"FrequencyCapPeriodMinutesMax":       {"FrequencyCap"},
+	"MinuteOfDayMin":                     {"SendingWindow"},
+	"MinuteOfDayMax":                     {"SendingWindow"},
+	"FrequencyCapsMaxItems":              {"FrequencyCap"},
+	"SendingWindowsMaxItems":             {"SendingWindow"},
+	"SendingWindowHoursMaxItems":         {"SendingWindow"},
 	"ImageURLMaxLength":                  {"Contact"},
 	"ImageURLPattern":                    {"Contact"},
 	"BrandKitLogoURLMaxLength":           {"BrandKit"},

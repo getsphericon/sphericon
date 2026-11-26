@@ -34,6 +34,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/eventjournalentry"
 	"github.com/getsphericon/sphericon/ent/eventreceipt"
+	"github.com/getsphericon/sphericon/ent/frequencycap"
 	"github.com/getsphericon/sphericon/ent/heldorderevent"
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/identitysecret"
@@ -68,6 +69,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendcaplimiter"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
+	"github.com/getsphericon/sphericon/ent/sendingwindow"
 	"github.com/getsphericon/sphericon/ent/servicecredential"
 	"github.com/getsphericon/sphericon/ent/signupitem"
 	"github.com/getsphericon/sphericon/ent/signupsurveyresponse"
@@ -966,6 +968,21 @@ func init() {
 	eventreceiptDescReceiptKey := eventreceiptFields[1].Descriptor()
 	// eventreceipt.ReceiptKeyValidator is a validator for the "receipt_key" field. It is called by the builders before save.
 	eventreceipt.ReceiptKeyValidator = eventreceiptDescReceiptKey.Validators[0].(func(string) error)
+	frequencycapMixin := schema.FrequencyCap{}.Mixin()
+	frequencycapMixinFields0 := frequencycapMixin[0].Fields()
+	_ = frequencycapMixinFields0
+	frequencycapFields := schema.FrequencyCap{}.Fields()
+	_ = frequencycapFields
+	// frequencycapDescCreatedAt is the schema descriptor for created_at field.
+	frequencycapDescCreatedAt := frequencycapMixinFields0[0].Descriptor()
+	// frequencycap.DefaultCreatedAt holds the default value on creation for the created_at field.
+	frequencycap.DefaultCreatedAt = frequencycapDescCreatedAt.Default.(func() time.Time)
+	// frequencycapDescUpdatedAt is the schema descriptor for updated_at field.
+	frequencycapDescUpdatedAt := frequencycapMixinFields0[1].Descriptor()
+	// frequencycap.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	frequencycap.DefaultUpdatedAt = frequencycapDescUpdatedAt.Default.(func() time.Time)
+	// frequencycap.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	frequencycap.UpdateDefaultUpdatedAt = frequencycapDescUpdatedAt.UpdateDefault.(func() time.Time)
 	heldordereventMixin := schema.HeldOrderEvent{}.Mixin()
 	heldordereventMixinFields0 := heldordereventMixin[0].Fields()
 	_ = heldordereventMixinFields0
@@ -1759,6 +1776,21 @@ func init() {
 	sendingdomainDescDkimPublicKey := sendingdomainFields[4].Descriptor()
 	// sendingdomain.DkimPublicKeyValidator is a validator for the "dkim_public_key" field. It is called by the builders before save.
 	sendingdomain.DkimPublicKeyValidator = sendingdomainDescDkimPublicKey.Validators[0].(func(string) error)
+	sendingwindowMixin := schema.SendingWindow{}.Mixin()
+	sendingwindowMixinFields0 := sendingwindowMixin[0].Fields()
+	_ = sendingwindowMixinFields0
+	sendingwindowFields := schema.SendingWindow{}.Fields()
+	_ = sendingwindowFields
+	// sendingwindowDescCreatedAt is the schema descriptor for created_at field.
+	sendingwindowDescCreatedAt := sendingwindowMixinFields0[0].Descriptor()
+	// sendingwindow.DefaultCreatedAt holds the default value on creation for the created_at field.
+	sendingwindow.DefaultCreatedAt = sendingwindowDescCreatedAt.Default.(func() time.Time)
+	// sendingwindowDescUpdatedAt is the schema descriptor for updated_at field.
+	sendingwindowDescUpdatedAt := sendingwindowMixinFields0[1].Descriptor()
+	// sendingwindow.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	sendingwindow.DefaultUpdatedAt = sendingwindowDescUpdatedAt.Default.(func() time.Time)
+	// sendingwindow.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	sendingwindow.UpdateDefaultUpdatedAt = sendingwindowDescUpdatedAt.UpdateDefault.(func() time.Time)
 	servicecredentialMixin := schema.ServiceCredential{}.Mixin()
 	servicecredentialMixinFields0 := servicecredentialMixin[0].Fields()
 	_ = servicecredentialMixinFields0

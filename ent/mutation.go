@@ -42,6 +42,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/eventjournalentry"
 	"github.com/getsphericon/sphericon/ent/eventreceipt"
+	"github.com/getsphericon/sphericon/ent/frequencycap"
 	"github.com/getsphericon/sphericon/ent/heldorderevent"
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/identitysecret"
@@ -77,6 +78,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendcaplimiter"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
+	"github.com/getsphericon/sphericon/ent/sendingwindow"
 	"github.com/getsphericon/sphericon/ent/servicecredential"
 	"github.com/getsphericon/sphericon/ent/signupitem"
 	"github.com/getsphericon/sphericon/ent/signupsurveyresponse"
@@ -150,6 +152,7 @@ const (
 	TypeEvent                      = "Event"
 	TypeEventJournalEntry          = "EventJournalEntry"
 	TypeEventReceipt               = "EventReceipt"
+	TypeFrequencyCap               = "FrequencyCap"
 	TypeHeldOrderEvent             = "HeldOrderEvent"
 	TypeHold                       = "Hold"
 	TypeIdentitySecret             = "IdentitySecret"
@@ -183,6 +186,7 @@ const (
 	TypeSegment                    = "Segment"
 	TypeSendCapLimiter             = "SendCapLimiter"
 	TypeSendingDomain              = "SendingDomain"
+	TypeSendingWindow              = "SendingWindow"
 	TypeServiceCredential          = "ServiceCredential"
 	TypeSignupItem                 = "SignupItem"
 	TypeSignupSurveyResponse       = "SignupSurveyResponse"
@@ -36572,6 +36576,847 @@ func (m *EventReceiptMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown EventReceipt edge %s", name)
 }
 
+// FrequencyCapMutation represents an operation that mutates the FrequencyCap nodes in the graph.
+type FrequencyCapMutation struct {
+	config
+	op                Op
+	typ               string
+	id                *int64
+	created_at        *time.Time
+	updated_at        *time.Time
+	channel           *channels.Channel
+	country           *string
+	max_messages      *int
+	addmax_messages   *int
+	period_minutes    *int
+	addperiod_minutes *int
+	clearedFields     map[string]struct{}
+	workspace         *int64
+	clearedworkspace  bool
+	done              bool
+	oldValue          func(context.Context) (*FrequencyCap, error)
+	predicates        []predicate.FrequencyCap
+}
+
+var _ ent.Mutation = (*FrequencyCapMutation)(nil)
+
+// frequencycapOption allows management of the mutation configuration using functional options.
+type frequencycapOption func(*FrequencyCapMutation)
+
+// newFrequencyCapMutation creates new mutation for the FrequencyCap entity.
+func newFrequencyCapMutation(c config, op Op, opts ...frequencycapOption) *FrequencyCapMutation {
+	m := &FrequencyCapMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeFrequencyCap,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withFrequencyCapID sets the ID field of the mutation.
+func withFrequencyCapID(id int64) frequencycapOption {
+	return func(m *FrequencyCapMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *FrequencyCap
+		)
+		m.oldValue = func(ctx context.Context) (*FrequencyCap, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().FrequencyCap.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withFrequencyCap sets the old FrequencyCap of the mutation.
+func withFrequencyCap(node *FrequencyCap) frequencycapOption {
+	return func(m *FrequencyCapMutation) {
+		m.oldValue = func(context.Context) (*FrequencyCap, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m FrequencyCapMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m FrequencyCapMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of FrequencyCap entities.
+func (m *FrequencyCapMutation) SetID(id int64) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *FrequencyCapMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *FrequencyCapMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().FrequencyCap.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *FrequencyCapMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *FrequencyCapMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the FrequencyCap entity.
+// If the FrequencyCap object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FrequencyCapMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *FrequencyCapMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *FrequencyCapMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *FrequencyCapMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the FrequencyCap entity.
+// If the FrequencyCap object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FrequencyCapMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *FrequencyCapMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetWorkspaceID sets the "workspace_id" field.
+func (m *FrequencyCapMutation) SetWorkspaceID(i int64) {
+	m.workspace = &i
+}
+
+// WorkspaceID returns the value of the "workspace_id" field in the mutation.
+func (m *FrequencyCapMutation) WorkspaceID() (r int64, exists bool) {
+	v := m.workspace
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWorkspaceID returns the old "workspace_id" field's value of the FrequencyCap entity.
+// If the FrequencyCap object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FrequencyCapMutation) OldWorkspaceID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWorkspaceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWorkspaceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWorkspaceID: %w", err)
+	}
+	return oldValue.WorkspaceID, nil
+}
+
+// ResetWorkspaceID resets all changes to the "workspace_id" field.
+func (m *FrequencyCapMutation) ResetWorkspaceID() {
+	m.workspace = nil
+}
+
+// SetChannel sets the "channel" field.
+func (m *FrequencyCapMutation) SetChannel(c channels.Channel) {
+	m.channel = &c
+}
+
+// Channel returns the value of the "channel" field in the mutation.
+func (m *FrequencyCapMutation) Channel() (r channels.Channel, exists bool) {
+	v := m.channel
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldChannel returns the old "channel" field's value of the FrequencyCap entity.
+// If the FrequencyCap object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FrequencyCapMutation) OldChannel(ctx context.Context) (v channels.Channel, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldChannel is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldChannel requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldChannel: %w", err)
+	}
+	return oldValue.Channel, nil
+}
+
+// ResetChannel resets all changes to the "channel" field.
+func (m *FrequencyCapMutation) ResetChannel() {
+	m.channel = nil
+}
+
+// SetCountry sets the "country" field.
+func (m *FrequencyCapMutation) SetCountry(s string) {
+	m.country = &s
+}
+
+// Country returns the value of the "country" field in the mutation.
+func (m *FrequencyCapMutation) Country() (r string, exists bool) {
+	v := m.country
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCountry returns the old "country" field's value of the FrequencyCap entity.
+// If the FrequencyCap object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FrequencyCapMutation) OldCountry(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCountry is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCountry requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCountry: %w", err)
+	}
+	return oldValue.Country, nil
+}
+
+// ClearCountry clears the value of the "country" field.
+func (m *FrequencyCapMutation) ClearCountry() {
+	m.country = nil
+	m.clearedFields[frequencycap.FieldCountry] = struct{}{}
+}
+
+// CountryCleared returns if the "country" field was cleared in this mutation.
+func (m *FrequencyCapMutation) CountryCleared() bool {
+	_, ok := m.clearedFields[frequencycap.FieldCountry]
+	return ok
+}
+
+// ResetCountry resets all changes to the "country" field.
+func (m *FrequencyCapMutation) ResetCountry() {
+	m.country = nil
+	delete(m.clearedFields, frequencycap.FieldCountry)
+}
+
+// SetMaxMessages sets the "max_messages" field.
+func (m *FrequencyCapMutation) SetMaxMessages(i int) {
+	m.max_messages = &i
+	m.addmax_messages = nil
+}
+
+// MaxMessages returns the value of the "max_messages" field in the mutation.
+func (m *FrequencyCapMutation) MaxMessages() (r int, exists bool) {
+	v := m.max_messages
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMaxMessages returns the old "max_messages" field's value of the FrequencyCap entity.
+// If the FrequencyCap object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FrequencyCapMutation) OldMaxMessages(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMaxMessages is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMaxMessages requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMaxMessages: %w", err)
+	}
+	return oldValue.MaxMessages, nil
+}
+
+// AddMaxMessages adds i to the "max_messages" field.
+func (m *FrequencyCapMutation) AddMaxMessages(i int) {
+	if m.addmax_messages != nil {
+		*m.addmax_messages += i
+	} else {
+		m.addmax_messages = &i
+	}
+}
+
+// AddedMaxMessages returns the value that was added to the "max_messages" field in this mutation.
+func (m *FrequencyCapMutation) AddedMaxMessages() (r int, exists bool) {
+	v := m.addmax_messages
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearMaxMessages clears the value of the "max_messages" field.
+func (m *FrequencyCapMutation) ClearMaxMessages() {
+	m.max_messages = nil
+	m.addmax_messages = nil
+	m.clearedFields[frequencycap.FieldMaxMessages] = struct{}{}
+}
+
+// MaxMessagesCleared returns if the "max_messages" field was cleared in this mutation.
+func (m *FrequencyCapMutation) MaxMessagesCleared() bool {
+	_, ok := m.clearedFields[frequencycap.FieldMaxMessages]
+	return ok
+}
+
+// ResetMaxMessages resets all changes to the "max_messages" field.
+func (m *FrequencyCapMutation) ResetMaxMessages() {
+	m.max_messages = nil
+	m.addmax_messages = nil
+	delete(m.clearedFields, frequencycap.FieldMaxMessages)
+}
+
+// SetPeriodMinutes sets the "period_minutes" field.
+func (m *FrequencyCapMutation) SetPeriodMinutes(i int) {
+	m.period_minutes = &i
+	m.addperiod_minutes = nil
+}
+
+// PeriodMinutes returns the value of the "period_minutes" field in the mutation.
+func (m *FrequencyCapMutation) PeriodMinutes() (r int, exists bool) {
+	v := m.period_minutes
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPeriodMinutes returns the old "period_minutes" field's value of the FrequencyCap entity.
+// If the FrequencyCap object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FrequencyCapMutation) OldPeriodMinutes(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPeriodMinutes is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPeriodMinutes requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPeriodMinutes: %w", err)
+	}
+	return oldValue.PeriodMinutes, nil
+}
+
+// AddPeriodMinutes adds i to the "period_minutes" field.
+func (m *FrequencyCapMutation) AddPeriodMinutes(i int) {
+	if m.addperiod_minutes != nil {
+		*m.addperiod_minutes += i
+	} else {
+		m.addperiod_minutes = &i
+	}
+}
+
+// AddedPeriodMinutes returns the value that was added to the "period_minutes" field in this mutation.
+func (m *FrequencyCapMutation) AddedPeriodMinutes() (r int, exists bool) {
+	v := m.addperiod_minutes
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearPeriodMinutes clears the value of the "period_minutes" field.
+func (m *FrequencyCapMutation) ClearPeriodMinutes() {
+	m.period_minutes = nil
+	m.addperiod_minutes = nil
+	m.clearedFields[frequencycap.FieldPeriodMinutes] = struct{}{}
+}
+
+// PeriodMinutesCleared returns if the "period_minutes" field was cleared in this mutation.
+func (m *FrequencyCapMutation) PeriodMinutesCleared() bool {
+	_, ok := m.clearedFields[frequencycap.FieldPeriodMinutes]
+	return ok
+}
+
+// ResetPeriodMinutes resets all changes to the "period_minutes" field.
+func (m *FrequencyCapMutation) ResetPeriodMinutes() {
+	m.period_minutes = nil
+	m.addperiod_minutes = nil
+	delete(m.clearedFields, frequencycap.FieldPeriodMinutes)
+}
+
+// ClearWorkspace clears the "workspace" edge to the Workspace entity.
+func (m *FrequencyCapMutation) ClearWorkspace() {
+	m.clearedworkspace = true
+	m.clearedFields[frequencycap.FieldWorkspaceID] = struct{}{}
+}
+
+// WorkspaceCleared reports if the "workspace" edge to the Workspace entity was cleared.
+func (m *FrequencyCapMutation) WorkspaceCleared() bool {
+	return m.clearedworkspace
+}
+
+// WorkspaceIDs returns the "workspace" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// WorkspaceID instead. It exists only for internal usage by the builders.
+func (m *FrequencyCapMutation) WorkspaceIDs() (ids []int64) {
+	if id := m.workspace; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetWorkspace resets all changes to the "workspace" edge.
+func (m *FrequencyCapMutation) ResetWorkspace() {
+	m.workspace = nil
+	m.clearedworkspace = false
+}
+
+// Where appends a list predicates to the FrequencyCapMutation builder.
+func (m *FrequencyCapMutation) Where(ps ...predicate.FrequencyCap) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the FrequencyCapMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *FrequencyCapMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.FrequencyCap, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *FrequencyCapMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *FrequencyCapMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (FrequencyCap).
+func (m *FrequencyCapMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *FrequencyCapMutation) Fields() []string {
+	fields := make([]string, 0, 7)
+	if m.created_at != nil {
+		fields = append(fields, frequencycap.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, frequencycap.FieldUpdatedAt)
+	}
+	if m.workspace != nil {
+		fields = append(fields, frequencycap.FieldWorkspaceID)
+	}
+	if m.channel != nil {
+		fields = append(fields, frequencycap.FieldChannel)
+	}
+	if m.country != nil {
+		fields = append(fields, frequencycap.FieldCountry)
+	}
+	if m.max_messages != nil {
+		fields = append(fields, frequencycap.FieldMaxMessages)
+	}
+	if m.period_minutes != nil {
+		fields = append(fields, frequencycap.FieldPeriodMinutes)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *FrequencyCapMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case frequencycap.FieldCreatedAt:
+		return m.CreatedAt()
+	case frequencycap.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case frequencycap.FieldWorkspaceID:
+		return m.WorkspaceID()
+	case frequencycap.FieldChannel:
+		return m.Channel()
+	case frequencycap.FieldCountry:
+		return m.Country()
+	case frequencycap.FieldMaxMessages:
+		return m.MaxMessages()
+	case frequencycap.FieldPeriodMinutes:
+		return m.PeriodMinutes()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *FrequencyCapMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case frequencycap.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case frequencycap.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case frequencycap.FieldWorkspaceID:
+		return m.OldWorkspaceID(ctx)
+	case frequencycap.FieldChannel:
+		return m.OldChannel(ctx)
+	case frequencycap.FieldCountry:
+		return m.OldCountry(ctx)
+	case frequencycap.FieldMaxMessages:
+		return m.OldMaxMessages(ctx)
+	case frequencycap.FieldPeriodMinutes:
+		return m.OldPeriodMinutes(ctx)
+	}
+	return nil, fmt.Errorf("unknown FrequencyCap field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *FrequencyCapMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case frequencycap.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case frequencycap.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case frequencycap.FieldWorkspaceID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWorkspaceID(v)
+		return nil
+	case frequencycap.FieldChannel:
+		v, ok := value.(channels.Channel)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetChannel(v)
+		return nil
+	case frequencycap.FieldCountry:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCountry(v)
+		return nil
+	case frequencycap.FieldMaxMessages:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMaxMessages(v)
+		return nil
+	case frequencycap.FieldPeriodMinutes:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPeriodMinutes(v)
+		return nil
+	}
+	return fmt.Errorf("unknown FrequencyCap field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *FrequencyCapMutation) AddedFields() []string {
+	var fields []string
+	if m.addmax_messages != nil {
+		fields = append(fields, frequencycap.FieldMaxMessages)
+	}
+	if m.addperiod_minutes != nil {
+		fields = append(fields, frequencycap.FieldPeriodMinutes)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *FrequencyCapMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case frequencycap.FieldMaxMessages:
+		return m.AddedMaxMessages()
+	case frequencycap.FieldPeriodMinutes:
+		return m.AddedPeriodMinutes()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *FrequencyCapMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case frequencycap.FieldMaxMessages:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddMaxMessages(v)
+		return nil
+	case frequencycap.FieldPeriodMinutes:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPeriodMinutes(v)
+		return nil
+	}
+	return fmt.Errorf("unknown FrequencyCap numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *FrequencyCapMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(frequencycap.FieldCountry) {
+		fields = append(fields, frequencycap.FieldCountry)
+	}
+	if m.FieldCleared(frequencycap.FieldMaxMessages) {
+		fields = append(fields, frequencycap.FieldMaxMessages)
+	}
+	if m.FieldCleared(frequencycap.FieldPeriodMinutes) {
+		fields = append(fields, frequencycap.FieldPeriodMinutes)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *FrequencyCapMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *FrequencyCapMutation) ClearField(name string) error {
+	switch name {
+	case frequencycap.FieldCountry:
+		m.ClearCountry()
+		return nil
+	case frequencycap.FieldMaxMessages:
+		m.ClearMaxMessages()
+		return nil
+	case frequencycap.FieldPeriodMinutes:
+		m.ClearPeriodMinutes()
+		return nil
+	}
+	return fmt.Errorf("unknown FrequencyCap nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *FrequencyCapMutation) ResetField(name string) error {
+	switch name {
+	case frequencycap.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case frequencycap.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case frequencycap.FieldWorkspaceID:
+		m.ResetWorkspaceID()
+		return nil
+	case frequencycap.FieldChannel:
+		m.ResetChannel()
+		return nil
+	case frequencycap.FieldCountry:
+		m.ResetCountry()
+		return nil
+	case frequencycap.FieldMaxMessages:
+		m.ResetMaxMessages()
+		return nil
+	case frequencycap.FieldPeriodMinutes:
+		m.ResetPeriodMinutes()
+		return nil
+	}
+	return fmt.Errorf("unknown FrequencyCap field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *FrequencyCapMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.workspace != nil {
+		edges = append(edges, frequencycap.EdgeWorkspace)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *FrequencyCapMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case frequencycap.EdgeWorkspace:
+		if id := m.workspace; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *FrequencyCapMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *FrequencyCapMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *FrequencyCapMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedworkspace {
+		edges = append(edges, frequencycap.EdgeWorkspace)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *FrequencyCapMutation) EdgeCleared(name string) bool {
+	switch name {
+	case frequencycap.EdgeWorkspace:
+		return m.clearedworkspace
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *FrequencyCapMutation) ClearEdge(name string) error {
+	switch name {
+	case frequencycap.EdgeWorkspace:
+		m.ClearWorkspace()
+		return nil
+	}
+	return fmt.Errorf("unknown FrequencyCap unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *FrequencyCapMutation) ResetEdge(name string) error {
+	switch name {
+	case frequencycap.EdgeWorkspace:
+		m.ResetWorkspace()
+		return nil
+	}
+	return fmt.Errorf("unknown FrequencyCap edge %s", name)
+}
+
 // HeldOrderEventMutation represents an operation that mutates the HeldOrderEvent nodes in the graph.
 type HeldOrderEventMutation struct {
 	config
@@ -67997,6 +68842,2131 @@ func (m *SendingDomainMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown SendingDomain edge %s", name)
 }
 
+// SendingWindowMutation represents an operation that mutates the SendingWindow nodes in the graph.
+type SendingWindowMutation struct {
+	config
+	op                  Op
+	typ                 string
+	id                  *int64
+	created_at          *time.Time
+	updated_at          *time.Time
+	channel             *channels.Channel
+	country             *string
+	monday_opens        *int
+	addmonday_opens     *int
+	monday_closes       *int
+	addmonday_closes    *int
+	tuesday_opens       *int
+	addtuesday_opens    *int
+	tuesday_closes      *int
+	addtuesday_closes   *int
+	wednesday_opens     *int
+	addwednesday_opens  *int
+	wednesday_closes    *int
+	addwednesday_closes *int
+	thursday_opens      *int
+	addthursday_opens   *int
+	thursday_closes     *int
+	addthursday_closes  *int
+	friday_opens        *int
+	addfriday_opens     *int
+	friday_closes       *int
+	addfriday_closes    *int
+	saturday_opens      *int
+	addsaturday_opens   *int
+	saturday_closes     *int
+	addsaturday_closes  *int
+	sunday_opens        *int
+	addsunday_opens     *int
+	sunday_closes       *int
+	addsunday_closes    *int
+	clearedFields       map[string]struct{}
+	workspace           *int64
+	clearedworkspace    bool
+	done                bool
+	oldValue            func(context.Context) (*SendingWindow, error)
+	predicates          []predicate.SendingWindow
+}
+
+var _ ent.Mutation = (*SendingWindowMutation)(nil)
+
+// sendingwindowOption allows management of the mutation configuration using functional options.
+type sendingwindowOption func(*SendingWindowMutation)
+
+// newSendingWindowMutation creates new mutation for the SendingWindow entity.
+func newSendingWindowMutation(c config, op Op, opts ...sendingwindowOption) *SendingWindowMutation {
+	m := &SendingWindowMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeSendingWindow,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withSendingWindowID sets the ID field of the mutation.
+func withSendingWindowID(id int64) sendingwindowOption {
+	return func(m *SendingWindowMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *SendingWindow
+		)
+		m.oldValue = func(ctx context.Context) (*SendingWindow, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().SendingWindow.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withSendingWindow sets the old SendingWindow of the mutation.
+func withSendingWindow(node *SendingWindow) sendingwindowOption {
+	return func(m *SendingWindowMutation) {
+		m.oldValue = func(context.Context) (*SendingWindow, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m SendingWindowMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m SendingWindowMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of SendingWindow entities.
+func (m *SendingWindowMutation) SetID(id int64) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *SendingWindowMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *SendingWindowMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().SendingWindow.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *SendingWindowMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *SendingWindowMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the SendingWindow entity.
+// If the SendingWindow object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SendingWindowMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *SendingWindowMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *SendingWindowMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *SendingWindowMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the SendingWindow entity.
+// If the SendingWindow object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SendingWindowMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *SendingWindowMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetWorkspaceID sets the "workspace_id" field.
+func (m *SendingWindowMutation) SetWorkspaceID(i int64) {
+	m.workspace = &i
+}
+
+// WorkspaceID returns the value of the "workspace_id" field in the mutation.
+func (m *SendingWindowMutation) WorkspaceID() (r int64, exists bool) {
+	v := m.workspace
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWorkspaceID returns the old "workspace_id" field's value of the SendingWindow entity.
+// If the SendingWindow object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SendingWindowMutation) OldWorkspaceID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWorkspaceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWorkspaceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWorkspaceID: %w", err)
+	}
+	return oldValue.WorkspaceID, nil
+}
+
+// ResetWorkspaceID resets all changes to the "workspace_id" field.
+func (m *SendingWindowMutation) ResetWorkspaceID() {
+	m.workspace = nil
+}
+
+// SetChannel sets the "channel" field.
+func (m *SendingWindowMutation) SetChannel(c channels.Channel) {
+	m.channel = &c
+}
+
+// Channel returns the value of the "channel" field in the mutation.
+func (m *SendingWindowMutation) Channel() (r channels.Channel, exists bool) {
+	v := m.channel
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldChannel returns the old "channel" field's value of the SendingWindow entity.
+// If the SendingWindow object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SendingWindowMutation) OldChannel(ctx context.Context) (v channels.Channel, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldChannel is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldChannel requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldChannel: %w", err)
+	}
+	return oldValue.Channel, nil
+}
+
+// ResetChannel resets all changes to the "channel" field.
+func (m *SendingWindowMutation) ResetChannel() {
+	m.channel = nil
+}
+
+// SetCountry sets the "country" field.
+func (m *SendingWindowMutation) SetCountry(s string) {
+	m.country = &s
+}
+
+// Country returns the value of the "country" field in the mutation.
+func (m *SendingWindowMutation) Country() (r string, exists bool) {
+	v := m.country
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCountry returns the old "country" field's value of the SendingWindow entity.
+// If the SendingWindow object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SendingWindowMutation) OldCountry(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCountry is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCountry requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCountry: %w", err)
+	}
+	return oldValue.Country, nil
+}
+
+// ClearCountry clears the value of the "country" field.
+func (m *SendingWindowMutation) ClearCountry() {
+	m.country = nil
+	m.clearedFields[sendingwindow.FieldCountry] = struct{}{}
+}
+
+// CountryCleared returns if the "country" field was cleared in this mutation.
+func (m *SendingWindowMutation) CountryCleared() bool {
+	_, ok := m.clearedFields[sendingwindow.FieldCountry]
+	return ok
+}
+
+// ResetCountry resets all changes to the "country" field.
+func (m *SendingWindowMutation) ResetCountry() {
+	m.country = nil
+	delete(m.clearedFields, sendingwindow.FieldCountry)
+}
+
+// SetMondayOpens sets the "monday_opens" field.
+func (m *SendingWindowMutation) SetMondayOpens(i int) {
+	m.monday_opens = &i
+	m.addmonday_opens = nil
+}
+
+// MondayOpens returns the value of the "monday_opens" field in the mutation.
+func (m *SendingWindowMutation) MondayOpens() (r int, exists bool) {
+	v := m.monday_opens
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMondayOpens returns the old "monday_opens" field's value of the SendingWindow entity.
+// If the SendingWindow object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SendingWindowMutation) OldMondayOpens(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMondayOpens is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMondayOpens requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMondayOpens: %w", err)
+	}
+	return oldValue.MondayOpens, nil
+}
+
+// AddMondayOpens adds i to the "monday_opens" field.
+func (m *SendingWindowMutation) AddMondayOpens(i int) {
+	if m.addmonday_opens != nil {
+		*m.addmonday_opens += i
+	} else {
+		m.addmonday_opens = &i
+	}
+}
+
+// AddedMondayOpens returns the value that was added to the "monday_opens" field in this mutation.
+func (m *SendingWindowMutation) AddedMondayOpens() (r int, exists bool) {
+	v := m.addmonday_opens
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearMondayOpens clears the value of the "monday_opens" field.
+func (m *SendingWindowMutation) ClearMondayOpens() {
+	m.monday_opens = nil
+	m.addmonday_opens = nil
+	m.clearedFields[sendingwindow.FieldMondayOpens] = struct{}{}
+}
+
+// MondayOpensCleared returns if the "monday_opens" field was cleared in this mutation.
+func (m *SendingWindowMutation) MondayOpensCleared() bool {
+	_, ok := m.clearedFields[sendingwindow.FieldMondayOpens]
+	return ok
+}
+
+// ResetMondayOpens resets all changes to the "monday_opens" field.
+func (m *SendingWindowMutation) ResetMondayOpens() {
+	m.monday_opens = nil
+	m.addmonday_opens = nil
+	delete(m.clearedFields, sendingwindow.FieldMondayOpens)
+}
+
+// SetMondayCloses sets the "monday_closes" field.
+func (m *SendingWindowMutation) SetMondayCloses(i int) {
+	m.monday_closes = &i
+	m.addmonday_closes = nil
+}
+
+// MondayCloses returns the value of the "monday_closes" field in the mutation.
+func (m *SendingWindowMutation) MondayCloses() (r int, exists bool) {
+	v := m.monday_closes
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMondayCloses returns the old "monday_closes" field's value of the SendingWindow entity.
+// If the SendingWindow object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SendingWindowMutation) OldMondayCloses(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMondayCloses is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMondayCloses requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMondayCloses: %w", err)
+	}
+	return oldValue.MondayCloses, nil
+}
+
+// AddMondayCloses adds i to the "monday_closes" field.
+func (m *SendingWindowMutation) AddMondayCloses(i int) {
+	if m.addmonday_closes != nil {
+		*m.addmonday_closes += i
+	} else {
+		m.addmonday_closes = &i
+	}
+}
+
+// AddedMondayCloses returns the value that was added to the "monday_closes" field in this mutation.
+func (m *SendingWindowMutation) AddedMondayCloses() (r int, exists bool) {
+	v := m.addmonday_closes
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearMondayCloses clears the value of the "monday_closes" field.
+func (m *SendingWindowMutation) ClearMondayCloses() {
+	m.monday_closes = nil
+	m.addmonday_closes = nil
+	m.clearedFields[sendingwindow.FieldMondayCloses] = struct{}{}
+}
+
+// MondayClosesCleared returns if the "monday_closes" field was cleared in this mutation.
+func (m *SendingWindowMutation) MondayClosesCleared() bool {
+	_, ok := m.clearedFields[sendingwindow.FieldMondayCloses]
+	return ok
+}
+
+// ResetMondayCloses resets all changes to the "monday_closes" field.
+func (m *SendingWindowMutation) ResetMondayCloses() {
+	m.monday_closes = nil
+	m.addmonday_closes = nil
+	delete(m.clearedFields, sendingwindow.FieldMondayCloses)
+}
+
+// SetTuesdayOpens sets the "tuesday_opens" field.
+func (m *SendingWindowMutation) SetTuesdayOpens(i int) {
+	m.tuesday_opens = &i
+	m.addtuesday_opens = nil
+}
+
+// TuesdayOpens returns the value of the "tuesday_opens" field in the mutation.
+func (m *SendingWindowMutation) TuesdayOpens() (r int, exists bool) {
+	v := m.tuesday_opens
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTuesdayOpens returns the old "tuesday_opens" field's value of the SendingWindow entity.
+// If the SendingWindow object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SendingWindowMutation) OldTuesdayOpens(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTuesdayOpens is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTuesdayOpens requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTuesdayOpens: %w", err)
+	}
+	return oldValue.TuesdayOpens, nil
+}
+
+// AddTuesdayOpens adds i to the "tuesday_opens" field.
+func (m *SendingWindowMutation) AddTuesdayOpens(i int) {
+	if m.addtuesday_opens != nil {
+		*m.addtuesday_opens += i
+	} else {
+		m.addtuesday_opens = &i
+	}
+}
+
+// AddedTuesdayOpens returns the value that was added to the "tuesday_opens" field in this mutation.
+func (m *SendingWindowMutation) AddedTuesdayOpens() (r int, exists bool) {
+	v := m.addtuesday_opens
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearTuesdayOpens clears the value of the "tuesday_opens" field.
+func (m *SendingWindowMutation) ClearTuesdayOpens() {
+	m.tuesday_opens = nil
+	m.addtuesday_opens = nil
+	m.clearedFields[sendingwindow.FieldTuesdayOpens] = struct{}{}
+}
+
+// TuesdayOpensCleared returns if the "tuesday_opens" field was cleared in this mutation.
+func (m *SendingWindowMutation) TuesdayOpensCleared() bool {
+	_, ok := m.clearedFields[sendingwindow.FieldTuesdayOpens]
+	return ok
+}
+
+// ResetTuesdayOpens resets all changes to the "tuesday_opens" field.
+func (m *SendingWindowMutation) ResetTuesdayOpens() {
+	m.tuesday_opens = nil
+	m.addtuesday_opens = nil
+	delete(m.clearedFields, sendingwindow.FieldTuesdayOpens)
+}
+
+// SetTuesdayCloses sets the "tuesday_closes" field.
+func (m *SendingWindowMutation) SetTuesdayCloses(i int) {
+	m.tuesday_closes = &i
+	m.addtuesday_closes = nil
+}
+
+// TuesdayCloses returns the value of the "tuesday_closes" field in the mutation.
+func (m *SendingWindowMutation) TuesdayCloses() (r int, exists bool) {
+	v := m.tuesday_closes
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTuesdayCloses returns the old "tuesday_closes" field's value of the SendingWindow entity.
+// If the SendingWindow object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SendingWindowMutation) OldTuesdayCloses(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTuesdayCloses is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTuesdayCloses requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTuesdayCloses: %w", err)
+	}
+	return oldValue.TuesdayCloses, nil
+}
+
+// AddTuesdayCloses adds i to the "tuesday_closes" field.
+func (m *SendingWindowMutation) AddTuesdayCloses(i int) {
+	if m.addtuesday_closes != nil {
+		*m.addtuesday_closes += i
+	} else {
+		m.addtuesday_closes = &i
+	}
+}
+
+// AddedTuesdayCloses returns the value that was added to the "tuesday_closes" field in this mutation.
+func (m *SendingWindowMutation) AddedTuesdayCloses() (r int, exists bool) {
+	v := m.addtuesday_closes
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearTuesdayCloses clears the value of the "tuesday_closes" field.
+func (m *SendingWindowMutation) ClearTuesdayCloses() {
+	m.tuesday_closes = nil
+	m.addtuesday_closes = nil
+	m.clearedFields[sendingwindow.FieldTuesdayCloses] = struct{}{}
+}
+
+// TuesdayClosesCleared returns if the "tuesday_closes" field was cleared in this mutation.
+func (m *SendingWindowMutation) TuesdayClosesCleared() bool {
+	_, ok := m.clearedFields[sendingwindow.FieldTuesdayCloses]
+	return ok
+}
+
+// ResetTuesdayCloses resets all changes to the "tuesday_closes" field.
+func (m *SendingWindowMutation) ResetTuesdayCloses() {
+	m.tuesday_closes = nil
+	m.addtuesday_closes = nil
+	delete(m.clearedFields, sendingwindow.FieldTuesdayCloses)
+}
+
+// SetWednesdayOpens sets the "wednesday_opens" field.
+func (m *SendingWindowMutation) SetWednesdayOpens(i int) {
+	m.wednesday_opens = &i
+	m.addwednesday_opens = nil
+}
+
+// WednesdayOpens returns the value of the "wednesday_opens" field in the mutation.
+func (m *SendingWindowMutation) WednesdayOpens() (r int, exists bool) {
+	v := m.wednesday_opens
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWednesdayOpens returns the old "wednesday_opens" field's value of the SendingWindow entity.
+// If the SendingWindow object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SendingWindowMutation) OldWednesdayOpens(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWednesdayOpens is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWednesdayOpens requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWednesdayOpens: %w", err)
+	}
+	return oldValue.WednesdayOpens, nil
+}
+
+// AddWednesdayOpens adds i to the "wednesday_opens" field.
+func (m *SendingWindowMutation) AddWednesdayOpens(i int) {
+	if m.addwednesday_opens != nil {
+		*m.addwednesday_opens += i
+	} else {
+		m.addwednesday_opens = &i
+	}
+}
+
+// AddedWednesdayOpens returns the value that was added to the "wednesday_opens" field in this mutation.
+func (m *SendingWindowMutation) AddedWednesdayOpens() (r int, exists bool) {
+	v := m.addwednesday_opens
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearWednesdayOpens clears the value of the "wednesday_opens" field.
+func (m *SendingWindowMutation) ClearWednesdayOpens() {
+	m.wednesday_opens = nil
+	m.addwednesday_opens = nil
+	m.clearedFields[sendingwindow.FieldWednesdayOpens] = struct{}{}
+}
+
+// WednesdayOpensCleared returns if the "wednesday_opens" field was cleared in this mutation.
+func (m *SendingWindowMutation) WednesdayOpensCleared() bool {
+	_, ok := m.clearedFields[sendingwindow.FieldWednesdayOpens]
+	return ok
+}
+
+// ResetWednesdayOpens resets all changes to the "wednesday_opens" field.
+func (m *SendingWindowMutation) ResetWednesdayOpens() {
+	m.wednesday_opens = nil
+	m.addwednesday_opens = nil
+	delete(m.clearedFields, sendingwindow.FieldWednesdayOpens)
+}
+
+// SetWednesdayCloses sets the "wednesday_closes" field.
+func (m *SendingWindowMutation) SetWednesdayCloses(i int) {
+	m.wednesday_closes = &i
+	m.addwednesday_closes = nil
+}
+
+// WednesdayCloses returns the value of the "wednesday_closes" field in the mutation.
+func (m *SendingWindowMutation) WednesdayCloses() (r int, exists bool) {
+	v := m.wednesday_closes
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWednesdayCloses returns the old "wednesday_closes" field's value of the SendingWindow entity.
+// If the SendingWindow object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SendingWindowMutation) OldWednesdayCloses(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWednesdayCloses is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWednesdayCloses requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWednesdayCloses: %w", err)
+	}
+	return oldValue.WednesdayCloses, nil
+}
+
+// AddWednesdayCloses adds i to the "wednesday_closes" field.
+func (m *SendingWindowMutation) AddWednesdayCloses(i int) {
+	if m.addwednesday_closes != nil {
+		*m.addwednesday_closes += i
+	} else {
+		m.addwednesday_closes = &i
+	}
+}
+
+// AddedWednesdayCloses returns the value that was added to the "wednesday_closes" field in this mutation.
+func (m *SendingWindowMutation) AddedWednesdayCloses() (r int, exists bool) {
+	v := m.addwednesday_closes
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearWednesdayCloses clears the value of the "wednesday_closes" field.
+func (m *SendingWindowMutation) ClearWednesdayCloses() {
+	m.wednesday_closes = nil
+	m.addwednesday_closes = nil
+	m.clearedFields[sendingwindow.FieldWednesdayCloses] = struct{}{}
+}
+
+// WednesdayClosesCleared returns if the "wednesday_closes" field was cleared in this mutation.
+func (m *SendingWindowMutation) WednesdayClosesCleared() bool {
+	_, ok := m.clearedFields[sendingwindow.FieldWednesdayCloses]
+	return ok
+}
+
+// ResetWednesdayCloses resets all changes to the "wednesday_closes" field.
+func (m *SendingWindowMutation) ResetWednesdayCloses() {
+	m.wednesday_closes = nil
+	m.addwednesday_closes = nil
+	delete(m.clearedFields, sendingwindow.FieldWednesdayCloses)
+}
+
+// SetThursdayOpens sets the "thursday_opens" field.
+func (m *SendingWindowMutation) SetThursdayOpens(i int) {
+	m.thursday_opens = &i
+	m.addthursday_opens = nil
+}
+
+// ThursdayOpens returns the value of the "thursday_opens" field in the mutation.
+func (m *SendingWindowMutation) ThursdayOpens() (r int, exists bool) {
+	v := m.thursday_opens
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldThursdayOpens returns the old "thursday_opens" field's value of the SendingWindow entity.
+// If the SendingWindow object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SendingWindowMutation) OldThursdayOpens(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldThursdayOpens is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldThursdayOpens requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldThursdayOpens: %w", err)
+	}
+	return oldValue.ThursdayOpens, nil
+}
+
+// AddThursdayOpens adds i to the "thursday_opens" field.
+func (m *SendingWindowMutation) AddThursdayOpens(i int) {
+	if m.addthursday_opens != nil {
+		*m.addthursday_opens += i
+	} else {
+		m.addthursday_opens = &i
+	}
+}
+
+// AddedThursdayOpens returns the value that was added to the "thursday_opens" field in this mutation.
+func (m *SendingWindowMutation) AddedThursdayOpens() (r int, exists bool) {
+	v := m.addthursday_opens
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearThursdayOpens clears the value of the "thursday_opens" field.
+func (m *SendingWindowMutation) ClearThursdayOpens() {
+	m.thursday_opens = nil
+	m.addthursday_opens = nil
+	m.clearedFields[sendingwindow.FieldThursdayOpens] = struct{}{}
+}
+
+// ThursdayOpensCleared returns if the "thursday_opens" field was cleared in this mutation.
+func (m *SendingWindowMutation) ThursdayOpensCleared() bool {
+	_, ok := m.clearedFields[sendingwindow.FieldThursdayOpens]
+	return ok
+}
+
+// ResetThursdayOpens resets all changes to the "thursday_opens" field.
+func (m *SendingWindowMutation) ResetThursdayOpens() {
+	m.thursday_opens = nil
+	m.addthursday_opens = nil
+	delete(m.clearedFields, sendingwindow.FieldThursdayOpens)
+}
+
+// SetThursdayCloses sets the "thursday_closes" field.
+func (m *SendingWindowMutation) SetThursdayCloses(i int) {
+	m.thursday_closes = &i
+	m.addthursday_closes = nil
+}
+
+// ThursdayCloses returns the value of the "thursday_closes" field in the mutation.
+func (m *SendingWindowMutation) ThursdayCloses() (r int, exists bool) {
+	v := m.thursday_closes
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldThursdayCloses returns the old "thursday_closes" field's value of the SendingWindow entity.
+// If the SendingWindow object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SendingWindowMutation) OldThursdayCloses(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldThursdayCloses is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldThursdayCloses requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldThursdayCloses: %w", err)
+	}
+	return oldValue.ThursdayCloses, nil
+}
+
+// AddThursdayCloses adds i to the "thursday_closes" field.
+func (m *SendingWindowMutation) AddThursdayCloses(i int) {
+	if m.addthursday_closes != nil {
+		*m.addthursday_closes += i
+	} else {
+		m.addthursday_closes = &i
+	}
+}
+
+// AddedThursdayCloses returns the value that was added to the "thursday_closes" field in this mutation.
+func (m *SendingWindowMutation) AddedThursdayCloses() (r int, exists bool) {
+	v := m.addthursday_closes
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearThursdayCloses clears the value of the "thursday_closes" field.
+func (m *SendingWindowMutation) ClearThursdayCloses() {
+	m.thursday_closes = nil
+	m.addthursday_closes = nil
+	m.clearedFields[sendingwindow.FieldThursdayCloses] = struct{}{}
+}
+
+// ThursdayClosesCleared returns if the "thursday_closes" field was cleared in this mutation.
+func (m *SendingWindowMutation) ThursdayClosesCleared() bool {
+	_, ok := m.clearedFields[sendingwindow.FieldThursdayCloses]
+	return ok
+}
+
+// ResetThursdayCloses resets all changes to the "thursday_closes" field.
+func (m *SendingWindowMutation) ResetThursdayCloses() {
+	m.thursday_closes = nil
+	m.addthursday_closes = nil
+	delete(m.clearedFields, sendingwindow.FieldThursdayCloses)
+}
+
+// SetFridayOpens sets the "friday_opens" field.
+func (m *SendingWindowMutation) SetFridayOpens(i int) {
+	m.friday_opens = &i
+	m.addfriday_opens = nil
+}
+
+// FridayOpens returns the value of the "friday_opens" field in the mutation.
+func (m *SendingWindowMutation) FridayOpens() (r int, exists bool) {
+	v := m.friday_opens
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFridayOpens returns the old "friday_opens" field's value of the SendingWindow entity.
+// If the SendingWindow object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SendingWindowMutation) OldFridayOpens(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFridayOpens is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFridayOpens requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFridayOpens: %w", err)
+	}
+	return oldValue.FridayOpens, nil
+}
+
+// AddFridayOpens adds i to the "friday_opens" field.
+func (m *SendingWindowMutation) AddFridayOpens(i int) {
+	if m.addfriday_opens != nil {
+		*m.addfriday_opens += i
+	} else {
+		m.addfriday_opens = &i
+	}
+}
+
+// AddedFridayOpens returns the value that was added to the "friday_opens" field in this mutation.
+func (m *SendingWindowMutation) AddedFridayOpens() (r int, exists bool) {
+	v := m.addfriday_opens
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearFridayOpens clears the value of the "friday_opens" field.
+func (m *SendingWindowMutation) ClearFridayOpens() {
+	m.friday_opens = nil
+	m.addfriday_opens = nil
+	m.clearedFields[sendingwindow.FieldFridayOpens] = struct{}{}
+}
+
+// FridayOpensCleared returns if the "friday_opens" field was cleared in this mutation.
+func (m *SendingWindowMutation) FridayOpensCleared() bool {
+	_, ok := m.clearedFields[sendingwindow.FieldFridayOpens]
+	return ok
+}
+
+// ResetFridayOpens resets all changes to the "friday_opens" field.
+func (m *SendingWindowMutation) ResetFridayOpens() {
+	m.friday_opens = nil
+	m.addfriday_opens = nil
+	delete(m.clearedFields, sendingwindow.FieldFridayOpens)
+}
+
+// SetFridayCloses sets the "friday_closes" field.
+func (m *SendingWindowMutation) SetFridayCloses(i int) {
+	m.friday_closes = &i
+	m.addfriday_closes = nil
+}
+
+// FridayCloses returns the value of the "friday_closes" field in the mutation.
+func (m *SendingWindowMutation) FridayCloses() (r int, exists bool) {
+	v := m.friday_closes
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFridayCloses returns the old "friday_closes" field's value of the SendingWindow entity.
+// If the SendingWindow object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SendingWindowMutation) OldFridayCloses(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFridayCloses is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFridayCloses requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFridayCloses: %w", err)
+	}
+	return oldValue.FridayCloses, nil
+}
+
+// AddFridayCloses adds i to the "friday_closes" field.
+func (m *SendingWindowMutation) AddFridayCloses(i int) {
+	if m.addfriday_closes != nil {
+		*m.addfriday_closes += i
+	} else {
+		m.addfriday_closes = &i
+	}
+}
+
+// AddedFridayCloses returns the value that was added to the "friday_closes" field in this mutation.
+func (m *SendingWindowMutation) AddedFridayCloses() (r int, exists bool) {
+	v := m.addfriday_closes
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearFridayCloses clears the value of the "friday_closes" field.
+func (m *SendingWindowMutation) ClearFridayCloses() {
+	m.friday_closes = nil
+	m.addfriday_closes = nil
+	m.clearedFields[sendingwindow.FieldFridayCloses] = struct{}{}
+}
+
+// FridayClosesCleared returns if the "friday_closes" field was cleared in this mutation.
+func (m *SendingWindowMutation) FridayClosesCleared() bool {
+	_, ok := m.clearedFields[sendingwindow.FieldFridayCloses]
+	return ok
+}
+
+// ResetFridayCloses resets all changes to the "friday_closes" field.
+func (m *SendingWindowMutation) ResetFridayCloses() {
+	m.friday_closes = nil
+	m.addfriday_closes = nil
+	delete(m.clearedFields, sendingwindow.FieldFridayCloses)
+}
+
+// SetSaturdayOpens sets the "saturday_opens" field.
+func (m *SendingWindowMutation) SetSaturdayOpens(i int) {
+	m.saturday_opens = &i
+	m.addsaturday_opens = nil
+}
+
+// SaturdayOpens returns the value of the "saturday_opens" field in the mutation.
+func (m *SendingWindowMutation) SaturdayOpens() (r int, exists bool) {
+	v := m.saturday_opens
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSaturdayOpens returns the old "saturday_opens" field's value of the SendingWindow entity.
+// If the SendingWindow object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SendingWindowMutation) OldSaturdayOpens(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSaturdayOpens is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSaturdayOpens requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSaturdayOpens: %w", err)
+	}
+	return oldValue.SaturdayOpens, nil
+}
+
+// AddSaturdayOpens adds i to the "saturday_opens" field.
+func (m *SendingWindowMutation) AddSaturdayOpens(i int) {
+	if m.addsaturday_opens != nil {
+		*m.addsaturday_opens += i
+	} else {
+		m.addsaturday_opens = &i
+	}
+}
+
+// AddedSaturdayOpens returns the value that was added to the "saturday_opens" field in this mutation.
+func (m *SendingWindowMutation) AddedSaturdayOpens() (r int, exists bool) {
+	v := m.addsaturday_opens
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearSaturdayOpens clears the value of the "saturday_opens" field.
+func (m *SendingWindowMutation) ClearSaturdayOpens() {
+	m.saturday_opens = nil
+	m.addsaturday_opens = nil
+	m.clearedFields[sendingwindow.FieldSaturdayOpens] = struct{}{}
+}
+
+// SaturdayOpensCleared returns if the "saturday_opens" field was cleared in this mutation.
+func (m *SendingWindowMutation) SaturdayOpensCleared() bool {
+	_, ok := m.clearedFields[sendingwindow.FieldSaturdayOpens]
+	return ok
+}
+
+// ResetSaturdayOpens resets all changes to the "saturday_opens" field.
+func (m *SendingWindowMutation) ResetSaturdayOpens() {
+	m.saturday_opens = nil
+	m.addsaturday_opens = nil
+	delete(m.clearedFields, sendingwindow.FieldSaturdayOpens)
+}
+
+// SetSaturdayCloses sets the "saturday_closes" field.
+func (m *SendingWindowMutation) SetSaturdayCloses(i int) {
+	m.saturday_closes = &i
+	m.addsaturday_closes = nil
+}
+
+// SaturdayCloses returns the value of the "saturday_closes" field in the mutation.
+func (m *SendingWindowMutation) SaturdayCloses() (r int, exists bool) {
+	v := m.saturday_closes
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSaturdayCloses returns the old "saturday_closes" field's value of the SendingWindow entity.
+// If the SendingWindow object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SendingWindowMutation) OldSaturdayCloses(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSaturdayCloses is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSaturdayCloses requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSaturdayCloses: %w", err)
+	}
+	return oldValue.SaturdayCloses, nil
+}
+
+// AddSaturdayCloses adds i to the "saturday_closes" field.
+func (m *SendingWindowMutation) AddSaturdayCloses(i int) {
+	if m.addsaturday_closes != nil {
+		*m.addsaturday_closes += i
+	} else {
+		m.addsaturday_closes = &i
+	}
+}
+
+// AddedSaturdayCloses returns the value that was added to the "saturday_closes" field in this mutation.
+func (m *SendingWindowMutation) AddedSaturdayCloses() (r int, exists bool) {
+	v := m.addsaturday_closes
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearSaturdayCloses clears the value of the "saturday_closes" field.
+func (m *SendingWindowMutation) ClearSaturdayCloses() {
+	m.saturday_closes = nil
+	m.addsaturday_closes = nil
+	m.clearedFields[sendingwindow.FieldSaturdayCloses] = struct{}{}
+}
+
+// SaturdayClosesCleared returns if the "saturday_closes" field was cleared in this mutation.
+func (m *SendingWindowMutation) SaturdayClosesCleared() bool {
+	_, ok := m.clearedFields[sendingwindow.FieldSaturdayCloses]
+	return ok
+}
+
+// ResetSaturdayCloses resets all changes to the "saturday_closes" field.
+func (m *SendingWindowMutation) ResetSaturdayCloses() {
+	m.saturday_closes = nil
+	m.addsaturday_closes = nil
+	delete(m.clearedFields, sendingwindow.FieldSaturdayCloses)
+}
+
+// SetSundayOpens sets the "sunday_opens" field.
+func (m *SendingWindowMutation) SetSundayOpens(i int) {
+	m.sunday_opens = &i
+	m.addsunday_opens = nil
+}
+
+// SundayOpens returns the value of the "sunday_opens" field in the mutation.
+func (m *SendingWindowMutation) SundayOpens() (r int, exists bool) {
+	v := m.sunday_opens
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSundayOpens returns the old "sunday_opens" field's value of the SendingWindow entity.
+// If the SendingWindow object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SendingWindowMutation) OldSundayOpens(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSundayOpens is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSundayOpens requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSundayOpens: %w", err)
+	}
+	return oldValue.SundayOpens, nil
+}
+
+// AddSundayOpens adds i to the "sunday_opens" field.
+func (m *SendingWindowMutation) AddSundayOpens(i int) {
+	if m.addsunday_opens != nil {
+		*m.addsunday_opens += i
+	} else {
+		m.addsunday_opens = &i
+	}
+}
+
+// AddedSundayOpens returns the value that was added to the "sunday_opens" field in this mutation.
+func (m *SendingWindowMutation) AddedSundayOpens() (r int, exists bool) {
+	v := m.addsunday_opens
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearSundayOpens clears the value of the "sunday_opens" field.
+func (m *SendingWindowMutation) ClearSundayOpens() {
+	m.sunday_opens = nil
+	m.addsunday_opens = nil
+	m.clearedFields[sendingwindow.FieldSundayOpens] = struct{}{}
+}
+
+// SundayOpensCleared returns if the "sunday_opens" field was cleared in this mutation.
+func (m *SendingWindowMutation) SundayOpensCleared() bool {
+	_, ok := m.clearedFields[sendingwindow.FieldSundayOpens]
+	return ok
+}
+
+// ResetSundayOpens resets all changes to the "sunday_opens" field.
+func (m *SendingWindowMutation) ResetSundayOpens() {
+	m.sunday_opens = nil
+	m.addsunday_opens = nil
+	delete(m.clearedFields, sendingwindow.FieldSundayOpens)
+}
+
+// SetSundayCloses sets the "sunday_closes" field.
+func (m *SendingWindowMutation) SetSundayCloses(i int) {
+	m.sunday_closes = &i
+	m.addsunday_closes = nil
+}
+
+// SundayCloses returns the value of the "sunday_closes" field in the mutation.
+func (m *SendingWindowMutation) SundayCloses() (r int, exists bool) {
+	v := m.sunday_closes
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSundayCloses returns the old "sunday_closes" field's value of the SendingWindow entity.
+// If the SendingWindow object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SendingWindowMutation) OldSundayCloses(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSundayCloses is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSundayCloses requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSundayCloses: %w", err)
+	}
+	return oldValue.SundayCloses, nil
+}
+
+// AddSundayCloses adds i to the "sunday_closes" field.
+func (m *SendingWindowMutation) AddSundayCloses(i int) {
+	if m.addsunday_closes != nil {
+		*m.addsunday_closes += i
+	} else {
+		m.addsunday_closes = &i
+	}
+}
+
+// AddedSundayCloses returns the value that was added to the "sunday_closes" field in this mutation.
+func (m *SendingWindowMutation) AddedSundayCloses() (r int, exists bool) {
+	v := m.addsunday_closes
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearSundayCloses clears the value of the "sunday_closes" field.
+func (m *SendingWindowMutation) ClearSundayCloses() {
+	m.sunday_closes = nil
+	m.addsunday_closes = nil
+	m.clearedFields[sendingwindow.FieldSundayCloses] = struct{}{}
+}
+
+// SundayClosesCleared returns if the "sunday_closes" field was cleared in this mutation.
+func (m *SendingWindowMutation) SundayClosesCleared() bool {
+	_, ok := m.clearedFields[sendingwindow.FieldSundayCloses]
+	return ok
+}
+
+// ResetSundayCloses resets all changes to the "sunday_closes" field.
+func (m *SendingWindowMutation) ResetSundayCloses() {
+	m.sunday_closes = nil
+	m.addsunday_closes = nil
+	delete(m.clearedFields, sendingwindow.FieldSundayCloses)
+}
+
+// ClearWorkspace clears the "workspace" edge to the Workspace entity.
+func (m *SendingWindowMutation) ClearWorkspace() {
+	m.clearedworkspace = true
+	m.clearedFields[sendingwindow.FieldWorkspaceID] = struct{}{}
+}
+
+// WorkspaceCleared reports if the "workspace" edge to the Workspace entity was cleared.
+func (m *SendingWindowMutation) WorkspaceCleared() bool {
+	return m.clearedworkspace
+}
+
+// WorkspaceIDs returns the "workspace" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// WorkspaceID instead. It exists only for internal usage by the builders.
+func (m *SendingWindowMutation) WorkspaceIDs() (ids []int64) {
+	if id := m.workspace; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetWorkspace resets all changes to the "workspace" edge.
+func (m *SendingWindowMutation) ResetWorkspace() {
+	m.workspace = nil
+	m.clearedworkspace = false
+}
+
+// Where appends a list predicates to the SendingWindowMutation builder.
+func (m *SendingWindowMutation) Where(ps ...predicate.SendingWindow) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the SendingWindowMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *SendingWindowMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.SendingWindow, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *SendingWindowMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *SendingWindowMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (SendingWindow).
+func (m *SendingWindowMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *SendingWindowMutation) Fields() []string {
+	fields := make([]string, 0, 19)
+	if m.created_at != nil {
+		fields = append(fields, sendingwindow.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, sendingwindow.FieldUpdatedAt)
+	}
+	if m.workspace != nil {
+		fields = append(fields, sendingwindow.FieldWorkspaceID)
+	}
+	if m.channel != nil {
+		fields = append(fields, sendingwindow.FieldChannel)
+	}
+	if m.country != nil {
+		fields = append(fields, sendingwindow.FieldCountry)
+	}
+	if m.monday_opens != nil {
+		fields = append(fields, sendingwindow.FieldMondayOpens)
+	}
+	if m.monday_closes != nil {
+		fields = append(fields, sendingwindow.FieldMondayCloses)
+	}
+	if m.tuesday_opens != nil {
+		fields = append(fields, sendingwindow.FieldTuesdayOpens)
+	}
+	if m.tuesday_closes != nil {
+		fields = append(fields, sendingwindow.FieldTuesdayCloses)
+	}
+	if m.wednesday_opens != nil {
+		fields = append(fields, sendingwindow.FieldWednesdayOpens)
+	}
+	if m.wednesday_closes != nil {
+		fields = append(fields, sendingwindow.FieldWednesdayCloses)
+	}
+	if m.thursday_opens != nil {
+		fields = append(fields, sendingwindow.FieldThursdayOpens)
+	}
+	if m.thursday_closes != nil {
+		fields = append(fields, sendingwindow.FieldThursdayCloses)
+	}
+	if m.friday_opens != nil {
+		fields = append(fields, sendingwindow.FieldFridayOpens)
+	}
+	if m.friday_closes != nil {
+		fields = append(fields, sendingwindow.FieldFridayCloses)
+	}
+	if m.saturday_opens != nil {
+		fields = append(fields, sendingwindow.FieldSaturdayOpens)
+	}
+	if m.saturday_closes != nil {
+		fields = append(fields, sendingwindow.FieldSaturdayCloses)
+	}
+	if m.sunday_opens != nil {
+		fields = append(fields, sendingwindow.FieldSundayOpens)
+	}
+	if m.sunday_closes != nil {
+		fields = append(fields, sendingwindow.FieldSundayCloses)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *SendingWindowMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case sendingwindow.FieldCreatedAt:
+		return m.CreatedAt()
+	case sendingwindow.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case sendingwindow.FieldWorkspaceID:
+		return m.WorkspaceID()
+	case sendingwindow.FieldChannel:
+		return m.Channel()
+	case sendingwindow.FieldCountry:
+		return m.Country()
+	case sendingwindow.FieldMondayOpens:
+		return m.MondayOpens()
+	case sendingwindow.FieldMondayCloses:
+		return m.MondayCloses()
+	case sendingwindow.FieldTuesdayOpens:
+		return m.TuesdayOpens()
+	case sendingwindow.FieldTuesdayCloses:
+		return m.TuesdayCloses()
+	case sendingwindow.FieldWednesdayOpens:
+		return m.WednesdayOpens()
+	case sendingwindow.FieldWednesdayCloses:
+		return m.WednesdayCloses()
+	case sendingwindow.FieldThursdayOpens:
+		return m.ThursdayOpens()
+	case sendingwindow.FieldThursdayCloses:
+		return m.ThursdayCloses()
+	case sendingwindow.FieldFridayOpens:
+		return m.FridayOpens()
+	case sendingwindow.FieldFridayCloses:
+		return m.FridayCloses()
+	case sendingwindow.FieldSaturdayOpens:
+		return m.SaturdayOpens()
+	case sendingwindow.FieldSaturdayCloses:
+		return m.SaturdayCloses()
+	case sendingwindow.FieldSundayOpens:
+		return m.SundayOpens()
+	case sendingwindow.FieldSundayCloses:
+		return m.SundayCloses()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *SendingWindowMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case sendingwindow.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case sendingwindow.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case sendingwindow.FieldWorkspaceID:
+		return m.OldWorkspaceID(ctx)
+	case sendingwindow.FieldChannel:
+		return m.OldChannel(ctx)
+	case sendingwindow.FieldCountry:
+		return m.OldCountry(ctx)
+	case sendingwindow.FieldMondayOpens:
+		return m.OldMondayOpens(ctx)
+	case sendingwindow.FieldMondayCloses:
+		return m.OldMondayCloses(ctx)
+	case sendingwindow.FieldTuesdayOpens:
+		return m.OldTuesdayOpens(ctx)
+	case sendingwindow.FieldTuesdayCloses:
+		return m.OldTuesdayCloses(ctx)
+	case sendingwindow.FieldWednesdayOpens:
+		return m.OldWednesdayOpens(ctx)
+	case sendingwindow.FieldWednesdayCloses:
+		return m.OldWednesdayCloses(ctx)
+	case sendingwindow.FieldThursdayOpens:
+		return m.OldThursdayOpens(ctx)
+	case sendingwindow.FieldThursdayCloses:
+		return m.OldThursdayCloses(ctx)
+	case sendingwindow.FieldFridayOpens:
+		return m.OldFridayOpens(ctx)
+	case sendingwindow.FieldFridayCloses:
+		return m.OldFridayCloses(ctx)
+	case sendingwindow.FieldSaturdayOpens:
+		return m.OldSaturdayOpens(ctx)
+	case sendingwindow.FieldSaturdayCloses:
+		return m.OldSaturdayCloses(ctx)
+	case sendingwindow.FieldSundayOpens:
+		return m.OldSundayOpens(ctx)
+	case sendingwindow.FieldSundayCloses:
+		return m.OldSundayCloses(ctx)
+	}
+	return nil, fmt.Errorf("unknown SendingWindow field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SendingWindowMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case sendingwindow.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case sendingwindow.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case sendingwindow.FieldWorkspaceID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWorkspaceID(v)
+		return nil
+	case sendingwindow.FieldChannel:
+		v, ok := value.(channels.Channel)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetChannel(v)
+		return nil
+	case sendingwindow.FieldCountry:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCountry(v)
+		return nil
+	case sendingwindow.FieldMondayOpens:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMondayOpens(v)
+		return nil
+	case sendingwindow.FieldMondayCloses:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMondayCloses(v)
+		return nil
+	case sendingwindow.FieldTuesdayOpens:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTuesdayOpens(v)
+		return nil
+	case sendingwindow.FieldTuesdayCloses:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTuesdayCloses(v)
+		return nil
+	case sendingwindow.FieldWednesdayOpens:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWednesdayOpens(v)
+		return nil
+	case sendingwindow.FieldWednesdayCloses:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWednesdayCloses(v)
+		return nil
+	case sendingwindow.FieldThursdayOpens:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetThursdayOpens(v)
+		return nil
+	case sendingwindow.FieldThursdayCloses:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetThursdayCloses(v)
+		return nil
+	case sendingwindow.FieldFridayOpens:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFridayOpens(v)
+		return nil
+	case sendingwindow.FieldFridayCloses:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFridayCloses(v)
+		return nil
+	case sendingwindow.FieldSaturdayOpens:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSaturdayOpens(v)
+		return nil
+	case sendingwindow.FieldSaturdayCloses:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSaturdayCloses(v)
+		return nil
+	case sendingwindow.FieldSundayOpens:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSundayOpens(v)
+		return nil
+	case sendingwindow.FieldSundayCloses:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSundayCloses(v)
+		return nil
+	}
+	return fmt.Errorf("unknown SendingWindow field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *SendingWindowMutation) AddedFields() []string {
+	var fields []string
+	if m.addmonday_opens != nil {
+		fields = append(fields, sendingwindow.FieldMondayOpens)
+	}
+	if m.addmonday_closes != nil {
+		fields = append(fields, sendingwindow.FieldMondayCloses)
+	}
+	if m.addtuesday_opens != nil {
+		fields = append(fields, sendingwindow.FieldTuesdayOpens)
+	}
+	if m.addtuesday_closes != nil {
+		fields = append(fields, sendingwindow.FieldTuesdayCloses)
+	}
+	if m.addwednesday_opens != nil {
+		fields = append(fields, sendingwindow.FieldWednesdayOpens)
+	}
+	if m.addwednesday_closes != nil {
+		fields = append(fields, sendingwindow.FieldWednesdayCloses)
+	}
+	if m.addthursday_opens != nil {
+		fields = append(fields, sendingwindow.FieldThursdayOpens)
+	}
+	if m.addthursday_closes != nil {
+		fields = append(fields, sendingwindow.FieldThursdayCloses)
+	}
+	if m.addfriday_opens != nil {
+		fields = append(fields, sendingwindow.FieldFridayOpens)
+	}
+	if m.addfriday_closes != nil {
+		fields = append(fields, sendingwindow.FieldFridayCloses)
+	}
+	if m.addsaturday_opens != nil {
+		fields = append(fields, sendingwindow.FieldSaturdayOpens)
+	}
+	if m.addsaturday_closes != nil {
+		fields = append(fields, sendingwindow.FieldSaturdayCloses)
+	}
+	if m.addsunday_opens != nil {
+		fields = append(fields, sendingwindow.FieldSundayOpens)
+	}
+	if m.addsunday_closes != nil {
+		fields = append(fields, sendingwindow.FieldSundayCloses)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *SendingWindowMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case sendingwindow.FieldMondayOpens:
+		return m.AddedMondayOpens()
+	case sendingwindow.FieldMondayCloses:
+		return m.AddedMondayCloses()
+	case sendingwindow.FieldTuesdayOpens:
+		return m.AddedTuesdayOpens()
+	case sendingwindow.FieldTuesdayCloses:
+		return m.AddedTuesdayCloses()
+	case sendingwindow.FieldWednesdayOpens:
+		return m.AddedWednesdayOpens()
+	case sendingwindow.FieldWednesdayCloses:
+		return m.AddedWednesdayCloses()
+	case sendingwindow.FieldThursdayOpens:
+		return m.AddedThursdayOpens()
+	case sendingwindow.FieldThursdayCloses:
+		return m.AddedThursdayCloses()
+	case sendingwindow.FieldFridayOpens:
+		return m.AddedFridayOpens()
+	case sendingwindow.FieldFridayCloses:
+		return m.AddedFridayCloses()
+	case sendingwindow.FieldSaturdayOpens:
+		return m.AddedSaturdayOpens()
+	case sendingwindow.FieldSaturdayCloses:
+		return m.AddedSaturdayCloses()
+	case sendingwindow.FieldSundayOpens:
+		return m.AddedSundayOpens()
+	case sendingwindow.FieldSundayCloses:
+		return m.AddedSundayCloses()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SendingWindowMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case sendingwindow.FieldMondayOpens:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddMondayOpens(v)
+		return nil
+	case sendingwindow.FieldMondayCloses:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddMondayCloses(v)
+		return nil
+	case sendingwindow.FieldTuesdayOpens:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTuesdayOpens(v)
+		return nil
+	case sendingwindow.FieldTuesdayCloses:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTuesdayCloses(v)
+		return nil
+	case sendingwindow.FieldWednesdayOpens:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddWednesdayOpens(v)
+		return nil
+	case sendingwindow.FieldWednesdayCloses:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddWednesdayCloses(v)
+		return nil
+	case sendingwindow.FieldThursdayOpens:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddThursdayOpens(v)
+		return nil
+	case sendingwindow.FieldThursdayCloses:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddThursdayCloses(v)
+		return nil
+	case sendingwindow.FieldFridayOpens:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddFridayOpens(v)
+		return nil
+	case sendingwindow.FieldFridayCloses:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddFridayCloses(v)
+		return nil
+	case sendingwindow.FieldSaturdayOpens:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSaturdayOpens(v)
+		return nil
+	case sendingwindow.FieldSaturdayCloses:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSaturdayCloses(v)
+		return nil
+	case sendingwindow.FieldSundayOpens:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSundayOpens(v)
+		return nil
+	case sendingwindow.FieldSundayCloses:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSundayCloses(v)
+		return nil
+	}
+	return fmt.Errorf("unknown SendingWindow numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *SendingWindowMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(sendingwindow.FieldCountry) {
+		fields = append(fields, sendingwindow.FieldCountry)
+	}
+	if m.FieldCleared(sendingwindow.FieldMondayOpens) {
+		fields = append(fields, sendingwindow.FieldMondayOpens)
+	}
+	if m.FieldCleared(sendingwindow.FieldMondayCloses) {
+		fields = append(fields, sendingwindow.FieldMondayCloses)
+	}
+	if m.FieldCleared(sendingwindow.FieldTuesdayOpens) {
+		fields = append(fields, sendingwindow.FieldTuesdayOpens)
+	}
+	if m.FieldCleared(sendingwindow.FieldTuesdayCloses) {
+		fields = append(fields, sendingwindow.FieldTuesdayCloses)
+	}
+	if m.FieldCleared(sendingwindow.FieldWednesdayOpens) {
+		fields = append(fields, sendingwindow.FieldWednesdayOpens)
+	}
+	if m.FieldCleared(sendingwindow.FieldWednesdayCloses) {
+		fields = append(fields, sendingwindow.FieldWednesdayCloses)
+	}
+	if m.FieldCleared(sendingwindow.FieldThursdayOpens) {
+		fields = append(fields, sendingwindow.FieldThursdayOpens)
+	}
+	if m.FieldCleared(sendingwindow.FieldThursdayCloses) {
+		fields = append(fields, sendingwindow.FieldThursdayCloses)
+	}
+	if m.FieldCleared(sendingwindow.FieldFridayOpens) {
+		fields = append(fields, sendingwindow.FieldFridayOpens)
+	}
+	if m.FieldCleared(sendingwindow.FieldFridayCloses) {
+		fields = append(fields, sendingwindow.FieldFridayCloses)
+	}
+	if m.FieldCleared(sendingwindow.FieldSaturdayOpens) {
+		fields = append(fields, sendingwindow.FieldSaturdayOpens)
+	}
+	if m.FieldCleared(sendingwindow.FieldSaturdayCloses) {
+		fields = append(fields, sendingwindow.FieldSaturdayCloses)
+	}
+	if m.FieldCleared(sendingwindow.FieldSundayOpens) {
+		fields = append(fields, sendingwindow.FieldSundayOpens)
+	}
+	if m.FieldCleared(sendingwindow.FieldSundayCloses) {
+		fields = append(fields, sendingwindow.FieldSundayCloses)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *SendingWindowMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *SendingWindowMutation) ClearField(name string) error {
+	switch name {
+	case sendingwindow.FieldCountry:
+		m.ClearCountry()
+		return nil
+	case sendingwindow.FieldMondayOpens:
+		m.ClearMondayOpens()
+		return nil
+	case sendingwindow.FieldMondayCloses:
+		m.ClearMondayCloses()
+		return nil
+	case sendingwindow.FieldTuesdayOpens:
+		m.ClearTuesdayOpens()
+		return nil
+	case sendingwindow.FieldTuesdayCloses:
+		m.ClearTuesdayCloses()
+		return nil
+	case sendingwindow.FieldWednesdayOpens:
+		m.ClearWednesdayOpens()
+		return nil
+	case sendingwindow.FieldWednesdayCloses:
+		m.ClearWednesdayCloses()
+		return nil
+	case sendingwindow.FieldThursdayOpens:
+		m.ClearThursdayOpens()
+		return nil
+	case sendingwindow.FieldThursdayCloses:
+		m.ClearThursdayCloses()
+		return nil
+	case sendingwindow.FieldFridayOpens:
+		m.ClearFridayOpens()
+		return nil
+	case sendingwindow.FieldFridayCloses:
+		m.ClearFridayCloses()
+		return nil
+	case sendingwindow.FieldSaturdayOpens:
+		m.ClearSaturdayOpens()
+		return nil
+	case sendingwindow.FieldSaturdayCloses:
+		m.ClearSaturdayCloses()
+		return nil
+	case sendingwindow.FieldSundayOpens:
+		m.ClearSundayOpens()
+		return nil
+	case sendingwindow.FieldSundayCloses:
+		m.ClearSundayCloses()
+		return nil
+	}
+	return fmt.Errorf("unknown SendingWindow nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *SendingWindowMutation) ResetField(name string) error {
+	switch name {
+	case sendingwindow.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case sendingwindow.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case sendingwindow.FieldWorkspaceID:
+		m.ResetWorkspaceID()
+		return nil
+	case sendingwindow.FieldChannel:
+		m.ResetChannel()
+		return nil
+	case sendingwindow.FieldCountry:
+		m.ResetCountry()
+		return nil
+	case sendingwindow.FieldMondayOpens:
+		m.ResetMondayOpens()
+		return nil
+	case sendingwindow.FieldMondayCloses:
+		m.ResetMondayCloses()
+		return nil
+	case sendingwindow.FieldTuesdayOpens:
+		m.ResetTuesdayOpens()
+		return nil
+	case sendingwindow.FieldTuesdayCloses:
+		m.ResetTuesdayCloses()
+		return nil
+	case sendingwindow.FieldWednesdayOpens:
+		m.ResetWednesdayOpens()
+		return nil
+	case sendingwindow.FieldWednesdayCloses:
+		m.ResetWednesdayCloses()
+		return nil
+	case sendingwindow.FieldThursdayOpens:
+		m.ResetThursdayOpens()
+		return nil
+	case sendingwindow.FieldThursdayCloses:
+		m.ResetThursdayCloses()
+		return nil
+	case sendingwindow.FieldFridayOpens:
+		m.ResetFridayOpens()
+		return nil
+	case sendingwindow.FieldFridayCloses:
+		m.ResetFridayCloses()
+		return nil
+	case sendingwindow.FieldSaturdayOpens:
+		m.ResetSaturdayOpens()
+		return nil
+	case sendingwindow.FieldSaturdayCloses:
+		m.ResetSaturdayCloses()
+		return nil
+	case sendingwindow.FieldSundayOpens:
+		m.ResetSundayOpens()
+		return nil
+	case sendingwindow.FieldSundayCloses:
+		m.ResetSundayCloses()
+		return nil
+	}
+	return fmt.Errorf("unknown SendingWindow field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *SendingWindowMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.workspace != nil {
+		edges = append(edges, sendingwindow.EdgeWorkspace)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *SendingWindowMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case sendingwindow.EdgeWorkspace:
+		if id := m.workspace; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *SendingWindowMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *SendingWindowMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *SendingWindowMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedworkspace {
+		edges = append(edges, sendingwindow.EdgeWorkspace)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *SendingWindowMutation) EdgeCleared(name string) bool {
+	switch name {
+	case sendingwindow.EdgeWorkspace:
+		return m.clearedworkspace
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *SendingWindowMutation) ClearEdge(name string) error {
+	switch name {
+	case sendingwindow.EdgeWorkspace:
+		m.ClearWorkspace()
+		return nil
+	}
+	return fmt.Errorf("unknown SendingWindow unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *SendingWindowMutation) ResetEdge(name string) error {
+	switch name {
+	case sendingwindow.EdgeWorkspace:
+		m.ResetWorkspace()
+		return nil
+	}
+	return fmt.Errorf("unknown SendingWindow edge %s", name)
+}
+
 // ServiceCredentialMutation represents an operation that mutates the ServiceCredential nodes in the graph.
 type ServiceCredentialMutation struct {
 	config
@@ -84198,6 +87168,12 @@ type WorkspaceMutation struct {
 	holds                                map[int64]struct{}
 	removedholds                         map[int64]struct{}
 	clearedholds                         bool
+	frequency_caps                       map[int64]struct{}
+	removedfrequency_caps                map[int64]struct{}
+	clearedfrequency_caps                bool
+	sending_windows                      map[int64]struct{}
+	removedsending_windows               map[int64]struct{}
+	clearedsending_windows               bool
 	broadcasts                           map[int64]struct{}
 	removedbroadcasts                    map[int64]struct{}
 	clearedbroadcasts                    bool
@@ -86907,6 +89883,114 @@ func (m *WorkspaceMutation) ResetHolds() {
 	m.removedholds = nil
 }
 
+// AddFrequencyCapIDs adds the "frequency_caps" edge to the FrequencyCap entity by ids.
+func (m *WorkspaceMutation) AddFrequencyCapIDs(ids ...int64) {
+	if m.frequency_caps == nil {
+		m.frequency_caps = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.frequency_caps[ids[i]] = struct{}{}
+	}
+}
+
+// ClearFrequencyCaps clears the "frequency_caps" edge to the FrequencyCap entity.
+func (m *WorkspaceMutation) ClearFrequencyCaps() {
+	m.clearedfrequency_caps = true
+}
+
+// FrequencyCapsCleared reports if the "frequency_caps" edge to the FrequencyCap entity was cleared.
+func (m *WorkspaceMutation) FrequencyCapsCleared() bool {
+	return m.clearedfrequency_caps
+}
+
+// RemoveFrequencyCapIDs removes the "frequency_caps" edge to the FrequencyCap entity by IDs.
+func (m *WorkspaceMutation) RemoveFrequencyCapIDs(ids ...int64) {
+	if m.removedfrequency_caps == nil {
+		m.removedfrequency_caps = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.frequency_caps, ids[i])
+		m.removedfrequency_caps[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedFrequencyCaps returns the removed IDs of the "frequency_caps" edge to the FrequencyCap entity.
+func (m *WorkspaceMutation) RemovedFrequencyCapsIDs() (ids []int64) {
+	for id := range m.removedfrequency_caps {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// FrequencyCapsIDs returns the "frequency_caps" edge IDs in the mutation.
+func (m *WorkspaceMutation) FrequencyCapsIDs() (ids []int64) {
+	for id := range m.frequency_caps {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetFrequencyCaps resets all changes to the "frequency_caps" edge.
+func (m *WorkspaceMutation) ResetFrequencyCaps() {
+	m.frequency_caps = nil
+	m.clearedfrequency_caps = false
+	m.removedfrequency_caps = nil
+}
+
+// AddSendingWindowIDs adds the "sending_windows" edge to the SendingWindow entity by ids.
+func (m *WorkspaceMutation) AddSendingWindowIDs(ids ...int64) {
+	if m.sending_windows == nil {
+		m.sending_windows = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.sending_windows[ids[i]] = struct{}{}
+	}
+}
+
+// ClearSendingWindows clears the "sending_windows" edge to the SendingWindow entity.
+func (m *WorkspaceMutation) ClearSendingWindows() {
+	m.clearedsending_windows = true
+}
+
+// SendingWindowsCleared reports if the "sending_windows" edge to the SendingWindow entity was cleared.
+func (m *WorkspaceMutation) SendingWindowsCleared() bool {
+	return m.clearedsending_windows
+}
+
+// RemoveSendingWindowIDs removes the "sending_windows" edge to the SendingWindow entity by IDs.
+func (m *WorkspaceMutation) RemoveSendingWindowIDs(ids ...int64) {
+	if m.removedsending_windows == nil {
+		m.removedsending_windows = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.sending_windows, ids[i])
+		m.removedsending_windows[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedSendingWindows returns the removed IDs of the "sending_windows" edge to the SendingWindow entity.
+func (m *WorkspaceMutation) RemovedSendingWindowsIDs() (ids []int64) {
+	for id := range m.removedsending_windows {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// SendingWindowsIDs returns the "sending_windows" edge IDs in the mutation.
+func (m *WorkspaceMutation) SendingWindowsIDs() (ids []int64) {
+	for id := range m.sending_windows {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetSendingWindows resets all changes to the "sending_windows" edge.
+func (m *WorkspaceMutation) ResetSendingWindows() {
+	m.sending_windows = nil
+	m.clearedsending_windows = false
+	m.removedsending_windows = nil
+}
+
 // AddBroadcastIDs adds the "broadcasts" edge to the Broadcast entity by ids.
 func (m *WorkspaceMutation) AddBroadcastIDs(ids ...int64) {
 	if m.broadcasts == nil {
@@ -89476,7 +92560,7 @@ func (m *WorkspaceMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *WorkspaceMutation) AddedEdges() []string {
-	edges := make([]string, 0, 56)
+	edges := make([]string, 0, 58)
 	if m.contacts != nil {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -89542,6 +92626,12 @@ func (m *WorkspaceMutation) AddedEdges() []string {
 	}
 	if m.holds != nil {
 		edges = append(edges, workspace.EdgeHolds)
+	}
+	if m.frequency_caps != nil {
+		edges = append(edges, workspace.EdgeFrequencyCaps)
+	}
+	if m.sending_windows != nil {
+		edges = append(edges, workspace.EdgeSendingWindows)
 	}
 	if m.broadcasts != nil {
 		edges = append(edges, workspace.EdgeBroadcasts)
@@ -89784,6 +92874,18 @@ func (m *WorkspaceMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case workspace.EdgeFrequencyCaps:
+		ids := make([]ent.Value, 0, len(m.frequency_caps))
+		for id := range m.frequency_caps {
+			ids = append(ids, id)
+		}
+		return ids
+	case workspace.EdgeSendingWindows:
+		ids := make([]ent.Value, 0, len(m.sending_windows))
+		for id := range m.sending_windows {
+			ids = append(ids, id)
+		}
+		return ids
 	case workspace.EdgeBroadcasts:
 		ids := make([]ent.Value, 0, len(m.broadcasts))
 		for id := range m.broadcasts {
@@ -89992,7 +93094,7 @@ func (m *WorkspaceMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *WorkspaceMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 56)
+	edges := make([]string, 0, 58)
 	if m.removedcontacts != nil {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -90058,6 +93160,12 @@ func (m *WorkspaceMutation) RemovedEdges() []string {
 	}
 	if m.removedholds != nil {
 		edges = append(edges, workspace.EdgeHolds)
+	}
+	if m.removedfrequency_caps != nil {
+		edges = append(edges, workspace.EdgeFrequencyCaps)
+	}
+	if m.removedsending_windows != nil {
+		edges = append(edges, workspace.EdgeSendingWindows)
 	}
 	if m.removedbroadcasts != nil {
 		edges = append(edges, workspace.EdgeBroadcasts)
@@ -90297,6 +93405,18 @@ func (m *WorkspaceMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case workspace.EdgeFrequencyCaps:
+		ids := make([]ent.Value, 0, len(m.removedfrequency_caps))
+		for id := range m.removedfrequency_caps {
+			ids = append(ids, id)
+		}
+		return ids
+	case workspace.EdgeSendingWindows:
+		ids := make([]ent.Value, 0, len(m.removedsending_windows))
+		for id := range m.removedsending_windows {
+			ids = append(ids, id)
+		}
+		return ids
 	case workspace.EdgeBroadcasts:
 		ids := make([]ent.Value, 0, len(m.removedbroadcasts))
 		for id := range m.removedbroadcasts {
@@ -90501,7 +93621,7 @@ func (m *WorkspaceMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *WorkspaceMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 56)
+	edges := make([]string, 0, 58)
 	if m.clearedcontacts {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -90567,6 +93687,12 @@ func (m *WorkspaceMutation) ClearedEdges() []string {
 	}
 	if m.clearedholds {
 		edges = append(edges, workspace.EdgeHolds)
+	}
+	if m.clearedfrequency_caps {
+		edges = append(edges, workspace.EdgeFrequencyCaps)
+	}
+	if m.clearedsending_windows {
+		edges = append(edges, workspace.EdgeSendingWindows)
 	}
 	if m.clearedbroadcasts {
 		edges = append(edges, workspace.EdgeBroadcasts)
@@ -90721,6 +93847,10 @@ func (m *WorkspaceMutation) EdgeCleared(name string) bool {
 		return m.clearedsend_cap_limiters
 	case workspace.EdgeHolds:
 		return m.clearedholds
+	case workspace.EdgeFrequencyCaps:
+		return m.clearedfrequency_caps
+	case workspace.EdgeSendingWindows:
+		return m.clearedsending_windows
 	case workspace.EdgeBroadcasts:
 		return m.clearedbroadcasts
 	case workspace.EdgeBroadcastRecipients:
@@ -90873,6 +94003,12 @@ func (m *WorkspaceMutation) ResetEdge(name string) error {
 		return nil
 	case workspace.EdgeHolds:
 		m.ResetHolds()
+		return nil
+	case workspace.EdgeFrequencyCaps:
+		m.ResetFrequencyCaps()
+		return nil
+	case workspace.EdgeSendingWindows:
+		m.ResetSendingWindows()
 		return nil
 	case workspace.EdgeBroadcasts:
 		m.ResetBroadcasts()
