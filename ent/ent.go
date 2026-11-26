@@ -43,6 +43,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/eventjournalentry"
 	"github.com/getsphericon/sphericon/ent/eventreceipt"
 	"github.com/getsphericon/sphericon/ent/frequencycap"
+	"github.com/getsphericon/sphericon/ent/frequencycount"
 	"github.com/getsphericon/sphericon/ent/heldorderevent"
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/identitysecret"
@@ -188,6 +189,7 @@ func checkColumn(t, c string) error {
 			eventjournalentry.Table:          eventjournalentry.ValidColumn,
 			eventreceipt.Table:               eventreceipt.ValidColumn,
 			frequencycap.Table:               frequencycap.ValidColumn,
+			frequencycount.Table:             frequencycount.ValidColumn,
 			heldorderevent.Table:             heldorderevent.ValidColumn,
 			hold.Table:                       hold.ValidColumn,
 			identitysecret.Table:             identitysecret.ValidColumn,

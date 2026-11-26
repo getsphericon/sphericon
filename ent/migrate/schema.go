@@ -1619,6 +1619,49 @@ var (
 			},
 		},
 	}
+	// FrequencyCountsColumns holds the columns for the "frequency_counts" table.
+	FrequencyCountsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email", "telegram", "sms"}},
+		{Name: "destination", Type: field.TypeString},
+		{Name: "counted_at", Type: field.TypeTime},
+		{Name: "outbound_message_id", Type: field.TypeInt64},
+		{Name: "workspace_id", Type: field.TypeInt64},
+	}
+	// FrequencyCountsTable holds the schema information for the "frequency_counts" table.
+	FrequencyCountsTable = &schema.Table{
+		Name:       "frequency_counts",
+		Columns:    FrequencyCountsColumns,
+		PrimaryKey: []*schema.Column{FrequencyCountsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "frequency_counts_outbound_messages_frequency_counts",
+				Columns:    []*schema.Column{FrequencyCountsColumns[6]},
+				RefColumns: []*schema.Column{OutboundMessagesColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "frequency_counts_workspaces_frequency_counts",
+				Columns:    []*schema.Column{FrequencyCountsColumns[7]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "frequency_counts_workspace_channel_destination_counted_at",
+				Unique:  false,
+				Columns: []*schema.Column{FrequencyCountsColumns[7], FrequencyCountsColumns[3], FrequencyCountsColumns[4], FrequencyCountsColumns[5]},
+			},
+			{
+				Name:    "frequency_counts_workspace_id_outbound_message_id",
+				Unique:  false,
+				Columns: []*schema.Column{FrequencyCountsColumns[7], FrequencyCountsColumns[6]},
+			},
+		},
+	}
 	// HeldOrderEventsColumns holds the columns for the "held_order_events" table.
 	HeldOrderEventsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -3836,6 +3879,7 @@ var (
 		EventJournalEntriesTable,
 		EventReceiptsTable,
 		FrequencyCapsTable,
+		FrequencyCountsTable,
 		HeldOrderEventsTable,
 		HoldsTable,
 		IdentitySecretsTable,
@@ -4168,6 +4212,14 @@ func init() {
 		"frequency_caps_country_format":       "country ~ '^[A-Z]{2}$'",
 		"frequency_caps_max_messages_check":   "max_messages >= 1",
 		"frequency_caps_period_minutes_check": "period_minutes BETWEEN 1 AND 10080",
+	}
+	FrequencyCountsTable.ForeignKeys[0].RefTable = OutboundMessagesTable
+	FrequencyCountsTable.ForeignKeys[1].RefTable = WorkspacesTable
+	FrequencyCountsTable.Annotation = &entsql.Annotation{
+		Table: "frequency_counts",
+	}
+	FrequencyCountsTable.Annotation.Checks = map[string]string{
+		"frequency_counts_channel_check": "channel IN ('email', 'telegram', 'sms')",
 	}
 	HeldOrderEventsTable.ForeignKeys[0].RefTable = WorkspacesTable
 	HeldOrderEventsTable.Annotation = &entsql.Annotation{

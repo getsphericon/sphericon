@@ -88,3 +88,18 @@ an Enrollment, a send) never takes it: it locks the row it acts on and checks it
 lock, and the locked row is a value the write takes. An Enrollment is written (`automations.begin`)
 with the Contact locked (`contactlock.Locked`) and the Automation share-locked on its live version;
 a Firing (`rules.recordFiring`) with its Rule share-locked while it still fires on that version.
+
+## Destination lock
+
+**The Destination locks (ADR 0137, ADR 0178)**: a new claim of an Outbound message is written in
+`events.Bus.WithinDestinationLockTx`, whose first statements take the transaction-scoped advisory
+lock of each Destination the message is claimed for (`postgres.DestinationKey`, a 64-bit hash of the
+lock's kind, the Workspace, the Channel and the Destination), deduplicated and in ascending order, so
+two sends never wait for each other in a cycle. The bus hands its callback `*ent.DestinationLocked`
+(`ent/template/scoped_destination_lock.tmpl`) and is the one caller of `ent.Scoped.LockDestinations`
+(forbidigo). Which Destinations are locked is the `frequencycap` rule's (`frequencycap.Module.Within`):
+those a Frequency cap holds, by the Channel and the number's country; where none does, the type is
+handed out all the same and stands for no lock. The writer of a claim and its count rows
+(`outboundmessages.writeClaim`, `frequencycap.Module.Count`) takes the type, so no claim is written
+without it. The locks are held from the count to the claim's commit, never over the provider call,
+and join no lock order with the Contact's or the Workspace's.

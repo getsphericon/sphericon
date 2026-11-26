@@ -30,6 +30,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/frequencycap"
+	"github.com/getsphericon/sphericon/ent/frequencycount"
 	"github.com/getsphericon/sphericon/ent/heldorderevent"
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/identitysecret"
@@ -237,6 +238,7 @@ func eraseSteps() []eraseStep {
 		stepOf((*ent.Scoped).Order, order.IDIn),
 		stepOf((*ent.Scoped).CapturedMessage, capturedmessage.IDIn),
 		stepOf((*ent.Scoped).TrackedLink, trackedlink.IDIn),
+		stepOf((*ent.Scoped).FrequencyCount, frequencycount.IDIn),
 		stepOf((*ent.Scoped).OutboundMessage, outboundmessage.IDIn),
 		stepOf((*ent.Scoped).BroadcastRecipient, broadcastrecipient.IDIn),
 		stepOf((*ent.Scoped).BroadcastFigure, broadcastfigure.IDIn),

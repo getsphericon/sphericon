@@ -20,6 +20,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
+	"github.com/getsphericon/sphericon/ent/frequencycount"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
@@ -36,6 +37,7 @@ type OutboundMessageQuery struct {
 	predicates             []predicate.OutboundMessage
 	withWorkspace          *WorkspaceQuery
 	withTrackedLinks       *TrackedLinkQuery
+	withFrequencyCounts    *FrequencyCountQuery
 	withBroadcast          *BroadcastQuery
 	withAutomation         *AutomationQuery
 	withAutomationVersion  *AutomationVersionQuery
@@ -118,6 +120,28 @@ func (_q *OutboundMessageQuery) QueryTrackedLinks() *TrackedLinkQuery {
 			sqlgraph.From(outboundmessage.Table, outboundmessage.FieldID, selector),
 			sqlgraph.To(trackedlink.Table, trackedlink.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, outboundmessage.TrackedLinksTable, outboundmessage.TrackedLinksColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryFrequencyCounts chains the current query on the "frequency_counts" edge.
+func (_q *OutboundMessageQuery) QueryFrequencyCounts() *FrequencyCountQuery {
+	query := (&FrequencyCountClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(outboundmessage.Table, outboundmessage.FieldID, selector),
+			sqlgraph.To(frequencycount.Table, frequencycount.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, outboundmessage.FrequencyCountsTable, outboundmessage.FrequencyCountsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -495,6 +519,7 @@ func (_q *OutboundMessageQuery) Clone() *OutboundMessageQuery {
 		predicates:             append([]predicate.OutboundMessage{}, _q.predicates...),
 		withWorkspace:          _q.withWorkspace.Clone(),
 		withTrackedLinks:       _q.withTrackedLinks.Clone(),
+		withFrequencyCounts:    _q.withFrequencyCounts.Clone(),
 		withBroadcast:          _q.withBroadcast.Clone(),
 		withAutomation:         _q.withAutomation.Clone(),
 		withAutomationVersion:  _q.withAutomationVersion.Clone(),
@@ -529,6 +554,17 @@ func (_q *OutboundMessageQuery) WithTrackedLinks(opts ...func(*TrackedLinkQuery)
 		opt(query)
 	}
 	_q.withTrackedLinks = query
+	return _q
+}
+
+// WithFrequencyCounts tells the query-builder to eager-load the nodes that are connected to
+// the "frequency_counts" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *OutboundMessageQuery) WithFrequencyCounts(opts ...func(*FrequencyCountQuery)) *OutboundMessageQuery {
+	query := (&FrequencyCountClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withFrequencyCounts = query
 	return _q
 }
 
@@ -698,9 +734,10 @@ func (_q *OutboundMessageQuery) sqlAll(ctx context.Context, hooks ...queryHook) 
 	var (
 		nodes       = []*OutboundMessage{}
 		_spec       = _q.querySpec()
-		loadedTypes = [10]bool{
+		loadedTypes = [11]bool{
 			_q.withWorkspace != nil,
 			_q.withTrackedLinks != nil,
+			_q.withFrequencyCounts != nil,
 			_q.withBroadcast != nil,
 			_q.withAutomation != nil,
 			_q.withAutomationVersion != nil,
@@ -742,6 +779,15 @@ func (_q *OutboundMessageQuery) sqlAll(ctx context.Context, hooks ...queryHook) 
 		if err := _q.loadTrackedLinks(ctx, query, nodes,
 			func(n *OutboundMessage) { n.Edges.TrackedLinks = []*TrackedLink{} },
 			func(n *OutboundMessage, e *TrackedLink) { n.Edges.TrackedLinks = append(n.Edges.TrackedLinks, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withFrequencyCounts; query != nil {
+		if err := _q.loadFrequencyCounts(ctx, query, nodes,
+			func(n *OutboundMessage) { n.Edges.FrequencyCounts = []*FrequencyCount{} },
+			func(n *OutboundMessage, e *FrequencyCount) {
+				n.Edges.FrequencyCounts = append(n.Edges.FrequencyCounts, e)
+			}); err != nil {
 			return nil, err
 		}
 	}
@@ -853,6 +899,36 @@ func (_q *OutboundMessageQuery) loadTrackedLinks(ctx context.Context, query *Tra
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "outbound_message_id" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *OutboundMessageQuery) loadFrequencyCounts(ctx context.Context, query *FrequencyCountQuery, nodes []*OutboundMessage, init func(*OutboundMessage), assign func(*OutboundMessage, *FrequencyCount)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*OutboundMessage)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(frequencycount.FieldOutboundMessageID)
+	}
+	query.Where(predicate.FrequencyCount(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(outboundmessage.FrequencyCountsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.OutboundMessageID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "outbound_message_id" returned %v for node %v`, fk, n.ID)
 		}
 		assign(node, n)
 	}

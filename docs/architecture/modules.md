@@ -123,13 +123,13 @@ context above: not `broadcasts`, `automations` or `rules`, not `integrations`, `
 `emailtemplates`, and no use case.
 Content, above contacts, is one component too (`domain-content`, the glob of
 `internal/domain/content`): `emailtemplates`, `brandkits` and `versioneddefinition`, the lifecycle every Versioned
-definition shares. Sending, above content, is `outboundmessages`, `holds`, `providerlimit`,
+definition shares. Sending, above content, is `outboundmessages`, `holds`, `providerlimit`, `frequencycap`,
 `integrations`, `sendingdomains`, `bindings`, `trackingdomains`, `trackinghostchanges`, `messagetoken`,
 `linkclick`, `reputation`, `capturedmessages` and `privaterelayranges` (the spec's list), with two packages
 placed by the same rule: `preset`, the engine that reads an Integration's callbacks
 (`integrations` uses it), and `callbackinterpretation` (the Callback interpretation, which has no
 table: what the facts a Preset parsed mean, ADR 0112). The DKIM and DMARC primitives of a Sending
-domain are `sendingdomains`' own. Its raw-client holders are `bindings`, `callbackinterpretation`, `capturedmessages`,
+domain are `sendingdomains`' own. Its raw-client holders are `bindings`, `callbackinterpretation`, `capturedmessages`, `frequencycap`,
 `integrations`, `privaterelayranges`, `sendingdomains`, `trackingdomains` and `trackinghostchanges`,
 and the context is `domain-sending`. A content module imports no Integration,
 Outbound send or other sending module, and neither context imports `broadcasts`,
@@ -236,7 +236,7 @@ where its dependencies come from and the shapes that recur under it; the Tags pa
   (`ApplyDeletion(ctx, l, d)`). What applying needs besides comes from `New`: the clock for a time it
   writes, and the bus to publish an event or queue a job in the transaction its scope is bound to.
   `Bus.PublishIn(ctx, s, ev)` and `Bus.EnqueueIn(ctx, s, args, opts)` do that with the publisher of
-  the bus transaction that scope (or a tx-bound `*ent.Client`, or a `*ent.WorkspaceLocked`) is bound
+  the bus transaction that scope (or a tx-bound `*ent.Client`, a `*ent.WorkspaceLocked` or a `*ent.DestinationLocked`) is bound
   to, and refuse one bound to none (`events.ErrNotInBusTx`): they never open a transaction. An
   operation that publishes therefore takes no `events.Publisher` or `events.Enqueuer` argument, and
   one that records an explicit Audit entry calls `Bus.RecordAuditIn(ctx, s, entry)`, which is

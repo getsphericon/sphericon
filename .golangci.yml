@@ -166,9 +166,15 @@ linters:
         - pattern: ^ent\.Scoped\.LockWorkspace$
           pkg: '^github\.com/getsphericon/sphericon/ent$'
           msg: the Workspace lock is taken only by events.Bus.WithinWorkspaceLockTx (ADR 0108), first in its transaction; run the write there
+        # ADR 0178: the scope of the Destination locks, *ent.DestinationLocked, is handed out by the
+        # events bus alone, whose WithinDestinationLockTx takes the locks as the first statements of
+        # its transaction, in one order, before any row lock.
+        - pattern: ^ent\.Scoped\.LockDestinations$
+          pkg: '^github\.com/getsphericon/sphericon/ent$'
+          msg: the Destination locks are taken only by events.Bus.WithinDestinationLockTx (ADR 0178), first in its transaction; run the claim there
         # The driver of a client's transaction is unscoped: only the events bus reads it, through
         # events.InTx, to publish and queue in that transaction.
-        - pattern: ^ent\.(Client|Scoped|WorkspaceLocked)\.TxDriver$
+        - pattern: ^ent\.(Client|Scoped|WorkspaceLocked|DestinationLocked)\.TxDriver$
           pkg: '^github\.com/getsphericon/sphericon/ent$'
           msg: the driver of a transaction is the events bus's; publish or queue with events.Bus.PublishIn or EnqueueIn
         - pattern: ^time\.Sleep$
@@ -387,6 +393,11 @@ linters:
         linters:
           - forbidigo
         text: the Workspace lock is taken only by events.Bus.WithinWorkspaceLockTx
+      # The events bus is the one place the Destination locks are taken (ADR 0178).
+      - path: ^internal/infra/events/destinationlock\.go$
+        linters:
+          - forbidigo
+        text: the Destination locks are taken only by events.Bus.WithinDestinationLockTx
       # gosec's taint rules (G702-G705, G710) and the cookie rule (G124) cannot see a check that
       # is made before the sink. Each exclusion below names the files and the reason; every
       # finding was read, and the ones that were defects are fixed in code.

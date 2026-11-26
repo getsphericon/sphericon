@@ -36,9 +36,11 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
+	"github.com/getsphericon/sphericon/internal/domain/sending/frequencycap"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
@@ -346,6 +348,41 @@ func TestAnErasureDeletesTheShortLinksOfTheContactsMessages(t *testing.T) {
 	m := env.DB.OutboundMessage.GetX(ctx, fixtures.OutboundMessageWelcomeID)
 	assert.Empty(t, m.Destination, "the message stays as an anonymous row")
 	assert.Nil(t, m.ContactID)
+}
+
+// The places the Contact's messages took under the Frequency cap go, so the count of its Destinations
+// restarts (ADR 0178); a bystander's stay. Fixtures: FrequencyCountErasable is the place of
+// ContactErasable's Broadcast message, FrequencyCountBystander that of ContactBystander's.
+func TestAnErasureDeletesTheCountOfTheContactsDestinations(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	eraseErasable(t, env)
+
+	assert.Zero(t, countedEver(t, env, fixtures.InitechID, channels.Email, fixtures.FrequencyCountErasableDestination))
+	assert.Equal(t, 1, countedEver(t, env, fixtures.InitechID, channels.Email, fixtures.FrequencyCountBystanderDestination),
+		"a bystander's count stays")
+}
+
+// The count of an erased Contact's number restarts too. Fixtures: FrequencyCountTexter is the place
+// of the text to ContactTexter.
+func TestAnErasureDeletesTheCountOfTheContactsNumber(t *testing.T) {
+	env := testhelper.Setup(t)
+	before := countedEver(t, env, fixtures.AcmeID, channels.SMS, fixtures.FrequencyCountTexterDestination)
+
+	require.NoError(t, erase(t, env, fixtures.AcmeID, contacterasure.Identifier{ContactID: fixtures.ContactTexterID}))
+
+	assert.Equal(t, 1, before)
+	assert.Zero(t, countedEver(t, env, fixtures.AcmeID, channels.SMS, fixtures.FrequencyCountTexterDestination))
+}
+
+// countedEver is how many places the count of the Destination on ch holds in the Workspace, however
+// old.
+func countedEver(t *testing.T, env *testhelper.TestEnv, ws int64, ch channels.Channel, dest string) int {
+	t.Helper()
+	n, err := testhelper.Module[*frequencycap.Module](env).Counted(t.Context(), env.DB.Scoped(ws),
+		frequencycap.CountedInput{Channel: ch, Destination: dest})
+	require.NoError(t, err)
+	return n
 }
 
 // An opt-out of a number keeps refusing it after the Erasure, keyed by the number's hash and never

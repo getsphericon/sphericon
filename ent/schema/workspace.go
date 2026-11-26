@@ -215,6 +215,7 @@ func (Workspace) Edges() []ent.Edge {
 		edge.To("send_cap_limiters", SendCapLimiter.Type),
 		edge.To("holds", Hold.Type),
 		edge.To("frequency_caps", FrequencyCap.Type),
+		edge.To("frequency_counts", FrequencyCount.Type),
 		edge.To("sending_windows", SendingWindow.Type),
 		edge.To("broadcasts", Broadcast.Type),
 		edge.To("broadcast_recipients", BroadcastRecipient.Type),

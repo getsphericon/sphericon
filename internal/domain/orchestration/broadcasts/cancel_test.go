@@ -81,7 +81,7 @@ func TestAClaimRacingCancelLoses(t *testing.T) {
 	d := newDelivery(t, time.Now)
 	alice := d.recipient(fixtures.ContactAliceID)
 	cancelled := make(chan broadcasts.Cancelled, 1)
-	d.env.DB.OutboundMessage.Use(cancelAfterTheClaim(d, cancelled))
+	cancelOnceTheClaimCommits(d, cancelled)
 
 	require.NoError(t, d.del.SendRecipient(d.t.Context(), d.s, alice))
 
@@ -165,6 +165,35 @@ func cancelAfterTheClaim(d *delivery, cancelled chan<- broadcasts.Cancelled) ent
 			return v, nil
 		})
 	}
+}
+
+// cancelOnceTheClaimCommits cancels the sending Broadcast once, right after the transaction that
+// writes the claim (under its Destination locks) commits: at the first read of an Outbound message
+// after the claim's row is written, the one that comes before the source's stop is asked. It hands
+// over what Cancel answered.
+func cancelOnceTheClaimCommits(d *delivery, cancelled chan<- broadcasts.Cancelled) {
+	claimed, done := false, false
+	d.env.Bus.Use(func(next ent.Mutator) ent.Mutator {
+		return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+			v, err := next.Mutate(ctx, m)
+			claimed = claimed || (err == nil && m.Op().Is(ent.OpCreate) && m.Type() == ent.TypeOutboundMessage)
+			return v, err
+		})
+	})
+	d.env.DB.OutboundMessage.Intercept(ent.InterceptFunc(func(next ent.Querier) ent.Querier {
+		return ent.QuerierFunc(func(ctx context.Context, q ent.Query) (ent.Value, error) {
+			if !claimed || done {
+				return next.Query(ctx, q)
+			}
+			done = true
+			answer, err := d.module().Cancel(ctx, d.s, fixtures.BroadcastSendingID)
+			if err != nil {
+				return nil, err
+			}
+			cancelled <- answer
+			return next.Query(ctx, q)
+		})
+	}))
 }
 
 // A message claimed before Cancel goes on: a provider cannot be called back, and the claim is the

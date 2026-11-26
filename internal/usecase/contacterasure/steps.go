@@ -237,8 +237,13 @@ func (u *UseCase) eraseTracking(ctx context.Context, s *ent.Scoped, t *Target, _
 // their status and timing, so reports keep their totals, but no longer name anyone. The
 // Contact's Outbound messages go first, then the messages to its addresses and number, which a
 // transactional send may have made without a Contact. Its Broadcast recipients name it only by
-// the Contact reference, which their foreign key sets null when the Contact row goes.
+// the Contact reference, which their foreign key sets null when the Contact row goes. The places
+// those messages took under the Frequency cap go before them, found by the Contact the anonymizing
+// clears: they name the Destination, and its count restarts (ADR 0178).
 func (u *UseCase) anonymizeDelivery(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
+	if err := u.counts.EraseContact(ctx, s, t.ContactID, t.destinations()); err != nil {
+		return err
+	}
 	if err := u.outbound.AnonymizeContact(ctx, s, t.ContactID, t.Phone); err != nil {
 		return err
 	}

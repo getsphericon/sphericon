@@ -114,6 +114,21 @@ func WorkspaceKey(kind string, workspaceID int64) int64 {
 	return int64(h.Sum32())
 }
 
+// DestinationKey is the advisory lock key of one kind of lock of one Destination of a Workspace on a
+// Channel: "frequency-cap" for the count of its Frequency cap and the claims it is written with (ADR
+// 0178). It is a 64-bit hash, apart from WorkspaceKey's, since a Workspace has many Destinations: two
+// whose keys collide only wait for each other.
+func DestinationKey(kind string, workspaceID int64, channel, destination string) int64 {
+	h := fnv.New64a()
+	_, _ = fmt.Fprintf(h, "%s:%d:%s:%s", kind, workspaceID, channel, destination)
+	// The hash's 64 bits, as Postgres's bigint takes them.
+	var key int64
+	for _, b := range h.Sum(nil) {
+		key = key<<8 | int64(b)
+	}
+	return key
+}
+
 // ServerMajor is the major version of the Postgres server (server_version_num is
 // major*10000+minor from version 10 on).
 func ServerMajor(ctx context.Context, q Queryer) (int, error) {

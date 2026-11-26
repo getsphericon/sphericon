@@ -2114,6 +2114,71 @@ const (
 	RoleOf_FrequencyCapCreateBulk_OnConflictColumns = RoleStart
 )
 
+// The types ent generates for FrequencyCount.
+const (
+	TypeOf_FrequencyCount             = TypeEntity
+	TypeOf_FrequencyCounts            = TypeOther
+	TypeOf_FrequencyCountEdges        = TypeOther
+	EntityOf_FrequencyCountEdges      = "FrequencyCount"
+	TypeOf_FrequencyCountMutation     = TypeOther
+	TypeOf_FrequencyCountClient       = TypeClient
+	TypeOf_FrequencyCountQuery        = TypeQuery
+	TypeOf_FrequencyCountSelect       = TypeQuery
+	TypeOf_FrequencyCountGroupBy      = TypeQuery
+	TypeOf_FrequencyCountCreate       = TypeCreate
+	TypeOf_FrequencyCountCreateBulk   = TypeCreate
+	TypeOf_FrequencyCountUpdate       = TypeUpdate
+	TypeOf_FrequencyCountUpdateOne    = TypeUpdate
+	TypeOf_FrequencyCountDelete       = TypeDelete
+	TypeOf_FrequencyCountDeleteOne    = TypeDelete
+	TypeOf_FrequencyCountUpsert       = TypeUpsert
+	TypeOf_FrequencyCountUpsertOne    = TypeUpsert
+	TypeOf_FrequencyCountUpsertBulk   = TypeUpsert
+	EntityOf_FrequencyCounts          = "FrequencyCount"
+	EntityOf_FrequencyCount           = "FrequencyCount"
+	EntityOf_FrequencyCountMutation   = "FrequencyCount"
+	EntityOf_FrequencyCountClient     = "FrequencyCount"
+	EntityOf_FrequencyCountQuery      = "FrequencyCount"
+	EntityOf_FrequencyCountSelect     = "FrequencyCount"
+	EntityOf_FrequencyCountGroupBy    = "FrequencyCount"
+	EntityOf_FrequencyCountCreate     = "FrequencyCount"
+	EntityOf_FrequencyCountCreateBulk = "FrequencyCount"
+	EntityOf_FrequencyCountUpdate     = "FrequencyCount"
+	EntityOf_FrequencyCountUpdateOne  = "FrequencyCount"
+	EntityOf_FrequencyCountDelete     = "FrequencyCount"
+	EntityOf_FrequencyCountDeleteOne  = "FrequencyCount"
+	EntityOf_FrequencyCountUpsert     = "FrequencyCount"
+	EntityOf_FrequencyCountUpsertOne  = "FrequencyCount"
+	EntityOf_FrequencyCountUpsertBulk = "FrequencyCount"
+)
+
+// The reads and the writes ent's methods for FrequencyCount start.
+const (
+	RoleOf_FrequencyCountClient_Create                = RoleStart
+	RoleOf_FrequencyCountClient_CreateBulk            = RoleStart
+	RoleOf_FrequencyCountClient_MapCreateBulk         = RoleStart
+	RoleOf_FrequencyCountClient_Update                = RoleStart
+	RoleOf_FrequencyCountClient_UpdateOne             = RoleStart
+	RoleOf_FrequencyCountClient_Delete                = RoleStart
+	RoleOf_FrequencyCountClient_Query                 = RoleRead
+	RoleOf_FrequencyCountClient_UpdateOneID           = RoleStart
+	RoleOf_FrequencyCountClient_DeleteOne             = RoleStart
+	RoleOf_FrequencyCountClient_DeleteOneID           = RoleStart
+	RoleOf_FrequencyCountClient_Get                   = RoleRead
+	RoleOf_FrequencyCountClient_GetX                  = RoleRead
+	RoleOf_FrequencyCountClient_QueryWorkspace        = RoleRead
+	RoleOf_FrequencyCount_QueryWorkspace              = RoleRead
+	RoleOf_FrequencyCountQuery_QueryWorkspace         = RoleRead
+	RoleOf_FrequencyCountClient_QueryOutboundMessage  = RoleRead
+	RoleOf_FrequencyCount_QueryOutboundMessage        = RoleRead
+	RoleOf_FrequencyCountQuery_QueryOutboundMessage   = RoleRead
+	RoleOf_FrequencyCount_Update                      = RoleStart
+	RoleOf_FrequencyCountCreate_OnConflict            = RoleStart
+	RoleOf_FrequencyCountCreate_OnConflictColumns     = RoleStart
+	RoleOf_FrequencyCountCreateBulk_OnConflict        = RoleStart
+	RoleOf_FrequencyCountCreateBulk_OnConflictColumns = RoleStart
+)
+
 // The types ent generates for HeldOrderEvent.
 const (
 	TypeOf_HeldOrderEvent             = TypeEntity
@@ -3290,6 +3355,9 @@ const (
 	RoleOf_OutboundMessageClient_QueryTrackedLinks       = RoleRead
 	RoleOf_OutboundMessage_QueryTrackedLinks             = RoleRead
 	RoleOf_OutboundMessageQuery_QueryTrackedLinks        = RoleRead
+	RoleOf_OutboundMessageClient_QueryFrequencyCounts    = RoleRead
+	RoleOf_OutboundMessage_QueryFrequencyCounts          = RoleRead
+	RoleOf_OutboundMessageQuery_QueryFrequencyCounts     = RoleRead
 	RoleOf_OutboundMessageClient_QueryBroadcast          = RoleRead
 	RoleOf_OutboundMessage_QueryBroadcast                = RoleRead
 	RoleOf_OutboundMessageQuery_QueryBroadcast           = RoleRead
@@ -5617,6 +5685,9 @@ const (
 	RoleOf_WorkspaceClient_QueryFrequencyCaps               = RoleRead
 	RoleOf_Workspace_QueryFrequencyCaps                     = RoleRead
 	RoleOf_WorkspaceQuery_QueryFrequencyCaps                = RoleRead
+	RoleOf_WorkspaceClient_QueryFrequencyCounts             = RoleRead
+	RoleOf_Workspace_QueryFrequencyCounts                   = RoleRead
+	RoleOf_WorkspaceQuery_QueryFrequencyCounts              = RoleRead
 	RoleOf_WorkspaceClient_QuerySendingWindows              = RoleRead
 	RoleOf_Workspace_QuerySendingWindows                    = RoleRead
 	RoleOf_WorkspaceQuery_QuerySendingWindows               = RoleRead

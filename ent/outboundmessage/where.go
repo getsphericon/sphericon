@@ -2175,6 +2175,29 @@ func HasTrackedLinksWith(preds ...predicate.TrackedLink) predicate.OutboundMessa
 	})
 }
 
+// HasFrequencyCounts applies the HasEdge predicate on the "frequency_counts" edge.
+func HasFrequencyCounts() predicate.OutboundMessage {
+	return predicate.OutboundMessage(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, FrequencyCountsTable, FrequencyCountsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasFrequencyCountsWith applies the HasEdge predicate on the "frequency_counts" edge with a given conditions (other predicates).
+func HasFrequencyCountsWith(preds ...predicate.FrequencyCount) predicate.OutboundMessage {
+	return predicate.OutboundMessage(func(s *sql.Selector) {
+		step := newFrequencyCountsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasBroadcast applies the HasEdge predicate on the "broadcast" edge.
 func HasBroadcast() predicate.OutboundMessage {
 	return predicate.OutboundMessage(func(s *sql.Selector) {

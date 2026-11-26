@@ -104,6 +104,8 @@ const (
 	EdgeWorkspace = "workspace"
 	// EdgeTrackedLinks holds the string denoting the tracked_links edge name in mutations.
 	EdgeTrackedLinks = "tracked_links"
+	// EdgeFrequencyCounts holds the string denoting the frequency_counts edge name in mutations.
+	EdgeFrequencyCounts = "frequency_counts"
 	// EdgeBroadcast holds the string denoting the broadcast edge name in mutations.
 	EdgeBroadcast = "broadcast"
 	// EdgeAutomation holds the string denoting the automation edge name in mutations.
@@ -136,6 +138,13 @@ const (
 	TrackedLinksInverseTable = "tracked_links"
 	// TrackedLinksColumn is the table column denoting the tracked_links relation/edge.
 	TrackedLinksColumn = "outbound_message_id"
+	// FrequencyCountsTable is the table that holds the frequency_counts relation/edge.
+	FrequencyCountsTable = "frequency_counts"
+	// FrequencyCountsInverseTable is the table name for the FrequencyCount entity.
+	// It exists in this package in order to avoid circular dependency with the "frequencycount" package.
+	FrequencyCountsInverseTable = "frequency_counts"
+	// FrequencyCountsColumn is the table column denoting the frequency_counts relation/edge.
+	FrequencyCountsColumn = "outbound_message_id"
 	// BroadcastTable is the table that holds the broadcast relation/edge.
 	BroadcastTable = "outbound_messages"
 	// BroadcastInverseTable is the table name for the Broadcast entity.
@@ -581,6 +590,20 @@ func ByTrackedLinks(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// ByFrequencyCountsCount orders the results by frequency_counts count.
+func ByFrequencyCountsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newFrequencyCountsStep(), opts...)
+	}
+}
+
+// ByFrequencyCounts orders the results by frequency_counts terms.
+func ByFrequencyCounts(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newFrequencyCountsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByBroadcastField orders the results by broadcast field.
 func ByBroadcastField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -648,6 +671,13 @@ func newTrackedLinksStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(TrackedLinksInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, TrackedLinksTable, TrackedLinksColumn),
+	)
+}
+func newFrequencyCountsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(FrequencyCountsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, FrequencyCountsTable, FrequencyCountsColumn),
 	)
 }
 func newBroadcastStep() *sqlgraph.Step {

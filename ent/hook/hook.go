@@ -381,6 +381,18 @@ func (f FrequencyCapFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.FrequencyCapMutation", m)
 }
 
+// The FrequencyCountFunc type is an adapter to allow the use of ordinary
+// function as FrequencyCount mutator.
+type FrequencyCountFunc func(context.Context, *ent.FrequencyCountMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f FrequencyCountFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.FrequencyCountMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.FrequencyCountMutation", m)
+}
+
 // The HeldOrderEventFunc type is an adapter to allow the use of ordinary
 // function as HeldOrderEvent mutator.
 type HeldOrderEventFunc func(context.Context, *ent.HeldOrderEventMutation) (ent.Value, error)

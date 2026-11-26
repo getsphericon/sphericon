@@ -62,6 +62,21 @@ func Normalize(raw, country string) (string, error) {
 	return phonenumbers.Format(n, phonenumbers.E164), nil
 }
 
+// Country is the ISO 3166-1 alpha-2 country of the E.164 number, "" when it has none: a number of
+// no country (a global service number) or one that does not parse.
+func Country(number string) string {
+	n, err := phonenumbers.Parse(number, "")
+	if err != nil {
+		return ""
+	}
+	switch region := phonenumbers.GetRegionCodeForNumber(n); region {
+	case phonenumbers.UNKNOWN_REGION, phonenumbers.REGION_CODE_FOR_NON_GEO_ENTITY:
+		return ""
+	default:
+		return region
+	}
+}
+
 // Hash is the form a number takes on the opt-outs and Suppressions that outlive the Contact whose
 // phone it was (ADR 0021): the lowercase hex SHA-256 of the E.164 number, the value the Erasure
 // record keeps as the phone's hash. The eligibility layers on sms match a stored number by it too,

@@ -37,6 +37,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/eventjournalentry"
 	"github.com/getsphericon/sphericon/ent/frequencycap"
+	"github.com/getsphericon/sphericon/ent/frequencycount"
 	"github.com/getsphericon/sphericon/ent/heldorderevent"
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/identitysecret"
@@ -916,6 +917,21 @@ func (_u *WorkspaceUpdate) AddFrequencyCaps(v ...*FrequencyCap) *WorkspaceUpdate
 		ids[i] = v[i].ID
 	}
 	return _u.AddFrequencyCapIDs(ids...)
+}
+
+// AddFrequencyCountIDs adds the "frequency_counts" edge to the FrequencyCount entity by IDs.
+func (_u *WorkspaceUpdate) AddFrequencyCountIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.AddFrequencyCountIDs(ids...)
+	return _u
+}
+
+// AddFrequencyCounts adds the "frequency_counts" edges to the FrequencyCount entity.
+func (_u *WorkspaceUpdate) AddFrequencyCounts(v ...*FrequencyCount) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddFrequencyCountIDs(ids...)
 }
 
 // AddSendingWindowIDs adds the "sending_windows" edge to the SendingWindow entity by IDs.
@@ -1933,6 +1949,27 @@ func (_u *WorkspaceUpdate) RemoveFrequencyCaps(v ...*FrequencyCap) *WorkspaceUpd
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveFrequencyCapIDs(ids...)
+}
+
+// ClearFrequencyCounts clears all "frequency_counts" edges to the FrequencyCount entity.
+func (_u *WorkspaceUpdate) ClearFrequencyCounts() *WorkspaceUpdate {
+	_u.mutation.ClearFrequencyCounts()
+	return _u
+}
+
+// RemoveFrequencyCountIDs removes the "frequency_counts" edge to FrequencyCount entities by IDs.
+func (_u *WorkspaceUpdate) RemoveFrequencyCountIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.RemoveFrequencyCountIDs(ids...)
+	return _u
+}
+
+// RemoveFrequencyCounts removes "frequency_counts" edges to FrequencyCount entities.
+func (_u *WorkspaceUpdate) RemoveFrequencyCounts(v ...*FrequencyCount) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveFrequencyCountIDs(ids...)
 }
 
 // ClearSendingWindows clears all "sending_windows" edges to the SendingWindow entity.
@@ -3948,6 +3985,51 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(frequencycap.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.FrequencyCountsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.FrequencyCountsTable,
+			Columns: []string{workspace.FrequencyCountsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(frequencycount.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedFrequencyCountsIDs(); len(nodes) > 0 && !_u.mutation.FrequencyCountsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.FrequencyCountsTable,
+			Columns: []string{workspace.FrequencyCountsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(frequencycount.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.FrequencyCountsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.FrequencyCountsTable,
+			Columns: []string{workspace.FrequencyCountsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(frequencycount.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -6367,6 +6449,21 @@ func (_u *WorkspaceUpdateOne) AddFrequencyCaps(v ...*FrequencyCap) *WorkspaceUpd
 	return _u.AddFrequencyCapIDs(ids...)
 }
 
+// AddFrequencyCountIDs adds the "frequency_counts" edge to the FrequencyCount entity by IDs.
+func (_u *WorkspaceUpdateOne) AddFrequencyCountIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.AddFrequencyCountIDs(ids...)
+	return _u
+}
+
+// AddFrequencyCounts adds the "frequency_counts" edges to the FrequencyCount entity.
+func (_u *WorkspaceUpdateOne) AddFrequencyCounts(v ...*FrequencyCount) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddFrequencyCountIDs(ids...)
+}
+
 // AddSendingWindowIDs adds the "sending_windows" edge to the SendingWindow entity by IDs.
 func (_u *WorkspaceUpdateOne) AddSendingWindowIDs(ids ...int64) *WorkspaceUpdateOne {
 	_u.mutation.AddSendingWindowIDs(ids...)
@@ -7382,6 +7479,27 @@ func (_u *WorkspaceUpdateOne) RemoveFrequencyCaps(v ...*FrequencyCap) *Workspace
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveFrequencyCapIDs(ids...)
+}
+
+// ClearFrequencyCounts clears all "frequency_counts" edges to the FrequencyCount entity.
+func (_u *WorkspaceUpdateOne) ClearFrequencyCounts() *WorkspaceUpdateOne {
+	_u.mutation.ClearFrequencyCounts()
+	return _u
+}
+
+// RemoveFrequencyCountIDs removes the "frequency_counts" edge to FrequencyCount entities by IDs.
+func (_u *WorkspaceUpdateOne) RemoveFrequencyCountIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.RemoveFrequencyCountIDs(ids...)
+	return _u
+}
+
+// RemoveFrequencyCounts removes "frequency_counts" edges to FrequencyCount entities.
+func (_u *WorkspaceUpdateOne) RemoveFrequencyCounts(v ...*FrequencyCount) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveFrequencyCountIDs(ids...)
 }
 
 // ClearSendingWindows clears all "sending_windows" edges to the SendingWindow entity.
@@ -9427,6 +9545,51 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(frequencycap.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.FrequencyCountsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.FrequencyCountsTable,
+			Columns: []string{workspace.FrequencyCountsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(frequencycount.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedFrequencyCountsIDs(); len(nodes) > 0 && !_u.mutation.FrequencyCountsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.FrequencyCountsTable,
+			Columns: []string{workspace.FrequencyCountsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(frequencycount.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.FrequencyCountsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.FrequencyCountsTable,
+			Columns: []string{workspace.FrequencyCountsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(frequencycount.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

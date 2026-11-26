@@ -109,7 +109,10 @@ They take a `*ent.Scoped` (modules: an explicit `s *ent.Scoped` parameter) and n
 5. transactions: `events.Bus.WithinScopedTx` (and its variants: `WithinScopedEnqueueTx`, and
    `WithinWorkspaceLockTx` / `WithinWorkspaceLockEnqueueTx`, which first take the Workspace's
    advisory lock, ADR 0099, and hand over the scope that stands for it, `*ent.WorkspaceLocked`,
-   which only they build, through `ent.Scoped.LockWorkspace`, ADR 0108), and `tx.Scoped(...)` inside
+   which only they build, through `ent.Scoped.LockWorkspace`, ADR 0108, and
+   `WithinDestinationLockTx`, which first takes the advisory locks of the Destinations a claim is
+   written for and hands over `*ent.DestinationLocked`, which only it builds, through
+   `ent.Scoped.LockDestinations`, ADR 0178), and `tx.Scoped(...)` inside
    `users.Module.AcceptInvitation` (its `acceptInvitationIn`, which the completion of a pending
    sign-up also runs in its own transaction) and inside `secondfactors.Module.Reset` (the Second
    factor reset reads its target Membership in the reset's transaction; the member's other
@@ -170,7 +173,7 @@ They take a `*ent.Scoped` (modules: an explicit `s *ent.Scoped` parameter) and n
 
 ## Raw-client holders
 
-**The raw `*ent.Client` is allowed only in:** `internal/domain/sending/bindings` (only `Chats.PruneStartTokens`, the Instance-wide purge of lapsed and used Start tokens, ADR 0076, called by a river job; every other function takes a `*ent.Scoped`), `internal/domain/sending/capturedmessages` (only `Purge`, the Instance-wide age purge of Captured messages, ADR 0058, called by a river job; every other function takes a `*ent.Scoped`), `internal/domain/identity/users` (the User,
+**The raw `*ent.Client` is allowed only in:** `internal/domain/sending/bindings` (only `Chats.PruneStartTokens`, the Instance-wide purge of lapsed and used Start tokens, ADR 0076, called by a river job; every other function takes a `*ent.Scoped`), `internal/domain/sending/capturedmessages` (only `Purge`, the Instance-wide age purge of Captured messages, ADR 0058, called by a river job; every other function takes a `*ent.Scoped`), `internal/domain/sending/frequencycap` (only `Module.Prune`, the Instance-wide age prune of the Frequency cap's count rows, ADR 0178, called by a river job; every other function takes a `*ent.Scoped` or the `*ent.DestinationLocked` of its lock transaction), `internal/domain/identity/users` (the User,
 ADR 0102, and the Pending sign-up of a Sign-in provider, ADR 0062: no User
 or Workspace exists yet, and its completion creates them, its Consent records and an Invitation's Membership in one
 transaction, which the Sign-up (`internal/domain/identity/signup`) opens; the prune river jobs only call it), `internal/domain/identity/invitations` (the lookup of a pending Invitation by its

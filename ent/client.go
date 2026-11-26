@@ -46,6 +46,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/eventjournalentry"
 	"github.com/getsphericon/sphericon/ent/eventreceipt"
 	"github.com/getsphericon/sphericon/ent/frequencycap"
+	"github.com/getsphericon/sphericon/ent/frequencycount"
 	"github.com/getsphericon/sphericon/ent/heldorderevent"
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/identitysecret"
@@ -171,6 +172,8 @@ type Client struct {
 	EventReceipt *EventReceiptClient
 	// FrequencyCap is the client for interacting with the FrequencyCap builders.
 	FrequencyCap *FrequencyCapClient
+	// FrequencyCount is the client for interacting with the FrequencyCount builders.
+	FrequencyCount *FrequencyCountClient
 	// HeldOrderEvent is the client for interacting with the HeldOrderEvent builders.
 	HeldOrderEvent *HeldOrderEventClient
 	// Hold is the client for interacting with the Hold builders.
@@ -321,6 +324,7 @@ func (c *Client) init() {
 	c.EventJournalEntry = NewEventJournalEntryClient(c.config)
 	c.EventReceipt = NewEventReceiptClient(c.config)
 	c.FrequencyCap = NewFrequencyCapClient(c.config)
+	c.FrequencyCount = NewFrequencyCountClient(c.config)
 	c.HeldOrderEvent = NewHeldOrderEventClient(c.config)
 	c.Hold = NewHoldClient(c.config)
 	c.IdentitySecret = NewIdentitySecretClient(c.config)
@@ -498,6 +502,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		EventJournalEntry:          NewEventJournalEntryClient(cfg),
 		EventReceipt:               NewEventReceiptClient(cfg),
 		FrequencyCap:               NewFrequencyCapClient(cfg),
+		FrequencyCount:             NewFrequencyCountClient(cfg),
 		HeldOrderEvent:             NewHeldOrderEventClient(cfg),
 		Hold:                       NewHoldClient(cfg),
 		IdentitySecret:             NewIdentitySecretClient(cfg),
@@ -602,6 +607,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		EventJournalEntry:          NewEventJournalEntryClient(cfg),
 		EventReceipt:               NewEventReceiptClient(cfg),
 		FrequencyCap:               NewFrequencyCapClient(cfg),
+		FrequencyCount:             NewFrequencyCountClient(cfg),
 		HeldOrderEvent:             NewHeldOrderEventClient(cfg),
 		Hold:                       NewHoldClient(cfg),
 		IdentitySecret:             NewIdentitySecretClient(cfg),
@@ -692,8 +698,8 @@ func (c *Client) Use(hooks ...Hook) {
 		c.Confirmation, c.ConsentRecord, c.ConsentStamp, c.Contact, c.ContactDate,
 		c.ContactTag, c.CustomField, c.DefaultSendCap, c.EmailTemplate,
 		c.EngagementTrackingConsent, c.Erasure, c.Event, c.EventJournalEntry,
-		c.EventReceipt, c.FrequencyCap, c.HeldOrderEvent, c.Hold, c.IdentitySecret,
-		c.InstanceAuditEntry, c.InstanceState, c.Integration,
+		c.EventReceipt, c.FrequencyCap, c.FrequencyCount, c.HeldOrderEvent, c.Hold,
+		c.IdentitySecret, c.InstanceAuditEntry, c.InstanceState, c.Integration,
 		c.IntegrationProviderState, c.Invitation, c.JoinDomain, c.LegalDocumentDraft,
 		c.LegalDocumentVersion, c.Membership, c.OAuthClient, c.OAuthCode,
 		c.OAuthRefreshToken, c.Order, c.OrderMovement, c.OutboundMessage, c.Passkey,
@@ -721,8 +727,8 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.Confirmation, c.ConsentRecord, c.ConsentStamp, c.Contact, c.ContactDate,
 		c.ContactTag, c.CustomField, c.DefaultSendCap, c.EmailTemplate,
 		c.EngagementTrackingConsent, c.Erasure, c.Event, c.EventJournalEntry,
-		c.EventReceipt, c.FrequencyCap, c.HeldOrderEvent, c.Hold, c.IdentitySecret,
-		c.InstanceAuditEntry, c.InstanceState, c.Integration,
+		c.EventReceipt, c.FrequencyCap, c.FrequencyCount, c.HeldOrderEvent, c.Hold,
+		c.IdentitySecret, c.InstanceAuditEntry, c.InstanceState, c.Integration,
 		c.IntegrationProviderState, c.Invitation, c.JoinDomain, c.LegalDocumentDraft,
 		c.LegalDocumentVersion, c.Membership, c.OAuthClient, c.OAuthCode,
 		c.OAuthRefreshToken, c.Order, c.OrderMovement, c.OutboundMessage, c.Passkey,
@@ -804,6 +810,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.EventReceipt.mutate(ctx, m)
 	case *FrequencyCapMutation:
 		return c.FrequencyCap.mutate(ctx, m)
+	case *FrequencyCountMutation:
+		return c.FrequencyCount.mutate(ctx, m)
 	case *HeldOrderEventMutation:
 		return c.HeldOrderEvent.mutate(ctx, m)
 	case *HoldMutation:
@@ -6198,6 +6206,171 @@ func (c *FrequencyCapClient) mutate(ctx context.Context, m *FrequencyCapMutation
 	}
 }
 
+// FrequencyCountClient is a client for the FrequencyCount schema.
+type FrequencyCountClient struct {
+	config
+}
+
+// NewFrequencyCountClient returns a client for the FrequencyCount from the given config.
+func NewFrequencyCountClient(c config) *FrequencyCountClient {
+	return &FrequencyCountClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `frequencycount.Hooks(f(g(h())))`.
+func (c *FrequencyCountClient) Use(hooks ...Hook) {
+	c.hooks.FrequencyCount = append(c.hooks.FrequencyCount, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `frequencycount.Intercept(f(g(h())))`.
+func (c *FrequencyCountClient) Intercept(interceptors ...Interceptor) {
+	c.inters.FrequencyCount = append(c.inters.FrequencyCount, interceptors...)
+}
+
+// Create returns a builder for creating a FrequencyCount entity.
+func (c *FrequencyCountClient) Create() *FrequencyCountCreate {
+	mutation := newFrequencyCountMutation(c.config, OpCreate)
+	return &FrequencyCountCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of FrequencyCount entities.
+func (c *FrequencyCountClient) CreateBulk(builders ...*FrequencyCountCreate) *FrequencyCountCreateBulk {
+	return &FrequencyCountCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *FrequencyCountClient) MapCreateBulk(slice any, setFunc func(*FrequencyCountCreate, int)) *FrequencyCountCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &FrequencyCountCreateBulk{err: fmt.Errorf("calling to FrequencyCountClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*FrequencyCountCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &FrequencyCountCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for FrequencyCount.
+func (c *FrequencyCountClient) Update() *FrequencyCountUpdate {
+	mutation := newFrequencyCountMutation(c.config, OpUpdate)
+	return &FrequencyCountUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *FrequencyCountClient) UpdateOne(_m *FrequencyCount) *FrequencyCountUpdateOne {
+	mutation := newFrequencyCountMutation(c.config, OpUpdateOne, withFrequencyCount(_m))
+	return &FrequencyCountUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *FrequencyCountClient) UpdateOneID(id int64) *FrequencyCountUpdateOne {
+	mutation := newFrequencyCountMutation(c.config, OpUpdateOne, withFrequencyCountID(id))
+	return &FrequencyCountUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for FrequencyCount.
+func (c *FrequencyCountClient) Delete() *FrequencyCountDelete {
+	mutation := newFrequencyCountMutation(c.config, OpDelete)
+	return &FrequencyCountDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *FrequencyCountClient) DeleteOne(_m *FrequencyCount) *FrequencyCountDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *FrequencyCountClient) DeleteOneID(id int64) *FrequencyCountDeleteOne {
+	builder := c.Delete().Where(frequencycount.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &FrequencyCountDeleteOne{builder}
+}
+
+// Query returns a query builder for FrequencyCount.
+func (c *FrequencyCountClient) Query() *FrequencyCountQuery {
+	return &FrequencyCountQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeFrequencyCount},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a FrequencyCount entity by its id.
+func (c *FrequencyCountClient) Get(ctx context.Context, id int64) (*FrequencyCount, error) {
+	return c.Query().Where(frequencycount.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *FrequencyCountClient) GetX(ctx context.Context, id int64) *FrequencyCount {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryWorkspace queries the workspace edge of a FrequencyCount.
+func (c *FrequencyCountClient) QueryWorkspace(_m *FrequencyCount) *WorkspaceQuery {
+	query := (&WorkspaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(frequencycount.Table, frequencycount.FieldID, id),
+			sqlgraph.To(workspace.Table, workspace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, frequencycount.WorkspaceTable, frequencycount.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryOutboundMessage queries the outbound_message edge of a FrequencyCount.
+func (c *FrequencyCountClient) QueryOutboundMessage(_m *FrequencyCount) *OutboundMessageQuery {
+	query := (&OutboundMessageClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(frequencycount.Table, frequencycount.FieldID, id),
+			sqlgraph.To(outboundmessage.Table, outboundmessage.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, frequencycount.OutboundMessageTable, frequencycount.OutboundMessageColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *FrequencyCountClient) Hooks() []Hook {
+	return c.hooks.FrequencyCount
+}
+
+// Interceptors returns the client interceptors.
+func (c *FrequencyCountClient) Interceptors() []Interceptor {
+	return c.inters.FrequencyCount
+}
+
+func (c *FrequencyCountClient) mutate(ctx context.Context, m *FrequencyCountMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&FrequencyCountCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&FrequencyCountUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&FrequencyCountUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&FrequencyCountDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown FrequencyCount mutation op: %q", m.Op())
+	}
+}
+
 // HeldOrderEventClient is a client for the HeldOrderEvent schema.
 type HeldOrderEventClient struct {
 	config
@@ -9216,6 +9389,22 @@ func (c *OutboundMessageClient) QueryTrackedLinks(_m *OutboundMessage) *TrackedL
 			sqlgraph.From(outboundmessage.Table, outboundmessage.FieldID, id),
 			sqlgraph.To(trackedlink.Table, trackedlink.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, outboundmessage.TrackedLinksTable, outboundmessage.TrackedLinksColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryFrequencyCounts queries the frequency_counts edge of a OutboundMessage.
+func (c *OutboundMessageClient) QueryFrequencyCounts(_m *OutboundMessage) *FrequencyCountQuery {
+	query := (&FrequencyCountClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(outboundmessage.Table, outboundmessage.FieldID, id),
+			sqlgraph.To(frequencycount.Table, frequencycount.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, outboundmessage.FrequencyCountsTable, outboundmessage.FrequencyCountsColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -15350,6 +15539,22 @@ func (c *WorkspaceClient) QueryFrequencyCaps(_m *Workspace) *FrequencyCapQuery {
 	return query
 }
 
+// QueryFrequencyCounts queries the frequency_counts edge of a Workspace.
+func (c *WorkspaceClient) QueryFrequencyCounts(_m *Workspace) *FrequencyCountQuery {
+	query := (&FrequencyCountClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, id),
+			sqlgraph.To(frequencycount.Table, frequencycount.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.FrequencyCountsTable, workspace.FrequencyCountsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QuerySendingWindows queries the sending_windows edge of a Workspace.
 func (c *WorkspaceClient) QuerySendingWindows(_m *Workspace) *SendingWindowQuery {
 	query := (&SendingWindowClient{config: c.config}).Query()
@@ -16093,8 +16298,8 @@ type (
 		BroadcastFigure, BroadcastRecipient, CapturedMessage, Confirmation,
 		ConsentRecord, ConsentStamp, Contact, ContactDate, ContactTag, CustomField,
 		DefaultSendCap, EmailTemplate, EngagementTrackingConsent, Erasure, Event,
-		EventJournalEntry, EventReceipt, FrequencyCap, HeldOrderEvent, Hold,
-		IdentitySecret, InstanceAuditEntry, InstanceState, Integration,
+		EventJournalEntry, EventReceipt, FrequencyCap, FrequencyCount, HeldOrderEvent,
+		Hold, IdentitySecret, InstanceAuditEntry, InstanceState, Integration,
 		IntegrationProviderState, Invitation, JoinDomain, LegalDocumentDraft,
 		LegalDocumentVersion, Membership, OAuthClient, OAuthCode, OAuthRefreshToken,
 		Order, OrderMovement, OutboundMessage, Passkey, PasskeyChallenge,
@@ -16113,8 +16318,8 @@ type (
 		BroadcastFigure, BroadcastRecipient, CapturedMessage, Confirmation,
 		ConsentRecord, ConsentStamp, Contact, ContactDate, ContactTag, CustomField,
 		DefaultSendCap, EmailTemplate, EngagementTrackingConsent, Erasure, Event,
-		EventJournalEntry, EventReceipt, FrequencyCap, HeldOrderEvent, Hold,
-		IdentitySecret, InstanceAuditEntry, InstanceState, Integration,
+		EventJournalEntry, EventReceipt, FrequencyCap, FrequencyCount, HeldOrderEvent,
+		Hold, IdentitySecret, InstanceAuditEntry, InstanceState, Integration,
 		IntegrationProviderState, Invitation, JoinDomain, LegalDocumentDraft,
 		LegalDocumentVersion, Membership, OAuthClient, OAuthCode, OAuthRefreshToken,
 		Order, OrderMovement, OutboundMessage, Passkey, PasskeyChallenge,

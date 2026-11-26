@@ -155,7 +155,7 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   tier (`internal/domain`, `ee/domain`), test files not read, the analyzer refuses, on an exported
   operation (a method that takes a `context.Context`): more than two results, a second result that is
   not `error`, named results, a `[]error` result, more than two arguments after `ctx` and the scope
-  (`*ent.Scoped`, `*ent.WorkspaceLocked` or `*ent.Client`), a `now` argument, a `func() time.Time`
+  (`*ent.Scoped`, `*ent.WorkspaceLocked`, `*ent.DestinationLocked` or `*ent.Client`), a `now` argument, a `func() time.Time`
   argument and a client argument: a type with a method that takes a context, an `*http.Client` or an
   `*ent.Client` past the scope's slot (an entity or another type of the generated `ent` package is no
   client; a write through an entity is rule 18's). It refuses a constructor `New…` that takes

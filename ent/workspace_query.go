@@ -40,6 +40,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/eventjournalentry"
 	"github.com/getsphericon/sphericon/ent/frequencycap"
+	"github.com/getsphericon/sphericon/ent/frequencycount"
 	"github.com/getsphericon/sphericon/ent/heldorderevent"
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/identitysecret"
@@ -107,6 +108,7 @@ type WorkspaceQuery struct {
 	withSendCapLimiters             *SendCapLimiterQuery
 	withHolds                       *HoldQuery
 	withFrequencyCaps               *FrequencyCapQuery
+	withFrequencyCounts             *FrequencyCountQuery
 	withSendingWindows              *SendingWindowQuery
 	withBroadcasts                  *BroadcastQuery
 	withBroadcastRecipients         *BroadcastRecipientQuery
@@ -700,6 +702,28 @@ func (_q *WorkspaceQuery) QueryFrequencyCaps() *FrequencyCapQuery {
 			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
 			sqlgraph.To(frequencycap.Table, frequencycap.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, workspace.FrequencyCapsTable, workspace.FrequencyCapsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryFrequencyCounts chains the current query on the "frequency_counts" edge.
+func (_q *WorkspaceQuery) QueryFrequencyCounts() *FrequencyCountQuery {
+	query := (&FrequencyCountClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
+			sqlgraph.To(frequencycount.Table, frequencycount.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.FrequencyCountsTable, workspace.FrequencyCountsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -1693,6 +1717,7 @@ func (_q *WorkspaceQuery) Clone() *WorkspaceQuery {
 		withSendCapLimiters:             _q.withSendCapLimiters.Clone(),
 		withHolds:                       _q.withHolds.Clone(),
 		withFrequencyCaps:               _q.withFrequencyCaps.Clone(),
+		withFrequencyCounts:             _q.withFrequencyCounts.Clone(),
 		withSendingWindows:              _q.withSendingWindows.Clone(),
 		withBroadcasts:                  _q.withBroadcasts.Clone(),
 		withBroadcastRecipients:         _q.withBroadcastRecipients.Clone(),
@@ -1996,6 +2021,17 @@ func (_q *WorkspaceQuery) WithFrequencyCaps(opts ...func(*FrequencyCapQuery)) *W
 		opt(query)
 	}
 	_q.withFrequencyCaps = query
+	return _q
+}
+
+// WithFrequencyCounts tells the query-builder to eager-load the nodes that are connected to
+// the "frequency_counts" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *WorkspaceQuery) WithFrequencyCounts(opts ...func(*FrequencyCountQuery)) *WorkspaceQuery {
+	query := (&FrequencyCountClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withFrequencyCounts = query
 	return _q
 }
 
@@ -2462,7 +2498,7 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 	var (
 		nodes       = []*Workspace{}
 		_spec       = _q.querySpec()
-		loadedTypes = [59]bool{
+		loadedTypes = [60]bool{
 			_q.withContacts != nil,
 			_q.withCustomFields != nil,
 			_q.withTags != nil,
@@ -2487,6 +2523,7 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 			_q.withSendCapLimiters != nil,
 			_q.withHolds != nil,
 			_q.withFrequencyCaps != nil,
+			_q.withFrequencyCounts != nil,
 			_q.withSendingWindows != nil,
 			_q.withBroadcasts != nil,
 			_q.withBroadcastRecipients != nil,
@@ -2712,6 +2749,13 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 		if err := _q.loadFrequencyCaps(ctx, query, nodes,
 			func(n *Workspace) { n.Edges.FrequencyCaps = []*FrequencyCap{} },
 			func(n *Workspace, e *FrequencyCap) { n.Edges.FrequencyCaps = append(n.Edges.FrequencyCaps, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withFrequencyCounts; query != nil {
+		if err := _q.loadFrequencyCounts(ctx, query, nodes,
+			func(n *Workspace) { n.Edges.FrequencyCounts = []*FrequencyCount{} },
+			func(n *Workspace, e *FrequencyCount) { n.Edges.FrequencyCounts = append(n.Edges.FrequencyCounts, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -3690,6 +3734,36 @@ func (_q *WorkspaceQuery) loadFrequencyCaps(ctx context.Context, query *Frequenc
 	}
 	query.Where(predicate.FrequencyCap(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(workspace.FrequencyCapsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.WorkspaceID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "workspace_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *WorkspaceQuery) loadFrequencyCounts(ctx context.Context, query *FrequencyCountQuery, nodes []*Workspace, init func(*Workspace), assign func(*Workspace, *FrequencyCount)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Workspace)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(frequencycount.FieldWorkspaceID)
+	}
+	query.Where(predicate.FrequencyCount(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(workspace.FrequencyCountsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
