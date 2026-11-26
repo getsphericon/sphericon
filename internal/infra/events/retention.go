@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/eventreceipt"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/schema"
+	"github.com/getsphericon/sphericon/internal/kernel/drain"
 )
 
 // PruneEvents deletes analytical Events created more than retention ago, in
@@ -70,18 +71,12 @@ func oldest[P ~func(*sql.Selector)](table string, batchSize int, where ...P) fun
 	}
 }
 
-// pruneBatches runs deleteBatch, which deletes at most batchSize rows, until a batch comes back short,
-// and returns how many it removed. what names the rows in its errors.
+// pruneBatches runs deleteBatch, which deletes at most batchSize rows, through drain.Batches and
+// returns how many it removed. what names the rows in its errors.
 func pruneBatches(ctx context.Context, what string, batchSize int, deleteBatch func(context.Context) (int, error)) (int64, error) {
-	var total int64
-	for {
-		n, err := deleteBatch(ctx)
-		if err != nil {
-			return total, fmt.Errorf("delete expired %s batch: %w", what, err)
-		}
-		total += int64(n)
-		if n < batchSize {
-			return total, nil
-		}
+	removed, err := drain.Batches(batchSize, func() (int, error) { return deleteBatch(ctx) })
+	if err != nil {
+		return int64(removed), fmt.Errorf("delete expired %s batch: %w", what, err)
 	}
+	return int64(removed), nil
 }

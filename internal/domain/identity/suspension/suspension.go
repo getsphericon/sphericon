@@ -11,6 +11,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/samber/lo"
+
 	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -95,7 +97,7 @@ func (s *Suspender) suspend(ctx context.Context, target workspaceTarget, in Susp
 		if err != nil {
 			return err
 		}
-		moved, err := s.workspaces.SuspendIn(ctx, tx, workspaceID, workspaces.SuspendInput{Kind: by.Kind, ByID: nilIfEmpty(by.ID), Reason: reason})
+		moved, err := s.workspaces.SuspendIn(ctx, tx, workspaceID, workspaces.SuspendInput{Kind: by.Kind, ByID: lo.EmptyableToPtr(by.ID), Reason: reason})
 		if err != nil || !moved {
 			return err
 		}
@@ -242,11 +244,4 @@ func recordWorkspaceAudit(ctx context.Context, tx *ent.Client, pub events.Publis
 		TargetName:  ws.Name,
 		Diff:        diff,
 	})
-}
-
-func nilIfEmpty(s string) *string {
-	if s == "" {
-		return nil
-	}
-	return &s
 }

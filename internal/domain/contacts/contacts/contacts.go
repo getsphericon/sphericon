@@ -24,6 +24,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/getsphericon/sphericon/internal/kernel/optional"
 	"github.com/getsphericon/sphericon/internal/kernel/tagname"
 
 	"github.com/samber/lo"
@@ -592,11 +593,7 @@ func enriches(existing *ent.Contact, in UpsertInput, core Core, typed map[string
 
 // differs reports whether f laid over have leaves another value than have.
 func differs[T any](f patch.Field[T], have *T, eq func(a, b T) bool) bool {
-	after := f.Over(have)
-	if after == nil || have == nil {
-		return (after == nil) != (have == nil)
-	}
-	return !eq(*after, *have)
+	return !optional.EqualFunc(f.Over(have), have, eq)
 }
 
 // AliasKeys are the alias keys a Contact is resolved by; a nil key is not asserted.

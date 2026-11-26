@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"maps"
 	"net/http"
 	"path"
 	"slices"
@@ -296,12 +297,7 @@ func (r *Registry) Get(name string) (*Preset, bool) {
 
 // Names lists the Presets' names in order.
 func (r *Registry) Names() []string {
-	names := make([]string, 0, len(r.byName))
-	for n := range r.byName {
-		names = append(names, n)
-	}
-	slices.Sort(names)
-	return names
+	return slices.Sorted(maps.Keys(r.byName))
 }
 
 // CaseResult is the outcome of one of the Preset's own tests: Err is nil when the case

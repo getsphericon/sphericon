@@ -22,6 +22,8 @@ import (
 	api "github.com/twilio/twilio-go/rest/api/v2010"
 	msgapi "github.com/twilio/twilio-go/rest/messaging/v1"
 
+	"github.com/samber/lo"
+
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 	"github.com/getsphericon/sphericon/internal/kernel/phone"
@@ -180,7 +182,7 @@ func (a *Account) Sender(ctx context.Context) (messaging.SMSFrom, error) {
 		if err != nil {
 			return messaging.SMSFrom{}, a.refusal(err)
 		}
-		return messaging.SMSFrom{Kind: kind, SID: deref(svc.Sid)}, nil
+		return messaging.SMSFrom{Kind: kind, SID: lo.FromPtr(svc.Sid)}, nil
 	case messaging.SMSFromNumber:
 		page, err := a.api(ctx).PageIncomingPhoneNumber((&api.ListIncomingPhoneNumberParams{}).
 			SetPathAccountSid(a.cfg.AccountSID).SetPhoneNumber(a.cfg.From).SetPageSize(20), "", "")
@@ -188,8 +190,8 @@ func (a *Account) Sender(ctx context.Context) (messaging.SMSFrom, error) {
 			return messaging.SMSFrom{}, a.refusal(err)
 		}
 		for i := range page.IncomingPhoneNumbers {
-			if n := &page.IncomingPhoneNumbers[i]; deref(n.PhoneNumber) == a.cfg.From {
-				return messaging.SMSFrom{Kind: kind, SID: deref(n.Sid)}, nil
+			if n := &page.IncomingPhoneNumbers[i]; lo.FromPtr(n.PhoneNumber) == a.cfg.From {
+				return messaging.SMSFrom{Kind: kind, SID: lo.FromPtr(n.Sid)}, nil
 			}
 		}
 		return messaging.SMSFrom{}, &messaging.SMSError{Status: http.StatusNotFound, Message: "the account has no number " + a.cfg.From}
@@ -245,7 +247,7 @@ func (a *Account) Send(ctx context.Context, msg messaging.SMSMessage) (messaging
 	if err != nil {
 		return messaging.SMSSent{}, a.refusal(err)
 	}
-	return messaging.SMSSent{ID: deref(created.Sid)}, nil
+	return messaging.SMSSent{ID: lo.FromPtr(created.Sid)}, nil
 }
 
 // api is the 2010-04-01 REST API of the account, its calls bound to ctx.
@@ -382,13 +384,6 @@ type redacted struct {
 
 func (e redacted) Error() string { return e.msg }
 func (e redacted) Unwrap() error { return e.cause }
-
-func deref(s *string) string {
-	if s == nil {
-		return ""
-	}
-	return *s
-}
 
 // codeFromNotCapable is Twilio's 21606: the From cannot send to the To.
 const codeFromNotCapable = 21606
