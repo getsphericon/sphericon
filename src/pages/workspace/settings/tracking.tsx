@@ -1,18 +1,8 @@
-import {
-  Anchor,
-  Box,
-  Badge,
-  Button,
-  Code,
-  CopyButton,
-  Group,
-  Stack,
-  Text,
-  Title,
-} from '@mantine/core'
+import { Anchor, Box, Badge, Code, Group, Stack, Text, Title } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
+import { CopyTextButton } from '../../../components/CopyTextButton.tsx'
 import { AnchorLink } from '../../../components/RouterLink.tsx'
 import {
   siteEventsListOptions,
@@ -85,13 +75,7 @@ function TestEvent({ collectKey, trackerUrl }: { collectKey: string; trackerUrl:
         {t(($) => $.settings.testEventDescription)}
       </Text>
       <Code block>{command}</Code>
-      <CopyButton value={command}>
-        {({ copied, copy }) => (
-          <Button size="xs" mt="sm" variant="light" onClick={copy}>
-            {copied ? t(($) => $.settings.copied) : t(($) => $.settings.copy)}
-          </Button>
-        )}
-      </CopyButton>
+      <CopyTextButton value={command} size="xs" mt="sm" />
     </Box>
   )
 }
@@ -131,13 +115,7 @@ function TrackingSection({
         {t(($) => $.settings.trackingDescription)}
       </Text>
       <Code block>{snippet}</Code>
-      <CopyButton value={snippet}>
-        {({ copied, copy }) => (
-          <Button size="xs" mt="sm" variant="light" onClick={copy}>
-            {copied ? t(($) => $.settings.copied) : t(($) => $.settings.copy)}
-          </Button>
-        )}
-      </CopyButton>
+      <CopyTextButton value={snippet} size="xs" mt="sm" />
       <InstallStatus workspaceId={workspaceId} />
     </Box>
   )

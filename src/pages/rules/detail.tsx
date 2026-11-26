@@ -1,12 +1,12 @@
 import { Badge, Button, Group, Stack, Text, Title } from '@mantine/core'
-import { useQuery } from '@tanstack/react-query'
+import { useSuspenseQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
-import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
 import { DetailsBadge } from '../../components/DetailsBadge.tsx'
 import { DraftControls } from '../../components/DraftControls.tsx'
 import { EventActionBadge, EventActionName } from '../../components/EventActionName.tsx'
 import { PagedTable } from '../../components/PagedTable.tsx'
+import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
 import { PageSkeleton } from '../../components/Skeletons.tsx'
 import {
@@ -67,12 +67,23 @@ function RuleVersionSummary({ version }: { version: RuleVersion }) {
 // The Rule with its live version and its Firings: each Event that fired it, the Contact and what
 // every Action did. Its draft is published or reverted here (ADR 0065).
 export function RuleDetailPage() {
+  const { t } = useTranslation()
+  return (
+    <QueryBoundary fallback={<PageSkeleton />} errorTitle={t(($) => $.alerts.ruleLoadErrorTitle)}>
+      <RuleDetail />
+    </QueryBoundary>
+  )
+}
+
+function RuleDetail() {
   const { formatDateTime } = useFormat()
   const { page } = rulesDetailRoute.useSearch()
   const pageNavigate = rulesDetailRoute.useNavigate()
   const { t } = useTranslation()
   const { workspaceId, ruleId } = rulesDetailRoute.useParams()
-  const ruleQuery = useQuery(siteRulesGetOptions({ path: { workspaceId, id: ruleId } }))
+  const { data: rule } = useSuspenseQuery(
+    siteRulesGetOptions({ path: { workspaceId, id: ruleId } }),
+  )
 
   const invalidate = [
     siteRulesGetQueryKey({ path: { workspaceId, id: ruleId } }),
@@ -85,13 +96,6 @@ export function RuleDetailPage() {
     errorTitle: t(($) => $.alerts.ruleStatusErrorTitle),
   })
 
-  if (ruleQuery.isLoading) {
-    return <PageSkeleton />
-  }
-  if (ruleQuery.isError || !ruleQuery.data) {
-    return <ApiErrorAlert error={ruleQuery.error} title={t(($) => $.alerts.ruleLoadErrorTitle)} />
-  }
-  const rule = ruleQuery.data
   const path = { workspaceId, id: ruleId }
 
   return (

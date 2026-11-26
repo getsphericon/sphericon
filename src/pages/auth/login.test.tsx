@@ -9,9 +9,11 @@ import {
   handleSitePasskeyLoginBegin,
   handleSitePasskeyLoginFinish,
 } from '../../generated/site/msw.gen.ts'
+import { Route as loginRoute } from '../../routes/login.tsx'
 import { problem } from '../../test/problem.ts'
 import { settled } from '../../test/queryClients.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
+import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
 import { LoginPage } from './login.tsx'
 
@@ -55,6 +57,8 @@ async function signInWithPassword(
   await screen.getByRole('button', { name: 'Sign in' }).click()
 }
 
+const LOGIN = routeMount(loginRoute)
+
 // A guard sent the person here to sign in, so a signed-in page moves the browser on to `NEXT`:
 // where its (real, in-memory) history went is what a test reads, rather than the calls of the
 // `navigate` the harness stubs.
@@ -95,7 +99,7 @@ beforeEach(() => {
 
 test('navigates home after a successful login', async () => {
   worker.use(handleSiteAuthLogin({ body: { outcome: 'session' } }))
-  const { screen, navigate } = await renderWithRouter(<LoginPage />)
+  const { screen, navigate } = await renderWithRouter(<LoginPage />, LOGIN)
 
   await signInWithPassword(screen, 'user@example.com')
 
@@ -104,7 +108,7 @@ test('navigates home after a successful login', async () => {
 
 test('shows an error notification when login fails', async () => {
   worker.use(handleSiteAuthLogin(() => problem(401, { detail: 'Invalid credentials' })))
-  const { screen, navigate } = await renderWithRouter(<LoginPage />)
+  const { screen, navigate } = await renderWithRouter(<LoginPage />, LOGIN)
 
   await signInWithPassword(screen, 'user@example.com', 'wrong')
 
@@ -118,7 +122,7 @@ test('tells an unverified user to verify their email', async () => {
       problem(403, { code: 'email_verification_required', detail: 'server detail' }),
     ),
   )
-  const { screen, navigate } = await renderWithRouter(<LoginPage />)
+  const { screen, navigate } = await renderWithRouter(<LoginPage />, LOGIN)
 
   await signInWithPassword(screen, 'user@example.com')
 
@@ -135,7 +139,7 @@ test('the verify-required refusal offers to send the link again to the typed add
       return new Response(null, { status: 202 })
     }),
   )
-  const { screen } = await renderWithRouter(<LoginPage />)
+  const { screen } = await renderWithRouter(<LoginPage />, LOGIN)
 
   await signInWithPassword(screen, 'user@example.com')
   await screen.getByRole('button', { name: 'Resend verification email' }).click()
@@ -150,7 +154,7 @@ test('the verify-required refusal offers to send the link again to the typed add
 
 test('shows how long to wait when login is rate limited', async () => {
   worker.use(handleSiteAuthLogin(() => problem(429, { retryAfter: 90 })))
-  const { screen } = await renderWithRouter(<LoginPage />)
+  const { screen } = await renderWithRouter(<LoginPage />, LOGIN)
 
   await signInWithPassword(screen, 'user@example.com')
 
@@ -159,7 +163,7 @@ test('shows how long to wait when login is rate limited', async () => {
 
 test('shows the wait in seconds when it is under a minute', async () => {
   worker.use(handleSiteAuthLogin(() => problem(429, { retryAfter: 4 })))
-  const { screen } = await renderWithRouter(<LoginPage />)
+  const { screen } = await renderWithRouter(<LoginPage />, LOGIN)
 
   await signInWithPassword(screen, 'user@example.com')
 
@@ -175,7 +179,7 @@ test('asks for the second step only when the login answers with a challenge', as
       return HttpResponse.json({ outcome: 'session' })
     }),
   )
-  const { screen, navigate } = await renderWithRouter(<LoginPage />)
+  const { screen, navigate } = await renderWithRouter(<LoginPage />, LOGIN)
 
   await signInWithPassword(screen)
 
@@ -196,7 +200,7 @@ test('the second step takes a recovery code instead of the app code', async () =
       return HttpResponse.json({ outcome: 'session' })
     }),
   )
-  const { screen, navigate } = await renderWithRouter(<LoginPage />)
+  const { screen, navigate } = await renderWithRouter(<LoginPage />, LOGIN)
 
   await signInWithPassword(screen)
   await screen.getByRole('button', { name: 'Use a recovery code' }).click()
@@ -209,7 +213,7 @@ test('the second step takes a recovery code instead of the app code', async () =
 
 test('a session outcome skips the second step', async () => {
   worker.use(handleSiteAuthLogin({ body: { outcome: 'session' } }))
-  const { screen, navigate } = await renderWithRouter(<LoginPage />)
+  const { screen, navigate } = await renderWithRouter(<LoginPage />, LOGIN)
 
   await signInWithPassword(screen, 'user@example.com')
 
@@ -222,7 +226,7 @@ test('shows an error and stays on the second step when the code is wrong', async
     handleSiteAuthLogin({ body: { outcome: 'challenge', challenge: 'signed-challenge' } }),
     handleSiteAuthSecondFactor(() => problem(401, { detail: 'the code is not valid' })),
   )
-  const { screen, navigate } = await renderWithRouter(<LoginPage />)
+  const { screen, navigate } = await renderWithRouter(<LoginPage />, LOGIN)
 
   await signInWithPassword(screen)
   await screen.getByLabelText(/^Authentication code/).fill('000000')
@@ -243,7 +247,7 @@ test('a code step abandoned by Start over fails late without touching the passwo
       return codeAnswer.promise
     }),
   )
-  const { screen } = await renderWithRouter(<LoginPage />)
+  const { screen } = await renderWithRouter(<LoginPage />, LOGIN)
 
   await signInWithPassword(screen)
   await screen.getByLabelText(/^Authentication code/).fill('000000')
@@ -272,7 +276,7 @@ test('a new code step with the same challenge ignores the code sent to the aband
       return codeAnswer.promise
     }),
   )
-  const { screen } = await renderWithRouter(<LoginPage />)
+  const { screen } = await renderWithRouter(<LoginPage />, LOGIN)
 
   await signInWithPassword(screen)
   await screen.getByLabelText(/^Authentication code/).fill('000000')
@@ -418,7 +422,7 @@ test('the code step a provider sent the person back to offers no Passkey in auto
 test('the Passkey button waits while a password login is pending', async () => {
   const answer = Promise.withResolvers<Response>()
   worker.use(handleSiteAuthLogin(async () => answer.promise))
-  const { screen } = await renderWithRouter(<LoginPage />)
+  const { screen } = await renderWithRouter(<LoginPage />, LOGIN)
 
   await signInWithPassword(screen, 'user@example.com')
 
@@ -430,7 +434,7 @@ test('the Passkey button waits while a password login is pending', async () => {
 test('a password login waits while the Passkey button is pending', async () => {
   const ceremony = passkeyCeremony()
   worker.use(handleSitePasskeyLoginBegin({ body: { options: OPTIONS } }))
-  const { screen } = await renderWithRouter(<LoginPage />)
+  const { screen } = await renderWithRouter(<LoginPage />, LOGIN)
 
   await screen.getByRole('button', { name: 'Use a passkey' }).click()
 
@@ -450,7 +454,7 @@ test('the Passkey button logs in without an email or a password', async () => {
       return HttpResponse.json({ outcome: 'session' })
     }),
   )
-  const { screen, navigate } = await renderWithRouter(<LoginPage />)
+  const { screen, navigate } = await renderWithRouter(<LoginPage />, LOGIN)
 
   await screen.getByRole('button', { name: 'Use a passkey' }).click()
 
@@ -469,7 +473,7 @@ test('the browser offers the Passkeys in the email field and the login finishes 
     handleSitePasskeyLoginBegin({ body: { options: OPTIONS } }),
     handleSitePasskeyLoginFinish({ body: { outcome: 'session' } }),
   )
-  const { screen, navigate } = await renderWithRouter(<LoginPage />)
+  const { screen, navigate } = await renderWithRouter(<LoginPage />, LOGIN)
 
   await expect.poll(() => navigate.mock.calls).toContainEqual([{ to: '/' }])
   expect(webauthn.authenticate).toHaveBeenCalledWith({
@@ -487,7 +491,7 @@ test('a refused Passkey login says so and stays on the page', async () => {
     handleSitePasskeyLoginBegin({ body: { options: OPTIONS } }),
     handleSitePasskeyLoginFinish(() => problem(401, { detail: 'the passkey sign-in failed' })),
   )
-  const { screen, navigate } = await renderWithRouter(<LoginPage />)
+  const { screen, navigate } = await renderWithRouter(<LoginPage />, LOGIN)
 
   await screen.getByRole('button', { name: 'Use a passkey' }).click()
 
@@ -497,7 +501,7 @@ test('a refused Passkey login says so and stays on the page', async () => {
 
 test('a browser without WebAuthn offers no Passkey button', async () => {
   webauthn.supported.mockReturnValue(false)
-  const { screen } = await renderWithRouter(<LoginPage />)
+  const { screen } = await renderWithRouter(<LoginPage />, LOGIN)
 
   await expect.element(screen.getByLabelText(/^Email/)).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Use a passkey' }).query()).toBeNull()

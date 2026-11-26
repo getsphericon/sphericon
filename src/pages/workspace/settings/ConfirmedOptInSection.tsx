@@ -4,10 +4,13 @@ import { useTranslation } from 'react-i18next'
 
 import { QueryBoundary } from '../../../components/QueryBoundary.tsx'
 import { BlockSkeleton } from '../../../components/Skeletons.tsx'
-import { siteWorkspacesGetConfirmationEmailOptions } from '../../../generated/site/@tanstack/react-query.gen.ts'
+import {
+  siteWorkspacesGetConfirmationEmailOptions,
+  siteWorkspacesSetConfirmedOptInMutation,
+} from '../../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteWorkspaceResource } from '../../../generated/site/types.gen.ts'
 import { useConfirmation } from '../../../hooks/useConfirmation.tsx'
-import { useSetConfirmedOptIn } from '../../../hooks/useConfirmedOptIn.ts'
+import { useWorkspaceSettingMutation } from '../../../hooks/useWorkspaceSettingMutation.ts'
 import { can } from '../../../utils/permissions.ts'
 import { ConfirmationEmailEditForm } from './workspaceSettingsEditors.ts'
 import { CanEdit } from './workspaceSettingsForm.ts'
@@ -17,7 +20,12 @@ import { CanEdit } from './workspaceSettingsForm.ts'
 function ConfirmedOptInSettings({ workspace }: { workspace: SiteWorkspaceResource }) {
   const { t } = useTranslation()
   const confirm = useConfirmation()
-  const mutation = useSetConfirmedOptIn(workspace.id)
+  const mutation = useWorkspaceSettingMutation(workspace.id, {
+    mutation: siteWorkspacesSetConfirmedOptInMutation(),
+    successMessage: t(($) => $.settings.confirmedOptIn.saved),
+    errorTitle: t(($) => $.settings.confirmedOptIn.errorTitle),
+    forbiddenMessage: t(($) => $.settings.confirmedOptIn.forbidden),
+  })
   const { data: email } = useSuspenseQuery(
     siteWorkspacesGetConfirmationEmailOptions({ path: { workspaceId: workspace.id } }),
   )

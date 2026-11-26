@@ -70,6 +70,7 @@ import {
 } from '../../utils/auditFilter.ts'
 import type { AuditChipField, AuditFilter } from '../../utils/auditFilter.ts'
 import { dayOf, daysBefore } from '../../utils/datetime.ts'
+import { displayValue } from '../../utils/displayValue.ts'
 import { suspenseInfinite } from '../../utils/suspenseInfinite.ts'
 import { retentionEditor } from './settings/workspaceSettingsEditors.ts'
 
@@ -132,14 +133,15 @@ function TargetLabel({ entry }: { entry: AuditEntryResource }) {
 // DiffValue shows one side of a changed field.
 function DiffValue({ value }: { value: unknown }) {
   const { t } = useTranslation()
-  if (value === null || value === undefined || value === '') {
+  const shown = displayValue(value)
+  if (shown === undefined) {
     return (
       <Text span c="dimmed" size="sm">
         {t(($) => $.settings.auditLog.emptyValue)}
       </Text>
     )
   }
-  return <Code>{typeof value === 'string' ? value : JSON.stringify(value)}</Code>
+  return <Code>{shown}</Code>
 }
 
 function isChange(value: unknown): value is { from?: unknown; to?: unknown } {

@@ -4,7 +4,6 @@ import {
   Alert,
   Badge,
   Button,
-  CopyButton,
   Group,
   Menu,
   Modal,
@@ -23,6 +22,7 @@ import { DataTable } from 'mantine-datatable'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { CopyTextButton } from '../../components/CopyTextButton.tsx'
 import { DetailsBadge } from '../../components/DetailsBadge.tsx'
 import { EventActionNames, EventActionOption } from '../../components/EventActionName.tsx'
 import { QueryBoundary } from '../../components/QueryBoundary.tsx'
@@ -265,13 +265,11 @@ function WebhooksTable({
           accessor: 'secret',
           title: t(($) => $.settings.webhooks.secret),
           render: (record) => (
-            <CopyButton value={record.secret}>
-              {({ copied, copy }) => (
-                <Button size="compact-xs" variant="light" onClick={copy}>
-                  {copied ? t(($) => $.settings.copied) : t(($) => $.settings.webhooks.copySecret)}
-                </Button>
-              )}
-            </CopyButton>
+            <CopyTextButton
+              value={record.secret}
+              size="compact-xs"
+              label={t(($) => $.settings.webhooks.copySecret)}
+            />
           ),
         },
         {

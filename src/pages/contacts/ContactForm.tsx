@@ -12,8 +12,7 @@ import type { ResourceFormProps } from '../../resources/defineResource.tsx'
 import { Route as contactsRoute } from '../../routes/workspaces/$workspaceId/contacts/index.tsx'
 import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
 import { countryOptions } from '../../utils/countries.ts'
-
-const timeZones = Intl.supportedValuesOf('timeZone')
+import { TIME_ZONES } from '../../utils/datetime.ts'
 
 // What the form submits: the create input, with the tags always given.
 export type ContactPayload = Omit<SiteCreateContactInput, 'tags'> & { tags: string[] }
@@ -33,10 +32,10 @@ export function ContactForm({
 }: ResourceFormProps<ContactPayload, ContactValues>) {
   const { t } = useTranslation()
   const { workspaceId } = workspaceRoute.useParams()
-  // A stored zone the browser's list lacks (UTC, an alias) stays selectable.
+  // A stored zone the list lacks (an alias) stays selectable.
   const timeZone = form.values.timeZone
   const zones =
-    timeZone === '' || timeZones.includes(timeZone) ? timeZones : [...timeZones, timeZone]
+    timeZone === '' || TIME_ZONES.includes(timeZone) ? TIME_ZONES : [...TIME_ZONES, timeZone]
   const tagsQuery = useQuery(siteTagsListOptions({ path: { workspaceId } }))
   const knownTags = useMemo(
     () => tagsQuery.data?.items.map((tag) => tag.name) ?? [],

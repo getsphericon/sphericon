@@ -15,6 +15,7 @@ import { Route as automationRoute } from '../routes/workspaces/$workspaceId/auto
 import { Route as broadcastReportRoute } from '../routes/workspaces/$workspaceId/broadcasts/$broadcastId/report.tsx'
 import { Route as tagsRoute } from '../routes/workspaces/$workspaceId/tags/index.tsx'
 import { maxPageSize } from '../utils/bounds.ts'
+import { displayValue } from '../utils/displayValue.ts'
 import { shortUrl } from '../utils/shortUrl.ts'
 import { PAGE_VIEW_ACTION } from '../utils/systemEvents.ts'
 import { EventActionName } from './EventActionName.tsx'
@@ -86,11 +87,7 @@ export function EventSummary({ workspaceId, event }: Row) {
 
 // text is a property of the Event as text, undefined when it is absent or empty.
 function text(properties: JsonObject | null | undefined, key: string): string | undefined {
-  const value = properties?.[key]
-  if (value === undefined || value === null || value === '') {
-    return undefined
-  }
-  return typeof value === 'string' ? value : JSON.stringify(value)
+  return displayValue(properties?.[key])
 }
 
 // subjectOf is the subject of the email an Event is about, undefined when its message kept none.

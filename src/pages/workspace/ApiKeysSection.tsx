@@ -5,7 +5,6 @@ import {
   Badge,
   Button,
   Code,
-  CopyButton,
   Group,
   Menu,
   Modal,
@@ -20,6 +19,7 @@ import { DataTable } from 'mantine-datatable'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { CopyTextButton } from '../../components/CopyTextButton.tsx'
 import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
 import { ScopesBadge } from '../../components/ScopesBadge.tsx'
@@ -232,13 +232,7 @@ export function ApiKeysSection({
           <Alert color="yellow" title={t(($) => $.settings.tokens.secretNotice)}>
             <Group align="center" gap="sm" wrap="nowrap">
               <Code>{newSecret}</Code>
-              <CopyButton value={newSecret}>
-                {({ copied, copy }) => (
-                  <Button size="compact-xs" variant="light" onClick={copy}>
-                    {copied ? t(($) => $.settings.copied) : t(($) => $.settings.copy)}
-                  </Button>
-                )}
-              </CopyButton>
+              <CopyTextButton value={newSecret} size="compact-xs" />
             </Group>
           </Alert>
         ) : (

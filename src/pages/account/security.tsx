@@ -3,7 +3,6 @@ import {
   Badge,
   Button,
   Code,
-  CopyButton,
   Group,
   Image,
   SimpleGrid,
@@ -17,6 +16,7 @@ import { useSuspenseQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { CopyTextButton } from '../../components/CopyTextButton.tsx'
 import { IdentityProof } from '../../components/IdentityProof.tsx'
 import { LinkedIdentities } from '../../components/LinkedIdentities.tsx'
 import { OneTimeCodeInput } from '../../components/OneTimeCodeInput.tsx'
@@ -72,13 +72,11 @@ function RecoveryCodes({ codes, onDone }: { codes: string[]; onDone: () => void 
           ))}
         </SimpleGrid>
         <Group justify="flex-end">
-          <CopyButton value={codes.join('\n')}>
-            {({ copied, copy }) => (
-              <Button variant="light" onClick={copy}>
-                {copied ? t(($) => $.security.copied) : t(($) => $.security.copyCodes)}
-              </Button>
-            )}
-          </CopyButton>
+          <CopyTextButton
+            value={codes.join('\n')}
+            label={t(($) => $.security.copyCodes)}
+            copiedLabel={t(($) => $.security.copied)}
+          />
           <Button onClick={onDone}>{t(($) => $.security.savedCodes)}</Button>
         </Group>
       </Stack>
@@ -148,13 +146,13 @@ function Enrollment({
         <Text size="sm">{t(($) => $.security.keyHint)}</Text>
         <Group gap="xs">
           <Code>{enrollment.secret}</Code>
-          <CopyButton value={enrollment.secret}>
-            {({ copied, copy }) => (
-              <Button size="xs" variant="subtle" onClick={copy}>
-                {copied ? t(($) => $.security.copied) : t(($) => $.security.copyKey)}
-              </Button>
-            )}
-          </CopyButton>
+          <CopyTextButton
+            value={enrollment.secret}
+            size="xs"
+            variant="subtle"
+            label={t(($) => $.security.copyKey)}
+            copiedLabel={t(($) => $.security.copied)}
+          />
         </Group>
         <OneTimeCodeInput label={t(($) => $.security.codeLabel)} {...form.getInputProps('code')} />
         <Group justify="flex-end">
@@ -427,6 +425,8 @@ function SecurityStatus({ codeMutations }: { codeMutations: CodeMutations }) {
 // app, see the Recovery codes once, regenerate them, or disable the factor.
 export function SecurityPage() {
   const { t } = useTranslation()
+  // Why linking a provider account did not succeed, set by the server's callback.
+  const { error: linkError } = securityRoute.useSearch()
   const { codes, dismiss, codeMutations } = useRecoveryCodes()
 
   return (
@@ -457,7 +457,7 @@ export function SecurityPage() {
 
       <Passkeys returnTo={securityRoute.to} />
 
-      <LinkedIdentities returnTo={securityRoute.to} />
+      <LinkedIdentities returnTo={securityRoute.to} linkError={linkError} />
     </Stack>
   )
 }

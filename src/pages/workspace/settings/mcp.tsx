@@ -1,6 +1,5 @@
 import {
   ActionIcon,
-  Alert,
   Anchor,
   Box,
   Button,
@@ -13,10 +12,11 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { IconCheck, IconCopy } from '@tabler/icons-react'
-import { useQuery } from '@tanstack/react-query'
+import { useSuspenseQuery } from '@tanstack/react-query'
 import { DataTable } from 'mantine-datatable'
 import { useTranslation } from 'react-i18next'
 
+import { QueryBoundary } from '../../../components/QueryBoundary.tsx'
 import { ScopesBadge } from '../../../components/ScopesBadge.tsx'
 import { TableSkeleton } from '../../../components/Skeletons.tsx'
 import {
@@ -83,11 +83,33 @@ function McpSection({ workspace }: { workspace: SiteWorkspaceResource }) {
 // members:manage, which the server decides) and revokes one. They are not API tokens and are not
 // listed with them.
 function ConnectionsSection({ workspace }: { workspace: SiteWorkspaceResource }) {
+  const { t } = useTranslation()
+
+  return (
+    <Box>
+      <Title order={4} mb="xs">
+        {t(($) => $.settings.connections.title)}
+      </Title>
+      <Text c="dimmed" size="sm" mb="sm">
+        {can(workspace, 'members:manage')
+          ? t(($) => $.settings.connections.descriptionManager)
+          : t(($) => $.settings.connections.description)}
+      </Text>
+      <QueryBoundary
+        fallback={<TableSkeleton />}
+        errorTitle={t(($) => $.settings.connections.loadError)}
+      >
+        <ConnectionsTable workspaceId={workspace.id} />
+      </QueryBoundary>
+    </Box>
+  )
+}
+
+function ConnectionsTable({ workspaceId }: { workspaceId: string }) {
   const { formatDate } = useFormat()
   const { t } = useTranslation()
   const confirmRevoke = useConfirmation()
-  const workspaceId = workspace.id
-  const connections = useQuery(siteConnectionsListOptions({ path: { workspaceId } }))
+  const { data: records } = useSuspenseQuery(siteConnectionsListOptions({ path: { workspaceId } }))
   const revoke = useResourceMutation({
     mutation: siteConnectionsDeleteMutation(),
     errorTitle: t(($) => $.settings.connections.revokeError),
@@ -101,67 +123,52 @@ function ConnectionsSection({ workspace }: { workspace: SiteWorkspaceResource })
       onConfirm: () => revoke.mutate({ path: { workspaceId, id } }),
     })
   }
-  const records = connections.data ?? []
 
   return (
-    <Box>
-      <Title order={4} mb="xs">
-        {t(($) => $.settings.connections.title)}
-      </Title>
-      <Text c="dimmed" size="sm" mb="sm">
-        {can(workspace, 'members:manage')
-          ? t(($) => $.settings.connections.descriptionManager)
-          : t(($) => $.settings.connections.description)}
-      </Text>
-      {connections.isError ? (
-        <Alert color="red" title={t(($) => $.settings.connections.loadError)} mb="md" />
-      ) : null}
-      {connections.isLoading ? <TableSkeleton /> : null}
-      <DataTable
-        minHeight={records.length === 0 ? 160 : 0}
-        withTableBorder
-        records={records}
-        idAccessor="id"
-        columns={[
-          {
-            accessor: 'name',
-            title: t(($) => $.settings.connections.application),
-          } satisfies FieldColumn<(typeof records)[number]>,
-          {
-            accessor: 'userName',
-            title: t(($) => $.settings.connections.user),
-            render: (record) => `${record.userName} (${record.userEmail})`,
-          },
-          {
-            accessor: 'scopes',
-            title: t(($) => $.settings.connections.scopes),
-            render: (record) => <ScopesBadge scopes={record.scopes} />,
-          },
-          {
-            accessor: 'createdAt',
-            title: t(($) => $.settings.connections.created),
-            render: (record) => formatDate(record.createdAt),
-          },
-          {
-            accessor: 'actions',
-            title: '',
-            textAlign: 'right',
-            render: (record) => (
-              <Button
-                size="xs"
-                variant="subtle"
-                color="red"
-                onClick={() => onRevoke(record)}
-                aria-label={t(($) => $.settings.connections.revokeLabel, { name: record.name })}
-              >
-                {t(($) => $.settings.connections.revoke)}
-              </Button>
-            ),
-          },
-        ]}
-        emptyState={<EmptyState title={t(($) => $.settings.connections.empty)} />}
-      />
-    </Box>
+    <DataTable
+      minHeight={records.length === 0 ? 160 : 0}
+      withTableBorder
+      records={records}
+      idAccessor="id"
+      columns={[
+        {
+          accessor: 'name',
+          title: t(($) => $.settings.connections.application),
+        } satisfies FieldColumn<(typeof records)[number]>,
+        {
+          accessor: 'userName',
+          title: t(($) => $.settings.connections.user),
+          render: (record) => `${record.userName} (${record.userEmail})`,
+        },
+        {
+          accessor: 'scopes',
+          title: t(($) => $.settings.connections.scopes),
+          render: (record) => <ScopesBadge scopes={record.scopes} />,
+        },
+        {
+          accessor: 'createdAt',
+          title: t(($) => $.settings.connections.created),
+          render: (record) => formatDate(record.createdAt),
+        },
+        {
+          accessor: 'actions',
+          title: '',
+          textAlign: 'right',
+          render: (record) => (
+            <Button
+              size="xs"
+              variant="subtle"
+              color="red"
+              onClick={() => onRevoke(record)}
+              aria-label={t(($) => $.settings.connections.revokeLabel, { name: record.name })}
+            >
+              {t(($) => $.settings.connections.revoke)}
+            </Button>
+          ),
+        },
+      ]}
+      emptyState={<EmptyState title={t(($) => $.settings.connections.empty)} />}
+    />
   )
 }
 

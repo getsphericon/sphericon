@@ -10,11 +10,15 @@ import {
   handleSiteSecondFactorGetStatus,
 } from '../../generated/site/msw.gen.ts'
 import type { SiteLinkedIdentities } from '../../generated/site/types.gen.ts'
+import { Route as securityRoute } from '../../routes/account/security.tsx'
 import { testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
+import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
 import { SecurityPage } from './security.tsx'
+
+const SECURITY = routeMount(securityRoute)
 
 const GOOGLE = { items: [{ name: 'google', displayName: 'Google' }] }
 // The proof a User with a password gives for a link.
@@ -47,7 +51,7 @@ function serve(identities: SiteLinkedIdentities) {
 
 test('a linked provider offers only Disconnect', async () => {
   serve(LINKED)
-  const { screen } = await renderWithRouter(<SecurityPage />)
+  const { screen } = await renderWithRouter(<SecurityPage />, SECURITY)
 
   await expect.element(screen.getByRole('button', { name: 'Disconnect' })).toBeVisible()
   expect(screen.getByRole('button', { name: 'Connect' }).elements()).toHaveLength(0)
@@ -55,7 +59,7 @@ test('a linked provider offers only Disconnect', async () => {
 
 test('a provider not linked yet offers only Connect', async () => {
   serve(NONE_LINKED)
-  const { screen } = await renderWithRouter(<SecurityPage />)
+  const { screen } = await renderWithRouter(<SecurityPage />, SECURITY)
 
   await expect.element(screen.getByRole('button', { name: 'Connect' })).toBeVisible()
   expect(screen.getByRole('button', { name: 'Disconnect' }).elements()).toHaveLength(0)
@@ -71,7 +75,7 @@ test('connecting a provider asks for the password and starts the link with it', 
       return HttpResponse.json({ redirectUrl: '#done' })
     }),
   )
-  const { screen } = await renderWithRouter(<SecurityPage />)
+  const { screen } = await renderWithRouter(<SecurityPage />, SECURITY)
 
   await screen.getByRole('button', { name: 'Connect' }).click()
   await screen.getByLabelText(/^Current password/).fill('secret-password')
@@ -91,7 +95,7 @@ test('a User with no password and a fresh proof connects without typing one', as
       return HttpResponse.json({ redirectUrl: '#done' })
     }),
   )
-  const { screen } = await renderWithRouter(<SecurityPage />)
+  const { screen } = await renderWithRouter(<SecurityPage />, SECURITY)
 
   await screen.getByRole('button', { name: 'Connect' }).click()
   await screen.getByRole('button', { name: 'Continue' }).click()
@@ -106,7 +110,7 @@ test('a User with no password whose proof is stale is sent to a fresh check firs
       body: { items: [], available: true, passwordSet: false, identityProofFresh: false },
     }),
   )
-  const { screen } = await renderWithRouter(<SecurityPage />)
+  const { screen } = await renderWithRouter(<SecurityPage />, SECURITY)
 
   await screen.getByRole('button', { name: 'Connect' }).click()
 
@@ -119,7 +123,7 @@ test('a User with no password whose proof is stale is sent to a fresh check firs
 test('a link the server refuses is reported', async () => {
   serve(NONE_LINKED)
   worker.use(handleSiteIdentitiesLink(() => problem(403, 'the current password is incorrect')))
-  const { screen } = await renderWithRouter(<SecurityPage />)
+  const { screen } = await renderWithRouter(<SecurityPage />, SECURITY)
 
   await screen.getByRole('button', { name: 'Connect' }).click()
   await screen.getByLabelText(/^Current password/).fill('wrong')
@@ -140,7 +144,7 @@ test('an identity of a provider the Instance no longer offers can still be disco
     ],
     ...WITH_PASSWORD,
   })
-  const { screen } = await renderWithRouter(<SecurityPage />)
+  const { screen } = await renderWithRouter(<SecurityPage />, SECURITY)
 
   await expect.element(screen.getByText('github')).toBeVisible()
   await expect.element(screen.getByRole('button', { name: 'Disconnect' })).toBeVisible()
@@ -156,7 +160,7 @@ test('unlinking a provider calls the unlink operation of that identity', async (
       return new HttpResponse(null, { status: 204 })
     }),
   )
-  const { screen } = await renderWithRouter(<SecurityPage />)
+  const { screen } = await renderWithRouter(<SecurityPage />, SECURITY)
 
   await screen.getByRole('button', { name: 'Disconnect' }).click()
 
@@ -173,7 +177,7 @@ test('an unlink the server refuses is reported', async () => {
       ),
     ),
   )
-  const { screen } = await renderWithRouter(<SecurityPage />)
+  const { screen } = await renderWithRouter(<SecurityPage />, SECURITY)
 
   await screen.getByRole('button', { name: 'Disconnect' }).click()
 
@@ -183,7 +187,8 @@ test('an unlink the server refuses is reported', async () => {
 test('a refused link is explained when the callback lands on the settings', async () => {
   serve(LINKED)
   const { screen } = await renderWithRouter(<SecurityPage />, {
-    initialPath: '/workspaces/TestWs01?error=identity_in_use',
+    ...SECURITY,
+    initialPath: `${SECURITY.initialPath}?error=identity_in_use`,
   })
 
   await expect.element(screen.getByText('Could not connect the account')).toBeVisible()

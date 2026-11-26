@@ -4,7 +4,6 @@ import {
   Button,
   Card,
   Code,
-  CopyButton,
   Group,
   Menu,
   Modal,
@@ -19,6 +18,7 @@ import { useDisclosure } from '@mantine/hooks'
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
+import { CopyTextButton } from '../../components/CopyTextButton.tsx'
 import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
 import { TableSkeleton } from '../../components/Skeletons.tsx'
@@ -96,13 +96,12 @@ function JoinDomainRow({
               </Text>
               <Group gap="xs" wrap="nowrap" align="center">
                 <Code>{domain.record.value}</Code>
-                <CopyButton value={domain.record.value}>
-                  {({ copied, copy }) => (
-                    <Button size="compact-xs" variant="light" onClick={copy}>
-                      {copied ? '✓' : '⧉'}
-                    </Button>
-                  )}
-                </CopyButton>
+                <CopyTextButton
+                  value={domain.record.value}
+                  size="compact-xs"
+                  label="⧉"
+                  copiedLabel="✓"
+                />
               </Group>
             </div>
           </Stack>

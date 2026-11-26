@@ -1,8 +1,9 @@
-import { Alert, Button, Code, CopyButton, Group, Modal, Stack, Text } from '@mantine/core'
+import { Alert, Button, Code, Group, Modal, Stack, Text } from '@mantine/core'
 import { modals } from '@mantine/modals'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
+import { CopyTextButton } from '../../components/CopyTextButton.tsx'
 import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { BlockSkeleton } from '../../components/Skeletons.tsx'
 import { siteIntegrationsGetOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
@@ -120,13 +121,7 @@ function InboundHook({
         </Text>
         <Code block>{stored.hookUrl}</Code>
         <Group>
-          <CopyButton value={stored.hookUrl}>
-            {({ copied, copy }) => (
-              <Button size="compact-sm" variant="light" onClick={copy}>
-                {copied ? t(($) => $.settings.copied) : t(($) => $.settings.copy)}
-              </Button>
-            )}
-          </CopyButton>
+          <CopyTextButton value={stored.hookUrl} size="compact-sm" />
           <Button
             size="compact-sm"
             color="red"
