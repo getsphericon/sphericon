@@ -25,6 +25,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/consentrecord"
 	"github.com/getsphericon/sphericon/ent/consentstamp"
 	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/contactdate"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/defaultsendcap"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
@@ -647,6 +648,21 @@ func init() {
 	contactDescSendLockedDates := contactFields[14].Descriptor()
 	// contact.DefaultSendLockedDates holds the default value on creation for the send_locked_dates field.
 	contact.DefaultSendLockedDates = contactDescSendLockedDates.Default.([]datetrigger.Field)
+	contactdateMixin := schema.ContactDate{}.Mixin()
+	contactdateMixinFields0 := contactdateMixin[0].Fields()
+	_ = contactdateMixinFields0
+	contactdateFields := schema.ContactDate{}.Fields()
+	_ = contactdateFields
+	// contactdateDescCreatedAt is the schema descriptor for created_at field.
+	contactdateDescCreatedAt := contactdateMixinFields0[0].Descriptor()
+	// contactdate.DefaultCreatedAt holds the default value on creation for the created_at field.
+	contactdate.DefaultCreatedAt = contactdateDescCreatedAt.Default.(func() time.Time)
+	// contactdateDescUpdatedAt is the schema descriptor for updated_at field.
+	contactdateDescUpdatedAt := contactdateMixinFields0[1].Descriptor()
+	// contactdate.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	contactdate.DefaultUpdatedAt = contactdateDescUpdatedAt.Default.(func() time.Time)
+	// contactdate.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	contactdate.UpdateDefaultUpdatedAt = contactdateDescUpdatedAt.UpdateDefault.(func() time.Time)
 	customfieldMixin := schema.CustomField{}.Mixin()
 	customfieldMixinFields0 := customfieldMixin[0].Fields()
 	_ = customfieldMixinFields0

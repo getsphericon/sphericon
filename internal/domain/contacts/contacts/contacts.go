@@ -235,6 +235,9 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, src contact.Source, 
 		if err := constraints.Write(ctx, ts, func() (err error) { c, err = q.Save(ctx); return err }); err != nil {
 			return err
 		}
+		if err := keepDates(ctx, ts, nil, c); err != nil {
+			return err
+		}
 		if err := m.publishCreated(ctx, ts, c); err != nil {
 			return err
 		}
@@ -304,6 +307,9 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		var after *ent.Contact
 		err = constraints.Write(ctx, ts, func() (err error) { after, err = q.Save(ctx); return err })
 		if err != nil {
+			return err
+		}
+		if err := keepDates(ctx, ts, before, after); err != nil {
 			return err
 		}
 		if err := m.publishFieldChanges(ctx, ts, after, before.CustomFields); err != nil {
@@ -458,6 +464,9 @@ func (m *Module) upsertIn(ctx context.Context, s *ent.Scoped, src contact.Source
 	if err := constraints.Write(ctx, s, func() (err error) { c, err = q.Save(ctx); return err }); err != nil {
 		return Result{}, err
 	}
+	if err := keepDates(ctx, s, nil, c); err != nil {
+		return Result{}, err
+	}
 	if err := m.publishCreated(ctx, s, c); err != nil {
 		return Result{}, err
 	}
@@ -544,8 +553,14 @@ func (m *Module) enrich(ctx context.Context, s *ent.Scoped, id int64, in UpsertI
 		q.SetSendLockedDates(locks)
 	}
 	var c *ent.Contact
-	if err := constraints.Write(ctx, s, func() (err error) { c, err = q.Save(ctx); return err }); err != nil || ch != recordChanges {
-		return c, err
+	if err := constraints.Write(ctx, s, func() (err error) { c, err = q.Save(ctx); return err }); err != nil {
+		return nil, err
+	}
+	if err := keepDates(ctx, s, existing, c); err != nil {
+		return nil, err
+	}
+	if ch != recordChanges {
+		return c, nil
 	}
 	return c, m.publishFieldChanges(ctx, s, c, existing.CustomFields)
 }

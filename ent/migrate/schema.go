@@ -1155,6 +1155,60 @@ var (
 			},
 		},
 	}
+	// ContactDatesColumns holds the columns for the "contact_dates" table.
+	ContactDatesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "kind", Type: field.TypeEnum, Enums: []string{"birthday", "customField"}},
+		{Name: "key", Type: field.TypeString},
+		{Name: "date", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "date"}},
+		{Name: "month_day", Type: field.TypeInt},
+		{Name: "contact_id", Type: field.TypeInt64},
+		{Name: "workspace_id", Type: field.TypeInt64},
+	}
+	// ContactDatesTable holds the schema information for the "contact_dates" table.
+	ContactDatesTable = &schema.Table{
+		Name:       "contact_dates",
+		Columns:    ContactDatesColumns,
+		PrimaryKey: []*schema.Column{ContactDatesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "contact_dates_contacts_dates",
+				Columns:    []*schema.Column{ContactDatesColumns[7]},
+				RefColumns: []*schema.Column{ContactsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "contact_dates_workspaces_contact_dates",
+				Columns:    []*schema.Column{ContactDatesColumns[8]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "contact_dates_field_contact",
+				Unique:  true,
+				Columns: []*schema.Column{ContactDatesColumns[8], ContactDatesColumns[3], ContactDatesColumns[4], ContactDatesColumns[7]},
+			},
+			{
+				Name:    "contactdate_workspace_id_contact_id",
+				Unique:  false,
+				Columns: []*schema.Column{ContactDatesColumns[8], ContactDatesColumns[7]},
+			},
+			{
+				Name:    "contactdate_workspace_id_kind_key_month_day",
+				Unique:  false,
+				Columns: []*schema.Column{ContactDatesColumns[8], ContactDatesColumns[3], ContactDatesColumns[4], ContactDatesColumns[6]},
+			},
+			{
+				Name:    "contactdate_workspace_id_kind_key_date",
+				Unique:  false,
+				Columns: []*schema.Column{ContactDatesColumns[8], ContactDatesColumns[3], ContactDatesColumns[4], ContactDatesColumns[5]},
+			},
+		},
+	}
 	// ContactTagsColumns holds the columns for the "contact_tags" table.
 	ContactTagsColumns = []*schema.Column{
 		{Name: "contact_id", Type: field.TypeInt64},
@@ -3673,6 +3727,7 @@ var (
 		ConsentRecordsTable,
 		ConsentStampsTable,
 		ContactsTable,
+		ContactDatesTable,
 		ContactTagsTable,
 		CustomFieldsTable,
 		DefaultSendCapTable,
@@ -3935,6 +3990,16 @@ func init() {
 		"contacts_phone_format":            "phone ~ '^\\+[1-9]\\d{1,14}$'",
 		"contacts_send_locked_dates_check": "jsonb_typeof(send_locked_dates) = 'array'",
 		"contacts_source_check":            "source IN ('manual', 'api', 'tracker')",
+	}
+	ContactDatesTable.ForeignKeys[0].RefTable = ContactsTable
+	ContactDatesTable.ForeignKeys[1].RefTable = WorkspacesTable
+	ContactDatesTable.Annotation = &entsql.Annotation{
+		Table: "contact_dates",
+	}
+	ContactDatesTable.Annotation.Checks = map[string]string{
+		"contact_dates_key_check":       "(kind = 'birthday') = (key = '')",
+		"contact_dates_kind_check":      "kind IN ('birthday', 'customField')",
+		"contact_dates_month_day_check": "month_day = EXTRACT(MONTH FROM date) * 100 + EXTRACT(DAY FROM date)",
 	}
 	ContactTagsTable.ForeignKeys[0].RefTable = ContactsTable
 	ContactTagsTable.ForeignKeys[1].RefTable = TagsTable

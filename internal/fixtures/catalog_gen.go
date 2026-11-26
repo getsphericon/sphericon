@@ -615,6 +615,8 @@ const (
 	AutomationRepeatPurchaseVersionID = 15540
 	// AutomationRunArchivedErasableID is from fixtures/automation_runs.
 	AutomationRunArchivedErasableID = 3003
+	// AutomationRunBirthdayGreetingAliceID is from fixtures/automation_runs.
+	AutomationRunBirthdayGreetingAliceID = 17130
 	// AutomationRunBystanderHTTPFailedID is from fixtures/automation_runs.
 	AutomationRunBystanderHTTPFailedID = 3002
 	// AutomationRunErasableHTTPFailedID is from fixtures/automation_runs.

@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/contactdate"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/order"
 	"github.com/getsphericon/sphericon/ent/starttoken"
@@ -306,6 +307,21 @@ func (_c *ContactCreate) AddStartTokens(v ...*StartToken) *ContactCreate {
 	return _c.AddStartTokenIDs(ids...)
 }
 
+// AddDateIDs adds the "dates" edge to the ContactDate entity by IDs.
+func (_c *ContactCreate) AddDateIDs(ids ...int64) *ContactCreate {
+	_c.mutation.AddDateIDs(ids...)
+	return _c
+}
+
+// AddDates adds the "dates" edges to the ContactDate entity.
+func (_c *ContactCreate) AddDates(v ...*ContactDate) *ContactCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddDateIDs(ids...)
+}
+
 // AddTagIDs adds the "tags" edge to the Tag entity by IDs.
 func (_c *ContactCreate) AddTagIDs(ids ...int64) *ContactCreate {
 	_c.mutation.AddTagIDs(ids...)
@@ -596,6 +612,22 @@ func (_c *ContactCreate) createSpec() (*Contact, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(starttoken.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.DatesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   contact.DatesTable,
+			Columns: []string{contact.DatesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contactdate.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

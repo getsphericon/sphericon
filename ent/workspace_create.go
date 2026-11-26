@@ -29,6 +29,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/consentstamp"
 	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/contactdate"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
@@ -494,6 +495,21 @@ func (_c *WorkspaceCreate) AddTags(v ...*Tag) *WorkspaceCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddTagIDs(ids...)
+}
+
+// AddContactDateIDs adds the "contact_dates" edge to the ContactDate entity by IDs.
+func (_c *WorkspaceCreate) AddContactDateIDs(ids ...int64) *WorkspaceCreate {
+	_c.mutation.AddContactDateIDs(ids...)
+	return _c
+}
+
+// AddContactDates adds the "contact_dates" edges to the ContactDate entity.
+func (_c *WorkspaceCreate) AddContactDates(v ...*ContactDate) *WorkspaceCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddContactDateIDs(ids...)
 }
 
 // AddSegmentIDs adds the "segments" edge to the Segment entity by IDs.
@@ -1644,6 +1660,22 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(tag.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ContactDatesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ContactDatesTable,
+			Columns: []string{workspace.ContactDatesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contactdate.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

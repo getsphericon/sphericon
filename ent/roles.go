@@ -1407,6 +1407,9 @@ const (
 	RoleOf_ContactClient_QueryStartTokens      = RoleRead
 	RoleOf_Contact_QueryStartTokens            = RoleRead
 	RoleOf_ContactQuery_QueryStartTokens       = RoleRead
+	RoleOf_ContactClient_QueryDates            = RoleRead
+	RoleOf_Contact_QueryDates                  = RoleRead
+	RoleOf_ContactQuery_QueryDates             = RoleRead
 	RoleOf_ContactClient_QueryTags             = RoleRead
 	RoleOf_Contact_QueryTags                   = RoleRead
 	RoleOf_ContactQuery_QueryTags              = RoleRead
@@ -1424,6 +1427,71 @@ const (
 	RoleOf_ContactCreate_OnConflictColumns     = RoleStart
 	RoleOf_ContactCreateBulk_OnConflict        = RoleStart
 	RoleOf_ContactCreateBulk_OnConflictColumns = RoleStart
+)
+
+// The types ent generates for ContactDate.
+const (
+	TypeOf_ContactDate             = TypeEntity
+	TypeOf_ContactDates            = TypeOther
+	TypeOf_ContactDateEdges        = TypeOther
+	EntityOf_ContactDateEdges      = "ContactDate"
+	TypeOf_ContactDateMutation     = TypeOther
+	TypeOf_ContactDateClient       = TypeClient
+	TypeOf_ContactDateQuery        = TypeQuery
+	TypeOf_ContactDateSelect       = TypeQuery
+	TypeOf_ContactDateGroupBy      = TypeQuery
+	TypeOf_ContactDateCreate       = TypeCreate
+	TypeOf_ContactDateCreateBulk   = TypeCreate
+	TypeOf_ContactDateUpdate       = TypeUpdate
+	TypeOf_ContactDateUpdateOne    = TypeUpdate
+	TypeOf_ContactDateDelete       = TypeDelete
+	TypeOf_ContactDateDeleteOne    = TypeDelete
+	TypeOf_ContactDateUpsert       = TypeUpsert
+	TypeOf_ContactDateUpsertOne    = TypeUpsert
+	TypeOf_ContactDateUpsertBulk   = TypeUpsert
+	EntityOf_ContactDates          = "ContactDate"
+	EntityOf_ContactDate           = "ContactDate"
+	EntityOf_ContactDateMutation   = "ContactDate"
+	EntityOf_ContactDateClient     = "ContactDate"
+	EntityOf_ContactDateQuery      = "ContactDate"
+	EntityOf_ContactDateSelect     = "ContactDate"
+	EntityOf_ContactDateGroupBy    = "ContactDate"
+	EntityOf_ContactDateCreate     = "ContactDate"
+	EntityOf_ContactDateCreateBulk = "ContactDate"
+	EntityOf_ContactDateUpdate     = "ContactDate"
+	EntityOf_ContactDateUpdateOne  = "ContactDate"
+	EntityOf_ContactDateDelete     = "ContactDate"
+	EntityOf_ContactDateDeleteOne  = "ContactDate"
+	EntityOf_ContactDateUpsert     = "ContactDate"
+	EntityOf_ContactDateUpsertOne  = "ContactDate"
+	EntityOf_ContactDateUpsertBulk = "ContactDate"
+)
+
+// The reads and the writes ent's methods for ContactDate start.
+const (
+	RoleOf_ContactDateClient_Create                = RoleStart
+	RoleOf_ContactDateClient_CreateBulk            = RoleStart
+	RoleOf_ContactDateClient_MapCreateBulk         = RoleStart
+	RoleOf_ContactDateClient_Update                = RoleStart
+	RoleOf_ContactDateClient_UpdateOne             = RoleStart
+	RoleOf_ContactDateClient_Delete                = RoleStart
+	RoleOf_ContactDateClient_Query                 = RoleRead
+	RoleOf_ContactDateClient_UpdateOneID           = RoleStart
+	RoleOf_ContactDateClient_DeleteOne             = RoleStart
+	RoleOf_ContactDateClient_DeleteOneID           = RoleStart
+	RoleOf_ContactDateClient_Get                   = RoleRead
+	RoleOf_ContactDateClient_GetX                  = RoleRead
+	RoleOf_ContactDateClient_QueryWorkspace        = RoleRead
+	RoleOf_ContactDate_QueryWorkspace              = RoleRead
+	RoleOf_ContactDateQuery_QueryWorkspace         = RoleRead
+	RoleOf_ContactDateClient_QueryContact          = RoleRead
+	RoleOf_ContactDate_QueryContact                = RoleRead
+	RoleOf_ContactDateQuery_QueryContact           = RoleRead
+	RoleOf_ContactDate_Update                      = RoleStart
+	RoleOf_ContactDateCreate_OnConflict            = RoleStart
+	RoleOf_ContactDateCreate_OnConflictColumns     = RoleStart
+	RoleOf_ContactDateCreateBulk_OnConflict        = RoleStart
+	RoleOf_ContactDateCreateBulk_OnConflictColumns = RoleStart
 )
 
 // The types ent generates for ContactTag.
@@ -5365,6 +5433,9 @@ const (
 	RoleOf_WorkspaceClient_QueryContactTags                 = RoleRead
 	RoleOf_Workspace_QueryContactTags                       = RoleRead
 	RoleOf_WorkspaceQuery_QueryContactTags                  = RoleRead
+	RoleOf_WorkspaceClient_QueryContactDates                = RoleRead
+	RoleOf_Workspace_QueryContactDates                      = RoleRead
+	RoleOf_WorkspaceQuery_QueryContactDates                 = RoleRead
 	RoleOf_WorkspaceClient_QuerySegments                    = RoleRead
 	RoleOf_Workspace_QuerySegments                          = RoleRead
 	RoleOf_WorkspaceQuery_QuerySegments                     = RoleRead

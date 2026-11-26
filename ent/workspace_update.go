@@ -29,6 +29,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/consentstamp"
 	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/contactdate"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
@@ -613,6 +614,21 @@ func (_u *WorkspaceUpdate) AddTags(v ...*Tag) *WorkspaceUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.AddTagIDs(ids...)
+}
+
+// AddContactDateIDs adds the "contact_dates" edge to the ContactDate entity by IDs.
+func (_u *WorkspaceUpdate) AddContactDateIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.AddContactDateIDs(ids...)
+	return _u
+}
+
+// AddContactDates adds the "contact_dates" edges to the ContactDate entity.
+func (_u *WorkspaceUpdate) AddContactDates(v ...*ContactDate) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddContactDateIDs(ids...)
 }
 
 // AddSegmentIDs adds the "segments" edge to the Segment entity by IDs.
@@ -1465,6 +1481,27 @@ func (_u *WorkspaceUpdate) RemoveTags(v ...*Tag) *WorkspaceUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveTagIDs(ids...)
+}
+
+// ClearContactDates clears all "contact_dates" edges to the ContactDate entity.
+func (_u *WorkspaceUpdate) ClearContactDates() *WorkspaceUpdate {
+	_u.mutation.ClearContactDates()
+	return _u
+}
+
+// RemoveContactDateIDs removes the "contact_dates" edge to ContactDate entities by IDs.
+func (_u *WorkspaceUpdate) RemoveContactDateIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.RemoveContactDateIDs(ids...)
+	return _u
+}
+
+// RemoveContactDates removes "contact_dates" edges to ContactDate entities.
+func (_u *WorkspaceUpdate) RemoveContactDates(v ...*ContactDate) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveContactDateIDs(ids...)
 }
 
 // ClearSegments clears all "segments" edges to the Segment entity.
@@ -2937,6 +2974,51 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(tag.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ContactDatesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ContactDatesTable,
+			Columns: []string{workspace.ContactDatesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contactdate.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedContactDatesIDs(); len(nodes) > 0 && !_u.mutation.ContactDatesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ContactDatesTable,
+			Columns: []string{workspace.ContactDatesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contactdate.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ContactDatesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ContactDatesTable,
+			Columns: []string{workspace.ContactDatesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contactdate.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -5821,6 +5903,21 @@ func (_u *WorkspaceUpdateOne) AddTags(v ...*Tag) *WorkspaceUpdateOne {
 	return _u.AddTagIDs(ids...)
 }
 
+// AddContactDateIDs adds the "contact_dates" edge to the ContactDate entity by IDs.
+func (_u *WorkspaceUpdateOne) AddContactDateIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.AddContactDateIDs(ids...)
+	return _u
+}
+
+// AddContactDates adds the "contact_dates" edges to the ContactDate entity.
+func (_u *WorkspaceUpdateOne) AddContactDates(v ...*ContactDate) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddContactDateIDs(ids...)
+}
+
 // AddSegmentIDs adds the "segments" edge to the Segment entity by IDs.
 func (_u *WorkspaceUpdateOne) AddSegmentIDs(ids ...int64) *WorkspaceUpdateOne {
 	_u.mutation.AddSegmentIDs(ids...)
@@ -6671,6 +6768,27 @@ func (_u *WorkspaceUpdateOne) RemoveTags(v ...*Tag) *WorkspaceUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveTagIDs(ids...)
+}
+
+// ClearContactDates clears all "contact_dates" edges to the ContactDate entity.
+func (_u *WorkspaceUpdateOne) ClearContactDates() *WorkspaceUpdateOne {
+	_u.mutation.ClearContactDates()
+	return _u
+}
+
+// RemoveContactDateIDs removes the "contact_dates" edge to ContactDate entities by IDs.
+func (_u *WorkspaceUpdateOne) RemoveContactDateIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.RemoveContactDateIDs(ids...)
+	return _u
+}
+
+// RemoveContactDates removes "contact_dates" edges to ContactDate entities.
+func (_u *WorkspaceUpdateOne) RemoveContactDates(v ...*ContactDate) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveContactDateIDs(ids...)
 }
 
 // ClearSegments clears all "segments" edges to the Segment entity.
@@ -8173,6 +8291,51 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(tag.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ContactDatesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ContactDatesTable,
+			Columns: []string{workspace.ContactDatesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contactdate.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedContactDatesIDs(); len(nodes) > 0 && !_u.mutation.ContactDatesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ContactDatesTable,
+			Columns: []string{workspace.ContactDatesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contactdate.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ContactDatesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ContactDatesTable,
+			Columns: []string{workspace.ContactDatesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contactdate.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

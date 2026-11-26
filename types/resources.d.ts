@@ -488,7 +488,7 @@ export default interface Resources {
         "exited": "Exited",
         "failed": "Failed",
         "goalReached": "Reached goal",
-        "hint": "What the enrollments did from {{from}} to {{to}}: an enrollment counts as entered on the day it began and under its outcome on the day it ended. The average duration is over the enrollments that ended, whatever the outcome; orders and revenue are those credited to this automation in the period. Contacts are the distinct contacts among those entered. A skipped entry, refused because the chain of events that caused it already passed through this automation, because an enrollment was active when its event occurred or because the contact was enrolled before, counts on the day its event occurred.",
+        "hint": "What the enrollments did from {{from}} to {{to}}: an enrollment counts as entered on the day it began and under its outcome on the day it ended. The average duration is over the enrollments that ended, whatever the outcome; orders and revenue are those credited to this automation in the period. Contacts are the distinct contacts among those entered. A skipped entry, refused because the chain of events that caused it already passed through this automation, because an enrollment was active when its event occurred or because the contact was enrolled before, counts on the day its event occurred. A date's occurrence counts on its own day: entered when it enrolled the contact, skipped when an enrollment was active, when it was reached more than 24 hours late, or when the date was set by an agent that may not send.",
         "loadError": "Failed to load the results",
         "orders": "Orders in the period",
         "periods": {
@@ -503,8 +503,10 @@ export default interface Resources {
         "skippedCooldown": "Skipped: within the cooldown",
         "skippedCycle": "Skipped: a cycle",
         "skippedEnrollmentCeiling": "Skipped: too many enrollments of one contact",
+        "skippedMissed": "Skipped: reached more than 24 hours late",
         "skippedNoEnrollmentKey": "Skipped: no enrollment key",
         "skippedOnce": "Skipped: enrolled before",
+        "skippedSendLocked": "Skipped: the date was set by an agent that may not send",
         "title": "Results"
       },
       "searchPlaceholder": "Search by name",

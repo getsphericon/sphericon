@@ -24,6 +24,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/consentstamp"
 	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/contactdate"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
@@ -1335,6 +1336,12 @@ func ScopedEntities() []*ScopedEntity {
 					},
 				},
 				{
+					Name: "dates", Target: "ContactDate",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.Contact().UpdateOneID(id).AddDateIDs(target).Exec(ctx)
+					},
+				},
+				{
 					Name: "events", Target: "Event",
 					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
 						return s.Contact().UpdateOneID(id).AddEventIDs(target).Exec(ctx)
@@ -1347,6 +1354,49 @@ func ScopedEntities() []*ScopedEntity {
 					},
 				},
 			},
+		},
+		{
+			Kind:         Kinds["ContactDate"],
+			Name:         "ContactDate",
+			Wrapper:      reflect.TypeFor[*ContactDateScoped](),
+			AuditActions: []string{},
+			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
+				return c.ContactDate.Query().Where(contactdate.WorkspaceID(ws)).Order(Asc(contactdate.FieldID)).IDs(ctx)
+			},
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.ContactDate().Get(ctx, id)
+			},
+			Touch: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.ContactDate().UpdateOneID(id).Exec(ctx)
+			},
+			BulkTouch: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.ContactDate().Update().Where(contactdate.ID(id)).Save(ctx)
+			},
+			Delete: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.ContactDate().DeleteOneID(id).Exec(ctx)
+			},
+			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.ContactDate().Delete().Where(contactdate.ID(id)).Exec(ctx)
+			},
+			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
+				src, err := s.c.ContactDate.Get(ctx, id)
+				if err != nil {
+					return 0, err
+				}
+				_ = remap
+				b := s.ContactDate().Create()
+				b.SetContactID(remap("Contact", src.ContactID))
+				b.SetKind(src.Kind)
+				b.SetKey(src.Key)
+				b.SetDate(src.Date)
+				b.SetMonthDay(src.MonthDay)
+				created, err := b.Save(ctx)
+				if err != nil {
+					return 0, err
+				}
+				return created.WorkspaceID, nil
+			},
+			Refs: []ScopedRef{},
 		},
 		{
 			Kind:         Kinds["CustomField"],

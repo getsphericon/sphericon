@@ -32,6 +32,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/consentrecord"
 	"github.com/getsphericon/sphericon/ent/consentstamp"
 	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/contactdate"
 	"github.com/getsphericon/sphericon/ent/contacttag"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/defaultsendcap"
@@ -174,6 +175,7 @@ func checkColumn(t, c string) error {
 			consentrecord.Table:              consentrecord.ValidColumn,
 			consentstamp.Table:               consentstamp.ValidColumn,
 			contact.Table:                    contact.ValidColumn,
+			contactdate.Table:                contactdate.ValidColumn,
 			contacttag.Table:                 contacttag.ValidColumn,
 			customfield.Table:                customfield.ValidColumn,
 			defaultsendcap.Table:             defaultsendcap.ValidColumn,

@@ -1192,6 +1192,29 @@ func HasStartTokensWith(preds ...predicate.StartToken) predicate.Contact {
 	})
 }
 
+// HasDates applies the HasEdge predicate on the "dates" edge.
+func HasDates() predicate.Contact {
+	return predicate.Contact(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, DatesTable, DatesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasDatesWith applies the HasEdge predicate on the "dates" edge with a given conditions (other predicates).
+func HasDatesWith(preds ...predicate.ContactDate) predicate.Contact {
+	return predicate.Contact(func(s *sql.Selector) {
+		step := newDatesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasTags applies the HasEdge predicate on the "tags" edge.
 func HasTags() predicate.Contact {
 	return predicate.Contact(func(s *sql.Selector) {

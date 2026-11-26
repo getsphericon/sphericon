@@ -12,6 +12,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationskippedentry"
+	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
@@ -364,4 +365,89 @@ func TestAnOccurrenceAZoneChangeMovesIntoThePastEnrollsLate(t *testing.T) {
 	assert.Equal(t, []time.Time{at(2027, time.March, 14, 4, 30)}, c.beganAt(id, fixtures.ContactExportSubjectID), "10:00 in Kolkata")
 	assert.Empty(t, c.skips(id, fixtures.ContactAliceID))
 	assert.Empty(t, c.skips(id, fixtures.ContactExportSubjectID))
+}
+
+// contactsRead records the id of every Contact a query of the Instance returns from now on.
+func (c *dateCase) contactsRead() *[]int64 {
+	c.t.Helper()
+	read := new([]int64)
+	c.env.DB.Contact.Intercept(ent.InterceptFunc(func(next ent.Querier) ent.Querier {
+		return ent.QuerierFunc(func(ctx context.Context, q ent.Query) (ent.Value, error) {
+			v, err := next.Query(ctx, q)
+			rows, _ := v.([]*ent.Contact)
+			*read = append(*read, lo.Map(rows, func(r *ent.Contact, _ int) int64 { return r.ID })...)
+			return v, err
+		})
+	}))
+	return read
+}
+
+// The scheduler reads only the Contacts whose date falls in the band of its window: a birthday
+// half a year away is never read, on the path of the occurrences reached and on the path of the
+// dates set late, while today's enrolls.
+func TestADateFarOutsideTheWindowIsNeverRead(t *testing.T) {
+	c := newDateCase(t, at(2027, time.March, 13, 12, 0))
+	c.born(fixtures.ContactAliceID, at(1990, time.March, 14, 0, 0), "")
+	c.born(fixtures.ContactExportSubjectID, at(1990, time.September, 14, 0, 0), "")
+	id := c.publish(birthday(0, "10:00"))
+	read := c.contactsRead()
+
+	c.tickAt(id, at(2027, time.March, 14, 10, 5))
+	c.tickAt(id, at(2027, time.March, 14, 10, 6))
+
+	assert.Contains(t, *read, int64(fixtures.ContactAliceID))
+	assert.NotContains(t, *read, int64(fixtures.ContactExportSubjectID))
+	assert.Equal(t, []time.Time{at(2027, time.March, 14, 10, 0)}, c.beganAt(id, fixtures.ContactAliceID))
+}
+
+// Every writer of a Contact keeps the dates the scheduler finds it by: a Contact created with a
+// birthday, one an Identify creates with it and one an Identify gives it are enrolled, and one whose
+// birthday is cleared is not.
+func TestADateEveryContactWriterSetsIsFound(t *testing.T) {
+	c := newDateCase(t, at(2027, time.March, 13, 12, 0))
+	ctx := t.Context()
+	day := at(1990, time.March, 14, 0, 0)
+	created, err := c.contacts.Create(ctx, c.acme, contact.SourceAPI, contacts.CreateInput{Email: new("born@example.com"), Birthday: &day})
+	require.NoError(t, err)
+	identified, err := c.contacts.Upsert(ctx, c.acme, contact.SourceAPI, contacts.UpsertInput{Email: new("identified@example.com"), Birthday: patch.Set(day)})
+	require.NoError(t, err)
+	enriched, err := c.contacts.Upsert(ctx, c.acme, contact.SourceAPI, contacts.UpsertInput{Email: new(fixtures.ContactBobEmail), Birthday: patch.Set(day)})
+	require.NoError(t, err)
+	c.born(fixtures.ContactAliceID, day, "")
+	c.write(ctx, fixtures.ContactAliceID, contacts.Core{Birthday: patch.Clear[time.Time]()}, nil)
+	id := c.publish(birthday(0, "10:00"))
+
+	c.tickAt(id, at(2027, time.March, 14, 10, 5))
+
+	began := []time.Time{at(2027, time.March, 14, 10, 0)}
+	assert.Equal(t, began, c.beganAt(id, created.ID), "created")
+	assert.Equal(t, began, c.beganAt(id, identified.Contact.ID), "created by an Identify")
+	assert.Equal(t, began, c.beganAt(id, enriched.Contact.ID), "given it by an Identify")
+	assert.Equal(t, int64(fixtures.ContactBobID), enriched.Contact.ID)
+	assert.Empty(t, c.beganAt(id, fixtures.ContactAliceID), "cleared")
+}
+
+// The report counts a date Trigger's occurrences as it counts any entry (ADR 0126): one tick that
+// enrolls Carol, skips Bob as `active_enrollment` (last year's Enrollment still waits), finds
+// Alice's occurrence 30 hours late and holds the export subject's send-locked date shows each, the
+// Enrollment entered and each skip by its reason. The fixture birthdays of Liam and Emma fall
+// outside the period.
+func TestTheReportCountsTheOccurrencesOfADateTriggerByOutcome(t *testing.T) {
+	c := newDateCase(t, at(2026, time.September, 8, 12, 0))
+	c.born(fixtures.ContactBobID, at(1990, time.September, 10, 0, 0), "")
+	id := c.publish(birthday(0, "10:00"))
+	c.tickAt(id, at(2026, time.September, 10, 10, 5))
+	c.clock.Set(at(2026, time.September, 20, 12, 0))
+	c.born(fixtures.ContactAliceID, at(1990, time.September, 9, 0, 0), "")
+	c.born(fixtures.ContactCarolID, at(1990, time.September, 10, 0, 0), "")
+	c.write(events.SendLocked(t.Context()), fixtures.ContactExportSubjectID,
+		contacts.Core{Birthday: patch.Set(at(1990, time.September, 10, 0, 0)), TimeZone: patch.Clear[string]()}, nil)
+
+	c.tickAt(id, at(2027, time.September, 10, 16, 0))
+	report, err := c.module.ReportOf(t.Context(), c.acme, id, automations.ReportPeriod7Days)
+	require.NoError(t, err)
+
+	assert.Equal(t, 1, report.Results.Current.Entered)
+	assert.Equal(t, 1, report.Results.Current.Contacts)
+	assert.Equal(t, automations.SkippedCounts{ActiveEnrollment: 1, Missed: 1, SendLocked: 1}, report.Results.Current.Skipped)
 }

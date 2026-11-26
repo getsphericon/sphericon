@@ -1044,6 +1044,7 @@ func (c *ConverterImpl) EnrollmentToResource(source *ent.AutomationRun) external
 		externalapiEnrollmentResource.Status = c.EnrollmentStatusToResource((*source).Status)
 		externalapiEnrollmentResource.Ordinal = count((*source).Ordinal)
 		externalapiEnrollmentResource.KeyValue = optString((*source).KeyValue)
+		externalapiEnrollmentResource.Occurrence = enrollmentOccurrence((*source).Occurrence)
 		externalapiEnrollmentResource.CurrentStepId = optStepID((*source).CurrentStepID)
 		externalapiEnrollmentResource.ResumeAt = optTimestamp((*source).ResumeAt)
 		externalapiEnrollmentResource.Failure = enrollmentFailure(c, (*source))
@@ -2406,6 +2407,8 @@ func (c *ConverterImpl) automationsSkippedCountsToExternalapiAutomationSkippedCo
 	externalapiAutomationSkippedCounts.Cooldown = count(source.Cooldown)
 	externalapiAutomationSkippedCounts.NoEnrollmentKey = count(source.NoEnrollmentKey)
 	externalapiAutomationSkippedCounts.EnrollmentCeiling = count(source.EnrollmentCeiling)
+	externalapiAutomationSkippedCounts.Missed = count(source.Missed)
+	externalapiAutomationSkippedCounts.SendLocked = count(source.SendLocked)
 	return externalapiAutomationSkippedCounts
 }
 func (c *ConverterImpl) automationsStepFiguresToExternalapiAutomationStepFigures(source automations.StepFigures) external.AutomationStepFigures {
