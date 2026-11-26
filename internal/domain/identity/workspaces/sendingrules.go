@@ -126,15 +126,10 @@ func TakesCountry(ch channels.Channel) bool {
 }
 
 // HasSendingWindow reports whether marketing messages on the Channel wait for a Sending window
-// (ADR 0134): SMS does; email and Telegram, which no law restricts by the hour, do not.
+// (ADR 0134): those of a phone Channel (TakesCountry), whose number says which zones its recipient
+// may be in. Email and Telegram, which no law restricts by the hour, do not.
 func HasSendingWindow(ch channels.Channel) bool {
-	switch ch {
-	case channels.SMS:
-		return true
-	case channels.Email, channels.Telegram:
-		return false
-	}
-	return false
+	return TakesCountry(ch)
 }
 
 // startingCap is the Frequency cap a new Workspace has on the Channel (ADR 0137), nil for none:
