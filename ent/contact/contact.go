@@ -8,6 +8,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 )
 
 const (
@@ -49,6 +50,8 @@ const (
 	FieldSource = "source"
 	// FieldCustomFields holds the string denoting the custom_fields field in the database.
 	FieldCustomFields = "custom_fields"
+	// FieldSendLockedDates holds the string denoting the send_locked_dates field in the database.
+	FieldSendLockedDates = "send_locked_dates"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
 	EdgeWorkspace = "workspace"
 	// EdgeVisitors holds the string denoting the visitors edge name in mutations.
@@ -143,6 +146,7 @@ var Columns = []string{
 	FieldAvatar,
 	FieldSource,
 	FieldCustomFields,
+	FieldSendLockedDates,
 }
 
 var (
@@ -172,6 +176,8 @@ var (
 	DefaultRevision func() int64
 	// RevisionValidator is a validator for the "revision" field. It is called by the builders before save.
 	RevisionValidator func(int64) error
+	// DefaultSendLockedDates holds the default value on creation for the "send_locked_dates" field.
+	DefaultSendLockedDates []datetrigger.Field
 )
 
 // Source defines the type for the "source" enum field.

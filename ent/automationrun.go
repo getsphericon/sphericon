@@ -48,6 +48,8 @@ type AutomationRun struct {
 	TriggerSourceID *string `json:"trigger_source_id,omitempty"`
 	// FiringID holds the value of the "firing_id" field.
 	FiringID *int64 `json:"firing_id,omitempty"`
+	// Occurrence holds the value of the "occurrence" field.
+	Occurrence *int `json:"occurrence,omitempty"`
 	// Chain holds the value of the "chain" field.
 	Chain []int64 `json:"chain,omitempty"`
 	// Ordinal holds the value of the "ordinal" field.
@@ -151,7 +153,7 @@ func (*AutomationRun) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case automationrun.FieldEventProperties, automationrun.FieldChain:
 			values[i] = new([]byte)
-		case automationrun.FieldID, automationrun.FieldWorkspaceID, automationrun.FieldAutomationID, automationrun.FieldContactID, automationrun.FieldVersionID, automationrun.FieldFiringID, automationrun.FieldOrdinal, automationrun.FieldFailureStatus:
+		case automationrun.FieldID, automationrun.FieldWorkspaceID, automationrun.FieldAutomationID, automationrun.FieldContactID, automationrun.FieldVersionID, automationrun.FieldFiringID, automationrun.FieldOccurrence, automationrun.FieldOrdinal, automationrun.FieldFailureStatus:
 			values[i] = new(sql.NullInt64)
 		case automationrun.FieldStatus, automationrun.FieldEventAction, automationrun.FieldTriggerSourceID, automationrun.FieldKeyValue, automationrun.FieldCurrentStepID, automationrun.FieldFailureKind, automationrun.FieldFailureExcerpt:
 			values[i] = new(sql.NullString)
@@ -254,6 +256,13 @@ func (_m *AutomationRun) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.FiringID = new(int64)
 				*_m.FiringID = value.Int64
+			}
+		case automationrun.FieldOccurrence:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field occurrence", values[i])
+			} else if value.Valid {
+				_m.Occurrence = new(int)
+				*_m.Occurrence = int(value.Int64)
 			}
 		case automationrun.FieldChain:
 			if value, ok := values[i].(*[]byte); !ok {
@@ -418,6 +427,11 @@ func (_m *AutomationRun) String() string {
 	builder.WriteString(", ")
 	if v := _m.FiringID; v != nil {
 		builder.WriteString("firing_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.Occurrence; v != nil {
+		builder.WriteString("occurrence=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")

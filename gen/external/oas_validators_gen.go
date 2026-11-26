@@ -1320,6 +1320,11 @@ func (s AutomationTriggerInputSum) Validate() error {
 			return err
 		}
 		return nil
+	case DateTriggerInputAutomationTriggerInputSum:
+		if err := s.DateTriggerInput.Validate(); err != nil {
+			return err
+		}
+		return nil
 	default:
 		return errors.Errorf("invalid type %q", s.Type)
 	}
@@ -1329,6 +1334,11 @@ func (s AutomationTriggerSum) Validate() error {
 	switch s.Type {
 	case EventTriggerAutomationTriggerSum:
 		if err := s.EventTrigger.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case DateTriggerAutomationTriggerSum:
+		if err := s.DateTrigger.Validate(); err != nil {
 			return err
 		}
 		return nil
@@ -5099,6 +5109,158 @@ func (s DateRecurrence) Validate() error {
 	case "yearly":
 		return nil
 	case "once":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *DateTrigger) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Kind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "kind",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Field.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "field",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Recurrence.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "recurrence",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.OffsetDays.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "offsetDays",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.LocalTime.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "localTime",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *DateTriggerInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Kind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "kind",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Field.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "field",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Recurrence.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "recurrence",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.OffsetDays.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "offsetDays",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.LocalTime.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "localTime",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s DateTriggerInputKind) Validate() error {
+	switch s {
+	case "date":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s DateTriggerKind) Validate() error {
+	switch s {
+	case "date":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
@@ -10960,6 +11122,10 @@ func (s SkippedEntryReason) Validate() error {
 	case "cooldown":
 		return nil
 	case "enrollment_ceiling":
+		return nil
+	case "missed":
+		return nil
+	case "send_locked":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)

@@ -45,6 +45,8 @@ const (
 	EdgeDraftVersion = "draft_version"
 	// EdgeRuns holds the string denoting the runs edge name in mutations.
 	EdgeRuns = "runs"
+	// EdgeOccurrenceCursor holds the string denoting the occurrence_cursor edge name in mutations.
+	EdgeOccurrenceCursor = "occurrence_cursor"
 	// Table holds the table name of the automation in the database.
 	Table = "automations"
 	// WorkspaceTable is the table that holds the workspace relation/edge.
@@ -82,6 +84,13 @@ const (
 	RunsInverseTable = "automation_runs"
 	// RunsColumn is the table column denoting the runs relation/edge.
 	RunsColumn = "automation_id"
+	// OccurrenceCursorTable is the table that holds the occurrence_cursor relation/edge.
+	OccurrenceCursorTable = "automation_occurrence_cursors"
+	// OccurrenceCursorInverseTable is the table name for the AutomationOccurrenceCursor entity.
+	// It exists in this package in order to avoid circular dependency with the "automationoccurrencecursor" package.
+	OccurrenceCursorInverseTable = "automation_occurrence_cursors"
+	// OccurrenceCursorColumn is the table column denoting the occurrence_cursor relation/edge.
+	OccurrenceCursorColumn = "automation_id"
 )
 
 // Columns holds all SQL columns for automation fields.
@@ -256,6 +265,13 @@ func ByRuns(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newRunsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByOccurrenceCursorField orders the results by occurrence_cursor field.
+func ByOccurrenceCursorField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newOccurrenceCursorStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newWorkspaceStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -289,5 +305,12 @@ func newRunsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(RunsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, RunsTable, RunsColumn),
+	)
+}
+func newOccurrenceCursorStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(OccurrenceCursorInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2O, false, OccurrenceCursorTable, OccurrenceCursorColumn),
 	)
 }

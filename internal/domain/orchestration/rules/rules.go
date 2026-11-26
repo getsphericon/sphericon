@@ -250,9 +250,12 @@ func (versioned) Write(ctx context.Context, l *ent.WorkspaceLocked, id int64, nu
 	return v.ID, nil
 }
 
-func (versioned) Publishable(ctx context.Context, ts *ent.Scoped, draft *ent.RuleVersion) error {
-	return publishable(ctx, ts, draft)
+func (versioned) Publishable(ctx context.Context, l *ent.WorkspaceLocked, draft *ent.RuleVersion) error {
+	return publishable(ctx, l.Scope(), draft)
 }
+
+// Published keeps nothing: a Rule acts on the Events recorded from its activation (activated_at).
+func (versioned) Published(context.Context, *ent.WorkspaceLocked, *ent.RuleVersion) error { return nil }
 
 // Archivable never refuses: a Rule is discarded, never archived (ADR 0100), so it is never asked.
 func (versioned) Archivable(context.Context, *ent.WorkspaceLocked, *ent.Rule) error { return nil }
@@ -803,20 +806,32 @@ func (m *Module) record(ctx context.Context, s *ent.Scoped, firingID int64, inde
 }
 
 // requireAutomations refuses an enroll Action whose Automation is not a kept Automation of the
-// Workspace (ErrInvalid).
+// Workspace, or whose live version starts on a date (ADR 0126, decision 4 of #1613): such an
+// Automation enrolls a Contact once per occurrence of its date, and only its scheduler does
+// (ErrInvalid, naming it). Only the live version counts: the Automation's own Publish refuses a
+// date Trigger while an active Rule enrolls into it. Both read under the Workspace lock, so neither
+// slips past the other.
 func requireAutomations(ctx context.Context, s *ent.Scoped, actions []ruleaction.Action) error {
 	named := lo.FilterMap(actions, func(a ruleaction.Action, _ int) (int64, bool) { return a.AutomationID, a.Type == ruleaction.Enroll })
 	if len(named) == 0 {
 		return nil
 	}
-	found, err := s.Automation().Query().Where(automation.IDIn(lo.Uniq(named)...)).IDs(ctx)
+	found, err := s.Automation().Query().Where(automation.IDIn(lo.Uniq(named)...)).WithLiveVersion().All(ctx)
 	if err != nil {
 		return err
 	}
-	kept := lo.SliceToMap(found, func(id int64) (int64, bool) { return id, true })
+	kept := lo.SliceToMap(found, func(a *ent.Automation) (int64, *ent.Automation) { return a.ID, a })
 	for i := range actions {
-		if a := &actions[i]; a.Type == ruleaction.Enroll && !kept[a.AutomationID] {
+		a := &actions[i]
+		if a.Type != ruleaction.Enroll {
+			continue
+		}
+		target, ok := kept[a.AutomationID]
+		if !ok {
 			return ErrInvalid.With(fmt.Sprintf("action %d: automation %d not found", i+1, a.AutomationID))
+		}
+		if live := target.Edges.LiveVersion; live != nil && live.TriggerDate != nil {
+			return ErrInvalid.With(fmt.Sprintf("action %d: automation %q starts on a date, and a rule cannot enroll into it", i+1, target.Name))
 		}
 	}
 	return nil

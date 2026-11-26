@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/automation"
+	"github.com/getsphericon/sphericon/ent/automationoccurrencecursor"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/predicate"
@@ -226,6 +227,25 @@ func (_u *AutomationUpdate) AddRuns(v ...*AutomationRun) *AutomationUpdate {
 	return _u.AddRunIDs(ids...)
 }
 
+// SetOccurrenceCursorID sets the "occurrence_cursor" edge to the AutomationOccurrenceCursor entity by ID.
+func (_u *AutomationUpdate) SetOccurrenceCursorID(id int64) *AutomationUpdate {
+	_u.mutation.SetOccurrenceCursorID(id)
+	return _u
+}
+
+// SetNillableOccurrenceCursorID sets the "occurrence_cursor" edge to the AutomationOccurrenceCursor entity by ID if the given value is not nil.
+func (_u *AutomationUpdate) SetNillableOccurrenceCursorID(id *int64) *AutomationUpdate {
+	if id != nil {
+		_u = _u.SetOccurrenceCursorID(*id)
+	}
+	return _u
+}
+
+// SetOccurrenceCursor sets the "occurrence_cursor" edge to the AutomationOccurrenceCursor entity.
+func (_u *AutomationUpdate) SetOccurrenceCursor(v *AutomationOccurrenceCursor) *AutomationUpdate {
+	return _u.SetOccurrenceCursorID(v.ID)
+}
+
 // Mutation returns the AutomationMutation object of the builder.
 func (_u *AutomationUpdate) Mutation() *AutomationMutation {
 	return _u.mutation
@@ -289,6 +309,12 @@ func (_u *AutomationUpdate) RemoveRuns(v ...*AutomationRun) *AutomationUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveRunIDs(ids...)
+}
+
+// ClearOccurrenceCursor clears the "occurrence_cursor" edge to the AutomationOccurrenceCursor entity.
+func (_u *AutomationUpdate) ClearOccurrenceCursor() *AutomationUpdate {
+	_u.mutation.ClearOccurrenceCursor()
+	return _u
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -572,6 +598,35 @@ func (_u *AutomationUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.OccurrenceCursorCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   automation.OccurrenceCursorTable,
+			Columns: []string{automation.OccurrenceCursorColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationoccurrencecursor.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.OccurrenceCursorIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   automation.OccurrenceCursorTable,
+			Columns: []string{automation.OccurrenceCursorColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationoccurrencecursor.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -788,6 +843,25 @@ func (_u *AutomationUpdateOne) AddRuns(v ...*AutomationRun) *AutomationUpdateOne
 	return _u.AddRunIDs(ids...)
 }
 
+// SetOccurrenceCursorID sets the "occurrence_cursor" edge to the AutomationOccurrenceCursor entity by ID.
+func (_u *AutomationUpdateOne) SetOccurrenceCursorID(id int64) *AutomationUpdateOne {
+	_u.mutation.SetOccurrenceCursorID(id)
+	return _u
+}
+
+// SetNillableOccurrenceCursorID sets the "occurrence_cursor" edge to the AutomationOccurrenceCursor entity by ID if the given value is not nil.
+func (_u *AutomationUpdateOne) SetNillableOccurrenceCursorID(id *int64) *AutomationUpdateOne {
+	if id != nil {
+		_u = _u.SetOccurrenceCursorID(*id)
+	}
+	return _u
+}
+
+// SetOccurrenceCursor sets the "occurrence_cursor" edge to the AutomationOccurrenceCursor entity.
+func (_u *AutomationUpdateOne) SetOccurrenceCursor(v *AutomationOccurrenceCursor) *AutomationUpdateOne {
+	return _u.SetOccurrenceCursorID(v.ID)
+}
+
 // Mutation returns the AutomationMutation object of the builder.
 func (_u *AutomationUpdateOne) Mutation() *AutomationMutation {
 	return _u.mutation
@@ -851,6 +925,12 @@ func (_u *AutomationUpdateOne) RemoveRuns(v ...*AutomationRun) *AutomationUpdate
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveRunIDs(ids...)
+}
+
+// ClearOccurrenceCursor clears the "occurrence_cursor" edge to the AutomationOccurrenceCursor entity.
+func (_u *AutomationUpdateOne) ClearOccurrenceCursor() *AutomationUpdateOne {
+	_u.mutation.ClearOccurrenceCursor()
+	return _u
 }
 
 // Where appends a list predicates to the AutomationUpdate builder.
@@ -1157,6 +1237,35 @@ func (_u *AutomationUpdateOne) sqlSave(ctx context.Context) (_node *Automation, 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(automationrun.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.OccurrenceCursorCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   automation.OccurrenceCursorTable,
+			Columns: []string{automation.OccurrenceCursorColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationoccurrencecursor.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.OccurrenceCursorIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   automation.OccurrenceCursorTable,
+			Columns: []string{automation.OccurrenceCursorColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationoccurrencecursor.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

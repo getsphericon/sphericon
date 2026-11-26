@@ -21,6 +21,9 @@ type Automation func(*sql.Selector)
 // AutomationFigure is the predicate function for automationfigure builders.
 type AutomationFigure func(*sql.Selector)
 
+// AutomationOccurrenceCursor is the predicate function for automationoccurrencecursor builders.
+type AutomationOccurrenceCursor func(*sql.Selector)
+
 // AutomationRun is the predicate function for automationrun builders.
 type AutomationRun func(*sql.Selector)
 

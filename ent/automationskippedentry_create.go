@@ -100,6 +100,20 @@ func (_c *AutomationSkippedEntryCreate) SetNillableFiringID(v *int64) *Automatio
 	return _c
 }
 
+// SetOccurrence sets the "occurrence" field.
+func (_c *AutomationSkippedEntryCreate) SetOccurrence(v int) *AutomationSkippedEntryCreate {
+	_c.mutation.SetOccurrence(v)
+	return _c
+}
+
+// SetNillableOccurrence sets the "occurrence" field if the given value is not nil.
+func (_c *AutomationSkippedEntryCreate) SetNillableOccurrence(v *int) *AutomationSkippedEntryCreate {
+	if v != nil {
+		_c.SetOccurrence(*v)
+	}
+	return _c
+}
+
 // SetReason sets the "reason" field.
 func (_c *AutomationSkippedEntryCreate) SetReason(v automationskippedentry.Reason) *AutomationSkippedEntryCreate {
 	_c.mutation.SetReason(v)
@@ -264,6 +278,10 @@ func (_c *AutomationSkippedEntryCreate) createSpec() (*AutomationSkippedEntry, *
 	if value, ok := _c.mutation.SourceID(); ok {
 		_spec.SetField(automationskippedentry.FieldSourceID, field.TypeString, value)
 		_node.SourceID = &value
+	}
+	if value, ok := _c.mutation.Occurrence(); ok {
+		_spec.SetField(automationskippedentry.FieldOccurrence, field.TypeInt, value)
+		_node.Occurrence = &value
 	}
 	if value, ok := _c.mutation.Reason(); ok {
 		_spec.SetField(automationskippedentry.FieldReason, field.TypeEnum, value)
@@ -448,6 +466,9 @@ func (u *AutomationSkippedEntryUpsertOne) UpdateNewValues() *AutomationSkippedEn
 		}
 		if _, exists := u.create.mutation.FiringID(); exists {
 			s.SetIgnore(automationskippedentry.FieldFiringID)
+		}
+		if _, exists := u.create.mutation.Occurrence(); exists {
+			s.SetIgnore(automationskippedentry.FieldOccurrence)
 		}
 		if _, exists := u.create.mutation.Reason(); exists {
 			s.SetIgnore(automationskippedentry.FieldReason)
@@ -710,6 +731,9 @@ func (u *AutomationSkippedEntryUpsertBulk) UpdateNewValues() *AutomationSkippedE
 			}
 			if _, exists := b.mutation.FiringID(); exists {
 				s.SetIgnore(automationskippedentry.FieldFiringID)
+			}
+			if _, exists := b.mutation.Occurrence(); exists {
+				s.SetIgnore(automationskippedentry.FieldOccurrence)
 			}
 			if _, exists := b.mutation.Reason(); exists {
 				s.SetIgnore(automationskippedentry.FieldReason)

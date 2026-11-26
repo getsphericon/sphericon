@@ -443,8 +443,6 @@ type Converter interface {
 	WaitUntilTimeOfDayToResource(source automationstep.TimeOfDay) siteapi.WaitUntilTimeOfDay
 	// goverter:enum:transform value
 	WeekdayToResource(source localcalendar.Weekday) siteapi.Weekday
-	// goverter:enum:transform value
-	DateRecurrenceToResource(source localcalendar.Recurrence) siteapi.DateRecurrence
 	ApplyTagStepToResource(source automations.TagView) siteapi.ApplyTagStep
 	RemoveTagStepToResource(source automations.TagView) siteapi.RemoveTagStep
 	HttpStepToResource(source automations.HTTPView) siteapi.HttpStep
@@ -488,6 +486,8 @@ type Converter interface {
 	TelegramConfigToResource(source integrations.RedactedTelegram) siteapi.TelegramConfig
 	// goverter:enum:transform value
 	EntryPolicyToResource(source automationversion.EntryPolicy) siteapi.EntryPolicy
+	// goverter:enum:transform value
+	DateRecurrenceToResource(source localcalendar.Recurrence) siteapi.DateRecurrence
 	// goverter:enum:transform value
 	SmsFromKindToResource(source messaging.SMSFromKind) siteapi.SmsFromKind
 	// goverter:map . Kind | twilioConfigKind
@@ -1312,19 +1312,6 @@ func waitUntilMoment(c Converter, u automationstep.Until) (siteapi.WaitUntilMome
 	return siteapi.WaitUntilMoment{}, fmt.Errorf("the moment %T has no arm", u)
 }
 
-// dateField maps a date Trigger's field into the typed DTO by its kind. A stored field is checked
-// when it is written, so a kind it does not know is the birthday's never.
-func dateField(f datetrigger.Field) siteapi.DateField {
-	switch f.Kind {
-	case datetrigger.CustomField:
-		return siteapi.DateField{OneOf: siteapi.NewCustomFieldDateFieldDateFieldSum(siteapi.CustomFieldDateField{
-			Kind: siteapi.CustomFieldDateFieldKindCustomField, Key: f.Key,
-		})}
-	case datetrigger.Birthday:
-	}
-	return siteapi.DateField{OneOf: siteapi.NewBirthdayDateFieldDateFieldSum(siteapi.BirthdayDateField{Kind: siteapi.BirthdayDateFieldKindBirthday})}
-}
-
 func applyTagStepType(automationstep.Kind) siteapi.ApplyTagStepType {
 	return siteapi.ApplyTagStepTypeApplyTag
 }
@@ -1353,6 +1340,12 @@ func segmentCondition(g conditiontree.Segment) (siteapi.SegmentCondition, error)
 // automationTrigger maps a version's Trigger into the typed DTO by its kind: an Event matcher whose
 // filter is checked as a stored Condition is (convert.Document).
 func automationTrigger(c Converter, v *ent.AutomationVersion) (siteapi.AutomationTrigger, error) {
+	if d := automations.DateTriggerOf(v); d != nil {
+		return siteapi.AutomationTrigger{OneOf: siteapi.NewDateTriggerAutomationTriggerSum(siteapi.DateTrigger{
+			Kind: siteapi.DateTriggerKindDate, Field: dateField(d.Field), Recurrence: c.DateRecurrenceToResource(d.Recurrence),
+			OffsetDays: siteapi.DateOffsetDays(narrow.Int32(d.OffsetDays)), LocalTime: siteapi.LocalTime(d.LocalTime),
+		})}, nil
+	}
 	m := automations.TriggerOf(v)
 	ev := siteapi.EventTrigger{
 		Kind: siteapi.EventTriggerKindEvent, Action: m.Action,
@@ -1367,6 +1360,19 @@ func automationTrigger(c Converter, v *ent.AutomationVersion) (siteapi.Automatio
 		ev.Filter = siteapi.NewOptEventFilter(f)
 	}
 	return siteapi.AutomationTrigger{OneOf: siteapi.NewEventTriggerAutomationTriggerSum(ev)}, nil
+}
+
+// dateField maps a date Trigger's field into the typed DTO by its kind. A stored field is checked
+// when it is written, so a kind it does not know is the birthday's never.
+func dateField(f datetrigger.Field) siteapi.DateField {
+	switch f.Kind {
+	case datetrigger.CustomField:
+		return siteapi.DateField{OneOf: siteapi.NewCustomFieldDateFieldDateFieldSum(siteapi.CustomFieldDateField{
+			Kind: siteapi.CustomFieldDateFieldKindCustomField, Key: f.Key,
+		})}
+	case datetrigger.Birthday:
+	}
+	return siteapi.DateField{OneOf: siteapi.NewBirthdayDateFieldDateFieldSum(siteapi.BirthdayDateField{Kind: siteapi.BirthdayDateFieldKindBirthday})}
 }
 
 // eventMatcher maps an exit or goal event into the typed DTO, its filter checked as a stored

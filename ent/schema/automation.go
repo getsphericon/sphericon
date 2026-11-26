@@ -50,5 +50,9 @@ func (Automation) Edges() []ent.Edge {
 		// purges it, purges its Enrollments with it.
 		edge.To("runs", AutomationRun.Type).
 			Annotations(entsql.OnDelete(entsql.Cascade)),
+		// The date scheduler's cursor (ADR 0126) goes with its Automation.
+		edge.To("occurrence_cursor", AutomationOccurrenceCursor.Type).
+			Unique().
+			Annotations(entsql.OnDelete(entsql.Cascade)),
 	}
 }

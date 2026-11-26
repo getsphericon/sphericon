@@ -125,6 +125,8 @@ const (
 	EdgeAutomationFigures = "automation_figures"
 	// EdgeAutomationSkippedEntries holds the string denoting the automation_skipped_entries edge name in mutations.
 	EdgeAutomationSkippedEntries = "automation_skipped_entries"
+	// EdgeAutomationOccurrenceCursors holds the string denoting the automation_occurrence_cursors edge name in mutations.
+	EdgeAutomationOccurrenceCursors = "automation_occurrence_cursors"
 	// EdgeEmailTemplates holds the string denoting the email_templates edge name in mutations.
 	EdgeEmailTemplates = "email_templates"
 	// EdgeBrandKits holds the string denoting the brand_kits edge name in mutations.
@@ -372,6 +374,13 @@ const (
 	AutomationSkippedEntriesInverseTable = "automation_skipped_entries"
 	// AutomationSkippedEntriesColumn is the table column denoting the automation_skipped_entries relation/edge.
 	AutomationSkippedEntriesColumn = "workspace_id"
+	// AutomationOccurrenceCursorsTable is the table that holds the automation_occurrence_cursors relation/edge.
+	AutomationOccurrenceCursorsTable = "automation_occurrence_cursors"
+	// AutomationOccurrenceCursorsInverseTable is the table name for the AutomationOccurrenceCursor entity.
+	// It exists in this package in order to avoid circular dependency with the "automationoccurrencecursor" package.
+	AutomationOccurrenceCursorsInverseTable = "automation_occurrence_cursors"
+	// AutomationOccurrenceCursorsColumn is the table column denoting the automation_occurrence_cursors relation/edge.
+	AutomationOccurrenceCursorsColumn = "workspace_id"
 	// EmailTemplatesTable is the table that holds the email_templates relation/edge.
 	EmailTemplatesTable = "email_templates"
 	// EmailTemplatesInverseTable is the table name for the EmailTemplate entity.
@@ -1234,6 +1243,20 @@ func ByAutomationSkippedEntries(term sql.OrderTerm, terms ...sql.OrderTerm) Orde
 	}
 }
 
+// ByAutomationOccurrenceCursorsCount orders the results by automation_occurrence_cursors count.
+func ByAutomationOccurrenceCursorsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newAutomationOccurrenceCursorsStep(), opts...)
+	}
+}
+
+// ByAutomationOccurrenceCursors orders the results by automation_occurrence_cursors terms.
+func ByAutomationOccurrenceCursors(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newAutomationOccurrenceCursorsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByEmailTemplatesCount orders the results by email_templates count.
 func ByEmailTemplatesCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -1805,6 +1828,13 @@ func newAutomationSkippedEntriesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(AutomationSkippedEntriesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, AutomationSkippedEntriesTable, AutomationSkippedEntriesColumn),
+	)
+}
+func newAutomationOccurrenceCursorsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(AutomationOccurrenceCursorsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, AutomationOccurrenceCursorsTable, AutomationOccurrenceCursorsColumn),
 	)
 }
 func newEmailTemplatesStep() *sqlgraph.Step {

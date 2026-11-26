@@ -2266,6 +2266,29 @@ func HasAutomationSkippedEntriesWith(preds ...predicate.AutomationSkippedEntry) 
 	})
 }
 
+// HasAutomationOccurrenceCursors applies the HasEdge predicate on the "automation_occurrence_cursors" edge.
+func HasAutomationOccurrenceCursors() predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, AutomationOccurrenceCursorsTable, AutomationOccurrenceCursorsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasAutomationOccurrenceCursorsWith applies the HasEdge predicate on the "automation_occurrence_cursors" edge with a given conditions (other predicates).
+func HasAutomationOccurrenceCursorsWith(preds ...predicate.AutomationOccurrenceCursor) predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := newAutomationOccurrenceCursorsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasEmailTemplates applies the HasEdge predicate on the "email_templates" edge.
 func HasEmailTemplates() predicate.Workspace {
 	return predicate.Workspace(func(s *sql.Selector) {

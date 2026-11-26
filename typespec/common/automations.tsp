@@ -241,36 +241,13 @@ model WaitUntilTimeOfDayInput {
  * (`no_date`), or it lies more than 366 days ahead (`beyond_bound`). */
 model WaitUntilDate {
   form: "date";
-
-  /** The date the moment comes from */
-  field: DateField;
-
-  /** Every year, or once */
-  recurrence: DateRecurrence;
-
-  /** Days before (negative) or after the date */
-  offsetDays: DateOffsetDays;
-
-  /** The time of day of the moment, in the Contact's time zone */
-  localTime: LocalTime;
+  ...DateOccurrence;
 }
 
 /** Wait until the next occurrence of a date the Contact holds, as a request writes it */
 model WaitUntilDateInput {
   form: "date";
-
-  /** The date the moment comes from: the birthday, or a datetime Custom field of the Workspace's
-   * catalogue */
-  field: DateFieldInput;
-
-  /** Every year, or once; the birthday is only yearly */
-  recurrence: DateRecurrence;
-
-  /** Days before (negative) or after the date, within 365 */
-  offsetDays: DateOffsetDays;
-
-  /** The time of day of the moment, `HH:MM`, in the Contact's time zone */
-  localTime: LocalTime;
+  ...DateOccurrenceInput;
 }
 
 /** The moment a Wait until holds an Enrollment until, by `form` */
@@ -734,16 +711,38 @@ model EventTriggerInput {
   enrollmentKey?: string;
 }
 
-/** What enrolls a Contact in an automation, by `kind`: an Event matcher */
+/** A Trigger that enrolls a Contact on a date it holds (ADR 0126): on each anniversary of its
+ * birthday or of a datetime Custom field, or once on such a field, `offsetDays` before or after it,
+ * at `localTime` in the Contact's time zone, or in the Workspace time zone when the Contact has no
+ * valid one. A yearly date enrolls a Contact at most once per anniversary year, the year of the date
+ * the offset counts from, and a once date at most once ever; an occurrence while the previous
+ * enrollment is still active is skipped. Only occurrences after the automation was published
+ * enroll, at most 24 hours late, and the enrollment begins at the occurrence's moment with no
+ * triggering Event. A date Trigger has no entry policy, cooldown or Enrollment key, and no rule's
+ * enroll action may name its automation. */
+model DateTrigger {
+  kind: "date";
+  ...DateOccurrence;
+}
+
+/** A Trigger that enrolls a Contact on a date it holds (ADR 0126), as a request writes it */
+model DateTriggerInput {
+  kind: "date";
+  ...DateOccurrenceInput;
+}
+
+/** What enrolls a Contact in an automation, by `kind`: an Event matcher or a date */
 @discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
 union AutomationTrigger {
   event: EventTrigger,
+  date: DateTrigger,
 }
 
-/** What enrolls a Contact in an automation, by `kind`: an Event matcher */
+/** What enrolls a Contact in an automation, by `kind`: an Event matcher or a date */
 @discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
 union AutomationTriggerInput {
   event: EventTriggerInput,
+  date: DateTriggerInput,
 }
 
 /** An Event matcher that ends an enrollment (ADR 0133): an action, and an optional filter on that

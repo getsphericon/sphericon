@@ -6888,30 +6888,38 @@
         "oneOf": [
           {
             "$ref": "#/components/schemas/EventTrigger"
+          },
+          {
+            "$ref": "#/components/schemas/DateTrigger"
           }
         ],
         "discriminator": {
           "propertyName": "kind",
           "mapping": {
-            "event": "#/components/schemas/EventTrigger"
+            "event": "#/components/schemas/EventTrigger",
+            "date": "#/components/schemas/DateTrigger"
           }
         },
-        "description": "What enrolls a Contact in an automation, by `kind`: an Event matcher"
+        "description": "What enrolls a Contact in an automation, by `kind`: an Event matcher or a date"
       },
       "AutomationTriggerInput": {
         "type": "object",
         "oneOf": [
           {
             "$ref": "#/components/schemas/EventTriggerInput"
+          },
+          {
+            "$ref": "#/components/schemas/DateTriggerInput"
           }
         ],
         "discriminator": {
           "propertyName": "kind",
           "mapping": {
-            "event": "#/components/schemas/EventTriggerInput"
+            "event": "#/components/schemas/EventTriggerInput",
+            "date": "#/components/schemas/DateTriggerInput"
           }
         },
-        "description": "What enrolls a Contact in an automation, by `kind`: an Event matcher"
+        "description": "What enrolls a Contact in an automation, by `kind`: an Event matcher or a date"
       },
       "AutomationVersion": {
         "type": "object",
@@ -10122,6 +10130,84 @@
         },
         "description": "A date a Contact holds, by `kind`, as a request writes it"
       },
+      "DateOccurrence": {
+        "type": "object",
+        "required": ["field", "recurrence", "offsetDays", "localTime"],
+        "properties": {
+          "field": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateField"
+              }
+            ],
+            "description": "The date the occurrences come from"
+          },
+          "recurrence": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateRecurrence"
+              }
+            ],
+            "description": "Every year, or once"
+          },
+          "offsetDays": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateOffsetDays"
+              }
+            ],
+            "description": "Days before (negative) or after the date"
+          },
+          "localTime": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LocalTime"
+              }
+            ],
+            "description": "The time of day of each occurrence, in the Contact's time zone"
+          }
+        },
+        "description": "When a date the Contact holds comes (ADR 0126), as a date Trigger enrolls on it and a Wait until\nwaits for it: on each anniversary of the date, from the year after its own, or once on it,\n`offsetDays` before or after it, at `localTime` in the Contact's time zone, or in the Workspace\ntime zone when the Contact has no valid one"
+      },
+      "DateOccurrenceInput": {
+        "type": "object",
+        "required": ["field", "recurrence", "offsetDays", "localTime"],
+        "properties": {
+          "field": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateFieldInput"
+              }
+            ],
+            "description": "The date the occurrences come from: the birthday, or a datetime Custom field of the\nWorkspace's catalogue"
+          },
+          "recurrence": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateRecurrence"
+              }
+            ],
+            "description": "Every year, or once; the birthday is only yearly"
+          },
+          "offsetDays": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateOffsetDays"
+              }
+            ],
+            "description": "Days before (negative) or after the date, within 365"
+          },
+          "localTime": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LocalTime"
+              }
+            ],
+            "description": "The time of day of each occurrence, `HH:MM`, in the Contact's time zone"
+          }
+        },
+        "description": "When a date the Contact holds comes, as a request writes it"
+      },
       "DateOffsetDays": {
         "type": "integer",
         "format": "int32",
@@ -10133,6 +10219,93 @@
         "type": "string",
         "enum": ["yearly", "once"],
         "description": "How often a date comes: `yearly` on each anniversary, from the year after the date's own;\n`once` on the date itself. The birthday is always past, so it is only yearly."
+      },
+      "DateTrigger": {
+        "type": "object",
+        "required": ["kind", "field", "recurrence", "offsetDays", "localTime"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["date"]
+          },
+          "field": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateField"
+              }
+            ],
+            "description": "The date the occurrences come from"
+          },
+          "recurrence": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateRecurrence"
+              }
+            ],
+            "description": "Every year, or once"
+          },
+          "offsetDays": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateOffsetDays"
+              }
+            ],
+            "description": "Days before (negative) or after the date"
+          },
+          "localTime": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LocalTime"
+              }
+            ],
+            "description": "The time of day of each occurrence, in the Contact's time zone"
+          }
+        },
+        "description": "A Trigger that enrolls a Contact on a date it holds (ADR 0126): on each anniversary of its\nbirthday or of a datetime Custom field, or once on such a field, `offsetDays` before or after it,\nat `localTime` in the Contact's time zone, or in the Workspace time zone when the Contact has no\nvalid one. A yearly date enrolls a Contact at most once per anniversary year, the year of the date\nthe offset counts from, and a once date at most once ever; an occurrence while the previous\nenrollment is still active is skipped. Only occurrences after the automation was published\nenroll, at most 24 hours late, and the enrollment begins at the occurrence's moment with no\ntriggering Event. A date Trigger has no entry policy, cooldown or Enrollment key, and no rule's\nenroll action may name its automation."
+      },
+      "DateTriggerInput": {
+        "type": "object",
+        "required": ["kind", "field", "recurrence", "offsetDays", "localTime"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["date"]
+          },
+          "field": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateFieldInput"
+              }
+            ],
+            "description": "The date the occurrences come from: the birthday, or a datetime Custom field of the\nWorkspace's catalogue"
+          },
+          "recurrence": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateRecurrence"
+              }
+            ],
+            "description": "Every year, or once; the birthday is only yearly"
+          },
+          "offsetDays": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateOffsetDays"
+              }
+            ],
+            "description": "Days before (negative) or after the date, within 365"
+          },
+          "localTime": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LocalTime"
+              }
+            ],
+            "description": "The time of day of each occurrence, `HH:MM`, in the Contact's time zone"
+          }
+        },
+        "description": "A Trigger that enrolls a Contact on a date it holds (ADR 0126), as a request writes it",
+        "additionalProperties": false
       },
       "DeferralCause": {
         "type": "string",
@@ -15012,9 +15185,11 @@
           "active_enrollment",
           "once",
           "cooldown",
-          "enrollment_ceiling"
+          "enrollment_ceiling",
+          "missed",
+          "send_locked"
         ],
-        "description": "Why an entry into an automation was skipped, by the first entry check that refused it (ADR 0127,\nADR 0165), in their order: `no_enrollment_key` (the automation has an Enrollment key and the\ntriggering Event lacks its property), `cycle` (the chain of events that caused it already passed\nthrough the automation), `active_enrollment` (the triggering Event occurred while an enrollment\nof the contact for the key value was active, or one is active still), `once` (the contact had an\nenrollment for the key value in the automation before, under the `once` entry policy),\n`cooldown` (under `again`, the cooldown from the beginning of the contact's previous enrollment\nfor the key value had not passed) or `enrollment_ceiling` (the keyed automation's contact had 10\nactive enrollments, or 10 begun in a day)."
+        "description": "Why an entry into an automation was skipped, by the first entry check that refused it (ADR 0127,\nADR 0165), in their order: `no_enrollment_key` (the automation has an Enrollment key and the\ntriggering Event lacks its property), `cycle` (the chain of events that caused it already passed\nthrough the automation), `active_enrollment` (the triggering Event occurred while an enrollment\nof the contact for the key value was active, or one is active still), `once` (the contact had an\nenrollment for the key value in the automation before, under the `once` entry policy),\n`cooldown` (under `again`, the cooldown from the beginning of the contact's previous enrollment\nfor the key value had not passed) or `enrollment_ceiling` (the keyed automation's contact had 10\nactive enrollments, or 10 begun in a day). An occurrence of a date Trigger (ADR 0126) is skipped as\n`active_enrollment` (an enrollment of the contact was active at its moment), `missed` (it was\nreached 24 hours late or more) or `send_locked` (its date was last written through a Connection\nwithout mcp:send; a later write of the date may still enroll it within 24 hours)."
       },
       "SkippedEntryResource": {
         "type": "object",
@@ -15054,7 +15229,7 @@
           },
           "eventSourceId": {
             "type": "string",
-            "description": "The source id of the triggering Event (its dedupKey when it had one); absent when a rule's\nenroll action tried",
+            "description": "The source id of the triggering Event (its dedupKey when it had one); absent when a rule's\nenroll action or a date Trigger's occurrence tried",
             "x-untrusted": true
           },
           "firingId": {
@@ -15071,7 +15246,7 @@
                 "$ref": "#/components/schemas/Timestamp"
               }
             ],
-            "description": "When the enrollment would have begun: when its Event occurred"
+            "description": "When the enrollment would have begun: when its Event occurred, or the moment of the date\nTrigger's occurrence"
           },
           "createdAt": {
             "allOf": [
@@ -17278,7 +17453,7 @@
                 "$ref": "#/components/schemas/DateField"
               }
             ],
-            "description": "The date the moment comes from"
+            "description": "The date the occurrences come from"
           },
           "recurrence": {
             "allOf": [
@@ -17302,7 +17477,7 @@
                 "$ref": "#/components/schemas/LocalTime"
               }
             ],
-            "description": "The time of day of the moment, in the Contact's time zone"
+            "description": "The time of day of each occurrence, in the Contact's time zone"
           }
         },
         "description": "Wait until the next occurrence of a date the Contact holds (ADR 0126), at or after the moment\nthe Enrollment reaches the Step: `offsetDays` before or after the date, at `localTime` in the\nContact's time zone, or the Workspace time zone when the Contact has no valid one. A yearly date\nwaits for its next anniversary, from the year after the date's own; a once date for the date\nitself. When there is no such moment within 366 days the Enrollment goes on at once, and the\nreport counts why: the moment has passed (`past`), the Contact holds no date in the field\n(`no_date`), or it lies more than 366 days ahead (`beyond_bound`)."
@@ -17321,7 +17496,7 @@
                 "$ref": "#/components/schemas/DateFieldInput"
               }
             ],
-            "description": "The date the moment comes from: the birthday, or a datetime Custom field of the Workspace's\ncatalogue"
+            "description": "The date the occurrences come from: the birthday, or a datetime Custom field of the\nWorkspace's catalogue"
           },
           "recurrence": {
             "allOf": [
@@ -17345,7 +17520,7 @@
                 "$ref": "#/components/schemas/LocalTime"
               }
             ],
-            "description": "The time of day of the moment, `HH:MM`, in the Contact's time zone"
+            "description": "The time of day of each occurrence, `HH:MM`, in the Contact's time zone"
           }
         },
         "description": "Wait until the next occurrence of a date the Contact holds, as a request writes it",

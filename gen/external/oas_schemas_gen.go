@@ -3475,7 +3475,7 @@ func NewSplitStepAutomationStepSum(v SplitStep) AutomationStepSum {
 	return s
 }
 
-// What enrolls a Contact in an automation, by `kind`: an Event matcher.
+// What enrolls a Contact in an automation, by `kind`: an Event matcher or a date.
 // Ref: #/components/schemas/AutomationTrigger
 type AutomationTrigger struct {
 	OneOf AutomationTriggerSum
@@ -3491,7 +3491,7 @@ func (s *AutomationTrigger) SetOneOf(val AutomationTriggerSum) {
 	s.OneOf = val
 }
 
-// What enrolls a Contact in an automation, by `kind`: an Event matcher.
+// What enrolls a Contact in an automation, by `kind`: an Event matcher or a date.
 // Ref: #/components/schemas/AutomationTriggerInput
 type AutomationTriggerInput struct {
 	OneOf AutomationTriggerInputSum
@@ -3512,6 +3512,7 @@ type AutomationTriggerInputSum struct {
 	// Type selects the active sum variant, switch on this field.
 	Type              AutomationTriggerInputSumType
 	EventTriggerInput EventTriggerInput
+	DateTriggerInput  DateTriggerInput
 }
 
 // AutomationTriggerInputSumType is oneOf type of AutomationTriggerInputSum.
@@ -3520,11 +3521,17 @@ type AutomationTriggerInputSumType string
 // Possible values for AutomationTriggerInputSumType.
 const (
 	EventTriggerInputAutomationTriggerInputSum AutomationTriggerInputSumType = "event"
+	DateTriggerInputAutomationTriggerInputSum  AutomationTriggerInputSumType = "date"
 )
 
 // IsEventTriggerInput reports whether AutomationTriggerInputSum is EventTriggerInput.
 func (s AutomationTriggerInputSum) IsEventTriggerInput() bool {
 	return s.Type == EventTriggerInputAutomationTriggerInputSum
+}
+
+// IsDateTriggerInput reports whether AutomationTriggerInputSum is DateTriggerInput.
+func (s AutomationTriggerInputSum) IsDateTriggerInput() bool {
+	return s.Type == DateTriggerInputAutomationTriggerInputSum
 }
 
 // SetEventTriggerInput sets AutomationTriggerInputSum to EventTriggerInput.
@@ -3548,11 +3555,33 @@ func NewEventTriggerInputAutomationTriggerInputSum(v EventTriggerInput) Automati
 	return s
 }
 
+// SetDateTriggerInput sets AutomationTriggerInputSum to DateTriggerInput.
+func (s *AutomationTriggerInputSum) SetDateTriggerInput(v DateTriggerInput) {
+	s.Type = DateTriggerInputAutomationTriggerInputSum
+	s.DateTriggerInput = v
+}
+
+// GetDateTriggerInput returns DateTriggerInput and true boolean if AutomationTriggerInputSum is DateTriggerInput.
+func (s AutomationTriggerInputSum) GetDateTriggerInput() (v DateTriggerInput, ok bool) {
+	if !s.IsDateTriggerInput() {
+		return v, false
+	}
+	return s.DateTriggerInput, true
+}
+
+// NewDateTriggerInputAutomationTriggerInputSum returns new AutomationTriggerInputSum from DateTriggerInput.
+func NewDateTriggerInputAutomationTriggerInputSum(v DateTriggerInput) AutomationTriggerInputSum {
+	var s AutomationTriggerInputSum
+	s.SetDateTriggerInput(v)
+	return s
+}
+
 // AutomationTriggerSum represents sum type.
 type AutomationTriggerSum struct {
 	// Type selects the active sum variant, switch on this field.
 	Type         AutomationTriggerSumType
 	EventTrigger EventTrigger
+	DateTrigger  DateTrigger
 }
 
 // AutomationTriggerSumType is oneOf type of AutomationTriggerSum.
@@ -3561,12 +3590,16 @@ type AutomationTriggerSumType string
 // Possible values for AutomationTriggerSumType.
 const (
 	EventTriggerAutomationTriggerSum AutomationTriggerSumType = "event"
+	DateTriggerAutomationTriggerSum  AutomationTriggerSumType = "date"
 )
 
 // IsEventTrigger reports whether AutomationTriggerSum is EventTrigger.
 func (s AutomationTriggerSum) IsEventTrigger() bool {
 	return s.Type == EventTriggerAutomationTriggerSum
 }
+
+// IsDateTrigger reports whether AutomationTriggerSum is DateTrigger.
+func (s AutomationTriggerSum) IsDateTrigger() bool { return s.Type == DateTriggerAutomationTriggerSum }
 
 // SetEventTrigger sets AutomationTriggerSum to EventTrigger.
 func (s *AutomationTriggerSum) SetEventTrigger(v EventTrigger) {
@@ -3586,6 +3619,27 @@ func (s AutomationTriggerSum) GetEventTrigger() (v EventTrigger, ok bool) {
 func NewEventTriggerAutomationTriggerSum(v EventTrigger) AutomationTriggerSum {
 	var s AutomationTriggerSum
 	s.SetEventTrigger(v)
+	return s
+}
+
+// SetDateTrigger sets AutomationTriggerSum to DateTrigger.
+func (s *AutomationTriggerSum) SetDateTrigger(v DateTrigger) {
+	s.Type = DateTriggerAutomationTriggerSum
+	s.DateTrigger = v
+}
+
+// GetDateTrigger returns DateTrigger and true boolean if AutomationTriggerSum is DateTrigger.
+func (s AutomationTriggerSum) GetDateTrigger() (v DateTrigger, ok bool) {
+	if !s.IsDateTrigger() {
+		return v, false
+	}
+	return s.DateTrigger, true
+}
+
+// NewDateTriggerAutomationTriggerSum returns new AutomationTriggerSum from DateTrigger.
+func NewDateTriggerAutomationTriggerSum(v DateTrigger) AutomationTriggerSum {
+	var s AutomationTriggerSum
+	s.SetDateTrigger(v)
 	return s
 }
 
@@ -11316,6 +11370,211 @@ func (s *DateRecurrence) UnmarshalText(data []byte) error {
 		return nil
 	case DateRecurrenceOnce:
 		*s = DateRecurrenceOnce
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A Trigger that enrolls a Contact on a date it holds (ADR 0126): on each anniversary of its birthday
+// or of a datetime Custom field, or once on such a field, `offsetDays` before or after it, at
+// `localTime` in the Contact's time zone, or in the Workspace time zone when the Contact has no valid
+// one. A yearly date enrolls a Contact at most once per anniversary year, the year of the date the
+// offset counts from, and a once date at most once ever; an occurrence while the previous enrollment
+// is still active is skipped. Only occurrences after the automation was published enroll, at most 24
+// hours late, and the enrollment begins at the occurrence's moment with no triggering Event. A date
+// Trigger has no entry policy, cooldown or Enrollment key, and no rule's enroll action may name its
+// automation.
+// Ref: #/components/schemas/DateTrigger
+type DateTrigger struct {
+	Kind DateTriggerKind `json:"kind"`
+	// The date the occurrences come from.
+	Field DateField `json:"field"`
+	// Every year, or once.
+	Recurrence DateRecurrence `json:"recurrence"`
+	// Days before (negative) or after the date.
+	OffsetDays DateOffsetDays `json:"offsetDays"`
+	// The time of day of each occurrence, in the Contact's time zone.
+	LocalTime LocalTime `json:"localTime"`
+}
+
+// GetKind returns the value of Kind.
+func (s *DateTrigger) GetKind() DateTriggerKind {
+	return s.Kind
+}
+
+// GetField returns the value of Field.
+func (s *DateTrigger) GetField() DateField {
+	return s.Field
+}
+
+// GetRecurrence returns the value of Recurrence.
+func (s *DateTrigger) GetRecurrence() DateRecurrence {
+	return s.Recurrence
+}
+
+// GetOffsetDays returns the value of OffsetDays.
+func (s *DateTrigger) GetOffsetDays() DateOffsetDays {
+	return s.OffsetDays
+}
+
+// GetLocalTime returns the value of LocalTime.
+func (s *DateTrigger) GetLocalTime() LocalTime {
+	return s.LocalTime
+}
+
+// SetKind sets the value of Kind.
+func (s *DateTrigger) SetKind(val DateTriggerKind) {
+	s.Kind = val
+}
+
+// SetField sets the value of Field.
+func (s *DateTrigger) SetField(val DateField) {
+	s.Field = val
+}
+
+// SetRecurrence sets the value of Recurrence.
+func (s *DateTrigger) SetRecurrence(val DateRecurrence) {
+	s.Recurrence = val
+}
+
+// SetOffsetDays sets the value of OffsetDays.
+func (s *DateTrigger) SetOffsetDays(val DateOffsetDays) {
+	s.OffsetDays = val
+}
+
+// SetLocalTime sets the value of LocalTime.
+func (s *DateTrigger) SetLocalTime(val LocalTime) {
+	s.LocalTime = val
+}
+
+// A Trigger that enrolls a Contact on a date it holds (ADR 0126), as a request writes it.
+// Ref: #/components/schemas/DateTriggerInput
+type DateTriggerInput struct {
+	Kind DateTriggerInputKind `json:"kind"`
+	// The date the occurrences come from: the birthday, or a datetime Custom field of the Workspace's
+	// catalogue.
+	Field DateFieldInput `json:"field"`
+	// Every year, or once; the birthday is only yearly.
+	Recurrence DateRecurrence `json:"recurrence"`
+	// Days before (negative) or after the date, within 365.
+	OffsetDays DateOffsetDays `json:"offsetDays"`
+	// The time of day of each occurrence, `HH:MM`, in the Contact's time zone.
+	LocalTime LocalTime `json:"localTime"`
+}
+
+// GetKind returns the value of Kind.
+func (s *DateTriggerInput) GetKind() DateTriggerInputKind {
+	return s.Kind
+}
+
+// GetField returns the value of Field.
+func (s *DateTriggerInput) GetField() DateFieldInput {
+	return s.Field
+}
+
+// GetRecurrence returns the value of Recurrence.
+func (s *DateTriggerInput) GetRecurrence() DateRecurrence {
+	return s.Recurrence
+}
+
+// GetOffsetDays returns the value of OffsetDays.
+func (s *DateTriggerInput) GetOffsetDays() DateOffsetDays {
+	return s.OffsetDays
+}
+
+// GetLocalTime returns the value of LocalTime.
+func (s *DateTriggerInput) GetLocalTime() LocalTime {
+	return s.LocalTime
+}
+
+// SetKind sets the value of Kind.
+func (s *DateTriggerInput) SetKind(val DateTriggerInputKind) {
+	s.Kind = val
+}
+
+// SetField sets the value of Field.
+func (s *DateTriggerInput) SetField(val DateFieldInput) {
+	s.Field = val
+}
+
+// SetRecurrence sets the value of Recurrence.
+func (s *DateTriggerInput) SetRecurrence(val DateRecurrence) {
+	s.Recurrence = val
+}
+
+// SetOffsetDays sets the value of OffsetDays.
+func (s *DateTriggerInput) SetOffsetDays(val DateOffsetDays) {
+	s.OffsetDays = val
+}
+
+// SetLocalTime sets the value of LocalTime.
+func (s *DateTriggerInput) SetLocalTime(val LocalTime) {
+	s.LocalTime = val
+}
+
+type DateTriggerInputKind string
+
+const (
+	DateTriggerInputKindDate DateTriggerInputKind = "date"
+)
+
+// AllValues returns all DateTriggerInputKind values.
+func (DateTriggerInputKind) AllValues() []DateTriggerInputKind {
+	return []DateTriggerInputKind{
+		DateTriggerInputKindDate,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s DateTriggerInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case DateTriggerInputKindDate:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *DateTriggerInputKind) UnmarshalText(data []byte) error {
+	switch DateTriggerInputKind(data) {
+	case DateTriggerInputKindDate:
+		*s = DateTriggerInputKindDate
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type DateTriggerKind string
+
+const (
+	DateTriggerKindDate DateTriggerKind = "date"
+)
+
+// AllValues returns all DateTriggerKind values.
+func (DateTriggerKind) AllValues() []DateTriggerKind {
+	return []DateTriggerKind{
+		DateTriggerKindDate,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s DateTriggerKind) MarshalText() ([]byte, error) {
+	switch s {
+	case DateTriggerKindDate:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *DateTriggerKind) UnmarshalText(data []byte) error {
+	switch DateTriggerKind(data) {
+	case DateTriggerKindDate:
+		*s = DateTriggerKindDate
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -27462,7 +27721,10 @@ func (s *SkippedEntriesListOK) SetTotalPages(val int32) {
 // key value in the automation before, under the `once` entry policy), `cooldown` (under `again`, the
 // cooldown from the beginning of the contact's previous enrollment for the key value had not passed)
 // or `enrollment_ceiling` (the keyed automation's contact had 10 active enrollments, or 10 begun in a
-// day).
+// day). An occurrence of a date Trigger (ADR 0126) is skipped as `active_enrollment` (an enrollment of
+// the contact was active at its moment), `missed` (it was reached 24 hours late or more) or
+// `send_locked` (its date was last written through a Connection without mcp:send; a later write of the
+// date may still enroll it within 24 hours).
 // Ref: #/components/schemas/SkippedEntryReason
 type SkippedEntryReason string
 
@@ -27473,6 +27735,8 @@ const (
 	SkippedEntryReasonOnce              SkippedEntryReason = "once"
 	SkippedEntryReasonCooldown          SkippedEntryReason = "cooldown"
 	SkippedEntryReasonEnrollmentCeiling SkippedEntryReason = "enrollment_ceiling"
+	SkippedEntryReasonMissed            SkippedEntryReason = "missed"
+	SkippedEntryReasonSendLocked        SkippedEntryReason = "send_locked"
 )
 
 // AllValues returns all SkippedEntryReason values.
@@ -27484,6 +27748,8 @@ func (SkippedEntryReason) AllValues() []SkippedEntryReason {
 		SkippedEntryReasonOnce,
 		SkippedEntryReasonCooldown,
 		SkippedEntryReasonEnrollmentCeiling,
+		SkippedEntryReasonMissed,
+		SkippedEntryReasonSendLocked,
 	}
 }
 
@@ -27501,6 +27767,10 @@ func (s SkippedEntryReason) MarshalText() ([]byte, error) {
 	case SkippedEntryReasonCooldown:
 		return []byte(s), nil
 	case SkippedEntryReasonEnrollmentCeiling:
+		return []byte(s), nil
+	case SkippedEntryReasonMissed:
+		return []byte(s), nil
+	case SkippedEntryReasonSendLocked:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -27528,6 +27798,12 @@ func (s *SkippedEntryReason) UnmarshalText(data []byte) error {
 	case SkippedEntryReasonEnrollmentCeiling:
 		*s = SkippedEntryReasonEnrollmentCeiling
 		return nil
+	case SkippedEntryReasonMissed:
+		*s = SkippedEntryReasonMissed
+		return nil
+	case SkippedEntryReasonSendLocked:
+		*s = SkippedEntryReasonSendLocked
+		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
 	}
@@ -27546,11 +27822,12 @@ type SkippedEntryResource struct {
 	// Why the entry was skipped.
 	Reason SkippedEntryReason `json:"reason"`
 	// The source id of the triggering Event (its dedupKey when it had one); absent when a rule's enroll
-	// action tried.
+	// action or a date Trigger's occurrence tried.
 	EventSourceId OptString `json:"eventSourceId"`
 	// The rule firing whose enroll action tried; absent when the automation's trigger did.
 	FiringId OptEntityId `json:"firingId"`
-	// When the enrollment would have begun: when its Event occurred.
+	// When the enrollment would have begun: when its Event occurred, or the moment of the date Trigger's
+	// occurrence.
 	OccurredAt Timestamp `json:"occurredAt"`
 	// When the entry was skipped.
 	CreatedAt Timestamp `json:"createdAt"`
@@ -33303,13 +33580,13 @@ func (s *WaitStepType) UnmarshalText(data []byte) error {
 // Ref: #/components/schemas/WaitUntilDate
 type WaitUntilDate struct {
 	Form WaitUntilDateForm `json:"form"`
-	// The date the moment comes from.
+	// The date the occurrences come from.
 	Field DateField `json:"field"`
 	// Every year, or once.
 	Recurrence DateRecurrence `json:"recurrence"`
 	// Days before (negative) or after the date.
 	OffsetDays DateOffsetDays `json:"offsetDays"`
-	// The time of day of the moment, in the Contact's time zone.
+	// The time of day of each occurrence, in the Contact's time zone.
 	LocalTime LocalTime `json:"localTime"`
 }
 
@@ -33401,14 +33678,14 @@ func (s *WaitUntilDateForm) UnmarshalText(data []byte) error {
 // Ref: #/components/schemas/WaitUntilDateInput
 type WaitUntilDateInput struct {
 	Form WaitUntilDateInputForm `json:"form"`
-	// The date the moment comes from: the birthday, or a datetime Custom field of the Workspace's
+	// The date the occurrences come from: the birthday, or a datetime Custom field of the Workspace's
 	// catalogue.
 	Field DateFieldInput `json:"field"`
 	// Every year, or once; the birthday is only yearly.
 	Recurrence DateRecurrence `json:"recurrence"`
 	// Days before (negative) or after the date, within 365.
 	OffsetDays DateOffsetDays `json:"offsetDays"`
-	// The time of day of the moment, `HH:MM`, in the Contact's time zone.
+	// The time of day of each occurrence, `HH:MM`, in the Contact's time zone.
 	LocalTime LocalTime `json:"localTime"`
 }
 

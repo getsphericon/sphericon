@@ -25,11 +25,11 @@ type AutomationRun struct {
 	ent.Schema
 }
 
-// Annotations adds to the enum checks that an Enrollment began on an Event's Trigger or on a Rule's
-// Firing, never both, that its chain is a list and that its ordinal counts from one.
+// Annotations adds to the enum checks that an Enrollment began on an Event's Trigger, on a Rule's
+// Firing or on an occurrence of a date Trigger, never two, that its chain is a list and that its ordinal counts from one.
 func (AutomationRun) Annotations() []schema.Annotation {
 	a := TableWithEnumChecks("automation_runs", AutomationRun{}.Fields())
-	a.Checks["automation_runs_entry_check"] = "trigger_source_id IS NULL OR firing_id IS NULL"
+	a.Checks["automation_runs_entry_check"] = "num_nonnulls(trigger_source_id, firing_id, occurrence) <= 1"
 	a.Checks["automation_runs_chain_check"] = jsonCheck("chain", "array")
 	a.Checks["automation_runs_ordinal_check"] = "ordinal >= 1"
 	return []schema.Annotation{a}
@@ -92,6 +92,14 @@ func (AutomationRun) Fields() []ent.Field {
 		// Contact in an Automation once. Cleared when retention prunes the Firing (SET NULL), and
 		// null for an Enrollment a Trigger began.
 		field.Int64("firing_id").
+			Optional().
+			Nillable().
+			Immutable(),
+		// The occurrence of a date Trigger the Enrollment was made for (ADR 0126): the anniversary
+		// year of a yearly date, datetrigger.OnceMark for a once date. It belongs to the Automation,
+		// not the version: one Enrollment per Contact and occurrence, whatever field a later version
+		// names. Null for an Enrollment an Event or a Rule began.
+		field.Int("occurrence").
 			Optional().
 			Nillable().
 			Immutable(),
@@ -201,6 +209,11 @@ func (AutomationRun) Indexes() []ent.Index {
 		index.Fields("workspace_id", "automation_id", "firing_id").
 			Unique().
 			StorageKey("automation_runs_workspace_automation_firing"),
+		// One Enrollment per Automation, Contact and occurrence of its date Trigger (ADR 0126).
+		index.Fields("workspace_id", "automation_id", "contact_id", "occurrence").
+			Unique().
+			Annotations(entsql.IndexWhere("occurrence IS NOT NULL")).
+			StorageKey(OccurrenceEnrollmentIndex),
 		// The firing foreign key's index.
 		index.Fields("workspace_id", "firing_id"),
 		// Erasure reaches runs by contact; the leading workspace_id also serves workspace scans.
@@ -218,6 +231,10 @@ func (AutomationRun) Indexes() []ent.Index {
 		index.Fields("workspace_id", "automation_id", "ended_at"),
 	}
 }
+
+// OccurrenceEnrollmentIndex is the partial unique index of a Contact's Enrollment in an Automation
+// per occurrence of its date Trigger.
+const OccurrenceEnrollmentIndex = "automation_runs_occurrence"
 
 // ActiveEnrollmentIndex is the partial unique index of a Contact's active Enrollment in an
 // Automation per key value.

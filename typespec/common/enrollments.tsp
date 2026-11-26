@@ -85,7 +85,10 @@ model EnrollmentResource {
  * enrollment for the key value in the automation before, under the `once` entry policy),
  * `cooldown` (under `again`, the cooldown from the beginning of the contact's previous enrollment
  * for the key value had not passed) or `enrollment_ceiling` (the keyed automation's contact had 10
- * active enrollments, or 10 begun in a day).
+ * active enrollments, or 10 begun in a day). An occurrence of a date Trigger (ADR 0126) is skipped as
+ * `active_enrollment` (an enrollment of the contact was active at its moment), `missed` (it was
+ * reached 24 hours late or more) or `send_locked` (its date was last written through a Connection
+ * without mcp:send; a later write of the date may still enroll it within 24 hours).
  */
 enum SkippedEntryReason {
   no_enrollment_key: "no_enrollment_key",
@@ -94,6 +97,8 @@ enum SkippedEntryReason {
   once: "once",
   cooldown: "cooldown",
   enrollment_ceiling: "enrollment_ceiling",
+  missed: "missed",
+  send_locked: "send_locked",
 }
 
 /** An entry of a contact into an automation that its entry checks refused. Erased with the contact,
@@ -112,14 +117,15 @@ model SkippedEntryResource {
   reason: SkippedEntryReason;
 
   /** The source id of the triggering Event (its dedupKey when it had one); absent when a rule's
-   * enroll action tried */
+   * enroll action or a date Trigger's occurrence tried */
   @untrusted
   eventSourceId?: string;
 
   /** The rule firing whose enroll action tried; absent when the automation's trigger did */
   firingId?: EntityId;
 
-  /** When the enrollment would have begun: when its Event occurred */
+  /** When the enrollment would have begun: when its Event occurred, or the moment of the date
+   * Trigger's occurrence */
   occurredAt: Timestamp;
 
   /** When the entry was skipped */

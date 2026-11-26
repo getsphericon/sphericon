@@ -330,6 +330,16 @@ func TriggerFilterNotNil() predicate.AutomationVersion {
 	return predicate.AutomationVersion(sql.FieldNotNull(FieldTriggerFilter))
 }
 
+// TriggerDateIsNil applies the IsNil predicate on the "trigger_date" field.
+func TriggerDateIsNil() predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldIsNull(FieldTriggerDate))
+}
+
+// TriggerDateNotNil applies the NotNil predicate on the "trigger_date" field.
+func TriggerDateNotNil() predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldNotNull(FieldTriggerDate))
+}
+
 // GoalIsNil applies the IsNil predicate on the "goal" field.
 func GoalIsNil() predicate.AutomationVersion {
 	return predicate.AutomationVersion(sql.FieldIsNull(FieldGoal))

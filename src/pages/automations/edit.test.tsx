@@ -458,9 +458,12 @@ test('a version holding a step of a kind the editor does not know opens read-onl
   await expect.element(nodeButton(screen, 'wait_for_event')).toBeInTheDocument()
   await expect
     .element(
-      screen.getByText('This version holds a step of a kind this editor does not know', {
-        exact: false,
-      }),
+      screen.getByText(
+        'This version holds a step or a trigger of a kind this editor does not know',
+        {
+          exact: false,
+        },
+      ),
     )
     .toBeInTheDocument()
   await expect.element(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
@@ -471,6 +474,44 @@ test('a version holding a step of a kind the editor does not know opens read-onl
     .not.toBeInTheDocument()
   await openNode(screen, 'Wait')
   await expect.element(screen.getByRole('textbox', { name: 'Wait (seconds)' })).toBeDisabled()
+  await expect.element(screen.getByRole('button', { name: 'Publish' })).toBeEnabled()
+})
+
+// A date Trigger (ADR 0126), which this editor does not edit yet, is kept as stored: the version
+// opens read-only, and Publish still publishes it.
+test('a version whose Trigger is a date opens read-only', async () => {
+  worker.use(
+    handleSiteAutomationsGet({
+      body: {
+        ...STORED,
+        draft: {
+          ...withSteps([{ id: stepId(11), type: 'wait', seconds: 60 }]),
+          trigger: {
+            kind: 'date',
+            field: { kind: 'birthday' },
+            recurrence: 'yearly',
+            offsetDays: 0,
+            localTime: '10:00',
+          },
+        },
+      },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
+
+  await expect
+    .element(
+      screen.getByText(
+        'This version holds a step or a trigger of a kind this editor does not know',
+        {
+          exact: false,
+        },
+      ),
+    )
+    .toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
+  await expect.element(screen.getByLabelText('Name', { exact: false })).toBeDisabled()
   await expect.element(screen.getByRole('button', { name: 'Publish' })).toBeEnabled()
 })
 

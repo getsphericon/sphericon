@@ -39,6 +39,8 @@ const (
 	FieldTriggerSourceID = "trigger_source_id"
 	// FieldFiringID holds the string denoting the firing_id field in the database.
 	FieldFiringID = "firing_id"
+	// FieldOccurrence holds the string denoting the occurrence field in the database.
+	FieldOccurrence = "occurrence"
 	// FieldChain holds the string denoting the chain field in the database.
 	FieldChain = "chain"
 	// FieldOrdinal holds the string denoting the ordinal field in the database.
@@ -121,6 +123,7 @@ var Columns = []string{
 	FieldEventProperties,
 	FieldTriggerSourceID,
 	FieldFiringID,
+	FieldOccurrence,
 	FieldChain,
 	FieldOrdinal,
 	FieldKeyValue,
@@ -271,6 +274,11 @@ func ByTriggerSourceID(opts ...sql.OrderTermOption) OrderOption {
 // ByFiringID orders the results by the firing_id field.
 func ByFiringID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldFiringID, opts...).ToFunc()
+}
+
+// ByOccurrence orders the results by the occurrence field.
+func ByOccurrence(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldOccurrence, opts...).ToFunc()
 }
 
 // ByOrdinal orders the results by the ordinal field.

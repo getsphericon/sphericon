@@ -25,7 +25,7 @@ func endingOn(t *testing.T, env *testhelper.TestEnv, workspaceID int64, name str
 	ctx := context.Background()
 	s := env.DB.Scoped(workspaceID)
 	m := testhelper.Module[*automations.Module](env)
-	a, err := m.Create(ctx, s, automations.CreateInput{Name: name, Trigger: eventmatcher.Matcher{Action: "signed_up"}, ExitEvents: exits, GoalEvent: goal})
+	a, err := m.Create(ctx, s, automations.CreateInput{Name: name, Trigger: automations.Trigger{Event: eventmatcher.Matcher{Action: "signed_up"}}, ExitEvents: exits, GoalEvent: goal})
 	require.NoError(t, err)
 	if published {
 		a, err = m.Publish(ctx, s, a.ID, testhelper.AutomationRevisionIn(ctx, t, s, a.ID))

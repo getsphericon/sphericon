@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 )
 
@@ -89,6 +90,12 @@ func (_c *AutomationVersionCreate) SetTriggerAction(v string) *AutomationVersion
 // SetTriggerFilter sets the "trigger_filter" field.
 func (_c *AutomationVersionCreate) SetTriggerFilter(v *conditiontree.EventFilter) *AutomationVersionCreate {
 	_c.mutation.SetTriggerFilter(v)
+	return _c
+}
+
+// SetTriggerDate sets the "trigger_date" field.
+func (_c *AutomationVersionCreate) SetTriggerDate(v *datetrigger.Date) *AutomationVersionCreate {
+	_c.mutation.SetTriggerDate(v)
 	return _c
 }
 
@@ -339,6 +346,10 @@ func (_c *AutomationVersionCreate) createSpec() (*AutomationVersion, *sqlgraph.C
 		_spec.SetField(automationversion.FieldTriggerFilter, field.TypeJSON, value)
 		_node.TriggerFilter = value
 	}
+	if value, ok := _c.mutation.TriggerDate(); ok {
+		_spec.SetField(automationversion.FieldTriggerDate, field.TypeJSON, value)
+		_node.TriggerDate = value
+	}
 	if value, ok := _c.mutation.Exits(); ok {
 		_spec.SetField(automationversion.FieldExits, field.TypeJSON, value)
 		_node.Exits = value
@@ -536,6 +547,24 @@ func (u *AutomationVersionUpsert) UpdateTriggerFilter() *AutomationVersionUpsert
 // ClearTriggerFilter clears the value of the "trigger_filter" field.
 func (u *AutomationVersionUpsert) ClearTriggerFilter() *AutomationVersionUpsert {
 	u.SetNull(automationversion.FieldTriggerFilter)
+	return u
+}
+
+// SetTriggerDate sets the "trigger_date" field.
+func (u *AutomationVersionUpsert) SetTriggerDate(v *datetrigger.Date) *AutomationVersionUpsert {
+	u.Set(automationversion.FieldTriggerDate, v)
+	return u
+}
+
+// UpdateTriggerDate sets the "trigger_date" field to the value that was provided on create.
+func (u *AutomationVersionUpsert) UpdateTriggerDate() *AutomationVersionUpsert {
+	u.SetExcluded(automationversion.FieldTriggerDate)
+	return u
+}
+
+// ClearTriggerDate clears the value of the "trigger_date" field.
+func (u *AutomationVersionUpsert) ClearTriggerDate() *AutomationVersionUpsert {
+	u.SetNull(automationversion.FieldTriggerDate)
 	return u
 }
 
@@ -759,6 +788,27 @@ func (u *AutomationVersionUpsertOne) UpdateTriggerFilter() *AutomationVersionUps
 func (u *AutomationVersionUpsertOne) ClearTriggerFilter() *AutomationVersionUpsertOne {
 	return u.Update(func(s *AutomationVersionUpsert) {
 		s.ClearTriggerFilter()
+	})
+}
+
+// SetTriggerDate sets the "trigger_date" field.
+func (u *AutomationVersionUpsertOne) SetTriggerDate(v *datetrigger.Date) *AutomationVersionUpsertOne {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.SetTriggerDate(v)
+	})
+}
+
+// UpdateTriggerDate sets the "trigger_date" field to the value that was provided on create.
+func (u *AutomationVersionUpsertOne) UpdateTriggerDate() *AutomationVersionUpsertOne {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.UpdateTriggerDate()
+	})
+}
+
+// ClearTriggerDate clears the value of the "trigger_date" field.
+func (u *AutomationVersionUpsertOne) ClearTriggerDate() *AutomationVersionUpsertOne {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.ClearTriggerDate()
 	})
 }
 
@@ -1161,6 +1211,27 @@ func (u *AutomationVersionUpsertBulk) UpdateTriggerFilter() *AutomationVersionUp
 func (u *AutomationVersionUpsertBulk) ClearTriggerFilter() *AutomationVersionUpsertBulk {
 	return u.Update(func(s *AutomationVersionUpsert) {
 		s.ClearTriggerFilter()
+	})
+}
+
+// SetTriggerDate sets the "trigger_date" field.
+func (u *AutomationVersionUpsertBulk) SetTriggerDate(v *datetrigger.Date) *AutomationVersionUpsertBulk {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.SetTriggerDate(v)
+	})
+}
+
+// UpdateTriggerDate sets the "trigger_date" field to the value that was provided on create.
+func (u *AutomationVersionUpsertBulk) UpdateTriggerDate() *AutomationVersionUpsertBulk {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.UpdateTriggerDate()
+	})
+}
+
+// ClearTriggerDate clears the value of the "trigger_date" field.
+func (u *AutomationVersionUpsertBulk) ClearTriggerDate() *AutomationVersionUpsertBulk {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.ClearTriggerDate()
 	})
 }
 

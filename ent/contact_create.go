@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 )
 
 // ContactCreate is the builder for creating a Contact entity.
@@ -243,6 +244,12 @@ func (_c *ContactCreate) SetCustomFields(v map[string]interface{}) *ContactCreat
 	return _c
 }
 
+// SetSendLockedDates sets the "send_locked_dates" field.
+func (_c *ContactCreate) SetSendLockedDates(v []datetrigger.Field) *ContactCreate {
+	_c.mutation.SetSendLockedDates(v)
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *ContactCreate) SetID(v int64) *ContactCreate {
 	_c.mutation.SetID(v)
@@ -391,6 +398,10 @@ func (_c *ContactCreate) defaults() {
 		v := contact.DefaultRevision()
 		_c.mutation.SetRevision(v)
 	}
+	if _, ok := _c.mutation.SendLockedDates(); !ok {
+		v := contact.DefaultSendLockedDates
+		_c.mutation.SetSendLockedDates(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -419,6 +430,9 @@ func (_c *ContactCreate) check() error {
 		if err := contact.SourceValidator(v); err != nil {
 			return &ValidationError{Name: "source", err: fmt.Errorf(`ent: validator failed for field "Contact.source": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.SendLockedDates(); !ok {
+		return &ValidationError{Name: "send_locked_dates", err: errors.New(`ent: missing required field "Contact.send_locked_dates"`)}
 	}
 	if len(_c.mutation.WorkspaceIDs()) == 0 {
 		return &ValidationError{Name: "workspace", err: errors.New(`ent: missing required edge "Contact.workspace"`)}
@@ -519,6 +533,10 @@ func (_c *ContactCreate) createSpec() (*Contact, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.CustomFields(); ok {
 		_spec.SetField(contact.FieldCustomFields, field.TypeJSON, value)
 		_node.CustomFields = value
+	}
+	if value, ok := _c.mutation.SendLockedDates(); ok {
+		_spec.SetField(contact.FieldSendLockedDates, field.TypeJSON, value)
+		_node.SendLockedDates = value
 	}
 	if nodes := _c.mutation.WorkspaceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -943,6 +961,18 @@ func (u *ContactUpsert) ClearCustomFields() *ContactUpsert {
 	return u
 }
 
+// SetSendLockedDates sets the "send_locked_dates" field.
+func (u *ContactUpsert) SetSendLockedDates(v []datetrigger.Field) *ContactUpsert {
+	u.Set(contact.FieldSendLockedDates, v)
+	return u
+}
+
+// UpdateSendLockedDates sets the "send_locked_dates" field to the value that was provided on create.
+func (u *ContactUpsert) UpdateSendLockedDates() *ContactUpsert {
+	u.SetExcluded(contact.FieldSendLockedDates)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -1295,6 +1325,20 @@ func (u *ContactUpsertOne) UpdateCustomFields() *ContactUpsertOne {
 func (u *ContactUpsertOne) ClearCustomFields() *ContactUpsertOne {
 	return u.Update(func(s *ContactUpsert) {
 		s.ClearCustomFields()
+	})
+}
+
+// SetSendLockedDates sets the "send_locked_dates" field.
+func (u *ContactUpsertOne) SetSendLockedDates(v []datetrigger.Field) *ContactUpsertOne {
+	return u.Update(func(s *ContactUpsert) {
+		s.SetSendLockedDates(v)
+	})
+}
+
+// UpdateSendLockedDates sets the "send_locked_dates" field to the value that was provided on create.
+func (u *ContactUpsertOne) UpdateSendLockedDates() *ContactUpsertOne {
+	return u.Update(func(s *ContactUpsert) {
+		s.UpdateSendLockedDates()
 	})
 }
 
@@ -1816,6 +1860,20 @@ func (u *ContactUpsertBulk) UpdateCustomFields() *ContactUpsertBulk {
 func (u *ContactUpsertBulk) ClearCustomFields() *ContactUpsertBulk {
 	return u.Update(func(s *ContactUpsert) {
 		s.ClearCustomFields()
+	})
+}
+
+// SetSendLockedDates sets the "send_locked_dates" field.
+func (u *ContactUpsertBulk) SetSendLockedDates(v []datetrigger.Field) *ContactUpsertBulk {
+	return u.Update(func(s *ContactUpsert) {
+		s.SetSendLockedDates(v)
+	})
+}
+
+// UpdateSendLockedDates sets the "send_locked_dates" field to the value that was provided on create.
+func (u *ContactUpsertBulk) UpdateSendLockedDates() *ContactUpsertBulk {
+	return u.Update(func(s *ContactUpsert) {
+		s.UpdateSendLockedDates()
 	})
 }
 

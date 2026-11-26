@@ -15,7 +15,7 @@ import { zUpdateAutomationInput } from '../../generated/site/zod.gen.ts'
 import { stepId, testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { worker } from '../../test/worker.ts'
-import { flowOf } from './definition.ts'
+import { definitionOf, flowOf } from './definition.ts'
 import type { Flow } from './definition.ts'
 import { automationSubmission, editorSession } from './editorSession.ts'
 import { automationSnapshot } from './leaveSnapshot.ts'
@@ -240,6 +240,22 @@ test('a flow holding a kept Step has no submission', () => {
   const kept = flowOf({ ...DRAFT, steps: { id: stepId(1), steps: [newer] } })
 
   expect(automationSubmission('Kept', kept)).toBeNull()
+})
+
+// A version whose Trigger is a date (ADR 0126), which the editor does not edit yet, is never saved,
+// and reads back the Trigger as stored, so nothing drops it.
+test('a flow holding a date Trigger has no submission and keeps the Trigger', () => {
+  const trigger = {
+    kind: 'date' as const,
+    field: { kind: 'customField' as const, key: 'trial_ends_at' },
+    recurrence: 'once' as const,
+    offsetDays: -3,
+    localTime: '10:00',
+  }
+  const dated = flowOf({ ...DRAFT, trigger })
+
+  expect(automationSubmission('Dated', dated)).toBeNull()
+  expect(definitionOf(dated).trigger).toEqual(trigger)
 })
 
 // A Branch path whose Condition is still being typed is never sent: the Save stops on it first.

@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent/schema/index"
 
 	"github.com/getsphericon/sphericon/internal/kernel/bounds"
+	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 	"github.com/getsphericon/sphericon/internal/kernel/phone"
 )
 
@@ -23,6 +24,7 @@ func (Contact) Annotations() []schema.Annotation {
 	table.Checks[name] = expr
 	table = WithFormatCheck(table, "phone", phone.E164Pattern)
 	table = WithFormatCheck(table, "country", bounds.CountryCodePattern)
+	table.Checks["contacts_send_locked_dates_check"] = jsonCheck("send_locked_dates", "array")
 	return []schema.Annotation{
 		table,
 		Audited{Action: "contact", NamesOnly: true},
@@ -89,6 +91,13 @@ func (Contact) Fields() []ent.Field {
 		// number/bool/datetime, not only strings.
 		field.JSON("custom_fields", map[string]any{}).
 			Optional(),
+		// The date fields (the birthday and the datetime Custom fields, datetrigger.Field) whose last
+		// write came through a Connection without mcp:send (ADR 0132 as amended by ADR 0126): an
+		// occurrence of a date Trigger on such a value enrolls no one. A write of the field without the
+		// mark takes it off; a write that leaves the value as it was changes nothing.
+		field.JSON("send_locked_dates", []datetrigger.Field{}).
+			Default([]datetrigger.Field{}).
+			Annotations(entsql.Default("[]")),
 	}
 }
 

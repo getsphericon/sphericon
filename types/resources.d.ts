@@ -421,7 +421,7 @@ export default interface Resources {
       "integrationDefault": "Workspace default",
       "integrationDeleted": "{{name}} (deleted)",
       "integrationLabel": "Integration",
-      "keptReadOnly": "This version holds a step of a kind this editor does not know. It is shown read-only; publishing or reverting it keeps that step.",
+      "keptReadOnly": "This version holds a step or a trigger of a kind this editor does not know. It is shown read-only; publishing or reverting it keeps them.",
       "keptReadOnlyTitle": "Read-only version",
       "leaveMessage": "Your changes to this automation are not saved.",
       "liveVersion": "Live version {{number}}",
@@ -497,8 +497,10 @@ export default interface Resources {
         "cooldown": "Within the cooldown",
         "cycle": "Caused by this automation",
         "enrollment_ceiling": "Too many enrollments of one contact",
+        "missed": "Reached more than 24 hours late",
         "no_enrollment_key": "The event lacked the enrollment key",
-        "once": "Enrolled before"
+        "once": "Enrolled before",
+        "send_locked": "The date was set by an agent that may not send"
       },
       "smsNodeDescription": "Send a text message to the contact's phone.",
       "splitNodeDescription": "Send each contact down a path drawn by weight, as an A/B test does.",
@@ -546,6 +548,7 @@ export default interface Resources {
       "triggerFiltered": "where the event passes its filter",
       "triggerHint": "The event that enrolls a contact into this automation.",
       "triggerLabel": "Trigger event",
+      "triggerOnDate": "On a date the contact holds",
       "waitNodeDescription": "Pause before the next step.",
       "waitSecondsLabel": "Wait (seconds)",
       "waitUntilFigures": {

@@ -600,6 +600,29 @@ func HasRunsWith(preds ...predicate.AutomationRun) predicate.Automation {
 	})
 }
 
+// HasOccurrenceCursor applies the HasEdge predicate on the "occurrence_cursor" edge.
+func HasOccurrenceCursor() predicate.Automation {
+	return predicate.Automation(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, OccurrenceCursorTable, OccurrenceCursorColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasOccurrenceCursorWith applies the HasEdge predicate on the "occurrence_cursor" edge with a given conditions (other predicates).
+func HasOccurrenceCursorWith(preds ...predicate.AutomationOccurrenceCursor) predicate.Automation {
+	return predicate.Automation(func(s *sql.Selector) {
+		step := newOccurrenceCursorStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Automation) predicate.Automation {
 	return predicate.Automation(sql.AndPredicates(predicates...))

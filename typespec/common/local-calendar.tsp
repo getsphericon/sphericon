@@ -62,3 +62,37 @@ enum DateRecurrence {
 @minValue(-365)
 @maxValue(365)
 scalar DateOffsetDays extends int32;
+
+/** When a date the Contact holds comes (ADR 0126), as a date Trigger enrolls on it and a Wait until
+ * waits for it: on each anniversary of the date, from the year after its own, or once on it,
+ * `offsetDays` before or after it, at `localTime` in the Contact's time zone, or in the Workspace
+ * time zone when the Contact has no valid one */
+model DateOccurrence {
+  /** The date the occurrences come from */
+  field: DateField;
+
+  /** Every year, or once */
+  recurrence: DateRecurrence;
+
+  /** Days before (negative) or after the date */
+  offsetDays: DateOffsetDays;
+
+  /** The time of day of each occurrence, in the Contact's time zone */
+  localTime: LocalTime;
+}
+
+/** When a date the Contact holds comes, as a request writes it */
+model DateOccurrenceInput {
+  /** The date the occurrences come from: the birthday, or a datetime Custom field of the
+   * Workspace's catalogue */
+  field: DateFieldInput;
+
+  /** Every year, or once; the birthday is only yearly */
+  recurrence: DateRecurrence;
+
+  /** Days before (negative) or after the date, within 365 */
+  offsetDays: DateOffsetDays;
+
+  /** The time of day of each occurrence, `HH:MM`, in the Contact's time zone */
+  localTime: LocalTime;
+}

@@ -138,7 +138,7 @@ func (m *StepExecution) enrollOnRule(ctx context.Context, s *ent.Scoped, pub eve
 		o.Action, o.Properties, o.OccurredAt = fired.Action, events.BoundedProperties(fired.Properties), fired.OccurredAt
 		o.BegunOnSourceID = in.SourceID
 	}
-	return m.enroll(ctx, s, pub, automationID, contactID, o, func(a *ent.Automation) (bool, error) {
+	return m.enroll(ctx, s, pub, automationID, contactID, o, func(a *ent.Automation, _ *ent.Contact, _ *origin) (bool, error) {
 		if !active(a) {
 			return false, ErrInactive
 		}
@@ -154,7 +154,7 @@ func (m *StepExecution) enrollOnRule(ctx context.Context, s *ent.Scoped, pub eve
 // action and its filter (matchesEvent): a filter miss is the first entry check, no entry and no
 // skipped entry (ADR 0133).
 func (m *StepExecution) enrollOnTrigger(ctx context.Context, s *ent.Scoped, pub events.Publisher, automationID, contactID int64, o origin) (entered, error) {
-	return m.enroll(ctx, s, pub, automationID, contactID, o, func(a *ent.Automation) (bool, error) {
+	return m.enroll(ctx, s, pub, automationID, contactID, o, func(a *ent.Automation, _ *ent.Contact, _ *origin) (bool, error) {
 		live := a.Edges.LiveVersion
 		if !active(a) || live == nil || live.TriggerAction != o.Action {
 			return false, nil
@@ -180,7 +180,8 @@ var _ = db.Declare(
 )
 
 // enroll makes the Enrollment that began on the Event of o when admits, called under the share lock
-// with the Automation and its live version, accepts it, and the entry checks let it through
+// with the Automation and its live version and under the Contact's lock with the Contact, accepts
+// it (it may set when the entry begins, o.OccurredAt, from what it reads there), and the entry checks let it through
 // (judgeEntry), and copies o's action and properties onto it (#752). A live version with an
 // Enrollment key reads the key's value from o's stored Event (keyValueOf) before the checks judge
 // the entry, and the Enrollment keeps it (ADR 0165). admits answers whether the
@@ -193,7 +194,7 @@ var _ = db.Declare(
 // nothing is made, when the entry is refused or its Event or Firing made an Enrollment already (an
 // entry handled again). The Contact's lock is held to the end of the transaction s is
 // bound to.
-func (m *StepExecution) enroll(ctx context.Context, s *ent.Scoped, pub events.Publisher, automationID, contactID int64, o origin, admits func(*ent.Automation) (bool, error)) (entered, error) {
+func (m *StepExecution) enroll(ctx context.Context, s *ent.Scoped, pub events.Publisher, automationID, contactID int64, o origin, admits func(*ent.Automation, *ent.Contact, *origin) (bool, error)) (entered, error) {
 	held, locked, err := m.lockContact(ctx, s, contactID)
 	if err != nil {
 		return entered{}, err
@@ -212,7 +213,7 @@ func (m *StepExecution) enroll(ctx context.Context, s *ent.Scoped, pub events.Pu
 	if err != nil {
 		return entered{}, err
 	}
-	admitted, err := admits(a.row)
+	admitted, err := admits(a.row, held.Contact(), &o)
 	if err != nil || !admitted {
 		return entered{}, err
 	}

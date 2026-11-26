@@ -40,7 +40,7 @@ func againAutomation(t *testing.T, env *testhelper.TestEnv) int64 {
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := testhelper.Module[*automations.Module](env)
 	created, err := m.Create(ctx, s, automations.CreateInput{
-		Name: "Repeat purchase", Trigger: eventmatcher.Matcher{Action: repeatTrigger},
+		Name: "Repeat purchase", Trigger: automations.Trigger{Event: eventmatcher.Matcher{Action: repeatTrigger}},
 		Entry:      automations.Entry{Policy: automationversion.EntryPolicyAgain},
 		ExitEvents: []eventmatcher.Matcher{{Action: repeatExit}},
 		Steps:      new(automationstep.Root(automationstep.New(automationstep.Wait{Seconds: 30 * 24 * 3600}))),
@@ -237,10 +237,10 @@ func TestTheEntryPolicyDefaultsToOnceAndACooldownUnderAnHourIsRefused(t *testing
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := testhelper.Module[*automations.Module](env)
 
-	plain, err := m.Create(ctx, s, automations.CreateInput{Name: "Plain", Trigger: eventmatcher.Matcher{Action: repeatTrigger}})
+	plain, err := m.Create(ctx, s, automations.CreateInput{Name: "Plain", Trigger: automations.Trigger{Event: eventmatcher.Matcher{Action: repeatTrigger}}})
 	require.NoError(t, err)
 	_, refused := m.Create(ctx, s, automations.CreateInput{
-		Name: "Too often", Trigger: eventmatcher.Matcher{Action: repeatTrigger},
+		Name: "Too often", Trigger: automations.Trigger{Event: eventmatcher.Matcher{Action: repeatTrigger}},
 		Entry: automations.Entry{Policy: automationversion.EntryPolicyAgain, CooldownSeconds: new(1800)},
 	})
 
@@ -264,7 +264,7 @@ func TestAnEditOfTheEntryPolicyAloneWritesTheDraft(t *testing.T) {
 
 	edited, err := m.Update(ctx, s, automationID, automations.UpdateInput{
 		Revision: testhelper.AutomationRevisionIn(ctx, t, s, automationID),
-		Trigger:  &eventmatcher.Matcher{Action: repeatTrigger},
+		Trigger:  &automations.Trigger{Event: eventmatcher.Matcher{Action: repeatTrigger}},
 		Entry:    &automations.Entry{Policy: automationversion.EntryPolicyAgain, CooldownSeconds: new(7200)},
 	})
 

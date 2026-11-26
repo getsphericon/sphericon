@@ -53,6 +53,12 @@ const (
 	AutomationArchivedName = "Old referral nudge"
 	// AutomationArchivedVersionID is from fixtures/automation_versions.
 	AutomationArchivedVersionID = 107
+	// AutomationBirthdayGreetingID is from fixtures/automations.
+	AutomationBirthdayGreetingID = 1713
+	// AutomationBirthdayGreetingName is from fixtures/automations.
+	AutomationBirthdayGreetingName = "Birthday greeting"
+	// AutomationBirthdayGreetingVersionID is from fixtures/automation_versions.
+	AutomationBirthdayGreetingVersionID = 1713
 	// AutomationDuffActiveID is from fixtures/automations.
 	AutomationDuffActiveID = 7701
 	// AutomationDuffActiveName is from fixtures/automations.
@@ -3131,6 +3137,8 @@ const (
 	OAuthCodeGlobexCode = "globex-oauth-code"
 	// OAuthCodeGlobexID is from fixtures/oauth_codes.
 	OAuthCodeGlobexID = 7701
+	// OccurrenceCursorBirthdayGreetingID is from fixtures/automation_occurrence_cursors.
+	OccurrenceCursorBirthdayGreetingID = 1
 	// OllivandersAbeMembershipID is from fixtures/memberships.
 	OllivandersAbeMembershipID = 7952
 	// OllivandersCollectKey is from fixtures/workspaces.

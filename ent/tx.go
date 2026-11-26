@@ -24,6 +24,8 @@ type Tx struct {
 	Automation *AutomationClient
 	// AutomationFigure is the client for interacting with the AutomationFigure builders.
 	AutomationFigure *AutomationFigureClient
+	// AutomationOccurrenceCursor is the client for interacting with the AutomationOccurrenceCursor builders.
+	AutomationOccurrenceCursor *AutomationOccurrenceCursorClient
 	// AutomationRun is the client for interacting with the AutomationRun builders.
 	AutomationRun *AutomationRunClient
 	// AutomationSkippedEntry is the client for interacting with the AutomationSkippedEntry builders.
@@ -312,6 +314,7 @@ func (tx *Tx) init() {
 	tx.AuthAttempt = NewAuthAttemptClient(tx.config)
 	tx.Automation = NewAutomationClient(tx.config)
 	tx.AutomationFigure = NewAutomationFigureClient(tx.config)
+	tx.AutomationOccurrenceCursor = NewAutomationOccurrenceCursorClient(tx.config)
 	tx.AutomationRun = NewAutomationRunClient(tx.config)
 	tx.AutomationSkippedEntry = NewAutomationSkippedEntryClient(tx.config)
 	tx.AutomationStepRecord = NewAutomationStepRecordClient(tx.config)

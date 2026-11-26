@@ -122,7 +122,8 @@ type Deps struct {
 	SendingDomains *sendingdomains.Module
 	// StepExecution executes the steps of the Enrollments (the run_step and http_step jobs).
 	StepExecution *automations.StepExecution
-	// Automations prunes the skipped entries into Automations past the Events' window (ADR 0127).
+	// Automations prunes the skipped entries into Automations past the Events' window (ADR 0127)
+	// and lists the Automations the date scheduler ticks (ADR 0126).
 	Automations *automations.Module
 	JoinDomains *joindomains.Module
 	// Integrations reads an Integration's provider send quota (ADR 0023) and releases a deleted
@@ -189,6 +190,8 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 	river.AddWorker(workers, NewRefreshPrivateRelayWorker(deps.Machine))
 	river.AddWorker(workers, NewPruneEventsWorker(entClient, deps.Rules, deps.Retention.Events, now))
 	river.AddWorker(workers, NewPruneSkippedEntriesWorker(deps.Automations, entClient, deps.Retention.Events))
+	river.AddWorker(workers, NewDateTickWorker(entClient, deps.Automations))
+	river.AddWorker(workers, NewDecideOccurrencesWorker(entClient, stepper))
 	river.AddWorker(workers, NewPruneMessagesWorker(deps.MessageRetention))
 	river.AddWorker(workers, NewPruneWorkspaceMessagesWorker(deps.MessageRetention))
 	// The withdrawal of tracking a default turned to dont_track queues (ADR 0120).
@@ -346,6 +349,8 @@ func periodicJobs(extra []*river.PeriodicJob) []*river.PeriodicJob {
 		every(15*time.Minute, RecheckJoinDomainsArgs{}),
 		// Tracking domains are re-checked on their own cadence (ADR 0038, ADR 0071).
 		every(15*time.Minute, RecheckTrackingDomainsArgs{}),
+		// Decide the occurrences of the date Triggers, within a minute of their local time (ADR 0126).
+		every(time.Minute, DateTickArgs{}),
 		every(time.Hour, RefreshSendQuotasArgs{}),
 		// Drop failed-attempt rows past their window (ADR 0025).
 		every(time.Hour, PurgeAuthAttemptsArgs{}),

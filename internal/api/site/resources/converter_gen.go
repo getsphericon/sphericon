@@ -2637,10 +2637,14 @@ func (c *ConverterImpl) SkippedEntryReasonToResource(source automationskippedent
 		siteapiSkippedEntryReason = site.SkippedEntryReasonCycle
 	case automationskippedentry.ReasonEnrollmentCeiling:
 		siteapiSkippedEntryReason = site.SkippedEntryReasonEnrollmentCeiling
+	case automationskippedentry.ReasonMissed:
+		siteapiSkippedEntryReason = site.SkippedEntryReasonMissed
 	case automationskippedentry.ReasonNoEnrollmentKey:
 		siteapiSkippedEntryReason = site.SkippedEntryReasonNoEnrollmentKey
 	case automationskippedentry.ReasonOnce:
 		siteapiSkippedEntryReason = site.SkippedEntryReasonOnce
+	case automationskippedentry.ReasonSendLocked:
+		siteapiSkippedEntryReason = site.SkippedEntryReasonSendLocked
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}

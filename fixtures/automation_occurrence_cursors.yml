@@ -1,0 +1,17 @@
+# The date scheduler's cursor of an Automation with a date Trigger (ADR 0126): how far its
+# occurrences are decided. Each Publish of a date Trigger resets it.
+- id: 1 # fixture: OccurrenceCursorBirthdayGreeting
+  automation_id: 1713
+  span_start: '{{daysAgo 3}}'
+  decided_through: '{{daysAgo 3}}'
+  workspace_id: 1
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 3}}'
+# Globex (workspace 2): the foreign row the scoped-client isolation tests need.
+- id: 900
+  automation_id: 900
+  span_start: '{{daysAgo 3}}'
+  decided_through: '{{daysAgo 3}}'
+  workspace_id: 2
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 3}}'

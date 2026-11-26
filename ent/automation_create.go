@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/automation"
+	"github.com/getsphericon/sphericon/ent/automationoccurrencecursor"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/workspace"
@@ -198,6 +199,25 @@ func (_c *AutomationCreate) AddRuns(v ...*AutomationRun) *AutomationCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddRunIDs(ids...)
+}
+
+// SetOccurrenceCursorID sets the "occurrence_cursor" edge to the AutomationOccurrenceCursor entity by ID.
+func (_c *AutomationCreate) SetOccurrenceCursorID(id int64) *AutomationCreate {
+	_c.mutation.SetOccurrenceCursorID(id)
+	return _c
+}
+
+// SetNillableOccurrenceCursorID sets the "occurrence_cursor" edge to the AutomationOccurrenceCursor entity by ID if the given value is not nil.
+func (_c *AutomationCreate) SetNillableOccurrenceCursorID(id *int64) *AutomationCreate {
+	if id != nil {
+		_c = _c.SetOccurrenceCursorID(*id)
+	}
+	return _c
+}
+
+// SetOccurrenceCursor sets the "occurrence_cursor" edge to the AutomationOccurrenceCursor entity.
+func (_c *AutomationCreate) SetOccurrenceCursor(v *AutomationOccurrenceCursor) *AutomationCreate {
+	return _c.SetOccurrenceCursorID(v.ID)
 }
 
 // Mutation returns the AutomationMutation object of the builder.
@@ -428,6 +448,22 @@ func (_c *AutomationCreate) createSpec() (*Automation, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(automationrun.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.OccurrenceCursorIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   automation.OccurrenceCursorTable,
+			Columns: []string{automation.OccurrenceCursorColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationoccurrencecursor.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

@@ -82,6 +82,9 @@ func (c *SkippedCounts) add(reason automationskippedentry.Reason, n int) {
 		c.NoEnrollmentKey += n
 	case automationskippedentry.ReasonEnrollmentCeiling:
 		c.EnrollmentCeiling += n
+	case automationskippedentry.ReasonMissed, automationskippedentry.ReasonSendLocked:
+		// An occurrence of a date Trigger (ADR 0126) skipped as reached late or as send-locked: the
+		// report counts them with the occurrences, on their own (#1714).
 	}
 }
 

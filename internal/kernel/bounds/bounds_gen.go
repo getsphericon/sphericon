@@ -306,18 +306,18 @@ const (
 	TriggerCooldownDefault = 3600
 )
 
-// DateOffsetDays is how many whole days before (negative) or after a Contact's date its occurrence comes (ADR 0126).
-// From site DateOffsetDays.
-const (
-	DateOffsetDaysMin = -365
-	DateOffsetDaysMax = 365
-)
-
 // BranchPaths are the listed paths of a Branch, `otherwise` and `unknown` aside (ADR 0124).
 // From site BranchStepInput.paths, site BranchUnknownPathInput.conditions.
 const (
 	BranchPathsMinItems = 1
 	BranchPathsMaxItems = 9
+)
+
+// DateOffsetDays is how many whole days before (negative) or after a Contact's date its occurrence comes (ADR 0126).
+// From site DateOffsetDays.
+const (
+	DateOffsetDaysMin = -365
+	DateOffsetDaysMax = 365
 )
 
 // LocalTime is a local time of day, HH:MM in whole minutes (ADR 0126).
@@ -452,10 +452,10 @@ var Owners = map[string][]string{
 	"RuleTriggerEventsMinItems":          {"Rule"},
 	"EntryCooldownMin":                   {"AutomationVersion"},
 	"TriggerCooldownDefault":             {"AutomationVersion"},
-	"DateOffsetDaysMin":                  {"internal/kernel/localcalendar"},
-	"DateOffsetDaysMax":                  {"internal/kernel/localcalendar"},
 	"BranchPathsMinItems":                {"AutomationVersion"},
 	"BranchPathsMaxItems":                {"AutomationVersion"},
+	"DateOffsetDaysMin":                  {"internal/kernel/localcalendar"},
+	"DateOffsetDaysMax":                  {"internal/kernel/localcalendar"},
 	"LocalTimePattern":                   {"internal/kernel/localcalendar"},
 	"SplitPathsMinItems":                 {"AutomationVersion"},
 	"SplitPathsMaxItems":                 {"AutomationVersion"},

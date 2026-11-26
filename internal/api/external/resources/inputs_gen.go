@@ -57,11 +57,11 @@ func (c *InputsImpl) AutomationCreate(source *external.CreateAutomationInput) (a
 	var automationsCreateInput automations.CreateInput
 	if source != nil {
 		automationsCreateInput.Name = nameIn((*source).Name)
-		eventmatcherMatcher, err := automationTriggerIn((*source).Trigger)
+		automationsTrigger, err := automationTriggerIn(c, (*source).Trigger)
 		if err != nil {
 			return automationsCreateInput, err
 		}
-		automationsCreateInput.Trigger = eventmatcherMatcher
+		automationsCreateInput.Trigger = automationsTrigger
 		automationsCreateInput.Entry = automationEntryIn(c, (*source).Trigger)
 		eventmatcherMatcherList, err := automationExitsIn((*source).ExitEvents)
 		if err != nil {
@@ -112,11 +112,11 @@ func (c *InputsImpl) AutomationUpdate(source *external.UpdateAutomationInput) (a
 	if source != nil {
 		automationsUpdateInput.Revision = revisionIn((*source).Revision)
 		automationsUpdateInput.Name = namePtrIn((*source).Name)
-		pEventmatcherMatcher, err := automationTriggerPtrIn((*source).Trigger)
+		pAutomationsTrigger, err := automationTriggerPtrIn(c, (*source).Trigger)
 		if err != nil {
 			return automationsUpdateInput, err
 		}
-		automationsUpdateInput.Trigger = pEventmatcherMatcher
+		automationsUpdateInput.Trigger = pAutomationsTrigger
 		automationsUpdateInput.Entry = automationEntryPtrIn(c, (*source).Trigger)
 		pEventmatcherMatcherList, err := automationExitsPtrIn((*source).ExitEvents)
 		if err != nil {

@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationfigure"
+	"github.com/getsphericon/sphericon/ent/automationoccurrencecursor"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationskippedentry"
 	"github.com/getsphericon/sphericon/ent/automationsteprecord"
@@ -238,6 +239,7 @@ func eraseSteps() []eraseStep {
 		stepOf((*ent.Scoped).BroadcastFigure, broadcastfigure.IDIn),
 		stepOf((*ent.Scoped).AutomationFigure, automationfigure.IDIn),
 		stepOf((*ent.Scoped).AutomationSkippedEntry, automationskippedentry.IDIn),
+		stepOf((*ent.Scoped).AutomationOccurrenceCursor, automationoccurrencecursor.IDIn),
 		stepOf((*ent.Scoped).RuleFiring, rulefiring.IDIn),
 		stepOf((*ent.Scoped).RuleVersionTrigger, ruleversiontrigger.IDIn),
 		stepOf((*ent.Scoped).RuleVersion, ruleversion.IDIn),
