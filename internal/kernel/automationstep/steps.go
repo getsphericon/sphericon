@@ -232,37 +232,32 @@ func (b Branch) Conditions() []conditiontree.Branch {
 // its paths through it, and a new fork kind implements it.
 type Fork interface {
 	Payload
-	// Forks are the fork's paths, in the order the walker visits them: a Branch's listed paths,
-	// then otherwise, then unknown when it has one.
-	Forks() []Path
+	// Forks are the fork's paths, each with where it lies in the Step's document, in the order the
+	// walker visits them: a Branch's listed paths, then otherwise, then unknown when it has one.
+	Forks() []PlacedPath
 	// WithForks is the fork with its paths replaced by paths, given in the order Forks gives them;
 	// what else it holds (a path's Condition) is kept.
 	WithForks(paths []Path) Fork
-	// ForkPlaces are where the fork's paths lie in its Step's document, in the order Forks gives
-	// them (`paths.0`, `otherwise`): a refusal of a Step in one is placed through it (Locations).
-	ForkPlaces() []string
 }
 
-func (b Branch) Forks() []Path {
-	out := make([]Path, 0, len(b.Paths)+2)
-	for _, p := range b.Paths {
-		out = append(out, Path{ID: p.ID, Steps: p.Steps})
-	}
-	out = append(out, b.Otherwise)
-	if b.Unknown != nil {
-		out = append(out, *b.Unknown)
-	}
-	return out
+// PlacedPath is a path of a fork and where it lies in its Step's document (`paths.0`,
+// `otherwise`): a refusal of a Step in it is placed through it (Locations).
+type PlacedPath struct {
+	Place string
+	Path  Path
 }
 
-func (b Branch) ForkPlaces() []string {
-	out := make([]string, 0, len(b.Paths)+2)
-	for i := range b.Paths {
-		out = append(out, "paths."+strconv.Itoa(i))
+// listedPlace is where the i-th listed path of a fork lies in its Step's document.
+func listedPlace(i int) string { return "paths." + strconv.Itoa(i) }
+
+func (b Branch) Forks() []PlacedPath {
+	out := make([]PlacedPath, 0, len(b.Paths)+2)
+	for i, p := range b.Paths {
+		out = append(out, PlacedPath{Place: listedPlace(i), Path: Path{ID: p.ID, Steps: p.Steps}})
 	}
-	out = append(out, "otherwise")
+	out = append(out, PlacedPath{Place: "otherwise", Path: b.Otherwise})
 	if b.Unknown != nil {
-		out = append(out, "unknown")
+		out = append(out, PlacedPath{Place: "unknown", Path: *b.Unknown})
 	}
 	return out
 }
@@ -294,18 +289,10 @@ type SplitPath struct {
 	Steps  []Step `json:"steps"`
 }
 
-func (s Split) Forks() []Path {
-	out := make([]Path, len(s.Paths))
+func (s Split) Forks() []PlacedPath {
+	out := make([]PlacedPath, len(s.Paths))
 	for i, p := range s.Paths {
-		out[i] = Path{ID: p.ID, Steps: p.Steps}
-	}
-	return out
-}
-
-func (s Split) ForkPlaces() []string {
-	out := make([]string, len(s.Paths))
-	for i := range s.Paths {
-		out[i] = "paths." + strconv.Itoa(i)
+		out[i] = PlacedPath{Place: listedPlace(i), Path: Path{ID: p.ID, Steps: p.Steps}}
 	}
 	return out
 }
@@ -546,7 +533,7 @@ func Identify(p Path, mint func() ID) (Path, error) {
 			return Step{ID: id, Payload: st.Payload}, nil
 		}
 		// A fork's paths are claimed after the fork and before their Steps, which Map reaches next.
-		paths := f.Forks()
+		paths := forkPaths(f)
 		for i := range paths {
 			if paths[i].ID, err = claim(paths[i].ID, nil); err != nil {
 				return Step{}, err

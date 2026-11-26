@@ -56,7 +56,7 @@ func Own(p Path) iter.Seq[*Step] {
 // any other Step.
 func Forks(st *Step) []Path {
 	if f, ok := st.Payload.(Fork); ok {
-		return f.Forks()
+		return forkPaths(f)
 	}
 	return nil
 }
@@ -82,9 +82,8 @@ func locate(p Path, prefix string, out map[ID]string) {
 		if !ok {
 			continue
 		}
-		places := f.ForkPlaces()
-		for j, sub := range f.Forks() {
-			locate(sub, at+"."+places[j]+".", out)
+		for _, sub := range f.Forks() {
+			locate(sub.Path, at+"."+sub.Place+".", out)
 		}
 	}
 }
@@ -165,7 +164,7 @@ func mapPath(p Path, pos *int, rewrite func(pos int, st *Step) (Step, error)) (P
 		}
 		*pos++
 		if f, ok := made.Payload.(Fork); ok {
-			subs := f.Forks()
+			subs := forkPaths(f)
 			mapped := make([]Path, len(subs))
 			for j, sub := range subs {
 				if mapped[j], err = mapPath(sub, pos, rewrite); err != nil {
@@ -184,6 +183,16 @@ func Rewrite(p Path, rewrite func(pos int, st *Step) Step) Path {
 	out, err := Map(p, func(pos int, st *Step) (Step, error) { return rewrite(pos, st), nil })
 	if err != nil {
 		return Path{} // rewrite returns no error
+	}
+	return out
+}
+
+// forkPaths are the paths of the fork, in the order Forks gives them, without their places.
+func forkPaths(f Fork) []Path {
+	placed := f.Forks()
+	out := make([]Path, len(placed))
+	for i, p := range placed {
+		out[i] = p.Path
 	}
 	return out
 }
