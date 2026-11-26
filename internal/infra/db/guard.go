@@ -184,6 +184,9 @@ func pendingMigrations(ctx context.Context, sqlDB *sql.DB) (int, error) {
 }
 
 func isUndefinedTable(err error) bool {
-	var pgErr interface{ SQLState() string }
-	return errors.As(err, &pgErr) && pgErr.SQLState() == pgerrcode.UndefinedTable
+	pgErr, ok := errors.AsType[interface {
+		error
+		SQLState() string
+	}](err)
+	return ok && pgErr.SQLState() == pgerrcode.UndefinedTable
 }

@@ -171,6 +171,8 @@ linters:
         - pattern: ^ent\.(Client|Scoped|WorkspaceLocked)\.TxDriver$
           pkg: '^github\.com/getsphericon/sphericon/ent$'
           msg: the driver of a transaction is the events bus's; publish or queue with events.Bus.PublishIn or EnqueueIn
+        - pattern: ^errors\.As$
+          msg: take the typed error with errors.AsType (CODING_STANDARDS.md), which returns it instead of filling a variable declared for it
         - pattern: ^time\.Sleep$
           msg: no sleeps; wait on the condition, take a clock, or call testhelper.Elapse inside a synctest bubble (CODING_STANDARDS.md)
         - pattern: ^time\.(Now|Since|Until)$

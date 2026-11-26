@@ -122,8 +122,8 @@ func Inserted(err error) (bool, error) {
 
 // read is the declared refusal err stands for, or err.
 func (cs Constraints) read(err error) error {
-	var pgErr *pgconn.PgError
-	if !errors.As(err, &pgErr) {
+	pgErr, ok := errors.AsType[*pgconn.PgError](err)
+	if !ok {
 		return err
 	}
 	if pgErr.Code != pgerrcode.UniqueViolation && pgErr.Code != pgerrcode.ExclusionViolation {

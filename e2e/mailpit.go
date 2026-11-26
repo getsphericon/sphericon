@@ -183,8 +183,8 @@ func StartMailpit(ctx context.Context) (*Mailpit, func(), error) {
 	stop := func() {
 		cleanup.Report("kill mailpit", cmd.Process.Kill())
 		// Waiting for a killed process always ends in an *exec.ExitError (signal: killed).
-		var exited *exec.ExitError
-		if err := cmd.Wait(); err != nil && !errors.As(err, &exited) {
+		err := cmd.Wait()
+		if _, killed := errors.AsType[*exec.ExitError](err); err != nil && !killed {
 			cleanup.Report("wait for mailpit", err)
 		}
 	}

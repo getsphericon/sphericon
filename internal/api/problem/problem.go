@@ -140,12 +140,12 @@ func decide(ctx context.Context, ex *exchange, err error) (int, *siteapi.Problem
 		return http.StatusServiceUnavailable, Body(http.StatusServiceUnavailable, emailrender.ErrRenderUnavailable.Error())
 	}
 	code := http.StatusInternalServerError
-	var oe ogenerrors.Error
-	var tooBig *http.MaxBytesError
+	_, tooBig := errors.AsType[*http.MaxBytesError](err)
+	oe, fromOgen := errors.AsType[ogenerrors.Error](err)
 	switch {
-	case errors.As(err, &tooBig):
+	case tooBig:
 		code = http.StatusRequestEntityTooLarge
-	case errors.As(err, &oe):
+	case fromOgen:
 		code = oe.Code()
 	case errors.Is(err, lifecycle.ErrInvalidTransition):
 		// A move the entity's lifecycle refuses, or lost to a concurrent writer (ADR 0046).

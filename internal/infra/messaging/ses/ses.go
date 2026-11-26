@@ -183,8 +183,8 @@ var refusedCodes = map[string]bool{
 
 // refused tells whether err is one of refusedCodes.
 func refused(err error) bool {
-	var api smithy.APIError
-	return errors.As(err, &api) && refusedCodes[api.ErrorCode()]
+	api, ok := errors.AsType[smithy.APIError](err)
+	return ok && refusedCodes[api.ErrorCode()]
 }
 
 // SendQuota reads the account's send quota and standing (GetAccount): MaxSendRate messages
