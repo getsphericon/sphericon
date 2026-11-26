@@ -52,7 +52,7 @@ func TestSiteSuppressionsCRUD(t *testing.T) {
 	row, err := env.DB.Suppression.Get(ctx, int64(res.ID))
 	require.NoError(t, err)
 	assert.NotNil(t, row.LiftedAt, "the lifted row stays with its lift time")
-	verdict, err := eligibility.New().Check(ctx, env.DB.Scoped(fixtures.AcmeID), eligibility.CheckInput{Channel: channels.Email, Destination: "blocked@example.com", Source: eligibility.SourceBroadcasts})
+	verdict, err := eligibility.New().Check(ctx, env.DB.Scoped(fixtures.AcmeID), eligibility.CheckInput{Channel: channels.Email, Destination: "blocked@example.com", Mode: eligibility.Marketing(eligibility.SourceBroadcasts)})
 	require.NoError(t, err)
 	assert.True(t, verdict.Eligible, "a lifted destination receives mail again")
 

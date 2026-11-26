@@ -50,7 +50,7 @@ func (CapturedMessage) Fields() []ent.Field {
 			Nillable(),
 		// Which surface asked for the send; a Test send of a Broadcast is its own surface.
 		field.Enum("surface").
-			Values("broadcast", "automation", "transactional", "test").
+			Values("broadcast", "automation", "transactional", "confirmation", "test").
 			Immutable(),
 		// The Sending source of a marketing send; nil for transactional (it carries none).
 		field.String("sending_source").

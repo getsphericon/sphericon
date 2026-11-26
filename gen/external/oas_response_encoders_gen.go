@@ -429,6 +429,37 @@ func encodeCapturedMessagesListResponse(response *CapturedMessagesListOK, w http
 	return nil
 }
 
+func encodeConfirmationRequestsCreateResponse(response ConfirmationRequestsCreateRes, w http.ResponseWriter, span trace.Span) error {
+	switch response := response.(type) {
+	case *ConfirmationRequestsCreateOK:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(200)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *ConfirmationRequestsCreateAccepted:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(202)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
+}
+
 func encodeConfirmationsCreateResponse(response *ConfirmationResource, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(201)

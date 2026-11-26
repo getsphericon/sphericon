@@ -129,3 +129,52 @@ func (w *Workspace) contactExport(email string) (externalapi.ContactExportDocume
 	}
 	return doc, doc.Decode(jx.DecodeBytes(raw)) == nil
 }
+
+// RequireConfirmedOptIn sets up the Workspace's confirmation email, from its own From and with
+// subject, and turns confirmed opt-in on, as its owner does in the settings: only a person turns the
+// policy on (ADR 0013), so the step goes through the SPA's API.
+func (w *Workspace) RequireConfirmedOptIn(subject string) {
+	w.t.Helper()
+	ctx := w.t.Context()
+	id := siteapi.WorkspaceId(w.publicID)
+	revision := func() siteapi.Revision {
+		read, err := w.site.SiteWorkspacesGet(ctx, siteapi.SiteWorkspacesGetParams{WorkspaceId: id})
+		require.NoError(w.t, err, "read the workspace")
+		return read.Revision
+	}
+	_, err := w.site.SiteWorkspacesUpdateConfirmationEmail(ctx, &siteapi.SiteUpdateConfirmationEmailInput{
+		Revision: revision(), FromEmail: siteapi.EmailAddress(w.FromEmail), Subject: siteapi.NewOptString(subject),
+	}, siteapi.SiteWorkspacesUpdateConfirmationEmailParams{WorkspaceId: id})
+	require.NoError(w.t, err, "set up the confirmation email")
+	_, err = w.site.SiteWorkspacesSetConfirmedOptIn(ctx, &siteapi.SiteSetConfirmedOptInInput{Revision: revision(), Enabled: true},
+		siteapi.SiteWorkspacesSetConfirmedOptInParams{WorkspaceId: id})
+	require.NoError(w.t, err, "turn confirmed opt-in on")
+}
+
+// RequestConfirmation asks, through the external API, for a confirmation email to the Contact with
+// this email, which ImportContacts made.
+func (w *Workspace) RequestConfirmation(email string) {
+	w.t.Helper()
+	res, err := w.api.ContactsBatchUpsert(w.t.Context(), &externalapi.UpsertContactsInput{Contacts: []externalapi.UpsertContactInput{{
+		Email: externalapi.NewOptNilEmailAddress(externalapi.EmailAddress(email)),
+	}}})
+	out := ok[externalapi.UpsertContactsResult](w.t, "find the contact", res, err)
+	require.Len(w.t, out.Results, 1)
+	contactID, found := out.Results[0].ContactId.Get()
+	require.True(w.t, found, "the contact of %s", email)
+	asked, err := w.api.ConfirmationRequestsCreate(w.t.Context(), externalapi.ConfirmationRequestsCreateParams{ContactId: contactID})
+	ok[externalapi.ConfirmationRequestsCreateAccepted](w.t, "request a confirmation email", asked, err)
+}
+
+// ConfirmFromEmail is the recipient pressing the Confirm button of a confirmation email: the link
+// answers 303 to the confirmation page, which reads its token from its own address, and the page's
+// Confirm button performs the confirmation through the site API, as a visitor who is not signed in.
+func (w *Workspace) ConfirmFromEmail(msg Message) {
+	w.t.Helper()
+	link := msg.Link("/e/confirm/")
+	require.NotEmpty(w.t, link, "the email %q carries a confirmation link", msg.Subject)
+	page := w.openLink(link, http.StatusSeeOther)
+	token := w.pageToken(page, "/confirm")
+	err := w.anonymousSite().SitePublicConfirmationsPerform(w.t.Context(), siteapi.SitePublicConfirmationsPerformParams{Token: token})
+	require.NoError(w.t, err, "the confirmation page's Confirm")
+}

@@ -42,10 +42,10 @@ var MessageActions = []string{
 }
 
 // KeptActions are the evidentiary System events Event retention never deletes by age (ADR 0019):
-// consent proof, Engagement tracking consent, complaints and unsubscribes. A hard bounce is kept
+// consent proof, Engagement tracking consent, complaints, unsubscribes and the returns that lift them. A hard bounce is kept
 // too, which its bounceKind says (BounceKindProperty), so email.bounced as an action is not.
 var KeptActions = []string{
-	MarketingConfirmed, SmsConfirmed, EmailComplained, EmailUnsubscribed,
+	MarketingConfirmed, SmsConfirmed, EmailComplained, EmailUnsubscribed, EmailResubscribed,
 	EmailEngagementTrackingGranted, EmailEngagementTrackingDenied,
 	SmsEngagementTrackingGranted, SmsEngagementTrackingDenied,
 	TelegramEngagementTrackingGranted, TelegramEngagementTrackingDenied,

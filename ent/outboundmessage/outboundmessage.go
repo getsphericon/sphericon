@@ -268,6 +268,7 @@ const (
 	KindBroadcast     Kind = "broadcast"
 	KindAutomation    Kind = "automation"
 	KindTransactional Kind = "transactional"
+	KindConfirmation  Kind = "confirmation"
 )
 
 func (k Kind) String() string {
@@ -277,7 +278,7 @@ func (k Kind) String() string {
 // KindValidator is a validator for the "kind" field enum values. It is called by the builders before save.
 func KindValidator(k Kind) error {
 	switch k {
-	case KindBroadcast, KindAutomation, KindTransactional:
+	case KindBroadcast, KindAutomation, KindTransactional, KindConfirmation:
 		return nil
 	default:
 		return fmt.Errorf("outboundmessage: invalid enum value for kind field: %q", k)

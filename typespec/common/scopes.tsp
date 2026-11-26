@@ -77,6 +77,7 @@ enum SendScope {
   emailsSend: "emails:send",
   broadcastsSend: "broadcasts:send",
   automationsPublish: "automations:publish",
+  confirmationsSend: "confirmations:send",
   mcpSend: "mcp:send",
 }
 

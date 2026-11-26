@@ -39,10 +39,12 @@ import (
 const (
 	PolicyHuman = "human"
 	// PolicyTestSend is the cap on Test sends from the System sender (ADR 0041).
-	PolicyTestSend   = "test-send"
-	PolicyAPIBurst   = "api-burst"
-	PolicyAPI        = "api"
-	PolicyFailedAuth = "failed-auth"
+	PolicyTestSend = "test-send"
+	// PolicyConfirmation is the cap on the confirmation emails of a Destination (ADR 0013).
+	PolicyConfirmation = "confirmation"
+	PolicyAPIBurst     = "api-burst"
+	PolicyAPI          = "api"
+	PolicyFailedAuth   = "failed-auth"
 	// PolicyTracking is the recording guard of opens and clicks. It never refuses.
 	PolicyTracking = "tracking"
 	// PolicyLoginAccount is the per-account login delay, PolicyLoginIP the per-IP cap

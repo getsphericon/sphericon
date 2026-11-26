@@ -17,10 +17,11 @@
 // Audience narrows a Contact query to the Contacts with an eligible Destination. The rule is
 // keyed by destination, never by Contact — a transactional destination may have no Contact.
 //
-// A source of "" means a transactional send (ADR 0005): it skips layers 2–4 (you
-// cannot opt out of, nor must you confirm, your own password reset) but still
-// respects Suppression. Whether the workspace requires confirmed opt-in is read
-// inside the rule, so no caller can forget the confirmation gate.
+// Which layers apply is the Mode a message is checked in (mode.go): a marketing message all of
+// them under its Sending source; a transactional send (ADR 0005) Suppression only (you cannot opt out
+// of, nor must you confirm, your own password reset); a confirmation email (ADR 0013) Suppression,
+// and an opt-out of everything when the Workspace asked for it. Whether the workspace requires
+// confirmed opt-in is read inside the rule, so no caller can forget the confirmation gate.
 //
 // Stored destinations and contact.email are both in their Email case (internal/kernel/emailcase,
 // held by each column's lower-case CHECK), so the Contact-side comparison is a plain equality,
@@ -67,13 +68,12 @@ func New() *Module { return &Module{} }
 type CheckInput struct {
 	Channel     channels.Channel
 	Destination string
-	// Source is the Sending source the message goes out under, "" for a transactional send.
-	Source string
+	// Mode is what the message is checked for (Marketing, Transactional, a confirmation's).
+	Mode Mode
 }
 
-// Check decides eligibility for one destination in the scoped Workspace. in.Source is
-// the Sending source the message goes out under, or "" for a transactional send. An
-// empty destination is treated as eligible — the caller decides what a missing
+// Check decides eligibility for one destination in the scoped Workspace, in the mode in.Mode; a
+// Mode no constructor made is an error. An empty destination is treated as eligible — the caller decides what a missing
 // address means (there is nothing to suppress against).
 //
 // The rule is one SQL expression (layers) whose Workspace comes from s; the
@@ -83,7 +83,10 @@ type CheckInput struct {
 // client; HAVING TRUE turns the select into a single-group one, so exactly one row
 // comes back whether or not the Workspace has any Suppression.
 func (m *Module) Check(ctx context.Context, s *ent.Scoped, in CheckInput) (Decision, error) {
-	channel, source := in.Channel, in.Source
+	channel, mode := in.Channel, in.Mode
+	if !mode.valid() {
+		return Decision{}, errNoMode
+	}
 	d := emailcase.Of(in.Destination)
 	if d == "" {
 		return Decision{Eligible: true}, nil
@@ -101,7 +104,7 @@ func (m *Module) Check(ctx context.Context, s *ent.Scoped, in CheckInput) (Decis
 				b.WriteString("CASE WHEN NOT EXISTS (SELECT 1 FROM ").Ident(workspace.Table).
 					WriteString(" WHERE ").Ident(workspace.FieldID).WriteString(" = ").Arg(s.WorkspaceID()).
 					WriteString(") THEN ").Arg(workspaceMissing)
-				for _, l := range layers(r, channel, source) {
+				for _, l := range layers(r, channel, mode) {
 					b.WriteString(" WHEN ")
 					b.Join(l.blocks)
 					b.WriteString(" THEN ").Arg(string(l.reason))
@@ -199,13 +202,17 @@ func (d bindingDestination) reach(s *sql.Selector, eligible func(ref) *sql.Predi
 	s.Where(sql.Exists(sub))
 }
 
-// Audience narrows a Contact query to the Contacts reachable at dest on its Channel from
-// source: they have the Destination and it is eligible; "" source means transactional
-// (Suppression only). It composes with a Segment predicate (both are predicate.Contact).
-func Audience(dest Destination, source string) predicate.Contact {
+// Audience narrows a Contact query to the Contacts reachable at dest on its Channel in mode: they
+// have the Destination and it is eligible. A Mode no constructor made keeps nobody. It composes with
+// a Segment predicate (both are predicate.Contact).
+func Audience(dest Destination, mode Mode) predicate.Contact {
 	return func(s *sql.Selector) {
+		if !mode.valid() {
+			s.Where(sql.False())
+			return
+		}
 		dest.reach(s, func(r ref) *sql.Predicate {
-			ls := layers(r, dest.channel(), source)
+			ls := layers(r, dest.channel(), mode)
 			kept := make([]*sql.Predicate, len(ls))
 			for i, l := range ls {
 				kept[i] = sql.Not(l.blocks)
@@ -241,7 +248,7 @@ func (m *Module) BroadcastAudience(ctx context.Context, s *ent.Scoped, channel c
 	default:
 		return nil, fmt.Errorf("channel %q has no destination", channel)
 	}
-	return Audience(dest, SourceBroadcasts), nil
+	return Audience(dest, Marketing(SourceBroadcasts)), nil
 }
 
 // GloballyOptedOut matches contacts whose destination is non-mailable on the given
@@ -254,7 +261,7 @@ func GloballyOptedOut(channel channels.Channel) predicate.Contact {
 	return func(s *sql.Selector) {
 		r := contactRef(s)
 		var preds []*sql.Predicate
-		for _, l := range layers(r, channel, SourceBroadcasts) {
+		for _, l := range layers(r, channel, Marketing(SourceBroadcasts)) {
 			if l.reason == skipreason.Suppressed || l.reason == skipreason.UnsubscribedEverything {
 				preds = append(preds, l.blocks)
 			}
@@ -273,7 +280,7 @@ func UnconfirmedMailable() predicate.Contact {
 	return func(s *sql.Selector) {
 		r := contactRef(s)
 		kept := []*sql.Predicate{sql.NotNull(s.C(contact.FieldEmail))}
-		for _, l := range layers(r, channels.Email, SourceEverything) {
+		for _, l := range layers(r, channels.Email, Marketing(SourceEverything)) {
 			if l.reason == skipreason.Suppressed || l.reason == skipreason.UnsubscribedEverything {
 				kept = append(kept, sql.Not(l.blocks))
 			}
@@ -323,24 +330,28 @@ var (
 
 // layers is the single definition of the eligibility rule, in precedence order
 // (negatives first, the positive confirmation gate last so the negatives always
-// dominate). source "" is a transactional send.
-func layers(r ref, channel channels.Channel, source string) []layer {
+// dominate), as mode takes it; the caller has checked that mode is valid.
+func layers(r ref, channel channels.Channel, mode Mode) []layer {
 	suppressed := layer{
 		reason: skipreason.Suppressed,
 		blocks: sql.Exists(match(r, suppressionStore, channel)),
 	}
-	if source == "" {
+	everything := layer{
+		reason: skipreason.UnsubscribedEverything,
+		blocks: sql.Exists(match(r, unsubscribes, channel, unsubscribe.FieldSendingSource, SourceEverything)),
+	}
+	switch mode.Kind() {
+	case ModeTransactional, ModeConfirmationByPerson:
 		return []layer{suppressed}
+	case ModeConfirmationByWorkspace:
+		return []layer{suppressed, everything}
+	case ModeMarketing:
 	}
 	out := make([]layer, 0, 4)
-	out = append(out, suppressed,
-		layer{
-			reason: skipreason.UnsubscribedEverything,
-			blocks: sql.Exists(match(r, unsubscribes, channel, unsubscribe.FieldSendingSource, SourceEverything)),
-		},
+	out = append(out, suppressed, everything,
 		layer{
 			reason: skipreason.UnsubscribedSource,
-			blocks: sql.Exists(match(r, unsubscribes, channel, unsubscribe.FieldSendingSource, source)),
+			blocks: sql.Exists(match(r, unsubscribes, channel, unsubscribe.FieldSendingSource, mode.Source())),
 		})
 	unconfirmed := sql.NotExists(match(r, confirmations, channel))
 	switch channel {

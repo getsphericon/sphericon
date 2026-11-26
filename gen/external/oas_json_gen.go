@@ -407,6 +407,8 @@ func (s *ApiTokenScope) Decode(d *jx.Decoder) error {
 		*s = ApiTokenScopeBroadcastsSend
 	case ApiTokenScopeAutomationsPublish:
 		*s = ApiTokenScopeAutomationsPublish
+	case ApiTokenScopeConfirmationsSend:
+		*s = ApiTokenScopeConfirmationsSend
 	case ApiTokenScopeMcpSend:
 		*s = ApiTokenScopeMcpSend
 	case ApiTokenScopeSendingDomainsWrite:
@@ -11646,6 +11648,8 @@ func (s *CapturedMessageSurface) Decode(d *jx.Decoder) error {
 		*s = CapturedMessageSurfaceAutomation
 	case CapturedMessageSurfaceTransactional:
 		*s = CapturedMessageSurfaceTransactional
+	case CapturedMessageSurfaceConfirmation:
+		*s = CapturedMessageSurfaceConfirmation
 	case CapturedMessageSurfaceTest:
 		*s = CapturedMessageSurfaceTest
 	default:
@@ -12088,6 +12092,216 @@ func (s ConfirmationProvenance) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *ConfirmationProvenance) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *ConfirmationRequestResult) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *ConfirmationRequestResult) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("status")
+		s.Status.Encode(e)
+	}
+}
+
+var jsonFieldsNameOfConfirmationRequestResult = [1]string{
+	0: "status",
+}
+
+// Decode decodes ConfirmationRequestResult from json.
+func (s *ConfirmationRequestResult) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ConfirmationRequestResult to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "status":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Status.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"status\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode ConfirmationRequestResult")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000001,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfConfirmationRequestResult) {
+					name = jsonFieldsNameOfConfirmationRequestResult[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *ConfirmationRequestResult) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ConfirmationRequestResult) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ConfirmationRequestStatus as json.
+func (s ConfirmationRequestStatus) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes ConfirmationRequestStatus from json.
+func (s *ConfirmationRequestStatus) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ConfirmationRequestStatus to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch ConfirmationRequestStatus(v) {
+	case ConfirmationRequestStatusAccepted:
+		*s = ConfirmationRequestStatusAccepted
+	case ConfirmationRequestStatusConfirmed:
+		*s = ConfirmationRequestStatusConfirmed
+	default:
+		*s = ConfirmationRequestStatus(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s ConfirmationRequestStatus) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ConfirmationRequestStatus) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ConfirmationRequestsCreateAccepted as json.
+func (s *ConfirmationRequestsCreateAccepted) Encode(e *jx.Encoder) {
+	unwrapped := (*ConfirmationRequestResult)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes ConfirmationRequestsCreateAccepted from json.
+func (s *ConfirmationRequestsCreateAccepted) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ConfirmationRequestsCreateAccepted to nil")
+	}
+	var unwrapped ConfirmationRequestResult
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = ConfirmationRequestsCreateAccepted(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *ConfirmationRequestsCreateAccepted) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ConfirmationRequestsCreateAccepted) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ConfirmationRequestsCreateOK as json.
+func (s *ConfirmationRequestsCreateOK) Encode(e *jx.Encoder) {
+	unwrapped := (*ConfirmationRequestResult)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes ConfirmationRequestsCreateOK from json.
+func (s *ConfirmationRequestsCreateOK) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ConfirmationRequestsCreateOK to nil")
+	}
+	var unwrapped ConfirmationRequestResult
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = ConfirmationRequestsCreateOK(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *ConfirmationRequestsCreateOK) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ConfirmationRequestsCreateOK) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

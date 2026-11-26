@@ -35,7 +35,7 @@ func TestAddNormalizesAndSuppressesInEligibility(t *testing.T) {
 	assert.Equal(t, "blocked@example.com", got.Destination)
 	assert.Equal(t, entsuppression.ReasonManual, got.Reason)
 
-	verdict, err := eligibility.New().Check(ctx, s, eligibility.CheckInput{Channel: channels.Email, Destination: "BLOCKED@example.com", Source: eligibility.SourceBroadcasts})
+	verdict, err := eligibility.New().Check(ctx, s, eligibility.CheckInput{Channel: channels.Email, Destination: "BLOCKED@example.com", Mode: eligibility.Marketing(eligibility.SourceBroadcasts)})
 	require.NoError(t, err)
 	assert.False(t, verdict.Eligible)
 	assert.Equal(t, skipreason.Suppressed, verdict.Reason)
@@ -159,7 +159,7 @@ func TestAManualSMSSuppressionStoresTheNumberInE164(t *testing.T) {
 	assert.Equal(t, "+14155550132", got.Destination)
 	assert.Equal(t, channels.SMS, got.Channel)
 
-	verdict, err := eligibility.New().Check(ctx, s, eligibility.CheckInput{Channel: channels.SMS, Destination: "+14155550132", Source: eligibility.SourceBroadcasts})
+	verdict, err := eligibility.New().Check(ctx, s, eligibility.CheckInput{Channel: channels.SMS, Destination: "+14155550132", Mode: eligibility.Marketing(eligibility.SourceBroadcasts)})
 	require.NoError(t, err)
 	assert.Equal(t, skipreason.Suppressed, verdict.Reason)
 

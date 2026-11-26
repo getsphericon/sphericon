@@ -21,6 +21,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/linktarget"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -196,4 +197,48 @@ func TestSitePublicConsentOfAnErasedWorkspaceRecordsNothing(t *testing.T) {
 	require.NoError(t, confirmErr)
 	assert.Zero(t, optOuts)
 	assert.Zero(t, confirmed)
+}
+
+// Pressing Confirm on an unexpired link is the person's own act on fresh proof (ADR 0013): it lifts
+// the address's opt-out of everything, recorded as email.resubscribed, before the Confirmation, in
+// one transaction. A per-source opt-out stays.
+func TestSitePublicConfirmationLiftsAnOptOutOfEverything(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	env.UnsubscribeFromEverything(ctx, fixtures.ContactAliceEmail)
+	env.UnsubscribeFromBroadcasts(ctx, fixtures.ContactAliceEmail)
+	url, err := env.Tracker.ConfirmURL(linktarget.Confirmation{
+		Destination: fixtures.ContactAliceEmail, WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID,
+	})
+	require.NoError(t, err)
+	token := tokenAfter(t, url, "/e/confirm/")
+	check := func(source string) eligibility.Decision {
+		d, err := eligibility.New().Check(ctx, env.DB.Scoped(fixtures.AcmeID), eligibility.CheckInput{
+			Channel: channels.Email, Destination: fixtures.ContactAliceEmail, Mode: eligibility.Marketing(source),
+		})
+		require.NoError(t, err)
+		return d
+	}
+
+	anon := env.SiteAnonymous(t)
+	params := siteapi.SitePublicConfirmationsPerformParams{Token: token}
+
+	err = anon.SitePublicConfirmationsPerform(ctx, params)
+	require.NoError(t, err)
+
+	fromAutomation := check(eligibility.AutomationSource(fixtures.AutomationWelcomeSeriesID))
+	fromBroadcasts := check(eligibility.SourceBroadcasts)
+	queued := env.QueuedMessages(t, systemevent.EmailResubscribed, systemevent.MarketingConfirmed)
+	assert.True(t, fromAutomation.Eligible, "the opt-out of everything is lifted")
+	assert.Equal(t, skipreason.UnsubscribedSource, fromBroadcasts.Reason, "the per-source opt-out stays")
+	require.Len(t, queued, 2)
+	assert.Equal(t, systemevent.EmailResubscribed, queued[0].Envelope.Name, "the return comes before the Confirmation")
+	assert.Equal(t, eligibility.SourceEverything, queued[0].Data["source"])
+	assert.Equal(t, events.ResubscribedViaConfirmation, queued[0].Data["via"])
+	assert.Equal(t, systemevent.MarketingConfirmed, queued[1].Envelope.Name)
+
+	err = anon.SitePublicConfirmationsPerform(ctx, params)
+	require.NoError(t, err)
+	again := env.QueuedMessages(t, systemevent.EmailResubscribed)
+	assert.Len(t, again, 1, "a repeated Confirm lifts nothing again")
 }

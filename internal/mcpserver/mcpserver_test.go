@@ -82,7 +82,7 @@ var (
 		"rules_list", "rules_create", "rules_get", "rules_update", "rules_dry_run", "rules_deactivate", "rules_revert", "rules_delete", "rule_firings_list",
 		"automations_deactivate", "automations_revert", "automations_archive", "automations_unarchive", "automations_dry_run_http_step", "automations_report", "automations_skipped_entries_list", "enrollments_list", "enrollments_get",
 	}
-	sendTools = []string{"emails_send", "broadcasts_schedule", "broadcasts_unschedule", "automations_publish", "rules_publish"}
+	sendTools = []string{"emails_send", "contacts_confirmation_request", "broadcasts_schedule", "broadcasts_unschedule", "automations_publish", "rules_publish"}
 )
 
 func listedTools(t *testing.T, s *mcp.ClientSession) map[string]*mcp.Tool {

@@ -44,6 +44,7 @@ func pruneAll(t *testing.T, u *messageretention.UseCase, budget int) messagerete
 			total.Broadcast += p.Broadcast
 			total.Automation += p.Automation
 			total.Transactional += p.Transactional
+			total.Confirmation += p.Confirmation
 			if !p.More {
 				break
 			}

@@ -38,3 +38,14 @@ func (env *TestEnv) UnsubscribeFromBroadcasts(ctx context.Context, destination s
 		panic(err)
 	}
 }
+
+// UnsubscribeFromEverything opts a destination of Acme out of everything on email by moving the
+// fixture's opt-out of everything that has no Contact onto it: a test that needs one landing at a
+// chosen moment moves that row instead of creating one.
+func (env *TestEnv) UnsubscribeFromEverything(ctx context.Context, destination string) {
+	err := env.DB.Scoped(fixtures.AcmeID).Unsubscribe().UpdateOneID(fixtures.UnsubscribeEverythingNoContactID).
+		SetDestination(destination).Exec(ctx)
+	if err != nil {
+		panic(err)
+	}
+}

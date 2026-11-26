@@ -81,6 +81,15 @@ func HasConfirmationEmail(ws *ent.Workspace) bool {
 	return ws.ConfirmationFromEmail != nil
 }
 
+// RequireConfirmationEmail refuses with ErrConfirmationEmailRequired while ws has no confirmation
+// email set up: a Confirmation request has nothing to send (ADR 0013).
+func RequireConfirmationEmail(ws *ent.Workspace) error {
+	if !HasConfirmationEmail(ws) {
+		return ErrConfirmationEmailRequired
+	}
+	return nil
+}
+
 var (
 	// ErrConfirmationEmailRequired refuses confirmed opt-in, or a Confirmation request, while the
 	// Workspace has no confirmation email set up (ADR 0013).

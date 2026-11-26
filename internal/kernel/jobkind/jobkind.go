@@ -66,6 +66,8 @@ var (
 	RunStep         = Key{Kind: "automation_run_step", Arg: "run_id"}
 	HTTPStep        = Key{Kind: "automation_http_step", Arg: "run_id"}
 	SendRecipient   = Key{Kind: "send_broadcast_recipient", Arg: "recipient_id"}
+	// SendConfirmation is a Confirmation request's email (ADR 0013), matched by its Contact.
+	SendConfirmation = Key{Kind: "send_confirmation", Arg: "contact_id"}
 	// RuleEvaluate carries the Event's properties, so it is matched by its Contact.
 	RuleEvaluate = Key{Kind: "rule_evaluate_event", Arg: "contact_id"}
 )
@@ -86,4 +88,4 @@ const DeliverWebhookBodyArg = "body"
 
 // Purged lists every kind Erasure purges by an integer argument; a kind it purges by a Destination
 // is a DestinationKey (TrackingWithdrawal).
-var Purged = []Key{DeliverWebhook, EvaluateTrigger, RunStep, HTTPStep, SendRecipient, RuleEvaluate}
+var Purged = []Key{DeliverWebhook, EvaluateTrigger, RunStep, HTTPStep, SendRecipient, SendConfirmation, RuleEvaluate}

@@ -262,6 +262,21 @@ type Invoker interface {
 	//
 	// GET /captured-messages
 	CapturedMessagesList(ctx context.Context, params CapturedMessagesListParams) (*CapturedMessagesListOK, error)
+	// ConfirmationRequestsCreate invokes ConfirmationRequests_create operation.
+	//
+	// Ask for a double opt-in confirmation email to the contact's email address (ADR 0013): it is sent by
+	// a job through the Workspace's confirmation email, whose link records a Confirmation with provenance
+	// `double_opt_in` when the person presses Confirm. An address that already holds a Confirmation gets
+	// no mail and the answer is `confirmed` (200). 409 `confirmation_email_required` while the Workspace
+	// has no confirmation email set up; 409 when the address opted out of everything or is suppressed,
+	// naming which: soliciting a person who left is itself a violation, and only the person returns,
+	// through a form or the Preference page. 422 when the contact has no email address. At most 3
+	// confirmation emails reach an address in 24 hours, whoever asks: a fourth is a 429 with
+	// `Retry-After`. It works whether or not the Workspace requires confirmed opt-in. Send-class: needs
+	// the confirmations:send scope, and mcp:send over MCP.
+	//
+	// POST /contacts/{contactId}/confirmation-requests
+	ConfirmationRequestsCreate(ctx context.Context, params ConfirmationRequestsCreateParams) (ConfirmationRequestsCreateRes, error)
 	// ConfirmationsCreate invokes Confirmations_create operation.
 	//
 	// Record consent a phone number gave outside sphericon (a form of your own, a verification service),
@@ -5614,6 +5629,150 @@ func (c *Client) sendCapturedMessagesList(ctx context.Context, params CapturedMe
 
 	stage = "DecodeResponse"
 	result, err := decodeCapturedMessagesListResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// ConfirmationRequestsCreate invokes ConfirmationRequests_create operation.
+//
+// Ask for a double opt-in confirmation email to the contact's email address (ADR 0013): it is sent by
+// a job through the Workspace's confirmation email, whose link records a Confirmation with provenance
+// `double_opt_in` when the person presses Confirm. An address that already holds a Confirmation gets
+// no mail and the answer is `confirmed` (200). 409 `confirmation_email_required` while the Workspace
+// has no confirmation email set up; 409 when the address opted out of everything or is suppressed,
+// naming which: soliciting a person who left is itself a violation, and only the person returns,
+// through a form or the Preference page. 422 when the contact has no email address. At most 3
+// confirmation emails reach an address in 24 hours, whoever asks: a fourth is a 429 with
+// `Retry-After`. It works whether or not the Workspace requires confirmed opt-in. Send-class: needs
+// the confirmations:send scope, and mcp:send over MCP.
+//
+// POST /contacts/{contactId}/confirmation-requests
+func (c *Client) ConfirmationRequestsCreate(ctx context.Context, params ConfirmationRequestsCreateParams) (ConfirmationRequestsCreateRes, error) {
+	res, err := c.sendConfirmationRequestsCreate(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendConfirmationRequestsCreate(ctx context.Context, params ConfirmationRequestsCreateParams) (res ConfirmationRequestsCreateRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("ConfirmationRequests_create"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/contacts/{contactId}/confirmation-requests"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ConfirmationRequestsCreateOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/contacts/"
+	{
+		// Encode "contactId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "contactId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := publicid.ID(params.ContactId); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/confirmation-requests"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:BearerAuth"
+			switch err := c.securityBearerAuth(ctx, ConfirmationRequestsCreateOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"BearerAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeConfirmationRequestsCreateResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}

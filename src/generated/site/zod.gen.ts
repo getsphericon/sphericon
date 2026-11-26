@@ -49,6 +49,7 @@ export const zApiTokenScope = z.enum([
   'emails:send',
   'broadcasts:send',
   'automations:publish',
+  'confirmations:send',
   'mcp:send',
   'sending_domains:write',
   'tracking_domains:write',
@@ -298,6 +299,7 @@ export const zCapturedMessageSurface = z.enum([
   'broadcast',
   'automation',
   'transactional',
+  'confirmation',
   'test'
 ]);
 
@@ -324,6 +326,18 @@ export const zConfirmationProvenance = z.enum([
   'imported',
   'grandfathered'
 ]);
+
+/**
+ * What became of a Confirmation request (ADR 0013): its email is on its way (`accepted`), or the address already holds a Confirmation and gets none (`confirmed`)
+ */
+export const zConfirmationRequestStatus = z.enum(['accepted', 'confirmed']);
+
+/**
+ * The answer to a Confirmation request
+ */
+export const zConfirmationRequestResult = z.object({
+  status: zConfirmationRequestStatus
+});
 
 /**
  * The evidence of consent collected outside sphericon (ADR 0077), kept in the immutable `sms.confirmed` Event to answer a proof request
@@ -923,6 +937,7 @@ export const zPersonalScope = z.enum([
   'emails:send',
   'broadcasts:send',
   'automations:publish',
+  'confirmations:send',
   'mcp:send',
   'sending_domains:write',
   'tracking_domains:write',
@@ -1142,6 +1157,7 @@ export const zSendScope = z.enum([
   'emails:send',
   'broadcasts:send',
   'automations:publish',
+  'confirmations:send',
   'mcp:send'
 ]);
 
@@ -2128,6 +2144,28 @@ export const zSitePreviewSegmentResult = z.object({
 });
 
 /**
+ * The Brand kit of a public page, as it stands
+ */
+export const zSitePublicBrand = z.object({
+  accentColor: z.string(),
+  textColor: z.string(),
+  backgroundColor: z.string(),
+  bodyFont: z.string(),
+  buttonTextColor: z.string(),
+  buttonRadius: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  logoUrl: z.string()
+});
+
+/**
+ * What the confirmation page of a link shows
+ */
+export const zSiteConfirmationPage = z.object({
+  expired: z.boolean(),
+  workspaceName: z.string(),
+  brand: zSitePublicBrand
+});
+
+/**
  * An Engagement tracking consent a member records on the Contact card for one of the contact's Destinations (ADR 0120), as `manual`
  */
 export const zSiteRecordEngagementTrackingInput = z.strictObject({
@@ -2949,6 +2987,7 @@ export const zSystemEventAction = z.enum([
   'sms.engagement_tracking_denied',
   'telegram.engagement_tracking_granted',
   'telegram.engagement_tracking_denied',
+  'email.resubscribed',
   'contact.consent_superseded'
 ]);
 
@@ -6158,6 +6197,15 @@ export const zSiteAuthVerifyEmailBody = zSiteVerifyEmailInput;
  */
 export const zSiteAuthVerifyEmailResponse = zSiteVerifyEmailResult;
 
+export const zSitePublicConfirmationsReadPath = z.object({
+  token: z.string()
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSitePublicConfirmationsReadResponse = zSiteConfirmationPage;
+
 export const zSitePublicConfirmationsPerformPath = z.object({
   token: z.string()
 });
@@ -6166,6 +6214,15 @@ export const zSitePublicConfirmationsPerformPath = z.object({
  * There is no content to send for this request, but the headers may be useful.
  */
 export const zSitePublicConfirmationsPerformResponse = z.void();
+
+export const zSitePublicConfirmationsRenewPath = z.object({
+  token: z.string()
+});
+
+/**
+ * The request has been accepted for processing, but processing has not yet completed.
+ */
+export const zSitePublicConfirmationsRenewResponse = zConfirmationRequestResult;
 
 /**
  * The request has succeeded.
@@ -7066,6 +7123,16 @@ export const zSiteTelegramListBindingsPath = z.object({
  * The request has succeeded.
  */
 export const zSiteTelegramListBindingsResponse = z.array(zSiteBindingResource);
+
+export const zSiteConfirmationRequestsCreatePath = z.object({
+  workspaceId: zWorkspaceId,
+  contactId: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteConfirmationRequestsCreateResponse = zConfirmationRequestResult;
 
 export const zSiteEngagementTrackingGetPath = z.object({
   workspaceId: zWorkspaceId,

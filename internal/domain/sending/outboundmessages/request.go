@@ -11,13 +11,12 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 )
 
-// The three Request constructors are the only code that derives a Source, a Ref (and with it
-// the Kind) and an idempotency key. The key formats are stored on every Outbound message, so they
+// The Request constructors are the only code that derives a Ref (and with it the Kind and the mode
+// of Send-eligibility) and an idempotency key. The key formats are stored on every Outbound message, so they
 // must not change while a send recorded under one may still be retried.
 
 func broadcastRecipientKey(recipientID int64) string {
@@ -63,7 +62,6 @@ func BroadcastRecipient(b *ent.Broadcast, rec *ent.BroadcastRecipient, c *ent.Co
 		Key:           broadcastRecipientKey(rec.ID),
 		Destination:   contactDestination(content.Channel(), c),
 		Contact:       c,
-		Source:        eligibility.SourceBroadcasts,
 		Content:       content,
 		Track:         true,
 		Ref:           BroadcastRef{BroadcastID: b.ID, RecipientID: rec.ID},
@@ -84,7 +82,6 @@ func AutomationStep(a *ent.Automation, run *ent.AutomationRun, stepID automation
 		Key:           fmt.Sprintf("automation:%d:%s", run.ID, stepID),
 		Destination:   contactDestination(content.Channel(), c),
 		Contact:       c,
-		Source:        eligibility.AutomationSource(a.ID),
 		Content:       content,
 		Track:         true,
 		Ref:           AutomationRef{AutomationID: a.ID, VersionID: run.VersionID, RunID: run.ID, StepID: stepID},
@@ -121,7 +118,7 @@ type TransactionalMessage struct {
 	Track bool
 }
 
-// Transactional is the Request for a Transactional message (no unsubscribe Source).
+// Transactional is the Request for a Transactional message (no unsubscribe Sending source).
 func Transactional(m TransactionalMessage) Request {
 	key := "transactional:auto:" + ulid.Make().String()
 	digest := ""

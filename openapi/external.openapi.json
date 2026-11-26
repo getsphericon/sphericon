@@ -2058,6 +2058,60 @@
         "x-required-scopes": ["contacts:export"]
       }
     },
+    "/contacts/{contactId}/confirmation-requests": {
+      "post": {
+        "operationId": "ConfirmationRequests_create",
+        "description": "Ask for a double opt-in confirmation email to the contact's email address (ADR 0013): it is\nsent by a job through the Workspace's confirmation email, whose link records a Confirmation with\nprovenance `double_opt_in` when the person presses Confirm. An address that already holds a\nConfirmation gets no mail and the answer is `confirmed` (200). 409 `confirmation_email_required`\nwhile the Workspace has no confirmation email set up; 409 when the address opted out of\neverything or is suppressed, naming which: soliciting a person who left is itself a violation,\nand only the person returns, through a form or the Preference page. 422 when the contact has no\nemail address. At most 3 confirmation emails reach an address in 24 hours, whoever asks: a\nfourth is a 429 with `Retry-After`. It works whether or not the Workspace requires confirmed\nopt-in. Send-class: needs the confirmations:send scope, and mcp:send over MCP.",
+        "parameters": [
+          {
+            "name": "contactId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfirmationRequestResult"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "The request has been accepted for processing, but processing has not yet completed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfirmationRequestResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the\nstatus is the response's and the body's `status`, and `code` tells apart the answers a client\nbranches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the\nrate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's\n`retryAfter` is the wait for a client that reads only the body. Every operation declares it,\nas the `default` response (ADR 0103).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Consent"],
+        "x-required-scopes": ["confirmations:send"],
+        "x-mcp": {
+          "name": "contacts_confirmation_request",
+          "send": true
+        }
+      }
+    },
     "/contacts/{contactId}/engagement-tracking": {
       "get": {
         "operationId": "EngagementTracking_getForContact",
@@ -5805,6 +5859,7 @@
           "emails:send",
           "broadcasts:send",
           "automations:publish",
+          "confirmations:send",
           "mcp:send",
           "sending_domains:write",
           "tracking_domains:write",
@@ -8166,7 +8221,7 @@
       },
       "CapturedMessageSurface": {
         "type": "string",
-        "enum": ["broadcast", "automation", "transactional", "test"],
+        "enum": ["broadcast", "automation", "transactional", "confirmation", "test"],
         "description": "The surface that asked for the send a Captured message belongs to"
       },
       "CnameRecord": {
@@ -8198,6 +8253,26 @@
         "type": "string",
         "enum": ["double_opt_in", "keyword", "imported", "grandfathered"],
         "description": "How a Confirmation was obtained, strongest first: a double opt-in (the person clicked the link), a keyword (the person texted START), imported (consent an API client or an import collected itself, with its evidence), grandfathered (a prior basis asserted when confirmed opt-in was turned on). A Confirmation is replaced only by a stronger one."
+      },
+      "ConfirmationRequestResult": {
+        "type": "object",
+        "required": ["status"],
+        "properties": {
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ConfirmationRequestStatus"
+              }
+            ],
+            "description": "Whether a confirmation email is on its way or the address is confirmed already"
+          }
+        },
+        "description": "The answer to a Confirmation request"
+      },
+      "ConfirmationRequestStatus": {
+        "type": "string",
+        "enum": ["accepted", "confirmed"],
+        "description": "What became of a Confirmation request (ADR 0013): its email is on its way (`accepted`), or the address already holds a Confirmation and gets none (`confirmed`)"
       },
       "ConfirmationResource": {
         "type": "object",
@@ -11699,7 +11774,7 @@
           },
           "kind": {
             "type": "string",
-            "description": "Which surface asked for the send: `broadcast`, `automation` or `transactional`"
+            "description": "Which surface asked for the send: `broadcast`, `automation`, `transactional` or `confirmation` (a double opt-in confirmation email)"
           },
           "channel": {
             "type": "string",
@@ -14361,7 +14436,13 @@
       },
       "SendScope": {
         "type": "string",
-        "enum": ["emails:send", "broadcasts:send", "automations:publish", "mcp:send"],
+        "enum": [
+          "emails:send",
+          "broadcasts:send",
+          "automations:publish",
+          "confirmations:send",
+          "mcp:send"
+        ],
         "description": "Send-class scopes (ADR 0016, \"Send is a second lock\"). An OAuth client gets them\nonly when the user explicitly opts in. mcp:send is the MCP-specific key: send-class\ntools are not listed over /mcp without it, so any send-class grant brings it along.",
         "x-grant-permissions": [
           {
@@ -14372,6 +14453,9 @@
           },
           {
             "scope": "automations:publish"
+          },
+          {
+            "scope": "confirmations:send"
           },
           {
             "scope": "mcp:send"
@@ -15583,6 +15667,7 @@
           "sms.engagement_tracking_denied",
           "telegram.engagement_tracking_granted",
           "telegram.engagement_tracking_denied",
+          "email.resubscribed",
           "contact.consent_superseded"
         ],
         "description": "The action of a System event: an Event sphericon itself records, never a customer. An Event's\n`action`, an Automation's trigger and a condition carry one of these or a customer's own action,\nwhich may not take a System event's namespace; a webhook's event types may also name the Audit\nlog's `audit.entry`."

@@ -324,6 +324,7 @@ var registry = map[string]func() DomainEvent{
 	systemevent.SmsUndelivered:                    func() DomainEvent { return &SmsDelivery{} },
 	systemevent.SmsClicked:                        func() DomainEvent { return &SmsClicked{} },
 	systemevent.SmsUnsubscribed:                   func() DomainEvent { return &SmsUnsubscribed{} },
+	systemevent.EmailResubscribed:                 func() DomainEvent { return &EmailResubscribed{} },
 	systemevent.ContactConsentSuperseded:          func() DomainEvent { return &ConsentSuperseded{} },
 	systemevent.EmailEngagementTrackingGranted:    func() DomainEvent { return &EngagementTrackingGranted{} },
 	systemevent.EmailEngagementTrackingDenied:     func() DomainEvent { return &EngagementTrackingDenied{} },

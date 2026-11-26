@@ -296,6 +296,9 @@ func sendingCounts(ctx context.Context, s *ent.Scoped, since, until time.Time) (
 			out.Automation = r.Sent
 		case outboundmessage.KindTransactional:
 			out.Transactional = r.Sent
+		case outboundmessage.KindConfirmation:
+			// The confirmation emails of double opt-in (ADR 0013) are no surface of the Workspace's
+			// own: they count only in what became of all the messages.
 		}
 		out.Delivered += r.Delivered
 		out.Bounced += r.Bounced

@@ -13,7 +13,7 @@ model ExportMessageRow {
   /** Unique identifier */
   id: EntityId;
 
-  /** Which surface asked for the send: `broadcast`, `automation` or `transactional` */
+  /** Which surface asked for the send: `broadcast`, `automation`, `transactional` or `confirmation` (a double opt-in confirmation email) */
   kind: string;
 
   /** Delivery channel */

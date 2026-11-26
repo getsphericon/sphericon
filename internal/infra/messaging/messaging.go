@@ -47,7 +47,7 @@ type Origin struct {
 }
 
 // Surface is the part of the product that asked for a send. Its values are those of the
-// Outbound message kinds (broadcast, automation, transactional), plus SurfaceTest.
+// Outbound message kinds (broadcast, automation, transactional, confirmation), plus SurfaceTest.
 type Surface string
 
 // SurfaceTest is a Test send of a Broadcast or a template, which has no Outbound message.

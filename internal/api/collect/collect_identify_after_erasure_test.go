@@ -42,13 +42,13 @@ func TestCollectIdentifyAfterErasureCreatesAFreshContactStillRefusedByTheSurvivi
 	// Suppression is checked before Unsubscribe, so the opt-outs are told apart by
 	// removing the Suppression for the second check.
 	s := env.DB.Scoped(fixtures.InitechID)
-	transactional, err := eligibility.New().Check(ctx, s, eligibility.CheckInput{Channel: "email", Destination: fixtures.ContactErasableEmail})
+	transactional, err := eligibility.New().Check(ctx, s, eligibility.CheckInput{Channel: "email", Destination: fixtures.ContactErasableEmail, Mode: eligibility.Transactional()})
 	require.NoError(t, err)
 	assert.False(t, transactional.Eligible, "the surviving Suppression refuses even a transactional send")
 	assert.Equal(t, skipreason.Suppressed, transactional.Reason)
 
 	require.NoError(t, env.DB.Suppression.DeleteOneID(fixtures.SuppressionErasableID).Exec(ctx))
-	broadcasts, err := eligibility.New().Check(ctx, s, eligibility.CheckInput{Channel: "email", Destination: fixtures.ContactErasableEmail, Source: "broadcasts"})
+	broadcasts, err := eligibility.New().Check(ctx, s, eligibility.CheckInput{Channel: "email", Destination: fixtures.ContactErasableEmail, Mode: eligibility.Marketing("broadcasts")})
 	require.NoError(t, err)
 	assert.False(t, broadcasts.Eligible, "the surviving Unsubscribe refuses the new Contact")
 	assert.Equal(t, skipreason.UnsubscribedSource, broadcasts.Reason)

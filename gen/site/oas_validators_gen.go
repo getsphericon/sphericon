@@ -108,6 +108,8 @@ func (s ApiTokenScope) Validate() error {
 		return nil
 	case "automations:publish":
 		return nil
+	case "confirmations:send":
+		return nil
 	case "mcp:send":
 		return nil
 	case "sending_domains:write":
@@ -2444,6 +2446,8 @@ func (s CapturedMessageSurface) Validate() error {
 		return nil
 	case "transactional":
 		return nil
+	case "confirmation":
+		return nil
 	case "test":
 		return nil
 	default:
@@ -2503,6 +2507,40 @@ func (s ConfirmationProvenance) Validate() error {
 	case "imported":
 		return nil
 	case "grandfathered":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *ConfirmationRequestResult) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Status.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "status",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s ConfirmationRequestStatus) Validate() error {
+	switch s {
+	case "accepted":
+		return nil
+	case "confirmed":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
@@ -6469,6 +6507,8 @@ func (s PersonalScope) Validate() error {
 		return nil
 	case "automations:publish":
 		return nil
+	case "confirmations:send":
+		return nil
 	case "mcp:send":
 		return nil
 	case "sending_domains:write":
@@ -8305,6 +8345,8 @@ func (s SendScope) Validate() error {
 	case "broadcasts:send":
 		return nil
 	case "automations:publish":
+		return nil
+	case "confirmations:send":
 		return nil
 	case "mcp:send":
 		return nil
@@ -10396,6 +10438,22 @@ func (s *SiteConfirmationEmailResource) Validate() error {
 	}
 	if len(failures) > 0 {
 		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *SiteConfirmationRequestsCreateAccepted) Validate() error {
+	alias := (*ConfirmationRequestResult)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteConfirmationRequestsCreateOK) Validate() error {
+	alias := (*ConfirmationRequestResult)(s)
+	if err := alias.Validate(); err != nil {
+		return err
 	}
 	return nil
 }
