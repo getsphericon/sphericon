@@ -47,9 +47,11 @@ func TestTheBroadcastFiguresCountTheSkippedByReasonAndTheWaitingByCause(t *testi
 	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSendCap(1).ExecX(ctx)
 	env.DB.SendCapLimiter.UpdateOneID(fixtures.SendCapLimiterAcmeID).SetDayTokens(0).SetRefilledAt(time.Now()).ExecX(ctx)
 	del := testhelper.Module[*broadcasts.Delivery](env)
-	require.NoError(t, del.SendRecipient(ctx, s, alice))
+	skipped := del.SendRecipient(ctx, s, alice)
+	waits := del.SendRecipient(ctx, s, carol)
+	require.NoError(t, skipped)
 	var deferred *broadcasts.DeferredError
-	require.ErrorAs(t, del.SendRecipient(ctx, s, carol), &deferred)
+	require.ErrorAs(t, waits, &deferred)
 
 	got, err := env.SiteActor(t, fixtures.MemberMaryEmail).SiteBroadcastsGet(ctx, siteapi.SiteBroadcastsGetParams{
 		WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(fixtures.BroadcastSendingID),
@@ -66,7 +68,8 @@ func TestAnSMSBroadcastsFiguresCountTheSendsJudgedByASingleZone(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	env.LacunaTwilio(t)
-	require.NoError(t, env.SendBroadcastThrough(t, env.OutboundModule(), fixtures.BroadcastLacunaSmsGreetingID))
+	sent := env.SendBroadcastThrough(t, env.OutboundModule(), fixtures.BroadcastLacunaSmsGreetingID)
+	require.NoError(t, sent)
 
 	sms, err := env.SiteActor(t, fixtures.LacunaOwnerLenaEmail).SiteBroadcastsGet(ctx, siteapi.SiteBroadcastsGetParams{
 		WorkspaceId: fixtures.LacunaPublicID, ID: siteapi.EntityId(fixtures.BroadcastLacunaSmsGreetingID),
@@ -90,8 +93,9 @@ func TestAFinishedBroadcastHasNoneWaiting(t *testing.T) {
 	carol := env.PlaceRecipient(ctx, fixtures.BroadcastSendingID, fixtures.ContactCarolID)
 	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSendCap(1).ExecX(ctx)
 	env.DB.SendCapLimiter.UpdateOneID(fixtures.SendCapLimiterAcmeID).SetDayTokens(0).SetRefilledAt(time.Now()).ExecX(ctx)
+	waits := testhelper.Module[*broadcasts.Delivery](env).SendRecipient(ctx, s, carol)
 	var deferred *broadcasts.DeferredError
-	require.ErrorAs(t, testhelper.Module[*broadcasts.Delivery](env).SendRecipient(ctx, s, carol), &deferred)
+	require.ErrorAs(t, waits, &deferred)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	_, err := c.SiteBroadcastsCancel(ctx, siteapi.SiteBroadcastsCancelParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(fixtures.BroadcastSendingID)})
 	require.NoError(t, err)
