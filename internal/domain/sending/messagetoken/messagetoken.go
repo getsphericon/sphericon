@@ -212,9 +212,13 @@ func (t *Tracker) DecodeUnsub(token string) (linktarget.Unsubscribe, error) {
 	if c.Source == "" {
 		return linktarget.Unsubscribe{}, ErrLinkInvalid.With("missing src claim")
 	}
+	known := false
 	switch channels.Channel(c.Channel) {
 	case channels.Email, channels.Telegram, channels.SMS:
-	default:
+		// Every Channel's message carries an unsubscribe link.
+		known = true
+	}
+	if !known {
 		return linktarget.Unsubscribe{}, ErrLinkInvalid.With("missing or unknown ch claim")
 	}
 	if c.WorkspaceID == 0 {

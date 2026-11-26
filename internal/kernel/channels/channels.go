@@ -4,6 +4,12 @@
 package channels
 
 // Channel identifies a delivery medium.
+//
+// It is a closed enum of the analyzer closedenum (rule 19 of docs/standards/review-rules.md): every
+// switch on a Channel names every Channel and has no default, and every map literal keyed by one
+// lists every Channel. A new Channel is added by adding its constant here and to all, then following
+// the lint errors, which name each switch and map that does not handle it, and those of
+// `mise run generate`, where goverter maps a Channel to the contract's enums.
 type Channel string
 
 const (

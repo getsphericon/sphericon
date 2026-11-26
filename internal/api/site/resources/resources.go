@@ -976,9 +976,8 @@ func broadcastContent(c Converter, b *ent.Broadcast) siteapi.BroadcastContent {
 		return siteapi.BroadcastContent{OneOf: siteapi.NewTelegramBroadcastContentBroadcastContentSum(c.TelegramBroadcastContentToResource(b))}
 	case channels.SMS:
 		return siteapi.BroadcastContent{OneOf: siteapi.NewSmsBroadcastContentBroadcastContentSum(c.SmsBroadcastContentToResource(b))}
-	default:
-		return siteapi.BroadcastContent{}
 	}
+	return siteapi.BroadcastContent{}
 }
 
 // smsContentChannel is the discriminator of SMS's content arm.

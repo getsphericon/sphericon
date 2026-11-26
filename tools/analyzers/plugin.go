@@ -8,6 +8,7 @@ import (
 	"golang.org/x/tools/go/analysis"
 
 	"github.com/getsphericon/sphericon/tools/analyzers/callshape"
+	"github.com/getsphericon/sphericon/tools/analyzers/closedenum"
 	"github.com/getsphericon/sphericon/tools/analyzers/driverops"
 	"github.com/getsphericon/sphericon/tools/analyzers/entityupdate"
 	"github.com/getsphericon/sphericon/tools/analyzers/entrywrite"
@@ -34,7 +35,7 @@ func New(any) (register.LinterPlugin, error) {
 
 // BuildAnalyzers lists the analyzers; add a new one here.
 func (Plugin) BuildAnalyzers() ([]*analysis.Analyzer, error) {
-	return []*analysis.Analyzer{noprint.Analyzer, rawsql.Analyzer, handmapper.Analyzer, entrywrite.Analyzer, statemoment.Analyzer, testwrites.Analyzer, callshape.Analyzer, nowriter.Analyzer, driverops.Analyzer, foreignrefusal.Analyzer, entityupdate.Analyzer}, nil
+	return []*analysis.Analyzer{noprint.Analyzer, rawsql.Analyzer, handmapper.Analyzer, entrywrite.Analyzer, statemoment.Analyzer, testwrites.Analyzer, callshape.Analyzer, nowriter.Analyzer, driverops.Analyzer, foreignrefusal.Analyzer, entityupdate.Analyzer, closedenum.Analyzer}, nil
 }
 
 // GetLoadMode asks for types, which every analyzer here needs.
