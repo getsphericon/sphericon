@@ -63,9 +63,11 @@ type PeriodResults struct {
 	Revenue orders.Revenue
 }
 
-// SkippedCounts is how many entries were skipped for each reason.
+// SkippedCounts is how many entries were skipped for each reason. Missed and SendLocked are the
+// occurrences of a date Trigger (ADR 0126) reached 24 hours late or more, and those held by the
+// send lock; a send-locked occurrence is not decided, so it may count as entered later too.
 type SkippedCounts struct {
-	Cycle, ActiveEnrollment, Once, Cooldown, NoEnrollmentKey, EnrollmentCeiling int
+	Cycle, ActiveEnrollment, Once, Cooldown, NoEnrollmentKey, EnrollmentCeiling, Missed, SendLocked int
 }
 
 func (c *SkippedCounts) add(reason automationskippedentry.Reason, n int) {
@@ -82,9 +84,10 @@ func (c *SkippedCounts) add(reason automationskippedentry.Reason, n int) {
 		c.NoEnrollmentKey += n
 	case automationskippedentry.ReasonEnrollmentCeiling:
 		c.EnrollmentCeiling += n
-	case automationskippedentry.ReasonMissed, automationskippedentry.ReasonSendLocked:
-		// An occurrence of a date Trigger (ADR 0126) skipped as reached late or as send-locked: the
-		// report counts them with the occurrences, on their own (#1714).
+	case automationskippedentry.ReasonMissed:
+		c.Missed += n
+	case automationskippedentry.ReasonSendLocked:
+		c.SendLocked += n
 	}
 }
 

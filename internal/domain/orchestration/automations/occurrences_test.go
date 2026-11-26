@@ -365,3 +365,28 @@ func TestAnOccurrenceAZoneChangeMovesIntoThePastEnrollsLate(t *testing.T) {
 	assert.Empty(t, c.skips(id, fixtures.ContactAliceID))
 	assert.Empty(t, c.skips(id, fixtures.ContactExportSubjectID))
 }
+
+// The report counts a date Trigger's occurrences as it counts any entry (ADR 0126): one tick that
+// enrolls Carol, skips Bob as `active_enrollment` (last year's Enrollment still waits), finds
+// Alice's occurrence 30 hours late and holds the export subject's send-locked date shows each, the
+// Enrollment entered and each skip by its reason. The fixture birthdays of Liam and Emma fall
+// outside the period.
+func TestTheReportCountsTheOccurrencesOfADateTriggerByOutcome(t *testing.T) {
+	c := newDateCase(t, at(2026, time.September, 8, 12, 0))
+	c.born(fixtures.ContactBobID, at(1990, time.September, 10, 0, 0), "")
+	id := c.publish(birthday(0, "10:00"))
+	c.tickAt(id, at(2026, time.September, 10, 10, 5))
+	c.clock.Set(at(2026, time.September, 20, 12, 0))
+	c.born(fixtures.ContactAliceID, at(1990, time.September, 9, 0, 0), "")
+	c.born(fixtures.ContactCarolID, at(1990, time.September, 10, 0, 0), "")
+	c.write(events.SendLocked(t.Context()), fixtures.ContactExportSubjectID,
+		contacts.Core{Birthday: patch.Set(at(1990, time.September, 10, 0, 0)), TimeZone: patch.Clear[string]()}, nil)
+
+	c.tickAt(id, at(2027, time.September, 10, 16, 0))
+	report, err := c.module.ReportOf(t.Context(), c.acme, id, automations.ReportPeriod7Days)
+	require.NoError(t, err)
+
+	assert.Equal(t, 1, report.Results.Current.Entered)
+	assert.Equal(t, 1, report.Results.Current.Contacts)
+	assert.Equal(t, automations.SkippedCounts{ActiveEnrollment: 1, Missed: 1, SendLocked: 1}, report.Results.Current.Skipped)
+}
