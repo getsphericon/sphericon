@@ -83,8 +83,9 @@ type ReplaceSendingRulesInput struct {
 	SendingWindows []SendingWindow
 }
 
-// The refusals of a replacement of the sending rules, each reported against the cap or window it
-// is about (frequencyCaps.<i>, sendingWindows.<i>).
+// The refusals of a replacement of the sending rules, each reported against the field of the cap or
+// window it is about, as the request names it (frequencyCaps.<i>.country,
+// sendingWindows.<i>.hours.<j>.closesAt).
 var (
 	// ErrSendingRuleChannel refuses a Channel that is none.
 	ErrSendingRuleChannel = validation.RefuseField(fieldname.FrequencyCaps,
@@ -325,11 +326,15 @@ func checkFrequencyCaps(caps []FrequencyCap) ([]FrequencyCap, error) {
 			return nil, err
 		}
 		if seen[key] {
-			return nil, ErrSendingRuleRepeated.On(at)
+			return nil, ErrSendingRuleRepeated.On(key.field(at))
 		}
 		seen[key] = true
 		if (c.MaxMessages == nil) != (c.PeriodMinutes == nil) {
-			return nil, ErrFrequencyCapPeriod.On(at)
+			missing := fieldname.PeriodMinutes
+			if c.MaxMessages == nil {
+				missing = fieldname.MaxMessages
+			}
+			return nil, ErrFrequencyCapPeriod.On(validation.Nested(at, missing))
 		}
 		if c.MaxMessages != nil {
 			if err := validation.Range(validation.Nested(at, fieldname.MaxMessages), *c.MaxMessages,
@@ -362,10 +367,10 @@ func checkSendingWindows(windows []SendingWindow) ([]SendingWindow, error) {
 			return nil, err
 		}
 		if !HasSendingWindow(w.Channel) {
-			return nil, ErrSendingWindowChannel.On(at)
+			return nil, ErrSendingWindowChannel.On(validation.Nested(at, fieldname.Channel))
 		}
 		if seen[key] {
-			return nil, ErrSendingRuleRepeated.On(at)
+			return nil, ErrSendingRuleRepeated.On(key.field(at))
 		}
 		seen[key] = true
 		hours, err := checkHours(at, w.Hours)
@@ -385,13 +390,13 @@ func checkHours(at string, hours []OpenHours) ([]OpenHours, error) {
 		return nil, err
 	}
 	if len(hours) == 0 {
-		return nil, ErrSendingWindowNeverOpens.On(at)
+		return nil, ErrSendingWindowNeverOpens.On(field)
 	}
 	seen := map[localcalendar.Weekday]bool{}
 	for j, h := range hours {
 		day := validation.Nested(field, strconv.Itoa(j))
 		if !slices.Contains(localcalendar.Weekdays, h.Day) || seen[h.Day] {
-			return nil, ErrSendingWindowDayRepeated.On(day)
+			return nil, ErrSendingWindowDayRepeated.On(validation.Nested(day, fieldname.Day))
 		}
 		seen[h.Day] = true
 		for _, minute := range []struct {
@@ -404,7 +409,7 @@ func checkHours(at string, hours []OpenHours) ([]OpenHours, error) {
 			}
 		}
 		if h.ClosesAt <= h.OpensAt {
-			return nil, ErrSendingWindowHours.On(day)
+			return nil, ErrSendingWindowHours.On(validation.Nested(day, fieldname.ClosesAt))
 		}
 	}
 	out := slices.Clone(hours)
@@ -421,10 +426,19 @@ type ruleKey struct {
 	country string
 }
 
+// field is the field of the cap or window at that names its key: its country, or its Channel for
+// the Channel's own rule.
+func (k ruleKey) field(at string) string {
+	if k.country == "" {
+		return validation.Nested(at, fieldname.Channel)
+	}
+	return validation.Nested(at, fieldname.Country)
+}
+
 // checkRuleKey checks the Channel and the country of the cap or window at.
 func checkRuleKey(at string, ch channels.Channel, country *string) (ruleKey, error) {
 	if !ch.Valid() {
-		return ruleKey{}, ErrSendingRuleChannel.On(at)
+		return ruleKey{}, ErrSendingRuleChannel.On(validation.Nested(at, fieldname.Channel))
 	}
 	if country == nil {
 		return ruleKey{channel: ch}, nil
@@ -433,7 +447,7 @@ func checkRuleKey(at string, ch channels.Channel, country *string) (ruleKey, err
 		return ruleKey{}, err
 	}
 	if !TakesCountry(ch) {
-		return ruleKey{}, ErrSendingRuleCountry.On(at)
+		return ruleKey{}, ErrSendingRuleCountry.On(validation.Nested(at, fieldname.Country))
 	}
 	return ruleKey{channel: ch, country: *country}, nil
 }

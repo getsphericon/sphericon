@@ -220,9 +220,9 @@ func TestAWindowThatNeverOpensIsRefused(t *testing.T) {
 	_, countryErr := replaceSendingRules(t, env, owner, asInput(caps, []siteapi.SendingWindow{smsDefaultWindow, windowOf("FR", nil)}))
 
 	channel := testhelper.SiteRefusal(t, channelErr, http.StatusUnprocessableEntity)
-	assert.Contains(t, channel.Errors.Value["sendingWindows.0"][0], "never opens")
+	assert.Contains(t, channel.Errors.Value["sendingWindows.0.hours"][0], "never opens")
 	country := testhelper.SiteRefusal(t, countryErr, http.StatusUnprocessableEntity)
-	assert.Contains(t, country.Errors.Value["sendingWindows.1"][0], "never opens")
+	assert.Contains(t, country.Errors.Value["sendingWindows.1.hours"][0], "never opens")
 	stored := sendingRules(t, owner, fixtures.AcmePublicID)
 	assert.Equal(t, []siteapi.SendingWindow{acmeWindow}, stored.SendingWindows)
 	audited := env.QueuedEvents(t, events.NameAuditEntry)
@@ -261,16 +261,18 @@ func TestARuleTheChannelOrItsShapeCannotHoldIsRefused(t *testing.T) {
 		message string
 	}{
 		{"a country on email", asInput([]siteapi.FrequencyCap{capOf(siteapi.FrequencyCapChannelEmail, "US", 3, 1440)}, windows),
-			"frequencyCaps.0", "only on a phone channel"},
-		{"a maximum without a period", asInput([]siteapi.FrequencyCap{noPeriod}, windows), "frequencyCaps.0", "both a maximum and a period"},
+			"frequencyCaps.0.country", "only on a phone channel"},
+		{"a maximum without a period", asInput([]siteapi.FrequencyCap{noPeriod}, windows), "frequencyCaps.0.periodMinutes", "both a maximum and a period"},
 		{"two caps for SMS", asInput([]siteapi.FrequencyCap{smsDefaultCap, capOf(siteapi.FrequencyCapChannelSMS, "", 2, 60)}, windows),
-			"frequencyCaps.1", "already have a rule"},
+			"frequencyCaps.1.channel", "already have a rule"},
+		{"two caps for one country", asInput([]siteapi.FrequencyCap{capOf(siteapi.FrequencyCapChannelSMS, "US", 3, 1440), capOf(siteapi.FrequencyCapChannelSMS, "US", 2, 60)}, windows),
+			"frequencyCaps.1.country", "already have a rule"},
 		{"two windows for one country", asInput(nil, []siteapi.SendingWindow{windowOf("US", hoursOf(480, 1200, everyDay...)), windowOf("US", hoursOf(540, 1200, everyDay...))}),
-			"sendingWindows.1", "already have a rule"},
+			"sendingWindows.1.country", "already have a rule"},
 		{"a day listed twice", asInput(nil, []siteapi.SendingWindow{windowOf("", hoursOf(480, 1200, siteapi.WeekdayMonday, siteapi.WeekdayMonday))}),
-			"sendingWindows.0.hours.1", "listed twice"},
+			"sendingWindows.0.hours.1.day", "listed twice"},
 		{"a window that closes as it opens", asInput(nil, []siteapi.SendingWindow{windowOf("", hoursOf(600, 600, siteapi.WeekdayMonday))}),
-			"sendingWindows.0.hours.0", "closes after it opens"},
+			"sendingWindows.0.hours.0.closesAt", "closes after it opens"},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
