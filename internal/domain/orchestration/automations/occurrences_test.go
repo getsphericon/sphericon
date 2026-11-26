@@ -239,6 +239,21 @@ func TestATimeZoneChangeMovesTheOccurrencesNotReached(t *testing.T) {
 	assert.Equal(t, []time.Time{at(2027, time.March, 14, 14, 0)}, c.beganAt(id, fixtures.ContactAliceID), "10:00 EDT")
 }
 
+// A Contact's time zone changed after it was enrolled this year moves this year's occurrence to a
+// moment not reached yet, which enrolls no one again: the occurrence is the anniversary year's.
+func TestATimeZoneChangedAfterThisYearsEnrollmentEnrollsNoOneAgain(t *testing.T) {
+	c := newDateCase(t, at(2027, time.March, 13, 12, 0))
+	c.born(fixtures.ContactExportSubjectID, at(1990, time.March, 14, 0, 0), "Europe/Berlin")
+	id := c.publish(birthday(0, "10:00"))
+	c.tickAt(id, at(2027, time.March, 14, 9, 5))
+
+	c.born(fixtures.ContactExportSubjectID, at(1990, time.March, 14, 0, 0), "America/New_York")
+	c.tickAt(id, at(2027, time.March, 14, 14, 5))
+
+	assert.Equal(t, []time.Time{at(2027, time.March, 14, 9, 0)}, c.beganAt(id, fixtures.ContactExportSubjectID), "10:00 CET, once")
+	assert.Empty(t, c.skips(id, fixtures.ContactExportSubjectID))
+}
+
 // Publishing after an occurrence earlier the same day enrolls no one for it, and deactivating across
 // an occurrence and publishing again enrolls no one for it and counts it as no `missed`.
 func TestOnlyOccurrencesOfTheActiveSpanEnroll(t *testing.T) {
@@ -273,23 +288,28 @@ func TestAnOccurrenceReachedLateEnrollsWithin24Hours(t *testing.T) {
 	assert.Equal(t, []time.Time{at(2027, time.March, 14, 20, 0)}, c.beganAt(id, fixtures.ContactExportSubjectID), "10:00 in Honolulu, 20 hours late")
 }
 
-// A date set two hours after its 10:00 enrolls the Contact by the late path; one set 30 hours after
-// has no occurrence this year, and counts no `missed`.
-func TestADateSetLateEnrollsWithin24Hours(t *testing.T) {
+// A Contact created with today's birthday two hours after its 10:00 enrolls by the late path; one
+// created 30 hours after it has no occurrence this year, and counts no `missed`.
+func TestAContactCreatedWithADateSetLateEnrollsWithin24Hours(t *testing.T) {
 	c := newDateCase(t, at(2027, time.March, 13, 12, 0))
+	ctx := t.Context()
+	day := at(1990, time.March, 14, 0, 0)
 	id := c.publish(birthday(0, "10:00"))
 	c.tickAt(id, at(2027, time.March, 14, 11, 59))
 
 	c.clock.Set(at(2027, time.March, 14, 12, 0))
-	c.born(fixtures.ContactAliceID, at(1990, time.March, 14, 0, 0), "")
+	early, err := c.contacts.Create(ctx, c.acme, contact.SourceAPI, contacts.CreateInput{Email: new("early@example.com"), Birthday: &day})
+	require.NoError(t, err)
 	c.tickAt(id, at(2027, time.March, 14, 12, 1))
 	c.tickAt(id, at(2027, time.March, 15, 15, 59))
-	c.born(fixtures.ContactExportSubjectID, at(1990, time.March, 14, 0, 0), "")
+	c.clock.Set(at(2027, time.March, 15, 16, 0))
+	late, err := c.contacts.Create(ctx, c.acme, contact.SourceAPI, contacts.CreateInput{Email: new("late@example.com"), Birthday: &day})
+	require.NoError(t, err)
 	c.tickAt(id, at(2027, time.March, 15, 16, 1))
 
-	assert.Equal(t, []time.Time{at(2027, time.March, 14, 10, 0)}, c.beganAt(id, fixtures.ContactAliceID))
-	assert.Empty(t, c.beganAt(id, fixtures.ContactExportSubjectID))
-	assert.Empty(t, c.skips(id, fixtures.ContactExportSubjectID))
+	assert.Equal(t, []time.Time{at(2027, time.March, 14, 10, 0)}, c.beganAt(id, early.ID), "created 2 hours after")
+	assert.Empty(t, c.beganAt(id, late.ID), "created 30 hours after")
+	assert.Empty(t, c.skips(id, late.ID))
 }
 
 // 29 February enrolls on 28 February in a common year, and 02:30 on the day the clocks spring
@@ -309,13 +329,15 @@ func TestADateTriggerKeepsTheCalendarRules(t *testing.T) {
 }
 
 // A birthday set to today through a Connection without mcp:send enrolls no one at its occurrence
-// and records `send_locked`; the same value written again without the mark changes nothing, and a
-// new value written without it within 24 hours after the occurrence enrolls it.
+// and records `send_locked`; the same value written again without the mark changes nothing, a new
+// value written without it within 24 hours after the occurrence enrolls it, and a clean value
+// written later enrolls the next year's occurrence.
 func TestASendLockedDateEnrollsNoOneUntilAWriteWithoutTheMark(t *testing.T) {
 	c := newDateCase(t, at(2027, time.March, 13, 12, 0))
 	id := c.publish(birthday(0, "10:00"))
 	locked := events.SendLocked(t.Context())
 	c.write(locked, fixtures.ContactAliceID, contacts.Core{Birthday: patch.Set(at(1990, time.March, 14, 0, 0))}, nil)
+	c.write(locked, fixtures.ContactExportSubjectID, contacts.Core{Birthday: patch.Set(at(1990, time.March, 14, 0, 0)), TimeZone: patch.Clear[string]()}, nil)
 
 	c.tickAt(id, at(2027, time.March, 14, 10, 5))
 	held := c.skips(id, fixtures.ContactAliceID)
@@ -324,10 +346,15 @@ func TestASendLockedDateEnrollsNoOneUntilAWriteWithoutTheMark(t *testing.T) {
 	same := c.beganAt(id, fixtures.ContactAliceID)
 	c.born(fixtures.ContactAliceID, at(1991, time.March, 14, 0, 0), "")
 	c.tickAt(id, at(2027, time.March, 14, 14, 0))
+	c.clock.Set(at(2027, time.March, 20, 12, 0))
+	c.born(fixtures.ContactExportSubjectID, at(1991, time.March, 14, 0, 0), "")
+	c.tickAt(id, at(2028, time.March, 14, 10, 5))
 
 	assert.Equal(t, []automationskippedentry.Reason{automationskippedentry.ReasonSendLocked}, held)
 	assert.Empty(t, same, "the same value written again lifts nothing")
 	assert.Equal(t, []time.Time{at(2027, time.March, 14, 10, 0)}, c.beganAt(id, fixtures.ContactAliceID))
+	assert.Equal(t, []automationskippedentry.Reason{automationskippedentry.ReasonSendLocked}, c.skips(id, fixtures.ContactExportSubjectID), "this year's")
+	assert.Equal(t, []time.Time{at(2028, time.March, 14, 10, 0)}, c.beganAt(id, fixtures.ContactExportSubjectID), "next year's, written clean")
 }
 
 // A date written during a scheduler outage more than 24 hours after its occurrence is a date set

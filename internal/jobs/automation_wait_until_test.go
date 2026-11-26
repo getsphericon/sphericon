@@ -10,9 +10,12 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/patch"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -99,7 +102,11 @@ func TestAWaitUntilOfAContactWithNoZoneReadsTheWorkspaceTimeZone(t *testing.T) {
 	berlin := zoneOf(t, "Europe/Berlin")
 	env, clock := waitUntilEnv(t, time.Date(2027, time.January, 15, 18, 0, 0, 0, berlin))
 	ctx := t.Context()
-	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetTimezone("Europe/Berlin").ExecX(ctx)
+	acme := env.DB.Scoped(fixtures.AcmeID)
+	ws, err := acme.Workspace(ctx)
+	require.NoError(t, err)
+	_, err = testhelper.Module[*workspaces.Module](env).SetTimezone(ctx, acme, ws.Revision, "Europe/Berlin")
+	require.NoError(t, err)
 
 	runID := enrollInWaitUntil(t, env, clock, fixtures.ContactAliceID)
 
@@ -119,7 +126,7 @@ func TestAContactsTimeZoneChangedDuringAWaitUntilDoesNotMoveIt(t *testing.T) {
 	runID := enrollInWaitUntil(t, env, clock, fixtures.ContactLiamID)
 	due := env.DB.AutomationRun.GetX(ctx, runID).ResumeAt
 
-	env.DB.Contact.UpdateOneID(fixtures.ContactLiamID).SetTimeZone("Asia/Tokyo").ExecX(ctx)
+	updateContact(t, env, fixtures.ContactLiamID, contacts.UpdateInput{Core: contacts.Core{TimeZone: patch.Set("Asia/Tokyo")}})
 	clock.now = time.Date(2027, time.January, 18, 9, 0, 0, 0, newYork)
 	env.RunQueuedSteps(t, stepper)
 

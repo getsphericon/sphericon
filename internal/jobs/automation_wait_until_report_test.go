@@ -7,7 +7,9 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/patch"
 )
 
 // The report counts, for the Wait until's Step, the Enrollments that went on at once in the
@@ -16,14 +18,13 @@ import (
 func TestTheReportCountsTheEnrollmentsAWaitUntilLetGoOnByReason(t *testing.T) {
 	newYork := zoneOf(t, "America/New_York")
 	env, clock := waitUntilEnv(t, time.Date(2027, time.January, 15, 12, 0, 0, 0, newYork))
-	ctx := t.Context()
 	for contactID, fields := range map[int64]map[string]any{
 		fixtures.ContactLiamID:  {"trial_ends_at": "2027-01-10"},
 		fixtures.ContactAliceID: {"trial_ends_at": "2026-12-01"},
 		fixtures.ContactBobID:   {},
 		fixtures.ContactCarolID: {"trial_ends_at": "2029-01-20"},
 	} {
-		env.DB.Contact.UpdateOneID(contactID).SetCustomFields(fields).ExecX(ctx)
+		updateContact(t, env, contactID, contacts.UpdateInput{CustomFields: patch.Set(fields)})
 		enrollOnItsTrigger(t, env, clock, fixtures.AutomationJobsWaitUntilDateID, contactID)
 	}
 	stepper := stepperAt(env, newMod(env, resolvingTo(&fakeSender{}), clock.read), clock.read)

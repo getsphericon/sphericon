@@ -10,9 +10,11 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationsteprecord"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
+	"github.com/getsphericon/sphericon/internal/kernel/patch"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -35,13 +37,23 @@ func enrollOnItsTrigger(t *testing.T, env *testhelper.TestEnv, clock *harnessClo
 	return runIDs[0]
 }
 
+// updateContact changes the Acme Contact through the contacts module, as a write of /api does.
+func updateContact(t *testing.T, env *testhelper.TestEnv, contactID int64, in contacts.UpdateInput) {
+	t.Helper()
+	held, err := env.DB.Contact.Get(t.Context(), contactID)
+	require.NoError(t, err)
+	in.Revision = held.Revision
+	_, err = testhelper.Module[*contacts.Module](env).Update(t.Context(), env.DB.Scoped(fixtures.AcmeID), contactID, in)
+	require.NoError(t, err)
+}
+
 // "3 days before trial_ends_at at 10:00" with the field ahead stands on the Step until that moment
 // in the Contact's zone, then sends.
 func TestAWaitUntilADateAheadStandsOnItUntilItsMoment(t *testing.T) {
 	newYork := zoneOf(t, "America/New_York")
 	env, clock := waitUntilEnv(t, time.Date(2027, time.January, 15, 12, 0, 0, 0, newYork))
 	ctx := t.Context()
-	env.DB.Contact.UpdateOneID(fixtures.ContactLiamID).SetCustomFields(map[string]any{"trial_ends_at": "2027-01-20"}).ExecX(ctx)
+	updateContact(t, env, fixtures.ContactLiamID, contacts.UpdateInput{CustomFields: patch.Set(map[string]any{"trial_ends_at": "2027-01-20"})})
 	fs := &fakeSender{}
 	stepper := stepperAt(env, newMod(env, resolvingTo(fs), clock.read), clock.read)
 	sunday := time.Date(2027, time.January, 17, 10, 0, 0, 0, newYork)
@@ -82,7 +94,7 @@ func TestAWaitUntilADateItCannotReachGoesOnAtOnceWithItsReason(t *testing.T) {
 			newYork := zoneOf(t, "America/New_York")
 			env, clock := waitUntilEnv(t, time.Date(2027, time.January, 15, 12, 0, 0, 0, newYork))
 			ctx := t.Context()
-			env.DB.Contact.UpdateOneID(fixtures.ContactLiamID).SetCustomFields(tc.fields).ExecX(ctx)
+			updateContact(t, env, fixtures.ContactLiamID, contacts.UpdateInput{CustomFields: patch.Set(tc.fields)})
 			fs := &fakeSender{}
 			stepper := stepperAt(env, newMod(env, resolvingTo(fs), clock.read), clock.read)
 			runID := enrollOnItsTrigger(t, env, clock, fixtures.AutomationJobsWaitUntilDateID, fixtures.ContactLiamID)
@@ -117,7 +129,7 @@ func TestAWaitUntilTheNextBirthdayWaitsForThisYearsOrNextYears(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			env, clock := waitUntilEnv(t, time.Date(2027, time.January, 15, 12, 0, 0, 0, newYork))
 			ctx := t.Context()
-			env.DB.Contact.UpdateOneID(fixtures.ContactLiamID).SetBirthday(tc.birthday).ExecX(ctx)
+			updateContact(t, env, fixtures.ContactLiamID, contacts.UpdateInput{Core: contacts.Core{Birthday: patch.Set(tc.birthday)}})
 
 			runID := enrollOnItsTrigger(t, env, clock, fixtures.AutomationJobsWaitUntilBirthdayID, fixtures.ContactLiamID)
 
