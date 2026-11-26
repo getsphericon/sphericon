@@ -382,6 +382,35 @@ export function allSteps(path: FlowPath): FlowStep[] {
   ])
 }
 
+// stepsBefore are the Steps an Enrollment may have passed when it reaches the Step of the id (ADR
+// 0122), in the order allSteps gives them: those before it in its own path and in every path around
+// it, each with the Steps of its forks' paths, and the forks it stands in; never the Step itself, one
+// after it, one of its own paths, or one of another path of a fork it stands in. None when the path
+// holds no Step of the id. A Branch may test the message of a send Step among them.
+export function stepsBefore(path: FlowPath, id: string): FlowStep[] {
+  return before(path, id, []) ?? []
+}
+
+// before is stepsBefore within the path, passed being what the Enrollment may have passed when it
+// entered it; undefined when the path holds no Step of the id.
+function before(path: FlowPath, id: string, passed: FlowStep[]): FlowStep[] | undefined {
+  let sofar = passed
+  for (const step of path.steps) {
+    if (step.id === id) {
+      return sofar
+    }
+    const into = [...sofar, step]
+    for (const nested of forkPaths(step)) {
+      const found = before(nested, id, into)
+      if (found !== undefined) {
+        return found
+      }
+    }
+    sofar = [...into, ...forkPaths(step).flatMap((nested) => allSteps(nested))]
+  }
+  return undefined
+}
+
 // sendsMessage tells whether the Step sends a message on its Channel: the report counts what such a
 // Step sent and skipped, by its id.
 export function sendsMessage(step: FlowStep): boolean {

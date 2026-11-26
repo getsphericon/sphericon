@@ -2,6 +2,7 @@ package automationstep
 
 import (
 	"iter"
+	"slices"
 	"strconv"
 )
 
@@ -195,4 +196,38 @@ func forkPaths(f Fork) []Path {
 		out[i] = p.Path
 	}
 	return out
+}
+
+// Before are the Steps an Enrollment may have passed when it reaches the Step at (ADR 0122), in the
+// walker's order: those before it in its own path and in every path around it, each with every Step
+// of its forks' paths, whichever of them the Enrollment took, and the forks it stands in. It never
+// holds the Step at itself, a Step after it, one of its own paths, or one of another path of a fork
+// it stands in, which an Enrollment on its path never passed. None when the tree has no Step at.
+func Before(p Path, at ID) []*Step {
+	steps, _ := before(p, at, nil)
+	return steps
+}
+
+// before is Before within the path p, passed is what the Enrollment may have passed when it entered
+// p; false when p holds no Step at, at any depth.
+func before(p Path, at ID, passed []*Step) ([]*Step, bool) {
+	for i := range p.Steps {
+		st := &p.Steps[i]
+		if st.ID == at {
+			return passed, true
+		}
+		into := append(slices.Clip(passed), st)
+		for _, sub := range Forks(st) {
+			if found, ok := before(sub, at, into); ok {
+				return found, true
+			}
+		}
+		passed = into
+		for _, sub := range Forks(st) {
+			for _, inner := range All(sub) {
+				passed = append(passed, inner)
+			}
+		}
+	}
+	return nil, false
 }

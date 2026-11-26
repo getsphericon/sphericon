@@ -45,7 +45,7 @@ func TestMessageProjectionsKeepEarliestObservationsDespiteHandlingOrderAndWorker
 		t.Helper()
 		env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
 		msg := env.DB.OutboundMessage.GetX(t.Context(), fixtures.OutboundMessageTrackingSampleID)
-		for field, stamp := range map[string]*time.Time{"opened": msg.OpenedAt, "clicked": msg.ClickedAt, "delivered": msg.DeliveredAt, "bounced": msg.BouncedAt, "complained": msg.ComplainedAt} {
+		for field, stamp := range map[string]*time.Time{"opened_at": msg.OpenedAt, "clicked_at": msg.ClickedAt, "delivered_at": msg.DeliveredAt, "bounced_at": msg.BouncedAt, "complained_at": msg.ComplainedAt} {
 			require.NotNil(t, stamp, field)
 			assert.True(t, at.Equal(*stamp), "%s retains the earliest accepted observation", field)
 		}

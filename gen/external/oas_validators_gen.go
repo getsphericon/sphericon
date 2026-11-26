@@ -1954,6 +1954,11 @@ func (s BranchConditionNodeInputSum) Validate() error {
 			return err
 		}
 		return nil
+	case StepMessageLeafInputBranchConditionNodeInputSum:
+		if err := s.StepMessageLeafInput.Validate(); err != nil {
+			return err
+		}
+		return nil
 	default:
 		return errors.Errorf("invalid type %q", s.Type)
 	}
@@ -2008,6 +2013,11 @@ func (s BranchConditionNodeSum) Validate() error {
 		return nil
 	case BranchPropertyLeafBranchConditionNodeSum:
 		if err := s.BranchPropertyLeaf.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case StepMessageLeafBranchConditionNodeSum:
+		if err := s.StepMessageLeaf.Validate(); err != nil {
 			return err
 		}
 		return nil
@@ -7944,6 +7954,17 @@ func (s MaxPerSecond) Validate() error {
 	return nil
 }
 
+func (s MessageEngagement) Validate() error {
+	switch s {
+	case "opened":
+		return nil
+	case "clicked":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s *MessageRevenue) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -12156,6 +12177,92 @@ func (s StateOperator) Validate() error {
 	case "eq":
 		return nil
 	case "neq":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *StepMessageLeaf) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Kind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "kind",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Engagement.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "engagement",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *StepMessageLeafInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Kind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "kind",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Engagement.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "engagement",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s StepMessageLeafInputKind) Validate() error {
+	switch s {
+	case "stepMessage":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s StepMessageLeafKind) Validate() error {
+	switch s {
+	case "stepMessage":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)

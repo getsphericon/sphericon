@@ -880,6 +880,12 @@ export const zMaxPerDay = z.int().gte(1).lte(100000000);
 export const zMaxPerSecond = z.int().gte(1).lte(10000);
 
 /**
+ * What a test of an Enrollment's own message asks of it: that it was opened (an email Step's
+ * message only) or clicked
+ */
+export const zMessageEngagement = z.enum(['opened', 'clicked']);
+
+/**
  * The Orders credited to one Broadcast or Automation and the net revenue of their Movements
  * (ADR 0064), in the Reporting currency, read from the Movements and never stored: a refund
  * lowers `amount` on its own day. Orders in another currency are counted in neither field.
@@ -3077,6 +3083,36 @@ export const zSmsStepInput = z.strictObject({
 });
 
 /**
+ * A test of the message a send Step of the Automation sent to this Enrollment (ADR 0122): whether
+ * it was opened or clicked, by the first human open or click stamped on it, so an open or click by
+ * a machine never counts (ADR 0053). It is unknown, never false, when the message went out
+ * untracked, when its tracking was withdrawn since (ADR 0120), when the Step was skipped and when
+ * the Enrollment never passed it, so a Branch holding it needs its unknown path. The Step must be a
+ * send Step that can come before the Branch: an email Step for `opened`, any send Step for
+ * `clicked`. A Step a test names cannot be removed.
+ */
+export const zStepMessageLeaf = z.object({
+  kind: z.enum(['stepMessage']),
+  step: zStepId,
+  engagement: zMessageEngagement
+});
+
+/**
+ * A test of the message a send Step of the Automation sent to this Enrollment (ADR 0122): whether
+ * it was opened or clicked, by the first human open or click stamped on it, so an open or click by
+ * a machine never counts (ADR 0053). It is unknown, never false, when the message went out
+ * untracked, when its tracking was withdrawn since (ADR 0120), when the Step was skipped and when
+ * the Enrollment never passed it, so a Branch holding it needs its unknown path. The Step must be a
+ * send Step that can come before the Branch: an email Step for `opened`, any send Step for
+ * `clicked`. A Step a test names cannot be removed.
+ */
+export const zStepMessageLeafInput = z.strictObject({
+  kind: z.enum(['stepMessage']),
+  step: zStepId,
+  engagement: zMessageEngagement
+});
+
+/**
  * A Channel a destination can be suppressed on
  */
 export const zSuppressionChannel = z.enum([
@@ -5269,7 +5305,8 @@ export const zAutomationVersion = z.object({
 
 /**
  * A Branch path's Condition: the tree of tests the Contact, on its live data when the Enrollment
- * reaches the Branch, and the Event the Enrollment began with match
+ * reaches the Branch, the Event the Enrollment began with and the messages the Enrollment was sent
+ * match
  */
 export const zBranchCondition = z.object({
   kind: z.enum(['group']),
@@ -5280,7 +5317,8 @@ export const zBranchCondition = z.object({
 
 /**
  * A Branch path's Condition: the tree of tests the Contact, on its live data when the Enrollment
- * reaches the Branch, and the Event the Enrollment began with match
+ * reaches the Branch, the Event the Enrollment began with and the messages the Enrollment was sent
+ * match
  */
 export const zBranchConditionInput = z.strictObject({
   kind: z.enum(['group']),
@@ -5291,7 +5329,7 @@ export const zBranchConditionInput = z.strictObject({
 
 /**
  * An entry of a Branch path's Condition, by `kind`: a Rule's, the property test reading the
- * Event the Enrollment began with
+ * Event the Enrollment began with, and the test of the Enrollment's own message
  */
 export const zBranchConditionNode = z.union([
   z.object({
@@ -5323,12 +5361,15 @@ export const zBranchConditionNode = z.union([
   }).and(z.lazy((): any => zEventLeaf)),
   z.object({
     kind: z.literal('property')
-  }).and(zBranchPropertyLeaf)
+  }).and(zBranchPropertyLeaf),
+  z.object({
+    kind: z.literal('stepMessage')
+  }).and(zStepMessageLeaf)
 ]);
 
 /**
  * An entry of a Branch path's Condition, by `kind`: a Rule's, the property test reading the
- * Event the Enrollment began with
+ * Event the Enrollment began with, and the test of the Enrollment's own message
  */
 export const zBranchConditionNodeInput = z.union([
   z.object({
@@ -5360,7 +5401,10 @@ export const zBranchConditionNodeInput = z.union([
   }).and(z.lazy((): any => zEventLeafInput)),
   z.object({
     kind: z.literal('property')
-  }).and(zBranchPropertyLeafInput)
+  }).and(zBranchPropertyLeafInput),
+  z.object({
+    kind: z.literal('stepMessage')
+  }).and(zStepMessageLeafInput)
 ]);
 
 /**
@@ -5385,7 +5429,8 @@ export const zBranchPathInput = z.strictObject({
  * A Step that sends each Enrollment down the first of its paths whose Condition holds, on the
  * Contact's live data when the Enrollment reaches it (ADR 0124), and down `otherwise` when none
  * does. A Condition that is unknown for the Contact (an engagement count of a Destination that is
- * not tracked, ADR 0123) before any holds sends it down `unknown`. The paths rejoin at the Step
+ * not tracked, ADR 0123, or a test of the Enrollment's own message that cannot be known, ADR 0122)
+ * before any holds sends it down `unknown`. The paths rejoin at the Step
  * after the Branch.
  */
 export const zBranchStep = z.object({
@@ -5398,7 +5443,7 @@ export const zBranchStep = z.object({
 
 /**
  * A Branch, as a request writes it. Publish refuses it without `unknown` when a Condition counts
- * an open or a click, and with `unknown` when none does.
+ * an open or a click or tests the Enrollment's own message, and with `unknown` when none does.
  */
 export const zBranchStepInput = z.strictObject({
   id: z.exactOptional(zStepId),

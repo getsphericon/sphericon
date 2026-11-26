@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 )
 
@@ -29,12 +30,15 @@ func (m *Module) CheckBranch(ctx context.Context, s *ent.Scoped, g conditiontree
 	return err
 }
 
-// OutcomesInput is what Outcomes reads: the Contact, the Conditions in order, and the properties
-// of the Event the Enrollment began with (nil for none), which each property test reads.
+// OutcomesInput is what Outcomes reads: the Contact, the Conditions in order, the properties of
+// the Event the Enrollment began with (nil for none), which each property test reads, and the
+// messages the Enrollment was sent by the send Step that sent each, which each test of its own
+// message reads (a Step absent from it sent none).
 type OutcomesInput struct {
 	ContactID  int64
 	Conditions []conditiontree.Branch
 	Properties map[string]any
+	Messages   map[automationstep.ID]Message
 }
 
 // Outcomes reads what each Condition of in is for its Contact, on its live data, in the order
@@ -57,8 +61,8 @@ func (m *Module) Outcomes(ctx context.Context, s *ent.Scoped, in OutcomesInput) 
 		return nil, fmt.Errorf("encode the Enrollment's Event properties: %w", err)
 	}
 	now := m.now()
-	read := &compiler{s: s, now: now, trigger: trigger}
-	counted := &compiler{s: s, now: now, trigger: trigger, counted: true}
+	read := &compiler{s: s, now: now, trigger: trigger, messages: in.Messages}
+	counted := &compiler{s: s, now: now, trigger: trigger, messages: in.Messages, counted: true}
 	type judged struct{ held, asCounted predicate.Contact }
 	preds := make([]judged, len(conds))
 	for i, g := range conds {

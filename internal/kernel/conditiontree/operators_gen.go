@@ -146,3 +146,18 @@ var TrackingChannels = []TrackingChannel{
 	TrackingSms,
 	TrackingTelegram,
 }
+
+// Engagement is what a stepMessage leaf asks of the message a send Step sent to the Enrollment: opened or clicked.
+type Engagement string
+
+// The values of the contract's MessageEngagement enum, in its order.
+const (
+	MessageOpened  Engagement = "opened"
+	MessageClicked Engagement = "clicked"
+)
+
+// Engagements is every Engagement, in the contract's order.
+var Engagements = []Engagement{
+	MessageOpened,
+	MessageClicked,
+}

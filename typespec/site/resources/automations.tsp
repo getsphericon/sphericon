@@ -87,7 +87,8 @@ model BranchUnknownPathInput {
 model BranchUnknownPathResult {
   /**
    * True when one of its Conditions can be unknown for a Contact (it counts an open or a click,
-   * ADR 0123): Publish then refuses the Branch without an unknown path, and with one when false
+   * ADR 0123, or tests the Enrollment's own message, ADR 0122): Publish then refuses the Branch
+   * without an unknown path, and with one when false
    */
   needed: boolean;
 }

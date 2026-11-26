@@ -14,6 +14,7 @@ import {
   flowOf,
   holdsKept,
   pathInputOf,
+  stepsBefore,
   withoutHalfTypedFilter,
 } from './definition.ts'
 import type { Flow, TriggerDraft } from './definition.ts'
@@ -602,4 +603,38 @@ test('a Trigger switched to a date saves no Event matcher or entry settings', ()
       localTime: '10:00',
     },
   })
+})
+
+// A tag step of the id, and a Branch of the id with one listed path and otherwise.
+function tagOf(id: number): AutomationStep {
+  return { id: stepId(id), type: 'apply_tag', tag: 'x' }
+}
+function forkOf(id: number, listed: AutomationStep[], otherwise: AutomationStep[]): AutomationStep {
+  return {
+    id: stepId(id),
+    type: 'branch',
+    paths: [{ id: stepId(id + 100), condition: VIP, steps: listed }],
+    otherwise: { id: stepId(id + 200), steps: otherwise },
+  }
+}
+
+// The Steps a Branch may test the message of are those an Enrollment may have passed on its way
+// there (ADR 0122): before the Branch in its path and in every path around it, the Steps of a fork it
+// passed included; never its own paths', one after it, or one of another path of a fork it stands in.
+test('the Steps before a Step are those an Enrollment may have passed when it reaches it', () => {
+  const flow = flowOf(
+    version([
+      tagOf(40),
+      forkOf(41, [tagOf(42)], [tagOf(43)]),
+      forkOf(44, [tagOf(45)], [tagOf(46), forkOf(47, [tagOf(48)], [])]),
+      tagOf(49),
+    ]),
+  )
+  const ids = (target: number) => stepsBefore(flow.path, stepId(target)).map((step) => step.id)
+
+  expect(ids(47)).toEqual([40, 41, 42, 43, 44, 46].map((id) => stepId(id)))
+  expect(ids(48)).toEqual([40, 41, 42, 43, 44, 46, 47].map((id) => stepId(id)))
+  expect(ids(49)).toEqual([40, 41, 42, 43, 44, 45, 46, 47, 48].map((id) => stepId(id)))
+  expect(ids(40)).toEqual([])
+  expect(stepsBefore(flow.path, stepId(99))).toEqual([])
 })

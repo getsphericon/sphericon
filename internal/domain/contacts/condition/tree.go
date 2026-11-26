@@ -11,6 +11,7 @@ import (
 
 	"github.com/samber/lo"
 
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
@@ -89,6 +90,14 @@ type eventCountLeaf struct {
 	path       *Path
 }
 
+// stepMessageLeaf tests the message the send Step step sent to the Enrollment (ADR 0122): whether
+// it was opened or clicked, read from the facts the Branch is given of the Enrollment's messages,
+// unknown unless the message went out tracked and is tracked still.
+type stepMessageLeaf struct {
+	step       automationstep.ID
+	engagement conditiontree.Engagement
+}
+
 // propertyLeaf tests the property key of the triggering Event, the one source a Rule's property
 // test reads, by a text, presence or number test.
 type propertyLeaf struct {
@@ -105,6 +114,7 @@ func (smsLeaf) isNode()         {}
 func (customFieldLeaf) isNode() {}
 func (eventCountLeaf) isNode()  {}
 func (propertyLeaf) isNode()    {}
+func (stepMessageLeaf) isNode() {}
 
 // test is what a leaf asks of the value it reads, typed by that value: text, presence, number,
 // moment or the last days.
@@ -232,6 +242,8 @@ type entry struct {
 	Times      *int                          `json:"times"`
 	WithinDays *int                          `json:"withinDays"`
 	Filter     *conditiontree.EventFilter    `json:"filter"`
+	Step       automationstep.ID             `json:"step"`
+	Engagement conditiontree.Engagement      `json:"engagement"`
 }
 
 // source is a property test's `of`: whose properties it reads, by its `kind`.
@@ -319,10 +331,25 @@ func decodeEntry(raw json.RawMessage, p place, sub func(conditiontree.Group) (no
 		return decodeEvent(e)
 	case conditiontree.KindProperty:
 		return decodeProperty(e, p.sources)
+	case conditiontree.KindStepMessage:
+		return decodeStepMessage(e)
 	case conditiontree.KindSentBy:
 		// A sent-by test is an Event filter's alone (decodeFilterEntry): no place's tree admits it.
 	}
 	return nil, fmt.Errorf("unknown entry kind %q", e.Kind)
+}
+
+// decodeStepMessage reads a `stepMessage` leaf: the send Step it names, and whether it asks for an
+// open or a click. Whether the Step is a send Step of the version that can come before the Branch
+// is the save's check, which knows the version's Steps.
+func decodeStepMessage(e entry) (node, error) {
+	if e.Step == "" {
+		return nil, errors.New("the send step a message test names is required")
+	}
+	if !slices.Contains(conditiontree.Engagements, e.Engagement) {
+		return nil, fmt.Errorf("unknown engagement %q", e.Engagement)
+	}
+	return stepMessageLeaf{step: e.Step, engagement: e.Engagement}, nil
 }
 
 // decodeProperty reads a property test of one of the sources its place's property tests read.

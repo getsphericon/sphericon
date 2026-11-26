@@ -31,6 +31,7 @@ func unknownPathOf(t *testing.T, conditions ...string) bool {
 const (
 	openedOnceCondition = `{"kind":"group","combinator":"and","entries":[{"kind":"event","action":"email.opened","operator":"atLeast","times":1}]}`
 	vipTagCondition     = `{"kind":"group","combinator":"and","entries":[{"kind":"tag","name":"vip","operator":"has"}]}`
+	ownMessageCondition = `{"kind":"group","combinator":"and","entries":[{"kind":"group","combinator":"and","not":true,"entries":[{"kind":"stepMessage","step":"5a0f6d2e-8b1c-4e3a-9f7d-000000000002","engagement":"opened"}]}]}`
 	orderCondition      = `{"kind":"group","combinator":"and","entries":[{"kind":"property","of":{"kind":"trigger"},"key":"total","test":{"kind":"number","operator":"gt","value":100}}]}`
 )
 
@@ -38,6 +39,14 @@ const (
 // ADR 0124): the server answers it for the Conditions being edited, as Publish decides it.
 func TestSiteAutomationBranchNeedsAnUnknownPathWhenAConditionCountsAnOpen(t *testing.T) {
 	needed := unknownPathOf(t, vipTagCondition, openedOnceCondition)
+
+	assert.True(t, needed)
+}
+
+// A test of the Enrollment's own message can be unknown too (ADR 0122), so a Branch that holds one
+// needs an unknown path.
+func TestSiteAutomationBranchNeedsAnUnknownPathWhenAConditionTestsItsOwnMessage(t *testing.T) {
+	needed := unknownPathOf(t, vipTagCondition, ownMessageCondition)
 
 	assert.True(t, needed)
 }

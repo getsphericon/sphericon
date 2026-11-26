@@ -11,9 +11,11 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationskippedentry"
+	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contactlock"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -355,7 +357,11 @@ func splitRound(run *ent.AutomationRun) int {
 // delivered again finds the Enrollment moved on. A Condition that no longer reads (a Custom field
 // retyped past it) fails the Enrollment; a failed read is retried.
 func (m *StepExecution) branch(ctx context.Context, s *ent.Scoped, run *ent.AutomationRun, at place, b automationstep.Branch) error {
-	truths, err := m.conditions.Outcomes(ctx, s, condition.OutcomesInput{ContactID: run.ContactID, Conditions: b.Conditions(), Properties: run.EventProperties})
+	messages, err := messagesOf(ctx, s, run.ID, b)
+	if err != nil {
+		return err
+	}
+	truths, err := m.conditions.Outcomes(ctx, s, condition.OutcomesInput{ContactID: run.ContactID, Conditions: b.Conditions(), Properties: run.EventProperties, Messages: messages})
 	if errors.Is(err, condition.ErrStorage) {
 		return err
 	}
@@ -363,6 +369,42 @@ func (m *StepExecution) branch(ctx context.Context, s *ent.Scoped, run *ent.Auto
 		return m.fail(ctx, s, run.ID, fmt.Errorf("branch step %s: %w", at.step, err))
 	}
 	return m.advance(ctx, s, run.ID, at, stepMove{path: chosen(b, truths)})
+}
+
+// messagesOf is what the Branch's tests of the Enrollment's own messages read (ADR 0122): the
+// message each send Step they name sent to the Enrollment run, by the Step. A message is read
+// tracked only when it went out (sent) tracked and its tracking was not withdrawn since (ADR 0120);
+// its opened and clicked are its stamps of the first human open and click, which no machine sets
+// (ADR 0053). A Step that sent the Enrollment no message (it was skipped, or the Enrollment never
+// passed it) is absent, and so read unknown. None when the Branch tests no message of its own.
+func messagesOf(ctx context.Context, s *ent.Scoped, runID int64, b automationstep.Branch) (map[automationstep.ID]condition.Message, error) {
+	var steps []automationstep.ID
+	for _, c := range b.Conditions() {
+		for _, test := range condition.StepMessageTests(c.Group) {
+			steps = append(steps, test.Step)
+		}
+	}
+	if len(steps) == 0 {
+		return nil, nil
+	}
+	sent, err := s.OutboundMessage().Query().
+		Where(outboundmessage.AutomationRunID(runID), outboundmessage.AutomationStepIDIn(lo.Uniq(steps)...)).
+		All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("read the messages the branch tests: %w", err)
+	}
+	out := make(map[automationstep.ID]condition.Message, len(sent))
+	for _, msg := range sent {
+		if msg.AutomationStepID == nil {
+			continue
+		}
+		out[*msg.AutomationStepID] = condition.Message{
+			Tracked: msg.Status == outboundmessage.StatusSent && engagementtracking.IsTracked(msg),
+			Opened:  msg.OpenedAt != nil,
+			Clicked: msg.ClickedAt != nil,
+		}
+	}
+	return out, nil
 }
 
 // chosen is the path of the Branch its paths' truths send the Enrollment down (ADR 0124), with each
