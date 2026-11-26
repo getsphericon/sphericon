@@ -26,7 +26,7 @@ func TestCheckEmptyDestinationIsEligible(t *testing.T) {
 		"email under confirmation": {fixtures.LumonID, channels.Email},
 		"sms":                      {fixtures.TyrellID, channels.SMS},
 	} {
-		d, err := eligibility.New().Check(context.Background(), env.DB.Scoped(tc.ws), eligibility.CheckInput{Channel: tc.channel, Destination: "   ", Source: eligibility.SourceBroadcasts})
+		d, err := eligibility.New().Check(context.Background(), env.DB.Scoped(tc.ws), eligibility.CheckInput{Channel: tc.channel, Destination: "   ", Mode: eligibility.Marketing(eligibility.SourceBroadcasts)})
 
 		require.NoError(t, err, name)
 		assert.Equal(t, eligibility.Decision{Eligible: true}, d, name)
@@ -38,11 +38,11 @@ func TestCheckFailsClosedOnStoreErrorAndUnknownWorkspace(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	_, err := eligibility.New().Check(ctx, env.DB.Scoped(fixtures.AcmeID), eligibility.CheckInput{Channel: channels.Email, Destination: "a@example.com", Source: eligibility.SourceBroadcasts})
+	_, err := eligibility.New().Check(ctx, env.DB.Scoped(fixtures.AcmeID), eligibility.CheckInput{Channel: channels.Email, Destination: "a@example.com", Mode: eligibility.Marketing(eligibility.SourceBroadcasts)})
 	require.ErrorContains(t, err, "eligibility check")
 	require.ErrorIs(t, err, context.Canceled, "the store's error is wrapped, not replaced")
 
-	_, err = eligibility.New().Check(context.Background(), env.DB.Scoped(987654), eligibility.CheckInput{Channel: channels.Email, Destination: "a@example.com", Source: eligibility.SourceBroadcasts})
+	_, err = eligibility.New().Check(context.Background(), env.DB.Scoped(987654), eligibility.CheckInput{Channel: channels.Email, Destination: "a@example.com", Mode: eligibility.Marketing(eligibility.SourceBroadcasts)})
 	assert.ErrorContains(t, err, "workspace 987654 not found")
 }
 

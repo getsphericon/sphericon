@@ -39,7 +39,6 @@ func textTo(t *testing.T, env *testhelper.TestEnv, account testhelper.TwilioAcco
 		Key:           key,
 		Destination:   *c.Phone,
 		Contact:       c,
-		Source:        eligibility.SourceBroadcasts,
 		Content:       outboundmessages.SMSContent{Text: "Hello"},
 		IntegrationID: &id,
 	}

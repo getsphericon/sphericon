@@ -53,6 +53,8 @@ var outboundProvenance = []variant{
 	{value: "broadcast", required: []string{"broadcast_id"}, optional: []string{"broadcast_recipient_id"}},
 	{value: "automation", required: []string{"automation_id", "automation_version_id", "automation_step_id"}, optional: []string{"automation_run_id"}},
 	{value: "transactional", optional: []string{"template_id"}},
+	// A confirmation email (ADR 0013) points at no surface record: its Contact is its subject.
+	{value: "confirmation"},
 }
 
 // outboundOutcome is the column that explains each status: a skipped message its Skipped reason,
@@ -75,7 +77,7 @@ func (OutboundMessage) Fields() []ent.Field {
 			Immutable(),
 		// Which surface asked for the send.
 		field.Enum("kind").
-			Values("broadcast", "automation", "transactional").
+			Values("broadcast", "automation", "transactional", "confirmation").
 			Immutable(),
 		// Unique per (workspace, logical send): the surface builds it from its own
 		// identity (broadcast recipient, automation run + Step id, client key). The

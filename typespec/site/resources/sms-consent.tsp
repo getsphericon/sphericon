@@ -39,3 +39,27 @@ namespace SiteSmsConsents {
     | SmsConsent
     | Problem;
 }
+
+@route("/workspaces/{workspaceId}/contacts/{contactId}/confirmation-requests")
+@tag("Site Consent")
+namespace SiteConfirmationRequests {
+  /**
+   * Send the contact a double opt-in confirmation email (ADR 0013), as the API's confirmation
+   * request of a contact does: `confirmed` (200) when the address already
+   * holds a Confirmation, 409 `confirmation_email_required` while the confirmation email is not set
+   * up, 409 naming an opt-out of everything or a Suppression, 429 past 3 emails to the address in 24
+   * hours.
+   */
+  @post
+  @requiresPermissions(#[])
+  op create(@path workspaceId: WorkspaceId, @path contactId: EntityId):
+    | {
+        @statusCode statusCode: 202;
+        @body body: ConfirmationRequestResult;
+      }
+    | {
+        @statusCode statusCode: 200;
+        @body body: ConfirmationRequestResult;
+      }
+    | Problem;
+}

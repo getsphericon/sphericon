@@ -45,6 +45,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
+	"github.com/getsphericon/sphericon/internal/domain/sending/confirmationrequests"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
@@ -499,6 +500,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		add(tb, p, txDB, ws, jobs.NewOrderEventWorker(client, do.MustInvoke[*orders.Module](injector)))
 		add(tb, p, txDB, ws, jobs.NewBroadcastUnsubscribeEventWorker(client, do.MustInvoke[*broadcasts.Module](injector)))
 		add(tb, p, txDB, ws, jobs.NewMessageObservationWorker(client, do.MustInvoke[*outboundmessages.Module](injector)))
+		add(tb, p, txDB, ws, jobs.NewSendConfirmationWorker(client, do.MustInvoke[*confirmationrequests.Module](injector)))
 		add(tb, p, txDB, ws, jobs.NewTrackingWithdrawalWorker(client, do.MustInvoke[*trackingwithdrawal.UseCase](injector)))
 		add(tb, p, txDB, ws, jobs.NewWithdrawUngrantedWorker(client, do.MustInvoke[*outboundmessages.Module](injector)))
 		add(tb, p, txDB, ws, jobs.NewNoticeEventWorker(do.MustInvoke[*noticedelivery.Module](injector), systemSender))

@@ -8,6 +8,9 @@ enum CapturedMessageSurface {
   automation,
   transactional,
 
+  /** A confirmation email of double opt-in (ADR 0013) */
+  confirmation,
+
   /** A Test send of a Broadcast: it has no Outbound message */
   test,
 }

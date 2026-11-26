@@ -54,6 +54,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
+	"github.com/getsphericon/sphericon/internal/domain/sending/confirmationrequests"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/reputation"
@@ -690,6 +691,10 @@ type Converter interface {
 	// goverter:map . UpdatedAt | brandKitUpdatedAt
 	BrandKitToResource(source brandkits.Kit) siteapi.BrandKitResource
 
+	// The Brand kit a public page is in (the confirmation page, ADR 0013), as it stands.
+	PublicBrandToResource(source brandkits.Kit) siteapi.SitePublicBrand
+	ConfirmationPageToResource(source confirmationrequests.Page) siteapi.SiteConfirmationPage
+
 	// goverter:map . Actor
 	// goverter:map . Target
 	// goverter:map Diff Diff | auditDiff
@@ -995,9 +1000,8 @@ func broadcastContent(c Converter, b *ent.Broadcast) siteapi.BroadcastContent {
 		return siteapi.BroadcastContent{OneOf: siteapi.NewTelegramBroadcastContentBroadcastContentSum(c.TelegramBroadcastContentToResource(b))}
 	case channels.SMS:
 		return siteapi.BroadcastContent{OneOf: siteapi.NewSmsBroadcastContentBroadcastContentSum(c.SmsBroadcastContentToResource(b))}
-	default:
-		return siteapi.BroadcastContent{}
 	}
+	return siteapi.BroadcastContent{}
 }
 
 // smsContentChannel is the discriminator of SMS's content arm.

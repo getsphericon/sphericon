@@ -358,3 +358,10 @@ func validFooter(text string) bool {
 	}
 	return !strings.ContainsFunc(text, unicode.IsControl)
 }
+
+// Kit is the Workspace's Brand kit, read now: a page or a message that is in the Workspace's brand
+// as it stands (the confirmation email and its page, ADR 0013) reads it live, unlike a message
+// authored under it.
+func (*Brands) Kit(ctx context.Context, s *ent.Scoped) (Kit, error) {
+	return get(ctx, s)
+}

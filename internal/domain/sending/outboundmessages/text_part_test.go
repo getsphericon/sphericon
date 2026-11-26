@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
@@ -42,10 +41,9 @@ func sendUmbrella(t *testing.T, env *testhelper.TestEnv, req outboundmessages.Re
 func marketingRequest(t *testing.T, key string, track bool) outboundmessages.Request {
 	t.Helper()
 	return outboundmessages.Request{
-		Key:    key,
-		Source: eligibility.SourceBroadcasts,
-		Track:  track,
-		Ref:    broadcastIn(t, fixtures.UmbrellaID),
+		Key:   key,
+		Track: track,
+		Ref:   broadcastIn(t, fixtures.UmbrellaID),
 	}
 }
 

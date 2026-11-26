@@ -122,6 +122,9 @@ enum SystemEventAction {
   /** The Contact's Telegram chat refused to have its link clicks tracked */
   telegramEngagementTrackingDenied: "telegram.engagement_tracking_denied",
 
+  /** The Contact's email address returned to everything it had left, by confirming a fresh confirmation link (ADR 0013) */
+  emailResubscribed: "email.resubscribed",
+
   /** A consent observation of the Contact occurred before the consent standing, and changed nothing */
   contactConsentSuperseded: "contact.consent_superseded",
 }

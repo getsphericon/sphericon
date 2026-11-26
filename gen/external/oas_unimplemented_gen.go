@@ -347,6 +347,24 @@ func (UnimplementedHandler) CapturedMessagesList(ctx context.Context, params Cap
 	return r, ht.ErrNotImplemented
 }
 
+// ConfirmationRequestsCreate implements ConfirmationRequests_create operation.
+//
+// Ask for a double opt-in confirmation email to the contact's email address (ADR 0013): it is sent by
+// a job through the Workspace's confirmation email, whose link records a Confirmation with provenance
+// `double_opt_in` when the person presses Confirm. An address that already holds a Confirmation gets
+// no mail and the answer is `confirmed` (200). 409 `confirmation_email_required` while the Workspace
+// has no confirmation email set up; 409 when the address opted out of everything or is suppressed,
+// naming which: soliciting a person who left is itself a violation, and only the person returns,
+// through a form or the Preference page. 422 when the contact has no email address. At most 3
+// confirmation emails reach an address in 24 hours, whoever asks: a fourth is a 429 with
+// `Retry-After`. It works whether or not the Workspace requires confirmed opt-in. Send-class: needs
+// the confirmations:send scope, and mcp:send over MCP.
+//
+// POST /contacts/{contactId}/confirmation-requests
+func (UnimplementedHandler) ConfirmationRequestsCreate(ctx context.Context, params ConfirmationRequestsCreateParams) (r ConfirmationRequestsCreateRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // ConfirmationsCreate implements Confirmations_create operation.
 //
 // Record consent a phone number gave outside sphericon (a form of your own, a verification service),

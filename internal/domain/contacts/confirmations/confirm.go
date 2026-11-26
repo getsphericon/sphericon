@@ -3,12 +3,14 @@ package confirmations
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/consentstamps"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
@@ -18,7 +20,9 @@ import (
 
 // RecordConfirmation writes the derived Confirmation read-model row (provenance
 // double_opt_in) and publishes the immutable marketing.confirmed Event in one
-// transaction (ADR 0013) — the positive mirror of the unsubscribe link. It is keyed
+// transaction (ADR 0013) — the positive mirror of the unsubscribe link. The click on an unexpired
+// link is the person's own act on fresh proof, so before the Confirmation it lifts the address's
+// opt-out of everything (liftEverything); a per-source opt-out stays. It is keyed
 // by destination, so it records even if the contact was deleted between send and
 // click. A repeated POST (mailbox retry, double click) is a complete no-op: the
 // confirmation stands and no second Event is logged. s is the scope of the token's Workspace,
@@ -40,6 +44,9 @@ func (m *Module) RecordConfirmation(ctx context.Context, s *ent.Scoped, target l
 		if err != nil || workspaces.DeletionStateOf(ws) == workspaces.StateErased {
 			return err
 		}
+		if err := m.liftEverything(ctx, sc, target.ContactID, dest, at); err != nil {
+			return err
+		}
 		_, _, err = m.recordIn(ctx, sc, grant{
 			channel: channels.Email, destination: dest, provenance: confirmation.ProvenanceDoubleOptIn,
 			contactID: target.ContactID, ip: ip, at: consentstamps.At(at),
@@ -50,6 +57,25 @@ func (m *Module) RecordConfirmation(ctx context.Context, s *ent.Scoped, target l
 			return m.publishSuperseded(ctx, sc, target.ContactID, dest, at)
 		}
 		return err
+	})
+}
+
+// liftEverything lifts the opt-out of everything of address, the person returning by the link at
+// at, and records the return as email.resubscribed for the Contact the link was issued to (one gone
+// by now has nobody to name), ordered with the opt-out by when each occurred (ADR 0154). Nothing to
+// lift records nothing, so a repeated click is a no-op.
+func (m *Module) liftEverything(ctx context.Context, s *ent.Scoped, contactID int64, address string, at time.Time) error {
+	lifted, err := m.unsubs.LiftEmail(ctx, s, address, consentstamps.At(at))
+	if err != nil || !lifted {
+		return err
+	}
+	holder, err := m.locks.Referenced(ctx, s, contactID)
+	if err != nil {
+		return fmt.Errorf("lock the returning contact: %w", err)
+	}
+	return m.bus.PublishIn(ctx, s, &events.EmailResubscribed{
+		WorkspaceID: s.WorkspaceID(), ContactID: holder, Email: address,
+		Source: eligibility.SourceEverything, Via: events.ResubscribedViaConfirmation, ObservedAt: at,
 	})
 }
 

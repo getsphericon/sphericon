@@ -738,6 +738,8 @@ func (c *InputsImpl) PersonalScope(source site.PersonalScope) tokenscope.Persona
 		tokenscopePersonalScope = tokenscope.PersonalScopeBroadcastsSend
 	case site.PersonalScopeBroadcastsWrite:
 		tokenscopePersonalScope = tokenscope.PersonalScopeBroadcastsWrite
+	case site.PersonalScopeConfirmationsSend:
+		tokenscopePersonalScope = tokenscope.PersonalScopeConfirmationsSend
 	case site.PersonalScopeContactsExport:
 		tokenscopePersonalScope = tokenscope.PersonalScopeContactsExport
 	case site.PersonalScopeContactsRead:

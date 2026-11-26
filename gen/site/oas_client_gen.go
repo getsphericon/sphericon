@@ -493,6 +493,15 @@ type Invoker interface {
 	//
 	// GET /workspaces/{workspaceId}/captured-messages
 	SiteCapturedMessagesList(ctx context.Context, params SiteCapturedMessagesListParams) (*SiteCapturedMessagesListOK, error)
+	// SiteConfirmationRequestsCreate invokes SiteConfirmationRequests_create operation.
+	//
+	// Send the contact a double opt-in confirmation email (ADR 0013), as the API's confirmation request of
+	// a contact does: `confirmed` (200) when the address already holds a Confirmation, 409
+	// `confirmation_email_required` while the confirmation email is not set up, 409 naming an opt-out of
+	// everything or a Suppression, 429 past 3 emails to the address in 24 hours.
+	//
+	// POST /workspaces/{workspaceId}/contacts/{contactId}/confirmation-requests
+	SiteConfirmationRequestsCreate(ctx context.Context, params SiteConfirmationRequestsCreateParams) (SiteConfirmationRequestsCreateRes, error)
 	// SiteConnectionsDelete invokes SiteConnections_delete operation.
 	//
 	// Revoke a Connection: the caller's own, or anyone's with members:manage.
@@ -971,6 +980,24 @@ type Invoker interface {
 	//
 	// POST /confirmations/{token}
 	SitePublicConfirmationsPerform(ctx context.Context, params SitePublicConfirmationsPerformParams) error
+	// SitePublicConfirmationsRead invokes SitePublicConfirmations_read operation.
+	//
+	// Read what the confirmation page shows for a link (ADR 0013): whether it has expired, the Workspace's
+	// name and its Brand kit as it stands. A link past its 7 days still names its Workspace, so the page
+	// of an expired link is in its brand and offers a new one; 400 is an invalid token.
+	//
+	// GET /confirmations/{token}
+	SitePublicConfirmationsRead(ctx context.Context, params SitePublicConfirmationsReadParams) (*SiteConfirmationPage, error)
+	// SitePublicConfirmationsRenew invokes SitePublicConfirmations_renew operation.
+	//
+	// Send a new confirmation link, from the page of an expired one (ADR 0013): a request the person
+	// makes, which only a Suppression of the address stops. The answer is the same whether or not a mail
+	// goes out (an address over its limit, suppressed, or no longer the contact's), so the page says
+	// nothing about an address; `confirmed` when it holds a Confirmation already. 409
+	// `confirmation_email_required` while the Workspace has no confirmation email set up.
+	//
+	// POST /confirmations/{token}/renewals
+	SitePublicConfirmationsRenew(ctx context.Context, params SitePublicConfirmationsRenewParams) (*ConfirmationRequestResult, error)
 	// SitePublicInvitationsAccept invokes SitePublicInvitations_accept operation.
 	//
 	// Accept an invite: create or complete the User, or attach the signed-in Verified User, and create the
@@ -10557,6 +10584,166 @@ func (c *Client) sendSiteCapturedMessagesList(ctx context.Context, params SiteCa
 	return result, nil
 }
 
+// SiteConfirmationRequestsCreate invokes SiteConfirmationRequests_create operation.
+//
+// Send the contact a double opt-in confirmation email (ADR 0013), as the API's confirmation request of
+// a contact does: `confirmed` (200) when the address already holds a Confirmation, 409
+// `confirmation_email_required` while the confirmation email is not set up, 409 naming an opt-out of
+// everything or a Suppression, 429 past 3 emails to the address in 24 hours.
+//
+// POST /workspaces/{workspaceId}/contacts/{contactId}/confirmation-requests
+func (c *Client) SiteConfirmationRequestsCreate(ctx context.Context, params SiteConfirmationRequestsCreateParams) (SiteConfirmationRequestsCreateRes, error) {
+	res, err := c.sendSiteConfirmationRequestsCreate(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendSiteConfirmationRequestsCreate(ctx context.Context, params SiteConfirmationRequestsCreateParams) (res SiteConfirmationRequestsCreateRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteConfirmationRequests_create"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/workspaces/{workspaceId}/contacts/{contactId}/confirmation-requests"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteConfirmationRequestsCreateOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [5]string
+	pathParts[0] = "/workspaces/"
+	{
+		// Encode "workspaceId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "workspaceId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := string(params.WorkspaceId); true {
+				return e.EncodeValue(conv.StringToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/contacts/"
+	{
+		// Encode "contactId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "contactId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := publicid.ID(params.ContactId); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[3] = encoded
+	}
+	pathParts[4] = "/confirmation-requests"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, SiteConfirmationRequestsCreateOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteConfirmationRequestsCreateResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
 // SiteConnectionsDelete invokes SiteConnections_delete operation.
 //
 // Revoke a Connection: the caller's own, or anyone's with members:manage.
@@ -20024,6 +20211,209 @@ func (c *Client) sendSitePublicConfirmationsPerform(ctx context.Context, params 
 
 	stage = "DecodeResponse"
 	result, err := decodeSitePublicConfirmationsPerformResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SitePublicConfirmationsRead invokes SitePublicConfirmations_read operation.
+//
+// Read what the confirmation page shows for a link (ADR 0013): whether it has expired, the Workspace's
+// name and its Brand kit as it stands. A link past its 7 days still names its Workspace, so the page
+// of an expired link is in its brand and offers a new one; 400 is an invalid token.
+//
+// GET /confirmations/{token}
+func (c *Client) SitePublicConfirmationsRead(ctx context.Context, params SitePublicConfirmationsReadParams) (*SiteConfirmationPage, error) {
+	res, err := c.sendSitePublicConfirmationsRead(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendSitePublicConfirmationsRead(ctx context.Context, params SitePublicConfirmationsReadParams) (res *SiteConfirmationPage, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SitePublicConfirmations_read"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/confirmations/{token}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SitePublicConfirmationsReadOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/confirmations/"
+	{
+		// Encode "token" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "token",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.StringToString(params.Token))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSitePublicConfirmationsReadResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SitePublicConfirmationsRenew invokes SitePublicConfirmations_renew operation.
+//
+// Send a new confirmation link, from the page of an expired one (ADR 0013): a request the person
+// makes, which only a Suppression of the address stops. The answer is the same whether or not a mail
+// goes out (an address over its limit, suppressed, or no longer the contact's), so the page says
+// nothing about an address; `confirmed` when it holds a Confirmation already. 409
+// `confirmation_email_required` while the Workspace has no confirmation email set up.
+//
+// POST /confirmations/{token}/renewals
+func (c *Client) SitePublicConfirmationsRenew(ctx context.Context, params SitePublicConfirmationsRenewParams) (*ConfirmationRequestResult, error) {
+	res, err := c.sendSitePublicConfirmationsRenew(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendSitePublicConfirmationsRenew(ctx context.Context, params SitePublicConfirmationsRenewParams) (res *ConfirmationRequestResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SitePublicConfirmations_renew"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/confirmations/{token}/renewals"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SitePublicConfirmationsRenewOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/confirmations/"
+	{
+		// Encode "token" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "token",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.StringToString(params.Token))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/renewals"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSitePublicConfirmationsRenewResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}

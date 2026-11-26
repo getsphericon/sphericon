@@ -133,6 +133,33 @@ func TestTransactionalSendsIgnoreTheSendCapButSpendIt(t *testing.T) {
 	assert.Equal(t, 24*time.Hour, res.Wait, "three sends against a cap of two leave half a day of debt before the next token")
 }
 
+// A raised Send cap keeps a Transactional debt the same number of messages (#1808): three sends
+// against a cap of two leave one message of debt, and at 1000 a day the next Broadcast message
+// waits for two tokens, 172.8 seconds, not for half a day at the new rate.
+func TestARaisedSendCapKeepsATransactionalDebtInMessages(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := startClock()
+	m := sendCapModule(env, c)
+	capped(t, env, fixtures.AcmeID, new(2))
+	for i := range 3 {
+		res, err := m.Send(context.Background(), acme(env), transactional(fmt.Sprintf("tx:%d", i), "buyer@example.com"))
+		require.NoError(t, err)
+		require.Equal(t, outboundmessages.Sent, res.Outcome)
+	}
+	before := send(t, m, env, "bc:1")
+	require.Equal(t, 24*time.Hour, before.Wait)
+
+	capped(t, env, fixtures.AcmeID, new(1000))
+	res := send(t, m, env, "bc:1")
+
+	require.Equal(t, outboundmessages.Deferral, res.Outcome)
+	assert.Equal(t, deferralcause.SendCap, res.Cause)
+	assert.Equal(t, 172800*time.Millisecond, res.Wait, "one message of debt and one to send, at 86.4 seconds each")
+	c.Advance(res.Wait)
+	after := send(t, m, env, "bc:1")
+	assert.Equal(t, outboundmessages.Sent, after.Outcome)
+}
+
 // The Workspace bucket and the Integration's buckets are spent together or not at all: a send the
 // Provider limit defers leaves the Send cap's token, and one the Send cap defers leaves the
 // Provider limit's.

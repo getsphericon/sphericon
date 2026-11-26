@@ -211,9 +211,10 @@ func (g grant) proof(workspaceID int64) (events.DomainEvent, error) {
 			e.Wording, e.Source, e.Brand = ev.Wording, ev.Source, ev.Brand
 		}
 		return e, nil
-	default:
-		return nil, fmt.Errorf("record confirmation: no consent Event on channel %q", g.channel)
+	case channels.Telegram:
+		// A Binding is Telegram's opt-in: no Confirmation is recorded on it, so it has no consent Event.
 	}
+	return nil, fmt.Errorf("record confirmation: no consent Event on channel %q", g.channel)
 }
 
 // WithdrawInput is a withdrawal of the consent of a Destination on a Channel.

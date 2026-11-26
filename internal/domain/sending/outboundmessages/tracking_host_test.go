@@ -12,7 +12,6 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
@@ -33,7 +32,6 @@ func sendFrom(t *testing.T, env *testhelper.TestEnv, m *outboundmessages.Module,
 		Ref:         broadcastIn(t, ws),
 		Key:         key,
 		Destination: "reader@example.com",
-		Source:      eligibility.SourceBroadcasts,
 		Content:     outboundmessages.EmailContent{Subject: "News", Body: linkHTML, FromEmail: "news@" + domain},
 		Track:       true,
 	})
@@ -113,7 +111,6 @@ func TestTrackingHostLookupErrorIsRetriedNotFailed(t *testing.T) {
 			Ref:         broadcastIn(t, fixtures.UmbrellaID),
 			Key:         key,
 			Destination: "reader@example.com",
-			Source:      eligibility.SourceBroadcasts,
 			Content:     outboundmessages.EmailContent{Subject: "News", Body: linkHTML, FromEmail: "news@" + fixtures.SendingDomainUmbrellaDomain},
 			Track:       true,
 		})

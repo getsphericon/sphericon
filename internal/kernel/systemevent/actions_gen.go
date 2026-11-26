@@ -45,6 +45,7 @@ const (
 	SmsEngagementTrackingDenied       = "sms.engagement_tracking_denied"
 	TelegramEngagementTrackingGranted = "telegram.engagement_tracking_granted"
 	TelegramEngagementTrackingDenied  = "telegram.engagement_tracking_denied"
+	EmailResubscribed                 = "email.resubscribed"
 	ContactConsentSuperseded          = "contact.consent_superseded"
 )
 
@@ -88,5 +89,6 @@ var Actions = []string{
 	SmsEngagementTrackingDenied,
 	TelegramEngagementTrackingGranted,
 	TelegramEngagementTrackingDenied,
+	EmailResubscribed,
 	ContactConsentSuperseded,
 }

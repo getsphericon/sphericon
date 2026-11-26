@@ -27,10 +27,10 @@ type ProviderLimiter struct {
 	WorkspaceID int64 `json:"workspace_id,omitempty"`
 	// IntegrationID holds the value of the "integration_id" field.
 	IntegrationID int64 `json:"integration_id,omitempty"`
-	// SecondFill holds the value of the "second_fill" field.
-	SecondFill float64 `json:"second_fill,omitempty"`
-	// DayFill holds the value of the "day_fill" field.
-	DayFill float64 `json:"day_fill,omitempty"`
+	// SecondTokens holds the value of the "second_tokens" field.
+	SecondTokens *float64 `json:"second_tokens,omitempty"`
+	// DayTokens holds the value of the "day_tokens" field.
+	DayTokens *float64 `json:"day_tokens,omitempty"`
 	// RefilledAt holds the value of the "refilled_at" field.
 	RefilledAt time.Time `json:"refilled_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -77,7 +77,7 @@ func (*ProviderLimiter) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case providerlimiter.FieldSecondFill, providerlimiter.FieldDayFill:
+		case providerlimiter.FieldSecondTokens, providerlimiter.FieldDayTokens:
 			values[i] = new(sql.NullFloat64)
 		case providerlimiter.FieldID, providerlimiter.FieldWorkspaceID, providerlimiter.FieldIntegrationID:
 			values[i] = new(sql.NullInt64)
@@ -128,17 +128,19 @@ func (_m *ProviderLimiter) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.IntegrationID = value.Int64
 			}
-		case providerlimiter.FieldSecondFill:
+		case providerlimiter.FieldSecondTokens:
 			if value, ok := values[i].(*sql.NullFloat64); !ok {
-				return fmt.Errorf("unexpected type %T for field second_fill", values[i])
+				return fmt.Errorf("unexpected type %T for field second_tokens", values[i])
 			} else if value.Valid {
-				_m.SecondFill = value.Float64
+				_m.SecondTokens = new(float64)
+				*_m.SecondTokens = value.Float64
 			}
-		case providerlimiter.FieldDayFill:
+		case providerlimiter.FieldDayTokens:
 			if value, ok := values[i].(*sql.NullFloat64); !ok {
-				return fmt.Errorf("unexpected type %T for field day_fill", values[i])
+				return fmt.Errorf("unexpected type %T for field day_tokens", values[i])
 			} else if value.Valid {
-				_m.DayFill = value.Float64
+				_m.DayTokens = new(float64)
+				*_m.DayTokens = value.Float64
 			}
 		case providerlimiter.FieldRefilledAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -204,11 +206,15 @@ func (_m *ProviderLimiter) String() string {
 	builder.WriteString("integration_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.IntegrationID))
 	builder.WriteString(", ")
-	builder.WriteString("second_fill=")
-	builder.WriteString(fmt.Sprintf("%v", _m.SecondFill))
+	if v := _m.SecondTokens; v != nil {
+		builder.WriteString("second_tokens=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
-	builder.WriteString("day_fill=")
-	builder.WriteString(fmt.Sprintf("%v", _m.DayFill))
+	if v := _m.DayTokens; v != nil {
+		builder.WriteString("day_tokens=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
 	builder.WriteString("refilled_at=")
 	builder.WriteString(_m.RefilledAt.Format(time.ANSIC))

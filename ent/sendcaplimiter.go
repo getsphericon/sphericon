@@ -24,8 +24,8 @@ type SendCapLimiter struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// WorkspaceID holds the value of the "workspace_id" field.
 	WorkspaceID int64 `json:"workspace_id,omitempty"`
-	// DayFill holds the value of the "day_fill" field.
-	DayFill float64 `json:"day_fill,omitempty"`
+	// DayTokens holds the value of the "day_tokens" field.
+	DayTokens *float64 `json:"day_tokens,omitempty"`
 	// RefilledAt holds the value of the "refilled_at" field.
 	RefilledAt time.Time `json:"refilled_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -59,7 +59,7 @@ func (*SendCapLimiter) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case sendcaplimiter.FieldDayFill:
+		case sendcaplimiter.FieldDayTokens:
 			values[i] = new(sql.NullFloat64)
 		case sendcaplimiter.FieldID, sendcaplimiter.FieldWorkspaceID:
 			values[i] = new(sql.NullInt64)
@@ -104,11 +104,12 @@ func (_m *SendCapLimiter) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.WorkspaceID = value.Int64
 			}
-		case sendcaplimiter.FieldDayFill:
+		case sendcaplimiter.FieldDayTokens:
 			if value, ok := values[i].(*sql.NullFloat64); !ok {
-				return fmt.Errorf("unexpected type %T for field day_fill", values[i])
+				return fmt.Errorf("unexpected type %T for field day_tokens", values[i])
 			} else if value.Valid {
-				_m.DayFill = value.Float64
+				_m.DayTokens = new(float64)
+				*_m.DayTokens = value.Float64
 			}
 		case sendcaplimiter.FieldRefilledAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -166,8 +167,10 @@ func (_m *SendCapLimiter) String() string {
 	builder.WriteString("workspace_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.WorkspaceID))
 	builder.WriteString(", ")
-	builder.WriteString("day_fill=")
-	builder.WriteString(fmt.Sprintf("%v", _m.DayFill))
+	if v := _m.DayTokens; v != nil {
+		builder.WriteString("day_tokens=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
 	builder.WriteString("refilled_at=")
 	builder.WriteString(_m.RefilledAt.Format(time.ANSIC))

@@ -208,7 +208,7 @@ func TestUnblockingTheBotAndAnyLaterStartLiftTheOptOut(t *testing.T) {
 			lift(t, env, bot)
 
 			assert.False(t, optedOut(t, env, optOutUser))
-			d, err := eligibility.New().Check(t.Context(), env.DB.Scoped(fixtures.AcmeID), eligibility.CheckInput{Channel: channels.Telegram, Destination: strconv.Itoa(optOutUser), Source: eligibility.SourceBroadcasts})
+			d, err := eligibility.New().Check(t.Context(), env.DB.Scoped(fixtures.AcmeID), eligibility.CheckInput{Channel: channels.Telegram, Destination: strconv.Itoa(optOutUser), Mode: eligibility.Marketing(eligibility.SourceBroadcasts)})
 			require.NoError(t, err)
 			assert.True(t, d.Eligible)
 		})
@@ -344,7 +344,7 @@ func TestAManualTelegramSuppressionStopsEverySendToTheUser(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Equal(t, externalapi.SuppressionChannelTelegram, created.Channel)
-	d, err := eligibility.New().Check(t.Context(), env.DB.Scoped(fixtures.AcmeID), eligibility.CheckInput{Channel: channels.Telegram, Destination: strconv.Itoa(optOutUser)})
+	d, err := eligibility.New().Check(t.Context(), env.DB.Scoped(fixtures.AcmeID), eligibility.CheckInput{Channel: channels.Telegram, Destination: strconv.Itoa(optOutUser), Mode: eligibility.Transactional()})
 	require.NoError(t, err)
 	assert.Equal(t, skipreason.Suppressed, d.Reason)
 }

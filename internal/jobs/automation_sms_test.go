@@ -200,7 +200,7 @@ func TestTheSMSUnsubscribeLinkOptsTheNumberOutOfEverySMS(t *testing.T) {
 		unsubscribe.SendingSource(eligibility.SourceEverything)).OnlyX(ctx)
 	assert.Equal(t, channels.SMS, optOut.Channel)
 	assert.Equal(t, unsubscribe.ViaLink, lo.FromPtr(optOut.Via))
-	dec, err := eligibility.New().Check(ctx, env.DB.Scoped(fixtures.AcmeID), eligibility.CheckInput{Channel: channels.SMS, Destination: fixtures.ContactTexterConfirmedPhone, Source: eligibility.SourceBroadcasts})
+	dec, err := eligibility.New().Check(ctx, env.DB.Scoped(fixtures.AcmeID), eligibility.CheckInput{Channel: channels.SMS, Destination: fixtures.ContactTexterConfirmedPhone, Mode: eligibility.Marketing(eligibility.SourceBroadcasts)})
 	require.NoError(t, err)
 	assert.Equal(t, skipreason.UnsubscribedEverything, dec.Reason, "a Broadcast's text does not go either")
 	// The link of a received text attributes the opt-out to its Automation (ADR 0115), which the

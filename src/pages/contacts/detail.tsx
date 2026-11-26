@@ -28,11 +28,13 @@ import {
   siteContactsGetOptions,
   siteEventsListOptions,
   siteWorkspacesListOptions,
+  siteConfirmationRequestsCreateMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteContactResource } from '../../generated/site/types.gen.ts'
 import { useConfirmation } from '../../hooks/useConfirmation.tsx'
 import { useContactExport } from '../../hooks/useContactExport.ts'
 import { useFormat } from '../../hooks/useFormat.ts'
+import { useNotify } from '../../hooks/useNotify.ts'
 import { usePaginationText } from '../../hooks/usePaginationText.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as contactsEditRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/edit.tsx'
@@ -89,10 +91,19 @@ function formatCustomValue(value: unknown): string {
   return JSON.stringify(value)
 }
 
-function ContactActions({ workspaceId, contactId }: { workspaceId: string; contactId: string }) {
+function ContactActions({
+  workspaceId,
+  contactId,
+  hasEmail,
+}: {
+  workspaceId: string
+  contactId: string
+  hasEmail: boolean
+}) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const confirm = useConfirmation()
+  const notify = useNotify()
   const workspaces = useQuery(siteWorkspacesListOptions())
   const workspace = workspaces.data?.find((w) => w.id === workspaceId)
   // Erasure is irreversible, so it is offered only with contacts:erase, and exporting only
@@ -110,11 +121,45 @@ function ContactActions({ workspaceId, contactId }: { workspaceId: string; conta
 
   const exportMutation = useContactExport(workspaceId)
 
+  // A confirmation email of double opt-in (ADR 0013): sent by a job, or nothing when the address is
+  // confirmed already, which the answer says.
+  const confirmationRequest = useResourceMutation({
+    mutation: siteConfirmationRequestsCreateMutation(),
+    invalidate: false,
+    errorTitle: t(($) => $.contacts.confirmationRequestError),
+    onDone: (data) => {
+      notify({
+        color: 'teal',
+        title: t(($) => $.notifications.successTitle),
+        message:
+          data.status === 'confirmed'
+            ? t(($) => $.contacts.confirmationRequestConfirmed)
+            : t(($) => $.contacts.confirmationRequestSent),
+      })
+    },
+  })
+
   return (
     <Group gap="xs">
       <ButtonLink variant="default" to={contactsEditRoute.to} params={{ workspaceId, contactId }}>
         {t(($) => $.actions.edit)}
       </ButtonLink>
+      {hasEmail ? (
+        <Button
+          variant="default"
+          loading={confirmationRequest.isPending}
+          onClick={() =>
+            confirm({
+              title: t(($) => $.contacts.confirmationRequestConfirmTitle),
+              description: t(($) => $.contacts.confirmationRequestConfirmDescription),
+              confirmLabel: t(($) => $.contacts.confirmationRequest),
+              onConfirm: () => confirmationRequest.mutate({ path: { workspaceId, contactId } }),
+            })
+          }
+        >
+          {t(($) => $.contacts.confirmationRequest)}
+        </Button>
+      ) : null}
       {canExport ? (
         <Button
           variant="default"
@@ -298,7 +343,11 @@ export function ContactDetailPage() {
             {fullName ? <Text c="dimmed">{fullName}</Text> : null}
           </Stack>
         </Group>
-        <ContactActions workspaceId={workspaceId} contactId={contactId} />
+        <ContactActions
+          workspaceId={workspaceId}
+          contactId={contactId}
+          hasEmail={Boolean(contact.email)}
+        />
       </Group>
 
       <Title order={5}>{t(($) => $.contacts.detailsTitle)}</Title>

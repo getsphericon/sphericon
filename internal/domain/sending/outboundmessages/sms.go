@@ -190,7 +190,7 @@ func (smsAdapter) publishSent(ctx context.Context, pub events.Publisher, f sentF
 		AutomationID:      f.req.automationID(),
 		OutboundMessageID: f.messageID,
 		Surface:           string(f.req.Kind()),
-		SendingSource:     f.req.Source,
+		SendingSource:     f.req.source(),
 		DedupID:           fmt.Sprintf("%s:%d", systemevent.SmsSent, f.messageID),
 	}
 	if f.req.Contact != nil && f.req.Contact.Email != nil {
@@ -229,7 +229,8 @@ func (m *Module) sendSMSTest(ctx context.Context, s *ent.Scoped, content SMSCont
 	if err != nil {
 		return Result{}, err
 	}
-	rendered, err := smsChannel{m}.render(ctx, s, Request{Content: content, Variables: testVariables(testSampleEmail)}, 0, to, ws, !content.NoLinkTracking)
+	// Rendered as a Transactional message is: no unsubscribe link, since a Test send has no Sending source.
+	rendered, err := smsChannel{m}.render(ctx, s, Request{Content: content, Variables: testVariables(testSampleEmail), Ref: TransactionalRef{}}, 0, to, ws, !content.NoLinkTracking)
 	if err != nil {
 		if isContentError(err) {
 			return Result{}, fmt.Errorf("%w: %s", emailrender.ErrInvalidContent, err.Error())

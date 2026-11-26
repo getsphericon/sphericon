@@ -358,6 +358,7 @@ export const SystemEventAction = {
   SMS_ENGAGEMENT_TRACKING_DENIED: 'sms.engagement_tracking_denied',
   TELEGRAM_ENGAGEMENT_TRACKING_GRANTED: 'telegram.engagement_tracking_granted',
   TELEGRAM_ENGAGEMENT_TRACKING_DENIED: 'telegram.engagement_tracking_denied',
+  EMAIL_RESUBSCRIBED: 'email.resubscribed',
   CONTACT_CONSENT_SUPERSEDED: 'contact.consent_superseded'
 } as const;
 

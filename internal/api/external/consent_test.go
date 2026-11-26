@@ -23,9 +23,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func eligible(t *testing.T, env *testhelper.TestEnv, dest, source string) eligibility.Decision {
+func eligible(t *testing.T, env *testhelper.TestEnv, dest string, mode eligibility.Mode) eligibility.Decision {
 	t.Helper()
-	d, err := eligibility.New().Check(context.Background(), env.DB.Scoped(fixtures.AcmeID), eligibility.CheckInput{Channel: channels.Email, Destination: dest, Source: source})
+	d, err := eligibility.New().Check(context.Background(), env.DB.Scoped(fixtures.AcmeID), eligibility.CheckInput{Channel: channels.Email, Destination: dest, Mode: mode})
 	require.NoError(t, err)
 	return d
 }
@@ -35,16 +35,16 @@ func eligible(t *testing.T, env *testhelper.TestEnv, dest, source string) eligib
 func TestExternalSuppressionsCreateNarrowsEligibility(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeSuppressionsWrite)
-	require.True(t, eligible(t, env, fixtures.ContactAliceEmail, eligibility.SourceBroadcasts).Eligible)
-	require.True(t, eligible(t, env, fixtures.ContactAliceEmail, "").Eligible)
+	require.True(t, eligible(t, env, fixtures.ContactAliceEmail, eligibility.Marketing(eligibility.SourceBroadcasts)).Eligible)
+	require.True(t, eligible(t, env, fixtures.ContactAliceEmail, eligibility.Transactional()).Eligible)
 
 	created, err := c.SuppressionsCreate(context.Background(), &externalapi.CreateSuppressionInput{Destination: "Alice@Example.com"})
 	require.NoError(t, err)
 	assert.Equal(t, fixtures.ContactAliceEmail, created.Destination)
 	assert.Equal(t, externalapi.SuppressionReasonManual, created.Reason)
 
-	assert.Equal(t, skipreason.Suppressed, eligible(t, env, fixtures.ContactAliceEmail, eligibility.SourceBroadcasts).Reason)
-	assert.False(t, eligible(t, env, fixtures.ContactAliceEmail, "").Eligible, "suppression blocks transactional sends too")
+	assert.Equal(t, skipreason.Suppressed, eligible(t, env, fixtures.ContactAliceEmail, eligibility.Marketing(eligibility.SourceBroadcasts)).Reason)
+	assert.False(t, eligible(t, env, fixtures.ContactAliceEmail, eligibility.Transactional()).Eligible, "suppression blocks transactional sends too")
 }
 
 // A number is suppressed on sms in E.164, and the resource says so.
@@ -85,16 +85,16 @@ func TestExternalSuppressionsCreateIsIdempotent(t *testing.T) {
 func TestExternalUnsubscribesCreateDefaultsToBroadcasts(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
-	require.True(t, eligible(t, env, fixtures.ContactAliceEmail, eligibility.SourceBroadcasts).Eligible)
+	require.True(t, eligible(t, env, fixtures.ContactAliceEmail, eligibility.Marketing(eligibility.SourceBroadcasts)).Eligible)
 
 	created, err := c.UnsubscribesCreate(context.Background(), &externalapi.CreateUnsubscribeInput{Destination: "Alice@Example.com"})
 	require.NoError(t, err)
 	assert.Equal(t, fixtures.ContactAliceEmail, created.Destination)
 	assert.Equal(t, eligibility.SourceBroadcasts, created.SendingSource)
 
-	assert.False(t, eligible(t, env, fixtures.ContactAliceEmail, eligibility.SourceBroadcasts).Eligible)
-	assert.True(t, eligible(t, env, fixtures.ContactAliceEmail, eligibility.AutomationSource(fixtures.AutomationWelcomeSeriesID)).Eligible)
-	assert.True(t, eligible(t, env, fixtures.ContactAliceEmail, "").Eligible)
+	assert.False(t, eligible(t, env, fixtures.ContactAliceEmail, eligibility.Marketing(eligibility.SourceBroadcasts)).Eligible)
+	assert.True(t, eligible(t, env, fixtures.ContactAliceEmail, eligibility.Marketing(eligibility.AutomationSource(fixtures.AutomationWelcomeSeriesID))).Eligible)
+	assert.True(t, eligible(t, env, fixtures.ContactAliceEmail, eligibility.Transactional()).Eligible)
 }
 
 func TestExternalUnsubscribesCreateEverythingAndIdempotent(t *testing.T) {
@@ -111,7 +111,7 @@ func TestExternalUnsubscribesCreateEverythingAndIdempotent(t *testing.T) {
 	n, err := env.DB.Unsubscribe.Query().Where(unsubscribe.DestinationEQ(fixtures.ContactAliceEmail)).Count(context.Background())
 	require.NoError(t, err)
 	assert.Equal(t, 1, n)
-	assert.False(t, eligible(t, env, fixtures.ContactAliceEmail, eligibility.AutomationSource(fixtures.AutomationWelcomeSeriesID)).Eligible)
+	assert.False(t, eligible(t, env, fixtures.ContactAliceEmail, eligibility.Marketing(eligibility.AutomationSource(fixtures.AutomationWelcomeSeriesID))).Eligible)
 }
 
 func TestExternalUnsubscribesCreateAutomationSource(t *testing.T) {
@@ -123,8 +123,8 @@ func TestExternalUnsubscribesCreateAutomationSource(t *testing.T) {
 	}
 	_, err := c.UnsubscribesCreate(context.Background(), in)
 	require.NoError(t, err)
-	assert.False(t, eligible(t, env, fixtures.ContactAliceEmail, eligibility.AutomationSource(fixtures.AutomationWelcomeSeriesID)).Eligible)
-	assert.True(t, eligible(t, env, fixtures.ContactAliceEmail, eligibility.SourceBroadcasts).Eligible)
+	assert.False(t, eligible(t, env, fixtures.ContactAliceEmail, eligibility.Marketing(eligibility.AutomationSource(fixtures.AutomationWelcomeSeriesID))).Eligible)
+	assert.True(t, eligible(t, env, fixtures.ContactAliceEmail, eligibility.Marketing(eligibility.SourceBroadcasts)).Eligible)
 }
 
 func TestExternalUnsubscribesCreateRejectsUnknownSource(t *testing.T) {
@@ -145,7 +145,7 @@ func TestExternalConsentRequiresWriteScope(t *testing.T) {
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 	_, err = c.UnsubscribesCreate(context.Background(), &externalapi.CreateUnsubscribeInput{Destination: fixtures.ContactAliceEmail})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
-	assert.True(t, eligible(t, env, fixtures.ContactAliceEmail, eligibility.SourceBroadcasts).Eligible)
+	assert.True(t, eligible(t, env, fixtures.ContactAliceEmail, eligibility.Marketing(eligibility.SourceBroadcasts)).Eligible)
 }
 
 // Adding a Suppression is a scope of its own, as on /site it is a Permission of its own (ADR
@@ -157,7 +157,7 @@ func TestExternalSuppressionsCreateNeedsTheSuppressionsWriteScope(t *testing.T) 
 	_, err := c.SuppressionsCreate(context.Background(), &externalapi.CreateSuppressionInput{Destination: fixtures.ContactAliceEmail})
 	refused := testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 	assert.Equal(t, "the API token lacks the scope suppressions:write", refused.Detail.Value)
-	assert.True(t, eligible(t, env, fixtures.ContactAliceEmail, "").Eligible, "the refused call suppressed nothing")
+	assert.True(t, eligible(t, env, fixtures.ContactAliceEmail, eligibility.Transactional()).Eligible, "the refused call suppressed nothing")
 }
 
 // Consent only narrows through /api (ADR 0016): the contract has no operation that

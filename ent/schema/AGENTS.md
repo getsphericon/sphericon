@@ -41,7 +41,8 @@
   Upgrade, never a migration: a migration is fast DDL. A long DDL is built concurrently without a
   transaction (`CREATE INDEX CONCURRENTLY` under `-- +goose NO TRANSACTION`). A destructive
   migration starts with a check that the data it strands has moved (a `DO` block that raises), so
-  an Upgrade that skipped a release fails instead of losing data. CI (`mise run check:upgrade`,
+  an Upgrade that skipped a release fails instead of losing data. A column of derived state that
+  is rebuilt on use (the limiter buckets) is dropped without the check. CI (`mise run check:upgrade`,
   `cmd/upgradecheck`) lints the migrations a PR adds, skipping the generated river ones, and fails
   a destructive finding unless the PR title is breaking (`!`), and a blocking one (an index without
   `CONCURRENTLY`, a constraint without `NOT VALID`, `SET NOT NULL`) under any title unless the

@@ -9,6 +9,7 @@ import { HttpResponse } from 'msw'
 import { beforeEach, expect, test, vi } from 'vitest'
 
 import {
+  handleSiteConfirmationRequestsCreate,
   handleSiteContactsDelete,
   handleSiteContactsExport,
   handleSiteContactsGet,
@@ -357,6 +358,44 @@ test('contacts:erase erases a contact only after confirming the irreversible act
   await expect
     .poll(() => navigate.mock.calls.at(-1)?.[0])
     .toMatchObject({ to: contactsRoute.to, params: { workspaceId: 'TestWs01' } })
+})
+
+test('a member sends a confirmation request after confirming, and is told the email is on its way', async () => {
+  const asked: string[] = []
+  worker.use(
+    handleSiteContactsGet({ body: ADA }),
+    NO_EVENTS,
+    holding([]),
+    handleSiteConfirmationRequestsCreate(({ params }) => {
+      asked.push(params.contactId)
+      return HttpResponse.json({ status: 'accepted' }, { status: 202 })
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<ContactDetailPage />, DETAIL_ROUTE)
+
+  await screen.getByRole('button', { name: 'Send confirmation request' }).click()
+  expect(asked).toEqual([])
+  await screen
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Send confirmation request' })
+    .click()
+
+  await expect.poll(() => asked).toEqual([testId(9)])
+  await expect
+    .element(screen.getByText('The confirmation email is on its way.'))
+    .toBeInTheDocument()
+})
+
+test('a contact with no email has no confirmation request', async () => {
+  worker.use(handleSiteContactsGet({ body: { ...ADA, email: null } }), NO_EVENTS, holding([]))
+
+  const { screen } = await renderWithRouter(<ContactDetailPage />, DETAIL_ROUTE)
+
+  await expect.element(screen.getByRole('heading', { level: 4 })).toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('button', { name: 'Send confirmation request' }))
+    .not.toBeInTheDocument()
 })
 
 test('exporting a contact saves the document under the filename the server suggested', async () => {

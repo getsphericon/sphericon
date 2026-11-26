@@ -72,7 +72,7 @@ func confirmNumber(t *testing.T, env *testhelper.TestEnv, number string) {
 // textable is Send-eligibility's decision for a marketing text to the number.
 func textable(t *testing.T, env *testhelper.TestEnv, number string) eligibility.Decision {
 	t.Helper()
-	dec, err := eligibility.New().Check(t.Context(), env.DB.Scoped(fixtures.AcmeID), eligibility.CheckInput{Channel: channels.SMS, Destination: number, Source: eligibility.SourceBroadcasts})
+	dec, err := eligibility.New().Check(t.Context(), env.DB.Scoped(fixtures.AcmeID), eligibility.CheckInput{Channel: channels.SMS, Destination: number, Mode: eligibility.Marketing(eligibility.SourceBroadcasts)})
 	require.NoError(t, err)
 	return dec
 }
@@ -215,7 +215,7 @@ func TestSTARTAfterSTOPLiftsTheOptOutWithAKeywordConfirmationAndTheNextTextGoesO
 	id := int64(sms.Integration.ID)
 	res, err := env.OutboundModule().Send(t.Context(), env.DB.Scoped(fixtures.AcmeID), outboundmessages.Request{
 		Ref: outboundmessages.BroadcastRef{BroadcastID: fixtures.BroadcastSmsSentID}, Key: "sms:after-start", Destination: knownNumber, Contact: contact,
-		Source: eligibility.SourceBroadcasts, Content: outboundmessages.SMSContent{Text: "Welcome back"}, IntegrationID: &id,
+		Content: outboundmessages.SMSContent{Text: "Welcome back"}, IntegrationID: &id,
 	})
 	require.NoError(t, err)
 	assert.Equal(t, outboundmessages.Sent, res.Outcome)

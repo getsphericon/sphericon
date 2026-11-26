@@ -108,9 +108,22 @@ type unsubClaims struct {
 type confirmClaims struct {
 	jwt.RegisteredClaims
 
-	Destination string      `json:"dest"`
-	WorkspaceID publicid.ID `json:"ws"`
-	ContactID   publicid.ID `json:"cid"`
+	Destination string `json:"dest"`
+	// WorkspaceID is nil in a token that carries no `ws` claim, which names no link of ours.
+	WorkspaceID *publicid.ID `json:"ws"`
+	ContactID   publicid.ID  `json:"cid"`
+}
+
+// target is the link the claims name: a token that names no address or no Workspace is no link of
+// ours.
+func (c confirmClaims) target() (linktarget.Confirmation, error) {
+	switch {
+	case c.Destination == "":
+		return linktarget.Confirmation{}, ErrLinkInvalid.With("missing dest claim")
+	case c.WorkspaceID == nil:
+		return linktarget.Confirmation{}, ErrLinkInvalid.With("missing ws claim")
+	}
+	return linktarget.Confirmation{Destination: c.Destination, WorkspaceID: int64(*c.WorkspaceID), ContactID: int64(c.ContactID)}, nil
 }
 
 func (t *Tracker) sign(claims jwt.Claims) (string, error) {
@@ -199,9 +212,7 @@ func (t *Tracker) DecodeUnsub(token string) (linktarget.Unsubscribe, error) {
 	if c.Source == "" {
 		return linktarget.Unsubscribe{}, ErrLinkInvalid.With("missing src claim")
 	}
-	switch channels.Channel(c.Channel) {
-	case channels.Email, channels.Telegram, channels.SMS:
-	default:
+	if !channels.Channel(c.Channel).Valid() {
 		return linktarget.Unsubscribe{}, ErrLinkInvalid.With("missing or unknown ch claim")
 	}
 	if c.WorkspaceID == 0 {
@@ -220,7 +231,7 @@ func (t *Tracker) confirmToken(target linktarget.Confirmation) (string, error) {
 	return t.sign(&confirmClaims{
 		ExpiresAt:   jwt.NewNumericDate(t.now().Add(confirmTTL)),
 		Destination: target.Destination,
-		WorkspaceID: publicid.ID(target.WorkspaceID),
+		WorkspaceID: new(publicid.ID(target.WorkspaceID)),
 		ContactID:   publicid.ID(target.ContactID),
 	})
 }
@@ -241,13 +252,24 @@ func (t *Tracker) DecodeConfirm(token string) (linktarget.Confirmation, error) {
 	if err := t.parse(token, &c, jwt.WithExpirationRequired()); err != nil {
 		return linktarget.Confirmation{}, fmt.Errorf("%w: %w", ErrLinkInvalid, err)
 	}
-	if c.Destination == "" {
-		return linktarget.Confirmation{}, ErrLinkInvalid.With("missing dest claim")
+	return c.target()
+}
+
+// DecodeConfirmLink is DecodeConfirm that also takes a link past its TTL: a validly signed token
+// names its Workspace, Destination and Contact whatever its age, so the page of an expired link is
+// in its Workspace's brand and offers a new one, a request the person makes (ADR 0013). expired
+// reports whether the link is past its TTL; an expired link confirms nothing (DecodeConfirm).
+func (t *Tracker) DecodeConfirmLink(token string) (target linktarget.Confirmation, expired bool, err error) {
+	target, err = t.DecodeConfirm(token)
+	if !IsExpired(err) {
+		return target, false, err
 	}
-	if c.WorkspaceID == 0 {
-		return linktarget.Confirmation{}, ErrLinkInvalid.With("missing ws claim")
+	var c confirmClaims
+	if err := t.parse(token, &c, jwt.WithoutClaimsValidation()); err != nil {
+		return linktarget.Confirmation{}, false, fmt.Errorf("%w: %w", ErrLinkInvalid, err)
 	}
-	return linktarget.Confirmation{Destination: c.Destination, WorkspaceID: int64(c.WorkspaceID), ContactID: int64(c.ContactID)}, nil
+	target, err = c.target()
+	return target, err == nil, err
 }
 
 // OpenURL is the 1x1 pixel URL that records an open.

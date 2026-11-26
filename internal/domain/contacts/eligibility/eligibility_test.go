@@ -23,19 +23,19 @@ import (
 // opt-out state (fixtures/contacts.yml, "Eligibility matrix").
 
 // inAudience reports whether the batch predicate keeps the Contact.
-func inAudience(t *testing.T, env *testhelper.TestEnv, ws, contactID int64, source string) bool {
+func inAudience(t *testing.T, env *testhelper.TestEnv, ws, contactID int64, mode eligibility.Mode) bool {
 	t.Helper()
 	ok, err := env.DB.Scoped(ws).Contact().Query().
-		Where(contact.ID(contactID), eligibility.Audience(eligibility.EmailDestination(), source)).
+		Where(contact.ID(contactID), eligibility.Audience(eligibility.EmailDestination(), mode)).
 		Exist(context.Background())
 	require.NoError(t, err)
 	return ok
 }
 
 // decide runs the point check for a destination in a Workspace.
-func decide(t *testing.T, env *testhelper.TestEnv, ws int64, destination, source string) eligibility.Decision {
+func decide(t *testing.T, env *testhelper.TestEnv, ws int64, destination string, mode eligibility.Mode) eligibility.Decision {
 	t.Helper()
-	d, err := eligibility.New().Check(context.Background(), env.DB.Scoped(ws), eligibility.CheckInput{Channel: channels.Email, Destination: destination, Source: source})
+	d, err := eligibility.New().Check(context.Background(), env.DB.Scoped(ws), eligibility.CheckInput{Channel: channels.Email, Destination: destination, Mode: mode})
 	require.NoError(t, err)
 	return d
 }
@@ -43,7 +43,7 @@ func decide(t *testing.T, env *testhelper.TestEnv, ws int64, destination, source
 func TestCheckEligibleByDefault(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	d := decide(t, env, fixtures.AcmeID, "fresh@example.com", eligibility.SourceBroadcasts)
+	d := decide(t, env, fixtures.AcmeID, "fresh@example.com", eligibility.Marketing(eligibility.SourceBroadcasts))
 	assert.True(t, d.Eligible)
 	assert.Empty(t, d.Reason)
 }
@@ -51,7 +51,7 @@ func TestCheckEligibleByDefault(t *testing.T) {
 func TestCheckSuppressed(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	d := decide(t, env, fixtures.TyrellID, fixtures.SuppressionTyrellSuppressedDestination, eligibility.SourceBroadcasts)
+	d := decide(t, env, fixtures.TyrellID, fixtures.SuppressionTyrellSuppressedDestination, eligibility.Marketing(eligibility.SourceBroadcasts))
 	assert.False(t, d.Eligible)
 	assert.Equal(t, skipreason.Suppressed, d.Reason)
 }
@@ -60,9 +60,9 @@ func TestCheckSuppressed(t *testing.T) {
 func TestLiftedSuppressionDoesNotBlock(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	d := decide(t, env, fixtures.AcmeID, fixtures.ContactLiftedEmail, eligibility.SourceBroadcasts)
+	d := decide(t, env, fixtures.AcmeID, fixtures.ContactLiftedEmail, eligibility.Marketing(eligibility.SourceBroadcasts))
 	assert.True(t, d.Eligible, "the fixture's lifted destination is mailable")
-	assert.True(t, inAudience(t, env, fixtures.AcmeID, fixtures.ContactLiftedID, eligibility.SourceBroadcasts),
+	assert.True(t, inAudience(t, env, fixtures.AcmeID, fixtures.ContactLiftedID, eligibility.Marketing(eligibility.SourceBroadcasts)),
 		"an audience keeps the contact of a lifted destination")
 }
 
@@ -70,7 +70,7 @@ func TestLiftedSuppressionDoesNotBlock(t *testing.T) {
 func TestCheckTransactionalSkipsUnsubscribe(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	d := decide(t, env, fixtures.TyrellID, fixtures.TyrellMatrixUnsubEverythingEmail, "")
+	d := decide(t, env, fixtures.TyrellID, fixtures.TyrellMatrixUnsubEverythingEmail, eligibility.Transactional())
 	assert.True(t, d.Eligible, "transactional skips unsubscribe layers")
 }
 
@@ -78,7 +78,7 @@ func TestCheckTransactionalSkipsUnsubscribe(t *testing.T) {
 func TestCheckTransactionalRespectsSuppression(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	d := decide(t, env, fixtures.TyrellID, fixtures.SuppressionTyrellTransactionalDestination, "")
+	d := decide(t, env, fixtures.TyrellID, fixtures.SuppressionTyrellTransactionalDestination, eligibility.Transactional())
 	assert.False(t, d.Eligible)
 	assert.Equal(t, skipreason.Suppressed, d.Reason)
 }
@@ -86,7 +86,7 @@ func TestCheckTransactionalRespectsSuppression(t *testing.T) {
 func TestCheckUnsubscribedEverything(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	d := decide(t, env, fixtures.TyrellID, fixtures.TyrellMatrixUnsubEverythingEmail, eligibility.SourceBroadcasts)
+	d := decide(t, env, fixtures.TyrellID, fixtures.TyrellMatrixUnsubEverythingEmail, eligibility.Marketing(eligibility.SourceBroadcasts))
 	assert.Equal(t, skipreason.UnsubscribedEverything, d.Reason)
 }
 
@@ -95,8 +95,8 @@ func TestCheckUnsubscribedFromOneSourceOnly(t *testing.T) {
 	src := eligibility.AutomationSource(7)
 
 	assert.Equal(t, skipreason.UnsubscribedSource,
-		decide(t, env, fixtures.TyrellID, fixtures.TyrellMatrixUnsubAutomationEmail, src).Reason)
-	assert.True(t, decide(t, env, fixtures.TyrellID, fixtures.TyrellMatrixUnsubAutomationEmail, eligibility.SourceBroadcasts).Eligible,
+		decide(t, env, fixtures.TyrellID, fixtures.TyrellMatrixUnsubAutomationEmail, eligibility.Marketing(src)).Reason)
+	assert.True(t, decide(t, env, fixtures.TyrellID, fixtures.TyrellMatrixUnsubAutomationEmail, eligibility.Marketing(eligibility.SourceBroadcasts)).Eligible,
 		"eligible for a different source")
 }
 
@@ -106,9 +106,9 @@ func TestCheckUnsubscribedFromOneSourceOnly(t *testing.T) {
 func TestConfirmationGateNoopWhenOff(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	d := decide(t, env, fixtures.TyrellID, fixtures.TyrellMatrixCleanEmail, eligibility.SourceBroadcasts)
+	d := decide(t, env, fixtures.TyrellID, fixtures.TyrellMatrixCleanEmail, eligibility.Marketing(eligibility.SourceBroadcasts))
 	assert.True(t, d.Eligible, "no confirmation required when the gate is off")
-	assert.True(t, inAudience(t, env, fixtures.TyrellID, fixtures.TyrellMatrixCleanID, eligibility.SourceBroadcasts),
+	assert.True(t, inAudience(t, env, fixtures.TyrellID, fixtures.TyrellMatrixCleanID, eligibility.Marketing(eligibility.SourceBroadcasts)),
 		"unconfirmed contact still in the audience when the gate is off")
 }
 
@@ -117,10 +117,10 @@ func TestConfirmationGateNoopWhenOff(t *testing.T) {
 func TestConfirmationGateBlocksUnconfirmed(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	d := decide(t, env, fixtures.LumonID, fixtures.LumonMatrixCleanEmail, eligibility.SourceBroadcasts)
+	d := decide(t, env, fixtures.LumonID, fixtures.LumonMatrixCleanEmail, eligibility.Marketing(eligibility.SourceBroadcasts))
 	assert.False(t, d.Eligible)
 	assert.Equal(t, skipreason.Unconfirmed, d.Reason)
-	assert.False(t, inAudience(t, env, fixtures.LumonID, fixtures.LumonMatrixCleanID, eligibility.SourceBroadcasts),
+	assert.False(t, inAudience(t, env, fixtures.LumonID, fixtures.LumonMatrixCleanID, eligibility.Marketing(eligibility.SourceBroadcasts)),
 		"unconfirmed contact excluded from the audience")
 }
 
@@ -128,9 +128,9 @@ func TestConfirmationGateBlocksUnconfirmed(t *testing.T) {
 func TestConfirmationGateAdmitsConfirmed(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	d := decide(t, env, fixtures.LumonID, fixtures.LumonMatrixConfirmedEmail, eligibility.SourceBroadcasts)
+	d := decide(t, env, fixtures.LumonID, fixtures.LumonMatrixConfirmedEmail, eligibility.Marketing(eligibility.SourceBroadcasts))
 	assert.True(t, d.Eligible)
-	assert.True(t, inAudience(t, env, fixtures.LumonID, fixtures.LumonMatrixConfirmedID, eligibility.SourceBroadcasts),
+	assert.True(t, inAudience(t, env, fixtures.LumonID, fixtures.LumonMatrixConfirmedID, eligibility.Marketing(eligibility.SourceBroadcasts)),
 		"confirmed contact included in the audience")
 }
 
@@ -139,7 +139,7 @@ func TestConfirmationGateAdmitsConfirmed(t *testing.T) {
 func TestConfirmationDoesNotOverrideNegatives(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	d := decide(t, env, fixtures.LumonID, fixtures.LumonMatrixConfirmedSuppressedEmail, eligibility.SourceBroadcasts)
+	d := decide(t, env, fixtures.LumonID, fixtures.LumonMatrixConfirmedSuppressedEmail, eligibility.Marketing(eligibility.SourceBroadcasts))
 	assert.False(t, d.Eligible)
 	assert.Equal(t, skipreason.Suppressed, d.Reason, "negatives dominate the confirmation")
 }
@@ -148,7 +148,7 @@ func TestConfirmationDoesNotOverrideNegatives(t *testing.T) {
 func TestCheckFoldsCase(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	d := decide(t, env, fixtures.TyrellID, "  "+strings.ToUpper(fixtures.TyrellMatrixSuppressedEmail)+"  ", eligibility.SourceBroadcasts)
+	d := decide(t, env, fixtures.TyrellID, "  "+strings.ToUpper(fixtures.TyrellMatrixSuppressedEmail)+"  ", eligibility.Marketing(eligibility.SourceBroadcasts))
 	assert.False(t, d.Eligible, "input is normalized before lookup")
 }
 
@@ -156,26 +156,26 @@ func TestCheckFoldsCase(t *testing.T) {
 func TestCheckWorksWithoutAContact(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	d := decide(t, env, fixtures.TyrellID, fixtures.SuppressionTyrellNoContactDestination, "")
+	d := decide(t, env, fixtures.TyrellID, fixtures.SuppressionTyrellNoContactDestination, eligibility.Transactional())
 	assert.Equal(t, skipreason.Suppressed, d.Reason)
 }
 
 // matrixEligibility returns the emails of a Workspace's matrix Contacts that the point Check
 // admits and that the batch Predicate keeps, for one source.
-func matrixEligibility(t *testing.T, env *testhelper.TestEnv, ws int64, source string) (byCheck, byPredicate []string) {
+func matrixEligibility(t *testing.T, env *testhelper.TestEnv, ws int64, mode eligibility.Mode) (byCheck, byPredicate []string) {
 	t.Helper()
 	ctx := context.Background()
 	s := env.DB.Scoped(ws)
 	contacts, err := s.Contact().Query().All(ctx)
 	require.NoError(t, err)
 	for _, c := range contacts {
-		d, err := eligibility.New().Check(ctx, s, eligibility.CheckInput{Channel: channels.Email, Destination: *c.Email, Source: source})
+		d, err := eligibility.New().Check(ctx, s, eligibility.CheckInput{Channel: channels.Email, Destination: *c.Email, Mode: mode})
 		require.NoError(t, err)
 		if d.Eligible {
 			byCheck = append(byCheck, *c.Email)
 		}
 	}
-	kept, err := s.Contact().Query().Where(eligibility.Audience(eligibility.EmailDestination(), source)).All(ctx)
+	kept, err := s.Contact().Query().Where(eligibility.Audience(eligibility.EmailDestination(), mode)).All(ctx)
 	require.NoError(t, err)
 	for _, c := range kept {
 		byPredicate = append(byPredicate, *c.Email)
@@ -191,28 +191,28 @@ func TestPredicateAndCheckAgree(t *testing.T) {
 	env := testhelper.Setup(t)
 
 	for name, tc := range map[string]struct {
-		ws     int64
-		source string
-		want   []string
+		ws   int64
+		mode eligibility.Mode
+		want []string
 	}{
-		"gate off, transactional": {fixtures.TyrellID, "", []string{
+		"gate off, transactional": {fixtures.TyrellID, eligibility.Transactional(), []string{
 			fixtures.TyrellMatrixCleanEmail, fixtures.TyrellMatrixUnsubEverythingEmail, fixtures.TyrellMatrixUnsubBroadcastsEmail,
 			fixtures.TyrellMatrixUnsubAutomationEmail, fixtures.TyrellMatrixConfirmedEmail,
 		}},
-		"gate off, broadcasts": {fixtures.TyrellID, eligibility.SourceBroadcasts, []string{
+		"gate off, broadcasts": {fixtures.TyrellID, eligibility.Marketing(eligibility.SourceBroadcasts), []string{
 			fixtures.TyrellMatrixCleanEmail, fixtures.TyrellMatrixUnsubAutomationEmail, fixtures.TyrellMatrixConfirmedEmail,
 		}},
-		"gate off, automation": {fixtures.TyrellID, eligibility.AutomationSource(7), []string{
+		"gate off, automation": {fixtures.TyrellID, eligibility.Marketing(eligibility.AutomationSource(7)), []string{
 			fixtures.TyrellMatrixCleanEmail, fixtures.TyrellMatrixUnsubBroadcastsEmail, fixtures.TyrellMatrixConfirmedEmail,
 		}},
-		"gate on, transactional": {fixtures.LumonID, "", []string{
+		"gate on, transactional": {fixtures.LumonID, eligibility.Transactional(), []string{
 			fixtures.LumonMatrixCleanEmail, fixtures.LumonMatrixUnsubEverythingEmail, fixtures.LumonMatrixUnsubBroadcastsEmail,
 			fixtures.LumonMatrixUnsubAutomationEmail, fixtures.LumonMatrixConfirmedEmail,
 		}},
-		"gate on, broadcasts": {fixtures.LumonID, eligibility.SourceBroadcasts, []string{fixtures.LumonMatrixConfirmedEmail}},
-		"gate on, automation": {fixtures.LumonID, eligibility.AutomationSource(7), []string{fixtures.LumonMatrixConfirmedEmail}},
+		"gate on, broadcasts": {fixtures.LumonID, eligibility.Marketing(eligibility.SourceBroadcasts), []string{fixtures.LumonMatrixConfirmedEmail}},
+		"gate on, automation": {fixtures.LumonID, eligibility.Marketing(eligibility.AutomationSource(7)), []string{fixtures.LumonMatrixConfirmedEmail}},
 	} {
-		byCheck, byPredicate := matrixEligibility(t, env, tc.ws, tc.source)
+		byCheck, byPredicate := matrixEligibility(t, env, tc.ws, tc.mode)
 		assert.ElementsMatch(t, tc.want, byCheck, "%s: point Check", name)
 		assert.ElementsMatch(t, tc.want, byPredicate, "%s: batch Predicate", name)
 	}
@@ -224,11 +224,11 @@ func TestCheckOnTelegramAsksNoConfirmation(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	d, err := eligibility.New().Check(ctx, env.DB.Scoped(fixtures.LumonID), eligibility.CheckInput{Channel: channels.Telegram, Destination: "70001", Source: eligibility.SourceBroadcasts})
+	d, err := eligibility.New().Check(ctx, env.DB.Scoped(fixtures.LumonID), eligibility.CheckInput{Channel: channels.Telegram, Destination: "70001", Mode: eligibility.Marketing(eligibility.SourceBroadcasts)})
 
 	require.NoError(t, err)
 	assert.True(t, d.Eligible)
-	assert.False(t, decide(t, env, fixtures.LumonID, "nobody@example.com", eligibility.SourceBroadcasts).Eligible, "email there does ask for one")
+	assert.False(t, decide(t, env, fixtures.LumonID, "nobody@example.com", eligibility.Marketing(eligibility.SourceBroadcasts)).Eligible, "email there does ask for one")
 }
 
 // smsMatrix returns the matrix phones of a Workspace that the point Check on sms admits and the
@@ -238,13 +238,13 @@ func smsMatrix(t *testing.T, env *testhelper.TestEnv, ws int64, phones []string,
 	ctx := context.Background()
 	s := env.DB.Scoped(ws)
 	for _, p := range phones {
-		d, err := eligibility.New().Check(ctx, s, eligibility.CheckInput{Channel: channels.SMS, Destination: p, Source: source})
+		d, err := eligibility.New().Check(ctx, s, eligibility.CheckInput{Channel: channels.SMS, Destination: p, Mode: eligibility.Marketing(source)})
 		require.NoError(t, err)
 		if d.Eligible {
 			byCheck = append(byCheck, p)
 		}
 	}
-	kept, err := s.Contact().Query().Where(eligibility.Audience(eligibility.PhoneDestination(), source)).All(ctx)
+	kept, err := s.Contact().Query().Where(eligibility.Audience(eligibility.PhoneDestination(), eligibility.Marketing(source))).All(ctx)
 	require.NoError(t, err)
 	for _, c := range kept {
 		byPredicate = append(byPredicate, *c.Phone)
@@ -280,9 +280,9 @@ func TestSMSReasons(t *testing.T) {
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.TyrellID)
 
-	unconfirmed, err := eligibility.New().Check(ctx, s, eligibility.CheckInput{Channel: channels.SMS, Destination: fixtures.TyrellMatrixCleanPhone, Source: eligibility.SourceBroadcasts})
+	unconfirmed, err := eligibility.New().Check(ctx, s, eligibility.CheckInput{Channel: channels.SMS, Destination: fixtures.TyrellMatrixCleanPhone, Mode: eligibility.Marketing(eligibility.SourceBroadcasts)})
 	require.NoError(t, err)
-	optedOut, err := eligibility.New().Check(ctx, s, eligibility.CheckInput{Channel: channels.SMS, Destination: fixtures.TyrellMatrixUnsubEverythingPhone, Source: eligibility.AutomationSource(7)})
+	optedOut, err := eligibility.New().Check(ctx, s, eligibility.CheckInput{Channel: channels.SMS, Destination: fixtures.TyrellMatrixUnsubEverythingPhone, Mode: eligibility.Marketing(eligibility.AutomationSource(7))})
 	require.NoError(t, err)
 
 	assert.Equal(t, skipreason.Unconfirmed, unconfirmed.Reason)
@@ -291,10 +291,10 @@ func TestSMSReasons(t *testing.T) {
 
 // bindingAudience returns the Contacts of Lacuna that the batch Predicate keeps on a Channel of
 // Bindings, reached through the Integration's Bindings, for one source.
-func bindingAudience(t *testing.T, env *testhelper.TestEnv, integrationID int64, source string) []int64 {
+func bindingAudience(t *testing.T, env *testhelper.TestEnv, integrationID int64, mode eligibility.Mode) []int64 {
 	t.Helper()
 	ids, err := env.DB.Scoped(fixtures.LacunaID).Contact().Query().
-		Where(eligibility.Audience(eligibility.BindingDestination(channels.Telegram, integrationID), source)).
+		Where(eligibility.Audience(eligibility.BindingDestination(channels.Telegram, integrationID), mode)).
 		IDs(context.Background())
 	require.NoError(t, err)
 	return ids
@@ -309,20 +309,20 @@ func TestBindingAudienceReachesTheContactsBoundOnTheIntegration(t *testing.T) {
 
 	for name, tc := range map[string]struct {
 		integration int64
-		source      string
+		mode        eligibility.Mode
 		want        []int64
 	}{
-		"broadcasts on the bot": {fixtures.IntegrationLacunaTelegramID, eligibility.SourceBroadcasts, []int64{
+		"broadcasts on the bot": {fixtures.IntegrationLacunaTelegramID, eligibility.Marketing(eligibility.SourceBroadcasts), []int64{
 			fixtures.ContactLacunaTwoChatsID, fixtures.ContactLacunaBenID, fixtures.ContactLacunaFayID, fixtures.ContactLacunaEveID,
 		}},
-		"transactional on the bot": {fixtures.IntegrationLacunaTelegramID, "", []int64{
+		"transactional on the bot": {fixtures.IntegrationLacunaTelegramID, eligibility.Transactional(), []int64{
 			fixtures.ContactLacunaTwoChatsID, fixtures.ContactLacunaBenID, fixtures.ContactLacunaFayID, fixtures.ContactLacunaEveID,
 			fixtures.ContactLacunaStoppedID,
 		}},
-		"broadcasts on the other bot": {fixtures.IntegrationLacunaOtherTelegramID, eligibility.SourceBroadcasts, []int64{fixtures.ContactLacunaOtherBotID}},
-		"no Integration":              {0, eligibility.SourceBroadcasts, nil},
+		"broadcasts on the other bot": {fixtures.IntegrationLacunaOtherTelegramID, eligibility.Marketing(eligibility.SourceBroadcasts), []int64{fixtures.ContactLacunaOtherBotID}},
+		"no Integration":              {0, eligibility.Marketing(eligibility.SourceBroadcasts), nil},
 	} {
-		got := bindingAudience(t, env, tc.integration, tc.source)
+		got := bindingAudience(t, env, tc.integration, tc.mode)
 
 		assert.ElementsMatch(t, tc.want, got, name)
 	}
@@ -341,7 +341,7 @@ func TestSMSOptOutKeptUnderTheNumbersHashStillBlocks(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 1, hashed)
 
-	d, err := eligibility.New().Check(ctx, s, eligibility.CheckInput{Channel: channels.SMS, Destination: fixtures.TyrellMatrixUnsubEverythingPhone, Source: eligibility.SourceBroadcasts})
+	d, err := eligibility.New().Check(ctx, s, eligibility.CheckInput{Channel: channels.SMS, Destination: fixtures.TyrellMatrixUnsubEverythingPhone, Mode: eligibility.Marketing(eligibility.SourceBroadcasts)})
 	require.NoError(t, err)
 	byCheck, byPredicate := smsMatrix(t, env, fixtures.TyrellID,
 		[]string{fixtures.TyrellMatrixUnsubEverythingPhone, fixtures.TyrellMatrixConfirmedPhone}, eligibility.SourceBroadcasts)
@@ -349,4 +349,58 @@ func TestSMSOptOutKeptUnderTheNumbersHashStillBlocks(t *testing.T) {
 	assert.Equal(t, skipreason.UnsubscribedEverything, d.Reason)
 	assert.Equal(t, []string{fixtures.TyrellMatrixConfirmedPhone}, byCheck)
 	assert.Equal(t, []string{fixtures.TyrellMatrixConfirmedPhone}, byPredicate)
+}
+
+// A confirmation email is checked in the mode of who asked for it (ADR 0013): asked by the Workspace
+// it respects Suppression and an opt-out of everything, asked by the person only Suppression. Neither
+// asks for a Confirmation, which it is sent to obtain, nor reads a per-source opt-out. The point check
+// and the audience agree, in a Workspace that requires confirmed opt-in.
+func TestConfirmationModes(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	cases := map[string]struct {
+		mode eligibility.Mode
+		want map[string]skipreason.Reason
+	}{
+		"asked by the Workspace": {eligibility.ConfirmationByWorkspace(), map[string]skipreason.Reason{
+			fixtures.LumonMatrixCleanEmail:           "",
+			fixtures.LumonMatrixUnsubBroadcastsEmail: "",
+			fixtures.LumonMatrixUnsubEverythingEmail: skipreason.UnsubscribedEverything,
+			fixtures.LumonMatrixSuppressedEmail:      skipreason.Suppressed,
+		}},
+		"asked by the person": {eligibility.ConfirmationByPerson(), map[string]skipreason.Reason{
+			fixtures.LumonMatrixCleanEmail:           "",
+			fixtures.LumonMatrixUnsubBroadcastsEmail: "",
+			fixtures.LumonMatrixUnsubEverythingEmail: "",
+			fixtures.LumonMatrixSuppressedEmail:      skipreason.Suppressed,
+		}},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			for address, reason := range tc.want {
+				wantEligible := reason == ""
+				d := decide(t, env, fixtures.LumonID, address, tc.mode)
+				kept, err := env.DB.Scoped(fixtures.LumonID).Contact().Query().
+					Where(contact.Email(address), eligibility.Audience(eligibility.EmailDestination(), tc.mode)).
+					Exist(t.Context())
+				require.NoError(t, err)
+				assert.Equal(t, reason, d.Reason, address)
+				assert.Equal(t, wantEligible, d.Eligible, address)
+				assert.Equal(t, wantEligible, kept, "the audience agrees for %s", address)
+			}
+		})
+	}
+}
+
+// A Mode no constructor made names no rule: the check refuses it and the audience keeps nobody.
+func TestZeroModeFailsClosed(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	_, err := eligibility.New().Check(t.Context(), env.DB.Scoped(fixtures.TyrellID),
+		eligibility.CheckInput{Channel: channels.Email, Destination: fixtures.TyrellMatrixCleanEmail})
+	require.Error(t, err)
+	kept, err := env.DB.Scoped(fixtures.TyrellID).Contact().Query().
+		Where(eligibility.Audience(eligibility.EmailDestination(), eligibility.Mode{})).Exist(t.Context())
+	require.NoError(t, err)
+	assert.False(t, kept)
 }

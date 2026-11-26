@@ -7,13 +7,15 @@ import "github.com/getsphericon/sphericon/internal/kernel/paths"
 // siteLimits are the operations of /site the contract marks `@rateLimited`: the ServeMux
 // pattern of each, under its surface's prefix, and the policy it is limited under.
 var siteLimits = map[string]RouteLimit{
-	"POST " + paths.Site + "/auth/forgot-password":       RouteLimitForgotPassword,
-	"POST " + paths.Site + "/auth/login":                 RouteLimitLogin,
-	"POST " + paths.Site + "/auth/passkey/finish":        RouteLimitLogin,
-	"POST " + paths.Site + "/auth/resend-verification":   RouteLimitHuman,
-	"POST " + paths.Site + "/auth/second-factor":         RouteLimitLogin,
-	"POST " + paths.Site + "/auth/sign-up":               RouteLimitHuman,
-	"POST " + paths.Site + "/auth/verify-email":          RouteLimitHuman,
-	"POST " + paths.Site + "/confirmations/{token}":      RouteLimitHuman,
-	"POST " + paths.Site + "/invitations/{token}/accept": RouteLimitHuman,
+	"GET " + paths.Site + "/confirmations/{token}":           RouteLimitHuman,
+	"POST " + paths.Site + "/auth/forgot-password":           RouteLimitForgotPassword,
+	"POST " + paths.Site + "/auth/login":                     RouteLimitLogin,
+	"POST " + paths.Site + "/auth/passkey/finish":            RouteLimitLogin,
+	"POST " + paths.Site + "/auth/resend-verification":       RouteLimitHuman,
+	"POST " + paths.Site + "/auth/second-factor":             RouteLimitLogin,
+	"POST " + paths.Site + "/auth/sign-up":                   RouteLimitHuman,
+	"POST " + paths.Site + "/auth/verify-email":              RouteLimitHuman,
+	"POST " + paths.Site + "/confirmations/{token}":          RouteLimitHuman,
+	"POST " + paths.Site + "/confirmations/{token}/renewals": RouteLimitHuman,
+	"POST " + paths.Site + "/invitations/{token}/accept":     RouteLimitHuman,
 }

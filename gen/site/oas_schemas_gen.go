@@ -158,6 +158,7 @@ const (
 	ApiTokenScopeEmailsSend            ApiTokenScope = "emails:send"
 	ApiTokenScopeBroadcastsSend        ApiTokenScope = "broadcasts:send"
 	ApiTokenScopeAutomationsPublish    ApiTokenScope = "automations:publish"
+	ApiTokenScopeConfirmationsSend     ApiTokenScope = "confirmations:send"
 	ApiTokenScopeMcpSend               ApiTokenScope = "mcp:send"
 	ApiTokenScopeSendingDomainsWrite   ApiTokenScope = "sending_domains:write"
 	ApiTokenScopeTrackingDomainsWrite  ApiTokenScope = "tracking_domains:write"
@@ -201,6 +202,7 @@ func (ApiTokenScope) AllValues() []ApiTokenScope {
 		ApiTokenScopeEmailsSend,
 		ApiTokenScopeBroadcastsSend,
 		ApiTokenScopeAutomationsPublish,
+		ApiTokenScopeConfirmationsSend,
 		ApiTokenScopeMcpSend,
 		ApiTokenScopeSendingDomainsWrite,
 		ApiTokenScopeTrackingDomainsWrite,
@@ -270,6 +272,8 @@ func (s ApiTokenScope) MarshalText() ([]byte, error) {
 	case ApiTokenScopeBroadcastsSend:
 		return []byte(s), nil
 	case ApiTokenScopeAutomationsPublish:
+		return []byte(s), nil
+	case ApiTokenScopeConfirmationsSend:
 		return []byte(s), nil
 	case ApiTokenScopeMcpSend:
 		return []byte(s), nil
@@ -380,6 +384,9 @@ func (s *ApiTokenScope) UnmarshalText(data []byte) error {
 		return nil
 	case ApiTokenScopeAutomationsPublish:
 		*s = ApiTokenScopeAutomationsPublish
+		return nil
+	case ApiTokenScopeConfirmationsSend:
+		*s = ApiTokenScopeConfirmationsSend
 		return nil
 	case ApiTokenScopeMcpSend:
 		*s = ApiTokenScopeMcpSend
@@ -6028,6 +6035,7 @@ const (
 	CapturedMessageSurfaceBroadcast     CapturedMessageSurface = "broadcast"
 	CapturedMessageSurfaceAutomation    CapturedMessageSurface = "automation"
 	CapturedMessageSurfaceTransactional CapturedMessageSurface = "transactional"
+	CapturedMessageSurfaceConfirmation  CapturedMessageSurface = "confirmation"
 	CapturedMessageSurfaceTest          CapturedMessageSurface = "test"
 )
 
@@ -6037,6 +6045,7 @@ func (CapturedMessageSurface) AllValues() []CapturedMessageSurface {
 		CapturedMessageSurfaceBroadcast,
 		CapturedMessageSurfaceAutomation,
 		CapturedMessageSurfaceTransactional,
+		CapturedMessageSurfaceConfirmation,
 		CapturedMessageSurfaceTest,
 	}
 }
@@ -6049,6 +6058,8 @@ func (s CapturedMessageSurface) MarshalText() ([]byte, error) {
 	case CapturedMessageSurfaceAutomation:
 		return []byte(s), nil
 	case CapturedMessageSurfaceTransactional:
+		return []byte(s), nil
+	case CapturedMessageSurfaceConfirmation:
 		return []byte(s), nil
 	case CapturedMessageSurfaceTest:
 		return []byte(s), nil
@@ -6068,6 +6079,9 @@ func (s *CapturedMessageSurface) UnmarshalText(data []byte) error {
 		return nil
 	case CapturedMessageSurfaceTransactional:
 		*s = CapturedMessageSurfaceTransactional
+		return nil
+	case CapturedMessageSurfaceConfirmation:
+		*s = CapturedMessageSurfaceConfirmation
 		return nil
 	case CapturedMessageSurfaceTest:
 		*s = CapturedMessageSurfaceTest
@@ -6250,6 +6264,67 @@ func (s *ConfirmationProvenance) UnmarshalText(data []byte) error {
 		return nil
 	case ConfirmationProvenanceGrandfathered:
 		*s = ConfirmationProvenanceGrandfathered
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// The answer to a Confirmation request.
+// Ref: #/components/schemas/ConfirmationRequestResult
+type ConfirmationRequestResult struct {
+	// Whether a confirmation email is on its way or the address is confirmed already.
+	Status ConfirmationRequestStatus `json:"status"`
+}
+
+// GetStatus returns the value of Status.
+func (s *ConfirmationRequestResult) GetStatus() ConfirmationRequestStatus {
+	return s.Status
+}
+
+// SetStatus sets the value of Status.
+func (s *ConfirmationRequestResult) SetStatus(val ConfirmationRequestStatus) {
+	s.Status = val
+}
+
+// What became of a Confirmation request (ADR 0013): its email is on its way (`accepted`), or the
+// address already holds a Confirmation and gets none (`confirmed`).
+// Ref: #/components/schemas/ConfirmationRequestStatus
+type ConfirmationRequestStatus string
+
+const (
+	ConfirmationRequestStatusAccepted  ConfirmationRequestStatus = "accepted"
+	ConfirmationRequestStatusConfirmed ConfirmationRequestStatus = "confirmed"
+)
+
+// AllValues returns all ConfirmationRequestStatus values.
+func (ConfirmationRequestStatus) AllValues() []ConfirmationRequestStatus {
+	return []ConfirmationRequestStatus{
+		ConfirmationRequestStatusAccepted,
+		ConfirmationRequestStatusConfirmed,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ConfirmationRequestStatus) MarshalText() ([]byte, error) {
+	switch s {
+	case ConfirmationRequestStatusAccepted:
+		return []byte(s), nil
+	case ConfirmationRequestStatusConfirmed:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ConfirmationRequestStatus) UnmarshalText(data []byte) error {
+	switch ConfirmationRequestStatus(data) {
+	case ConfirmationRequestStatusAccepted:
+		*s = ConfirmationRequestStatusAccepted
+		return nil
+	case ConfirmationRequestStatusConfirmed:
+		*s = ConfirmationRequestStatusConfirmed
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -20632,6 +20707,7 @@ const (
 	PersonalScopeEmailsSend           PersonalScope = "emails:send"
 	PersonalScopeBroadcastsSend       PersonalScope = "broadcasts:send"
 	PersonalScopeAutomationsPublish   PersonalScope = "automations:publish"
+	PersonalScopeConfirmationsSend    PersonalScope = "confirmations:send"
 	PersonalScopeMcpSend              PersonalScope = "mcp:send"
 	PersonalScopeSendingDomainsWrite  PersonalScope = "sending_domains:write"
 	PersonalScopeTrackingDomainsWrite PersonalScope = "tracking_domains:write"
@@ -20668,6 +20744,7 @@ func (PersonalScope) AllValues() []PersonalScope {
 		PersonalScopeEmailsSend,
 		PersonalScopeBroadcastsSend,
 		PersonalScopeAutomationsPublish,
+		PersonalScopeConfirmationsSend,
 		PersonalScopeMcpSend,
 		PersonalScopeSendingDomainsWrite,
 		PersonalScopeTrackingDomainsWrite,
@@ -20730,6 +20807,8 @@ func (s PersonalScope) MarshalText() ([]byte, error) {
 	case PersonalScopeBroadcastsSend:
 		return []byte(s), nil
 	case PersonalScopeAutomationsPublish:
+		return []byte(s), nil
+	case PersonalScopeConfirmationsSend:
 		return []byte(s), nil
 	case PersonalScopeMcpSend:
 		return []byte(s), nil
@@ -20826,6 +20905,9 @@ func (s *PersonalScope) UnmarshalText(data []byte) error {
 		return nil
 	case PersonalScopeAutomationsPublish:
 		*s = PersonalScopeAutomationsPublish
+		return nil
+	case PersonalScopeConfirmationsSend:
+		*s = PersonalScopeConfirmationsSend
 		return nil
 	case PersonalScopeMcpSend:
 		*s = PersonalScopeMcpSend
@@ -24665,6 +24747,7 @@ const (
 	SendScopeEmailsSend         SendScope = "emails:send"
 	SendScopeBroadcastsSend     SendScope = "broadcasts:send"
 	SendScopeAutomationsPublish SendScope = "automations:publish"
+	SendScopeConfirmationsSend  SendScope = "confirmations:send"
 	SendScopeMcpSend            SendScope = "mcp:send"
 )
 
@@ -24674,6 +24757,7 @@ func (SendScope) AllValues() []SendScope {
 		SendScopeEmailsSend,
 		SendScopeBroadcastsSend,
 		SendScopeAutomationsPublish,
+		SendScopeConfirmationsSend,
 		SendScopeMcpSend,
 	}
 }
@@ -24686,6 +24770,8 @@ func (s SendScope) MarshalText() ([]byte, error) {
 	case SendScopeBroadcastsSend:
 		return []byte(s), nil
 	case SendScopeAutomationsPublish:
+		return []byte(s), nil
+	case SendScopeConfirmationsSend:
 		return []byte(s), nil
 	case SendScopeMcpSend:
 		return []byte(s), nil
@@ -24705,6 +24791,9 @@ func (s *SendScope) UnmarshalText(data []byte) error {
 		return nil
 	case SendScopeAutomationsPublish:
 		*s = SendScopeAutomationsPublish
+		return nil
+	case SendScopeConfirmationsSend:
+		*s = SendScopeConfirmationsSend
 		return nil
 	case SendScopeMcpSend:
 		*s = SendScopeMcpSend
@@ -29483,6 +29572,55 @@ func (s *SiteConfirmationEmailResource) SetRevision(val Revision) {
 	s.Revision = val
 }
 
+// What the confirmation page of a link shows.
+// Ref: #/components/schemas/SiteConfirmationPage
+type SiteConfirmationPage struct {
+	// The link is past its 7 days: it confirms nothing, and the page offers a new one.
+	Expired bool `json:"expired"`
+	// The name of the Workspace that sent the link.
+	WorkspaceName string `json:"workspaceName"`
+	// The Workspace's Brand kit, read now.
+	Brand SitePublicBrand `json:"brand"`
+}
+
+// GetExpired returns the value of Expired.
+func (s *SiteConfirmationPage) GetExpired() bool {
+	return s.Expired
+}
+
+// GetWorkspaceName returns the value of WorkspaceName.
+func (s *SiteConfirmationPage) GetWorkspaceName() string {
+	return s.WorkspaceName
+}
+
+// GetBrand returns the value of Brand.
+func (s *SiteConfirmationPage) GetBrand() SitePublicBrand {
+	return s.Brand
+}
+
+// SetExpired sets the value of Expired.
+func (s *SiteConfirmationPage) SetExpired(val bool) {
+	s.Expired = val
+}
+
+// SetWorkspaceName sets the value of WorkspaceName.
+func (s *SiteConfirmationPage) SetWorkspaceName(val string) {
+	s.WorkspaceName = val
+}
+
+// SetBrand sets the value of Brand.
+func (s *SiteConfirmationPage) SetBrand(val SitePublicBrand) {
+	s.Brand = val
+}
+
+type SiteConfirmationRequestsCreateAccepted ConfirmationRequestResult
+
+func (*SiteConfirmationRequestsCreateAccepted) siteConfirmationRequestsCreateRes() {}
+
+type SiteConfirmationRequestsCreateOK ConfirmationRequestResult
+
+func (*SiteConfirmationRequestsCreateOK) siteConfirmationRequestsCreateRes() {}
+
 // A Connection: the access a User gave an application (an MCP client) to the Workspace by consenting
 // to it (ADR 0061). It belongs to that User's Membership, can do no more than the User's Role allows
 // and ends with the Membership. Connections are not API tokens and are not listed with them.
@@ -34232,6 +34370,95 @@ func (s *SitePreviewSegmentResult) SetRecipients(val OptInt32) {
 // SetEventsKeptDays sets the value of EventsKeptDays.
 func (s *SitePreviewSegmentResult) SetEventsKeptDays(val OptInt32) {
 	s.EventsKeptDays = val
+}
+
+// The Brand kit of a public page, as it stands.
+// Ref: #/components/schemas/SitePublicBrand
+type SitePublicBrand struct {
+	// The brand color: buttons and links, #rrggbb.
+	AccentColor string `json:"accentColor"`
+	// The color of text, #rrggbb.
+	TextColor string `json:"textColor"`
+	// The page's background color, #rrggbb.
+	BackgroundColor string `json:"backgroundColor"`
+	// The CSS font-family list of body text.
+	BodyFont string `json:"bodyFont"`
+	// The text color of a button, #rrggbb.
+	ButtonTextColor string `json:"buttonTextColor"`
+	// The corner radius of a button, in pixels.
+	ButtonRadius int32 `json:"buttonRadius"`
+	// The absolute URL of the logo; empty for none.
+	LogoUrl string `json:"logoUrl"`
+}
+
+// GetAccentColor returns the value of AccentColor.
+func (s *SitePublicBrand) GetAccentColor() string {
+	return s.AccentColor
+}
+
+// GetTextColor returns the value of TextColor.
+func (s *SitePublicBrand) GetTextColor() string {
+	return s.TextColor
+}
+
+// GetBackgroundColor returns the value of BackgroundColor.
+func (s *SitePublicBrand) GetBackgroundColor() string {
+	return s.BackgroundColor
+}
+
+// GetBodyFont returns the value of BodyFont.
+func (s *SitePublicBrand) GetBodyFont() string {
+	return s.BodyFont
+}
+
+// GetButtonTextColor returns the value of ButtonTextColor.
+func (s *SitePublicBrand) GetButtonTextColor() string {
+	return s.ButtonTextColor
+}
+
+// GetButtonRadius returns the value of ButtonRadius.
+func (s *SitePublicBrand) GetButtonRadius() int32 {
+	return s.ButtonRadius
+}
+
+// GetLogoUrl returns the value of LogoUrl.
+func (s *SitePublicBrand) GetLogoUrl() string {
+	return s.LogoUrl
+}
+
+// SetAccentColor sets the value of AccentColor.
+func (s *SitePublicBrand) SetAccentColor(val string) {
+	s.AccentColor = val
+}
+
+// SetTextColor sets the value of TextColor.
+func (s *SitePublicBrand) SetTextColor(val string) {
+	s.TextColor = val
+}
+
+// SetBackgroundColor sets the value of BackgroundColor.
+func (s *SitePublicBrand) SetBackgroundColor(val string) {
+	s.BackgroundColor = val
+}
+
+// SetBodyFont sets the value of BodyFont.
+func (s *SitePublicBrand) SetBodyFont(val string) {
+	s.BodyFont = val
+}
+
+// SetButtonTextColor sets the value of ButtonTextColor.
+func (s *SitePublicBrand) SetButtonTextColor(val string) {
+	s.ButtonTextColor = val
+}
+
+// SetButtonRadius sets the value of ButtonRadius.
+func (s *SitePublicBrand) SetButtonRadius(val int32) {
+	s.ButtonRadius = val
+}
+
+// SetLogoUrl sets the value of LogoUrl.
+func (s *SitePublicBrand) SetLogoUrl(val string) {
+	s.LogoUrl = val
 }
 
 // SitePublicConfirmationsPerformNoContent is response for SitePublicConfirmationsPerform operation.

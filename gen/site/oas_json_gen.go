@@ -250,6 +250,8 @@ func (s *ApiTokenScope) Decode(d *jx.Decoder) error {
 		*s = ApiTokenScopeBroadcastsSend
 	case ApiTokenScopeAutomationsPublish:
 		*s = ApiTokenScopeAutomationsPublish
+	case ApiTokenScopeConfirmationsSend:
+		*s = ApiTokenScopeConfirmationsSend
 	case ApiTokenScopeMcpSend:
 		*s = ApiTokenScopeMcpSend
 	case ApiTokenScopeSendingDomainsWrite:
@@ -10318,6 +10320,8 @@ func (s *CapturedMessageSurface) Decode(d *jx.Decoder) error {
 		*s = CapturedMessageSurfaceAutomation
 	case CapturedMessageSurfaceTransactional:
 		*s = CapturedMessageSurfaceTransactional
+	case CapturedMessageSurfaceConfirmation:
+		*s = CapturedMessageSurfaceConfirmation
 	case CapturedMessageSurfaceTest:
 		*s = CapturedMessageSurfaceTest
 	default:
@@ -10586,6 +10590,140 @@ func (s ConfirmationProvenance) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *ConfirmationProvenance) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *ConfirmationRequestResult) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *ConfirmationRequestResult) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("status")
+		s.Status.Encode(e)
+	}
+}
+
+var jsonFieldsNameOfConfirmationRequestResult = [1]string{
+	0: "status",
+}
+
+// Decode decodes ConfirmationRequestResult from json.
+func (s *ConfirmationRequestResult) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ConfirmationRequestResult to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "status":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Status.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"status\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode ConfirmationRequestResult")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000001,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfConfirmationRequestResult) {
+					name = jsonFieldsNameOfConfirmationRequestResult[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *ConfirmationRequestResult) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ConfirmationRequestResult) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ConfirmationRequestStatus as json.
+func (s ConfirmationRequestStatus) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes ConfirmationRequestStatus from json.
+func (s *ConfirmationRequestStatus) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ConfirmationRequestStatus to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch ConfirmationRequestStatus(v) {
+	case ConfirmationRequestStatusAccepted:
+		*s = ConfirmationRequestStatusAccepted
+	case ConfirmationRequestStatusConfirmed:
+		*s = ConfirmationRequestStatusConfirmed
+	default:
+		*s = ConfirmationRequestStatus(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s ConfirmationRequestStatus) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ConfirmationRequestStatus) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -31055,6 +31193,8 @@ func (s *PersonalScope) Decode(d *jx.Decoder) error {
 		*s = PersonalScopeBroadcastsSend
 	case PersonalScopeAutomationsPublish:
 		*s = PersonalScopeAutomationsPublish
+	case PersonalScopeConfirmationsSend:
+		*s = PersonalScopeConfirmationsSend
 	case PersonalScopeMcpSend:
 		*s = PersonalScopeMcpSend
 	case PersonalScopeSendingDomainsWrite:
@@ -37942,6 +38082,8 @@ func (s *SendScope) Decode(d *jx.Decoder) error {
 		*s = SendScopeBroadcastsSend
 	case SendScopeAutomationsPublish:
 		*s = SendScopeAutomationsPublish
+	case SendScopeConfirmationsSend:
+		*s = SendScopeConfirmationsSend
 	case SendScopeMcpSend:
 		*s = SendScopeMcpSend
 	default:
@@ -47321,6 +47463,210 @@ func (s *SiteConfirmationEmailResource) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *SiteConfirmationEmailResource) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *SiteConfirmationPage) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SiteConfirmationPage) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("expired")
+		e.Bool(s.Expired)
+	}
+	{
+		e.FieldStart("workspaceName")
+		e.Str(s.WorkspaceName)
+	}
+	{
+		e.FieldStart("brand")
+		s.Brand.Encode(e)
+	}
+}
+
+var jsonFieldsNameOfSiteConfirmationPage = [3]string{
+	0: "expired",
+	1: "workspaceName",
+	2: "brand",
+}
+
+// Decode decodes SiteConfirmationPage from json.
+func (s *SiteConfirmationPage) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteConfirmationPage to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "expired":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := d.Bool()
+				s.Expired = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"expired\"")
+			}
+		case "workspaceName":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.WorkspaceName = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"workspaceName\"")
+			}
+		case "brand":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				if err := s.Brand.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"brand\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SiteConfirmationPage")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSiteConfirmationPage) {
+					name = jsonFieldsNameOfSiteConfirmationPage[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteConfirmationPage) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteConfirmationPage) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SiteConfirmationRequestsCreateAccepted as json.
+func (s *SiteConfirmationRequestsCreateAccepted) Encode(e *jx.Encoder) {
+	unwrapped := (*ConfirmationRequestResult)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes SiteConfirmationRequestsCreateAccepted from json.
+func (s *SiteConfirmationRequestsCreateAccepted) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteConfirmationRequestsCreateAccepted to nil")
+	}
+	var unwrapped ConfirmationRequestResult
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = SiteConfirmationRequestsCreateAccepted(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteConfirmationRequestsCreateAccepted) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteConfirmationRequestsCreateAccepted) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SiteConfirmationRequestsCreateOK as json.
+func (s *SiteConfirmationRequestsCreateOK) Encode(e *jx.Encoder) {
+	unwrapped := (*ConfirmationRequestResult)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes SiteConfirmationRequestsCreateOK from json.
+func (s *SiteConfirmationRequestsCreateOK) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteConfirmationRequestsCreateOK to nil")
+	}
+	var unwrapped ConfirmationRequestResult
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = SiteConfirmationRequestsCreateOK(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteConfirmationRequestsCreateOK) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteConfirmationRequestsCreateOK) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -58611,6 +58957,204 @@ func (s *SitePreviewSegmentResult) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *SitePreviewSegmentResult) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *SitePublicBrand) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SitePublicBrand) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("accentColor")
+		e.Str(s.AccentColor)
+	}
+	{
+		e.FieldStart("textColor")
+		e.Str(s.TextColor)
+	}
+	{
+		e.FieldStart("backgroundColor")
+		e.Str(s.BackgroundColor)
+	}
+	{
+		e.FieldStart("bodyFont")
+		e.Str(s.BodyFont)
+	}
+	{
+		e.FieldStart("buttonTextColor")
+		e.Str(s.ButtonTextColor)
+	}
+	{
+		e.FieldStart("buttonRadius")
+		e.Int32(s.ButtonRadius)
+	}
+	{
+		e.FieldStart("logoUrl")
+		e.Str(s.LogoUrl)
+	}
+}
+
+var jsonFieldsNameOfSitePublicBrand = [7]string{
+	0: "accentColor",
+	1: "textColor",
+	2: "backgroundColor",
+	3: "bodyFont",
+	4: "buttonTextColor",
+	5: "buttonRadius",
+	6: "logoUrl",
+}
+
+// Decode decodes SitePublicBrand from json.
+func (s *SitePublicBrand) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SitePublicBrand to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "accentColor":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := d.Str()
+				s.AccentColor = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"accentColor\"")
+			}
+		case "textColor":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.TextColor = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"textColor\"")
+			}
+		case "backgroundColor":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Str()
+				s.BackgroundColor = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"backgroundColor\"")
+			}
+		case "bodyFont":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				v, err := d.Str()
+				s.BodyFont = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"bodyFont\"")
+			}
+		case "buttonTextColor":
+			requiredBitSet[0] |= 1 << 4
+			if err := func() error {
+				v, err := d.Str()
+				s.ButtonTextColor = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"buttonTextColor\"")
+			}
+		case "buttonRadius":
+			requiredBitSet[0] |= 1 << 5
+			if err := func() error {
+				v, err := d.Int32()
+				s.ButtonRadius = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"buttonRadius\"")
+			}
+		case "logoUrl":
+			requiredBitSet[0] |= 1 << 6
+			if err := func() error {
+				v, err := d.Str()
+				s.LogoUrl = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"logoUrl\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SitePublicBrand")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b01111111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSitePublicBrand) {
+					name = jsonFieldsNameOfSitePublicBrand[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SitePublicBrand) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SitePublicBrand) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

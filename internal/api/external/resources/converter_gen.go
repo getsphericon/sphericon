@@ -502,6 +502,8 @@ func (c *ConverterImpl) CapturedMessageSurfaceToResource(source capturedmessage.
 		externalapiCapturedMessageSurface = external.CapturedMessageSurfaceAutomation
 	case capturedmessage.SurfaceBroadcast:
 		externalapiCapturedMessageSurface = external.CapturedMessageSurfaceBroadcast
+	case capturedmessage.SurfaceConfirmation:
+		externalapiCapturedMessageSurface = external.CapturedMessageSurfaceConfirmation
 	case capturedmessage.SurfaceTest:
 		externalapiCapturedMessageSurface = external.CapturedMessageSurfaceTest
 	case capturedmessage.SurfaceTransactional:

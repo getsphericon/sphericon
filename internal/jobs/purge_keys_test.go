@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
+	"github.com/getsphericon/sphericon/internal/domain/sending/confirmationrequests"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 )
@@ -37,7 +38,7 @@ func TestEveryPurgeKeyNamesAnIntegerArgumentOfItsJob(t *testing.T) {
 	byKind := map[string]river.JobArgs{}
 	for _, args := range []river.JobArgs{
 		jobs.DeliverWebhookArgs{}, jobs.EvaluateTriggerArgs{}, jobs.SendRecipientArgs{}, jobs.EvaluateRulesArgs{},
-		automations.RunStepArgs{}, automations.RunHTTPStepArgs{},
+		automations.RunStepArgs{}, automations.RunHTTPStepArgs{}, confirmationrequests.SendArgs{},
 	} {
 		byKind[args.Kind()] = args
 	}

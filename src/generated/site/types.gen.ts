@@ -65,6 +65,7 @@ export const ApiTokenScope = {
   EMAILS_SEND: 'emails:send',
   BROADCASTS_SEND: 'broadcasts:send',
   AUTOMATIONS_PUBLISH: 'automations:publish',
+  CONFIRMATIONS_SEND: 'confirmations:send',
   MCP_SEND: 'mcp:send',
   SENDING_DOMAINS_WRITE: 'sending_domains:write',
   TRACKING_DOMAINS_WRITE: 'tracking_domains:write',
@@ -1336,6 +1337,7 @@ export const CapturedMessageSurface = {
   BROADCAST: 'broadcast',
   AUTOMATION: 'automation',
   TRANSACTIONAL: 'transactional',
+  CONFIRMATION: 'confirmation',
   TEST: 'test'
 } as const;
 
@@ -1386,6 +1388,26 @@ export const ConfirmationProvenance = {
  * How a Confirmation was obtained, strongest first: a double opt-in (the person clicked the link), a keyword (the person texted START), imported (consent an API client or an import collected itself, with its evidence), grandfathered (a prior basis asserted when confirmed opt-in was turned on). A Confirmation is replaced only by a stronger one.
  */
 export type ConfirmationProvenance = typeof ConfirmationProvenance[keyof typeof ConfirmationProvenance];
+
+/**
+ * The answer to a Confirmation request
+ */
+export type ConfirmationRequestResult = {
+  /**
+   * Whether a confirmation email is on its way or the address is confirmed already
+   */
+  status: ConfirmationRequestStatus;
+};
+
+/**
+ * What became of a Confirmation request (ADR 0013): its email is on its way (`accepted`), or the address already holds a Confirmation and gets none (`confirmed`)
+ */
+export const ConfirmationRequestStatus = { ACCEPTED: 'accepted', CONFIRMED: 'confirmed' } as const;
+
+/**
+ * What became of a Confirmation request (ADR 0013): its email is on its way (`accepted`), or the address already holds a Confirmation and gets none (`confirmed`)
+ */
+export type ConfirmationRequestStatus = typeof ConfirmationRequestStatus[keyof typeof ConfirmationRequestStatus];
 
 /**
  * The evidence of consent collected outside sphericon (ADR 0077), kept in the immutable `sms.confirmed` Event to answer a proof request
@@ -3883,6 +3905,7 @@ export const PersonalScope = {
   EMAILS_SEND: 'emails:send',
   BROADCASTS_SEND: 'broadcasts:send',
   AUTOMATIONS_PUBLISH: 'automations:publish',
+  CONFIRMATIONS_SEND: 'confirmations:send',
   MCP_SEND: 'mcp:send',
   SENDING_DOMAINS_WRITE: 'sending_domains:write',
   TRACKING_DOMAINS_WRITE: 'tracking_domains:write',
@@ -4750,6 +4773,7 @@ export const SendScope = {
   EMAILS_SEND: 'emails:send',
   BROADCASTS_SEND: 'broadcasts:send',
   AUTOMATIONS_PUBLISH: 'automations:publish',
+  CONFIRMATIONS_SEND: 'confirmations:send',
   MCP_SEND: 'mcp:send'
 } as const;
 
@@ -6328,6 +6352,24 @@ export type SiteConfirmationEmailResource = {
 };
 
 /**
+ * What the confirmation page of a link shows
+ */
+export type SiteConfirmationPage = {
+  /**
+   * The link is past its 7 days: it confirms nothing, and the page offers a new one
+   */
+  expired: boolean;
+  /**
+   * The name of the Workspace that sent the link
+   */
+  workspaceName: string;
+  /**
+   * The Workspace's Brand kit, read now
+   */
+  brand: SitePublicBrand;
+};
+
+/**
  * A Connection: the access a User gave an application (an MCP client) to the Workspace by
  * consenting to it (ADR 0061). It belongs to that User's Membership, can do no more than the
  * User's Role allows and ends with the Membership. Connections are not API tokens and are not
@@ -7815,6 +7857,40 @@ export type SitePreviewSegmentResult = {
    * Absent when every Event is kept, or no event test reaches past them.
    */
   eventsKeptDays?: number;
+};
+
+/**
+ * The Brand kit of a public page, as it stands
+ */
+export type SitePublicBrand = {
+  /**
+   * The brand color: buttons and links, #rrggbb
+   */
+  accentColor: string;
+  /**
+   * The color of text, #rrggbb
+   */
+  textColor: string;
+  /**
+   * The page's background color, #rrggbb
+   */
+  backgroundColor: string;
+  /**
+   * The CSS font-family list of body text
+   */
+  bodyFont: string;
+  /**
+   * The text color of a button, #rrggbb
+   */
+  buttonTextColor: string;
+  /**
+   * The corner radius of a button, in pixels
+   */
+  buttonRadius: number;
+  /**
+   * The absolute URL of the logo; empty for none
+   */
+  logoUrl: string;
 };
 
 /**
@@ -9632,6 +9708,7 @@ export const SystemEventAction = {
   SMS_ENGAGEMENT_TRACKING_DENIED: 'sms.engagement_tracking_denied',
   TELEGRAM_ENGAGEMENT_TRACKING_GRANTED: 'telegram.engagement_tracking_granted',
   TELEGRAM_ENGAGEMENT_TRACKING_DENIED: 'telegram.engagement_tracking_denied',
+  EMAIL_RESUBSCRIBED: 'email.resubscribed',
   CONTACT_CONSENT_SUPERSEDED: 'contact.consent_superseded'
 } as const;
 
@@ -11760,6 +11837,38 @@ export type SiteAuthVerifyEmailResponses = {
 
 export type SiteAuthVerifyEmailResponse = SiteAuthVerifyEmailResponses[keyof SiteAuthVerifyEmailResponses];
 
+export type SitePublicConfirmationsReadData = {
+  body?: never;
+  path: {
+    token: string;
+  };
+  query?: never;
+  url: '/confirmations/{token}';
+};
+
+export type SitePublicConfirmationsReadErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SitePublicConfirmationsReadError = SitePublicConfirmationsReadErrors[keyof SitePublicConfirmationsReadErrors];
+
+export type SitePublicConfirmationsReadResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteConfirmationPage;
+};
+
+export type SitePublicConfirmationsReadResponse = SitePublicConfirmationsReadResponses[keyof SitePublicConfirmationsReadResponses];
+
 export type SitePublicConfirmationsPerformData = {
   body?: never;
   path: {
@@ -11791,6 +11900,38 @@ export type SitePublicConfirmationsPerformResponses = {
 };
 
 export type SitePublicConfirmationsPerformResponse = SitePublicConfirmationsPerformResponses[keyof SitePublicConfirmationsPerformResponses];
+
+export type SitePublicConfirmationsRenewData = {
+  body?: never;
+  path: {
+    token: string;
+  };
+  query?: never;
+  url: '/confirmations/{token}/renewals';
+};
+
+export type SitePublicConfirmationsRenewErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SitePublicConfirmationsRenewError = SitePublicConfirmationsRenewErrors[keyof SitePublicConfirmationsRenewErrors];
+
+export type SitePublicConfirmationsRenewResponses = {
+  /**
+   * The request has been accepted for processing, but processing has not yet completed.
+   */
+  202: ConfirmationRequestResult;
+};
+
+export type SitePublicConfirmationsRenewResponse = SitePublicConfirmationsRenewResponses[keyof SitePublicConfirmationsRenewResponses];
 
 export type SiteInstanceGetReleaseData = {
   body?: never;
@@ -15520,6 +15661,43 @@ export type SiteTelegramListBindingsResponses = {
 };
 
 export type SiteTelegramListBindingsResponse = SiteTelegramListBindingsResponses[keyof SiteTelegramListBindingsResponses];
+
+export type SiteConfirmationRequestsCreateData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+    contactId: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/contacts/{contactId}/confirmation-requests';
+};
+
+export type SiteConfirmationRequestsCreateErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SiteConfirmationRequestsCreateError = SiteConfirmationRequestsCreateErrors[keyof SiteConfirmationRequestsCreateErrors];
+
+export type SiteConfirmationRequestsCreateResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: ConfirmationRequestResult;
+  /**
+   * The request has been accepted for processing, but processing has not yet completed.
+   */
+  202: ConfirmationRequestResult;
+};
+
+export type SiteConfirmationRequestsCreateResponse = SiteConfirmationRequestsCreateResponses[keyof SiteConfirmationRequestsCreateResponses];
 
 export type SiteEngagementTrackingGetData = {
   body?: never;

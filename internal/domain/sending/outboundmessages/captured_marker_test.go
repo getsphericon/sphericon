@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
@@ -26,7 +25,6 @@ func (deliveringSender) Send(context.Context, messaging.EmailMessage) (messaging
 func automationRequest(t *testing.T, env *testhelper.TestEnv, key string) outboundmessages.Request {
 	t.Helper()
 	req := marketing(t, env, key, fixtures.ContactAliceID)
-	req.Source = eligibility.AutomationSource(fixtures.AutomationHoldDemoID)
 	req.Ref = outboundmessages.AutomationRef{AutomationID: fixtures.AutomationHoldDemoID, VersionID: fixtures.AutomationHoldDemoVersionID, StepID: "1c7f087b-436d-5b5a-b11e-da4433bba846"}
 	return req
 }

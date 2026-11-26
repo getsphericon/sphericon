@@ -132,6 +132,7 @@ const (
 	SurfaceBroadcast     Surface = "broadcast"
 	SurfaceAutomation    Surface = "automation"
 	SurfaceTransactional Surface = "transactional"
+	SurfaceConfirmation  Surface = "confirmation"
 	SurfaceTest          Surface = "test"
 )
 
@@ -142,7 +143,7 @@ func (s Surface) String() string {
 // SurfaceValidator is a validator for the "surface" field enum values. It is called by the builders before save.
 func SurfaceValidator(s Surface) error {
 	switch s {
-	case SurfaceBroadcast, SurfaceAutomation, SurfaceTransactional, SurfaceTest:
+	case SurfaceBroadcast, SurfaceAutomation, SurfaceTransactional, SurfaceConfirmation, SurfaceTest:
 		return nil
 	default:
 		return fmt.Errorf("capturedmessage: invalid enum value for surface field: %q", s)

@@ -94,6 +94,7 @@ require (
 	golang.org/x/net v0.63.0
 	golang.org/x/oauth2 v0.38.0
 	golang.org/x/text v0.44.0
+	golang.org/x/time v0.16.0
 	golang.org/x/tools v0.53.0
 	gopkg.in/dnaeon/go-vcr.v4 v4.0.8
 	pgregory.net/rapid v1.3.0
@@ -246,7 +247,6 @@ require (
 	golang.org/x/sys v0.50.0 // indirect
 	golang.org/x/telemetry v0.0.0-20261116191925-e77a43154acb // indirect
 	golang.org/x/term v0.48.0 // indirect
-	golang.org/x/time v0.16.0 // indirect
 	golang.org/x/vuln v1.10.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20261110000943-09e21b237f2c // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20261110000943-09e21b237f2c // indirect

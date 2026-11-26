@@ -342,7 +342,7 @@ func TestScopedUpdateModifyCannotAssignTheWorkspace(t *testing.T) {
 	s := env.DB.Scoped(acme)
 
 	n, err := s.ProviderLimiter().Update().
-		Modify(func(a *ent.ScopedAssign) { a.Set("second_fill", 0.5) }).
+		Modify(func(a *ent.ScopedAssign) { a.Set("second_tokens", 0.5) }).
 		Save(ctx)
 	require.NoError(t, err)
 	assert.Positive(t, n, "a computed assignment on a regular column goes through")

@@ -7,9 +7,11 @@
 // Integration's second in one transaction, so concurrent workers and instances cannot overspend
 // or deadlock. A denial reports how long until capacity returns and which limit is short.
 //
-// Buckets are stored as a fill fraction of capacity (1 is full). Capacity and refill
-// derive from the limits passed in on every call, so a changed limit or Send cap
-// takes effect at once, and a bucket with no limit is simply kept full.
+// A bucket stores the messages it holds (tokens), NULL when full. Its capacity is its ceiling and
+// it refills at ceiling/period tokens per second, both from the limits passed in on every call, so
+// a changed limit or Send cap takes effect at once. The balance is never rescaled: the time since
+// the last write refills at the ceiling in force at the call, capped at it, so a debt stays the
+// same number of messages. A bucket with no limit is kept full.
 package providerlimit
 
 import (
@@ -158,40 +160,48 @@ func spend(ctx context.Context, s *ent.Scoped, tx Tx, r Reservation, now time.Ti
 	return Shortfall{}, err
 }
 
-// bucket is one token bucket: its fill and refill-time columns, capacity in tokens and
-// the fill fraction regained per second.
+// bucket is one token bucket: its token and refill-time columns, its capacity in tokens (nil when
+// not limited) and the seconds it takes to refill that capacity.
 type bucket struct {
-	column     string
-	refilledAt string
-	capacity   *int
-	fillPerSec float64
+	column        string
+	refilledAt    string
+	capacity      *int
+	periodSeconds float64
 }
 
 func integrationBuckets(l Limits) []bucket {
 	return []bucket{
 		// Capacity is one second's worth of messages, refilled over one second.
-		{column: providerlimiter.FieldSecondFill, refilledAt: providerlimiter.FieldRefilledAt, capacity: l.PerSecond, fillPerSec: 1},
+		{column: providerlimiter.FieldSecondTokens, refilledAt: providerlimiter.FieldRefilledAt, capacity: l.PerSecond, periodSeconds: 1},
 		// Capacity is a day's worth of messages, refilled evenly over 24 hours.
-		{column: providerlimiter.FieldDayFill, refilledAt: providerlimiter.FieldRefilledAt, capacity: l.PerDay, fillPerSec: 1 / daySeconds},
+		{column: providerlimiter.FieldDayTokens, refilledAt: providerlimiter.FieldRefilledAt, capacity: l.PerDay, periodSeconds: daySeconds},
 	}
 }
 
 // workspaceBucket is the Send cap's: a day's worth of messages, refilled evenly over 24 hours.
 func workspaceBucket(sendCap int) bucket {
-	return bucket{column: sendcaplimiter.FieldDayFill, refilledAt: sendcaplimiter.FieldRefilledAt, capacity: &sendCap, fillPerSec: 1 / daySeconds}
+	return bucket{column: sendcaplimiter.FieldDayTokens, refilledAt: sendcaplimiter.FieldRefilledAt, capacity: &sendCap, periodSeconds: daySeconds}
 }
 
-// writeRefilled writes the SQL for a bucket's fill as of now, capped at full.
+// ceiling is the bucket's capacity in tokens.
+func (b bucket) ceiling() float64 { return float64(*b.capacity) }
+
+// perSecond is the tokens the bucket regains per second.
+func (b bucket) perSecond() float64 { return b.ceiling() / b.periodSeconds }
+
+// writeRefilled writes the SQL for the tokens a bucket holds as of now, capped at its capacity; a
+// NULL column is a full bucket.
 func (b bucket) writeRefilled(bld *entsql.Builder, now time.Time) {
-	bld.WriteString("LEAST(1.0, " + b.column + " + GREATEST(0, EXTRACT(EPOCH FROM (")
+	bld.WriteString("LEAST(")
+	bld.Arg(b.ceiling())
+	bld.WriteString("::float8, COALESCE(" + b.column + ", ")
+	bld.Arg(b.ceiling())
+	bld.WriteString("::float8) + GREATEST(0, EXTRACT(EPOCH FROM (")
 	bld.Arg(now)
 	bld.WriteString("::timestamptz - " + b.refilledAt + "))) * ")
-	bld.Arg(b.fillPerSec)
+	bld.Arg(b.perSecond())
 	bld.WriteString("::float8)")
 }
-
-// threshold is the fill a bucket needs to cover one token.
-func (b bucket) threshold() float64 { return 1 / float64(*b.capacity) }
 
 // enough narrows an UPDATE to a row whose limited buckets each hold a token as of now.
 func enough(sel *entsql.Selector, bs []bucket, now time.Time) {
@@ -199,22 +209,22 @@ func enough(sel *entsql.Selector, bs []bucket, now time.Time) {
 		if b.capacity == nil {
 			continue
 		}
-		// raw sql: compares a refilled value computed from the stored fill and elapsed time; ent
+		// raw sql: compares a refilled value computed from the stored tokens and elapsed time; ent
 		// predicates compare columns only.
 		sel.Where(entsql.P(func(bld *entsql.Builder) {
 			b.writeRefilled(bld, now)
 			bld.WriteString(" >= ")
-			bld.Arg(b.threshold() - epsilon)
+			bld.Arg(1 - epsilon)
 			bld.WriteString("::float8")
 		}))
 	}
 }
 
-// assignSpent sets every bucket to its refilled fill less one token, and the refill time to now.
+// assignSpent sets every bucket to its refilled tokens less one, and the refill time to now.
 func assignSpent(u *ent.ScopedAssign, bs []bucket, refilledAt string, now time.Time) {
 	for _, b := range bs {
 		if b.capacity == nil {
-			u.Set(b.column, 1.0) // not limited: keep it full for when a limit appears
+			u.Set(b.column, nil) // not limited: keep it full for when a limit appears
 			continue
 		}
 		// raw sql: refill and spend one token in the same UPDATE, computed from the stored row;
@@ -222,9 +232,7 @@ func assignSpent(u *ent.ScopedAssign, bs []bucket, refilledAt string, now time.T
 		u.Set(b.column, entsql.ExprFunc(func(bld *entsql.Builder) {
 			bld.WriteString("(")
 			b.writeRefilled(bld, now)
-			bld.WriteString(") - ")
-			bld.Arg(b.threshold())
-			bld.WriteString("::float8")
+			bld.WriteString(") - 1")
 		}))
 	}
 	// raw sql: GREATEST(refilled_at, now) so the clock never moves back; ent has no GREATEST.
@@ -253,8 +261,6 @@ func takeIntegration(ctx context.Context, s *ent.Scoped, integrationID int64, l 
 	ensure := func() (bool, error) {
 		return db.Inserted(s.ProviderLimiter().Create().
 			SetIntegrationID(integrationID).
-			SetSecondFill(1).
-			SetDayFill(1).
 			SetRefilledAt(now).
 			OnConflictColumns(providerlimiter.FieldIntegrationID).
 			DoNothing().
@@ -278,7 +284,6 @@ func takeWorkspace(ctx context.Context, s *ent.Scoped, sendCap int, now time.Tim
 	}
 	ensure := func() (bool, error) {
 		return db.Inserted(s.SendCapLimiter().Create().
-			SetDayFill(1).
 			SetRefilledAt(now).
 			OnConflictColumns(sendcaplimiter.FieldWorkspaceID).
 			DoNothing().
@@ -288,7 +293,7 @@ func takeWorkspace(ctx context.Context, s *ent.Scoped, sendCap int, now time.Tim
 }
 
 // takeOrCreate runs update; when it touched no row, either there is none yet or (guarded) a
-// bucket is short. ensure creates the row with full buckets when there is none, and update runs
+// bucket is short. ensure creates the row with full (NULL) buckets when there is none, and update runs
 // once more. A guarded take whose row was already there was short, the common way here, so its
 // denial costs no second UPDATE; a row another worker created between the two then reads as short
 // once, and the reservation is retried after the Shortfall's wait. An unguarded take always runs
@@ -325,7 +330,7 @@ func shortfall(ctx context.Context, s *ent.Scoped, r Reservation, now time.Time)
 			return Shortfall{}, err
 		}
 		if row != nil {
-			workspaceWait = workspaceBucket(*r.SendCap).secondsUntil(1, row.DayFill, row.RefilledAt, now)
+			workspaceWait = workspaceBucket(*r.SendCap).secondsUntil(1, row.DayTokens, row.RefilledAt, now)
 		}
 	}
 	if r.integration() {
@@ -335,11 +340,11 @@ func shortfall(ctx context.Context, s *ent.Scoped, r Reservation, now time.Time)
 		}
 		if row != nil {
 			for _, b := range integrationBuckets(r.Limits) {
-				fill := row.SecondFill
-				if b.column == providerlimiter.FieldDayFill {
-					fill = row.DayFill
+				tokens := row.SecondTokens
+				if b.column == providerlimiter.FieldDayTokens {
+					tokens = row.DayTokens
 				}
-				integrationWait = math.Max(integrationWait, b.secondsUntil(1, fill, row.RefilledAt, now))
+				integrationWait = math.Max(integrationWait, b.secondsUntil(1, tokens, row.RefilledAt, now))
 			}
 		}
 	}
@@ -355,19 +360,22 @@ func shortfall(ctx context.Context, s *ent.Scoped, r Reservation, now time.Time)
 	}, nil
 }
 
-// fillAt is the bucket's fill at now, from fill as of refilledAt: refilled for the time since,
-// capped at full (the Go side of writeRefilled).
-func (b bucket) fillAt(fill float64, refilledAt, now time.Time) float64 {
+// tokensAt is the tokens the bucket holds at now, from tokens as of refilledAt (nil when full):
+// refilled for the time since, capped at its capacity (the Go side of writeRefilled).
+func (b bucket) tokensAt(tokens *float64, refilledAt, now time.Time) float64 {
+	if tokens == nil {
+		return b.ceiling()
+	}
 	elapsed := math.Max(0, now.Sub(refilledAt).Seconds())
-	return math.Min(1, fill+elapsed*b.fillPerSec)
+	return math.Min(b.ceiling(), *tokens+elapsed*b.perSecond())
 }
 
-// secondsUntil is the seconds from now until the bucket, at fill as of refilledAt, has held n
+// secondsUntil is the seconds from now until the bucket, at tokens as of refilledAt, has held n
 // tokens: zero for a bucket with no limit or one that holds them already. Past the bucket's
 // capacity the tokens beyond it come at the refill rate.
-func (b bucket) secondsUntil(n int, fill float64, refilledAt, now time.Time) float64 {
+func (b bucket) secondsUntil(n int, tokens *float64, refilledAt, now time.Time) float64 {
 	if b.capacity == nil {
 		return 0
 	}
-	return math.Max(0, (float64(n)*b.threshold()-epsilon-b.fillAt(fill, refilledAt, now))/b.fillPerSec)
+	return math.Max(0, (float64(n)-epsilon-b.tokensAt(tokens, refilledAt, now))/b.perSecond())
 }

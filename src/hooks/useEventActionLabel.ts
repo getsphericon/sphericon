@@ -51,6 +51,7 @@ export function useEventActionLabel() {
       [SystemEventAction.EMAIL_OPENED]: t(($) => $.eventActions.emailOpened),
       [SystemEventAction.EMAIL_CLICKED]: t(($) => $.eventActions.emailClicked),
       [SystemEventAction.EMAIL_UNSUBSCRIBED]: t(($) => $.eventActions.emailUnsubscribed),
+      [SystemEventAction.EMAIL_RESUBSCRIBED]: t(($) => $.eventActions.emailResubscribed),
       [SystemEventAction.MARKETING_CONFIRMED]: t(($) => $.eventActions.marketingConfirmed),
       [SystemEventAction.EMAIL_ENGAGEMENT_TRACKING_GRANTED]: t(
         ($) => $.eventActions.emailEngagementTrackingGranted,

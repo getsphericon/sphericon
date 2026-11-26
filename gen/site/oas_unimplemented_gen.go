@@ -656,6 +656,18 @@ func (UnimplementedHandler) SiteCapturedMessagesList(ctx context.Context, params
 	return r, ht.ErrNotImplemented
 }
 
+// SiteConfirmationRequestsCreate implements SiteConfirmationRequests_create operation.
+//
+// Send the contact a double opt-in confirmation email (ADR 0013), as the API's confirmation request of
+// a contact does: `confirmed` (200) when the address already holds a Confirmation, 409
+// `confirmation_email_required` while the confirmation email is not set up, 409 naming an opt-out of
+// everything or a Suppression, 429 past 3 emails to the address in 24 hours.
+//
+// POST /workspaces/{workspaceId}/contacts/{contactId}/confirmation-requests
+func (UnimplementedHandler) SiteConfirmationRequestsCreate(ctx context.Context, params SiteConfirmationRequestsCreateParams) (r SiteConfirmationRequestsCreateRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteConnectionsDelete implements SiteConnections_delete operation.
 //
 // Revoke a Connection: the caller's own, or anyone's with members:manage.
@@ -1330,6 +1342,30 @@ func (UnimplementedHandler) SitePresetsList(ctx context.Context) (r []PresetReso
 // POST /confirmations/{token}
 func (UnimplementedHandler) SitePublicConfirmationsPerform(ctx context.Context, params SitePublicConfirmationsPerformParams) error {
 	return ht.ErrNotImplemented
+}
+
+// SitePublicConfirmationsRead implements SitePublicConfirmations_read operation.
+//
+// Read what the confirmation page shows for a link (ADR 0013): whether it has expired, the Workspace's
+// name and its Brand kit as it stands. A link past its 7 days still names its Workspace, so the page
+// of an expired link is in its brand and offers a new one; 400 is an invalid token.
+//
+// GET /confirmations/{token}
+func (UnimplementedHandler) SitePublicConfirmationsRead(ctx context.Context, params SitePublicConfirmationsReadParams) (r *SiteConfirmationPage, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SitePublicConfirmationsRenew implements SitePublicConfirmations_renew operation.
+//
+// Send a new confirmation link, from the page of an expired one (ADR 0013): a request the person
+// makes, which only a Suppression of the address stops. The answer is the same whether or not a mail
+// goes out (an address over its limit, suppressed, or no longer the contact's), so the page says
+// nothing about an address; `confirmed` when it holds a Confirmation already. 409
+// `confirmation_email_required` while the Workspace has no confirmation email set up.
+//
+// POST /confirmations/{token}/renewals
+func (UnimplementedHandler) SitePublicConfirmationsRenew(ctx context.Context, params SitePublicConfirmationsRenewParams) (r *ConfirmationRequestResult, _ error) {
+	return r, ht.ErrNotImplemented
 }
 
 // SitePublicInvitationsAccept implements SitePublicInvitations_accept operation.
