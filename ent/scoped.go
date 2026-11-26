@@ -26742,6 +26742,42 @@ func (x *ContactDateScopedCreate) build(ctx context.Context, s *Scoped) (*Contac
 	return written(b, s.checkContactDate(ctx, b.Mutation()))
 }
 
+// SetCreatedAt sets the "created_at" field.
+func (x *ContactDateScopedCreate) SetCreatedAt(v time.Time) *ContactDateScopedCreate {
+	x.set = append(x.set, func(b *ContactDateCreate) { b.SetCreatedAt(v) })
+	return x
+}
+
+const RoleOf_ContactDateScopedCreate_SetCreatedAt = RoleStep
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (x *ContactDateScopedCreate) SetNillableCreatedAt(v *time.Time) *ContactDateScopedCreate {
+	if v != nil {
+		x.SetCreatedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactDateScopedCreate_SetNillableCreatedAt = RoleStep
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *ContactDateScopedCreate) SetUpdatedAt(v time.Time) *ContactDateScopedCreate {
+	x.set = append(x.set, func(b *ContactDateCreate) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_ContactDateScopedCreate_SetUpdatedAt = RoleStep
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (x *ContactDateScopedCreate) SetNillableUpdatedAt(v *time.Time) *ContactDateScopedCreate {
+	if v != nil {
+		x.SetUpdatedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactDateScopedCreate_SetNillableUpdatedAt = RoleStep
+
 // SetContactID sets the "contact_id" field.
 func (x *ContactDateScopedCreate) SetContactID(v int64) *ContactDateScopedCreate {
 	x.set = append(x.set, func(b *ContactDateCreate) { b.SetContactID(v) })
@@ -26775,7 +26811,7 @@ func (x *ContactDateScopedCreate) SetDate(v time.Time) *ContactDateScopedCreate 
 const RoleOf_ContactDateScopedCreate_SetDate = RoleStep
 
 // SetMonthDay sets the "month_day" field.
-func (x *ContactDateScopedCreate) SetMonthDay(v int16) *ContactDateScopedCreate {
+func (x *ContactDateScopedCreate) SetMonthDay(v int) *ContactDateScopedCreate {
 	x.set = append(x.set, func(b *ContactDateCreate) { b.SetMonthDay(v) })
 	return x
 }
@@ -26903,6 +26939,22 @@ const (
 	EntityOf_ContactDateScopedUpsert = "ContactDate"
 )
 
+// SetUpdatedAt sets the "updated_at" field.
+func (u *ContactDateScopedUpsert) SetUpdatedAt(v time.Time) *ContactDateScopedUpsert {
+	u.u.Set(contactdate.FieldUpdatedAt, v)
+	return u
+}
+
+const RoleOf_ContactDateScopedUpsert_SetUpdatedAt = RoleStep
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *ContactDateScopedUpsert) UpdateUpdatedAt() *ContactDateScopedUpsert {
+	u.u.SetExcluded(contactdate.FieldUpdatedAt)
+	return u
+}
+
+const RoleOf_ContactDateScopedUpsert_UpdateUpdatedAt = RoleStep
+
 // SetDate sets the "date" field.
 func (u *ContactDateScopedUpsert) SetDate(v time.Time) *ContactDateScopedUpsert {
 	u.u.Set(contactdate.FieldDate, v)
@@ -26920,7 +26972,7 @@ func (u *ContactDateScopedUpsert) UpdateDate() *ContactDateScopedUpsert {
 const RoleOf_ContactDateScopedUpsert_UpdateDate = RoleStep
 
 // SetMonthDay sets the "month_day" field.
-func (u *ContactDateScopedUpsert) SetMonthDay(v int16) *ContactDateScopedUpsert {
+func (u *ContactDateScopedUpsert) SetMonthDay(v int) *ContactDateScopedUpsert {
 	u.u.Set(contactdate.FieldMonthDay, v)
 	return u
 }
@@ -26928,7 +26980,7 @@ func (u *ContactDateScopedUpsert) SetMonthDay(v int16) *ContactDateScopedUpsert 
 const RoleOf_ContactDateScopedUpsert_SetMonthDay = RoleStep
 
 // AddMonthDay adds v to the "month_day" field.
-func (u *ContactDateScopedUpsert) AddMonthDay(v int16) *ContactDateScopedUpsert {
+func (u *ContactDateScopedUpsert) AddMonthDay(v int) *ContactDateScopedUpsert {
 	u.u.Add(contactdate.FieldMonthDay, v)
 	return u
 }
@@ -27142,6 +27194,14 @@ func (x *ContactDateScopedUpdateOne) Where(ps ...predicate.ContactDate) *Contact
 	return x
 }
 
+// SetUpdatedAt sets the "updated_at" field.
+func (x *ContactDateScopedUpdateOne) SetUpdatedAt(v time.Time) *ContactDateScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactDateUpdateOne) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_ContactDateScopedUpdateOne_SetUpdatedAt = RoleStep
+
 // SetDate sets the "date" field.
 func (x *ContactDateScopedUpdateOne) SetDate(v time.Time) *ContactDateScopedUpdateOne {
 	x.set = append(x.set, func(b *ContactDateUpdateOne) { b.SetDate(v) })
@@ -27161,7 +27221,7 @@ func (x *ContactDateScopedUpdateOne) SetNillableDate(v *time.Time) *ContactDateS
 const RoleOf_ContactDateScopedUpdateOne_SetNillableDate = RoleStep
 
 // SetMonthDay sets the "month_day" field.
-func (x *ContactDateScopedUpdateOne) SetMonthDay(v int16) *ContactDateScopedUpdateOne {
+func (x *ContactDateScopedUpdateOne) SetMonthDay(v int) *ContactDateScopedUpdateOne {
 	x.set = append(x.set, func(b *ContactDateUpdateOne) { b.SetMonthDay(v) })
 	return x
 }
@@ -27169,7 +27229,7 @@ func (x *ContactDateScopedUpdateOne) SetMonthDay(v int16) *ContactDateScopedUpda
 const RoleOf_ContactDateScopedUpdateOne_SetMonthDay = RoleStep
 
 // SetNillableMonthDay sets the "month_day" field if the given value is not nil.
-func (x *ContactDateScopedUpdateOne) SetNillableMonthDay(v *int16) *ContactDateScopedUpdateOne {
+func (x *ContactDateScopedUpdateOne) SetNillableMonthDay(v *int) *ContactDateScopedUpdateOne {
 	if v != nil {
 		x.SetMonthDay(*v)
 	}
@@ -27179,7 +27239,7 @@ func (x *ContactDateScopedUpdateOne) SetNillableMonthDay(v *int16) *ContactDateS
 const RoleOf_ContactDateScopedUpdateOne_SetNillableMonthDay = RoleStep
 
 // AddMonthDay adds value to the "month_day" field.
-func (x *ContactDateScopedUpdateOne) AddMonthDay(v int16) *ContactDateScopedUpdateOne {
+func (x *ContactDateScopedUpdateOne) AddMonthDay(v int) *ContactDateScopedUpdateOne {
 	x.set = append(x.set, func(b *ContactDateUpdateOne) { b.AddMonthDay(v) })
 	return x
 }
@@ -27269,6 +27329,14 @@ func (x *ContactDateScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *Co
 	return x
 }
 
+// SetUpdatedAt sets the "updated_at" field.
+func (x *ContactDateScopedUpdate) SetUpdatedAt(v time.Time) *ContactDateScopedUpdate {
+	x.set = append(x.set, func(b *ContactDateUpdate) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_ContactDateScopedUpdate_SetUpdatedAt = RoleStep
+
 // SetDate sets the "date" field.
 func (x *ContactDateScopedUpdate) SetDate(v time.Time) *ContactDateScopedUpdate {
 	x.set = append(x.set, func(b *ContactDateUpdate) { b.SetDate(v) })
@@ -27288,7 +27356,7 @@ func (x *ContactDateScopedUpdate) SetNillableDate(v *time.Time) *ContactDateScop
 const RoleOf_ContactDateScopedUpdate_SetNillableDate = RoleStep
 
 // SetMonthDay sets the "month_day" field.
-func (x *ContactDateScopedUpdate) SetMonthDay(v int16) *ContactDateScopedUpdate {
+func (x *ContactDateScopedUpdate) SetMonthDay(v int) *ContactDateScopedUpdate {
 	x.set = append(x.set, func(b *ContactDateUpdate) { b.SetMonthDay(v) })
 	return x
 }
@@ -27296,7 +27364,7 @@ func (x *ContactDateScopedUpdate) SetMonthDay(v int16) *ContactDateScopedUpdate 
 const RoleOf_ContactDateScopedUpdate_SetMonthDay = RoleStep
 
 // SetNillableMonthDay sets the "month_day" field if the given value is not nil.
-func (x *ContactDateScopedUpdate) SetNillableMonthDay(v *int16) *ContactDateScopedUpdate {
+func (x *ContactDateScopedUpdate) SetNillableMonthDay(v *int) *ContactDateScopedUpdate {
 	if v != nil {
 		x.SetMonthDay(*v)
 	}
@@ -27306,7 +27374,7 @@ func (x *ContactDateScopedUpdate) SetNillableMonthDay(v *int16) *ContactDateScop
 const RoleOf_ContactDateScopedUpdate_SetNillableMonthDay = RoleStep
 
 // AddMonthDay adds value to the "month_day" field.
-func (x *ContactDateScopedUpdate) AddMonthDay(v int16) *ContactDateScopedUpdate {
+func (x *ContactDateScopedUpdate) AddMonthDay(v int) *ContactDateScopedUpdate {
 	x.set = append(x.set, func(b *ContactDateUpdate) { b.AddMonthDay(v) })
 	return x
 }

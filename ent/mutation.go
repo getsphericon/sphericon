@@ -26647,11 +26647,13 @@ type ContactDateMutation struct {
 	op               Op
 	typ              string
 	id               *int64
+	created_at       *time.Time
+	updated_at       *time.Time
 	kind             *datetrigger.FieldKind
 	key              *string
 	date             *time.Time
-	month_day        *int16
-	addmonth_day     *int16
+	month_day        *int
+	addmonth_day     *int
 	clearedFields    map[string]struct{}
 	workspace        *int64
 	clearedworkspace bool
@@ -26764,6 +26766,78 @@ func (m *ContactDateMutation) IDs(ctx context.Context) ([]int64, error) {
 	default:
 		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
 	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *ContactDateMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *ContactDateMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the ContactDate entity.
+// If the ContactDate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactDateMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *ContactDateMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *ContactDateMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *ContactDateMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the ContactDate entity.
+// If the ContactDate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactDateMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *ContactDateMutation) ResetUpdatedAt() {
+	m.updated_at = nil
 }
 
 // SetWorkspaceID sets the "workspace_id" field.
@@ -26947,13 +27021,13 @@ func (m *ContactDateMutation) ResetDate() {
 }
 
 // SetMonthDay sets the "month_day" field.
-func (m *ContactDateMutation) SetMonthDay(i int16) {
+func (m *ContactDateMutation) SetMonthDay(i int) {
 	m.month_day = &i
 	m.addmonth_day = nil
 }
 
 // MonthDay returns the value of the "month_day" field in the mutation.
-func (m *ContactDateMutation) MonthDay() (r int16, exists bool) {
+func (m *ContactDateMutation) MonthDay() (r int, exists bool) {
 	v := m.month_day
 	if v == nil {
 		return
@@ -26964,7 +27038,7 @@ func (m *ContactDateMutation) MonthDay() (r int16, exists bool) {
 // OldMonthDay returns the old "month_day" field's value of the ContactDate entity.
 // If the ContactDate object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ContactDateMutation) OldMonthDay(ctx context.Context) (v int16, err error) {
+func (m *ContactDateMutation) OldMonthDay(ctx context.Context) (v int, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldMonthDay is only allowed on UpdateOne operations")
 	}
@@ -26979,7 +27053,7 @@ func (m *ContactDateMutation) OldMonthDay(ctx context.Context) (v int16, err err
 }
 
 // AddMonthDay adds i to the "month_day" field.
-func (m *ContactDateMutation) AddMonthDay(i int16) {
+func (m *ContactDateMutation) AddMonthDay(i int) {
 	if m.addmonth_day != nil {
 		*m.addmonth_day += i
 	} else {
@@ -26988,7 +27062,7 @@ func (m *ContactDateMutation) AddMonthDay(i int16) {
 }
 
 // AddedMonthDay returns the value that was added to the "month_day" field in this mutation.
-func (m *ContactDateMutation) AddedMonthDay() (r int16, exists bool) {
+func (m *ContactDateMutation) AddedMonthDay() (r int, exists bool) {
 	v := m.addmonth_day
 	if v == nil {
 		return
@@ -27090,7 +27164,13 @@ func (m *ContactDateMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ContactDateMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 8)
+	if m.created_at != nil {
+		fields = append(fields, contactdate.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, contactdate.FieldUpdatedAt)
+	}
 	if m.workspace != nil {
 		fields = append(fields, contactdate.FieldWorkspaceID)
 	}
@@ -27117,6 +27197,10 @@ func (m *ContactDateMutation) Fields() []string {
 // schema.
 func (m *ContactDateMutation) Field(name string) (ent.Value, bool) {
 	switch name {
+	case contactdate.FieldCreatedAt:
+		return m.CreatedAt()
+	case contactdate.FieldUpdatedAt:
+		return m.UpdatedAt()
 	case contactdate.FieldWorkspaceID:
 		return m.WorkspaceID()
 	case contactdate.FieldContactID:
@@ -27138,6 +27222,10 @@ func (m *ContactDateMutation) Field(name string) (ent.Value, bool) {
 // database failed.
 func (m *ContactDateMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
+	case contactdate.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case contactdate.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
 	case contactdate.FieldWorkspaceID:
 		return m.OldWorkspaceID(ctx)
 	case contactdate.FieldContactID:
@@ -27159,6 +27247,20 @@ func (m *ContactDateMutation) OldField(ctx context.Context, name string) (ent.Va
 // type.
 func (m *ContactDateMutation) SetField(name string, value ent.Value) error {
 	switch name {
+	case contactdate.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case contactdate.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
 	case contactdate.FieldWorkspaceID:
 		v, ok := value.(int64)
 		if !ok {
@@ -27195,7 +27297,7 @@ func (m *ContactDateMutation) SetField(name string, value ent.Value) error {
 		m.SetDate(v)
 		return nil
 	case contactdate.FieldMonthDay:
-		v, ok := value.(int16)
+		v, ok := value.(int)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -27232,7 +27334,7 @@ func (m *ContactDateMutation) AddedField(name string) (ent.Value, bool) {
 func (m *ContactDateMutation) AddField(name string, value ent.Value) error {
 	switch name {
 	case contactdate.FieldMonthDay:
-		v, ok := value.(int16)
+		v, ok := value.(int)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -27265,6 +27367,12 @@ func (m *ContactDateMutation) ClearField(name string) error {
 // It returns an error if the field is not defined in the schema.
 func (m *ContactDateMutation) ResetField(name string) error {
 	switch name {
+	case contactdate.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case contactdate.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
 	case contactdate.FieldWorkspaceID:
 		m.ResetWorkspaceID()
 		return nil

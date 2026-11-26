@@ -25,6 +25,34 @@ type ContactDateCreate struct {
 	conflict []sql.ConflictOption
 }
 
+// SetCreatedAt sets the "created_at" field.
+func (_c *ContactDateCreate) SetCreatedAt(v time.Time) *ContactDateCreate {
+	_c.mutation.SetCreatedAt(v)
+	return _c
+}
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (_c *ContactDateCreate) SetNillableCreatedAt(v *time.Time) *ContactDateCreate {
+	if v != nil {
+		_c.SetCreatedAt(*v)
+	}
+	return _c
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (_c *ContactDateCreate) SetUpdatedAt(v time.Time) *ContactDateCreate {
+	_c.mutation.SetUpdatedAt(v)
+	return _c
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_c *ContactDateCreate) SetNillableUpdatedAt(v *time.Time) *ContactDateCreate {
+	if v != nil {
+		_c.SetUpdatedAt(*v)
+	}
+	return _c
+}
+
 // SetWorkspaceID sets the "workspace_id" field.
 func (_c *ContactDateCreate) SetWorkspaceID(v int64) *ContactDateCreate {
 	_c.mutation.SetWorkspaceID(v)
@@ -56,7 +84,7 @@ func (_c *ContactDateCreate) SetDate(v time.Time) *ContactDateCreate {
 }
 
 // SetMonthDay sets the "month_day" field.
-func (_c *ContactDateCreate) SetMonthDay(v int16) *ContactDateCreate {
+func (_c *ContactDateCreate) SetMonthDay(v int) *ContactDateCreate {
 	_c.mutation.SetMonthDay(v)
 	return _c
 }
@@ -84,6 +112,7 @@ func (_c *ContactDateCreate) Mutation() *ContactDateMutation {
 
 // Save creates the ContactDate in the database.
 func (_c *ContactDateCreate) Save(ctx context.Context) (*ContactDate, error) {
+	_c.defaults()
 	return withHooks(ctx, _c.sqlSave, _c.mutation, _c.hooks)
 }
 
@@ -109,8 +138,26 @@ func (_c *ContactDateCreate) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (_c *ContactDateCreate) defaults() {
+	if _, ok := _c.mutation.CreatedAt(); !ok {
+		v := contactdate.DefaultCreatedAt()
+		_c.mutation.SetCreatedAt(v)
+	}
+	if _, ok := _c.mutation.UpdatedAt(); !ok {
+		v := contactdate.DefaultUpdatedAt()
+		_c.mutation.SetUpdatedAt(v)
+	}
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (_c *ContactDateCreate) check() error {
+	if _, ok := _c.mutation.CreatedAt(); !ok {
+		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "ContactDate.created_at"`)}
+	}
+	if _, ok := _c.mutation.UpdatedAt(); !ok {
+		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "ContactDate.updated_at"`)}
+	}
 	if _, ok := _c.mutation.WorkspaceID(); !ok {
 		return &ValidationError{Name: "workspace_id", err: errors.New(`ent: missing required field "ContactDate.workspace_id"`)}
 	}
@@ -173,6 +220,14 @@ func (_c *ContactDateCreate) createSpec() (*ContactDate, *sqlgraph.CreateSpec) {
 		_node.ID = id
 		_spec.ID.Value = id
 	}
+	if value, ok := _c.mutation.CreatedAt(); ok {
+		_spec.SetField(contactdate.FieldCreatedAt, field.TypeTime, value)
+		_node.CreatedAt = value
+	}
+	if value, ok := _c.mutation.UpdatedAt(); ok {
+		_spec.SetField(contactdate.FieldUpdatedAt, field.TypeTime, value)
+		_node.UpdatedAt = value
+	}
 	if value, ok := _c.mutation.Kind(); ok {
 		_spec.SetField(contactdate.FieldKind, field.TypeEnum, value)
 		_node.Kind = value
@@ -186,7 +241,7 @@ func (_c *ContactDateCreate) createSpec() (*ContactDate, *sqlgraph.CreateSpec) {
 		_node.Date = value
 	}
 	if value, ok := _c.mutation.MonthDay(); ok {
-		_spec.SetField(contactdate.FieldMonthDay, field.TypeInt16, value)
+		_spec.SetField(contactdate.FieldMonthDay, field.TypeInt, value)
 		_node.MonthDay = value
 	}
 	if nodes := _c.mutation.WorkspaceIDs(); len(nodes) > 0 {
@@ -230,7 +285,7 @@ func (_c *ContactDateCreate) createSpec() (*ContactDate, *sqlgraph.CreateSpec) {
 // of the `INSERT` statement. For example:
 //
 //	client.ContactDate.Create().
-//		SetWorkspaceID(v).
+//		SetCreatedAt(v).
 //		OnConflict(
 //			// Update the row with the new values
 //			// the was proposed for insertion.
@@ -239,7 +294,7 @@ func (_c *ContactDateCreate) createSpec() (*ContactDate, *sqlgraph.CreateSpec) {
 //		// Override some of the fields with custom
 //		// update values.
 //		Update(func(u *ent.ContactDateUpsert) {
-//			SetWorkspaceID(v+v).
+//			SetCreatedAt(v+v).
 //		}).
 //		Exec(ctx)
 func (_c *ContactDateCreate) OnConflict(opts ...sql.ConflictOption) *ContactDateUpsertOne {
@@ -275,6 +330,18 @@ type (
 	}
 )
 
+// SetUpdatedAt sets the "updated_at" field.
+func (u *ContactDateUpsert) SetUpdatedAt(v time.Time) *ContactDateUpsert {
+	u.Set(contactdate.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *ContactDateUpsert) UpdateUpdatedAt() *ContactDateUpsert {
+	u.SetExcluded(contactdate.FieldUpdatedAt)
+	return u
+}
+
 // SetWorkspaceID sets the "workspace_id" field.
 func (u *ContactDateUpsert) SetWorkspaceID(v int64) *ContactDateUpsert {
 	u.Set(contactdate.FieldWorkspaceID, v)
@@ -300,7 +367,7 @@ func (u *ContactDateUpsert) UpdateDate() *ContactDateUpsert {
 }
 
 // SetMonthDay sets the "month_day" field.
-func (u *ContactDateUpsert) SetMonthDay(v int16) *ContactDateUpsert {
+func (u *ContactDateUpsert) SetMonthDay(v int) *ContactDateUpsert {
 	u.Set(contactdate.FieldMonthDay, v)
 	return u
 }
@@ -312,7 +379,7 @@ func (u *ContactDateUpsert) UpdateMonthDay() *ContactDateUpsert {
 }
 
 // AddMonthDay adds v to the "month_day" field.
-func (u *ContactDateUpsert) AddMonthDay(v int16) *ContactDateUpsert {
+func (u *ContactDateUpsert) AddMonthDay(v int) *ContactDateUpsert {
 	u.Add(contactdate.FieldMonthDay, v)
 	return u
 }
@@ -333,6 +400,9 @@ func (u *ContactDateUpsertOne) UpdateNewValues() *ContactDateUpsertOne {
 	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
 		if _, exists := u.create.mutation.ID(); exists {
 			s.SetIgnore(contactdate.FieldID)
+		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(contactdate.FieldCreatedAt)
 		}
 		if _, exists := u.create.mutation.ContactID(); exists {
 			s.SetIgnore(contactdate.FieldContactID)
@@ -374,6 +444,20 @@ func (u *ContactDateUpsertOne) Update(set func(*ContactDateUpsert)) *ContactDate
 	return u
 }
 
+// SetUpdatedAt sets the "updated_at" field.
+func (u *ContactDateUpsertOne) SetUpdatedAt(v time.Time) *ContactDateUpsertOne {
+	return u.Update(func(s *ContactDateUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *ContactDateUpsertOne) UpdateUpdatedAt() *ContactDateUpsertOne {
+	return u.Update(func(s *ContactDateUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
 // SetWorkspaceID sets the "workspace_id" field.
 func (u *ContactDateUpsertOne) SetWorkspaceID(v int64) *ContactDateUpsertOne {
 	return u.Update(func(s *ContactDateUpsert) {
@@ -403,14 +487,14 @@ func (u *ContactDateUpsertOne) UpdateDate() *ContactDateUpsertOne {
 }
 
 // SetMonthDay sets the "month_day" field.
-func (u *ContactDateUpsertOne) SetMonthDay(v int16) *ContactDateUpsertOne {
+func (u *ContactDateUpsertOne) SetMonthDay(v int) *ContactDateUpsertOne {
 	return u.Update(func(s *ContactDateUpsert) {
 		s.SetMonthDay(v)
 	})
 }
 
 // AddMonthDay adds v to the "month_day" field.
-func (u *ContactDateUpsertOne) AddMonthDay(v int16) *ContactDateUpsertOne {
+func (u *ContactDateUpsertOne) AddMonthDay(v int) *ContactDateUpsertOne {
 	return u.Update(func(s *ContactDateUpsert) {
 		s.AddMonthDay(v)
 	})
@@ -475,6 +559,7 @@ func (_c *ContactDateCreateBulk) Save(ctx context.Context) ([]*ContactDate, erro
 	for i := range _c.builders {
 		func(i int, root context.Context) {
 			builder := _c.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*ContactDateMutation)
 				if !ok {
@@ -557,7 +642,7 @@ func (_c *ContactDateCreateBulk) ExecX(ctx context.Context) {
 //		// Override some of the fields with custom
 //		// update values.
 //		Update(func(u *ent.ContactDateUpsert) {
-//			SetWorkspaceID(v+v).
+//			SetCreatedAt(v+v).
 //		}).
 //		Exec(ctx)
 func (_c *ContactDateCreateBulk) OnConflict(opts ...sql.ConflictOption) *ContactDateUpsertBulk {
@@ -604,6 +689,9 @@ func (u *ContactDateUpsertBulk) UpdateNewValues() *ContactDateUpsertBulk {
 			if _, exists := b.mutation.ID(); exists {
 				s.SetIgnore(contactdate.FieldID)
 			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(contactdate.FieldCreatedAt)
+			}
 			if _, exists := b.mutation.ContactID(); exists {
 				s.SetIgnore(contactdate.FieldContactID)
 			}
@@ -645,6 +733,20 @@ func (u *ContactDateUpsertBulk) Update(set func(*ContactDateUpsert)) *ContactDat
 	return u
 }
 
+// SetUpdatedAt sets the "updated_at" field.
+func (u *ContactDateUpsertBulk) SetUpdatedAt(v time.Time) *ContactDateUpsertBulk {
+	return u.Update(func(s *ContactDateUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *ContactDateUpsertBulk) UpdateUpdatedAt() *ContactDateUpsertBulk {
+	return u.Update(func(s *ContactDateUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
 // SetWorkspaceID sets the "workspace_id" field.
 func (u *ContactDateUpsertBulk) SetWorkspaceID(v int64) *ContactDateUpsertBulk {
 	return u.Update(func(s *ContactDateUpsert) {
@@ -674,14 +776,14 @@ func (u *ContactDateUpsertBulk) UpdateDate() *ContactDateUpsertBulk {
 }
 
 // SetMonthDay sets the "month_day" field.
-func (u *ContactDateUpsertBulk) SetMonthDay(v int16) *ContactDateUpsertBulk {
+func (u *ContactDateUpsertBulk) SetMonthDay(v int) *ContactDateUpsertBulk {
 	return u.Update(func(s *ContactDateUpsert) {
 		s.SetMonthDay(v)
 	})
 }
 
 // AddMonthDay adds v to the "month_day" field.
-func (u *ContactDateUpsertBulk) AddMonthDay(v int16) *ContactDateUpsertBulk {
+func (u *ContactDateUpsertBulk) AddMonthDay(v int) *ContactDateUpsertBulk {
 	return u.Update(func(s *ContactDateUpsert) {
 		s.AddMonthDay(v)
 	})

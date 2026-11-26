@@ -56,6 +56,16 @@ func IDLTE(id int64) predicate.ContactDate {
 	return predicate.ContactDate(sql.FieldLTE(FieldID, id))
 }
 
+// CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
+func CreatedAt(v time.Time) predicate.ContactDate {
+	return predicate.ContactDate(sql.FieldEQ(FieldCreatedAt, v))
+}
+
+// UpdatedAt applies equality check predicate on the "updated_at" field. It's identical to UpdatedAtEQ.
+func UpdatedAt(v time.Time) predicate.ContactDate {
+	return predicate.ContactDate(sql.FieldEQ(FieldUpdatedAt, v))
+}
+
 // WorkspaceID applies equality check predicate on the "workspace_id" field. It's identical to WorkspaceIDEQ.
 func WorkspaceID(v int64) predicate.ContactDate {
 	return predicate.ContactDate(sql.FieldEQ(FieldWorkspaceID, v))
@@ -77,8 +87,88 @@ func Date(v time.Time) predicate.ContactDate {
 }
 
 // MonthDay applies equality check predicate on the "month_day" field. It's identical to MonthDayEQ.
-func MonthDay(v int16) predicate.ContactDate {
+func MonthDay(v int) predicate.ContactDate {
 	return predicate.ContactDate(sql.FieldEQ(FieldMonthDay, v))
+}
+
+// CreatedAtEQ applies the EQ predicate on the "created_at" field.
+func CreatedAtEQ(v time.Time) predicate.ContactDate {
+	return predicate.ContactDate(sql.FieldEQ(FieldCreatedAt, v))
+}
+
+// CreatedAtNEQ applies the NEQ predicate on the "created_at" field.
+func CreatedAtNEQ(v time.Time) predicate.ContactDate {
+	return predicate.ContactDate(sql.FieldNEQ(FieldCreatedAt, v))
+}
+
+// CreatedAtIn applies the In predicate on the "created_at" field.
+func CreatedAtIn(vs ...time.Time) predicate.ContactDate {
+	return predicate.ContactDate(sql.FieldIn(FieldCreatedAt, vs...))
+}
+
+// CreatedAtNotIn applies the NotIn predicate on the "created_at" field.
+func CreatedAtNotIn(vs ...time.Time) predicate.ContactDate {
+	return predicate.ContactDate(sql.FieldNotIn(FieldCreatedAt, vs...))
+}
+
+// CreatedAtGT applies the GT predicate on the "created_at" field.
+func CreatedAtGT(v time.Time) predicate.ContactDate {
+	return predicate.ContactDate(sql.FieldGT(FieldCreatedAt, v))
+}
+
+// CreatedAtGTE applies the GTE predicate on the "created_at" field.
+func CreatedAtGTE(v time.Time) predicate.ContactDate {
+	return predicate.ContactDate(sql.FieldGTE(FieldCreatedAt, v))
+}
+
+// CreatedAtLT applies the LT predicate on the "created_at" field.
+func CreatedAtLT(v time.Time) predicate.ContactDate {
+	return predicate.ContactDate(sql.FieldLT(FieldCreatedAt, v))
+}
+
+// CreatedAtLTE applies the LTE predicate on the "created_at" field.
+func CreatedAtLTE(v time.Time) predicate.ContactDate {
+	return predicate.ContactDate(sql.FieldLTE(FieldCreatedAt, v))
+}
+
+// UpdatedAtEQ applies the EQ predicate on the "updated_at" field.
+func UpdatedAtEQ(v time.Time) predicate.ContactDate {
+	return predicate.ContactDate(sql.FieldEQ(FieldUpdatedAt, v))
+}
+
+// UpdatedAtNEQ applies the NEQ predicate on the "updated_at" field.
+func UpdatedAtNEQ(v time.Time) predicate.ContactDate {
+	return predicate.ContactDate(sql.FieldNEQ(FieldUpdatedAt, v))
+}
+
+// UpdatedAtIn applies the In predicate on the "updated_at" field.
+func UpdatedAtIn(vs ...time.Time) predicate.ContactDate {
+	return predicate.ContactDate(sql.FieldIn(FieldUpdatedAt, vs...))
+}
+
+// UpdatedAtNotIn applies the NotIn predicate on the "updated_at" field.
+func UpdatedAtNotIn(vs ...time.Time) predicate.ContactDate {
+	return predicate.ContactDate(sql.FieldNotIn(FieldUpdatedAt, vs...))
+}
+
+// UpdatedAtGT applies the GT predicate on the "updated_at" field.
+func UpdatedAtGT(v time.Time) predicate.ContactDate {
+	return predicate.ContactDate(sql.FieldGT(FieldUpdatedAt, v))
+}
+
+// UpdatedAtGTE applies the GTE predicate on the "updated_at" field.
+func UpdatedAtGTE(v time.Time) predicate.ContactDate {
+	return predicate.ContactDate(sql.FieldGTE(FieldUpdatedAt, v))
+}
+
+// UpdatedAtLT applies the LT predicate on the "updated_at" field.
+func UpdatedAtLT(v time.Time) predicate.ContactDate {
+	return predicate.ContactDate(sql.FieldLT(FieldUpdatedAt, v))
+}
+
+// UpdatedAtLTE applies the LTE predicate on the "updated_at" field.
+func UpdatedAtLTE(v time.Time) predicate.ContactDate {
+	return predicate.ContactDate(sql.FieldLTE(FieldUpdatedAt, v))
 }
 
 // WorkspaceIDEQ applies the EQ predicate on the "workspace_id" field.
@@ -257,42 +347,42 @@ func DateLTE(v time.Time) predicate.ContactDate {
 }
 
 // MonthDayEQ applies the EQ predicate on the "month_day" field.
-func MonthDayEQ(v int16) predicate.ContactDate {
+func MonthDayEQ(v int) predicate.ContactDate {
 	return predicate.ContactDate(sql.FieldEQ(FieldMonthDay, v))
 }
 
 // MonthDayNEQ applies the NEQ predicate on the "month_day" field.
-func MonthDayNEQ(v int16) predicate.ContactDate {
+func MonthDayNEQ(v int) predicate.ContactDate {
 	return predicate.ContactDate(sql.FieldNEQ(FieldMonthDay, v))
 }
 
 // MonthDayIn applies the In predicate on the "month_day" field.
-func MonthDayIn(vs ...int16) predicate.ContactDate {
+func MonthDayIn(vs ...int) predicate.ContactDate {
 	return predicate.ContactDate(sql.FieldIn(FieldMonthDay, vs...))
 }
 
 // MonthDayNotIn applies the NotIn predicate on the "month_day" field.
-func MonthDayNotIn(vs ...int16) predicate.ContactDate {
+func MonthDayNotIn(vs ...int) predicate.ContactDate {
 	return predicate.ContactDate(sql.FieldNotIn(FieldMonthDay, vs...))
 }
 
 // MonthDayGT applies the GT predicate on the "month_day" field.
-func MonthDayGT(v int16) predicate.ContactDate {
+func MonthDayGT(v int) predicate.ContactDate {
 	return predicate.ContactDate(sql.FieldGT(FieldMonthDay, v))
 }
 
 // MonthDayGTE applies the GTE predicate on the "month_day" field.
-func MonthDayGTE(v int16) predicate.ContactDate {
+func MonthDayGTE(v int) predicate.ContactDate {
 	return predicate.ContactDate(sql.FieldGTE(FieldMonthDay, v))
 }
 
 // MonthDayLT applies the LT predicate on the "month_day" field.
-func MonthDayLT(v int16) predicate.ContactDate {
+func MonthDayLT(v int) predicate.ContactDate {
 	return predicate.ContactDate(sql.FieldLT(FieldMonthDay, v))
 }
 
 // MonthDayLTE applies the LTE predicate on the "month_day" field.
-func MonthDayLTE(v int16) predicate.ContactDate {
+func MonthDayLTE(v int) predicate.ContactDate {
 	return predicate.ContactDate(sql.FieldLTE(FieldMonthDay, v))
 }
 

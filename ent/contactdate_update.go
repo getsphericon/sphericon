@@ -30,6 +30,12 @@ func (_u *ContactDateUpdate) Where(ps ...predicate.ContactDate) *ContactDateUpda
 	return _u
 }
 
+// SetUpdatedAt sets the "updated_at" field.
+func (_u *ContactDateUpdate) SetUpdatedAt(v time.Time) *ContactDateUpdate {
+	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
 // SetWorkspaceID sets the "workspace_id" field.
 func (_u *ContactDateUpdate) SetWorkspaceID(v int64) *ContactDateUpdate {
 	_u.mutation.SetWorkspaceID(v)
@@ -59,14 +65,14 @@ func (_u *ContactDateUpdate) SetNillableDate(v *time.Time) *ContactDateUpdate {
 }
 
 // SetMonthDay sets the "month_day" field.
-func (_u *ContactDateUpdate) SetMonthDay(v int16) *ContactDateUpdate {
+func (_u *ContactDateUpdate) SetMonthDay(v int) *ContactDateUpdate {
 	_u.mutation.ResetMonthDay()
 	_u.mutation.SetMonthDay(v)
 	return _u
 }
 
 // SetNillableMonthDay sets the "month_day" field if the given value is not nil.
-func (_u *ContactDateUpdate) SetNillableMonthDay(v *int16) *ContactDateUpdate {
+func (_u *ContactDateUpdate) SetNillableMonthDay(v *int) *ContactDateUpdate {
 	if v != nil {
 		_u.SetMonthDay(*v)
 	}
@@ -74,7 +80,7 @@ func (_u *ContactDateUpdate) SetNillableMonthDay(v *int16) *ContactDateUpdate {
 }
 
 // AddMonthDay adds value to the "month_day" field.
-func (_u *ContactDateUpdate) AddMonthDay(v int16) *ContactDateUpdate {
+func (_u *ContactDateUpdate) AddMonthDay(v int) *ContactDateUpdate {
 	_u.mutation.AddMonthDay(v)
 	return _u
 }
@@ -97,6 +103,7 @@ func (_u *ContactDateUpdate) ClearWorkspace() *ContactDateUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (_u *ContactDateUpdate) Save(ctx context.Context) (int, error) {
+	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -119,6 +126,14 @@ func (_u *ContactDateUpdate) Exec(ctx context.Context) error {
 func (_u *ContactDateUpdate) ExecX(ctx context.Context) {
 	if err := _u.Exec(ctx); err != nil {
 		panic(err)
+	}
+}
+
+// defaults sets the default values of the builder before save.
+func (_u *ContactDateUpdate) defaults() {
+	if _, ok := _u.mutation.UpdatedAt(); !ok {
+		v := contactdate.UpdateDefaultUpdatedAt()
+		_u.mutation.SetUpdatedAt(v)
 	}
 }
 
@@ -151,14 +166,17 @@ func (_u *ContactDateUpdate) sqlSave(ctx context.Context) (_node int, err error)
 			}
 		}
 	}
+	if value, ok := _u.mutation.UpdatedAt(); ok {
+		_spec.SetField(contactdate.FieldUpdatedAt, field.TypeTime, value)
+	}
 	if value, ok := _u.mutation.Date(); ok {
 		_spec.SetField(contactdate.FieldDate, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.MonthDay(); ok {
-		_spec.SetField(contactdate.FieldMonthDay, field.TypeInt16, value)
+		_spec.SetField(contactdate.FieldMonthDay, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.AddedMonthDay(); ok {
-		_spec.AddField(contactdate.FieldMonthDay, field.TypeInt16, value)
+		_spec.AddField(contactdate.FieldMonthDay, field.TypeInt, value)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -211,6 +229,12 @@ type ContactDateUpdateOne struct {
 	modifiers []func(*sql.UpdateBuilder)
 }
 
+// SetUpdatedAt sets the "updated_at" field.
+func (_u *ContactDateUpdateOne) SetUpdatedAt(v time.Time) *ContactDateUpdateOne {
+	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
 // SetWorkspaceID sets the "workspace_id" field.
 func (_u *ContactDateUpdateOne) SetWorkspaceID(v int64) *ContactDateUpdateOne {
 	_u.mutation.SetWorkspaceID(v)
@@ -240,14 +264,14 @@ func (_u *ContactDateUpdateOne) SetNillableDate(v *time.Time) *ContactDateUpdate
 }
 
 // SetMonthDay sets the "month_day" field.
-func (_u *ContactDateUpdateOne) SetMonthDay(v int16) *ContactDateUpdateOne {
+func (_u *ContactDateUpdateOne) SetMonthDay(v int) *ContactDateUpdateOne {
 	_u.mutation.ResetMonthDay()
 	_u.mutation.SetMonthDay(v)
 	return _u
 }
 
 // SetNillableMonthDay sets the "month_day" field if the given value is not nil.
-func (_u *ContactDateUpdateOne) SetNillableMonthDay(v *int16) *ContactDateUpdateOne {
+func (_u *ContactDateUpdateOne) SetNillableMonthDay(v *int) *ContactDateUpdateOne {
 	if v != nil {
 		_u.SetMonthDay(*v)
 	}
@@ -255,7 +279,7 @@ func (_u *ContactDateUpdateOne) SetNillableMonthDay(v *int16) *ContactDateUpdate
 }
 
 // AddMonthDay adds value to the "month_day" field.
-func (_u *ContactDateUpdateOne) AddMonthDay(v int16) *ContactDateUpdateOne {
+func (_u *ContactDateUpdateOne) AddMonthDay(v int) *ContactDateUpdateOne {
 	_u.mutation.AddMonthDay(v)
 	return _u
 }
@@ -291,6 +315,7 @@ func (_u *ContactDateUpdateOne) Select(field string, fields ...string) *ContactD
 
 // Save executes the query and returns the updated ContactDate entity.
 func (_u *ContactDateUpdateOne) Save(ctx context.Context) (*ContactDate, error) {
+	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -313,6 +338,14 @@ func (_u *ContactDateUpdateOne) Exec(ctx context.Context) error {
 func (_u *ContactDateUpdateOne) ExecX(ctx context.Context) {
 	if err := _u.Exec(ctx); err != nil {
 		panic(err)
+	}
+}
+
+// defaults sets the default values of the builder before save.
+func (_u *ContactDateUpdateOne) defaults() {
+	if _, ok := _u.mutation.UpdatedAt(); !ok {
+		v := contactdate.UpdateDefaultUpdatedAt()
+		_u.mutation.SetUpdatedAt(v)
 	}
 }
 
@@ -362,14 +395,17 @@ func (_u *ContactDateUpdateOne) sqlSave(ctx context.Context) (_node *ContactDate
 			}
 		}
 	}
+	if value, ok := _u.mutation.UpdatedAt(); ok {
+		_spec.SetField(contactdate.FieldUpdatedAt, field.TypeTime, value)
+	}
 	if value, ok := _u.mutation.Date(); ok {
 		_spec.SetField(contactdate.FieldDate, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.MonthDay(); ok {
-		_spec.SetField(contactdate.FieldMonthDay, field.TypeInt16, value)
+		_spec.SetField(contactdate.FieldMonthDay, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.AddedMonthDay(); ok {
-		_spec.AddField(contactdate.FieldMonthDay, field.TypeInt16, value)
+		_spec.AddField(contactdate.FieldMonthDay, field.TypeInt, value)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{

@@ -242,7 +242,7 @@ func candidates(ctx context.Context, s *ent.Scoped, f datetrigger.Field, band da
 		q = q.Where(contactdate.DateGTE(first.Midnight()), contactdate.DateLTE(last.Midnight()))
 	}
 	if days, ok := band.MonthDays(); ok {
-		q = q.Where(contactdate.MonthDayIn(lo.Map(days, func(d int, _ int) int16 { return int16(d) })...))
+		q = q.Where(contactdate.MonthDayIn(days...))
 	}
 	if changedAfter != nil {
 		q = q.Where(contactdate.HasContactWith(contact.WorkspaceID(s.WorkspaceID()), contact.UpdatedAtGT(*changedAfter)))

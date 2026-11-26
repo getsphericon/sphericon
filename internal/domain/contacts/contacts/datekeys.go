@@ -42,7 +42,7 @@ func keepDates(ctx context.Context, s *ent.Scoped, before, after *ent.Contact) e
 			SetKind(k.Field.Kind).
 			SetKey(k.Field.Key).
 			SetDate(k.Key.Midnight()).
-			SetMonthDay(int16(k.Key.MonthDay()))
+			SetMonthDay(k.Key.MonthDay())
 	}
 	return s.ContactDate().CreateBulk(rows...).Exec(ctx)
 }

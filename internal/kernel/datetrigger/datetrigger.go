@@ -109,7 +109,8 @@ type Keyed struct {
 // rewrites no stored value, so a field made datetime later finds its values keyed already.
 func (h Holder) Keys() []Keyed {
 	var keys []Keyed
-	fields := []Field{{Kind: Birthday}}
+	fields := make([]Field, 0, 1+len(h.CustomFields))
+	fields = append(fields, Field{Kind: Birthday})
 	for _, key := range slices.Sorted(maps.Keys(h.CustomFields)) {
 		fields = append(fields, Field{Kind: CustomField, Key: key})
 	}

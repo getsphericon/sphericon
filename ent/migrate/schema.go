@@ -1157,10 +1157,12 @@ var (
 	// ContactDatesColumns holds the columns for the "contact_dates" table.
 	ContactDatesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "kind", Type: field.TypeEnum, Enums: []string{"birthday", "customField"}},
 		{Name: "key", Type: field.TypeString},
 		{Name: "date", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "date"}},
-		{Name: "month_day", Type: field.TypeInt16},
+		{Name: "month_day", Type: field.TypeInt},
 		{Name: "contact_id", Type: field.TypeInt64},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
@@ -1172,13 +1174,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "contact_dates_contacts_dates",
-				Columns:    []*schema.Column{ContactDatesColumns[5]},
+				Columns:    []*schema.Column{ContactDatesColumns[7]},
 				RefColumns: []*schema.Column{ContactsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "contact_dates_workspaces_contact_dates",
-				Columns:    []*schema.Column{ContactDatesColumns[6]},
+				Columns:    []*schema.Column{ContactDatesColumns[8]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1187,22 +1189,22 @@ var (
 			{
 				Name:    "contact_dates_field_contact",
 				Unique:  true,
-				Columns: []*schema.Column{ContactDatesColumns[6], ContactDatesColumns[1], ContactDatesColumns[2], ContactDatesColumns[5]},
+				Columns: []*schema.Column{ContactDatesColumns[8], ContactDatesColumns[3], ContactDatesColumns[4], ContactDatesColumns[7]},
 			},
 			{
 				Name:    "contactdate_workspace_id_contact_id",
 				Unique:  false,
-				Columns: []*schema.Column{ContactDatesColumns[6], ContactDatesColumns[5]},
+				Columns: []*schema.Column{ContactDatesColumns[8], ContactDatesColumns[7]},
 			},
 			{
 				Name:    "contactdate_workspace_id_kind_key_month_day",
 				Unique:  false,
-				Columns: []*schema.Column{ContactDatesColumns[6], ContactDatesColumns[1], ContactDatesColumns[2], ContactDatesColumns[4]},
+				Columns: []*schema.Column{ContactDatesColumns[8], ContactDatesColumns[3], ContactDatesColumns[4], ContactDatesColumns[6]},
 			},
 			{
 				Name:    "contactdate_workspace_id_kind_key_date",
 				Unique:  false,
-				Columns: []*schema.Column{ContactDatesColumns[6], ContactDatesColumns[1], ContactDatesColumns[2], ContactDatesColumns[3]},
+				Columns: []*schema.Column{ContactDatesColumns[8], ContactDatesColumns[3], ContactDatesColumns[4], ContactDatesColumns[5]},
 			},
 		},
 	}

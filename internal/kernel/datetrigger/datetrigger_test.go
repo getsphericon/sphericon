@@ -13,9 +13,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/localcalendar"
 )
 
-// zones hold the extremes of the offsets (Kiritimati +14, Pago Pago -11, Baker Island's -12 is no
-// zone of a place), daylight-saving changes north and south, a half-hour offset and a change at
-// midnight; "" is no zone, the Workspace's or UTC.
+// zones hold the extremes of the offsets (Kiritimati +14, American Samoa -11; -12 is the zone of
+// no place), daylight-saving changes north and south, a half-hour offset and a change at midnight;
+// "" is no zone, the Workspace's or UTC.
 var zones = []string{"", "UTC", "Pacific/Kiritimati", "Pacific/Pago_Pago", "Europe/Berlin", "America/New_York", "Asia/Kolkata", "Australia/Lord_Howe", "America/Havana"}
 
 // drawZone is a zone name, nil for none.

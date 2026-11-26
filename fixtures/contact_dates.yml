@@ -317,3 +317,11 @@
   date: '2026-10-15'
   month_day: 1015
   workspace_id: 20
+# Globex (workspace 2): the foreign row the scoped-client isolation tests need, Reese's birthday.
+- id: 46
+  contact_id: 901
+  kind: birthday
+  key: ''
+  date: '1988-06-21'
+  month_day: 621
+  workspace_id: 2

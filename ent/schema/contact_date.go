@@ -32,7 +32,7 @@ func (ContactDate) Annotations() []schema.Annotation {
 }
 
 func (ContactDate) Mixin() []ent.Mixin {
-	return []ent.Mixin{WorkspaceMixin{Ref: "contact_dates"}}
+	return []ent.Mixin{TimeMixin{}, WorkspaceMixin{Ref: "contact_dates"}}
 }
 
 func (ContactDate) Fields() []ent.Field {
@@ -55,7 +55,7 @@ func (ContactDate) Fields() []ent.Field {
 			SchemaType(map[string]string{dialect.Postgres: "date"}),
 		// The key's month and day, month × 100 + day (contact_dates_month_day_check): a yearly date's
 		// band is a set of them.
-		field.Int16("month_day"),
+		field.Int("month_day"),
 	}
 }
 

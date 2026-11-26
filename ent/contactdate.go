@@ -20,6 +20,10 @@ type ContactDate struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID int64 `json:"id,omitempty"`
+	// CreatedAt holds the value of the "created_at" field.
+	CreatedAt time.Time `json:"created_at,omitempty"`
+	// UpdatedAt holds the value of the "updated_at" field.
+	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// WorkspaceID holds the value of the "workspace_id" field.
 	WorkspaceID int64 `json:"workspace_id,omitempty"`
 	// ContactID holds the value of the "contact_id" field.
@@ -31,7 +35,7 @@ type ContactDate struct {
 	// Date holds the value of the "date" field.
 	Date time.Time `json:"date,omitempty"`
 	// MonthDay holds the value of the "month_day" field.
-	MonthDay int16 `json:"month_day,omitempty"`
+	MonthDay int `json:"month_day,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ContactDateQuery when eager-loading is set.
 	Edges        ContactDateEdges `json:"edges"`
@@ -80,7 +84,7 @@ func (*ContactDate) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case contactdate.FieldKind, contactdate.FieldKey:
 			values[i] = new(sql.NullString)
-		case contactdate.FieldDate:
+		case contactdate.FieldCreatedAt, contactdate.FieldUpdatedAt, contactdate.FieldDate:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -103,6 +107,18 @@ func (_m *ContactDate) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
 			_m.ID = int64(value.Int64)
+		case contactdate.FieldCreatedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field created_at", values[i])
+			} else if value.Valid {
+				_m.CreatedAt = value.Time
+			}
+		case contactdate.FieldUpdatedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
+			} else if value.Valid {
+				_m.UpdatedAt = value.Time
+			}
 		case contactdate.FieldWorkspaceID:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field workspace_id", values[i])
@@ -137,7 +153,7 @@ func (_m *ContactDate) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field month_day", values[i])
 			} else if value.Valid {
-				_m.MonthDay = int16(value.Int64)
+				_m.MonthDay = int(value.Int64)
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -185,6 +201,12 @@ func (_m *ContactDate) String() string {
 	var builder strings.Builder
 	builder.WriteString("ContactDate(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
+	builder.WriteString("created_at=")
+	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("updated_at=")
+	builder.WriteString(_m.UpdatedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
 	builder.WriteString("workspace_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.WorkspaceID))
 	builder.WriteString(", ")

@@ -337,12 +337,12 @@ func (_q *ContactDateQuery) WithContact(opts ...func(*ContactQuery)) *ContactDat
 // Example:
 //
 //	var v []struct {
-//		WorkspaceID int64 `json:"workspace_id,omitempty"`
+//		CreatedAt time.Time `json:"created_at,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.ContactDate.Query().
-//		GroupBy(contactdate.FieldWorkspaceID).
+//		GroupBy(contactdate.FieldCreatedAt).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (_q *ContactDateQuery) GroupBy(field string, fields ...string) *ContactDateGroupBy {
@@ -360,11 +360,11 @@ func (_q *ContactDateQuery) GroupBy(field string, fields ...string) *ContactDate
 // Example:
 //
 //	var v []struct {
-//		WorkspaceID int64 `json:"workspace_id,omitempty"`
+//		CreatedAt time.Time `json:"created_at,omitempty"`
 //	}
 //
 //	client.ContactDate.Query().
-//		Select(contactdate.FieldWorkspaceID).
+//		Select(contactdate.FieldCreatedAt).
 //		Scan(ctx, &v)
 func (_q *ContactDateQuery) Select(fields ...string) *ContactDateSelect {
 	_q.ctx.Fields = append(_q.ctx.Fields, fields...)
