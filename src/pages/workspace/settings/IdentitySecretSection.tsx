@@ -1,8 +1,9 @@
-import { Box, Button, Code, CopyButton, Group, Text, Title } from '@mantine/core'
+import { Box, Button, Code, Group, Text, Title } from '@mantine/core'
 import { modals } from '@mantine/modals'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
+import { CopyTextButton } from '../../../components/CopyTextButton.tsx'
 import {
   siteIdentitySecretGetOptions,
   siteIdentitySecretRegenerateMutation,
@@ -54,13 +55,7 @@ export function IdentitySecretSection({ workspaceId }: { workspaceId: string }) 
       {secret ? (
         <Group gap="sm" mb="sm">
           <Code>{secret}</Code>
-          <CopyButton value={secret}>
-            {({ copied, copy }) => (
-              <Button size="xs" variant="light" onClick={copy}>
-                {copied ? t(($) => $.settings.copied) : t(($) => $.settings.copy)}
-              </Button>
-            )}
-          </CopyButton>
+          <CopyTextButton value={secret} size="xs" />
         </Group>
       ) : (
         <Text size="sm" mb="sm">

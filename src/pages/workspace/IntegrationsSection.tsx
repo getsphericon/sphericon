@@ -6,7 +6,6 @@ import {
   Checkbox,
   Code,
   Collapse,
-  CopyButton,
   Group,
   Menu,
   Modal,
@@ -33,6 +32,7 @@ import { DataTable } from 'mantine-datatable'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { CopyTextButton } from '../../components/CopyTextButton.tsx'
 import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
 import { TableSkeleton } from '../../components/Skeletons.tsx'
@@ -209,13 +209,7 @@ function IntegrationsList({
               <Text size="sm">{t(($) => $.settings.integrations.twilioCallbacks.body)}</Text>
               <Code block>{record.hookUrl}</Code>
               <Group>
-                <CopyButton value={record.hookUrl}>
-                  {({ copied, copy }) => (
-                    <Button size="compact-sm" variant="light" onClick={copy}>
-                      {copied ? t(($) => $.settings.copied) : t(($) => $.settings.copy)}
-                    </Button>
-                  )}
-                </CopyButton>
+                <CopyTextButton value={record.hookUrl} size="compact-sm" />
               </Group>
             </Stack>
           </Alert>

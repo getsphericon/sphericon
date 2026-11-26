@@ -5,7 +5,6 @@ import {
   Badge,
   Button,
   Code,
-  CopyButton,
   Group,
   Menu,
   Modal,
@@ -22,6 +21,7 @@ import { DataTable } from 'mantine-datatable'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { CopyTextButton } from '../../components/CopyTextButton.tsx'
 import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
 import { TableSkeleton } from '../../components/Skeletons.tsx'
@@ -330,13 +330,7 @@ export function MembersSection({ workspace }: { workspace: SiteWorkspaceResource
           <Alert color="yellow" title={t(($) => $.settings.members.inviteUrlNotice)}>
             <Group align="center" gap="sm" wrap="nowrap">
               <Code>{inviteUrl}</Code>
-              <CopyButton value={inviteUrl}>
-                {({ copied, copy }) => (
-                  <Button size="compact-sm" variant="light" onClick={copy}>
-                    {copied ? t(($) => $.settings.copied) : t(($) => $.settings.copy)}
-                  </Button>
-                )}
-              </CopyButton>
+              <CopyTextButton value={inviteUrl} size="compact-sm" />
             </Group>
           </Alert>
         ) : (

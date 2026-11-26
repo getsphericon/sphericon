@@ -1,18 +1,8 @@
-import {
-  Badge,
-  Button,
-  Code,
-  CopyButton,
-  Group,
-  Modal,
-  Stack,
-  Tabs,
-  Text,
-  Textarea,
-} from '@mantine/core'
+import { Badge, Button, Code, Group, Modal, Stack, Tabs, Text, Textarea } from '@mantine/core'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { CopyTextButton } from '../../components/CopyTextButton.tsx'
 import type { SendingDomainResource } from '../../generated/site/types.gen.ts'
 import { useVerifySendingDomain } from '../../hooks/useVerifySendingDomain.ts'
 import { SendingDomainStatus } from './SendingDomainStatus.tsx'
@@ -41,13 +31,13 @@ function ReadOnlyValue({
         value={value}
         aria-label={ariaLabel}
       />
-      <CopyButton value={value}>
-        {({ copied, copy }) => (
-          <Button size="compact-xs" variant="light" aria-label={ariaLabel} onClick={copy}>
-            {copied ? '✓' : '⧉'}
-          </Button>
-        )}
-      </CopyButton>
+      <CopyTextButton
+        value={value}
+        size="compact-xs"
+        aria-label={ariaLabel}
+        label="⧉"
+        copiedLabel="✓"
+      />
     </Group>
   )
 }
