@@ -233,7 +233,7 @@ func TestAnAutomationSendTheSendCapDefersRecordsItsWait(t *testing.T) {
 		require.NotNil(t, deferred.ResumeAt)
 		assert.WithinDuration(t, firstRetry, *deferred.ResumeAt, time.Microsecond, "until it is tried again")
 
-		testhelper.Elapse(firstRetry.Sub(time.Now()))
+		testhelper.Elapse(time.Until(firstRetry))
 		require.True(t, env.RunNextStep(t, step))
 		again := env.DB.AutomationRun.GetX(ctx, runID)
 		require.NotNil(t, again.DeferredSince)
@@ -245,7 +245,7 @@ func TestAnAutomationSendTheSendCapDefersRecordsItsWait(t *testing.T) {
 
 		// A token is back.
 		env.DB.SendCapLimiter.UpdateOneID(fixtures.SendCapLimiterAcmeID).SetDayTokens(1).SetRefilledAt(time.Now()).ExecX(ctx)
-		testhelper.Elapse(again.ResumeAt.Sub(time.Now()))
+		testhelper.Elapse(time.Until(*again.ResumeAt))
 		require.True(t, env.RunNextStep(t, step))
 		require.Len(t, fs.sent, 1, "the step sends")
 		sent := env.DB.AutomationRun.GetX(ctx, runID)

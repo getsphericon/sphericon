@@ -141,7 +141,9 @@ func TestExternalEnrollmentsReadTheWaitOfADeferredSend(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 	// The test's database is one transaction on one connection, so the send is not fenced against
 	// an exit on a connection of its own.
-	unfenced := func(ctx context.Context, _ *ent.Scoped, _ int64, effect func(context.Context) error) error { return effect(ctx) }
+	unfenced := func(ctx context.Context, _ *ent.Scoped, _ int64, effect func(context.Context) error) error {
+		return effect(ctx)
+	}
 	step := automations.NewStepExecution(env.Bus, env.OutboundModule(), testhelper.Module[*contacts.Module](env), unfenced, env.Cipher, nil, time.Now)
 	c := env.ExternalScoped(t, apitokens.ScopeEnrollmentsRead)
 	env.AcmeTwilio(t)
