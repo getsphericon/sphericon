@@ -688,6 +688,8 @@ export default interface Resources {
       "scheduleConfirm": {
         "confirm": "Schedule broadcast",
         "countError": "Could not count the recipients",
+        "outsideWindow": "{{count, number}} of them ({{share}}) would wait for their Sending window at that time: it is closed where they are. The last of them is reached on {{reachedAt}}." | "{{count, number}} of them ({{share}}) would wait for their Sending window at that time: it is closed where they are. The last of them is reached on {{reachedAt}}.",
+        "outsideWindowError": "Could not read the Sending window",
         "recipients": "It would reach {{count, number}} recipient now: the contacts of its audience who can receive it on its channel. Who receives it is settled when it sends." | "It would reach {{count, number}} recipients now: the contacts of its audience who can receive it on its channel. Who receives it is settled when it sends.",
         "title": "Schedule this broadcast?"
       },

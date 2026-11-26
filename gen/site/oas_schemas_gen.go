@@ -29059,6 +29059,91 @@ func (s *SiteBroadcastLinkClicksList) SetItems(val []LinkClicks) {
 	s.Items = val
 }
 
+// Request body for the share of a broadcast's audience outside its Sending window: the audience, as
+// the segment preview names it, and a moment.
+// Ref: #/components/schemas/SiteBroadcastOutsideWindowInput
+type SiteBroadcastOutsideWindowInput struct {
+	// The condition of the broadcast's segment; absent means all contacts.
+	Condition OptSegmentConditionInput `json:"condition"`
+	// The broadcast's Channel.
+	Channel BroadcastChannel `json:"channel"`
+	// The Integration the broadcast routes through; null or absent is the Channel's default.
+	IntegrationId OptNilEntityId `json:"integrationId"`
+	// The moment the broadcast would be scheduled at.
+	ScheduledAt Timestamp `json:"scheduledAt"`
+}
+
+// GetCondition returns the value of Condition.
+func (s *SiteBroadcastOutsideWindowInput) GetCondition() OptSegmentConditionInput {
+	return s.Condition
+}
+
+// GetChannel returns the value of Channel.
+func (s *SiteBroadcastOutsideWindowInput) GetChannel() BroadcastChannel {
+	return s.Channel
+}
+
+// GetIntegrationId returns the value of IntegrationId.
+func (s *SiteBroadcastOutsideWindowInput) GetIntegrationId() OptNilEntityId {
+	return s.IntegrationId
+}
+
+// GetScheduledAt returns the value of ScheduledAt.
+func (s *SiteBroadcastOutsideWindowInput) GetScheduledAt() Timestamp {
+	return s.ScheduledAt
+}
+
+// SetCondition sets the value of Condition.
+func (s *SiteBroadcastOutsideWindowInput) SetCondition(val OptSegmentConditionInput) {
+	s.Condition = val
+}
+
+// SetChannel sets the value of Channel.
+func (s *SiteBroadcastOutsideWindowInput) SetChannel(val BroadcastChannel) {
+	s.Channel = val
+}
+
+// SetIntegrationId sets the value of IntegrationId.
+func (s *SiteBroadcastOutsideWindowInput) SetIntegrationId(val OptNilEntityId) {
+	s.IntegrationId = val
+}
+
+// SetScheduledAt sets the value of ScheduledAt.
+func (s *SiteBroadcastOutsideWindowInput) SetScheduledAt(val Timestamp) {
+	s.ScheduledAt = val
+}
+
+// How many of a broadcast's recipients the Sending window would hold at a moment (ADR 0134).
+// Ref: #/components/schemas/SiteBroadcastOutsideWindowResult
+type SiteBroadcastOutsideWindowResult struct {
+	// How many of the recipients the broadcast would take would wait for their Sending window to open. A
+	// recipient whose zones are never open at once is skipped (no_local_time), not counted. Always 0 on
+	// email and Telegram, which no window holds.
+	Held int32 `json:"held"`
+	// When the last of them is reached: the latest moment their windows open. Absent when none is held.
+	ReachedAt OptTimestamp `json:"reachedAt"`
+}
+
+// GetHeld returns the value of Held.
+func (s *SiteBroadcastOutsideWindowResult) GetHeld() int32 {
+	return s.Held
+}
+
+// GetReachedAt returns the value of ReachedAt.
+func (s *SiteBroadcastOutsideWindowResult) GetReachedAt() OptTimestamp {
+	return s.ReachedAt
+}
+
+// SetHeld sets the value of Held.
+func (s *SiteBroadcastOutsideWindowResult) SetHeld(val int32) {
+	s.Held = val
+}
+
+// SetReachedAt sets the value of ReachedAt.
+func (s *SiteBroadcastOutsideWindowResult) SetReachedAt(val OptTimestamp) {
+	s.ReachedAt = val
+}
+
 // How far a sending broadcast has got. A broadcast limited by its Integration's Provider limit is
 // paced: recipients go out at an even interval. The Workspace's Send cap lets a day's worth out at a
 // time. The estimate is derived on the server from both, the later of the two, and `limitedBy` says

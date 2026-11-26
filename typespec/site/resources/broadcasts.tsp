@@ -209,6 +209,34 @@ model SiteTestSendBroadcastResult {
   captured: boolean;
 }
 
+/** Request body for the share of a broadcast's audience outside its Sending window: the audience, as the segment preview names it, and a moment */
+model SiteBroadcastOutsideWindowInput {
+  /** The condition of the broadcast's segment; absent means all contacts */
+  condition?: SegmentConditionInput;
+
+  /** The broadcast's Channel */
+  channel: BroadcastChannel;
+
+  /** The Integration the broadcast routes through; null or absent is the Channel's default */
+  integrationId?: EntityId | null;
+
+  /** The moment the broadcast would be scheduled at */
+  scheduledAt: Timestamp;
+}
+
+/** How many of a broadcast's recipients the Sending window would hold at a moment (ADR 0134) */
+model SiteBroadcastOutsideWindowResult {
+  /**
+   * How many of the recipients the broadcast would take would wait for their Sending window to
+   * open. A recipient whose zones are never open at once is skipped (no_local_time), not counted.
+   * Always 0 on email and Telegram, which no window holds.
+   */
+  held: int32;
+
+  /** When the last of them is reached: the latest moment their windows open. Absent when none is held. */
+  reachedAt?: Timestamp;
+}
+
 /** The order of the broadcast list */
 enum SiteBroadcastsOrder {
   /** The newest first: the default */
@@ -280,6 +308,21 @@ interface SiteBroadcasts
   cancel(...ResourceParameters<SiteBroadcastResource>):
     | SiteBroadcastResource
     | Problem;
+
+  /**
+   * The share of a broadcast's audience its Sending window would hold if it were sent at
+   * `scheduledAt` (ADR 0134): how many of the recipients the segment preview counts for the Channel
+   * and Integration would wait for their window, judged in every zone their number may be in and
+   * their own time zone, and when the last of them is reached. A condition that does not compile is
+   * a 422.
+   */
+  @collectionAction(SiteBroadcastResource, "outside-window")
+  @autoRoute
+  @requiresPermissions(#[])
+  outsideWindow(
+    ...ResourceCollectionParameters<SiteBroadcastResource>,
+    @body body: SiteBroadcastOutsideWindowInput,
+  ): SiteBroadcastOutsideWindowResult | Problem;
 
   /**
    * Send a one-off rendered preview to a single address: an email broadcast to the `email` given,

@@ -3964,6 +3964,14 @@ export const zSiteBindingResource = z.object({
 });
 
 /**
+ * How many of a broadcast's recipients the Sending window would hold at a moment (ADR 0134)
+ */
+export const zSiteBroadcastOutsideWindowResult = z.object({
+  held: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  reachedAt: z.exactOptional(zTimestamp)
+});
+
+/**
  * How far a sending broadcast has got. A broadcast limited by its Integration's Provider
  * limit is paced: recipients go out at an even interval. The Workspace's Send cap lets a
  * day's worth out at a time. The estimate is derived on the server from both, the later
@@ -5906,6 +5914,16 @@ export const zSiteAutomationResource = z.object({
   revision: zRevision,
   createdAt: zTimestamp,
   updatedAt: zTimestamp
+});
+
+/**
+ * Request body for the share of a broadcast's audience outside its Sending window: the audience, as the segment preview names it, and a moment
+ */
+export const zSiteBroadcastOutsideWindowInput = z.strictObject({
+  condition: z.exactOptional(zSegmentConditionInput),
+  channel: zBroadcastChannel,
+  integrationId: z.exactOptional(zEntityId.nullable()),
+  scheduledAt: zTimestamp
 });
 
 /**
@@ -8733,6 +8751,17 @@ export const zSiteAutomationsUnarchivePath = z.object({
  * The request has succeeded.
  */
 export const zSiteAutomationsUnarchiveResponse = zSiteAutomationResource;
+
+export const zSiteBroadcastsOutsideWindowBody = zSiteBroadcastOutsideWindowInput;
+
+export const zSiteBroadcastsOutsideWindowPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteBroadcastsOutsideWindowResponse = zSiteBroadcastOutsideWindowResult;
 
 export const zSiteRulesListPath = z.object({
   workspaceId: zWorkspaceId

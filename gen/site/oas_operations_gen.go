@@ -57,6 +57,7 @@ const (
 	SiteBroadcastsCreateOperation                       OperationName = "SiteBroadcastsCreate"
 	SiteBroadcastsGetOperation                          OperationName = "SiteBroadcastsGet"
 	SiteBroadcastsListOperation                         OperationName = "SiteBroadcastsList"
+	SiteBroadcastsOutsideWindowOperation                OperationName = "SiteBroadcastsOutsideWindow"
 	SiteBroadcastsScheduleOperation                     OperationName = "SiteBroadcastsSchedule"
 	SiteBroadcastsSendOperation                         OperationName = "SiteBroadcastsSend"
 	SiteBroadcastsTestSendOperation                     OperationName = "SiteBroadcastsTestSend"

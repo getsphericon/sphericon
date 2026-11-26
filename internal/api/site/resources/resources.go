@@ -575,6 +575,7 @@ type Converter interface {
 	// goverter:enum:transform value
 	EngagementTrackingOutcomeToResource(source engagementtracking.Outcome) siteapi.EngagementTrackingOutcome
 	TestSendResultToResource(source outboundmessages.Result) siteapi.SiteTestSendBroadcastResult
+	OutsideWindowToResource(source broadcasts.OutsideWindow) siteapi.SiteBroadcastOutsideWindowResult
 	SmsLengthLimitToResource(source smsrender.Limit) siteapi.SiteSmsLengthLimit
 	SmsOptOutToResource(source *confirmations.SMSOptOut) siteapi.SmsOptOut
 	// goverter:enum:transform value

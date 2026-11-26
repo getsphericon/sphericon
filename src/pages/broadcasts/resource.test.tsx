@@ -10,6 +10,7 @@ import {
   handleSiteBroadcastsCreate,
   handleSiteBroadcastsGet,
   handleSiteBroadcastsList,
+  handleSiteBroadcastsOutsideWindow,
   handleSiteBroadcastsSchedule,
   handleSiteBroadcastsSend,
   handleSiteBroadcastsTestSend,
@@ -36,6 +37,7 @@ import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { requestGate } from '../../test/requestGate.ts'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
+import { formatDateTime } from '../../utils/datetime.ts'
 import { BroadcastCreatePage, BroadcastEditPage } from './resource.tsx'
 
 const CREATE_ROUTE = routeMount(broadcastsCreateRoute, { workspaceId: 'TestWs01' })
@@ -768,6 +770,59 @@ test("scheduling a Segment's broadcast counts the Segment's recipients on its In
   expect(previews).toEqual([{ condition: VIPS, channel: 'email', integrationId: testId(21) }])
 })
 
+// Before Schedule, an SMS Broadcast says how many of its recipients the Sending window would hold
+// at the moment chosen and when the last of them is reached (ADR 0134): asked of the same audience
+// as the count, so the share reads against it.
+test('scheduling an SMS broadcast shows the share its Sending window holds and when the last is reached', async () => {
+  const asked: unknown[] = []
+  serveDraft({ text: 'Hello' }, 'sms')
+  worker.use(
+    handleSiteSegmentsPreview({ body: { count: 12, recipients: 10, unknownEngagement: 0 } }),
+    handleSiteBroadcastsOutsideWindow(async ({ request }) => {
+      asked.push(await request.json())
+      return HttpResponse.json({ held: 4, reachedAt: '2030-05-07T12:00:00Z' })
+    }),
+  )
+  const { screen } = await renderWithRouter(<BroadcastEditPage />, EDIT_ROUTE)
+
+  await screen.getByLabelText('Schedule for').fill('2030-05-06T21:00')
+  await screen.getByRole('button', { name: 'Schedule', exact: true }).click()
+
+  await expect.element(screen.getByText(/10 recipients/)).toBeVisible()
+  await expect
+    .element(screen.getByText(/4 of them \(40%\) would wait for their Sending window/))
+    .toBeVisible()
+  await expect
+    .element(
+      screen.getByText(new RegExp(`reached on ${formatDateTime('2030-05-07T12:00:00Z', 'en')}`)),
+    )
+    .toBeVisible()
+  expect(asked).toEqual([
+    { channel: 'sms', scheduledAt: new Date('2030-05-06T21:00').toISOString() },
+  ])
+})
+
+// An email Broadcast meets no Sending window: nothing is asked or said of one.
+test('scheduling an email broadcast says nothing of a Sending window', async () => {
+  const asked: unknown[] = []
+  serveDraft()
+  worker.use(
+    handleSiteSegmentsPreview({ body: { count: 12, recipients: 10, unknownEngagement: 0 } }),
+    handleSiteBroadcastsOutsideWindow(async ({ request }) => {
+      asked.push(await request.json())
+      return HttpResponse.json({ held: 0 })
+    }),
+  )
+  const { screen } = await renderWithRouter(<BroadcastEditPage />, EDIT_ROUTE)
+
+  await screen.getByLabelText('Schedule for').fill('2030-05-06T21:00')
+  await screen.getByRole('button', { name: 'Schedule', exact: true }).click()
+
+  await expect.element(screen.getByText(/10 recipients/)).toBeVisible()
+  await expect.element(screen.getByText(/Sending window/)).not.toBeInTheDocument()
+  expect(asked).toEqual([])
+})
+
 test('a refused Send now shows the error toast and stays on the page', async () => {
   serveDraft()
   worker.use(
@@ -890,6 +945,7 @@ test('an SMS broadcast is test-sent to the typed number, then scheduled', async 
       return HttpResponse.json({ captured: false })
     }),
     handleSiteSegmentsPreview({ body: { count: 3, recipients: 2, unknownEngagement: 0 } }),
+    handleSiteBroadcastsOutsideWindow({ body: { held: 0 } }),
     handleSiteBroadcastsSchedule(async ({ request }) => {
       schedules.push(await request.json())
       return HttpResponse.json(draft.as('scheduled'))
