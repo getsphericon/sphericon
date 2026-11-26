@@ -248,6 +248,9 @@ func (OutboundMessage) Edges() []ent.Edge {
 		// The short links of its text and buttons (ADR 0083) die with it.
 		edge.To("tracked_links", TrackedLink.Type).
 			Annotations(entsql.OnDelete(entsql.Cascade)),
+		// Its places under the Frequency cap (ADR 0178) die with it: a dropped claim frees them.
+		edge.To("frequency_counts", FrequencyCount.Type).
+			Annotations(entsql.OnDelete(entsql.Cascade)),
 		edge.To("broadcast", Broadcast.Type).Field("broadcast_id").Unique().
 			Annotations(entsql.OnDelete(entsql.Restrict)),
 		edge.To("automation", Automation.Type).Field("automation_id").Unique().

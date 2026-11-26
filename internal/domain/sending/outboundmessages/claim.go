@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/internal/domain/sending/frequencycap"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 )
@@ -39,13 +40,14 @@ func (m *Module) find(ctx context.Context, s *ent.Scoped, key string) (*ent.Outb
 	return msg, err
 }
 
-// claim takes the right to send under req.Key: it inserts the pending row before
-// the provider is called. If a row already exists (existing, from Send's replay
+// claim takes the right to send under req.Key to targets: it inserts the pending row before
+// the provider is called (claimNew). If a row already exists (existing, from Send's replay
 // check, or one that appears in a race) it is replayed when final, taken over when
-// its lease has expired, and otherwise reported as ErrInProgress.
-func (m *Module) claim(ctx context.Context, s *ent.Scoped, req Request, dest string, g gateResult, existing *ent.OutboundMessage) (*ent.OutboundMessage, *Result, error) {
+// its lease has expired, and otherwise reported as ErrInProgress. A claim taken over counts nothing
+// new: its rows have held its places since it was written (ADR 0178).
+func (m *Module) claim(ctx context.Context, s *ent.Scoped, req Request, dest string, g gateResult, existing *ent.OutboundMessage, targets []target) (*ent.OutboundMessage, *Result, error) {
 	if existing == nil {
-		id, holder, err := m.insert(ctx, s, req, m.newMessage(s, req, dest, g))
+		id, holder, err := m.claimNew(ctx, s, req, dest, g, targets)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -67,6 +69,42 @@ func (m *Module) claim(ctx context.Context, s *ent.Scoped, req Request, dest str
 		return nil, &r, nil
 	}
 	return m.adopt(ctx, s, req, existing)
+}
+
+// claimNew writes the new claim under req.Key in one transaction with its count (ADR 0178): a
+// marketing message counts at the Destination of each of targets, and the transaction holds the lock
+// of each of them a Frequency cap holds (frequencycap.Module.Within, whose rule decides). A message
+// that does not count (recipientLimitsOf) takes no lock and writes no row. id and holder are
+// insert's; the source's stop is asked once the transaction commits (claim), so a stop committed
+// meanwhile finds the row.
+func (m *Module) claimNew(ctx context.Context, s *ent.Scoped, req Request, dest string, g gateResult, targets []target) (id int64, holder *ent.OutboundMessage, err error) {
+	limits, err := recipientLimitsOf(req.Kind())
+	if err != nil {
+		return 0, nil, err
+	}
+	in := frequencycap.Claim{Channel: req.Channel()}
+	if limits.counts {
+		in.Destinations = lo.Map(targets, func(t target, _ int) string { return t.dest })
+	}
+	err = m.caps.Within(ctx, s, in, func(l *ent.DestinationLocked) error {
+		var werr error
+		id, holder, werr = m.writeClaim(ctx, l, req, dest, g, in)
+		return werr
+	})
+	return id, holder, err
+}
+
+// writeClaim inserts the claim under req.Key and, when it is new, counts it at in's Destinations, in
+// the transaction that holds their locks: it takes the scope that stands for them, so no claim is
+// written without them. An insert that loses the key writes no row: holder is judged as one found up
+// front.
+func (m *Module) writeClaim(ctx context.Context, l *ent.DestinationLocked, req Request, dest string, g gateResult, in frequencycap.Claim) (int64, *ent.OutboundMessage, error) {
+	ls := l.Scope()
+	id, holder, err := m.insert(ctx, ls, req, m.newMessage(ls, req, dest, g))
+	if err != nil || holder != nil || len(in.Destinations) == 0 {
+		return id, holder, err
+	}
+	return id, nil, m.caps.Count(ctx, l, frequencycap.CountInput{MessageID: id, Channel: in.Channel, Destinations: in.Destinations})
 }
 
 // skipUnclaimed records a send Skipped before any claim (no Destination, Send-eligibility) as a

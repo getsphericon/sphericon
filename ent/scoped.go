@@ -37,6 +37,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/frequencycap"
+	"github.com/getsphericon/sphericon/ent/frequencycount"
 	"github.com/getsphericon/sphericon/ent/heldorderevent"
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/identitysecret"
@@ -570,6 +571,22 @@ func (s *Scoped) verifyFrequencyCap(ctx context.Context, ids []int64) error {
 	}
 	if n != len(ids) {
 		return fmt.Errorf("FrequencyCap: %w", ErrNotInWorkspace)
+	}
+	return nil
+}
+
+// verifyFrequencyCount fails with ErrNotInWorkspace unless every id is a FrequencyCount of the Workspace.
+func (s *Scoped) verifyFrequencyCount(ctx context.Context, ids []int64) error {
+	ids = uniqueIDs(ids)
+	if len(ids) == 0 {
+		return nil
+	}
+	n, err := s.c.FrequencyCount.Query().Where(s.inFrequencyCount(frequencycount.IDIn(ids...))...).Count(ctx)
+	if err != nil {
+		return err
+	}
+	if n != len(ids) {
+		return fmt.Errorf("FrequencyCount: %w", ErrNotInWorkspace)
 	}
 	return nil
 }
@@ -34919,6 +34936,714 @@ const (
 	RoleOf_FrequencyCapScopedUpdate_Exec   = RoleStep
 )
 
+// FrequencyCountScoped reaches FrequencyCount entities of one Workspace.
+type FrequencyCountScoped struct{ s *Scoped }
+
+// FrequencyCount returns the FrequencyCount entities of the Workspace.
+func (s *Scoped) FrequencyCount() *FrequencyCountScoped { return &FrequencyCountScoped{s: s} }
+
+const (
+	TypeOf_FrequencyCountScoped             = TypeWrapper
+	EntityOf_FrequencyCountScoped           = "FrequencyCount"
+	RoleOf_Scoped_FrequencyCount            = RoleNone
+	RoleOf_FrequencyCountScoped_Query       = RoleRead
+	RoleOf_FrequencyCountScoped_Get         = RoleRead
+	RoleOf_FrequencyCountScoped_DeleteOneID = RoleStart
+	RoleOf_FrequencyCountScoped_UpdateOneID = RoleStart
+	RoleOf_FrequencyCountScoped_Delete      = RoleStart
+	RoleOf_FrequencyCountScoped_Create      = RoleStart
+	RoleOf_FrequencyCountScoped_CreateBulk  = RoleStart
+	RoleOf_FrequencyCountScoped_Update      = RoleStart
+)
+
+// inFrequencyCount confines predicates of FrequencyCount rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inFrequencyCount(ps ...predicate.FrequencyCount) []predicate.FrequencyCount {
+	return append([]predicate.FrequencyCount{frequencycount.WorkspaceID(s.ws)}, ps...)
+}
+
+// Query returns a FrequencyCount query already confined to the Workspace.
+func (t *FrequencyCountScoped) Query() *FrequencyCountQuery {
+	return t.s.c.FrequencyCount.Query().Where(t.s.inFrequencyCount()...)
+}
+
+// Get returns the FrequencyCount with the id; a row of another Workspace is not found.
+func (t *FrequencyCountScoped) Get(ctx context.Context, id int64) (*FrequencyCount, error) {
+	return t.Query().Where(frequencycount.ID(id)).Only(ctx)
+}
+
+// writeFrequencyCount runs a write of FrequencyCount rows: run builds it on the client of the scope it is
+// given and executes it, and reaches no other client. The
+// entity is not audited, so run gets the scope itself.
+func (s *Scoped) writeFrequencyCount(ctx context.Context, verb string, where []predicate.FrequencyCount, unchanged unchangedRows, run func(s *Scoped) ([]int64, error)) error {
+	_, _, _ = verb, where, unchanged
+	_, err := run(s)
+	return err
+}
+
+// checkFrequencyCount verifies every reference the mutations set against the Workspace of s, one query per
+// reference for all of them.
+func (s *Scoped) checkFrequencyCount(ctx context.Context, ms ...*FrequencyCountMutation) error {
+	{
+		var ids []int64
+		for _, m := range ms {
+			ids = append(ids, m.OutboundMessageIDs()...)
+		}
+		if err := s.verifyOutboundMessage(ctx, ids); err != nil {
+			return fmt.Errorf("outbound_message: %w", err)
+		}
+	}
+	return nil
+}
+
+// FrequencyCountScopedDeleteOne deletes one FrequencyCount: it keeps the row's id and its fences, and builds the
+// ent delete on the client the delete runs on.
+type FrequencyCountScopedDeleteOne struct {
+	s     *Scoped
+	id    int64
+	where []predicate.FrequencyCount
+}
+
+// DeleteOneID deletes the FrequencyCount with the id; a row of another Workspace is not found.
+func (t *FrequencyCountScoped) DeleteOneID(id int64) *FrequencyCountScopedDeleteOne {
+	return &FrequencyCountScopedDeleteOne{s: t.s, id: id}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *FrequencyCountScopedDeleteOne) Where(ps ...predicate.FrequencyCount) *FrequencyCountScopedDeleteOne {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+const (
+	TypeOf_FrequencyCountScopedDeleteOne       = TypeScopedDelete
+	EntityOf_FrequencyCountScopedDeleteOne     = "FrequencyCount"
+	RoleOf_FrequencyCountScopedDeleteOne_Where = RoleStep
+	RoleOf_FrequencyCountScopedDeleteOne_Exec  = RoleStep
+)
+
+// Exec deletes the row; a missing row is a NotFoundError.
+func (x *FrequencyCountScopedDeleteOne) Exec(ctx context.Context) error {
+	where := x.s.inFrequencyCount(x.where...)
+	return x.s.writeFrequencyCount(ctx, "delete", append([]predicate.FrequencyCount{frequencycount.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
+		return nil, s.c.FrequencyCount.DeleteOneID(x.id).Where(where...).Exec(ctx)
+	})
+}
+
+// FrequencyCountScopedDelete deletes the FrequencyCount rows of one Workspace that match its predicates, which it
+// keeps until the delete is built on the client it runs on.
+type FrequencyCountScopedDelete struct {
+	s     *Scoped
+	where []predicate.FrequencyCount
+}
+
+// Delete deletes the FrequencyCount entities of the Workspace that match the predicates.
+func (t *FrequencyCountScoped) Delete() *FrequencyCountScopedDelete {
+	return &FrequencyCountScopedDelete{s: t.s}
+}
+
+// Where appends predicates the rows must match.
+func (x *FrequencyCountScopedDelete) Where(ps ...predicate.FrequencyCount) *FrequencyCountScopedDelete {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+const (
+	TypeOf_FrequencyCountScopedDelete       = TypeScopedDelete
+	EntityOf_FrequencyCountScopedDelete     = "FrequencyCount"
+	RoleOf_FrequencyCountScopedDelete_Where = RoleStep
+	RoleOf_FrequencyCountScopedDelete_Exec  = RoleStep
+)
+
+// Exec deletes the rows and returns how many were deleted.
+func (x *FrequencyCountScopedDelete) Exec(ctx context.Context) (int, error) {
+	where := x.s.inFrequencyCount(x.where...)
+	var n int
+	err := x.s.writeFrequencyCount(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		var err error
+		n, err = s.c.FrequencyCount.Delete().Where(where...).Exec(ctx)
+		return nil, err
+	})
+	return written(n, err)
+}
+
+// ---------------------------------------------------------------- create
+
+// FrequencyCountScopedCreate creates a FrequencyCount of one Workspace. It has no way to name a Workspace: it
+// keeps what its setters set and builds the ent create, in its Workspace, on the client the create
+// runs on.
+type FrequencyCountScopedCreate struct {
+	s   *Scoped
+	set []func(*FrequencyCountCreate)
+}
+
+// Create starts a FrequencyCount in the Workspace.
+func (t *FrequencyCountScoped) Create() *FrequencyCountScopedCreate {
+	return &FrequencyCountScopedCreate{s: t.s}
+}
+
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *FrequencyCountScopedCreate) raw(s *Scoped) *FrequencyCountCreate {
+	b := s.c.FrequencyCount.Create().SetWorkspaceID(s.ws)
+	for _, set := range x.set {
+		set(b)
+	}
+	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *FrequencyCountScopedCreate) build(ctx context.Context, s *Scoped) (*FrequencyCountCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkFrequencyCount(ctx, b.Mutation()))
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (x *FrequencyCountScopedCreate) SetCreatedAt(v time.Time) *FrequencyCountScopedCreate {
+	x.set = append(x.set, func(b *FrequencyCountCreate) { b.SetCreatedAt(v) })
+	return x
+}
+
+const RoleOf_FrequencyCountScopedCreate_SetCreatedAt = RoleStep
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (x *FrequencyCountScopedCreate) SetNillableCreatedAt(v *time.Time) *FrequencyCountScopedCreate {
+	if v != nil {
+		x.SetCreatedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_FrequencyCountScopedCreate_SetNillableCreatedAt = RoleStep
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *FrequencyCountScopedCreate) SetUpdatedAt(v time.Time) *FrequencyCountScopedCreate {
+	x.set = append(x.set, func(b *FrequencyCountCreate) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_FrequencyCountScopedCreate_SetUpdatedAt = RoleStep
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (x *FrequencyCountScopedCreate) SetNillableUpdatedAt(v *time.Time) *FrequencyCountScopedCreate {
+	if v != nil {
+		x.SetUpdatedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_FrequencyCountScopedCreate_SetNillableUpdatedAt = RoleStep
+
+// SetOutboundMessageID sets the "outbound_message_id" field.
+func (x *FrequencyCountScopedCreate) SetOutboundMessageID(v int64) *FrequencyCountScopedCreate {
+	x.set = append(x.set, func(b *FrequencyCountCreate) { b.SetOutboundMessageID(v) })
+	return x
+}
+
+const RoleOf_FrequencyCountScopedCreate_SetOutboundMessageID = RoleStep
+
+// SetChannel sets the "channel" field.
+func (x *FrequencyCountScopedCreate) SetChannel(v channels.Channel) *FrequencyCountScopedCreate {
+	x.set = append(x.set, func(b *FrequencyCountCreate) { b.SetChannel(v) })
+	return x
+}
+
+const RoleOf_FrequencyCountScopedCreate_SetChannel = RoleStep
+
+// SetDestination sets the "destination" field.
+func (x *FrequencyCountScopedCreate) SetDestination(v string) *FrequencyCountScopedCreate {
+	x.set = append(x.set, func(b *FrequencyCountCreate) { b.SetDestination(v) })
+	return x
+}
+
+const RoleOf_FrequencyCountScopedCreate_SetDestination = RoleStep
+
+// SetCountedAt sets the "counted_at" field.
+func (x *FrequencyCountScopedCreate) SetCountedAt(v time.Time) *FrequencyCountScopedCreate {
+	x.set = append(x.set, func(b *FrequencyCountCreate) { b.SetCountedAt(v) })
+	return x
+}
+
+const RoleOf_FrequencyCountScopedCreate_SetCountedAt = RoleStep
+
+// SetOutboundMessage sets the "outbound_message" edge to the OutboundMessage entity.
+func (x *FrequencyCountScopedCreate) SetOutboundMessage(v *OutboundMessage) *FrequencyCountScopedCreate {
+	x.set = append(x.set, func(b *FrequencyCountCreate) { b.SetOutboundMessage(v) })
+	return x
+}
+
+const RoleOf_FrequencyCountScopedCreate_SetOutboundMessage = RoleStep
+
+const (
+	TypeOf_FrequencyCountScopedCreate                        = TypeScopedCreate
+	EntityOf_FrequencyCountScopedCreate                      = "FrequencyCount"
+	RoleOf_FrequencyCountScopedCreate_Save                   = RoleStep
+	RoleOf_FrequencyCountScopedCreate_Exec                   = RoleStep
+	RoleOf_FrequencyCountScopedCreate_OnConflictColumns      = RoleStart
+	RoleOf_FrequencyCountScopedCreate_OnConflictColumnsWhere = RoleStart
+)
+
+// Save verifies the references against the Workspace, then creates the FrequencyCount.
+func (x *FrequencyCountScopedCreate) Save(ctx context.Context) (*FrequencyCount, error) {
+	var created *FrequencyCount
+	err := x.s.writeFrequencyCount(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if created, err = b.Save(ctx); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+	return written(created, err)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *FrequencyCountScopedCreate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- create bulk
+
+// FrequencyCountScopedCreateBulk creates several FrequencyCount entities of one Workspace at once.
+type FrequencyCountScopedCreateBulk struct {
+	s  *Scoped
+	xs []*FrequencyCountScopedCreate
+}
+
+// CreateBulk batches creates started on this Workspace.
+func (t *FrequencyCountScoped) CreateBulk(xs ...*FrequencyCountScopedCreate) *FrequencyCountScopedCreateBulk {
+	return &FrequencyCountScopedCreateBulk{s: t.s, xs: xs}
+}
+
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *FrequencyCountScopedCreateBulk) refuseForeign() error {
+	for _, x := range b.xs {
+		if x.s.ws != b.s.ws {
+			return fmt.Errorf("FrequencyCount: builder of another scope: %w", ErrNotInWorkspace)
+		}
+	}
+	return nil
+}
+
+// build makes the ent bulk create on the client of s, every create of it in the Workspace, and
+// verifies the references of all of them, one query per reference rather than one per row.
+func (b *FrequencyCountScopedCreateBulk) build(ctx context.Context, s *Scoped) (*FrequencyCountCreateBulk, error) {
+	builders := make([]*FrequencyCountCreate, len(b.xs))
+	ms := make([]*FrequencyCountMutation, len(b.xs))
+	for i, x := range b.xs {
+		builders[i] = x.raw(s)
+		ms[i] = builders[i].Mutation()
+	}
+	if err := s.checkFrequencyCount(ctx, ms...); err != nil {
+		return nil, err
+	}
+	return s.c.FrequencyCount.CreateBulk(builders...), nil
+}
+
+// Save verifies every builder's references, then creates the FrequencyCount entities.
+func (b *FrequencyCountScopedCreateBulk) Save(ctx context.Context) ([]*FrequencyCount, error) {
+	if err := b.refuseForeign(); err != nil {
+		return nil, err
+	}
+	var created []*FrequencyCount
+	err := b.s.writeFrequencyCount(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		raw, err := b.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if created, err = raw.Save(ctx); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+	return written(created, err)
+}
+
+// Exec is like Save, discarding the entities.
+func (b *FrequencyCountScopedCreateBulk) Exec(ctx context.Context) error {
+	_, err := b.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_FrequencyCountScopedCreateBulk                   = TypeScopedCreate
+	EntityOf_FrequencyCountScopedCreateBulk                 = "FrequencyCount"
+	RoleOf_FrequencyCountScopedCreateBulk_Save              = RoleStep
+	RoleOf_FrequencyCountScopedCreateBulk_Exec              = RoleStep
+	RoleOf_FrequencyCountScopedCreateBulk_OnConflictColumns = RoleStart
+)
+
+// ---------------------------------------------------------------- upsert
+
+// FrequencyCountScopedUpsert is the "ON CONFLICT ... DO UPDATE" setter. It cannot move a row to
+// another Workspace or point a reference at a value that was not verified on create.
+type FrequencyCountScopedUpsert struct{ u *sql.UpdateSet }
+
+const (
+	TypeOf_FrequencyCountScopedUpsert   = TypeScopedUpsert
+	EntityOf_FrequencyCountScopedUpsert = "FrequencyCount"
+)
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *FrequencyCountScopedUpsert) SetUpdatedAt(v time.Time) *FrequencyCountScopedUpsert {
+	u.u.Set(frequencycount.FieldUpdatedAt, v)
+	return u
+}
+
+const RoleOf_FrequencyCountScopedUpsert_SetUpdatedAt = RoleStep
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *FrequencyCountScopedUpsert) UpdateUpdatedAt() *FrequencyCountScopedUpsert {
+	u.u.SetExcluded(frequencycount.FieldUpdatedAt)
+	return u
+}
+
+const RoleOf_FrequencyCountScopedUpsert_UpdateUpdatedAt = RoleStep
+
+// conflictOptions confines the DO UPDATE part to rows of the Workspace.
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *FrequencyCountScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
+		sql.ConflictColumns(columns...),
+		sql.UpdateWhere(sql.EQ(frequencycount.FieldWorkspaceID, t.s.ws)),
+	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
+}
+
+// FrequencyCountScopedUpsertOne is the "upsert" of one FrequencyCount: the create it was started on, which a setter
+// called later still changes, and what to do on a conflict.
+type FrequencyCountScopedUpsertOne struct {
+	x        *FrequencyCountScopedCreate
+	conflict []sql.ConflictOption
+	set      []func(*FrequencyCountUpsertOne)
+	// doNothing: the conflict action is DO NOTHING (the only upsert an audited entity allows).
+	doNothing bool
+}
+
+const (
+	TypeOf_FrequencyCountScopedUpsertOne                 = TypeScopedUpsert
+	EntityOf_FrequencyCountScopedUpsertOne               = "FrequencyCount"
+	RoleOf_FrequencyCountScopedUpsertOne_UpdateNewValues = RoleStep
+	RoleOf_FrequencyCountScopedUpsertOne_Ignore          = RoleStep
+	RoleOf_FrequencyCountScopedUpsertOne_DoNothing       = RoleStep
+	RoleOf_FrequencyCountScopedUpsertOne_Update          = RoleStep
+	RoleOf_FrequencyCountScopedUpsertOne_Exec            = RoleStep
+	RoleOf_FrequencyCountScopedUpsertOne_ID              = RoleStep
+)
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (x *FrequencyCountScopedCreate) OnConflictColumns(columns ...string) *FrequencyCountScopedUpsertOne {
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *FrequencyCountScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *FrequencyCountScopedUpsertOne {
+	return &FrequencyCountScopedUpsertOne{x: x, conflict: (&FrequencyCountScoped{s: x.s}).conflictOptions(columns, target)}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *FrequencyCountScopedUpsertOne) UpdateNewValues() *FrequencyCountScopedUpsertOne {
+	u.set = append(u.set, func(r *FrequencyCountUpsertOne) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *FrequencyCountScopedUpsertOne) Ignore() *FrequencyCountScopedUpsertOne {
+	u.set = append(u.set, func(r *FrequencyCountUpsertOne) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *FrequencyCountScopedUpsertOne) DoNothing() *FrequencyCountScopedUpsertOne {
+	u.set = append(u.set, func(r *FrequencyCountUpsertOne) { r.DoNothing() })
+	u.doNothing = true
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *FrequencyCountScopedUpsertOne) Update(set func(*FrequencyCountScopedUpsert)) *FrequencyCountScopedUpsertOne {
+	u.set = append(u.set, func(r *FrequencyCountUpsertOne) {
+		r.Update(func(s *FrequencyCountUpsert) { set(&FrequencyCountScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// build makes the ent upsert on the client of s and verifies the create's references.
+func (u *FrequencyCountScopedUpsertOne) build(ctx context.Context, s *Scoped) (*FrequencyCountUpsertOne, error) {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
+		return nil, err
+	}
+	r := b.OnConflict(u.conflict...)
+	for _, set := range u.set {
+		set(r)
+	}
+	return r, nil
+}
+
+// Exec verifies the references, then executes the upsert.
+func (u *FrequencyCountScopedUpsertOne) Exec(ctx context.Context) error {
+	_, err := u.ID(ctx)
+	return err
+}
+
+// ID is like Exec, returning the inserted or updated id.
+func (u *FrequencyCountScopedUpsertOne) ID(ctx context.Context) (int64, error) {
+	var id int64
+	err := u.x.s.writeFrequencyCount(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		r, err := u.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if id, err = r.ID(ctx); err != nil {
+			return nil, err
+		}
+		return []int64{id}, nil
+	})
+	return written(id, err)
+}
+
+// FrequencyCountScopedUpsertBulk is the "upsert" of several FrequencyCount entities.
+type FrequencyCountScopedUpsertBulk struct {
+	b       *FrequencyCountScopedCreateBulk
+	t       *FrequencyCountScoped
+	columns []string
+	set     []func(*FrequencyCountUpsertBulk)
+}
+
+const (
+	TypeOf_FrequencyCountScopedUpsertBulk                 = TypeScopedUpsert
+	EntityOf_FrequencyCountScopedUpsertBulk               = "FrequencyCount"
+	RoleOf_FrequencyCountScopedUpsertBulk_UpdateNewValues = RoleStep
+	RoleOf_FrequencyCountScopedUpsertBulk_Ignore          = RoleStep
+	RoleOf_FrequencyCountScopedUpsertBulk_DoNothing       = RoleStep
+	RoleOf_FrequencyCountScopedUpsertBulk_Update          = RoleStep
+	RoleOf_FrequencyCountScopedUpsertBulk_Exec            = RoleStep
+)
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (b *FrequencyCountScopedCreateBulk) OnConflictColumns(columns ...string) *FrequencyCountScopedUpsertBulk {
+	return &FrequencyCountScopedUpsertBulk{b: b, t: &FrequencyCountScoped{s: b.s}, columns: columns}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *FrequencyCountScopedUpsertBulk) UpdateNewValues() *FrequencyCountScopedUpsertBulk {
+	u.set = append(u.set, func(r *FrequencyCountUpsertBulk) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *FrequencyCountScopedUpsertBulk) Ignore() *FrequencyCountScopedUpsertBulk {
+	u.set = append(u.set, func(r *FrequencyCountUpsertBulk) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *FrequencyCountScopedUpsertBulk) DoNothing() *FrequencyCountScopedUpsertBulk {
+	u.set = append(u.set, func(r *FrequencyCountUpsertBulk) { r.DoNothing() })
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *FrequencyCountScopedUpsertBulk) Update(set func(*FrequencyCountScopedUpsert)) *FrequencyCountScopedUpsertBulk {
+	u.set = append(u.set, func(r *FrequencyCountUpsertBulk) {
+		r.Update(func(s *FrequencyCountUpsert) { set(&FrequencyCountScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// Exec verifies every builder's references, then executes the upsert.
+func (u *FrequencyCountScopedUpsertBulk) Exec(ctx context.Context) error {
+	if err := u.b.refuseForeign(); err != nil {
+		return err
+	}
+	return u.b.s.writeFrequencyCount(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		raw, err := u.b.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
+		for _, set := range u.set {
+			set(r)
+		}
+		return nil, r.Exec(ctx)
+	})
+}
+
+// ---------------------------------------------------------------- update
+
+// FrequencyCountScopedUpdateOne updates one FrequencyCount. It has no way to move the row to another Workspace: it
+// keeps the row's id, its fences and what its setters set, and builds the ent update on the client
+// the update runs on.
+type FrequencyCountScopedUpdateOne struct {
+	s     *Scoped
+	id    int64
+	where []predicate.FrequencyCount
+	set   []func(*FrequencyCountUpdateOne)
+}
+
+// UpdateOneID updates the FrequencyCount with the id; a row of another Workspace is not found.
+func (t *FrequencyCountScoped) UpdateOneID(id int64) *FrequencyCountScopedUpdateOne {
+	return &FrequencyCountScopedUpdateOne{s: t.s, id: id}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *FrequencyCountScopedUpdateOne) Where(ps ...predicate.FrequencyCount) *FrequencyCountScopedUpdateOne {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *FrequencyCountScopedUpdateOne) SetUpdatedAt(v time.Time) *FrequencyCountScopedUpdateOne {
+	x.set = append(x.set, func(b *FrequencyCountUpdateOne) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_FrequencyCountScopedUpdateOne_SetUpdatedAt = RoleStep
+
+// Save verifies the references against the Workspace, then updates the FrequencyCount.
+func (x *FrequencyCountScopedUpdateOne) Save(ctx context.Context) (*FrequencyCount, error) {
+	return x.save(ctx, "update", skipUnchanged)
+}
+
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *FrequencyCountScopedUpdateOne) build(ctx context.Context, s *Scoped) (*FrequencyCountUpdateOne, error) {
+	b := s.c.FrequencyCount.UpdateOneID(x.id).Where(s.inFrequencyCount(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkFrequencyCount(ctx, b.Mutation()))
+}
+
+// save is Save under a verb, doing with an unchanged row what unchanged says.
+func (x *FrequencyCountScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*FrequencyCount, error) {
+	where := x.s.inFrequencyCount(x.where...)
+	var updated *FrequencyCount
+	err := x.s.writeFrequencyCount(ctx, verb, append([]predicate.FrequencyCount{frequencycount.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		updated, err = b.Save(ctx)
+		return nil, err
+	})
+	return written(updated, err)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *FrequencyCountScopedUpdateOne) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_FrequencyCountScopedUpdateOne       = TypeScopedUpdate
+	EntityOf_FrequencyCountScopedUpdateOne     = "FrequencyCount"
+	RoleOf_FrequencyCountScopedUpdateOne_Where = RoleStep
+	RoleOf_FrequencyCountScopedUpdateOne_Save  = RoleStep
+	RoleOf_FrequencyCountScopedUpdateOne_Exec  = RoleStep
+)
+
+// FrequencyCountScopedUpdate is a conditional bulk update of one Workspace: it keeps its predicates and
+// what its setters and modifiers set, and builds the ent update on the client the update runs on.
+type FrequencyCountScopedUpdate struct {
+	s     *Scoped
+	where []predicate.FrequencyCount
+	set   []func(*FrequencyCountUpdate)
+	// modErr is set when a Modify modifier tried to assign workspace_id.
+	modErr error
+}
+
+// Update updates the FrequencyCount entities of the Workspace that match the predicates.
+func (t *FrequencyCountScoped) Update() *FrequencyCountScopedUpdate {
+	return &FrequencyCountScopedUpdate{s: t.s}
+}
+
+// Where appends predicates the rows must match.
+func (x *FrequencyCountScopedUpdate) Where(ps ...predicate.FrequencyCount) *FrequencyCountScopedUpdate {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+// Modify adds a statement modifier for computed assignments the typed setters cannot
+// express (SET col = LEAST(col + ..., ...)). A modifier gets assignment-only access
+// (ScopedAssign), so it cannot widen the Workspace predicate; an assignment to
+// workspace_id is refused: each modifier is probed against a scratch statement here, and
+// Save fails with ErrWorkspaceAssign.
+func (x *FrequencyCountScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *FrequencyCountScopedUpdate {
+	for _, m := range modifiers {
+		probe := &ScopedAssign{u: sql.Update(frequencycount.Table)}
+		m(probe)
+		if probe.workspace {
+			x.modErr = ErrWorkspaceAssign
+		}
+		x.set = append(x.set, func(b *FrequencyCountUpdate) {
+			b.Modify(func(u *sql.UpdateBuilder) { m(&ScopedAssign{u: u}) })
+		})
+	}
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *FrequencyCountScopedUpdate) SetUpdatedAt(v time.Time) *FrequencyCountScopedUpdate {
+	x.set = append(x.set, func(b *FrequencyCountUpdate) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_FrequencyCountScopedUpdate_SetUpdatedAt = RoleStep
+
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *FrequencyCountScopedUpdate) build(ctx context.Context, s *Scoped) (*FrequencyCountUpdate, error) {
+	b := s.c.FrequencyCount.Update().Where(s.inFrequencyCount(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkFrequencyCount(ctx, b.Mutation()))
+}
+
+// Save verifies the references against the Workspace, then updates the rows and
+// returns how many changed.
+func (x *FrequencyCountScopedUpdate) Save(ctx context.Context) (int, error) {
+	if x.modErr != nil {
+		return 0, x.modErr
+	}
+	where := x.s.inFrequencyCount(x.where...)
+	var n int
+	err := x.s.writeFrequencyCount(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		n, err = b.Save(ctx)
+		return nil, err
+	})
+	return written(n, err)
+}
+
+// Exec is like Save, discarding the count.
+func (x *FrequencyCountScopedUpdate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_FrequencyCountScopedUpdate        = TypeScopedUpdate
+	EntityOf_FrequencyCountScopedUpdate      = "FrequencyCount"
+	RoleOf_FrequencyCountScopedUpdate_Where  = RoleStep
+	RoleOf_FrequencyCountScopedUpdate_Modify = RoleStep
+	RoleOf_FrequencyCountScopedUpdate_Save   = RoleStep
+	RoleOf_FrequencyCountScopedUpdate_Exec   = RoleStep
+)
+
 // HeldOrderEventScoped reaches HeldOrderEvent entities of one Workspace.
 type HeldOrderEventScoped struct{ s *Scoped }
 
@@ -48075,6 +48800,15 @@ func (s *Scoped) checkOutboundMessage(ctx context.Context, ms ...*OutboundMessag
 	{
 		var ids []int64
 		for _, m := range ms {
+			ids = append(ids, m.FrequencyCountsIDs()...)
+		}
+		if err := s.verifyFrequencyCount(ctx, ids); err != nil {
+			return fmt.Errorf("frequency_counts: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, m := range ms {
 			ids = append(ids, m.BroadcastIDs()...)
 		}
 		if err := s.verifyBroadcast(ctx, ids); err != nil {
@@ -48954,6 +49688,22 @@ func (x *OutboundMessageScopedCreate) AddTrackedLinks(v ...*TrackedLink) *Outbou
 }
 
 const RoleOf_OutboundMessageScopedCreate_AddTrackedLinks = RoleStep
+
+// AddFrequencyCountIDs adds the "frequency_counts" edge to the FrequencyCount entity by IDs.
+func (x *OutboundMessageScopedCreate) AddFrequencyCountIDs(ids ...int64) *OutboundMessageScopedCreate {
+	x.set = append(x.set, func(b *OutboundMessageCreate) { b.AddFrequencyCountIDs(ids...) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedCreate_AddFrequencyCountIDs = RoleStep
+
+// AddFrequencyCounts adds the "frequency_counts" edges to the FrequencyCount entity.
+func (x *OutboundMessageScopedCreate) AddFrequencyCounts(v ...*FrequencyCount) *OutboundMessageScopedCreate {
+	x.set = append(x.set, func(b *OutboundMessageCreate) { b.AddFrequencyCounts(v...) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedCreate_AddFrequencyCounts = RoleStep
 
 // SetBroadcast sets the "broadcast" edge to the Broadcast entity.
 func (x *OutboundMessageScopedCreate) SetBroadcast(v *Broadcast) *OutboundMessageScopedCreate {
@@ -51043,6 +51793,46 @@ func (x *OutboundMessageScopedUpdateOne) RemoveTrackedLinks(v ...*TrackedLink) *
 
 const RoleOf_OutboundMessageScopedUpdateOne_RemoveTrackedLinks = RoleStep
 
+// AddFrequencyCountIDs adds the "frequency_counts" edge to the FrequencyCount entity by IDs.
+func (x *OutboundMessageScopedUpdateOne) AddFrequencyCountIDs(ids ...int64) *OutboundMessageScopedUpdateOne {
+	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.AddFrequencyCountIDs(ids...) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdateOne_AddFrequencyCountIDs = RoleStep
+
+// AddFrequencyCounts adds the "frequency_counts" edges to the FrequencyCount entity.
+func (x *OutboundMessageScopedUpdateOne) AddFrequencyCounts(v ...*FrequencyCount) *OutboundMessageScopedUpdateOne {
+	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.AddFrequencyCounts(v...) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdateOne_AddFrequencyCounts = RoleStep
+
+// ClearFrequencyCounts clears the "frequency_counts" edges to the FrequencyCount entity.
+func (x *OutboundMessageScopedUpdateOne) ClearFrequencyCounts() *OutboundMessageScopedUpdateOne {
+	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.ClearFrequencyCounts() })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdateOne_ClearFrequencyCounts = RoleStep
+
+// RemoveFrequencyCountIDs removes the "frequency_counts" edge to FrequencyCount entities by IDs.
+func (x *OutboundMessageScopedUpdateOne) RemoveFrequencyCountIDs(ids ...int64) *OutboundMessageScopedUpdateOne {
+	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.RemoveFrequencyCountIDs(ids...) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdateOne_RemoveFrequencyCountIDs = RoleStep
+
+// RemoveFrequencyCounts removes "frequency_counts" edges to FrequencyCount entities.
+func (x *OutboundMessageScopedUpdateOne) RemoveFrequencyCounts(v ...*FrequencyCount) *OutboundMessageScopedUpdateOne {
+	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.RemoveFrequencyCounts(v...) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdateOne_RemoveFrequencyCounts = RoleStep
+
 // SetBroadcast sets the "broadcast" edge to the Broadcast entity.
 func (x *OutboundMessageScopedUpdateOne) SetBroadcast(v *Broadcast) *OutboundMessageScopedUpdateOne {
 	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.SetBroadcast(v) })
@@ -52191,6 +52981,46 @@ func (x *OutboundMessageScopedUpdate) RemoveTrackedLinks(v ...*TrackedLink) *Out
 }
 
 const RoleOf_OutboundMessageScopedUpdate_RemoveTrackedLinks = RoleStep
+
+// AddFrequencyCountIDs adds the "frequency_counts" edge to the FrequencyCount entity by IDs.
+func (x *OutboundMessageScopedUpdate) AddFrequencyCountIDs(ids ...int64) *OutboundMessageScopedUpdate {
+	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.AddFrequencyCountIDs(ids...) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdate_AddFrequencyCountIDs = RoleStep
+
+// AddFrequencyCounts adds the "frequency_counts" edges to the FrequencyCount entity.
+func (x *OutboundMessageScopedUpdate) AddFrequencyCounts(v ...*FrequencyCount) *OutboundMessageScopedUpdate {
+	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.AddFrequencyCounts(v...) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdate_AddFrequencyCounts = RoleStep
+
+// ClearFrequencyCounts clears the "frequency_counts" edges to the FrequencyCount entity.
+func (x *OutboundMessageScopedUpdate) ClearFrequencyCounts() *OutboundMessageScopedUpdate {
+	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.ClearFrequencyCounts() })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdate_ClearFrequencyCounts = RoleStep
+
+// RemoveFrequencyCountIDs removes the "frequency_counts" edge to FrequencyCount entities by IDs.
+func (x *OutboundMessageScopedUpdate) RemoveFrequencyCountIDs(ids ...int64) *OutboundMessageScopedUpdate {
+	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.RemoveFrequencyCountIDs(ids...) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdate_RemoveFrequencyCountIDs = RoleStep
+
+// RemoveFrequencyCounts removes "frequency_counts" edges to FrequencyCount entities.
+func (x *OutboundMessageScopedUpdate) RemoveFrequencyCounts(v ...*FrequencyCount) *OutboundMessageScopedUpdate {
+	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.RemoveFrequencyCounts(v...) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdate_RemoveFrequencyCounts = RoleStep
 
 // SetBroadcast sets the "broadcast" edge to the Broadcast entity.
 func (x *OutboundMessageScopedUpdate) SetBroadcast(v *Broadcast) *OutboundMessageScopedUpdate {

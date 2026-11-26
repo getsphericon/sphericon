@@ -71,6 +71,21 @@ func (env *TestEnv) QueueBehindKey(tb testing.TB, key int64, writers ...Writer) 
 	return env.queueBehind(tb, holders, release, writers)
 }
 
+// RunBesideKey runs run while it holds the advisory lock key in a transaction of its own, and
+// returns run's error: run must finish without waiting for the key, so a writer that takes that lock
+// fails the test (nothing arrives within the timeout). It is QueueBehindKey's other side: a write
+// that must take no lock of the key.
+func (env *TestEnv) RunBesideKey(tb testing.TB, key int64, run func() error) error {
+	tb.Helper()
+	env.requireCommitted(tb, "RunBesideKey")
+	release := sync.OnceFunc(env.holdKey(tb, key))
+	tb.Cleanup(release) // a writer stuck behind the key must not outlive the test
+	defer release()
+	result := make(chan error, 1)
+	go func() { result <- run() }()
+	return Receive(tb, result, "the writer finishes while the key is held")
+}
+
 // holding runs hold and returns the transaction it holds open, told apart from those held before
 // it, and its release.
 func (env *TestEnv) holding(tb testing.TB, hold func() (release func())) (holders []int, release func()) {

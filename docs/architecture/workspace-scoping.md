@@ -170,7 +170,7 @@ They take a `*ent.Scoped` (modules: an explicit `s *ent.Scoped` parameter) and n
 
 ## Raw-client holders
 
-**The raw `*ent.Client` is allowed only in:** `internal/domain/sending/bindings` (only `Chats.PruneStartTokens`, the Instance-wide purge of lapsed and used Start tokens, ADR 0076, called by a river job; every other function takes a `*ent.Scoped`), `internal/domain/sending/capturedmessages` (only `Purge`, the Instance-wide age purge of Captured messages, ADR 0058, called by a river job; every other function takes a `*ent.Scoped`), `internal/domain/identity/users` (the User,
+**The raw `*ent.Client` is allowed only in:** `internal/domain/sending/bindings` (only `Chats.PruneStartTokens`, the Instance-wide purge of lapsed and used Start tokens, ADR 0076, called by a river job; every other function takes a `*ent.Scoped`), `internal/domain/sending/capturedmessages` (only `Purge`, the Instance-wide age purge of Captured messages, ADR 0058, called by a river job; every other function takes a `*ent.Scoped`), `internal/domain/sending/frequencycap` (only `Module.Prune`, the Instance-wide age prune of the Frequency cap's count rows, ADR 0178, called by a river job; every other function takes a `*ent.Scoped` or the `*ent.DestinationLocked` of its lock transaction), `internal/domain/identity/users` (the User,
 ADR 0102, and the Pending sign-up of a Sign-in provider, ADR 0062: no User
 or Workspace exists yet, and its completion creates them, its Consent records and an Invitation's Membership in one
 transaction, which the Sign-up (`internal/domain/identity/signup`) opens; the prune river jobs only call it), `internal/domain/identity/invitations` (the lookup of a pending Invitation by its

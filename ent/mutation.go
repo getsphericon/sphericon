@@ -43,6 +43,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/eventjournalentry"
 	"github.com/getsphericon/sphericon/ent/eventreceipt"
 	"github.com/getsphericon/sphericon/ent/frequencycap"
+	"github.com/getsphericon/sphericon/ent/frequencycount"
 	"github.com/getsphericon/sphericon/ent/heldorderevent"
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/identitysecret"
@@ -153,6 +154,7 @@ const (
 	TypeEventJournalEntry          = "EventJournalEntry"
 	TypeEventReceipt               = "EventReceipt"
 	TypeFrequencyCap               = "FrequencyCap"
+	TypeFrequencyCount             = "FrequencyCount"
 	TypeHeldOrderEvent             = "HeldOrderEvent"
 	TypeHold                       = "Hold"
 	TypeIdentitySecret             = "IdentitySecret"
@@ -36025,6 +36027,765 @@ func (m *FrequencyCapMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown FrequencyCap edge %s", name)
 }
 
+// FrequencyCountMutation represents an operation that mutates the FrequencyCount nodes in the graph.
+type FrequencyCountMutation struct {
+	config
+	op                      Op
+	typ                     string
+	id                      *int64
+	created_at              *time.Time
+	updated_at              *time.Time
+	channel                 *channels.Channel
+	destination             *string
+	counted_at              *time.Time
+	clearedFields           map[string]struct{}
+	workspace               *int64
+	clearedworkspace        bool
+	outbound_message        *int64
+	clearedoutbound_message bool
+	done                    bool
+	oldValue                func(context.Context) (*FrequencyCount, error)
+	predicates              []predicate.FrequencyCount
+}
+
+var _ ent.Mutation = (*FrequencyCountMutation)(nil)
+
+// frequencycountOption allows management of the mutation configuration using functional options.
+type frequencycountOption func(*FrequencyCountMutation)
+
+// newFrequencyCountMutation creates new mutation for the FrequencyCount entity.
+func newFrequencyCountMutation(c config, op Op, opts ...frequencycountOption) *FrequencyCountMutation {
+	m := &FrequencyCountMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeFrequencyCount,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withFrequencyCountID sets the ID field of the mutation.
+func withFrequencyCountID(id int64) frequencycountOption {
+	return func(m *FrequencyCountMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *FrequencyCount
+		)
+		m.oldValue = func(ctx context.Context) (*FrequencyCount, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().FrequencyCount.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withFrequencyCount sets the old FrequencyCount of the mutation.
+func withFrequencyCount(node *FrequencyCount) frequencycountOption {
+	return func(m *FrequencyCountMutation) {
+		m.oldValue = func(context.Context) (*FrequencyCount, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m FrequencyCountMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m FrequencyCountMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of FrequencyCount entities.
+func (m *FrequencyCountMutation) SetID(id int64) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *FrequencyCountMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *FrequencyCountMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().FrequencyCount.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *FrequencyCountMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *FrequencyCountMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the FrequencyCount entity.
+// If the FrequencyCount object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FrequencyCountMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *FrequencyCountMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *FrequencyCountMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *FrequencyCountMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the FrequencyCount entity.
+// If the FrequencyCount object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FrequencyCountMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *FrequencyCountMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetWorkspaceID sets the "workspace_id" field.
+func (m *FrequencyCountMutation) SetWorkspaceID(i int64) {
+	m.workspace = &i
+}
+
+// WorkspaceID returns the value of the "workspace_id" field in the mutation.
+func (m *FrequencyCountMutation) WorkspaceID() (r int64, exists bool) {
+	v := m.workspace
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWorkspaceID returns the old "workspace_id" field's value of the FrequencyCount entity.
+// If the FrequencyCount object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FrequencyCountMutation) OldWorkspaceID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWorkspaceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWorkspaceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWorkspaceID: %w", err)
+	}
+	return oldValue.WorkspaceID, nil
+}
+
+// ResetWorkspaceID resets all changes to the "workspace_id" field.
+func (m *FrequencyCountMutation) ResetWorkspaceID() {
+	m.workspace = nil
+}
+
+// SetOutboundMessageID sets the "outbound_message_id" field.
+func (m *FrequencyCountMutation) SetOutboundMessageID(i int64) {
+	m.outbound_message = &i
+}
+
+// OutboundMessageID returns the value of the "outbound_message_id" field in the mutation.
+func (m *FrequencyCountMutation) OutboundMessageID() (r int64, exists bool) {
+	v := m.outbound_message
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOutboundMessageID returns the old "outbound_message_id" field's value of the FrequencyCount entity.
+// If the FrequencyCount object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FrequencyCountMutation) OldOutboundMessageID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOutboundMessageID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOutboundMessageID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOutboundMessageID: %w", err)
+	}
+	return oldValue.OutboundMessageID, nil
+}
+
+// ResetOutboundMessageID resets all changes to the "outbound_message_id" field.
+func (m *FrequencyCountMutation) ResetOutboundMessageID() {
+	m.outbound_message = nil
+}
+
+// SetChannel sets the "channel" field.
+func (m *FrequencyCountMutation) SetChannel(c channels.Channel) {
+	m.channel = &c
+}
+
+// Channel returns the value of the "channel" field in the mutation.
+func (m *FrequencyCountMutation) Channel() (r channels.Channel, exists bool) {
+	v := m.channel
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldChannel returns the old "channel" field's value of the FrequencyCount entity.
+// If the FrequencyCount object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FrequencyCountMutation) OldChannel(ctx context.Context) (v channels.Channel, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldChannel is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldChannel requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldChannel: %w", err)
+	}
+	return oldValue.Channel, nil
+}
+
+// ResetChannel resets all changes to the "channel" field.
+func (m *FrequencyCountMutation) ResetChannel() {
+	m.channel = nil
+}
+
+// SetDestination sets the "destination" field.
+func (m *FrequencyCountMutation) SetDestination(s string) {
+	m.destination = &s
+}
+
+// Destination returns the value of the "destination" field in the mutation.
+func (m *FrequencyCountMutation) Destination() (r string, exists bool) {
+	v := m.destination
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDestination returns the old "destination" field's value of the FrequencyCount entity.
+// If the FrequencyCount object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FrequencyCountMutation) OldDestination(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDestination is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDestination requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDestination: %w", err)
+	}
+	return oldValue.Destination, nil
+}
+
+// ResetDestination resets all changes to the "destination" field.
+func (m *FrequencyCountMutation) ResetDestination() {
+	m.destination = nil
+}
+
+// SetCountedAt sets the "counted_at" field.
+func (m *FrequencyCountMutation) SetCountedAt(t time.Time) {
+	m.counted_at = &t
+}
+
+// CountedAt returns the value of the "counted_at" field in the mutation.
+func (m *FrequencyCountMutation) CountedAt() (r time.Time, exists bool) {
+	v := m.counted_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCountedAt returns the old "counted_at" field's value of the FrequencyCount entity.
+// If the FrequencyCount object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FrequencyCountMutation) OldCountedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCountedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCountedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCountedAt: %w", err)
+	}
+	return oldValue.CountedAt, nil
+}
+
+// ResetCountedAt resets all changes to the "counted_at" field.
+func (m *FrequencyCountMutation) ResetCountedAt() {
+	m.counted_at = nil
+}
+
+// ClearWorkspace clears the "workspace" edge to the Workspace entity.
+func (m *FrequencyCountMutation) ClearWorkspace() {
+	m.clearedworkspace = true
+	m.clearedFields[frequencycount.FieldWorkspaceID] = struct{}{}
+}
+
+// WorkspaceCleared reports if the "workspace" edge to the Workspace entity was cleared.
+func (m *FrequencyCountMutation) WorkspaceCleared() bool {
+	return m.clearedworkspace
+}
+
+// WorkspaceIDs returns the "workspace" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// WorkspaceID instead. It exists only for internal usage by the builders.
+func (m *FrequencyCountMutation) WorkspaceIDs() (ids []int64) {
+	if id := m.workspace; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetWorkspace resets all changes to the "workspace" edge.
+func (m *FrequencyCountMutation) ResetWorkspace() {
+	m.workspace = nil
+	m.clearedworkspace = false
+}
+
+// ClearOutboundMessage clears the "outbound_message" edge to the OutboundMessage entity.
+func (m *FrequencyCountMutation) ClearOutboundMessage() {
+	m.clearedoutbound_message = true
+	m.clearedFields[frequencycount.FieldOutboundMessageID] = struct{}{}
+}
+
+// OutboundMessageCleared reports if the "outbound_message" edge to the OutboundMessage entity was cleared.
+func (m *FrequencyCountMutation) OutboundMessageCleared() bool {
+	return m.clearedoutbound_message
+}
+
+// OutboundMessageIDs returns the "outbound_message" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// OutboundMessageID instead. It exists only for internal usage by the builders.
+func (m *FrequencyCountMutation) OutboundMessageIDs() (ids []int64) {
+	if id := m.outbound_message; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetOutboundMessage resets all changes to the "outbound_message" edge.
+func (m *FrequencyCountMutation) ResetOutboundMessage() {
+	m.outbound_message = nil
+	m.clearedoutbound_message = false
+}
+
+// Where appends a list predicates to the FrequencyCountMutation builder.
+func (m *FrequencyCountMutation) Where(ps ...predicate.FrequencyCount) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the FrequencyCountMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *FrequencyCountMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.FrequencyCount, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *FrequencyCountMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *FrequencyCountMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (FrequencyCount).
+func (m *FrequencyCountMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *FrequencyCountMutation) Fields() []string {
+	fields := make([]string, 0, 7)
+	if m.created_at != nil {
+		fields = append(fields, frequencycount.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, frequencycount.FieldUpdatedAt)
+	}
+	if m.workspace != nil {
+		fields = append(fields, frequencycount.FieldWorkspaceID)
+	}
+	if m.outbound_message != nil {
+		fields = append(fields, frequencycount.FieldOutboundMessageID)
+	}
+	if m.channel != nil {
+		fields = append(fields, frequencycount.FieldChannel)
+	}
+	if m.destination != nil {
+		fields = append(fields, frequencycount.FieldDestination)
+	}
+	if m.counted_at != nil {
+		fields = append(fields, frequencycount.FieldCountedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *FrequencyCountMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case frequencycount.FieldCreatedAt:
+		return m.CreatedAt()
+	case frequencycount.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case frequencycount.FieldWorkspaceID:
+		return m.WorkspaceID()
+	case frequencycount.FieldOutboundMessageID:
+		return m.OutboundMessageID()
+	case frequencycount.FieldChannel:
+		return m.Channel()
+	case frequencycount.FieldDestination:
+		return m.Destination()
+	case frequencycount.FieldCountedAt:
+		return m.CountedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *FrequencyCountMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case frequencycount.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case frequencycount.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case frequencycount.FieldWorkspaceID:
+		return m.OldWorkspaceID(ctx)
+	case frequencycount.FieldOutboundMessageID:
+		return m.OldOutboundMessageID(ctx)
+	case frequencycount.FieldChannel:
+		return m.OldChannel(ctx)
+	case frequencycount.FieldDestination:
+		return m.OldDestination(ctx)
+	case frequencycount.FieldCountedAt:
+		return m.OldCountedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown FrequencyCount field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *FrequencyCountMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case frequencycount.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case frequencycount.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case frequencycount.FieldWorkspaceID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWorkspaceID(v)
+		return nil
+	case frequencycount.FieldOutboundMessageID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOutboundMessageID(v)
+		return nil
+	case frequencycount.FieldChannel:
+		v, ok := value.(channels.Channel)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetChannel(v)
+		return nil
+	case frequencycount.FieldDestination:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDestination(v)
+		return nil
+	case frequencycount.FieldCountedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCountedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown FrequencyCount field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *FrequencyCountMutation) AddedFields() []string {
+	var fields []string
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *FrequencyCountMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *FrequencyCountMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown FrequencyCount numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *FrequencyCountMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *FrequencyCountMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *FrequencyCountMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown FrequencyCount nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *FrequencyCountMutation) ResetField(name string) error {
+	switch name {
+	case frequencycount.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case frequencycount.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case frequencycount.FieldWorkspaceID:
+		m.ResetWorkspaceID()
+		return nil
+	case frequencycount.FieldOutboundMessageID:
+		m.ResetOutboundMessageID()
+		return nil
+	case frequencycount.FieldChannel:
+		m.ResetChannel()
+		return nil
+	case frequencycount.FieldDestination:
+		m.ResetDestination()
+		return nil
+	case frequencycount.FieldCountedAt:
+		m.ResetCountedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown FrequencyCount field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *FrequencyCountMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.workspace != nil {
+		edges = append(edges, frequencycount.EdgeWorkspace)
+	}
+	if m.outbound_message != nil {
+		edges = append(edges, frequencycount.EdgeOutboundMessage)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *FrequencyCountMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case frequencycount.EdgeWorkspace:
+		if id := m.workspace; id != nil {
+			return []ent.Value{*id}
+		}
+	case frequencycount.EdgeOutboundMessage:
+		if id := m.outbound_message; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *FrequencyCountMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *FrequencyCountMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *FrequencyCountMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedworkspace {
+		edges = append(edges, frequencycount.EdgeWorkspace)
+	}
+	if m.clearedoutbound_message {
+		edges = append(edges, frequencycount.EdgeOutboundMessage)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *FrequencyCountMutation) EdgeCleared(name string) bool {
+	switch name {
+	case frequencycount.EdgeWorkspace:
+		return m.clearedworkspace
+	case frequencycount.EdgeOutboundMessage:
+		return m.clearedoutbound_message
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *FrequencyCountMutation) ClearEdge(name string) error {
+	switch name {
+	case frequencycount.EdgeWorkspace:
+		m.ClearWorkspace()
+		return nil
+	case frequencycount.EdgeOutboundMessage:
+		m.ClearOutboundMessage()
+		return nil
+	}
+	return fmt.Errorf("unknown FrequencyCount unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *FrequencyCountMutation) ResetEdge(name string) error {
+	switch name {
+	case frequencycount.EdgeWorkspace:
+		m.ResetWorkspace()
+		return nil
+	case frequencycount.EdgeOutboundMessage:
+		m.ResetOutboundMessage()
+		return nil
+	}
+	return fmt.Errorf("unknown FrequencyCount edge %s", name)
+}
+
 // HeldOrderEventMutation represents an operation that mutates the HeldOrderEvent nodes in the graph.
 type HeldOrderEventMutation struct {
 	config
@@ -51639,6 +52400,9 @@ type OutboundMessageMutation struct {
 	tracked_links              map[int64]struct{}
 	removedtracked_links       map[int64]struct{}
 	clearedtracked_links       bool
+	frequency_counts           map[int64]struct{}
+	removedfrequency_counts    map[int64]struct{}
+	clearedfrequency_counts    bool
 	broadcast                  *int64
 	clearedbroadcast           bool
 	automation                 *int64
@@ -53740,6 +54504,60 @@ func (m *OutboundMessageMutation) ResetTrackedLinks() {
 	m.removedtracked_links = nil
 }
 
+// AddFrequencyCountIDs adds the "frequency_counts" edge to the FrequencyCount entity by ids.
+func (m *OutboundMessageMutation) AddFrequencyCountIDs(ids ...int64) {
+	if m.frequency_counts == nil {
+		m.frequency_counts = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.frequency_counts[ids[i]] = struct{}{}
+	}
+}
+
+// ClearFrequencyCounts clears the "frequency_counts" edge to the FrequencyCount entity.
+func (m *OutboundMessageMutation) ClearFrequencyCounts() {
+	m.clearedfrequency_counts = true
+}
+
+// FrequencyCountsCleared reports if the "frequency_counts" edge to the FrequencyCount entity was cleared.
+func (m *OutboundMessageMutation) FrequencyCountsCleared() bool {
+	return m.clearedfrequency_counts
+}
+
+// RemoveFrequencyCountIDs removes the "frequency_counts" edge to the FrequencyCount entity by IDs.
+func (m *OutboundMessageMutation) RemoveFrequencyCountIDs(ids ...int64) {
+	if m.removedfrequency_counts == nil {
+		m.removedfrequency_counts = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.frequency_counts, ids[i])
+		m.removedfrequency_counts[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedFrequencyCounts returns the removed IDs of the "frequency_counts" edge to the FrequencyCount entity.
+func (m *OutboundMessageMutation) RemovedFrequencyCountsIDs() (ids []int64) {
+	for id := range m.removedfrequency_counts {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// FrequencyCountsIDs returns the "frequency_counts" edge IDs in the mutation.
+func (m *OutboundMessageMutation) FrequencyCountsIDs() (ids []int64) {
+	for id := range m.frequency_counts {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetFrequencyCounts resets all changes to the "frequency_counts" edge.
+func (m *OutboundMessageMutation) ResetFrequencyCounts() {
+	m.frequency_counts = nil
+	m.clearedfrequency_counts = false
+	m.removedfrequency_counts = nil
+}
+
 // ClearBroadcast clears the "broadcast" edge to the Broadcast entity.
 func (m *OutboundMessageMutation) ClearBroadcast() {
 	m.clearedbroadcast = true
@@ -54961,12 +55779,15 @@ func (m *OutboundMessageMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *OutboundMessageMutation) AddedEdges() []string {
-	edges := make([]string, 0, 10)
+	edges := make([]string, 0, 11)
 	if m.workspace != nil {
 		edges = append(edges, outboundmessage.EdgeWorkspace)
 	}
 	if m.tracked_links != nil {
 		edges = append(edges, outboundmessage.EdgeTrackedLinks)
+	}
+	if m.frequency_counts != nil {
+		edges = append(edges, outboundmessage.EdgeFrequencyCounts)
 	}
 	if m.broadcast != nil {
 		edges = append(edges, outboundmessage.EdgeBroadcast)
@@ -55009,6 +55830,12 @@ func (m *OutboundMessageMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case outboundmessage.EdgeFrequencyCounts:
+		ids := make([]ent.Value, 0, len(m.frequency_counts))
+		for id := range m.frequency_counts {
+			ids = append(ids, id)
+		}
+		return ids
 	case outboundmessage.EdgeBroadcast:
 		if id := m.broadcast; id != nil {
 			return []ent.Value{*id}
@@ -55047,9 +55874,12 @@ func (m *OutboundMessageMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *OutboundMessageMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 10)
+	edges := make([]string, 0, 11)
 	if m.removedtracked_links != nil {
 		edges = append(edges, outboundmessage.EdgeTrackedLinks)
+	}
+	if m.removedfrequency_counts != nil {
+		edges = append(edges, outboundmessage.EdgeFrequencyCounts)
 	}
 	return edges
 }
@@ -55064,18 +55894,27 @@ func (m *OutboundMessageMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case outboundmessage.EdgeFrequencyCounts:
+		ids := make([]ent.Value, 0, len(m.removedfrequency_counts))
+		for id := range m.removedfrequency_counts {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *OutboundMessageMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 10)
+	edges := make([]string, 0, 11)
 	if m.clearedworkspace {
 		edges = append(edges, outboundmessage.EdgeWorkspace)
 	}
 	if m.clearedtracked_links {
 		edges = append(edges, outboundmessage.EdgeTrackedLinks)
+	}
+	if m.clearedfrequency_counts {
+		edges = append(edges, outboundmessage.EdgeFrequencyCounts)
 	}
 	if m.clearedbroadcast {
 		edges = append(edges, outboundmessage.EdgeBroadcast)
@@ -55112,6 +55951,8 @@ func (m *OutboundMessageMutation) EdgeCleared(name string) bool {
 		return m.clearedworkspace
 	case outboundmessage.EdgeTrackedLinks:
 		return m.clearedtracked_links
+	case outboundmessage.EdgeFrequencyCounts:
+		return m.clearedfrequency_counts
 	case outboundmessage.EdgeBroadcast:
 		return m.clearedbroadcast
 	case outboundmessage.EdgeAutomation:
@@ -55176,6 +56017,9 @@ func (m *OutboundMessageMutation) ResetEdge(name string) error {
 		return nil
 	case outboundmessage.EdgeTrackedLinks:
 		m.ResetTrackedLinks()
+		return nil
+	case outboundmessage.EdgeFrequencyCounts:
+		m.ResetFrequencyCounts()
 		return nil
 	case outboundmessage.EdgeBroadcast:
 		m.ResetBroadcast()
@@ -85779,6 +86623,9 @@ type WorkspaceMutation struct {
 	frequency_caps                       map[int64]struct{}
 	removedfrequency_caps                map[int64]struct{}
 	clearedfrequency_caps                bool
+	frequency_counts                     map[int64]struct{}
+	removedfrequency_counts              map[int64]struct{}
+	clearedfrequency_counts              bool
 	sending_windows                      map[int64]struct{}
 	removedsending_windows               map[int64]struct{}
 	clearedsending_windows               bool
@@ -88545,6 +89392,60 @@ func (m *WorkspaceMutation) ResetFrequencyCaps() {
 	m.removedfrequency_caps = nil
 }
 
+// AddFrequencyCountIDs adds the "frequency_counts" edge to the FrequencyCount entity by ids.
+func (m *WorkspaceMutation) AddFrequencyCountIDs(ids ...int64) {
+	if m.frequency_counts == nil {
+		m.frequency_counts = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.frequency_counts[ids[i]] = struct{}{}
+	}
+}
+
+// ClearFrequencyCounts clears the "frequency_counts" edge to the FrequencyCount entity.
+func (m *WorkspaceMutation) ClearFrequencyCounts() {
+	m.clearedfrequency_counts = true
+}
+
+// FrequencyCountsCleared reports if the "frequency_counts" edge to the FrequencyCount entity was cleared.
+func (m *WorkspaceMutation) FrequencyCountsCleared() bool {
+	return m.clearedfrequency_counts
+}
+
+// RemoveFrequencyCountIDs removes the "frequency_counts" edge to the FrequencyCount entity by IDs.
+func (m *WorkspaceMutation) RemoveFrequencyCountIDs(ids ...int64) {
+	if m.removedfrequency_counts == nil {
+		m.removedfrequency_counts = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.frequency_counts, ids[i])
+		m.removedfrequency_counts[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedFrequencyCounts returns the removed IDs of the "frequency_counts" edge to the FrequencyCount entity.
+func (m *WorkspaceMutation) RemovedFrequencyCountsIDs() (ids []int64) {
+	for id := range m.removedfrequency_counts {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// FrequencyCountsIDs returns the "frequency_counts" edge IDs in the mutation.
+func (m *WorkspaceMutation) FrequencyCountsIDs() (ids []int64) {
+	for id := range m.frequency_counts {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetFrequencyCounts resets all changes to the "frequency_counts" edge.
+func (m *WorkspaceMutation) ResetFrequencyCounts() {
+	m.frequency_counts = nil
+	m.clearedfrequency_counts = false
+	m.removedfrequency_counts = nil
+}
+
 // AddSendingWindowIDs adds the "sending_windows" edge to the SendingWindow entity by ids.
 func (m *WorkspaceMutation) AddSendingWindowIDs(ids ...int64) {
 	if m.sending_windows == nil {
@@ -91168,7 +92069,7 @@ func (m *WorkspaceMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *WorkspaceMutation) AddedEdges() []string {
-	edges := make([]string, 0, 58)
+	edges := make([]string, 0, 59)
 	if m.contacts != nil {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -91237,6 +92138,9 @@ func (m *WorkspaceMutation) AddedEdges() []string {
 	}
 	if m.frequency_caps != nil {
 		edges = append(edges, workspace.EdgeFrequencyCaps)
+	}
+	if m.frequency_counts != nil {
+		edges = append(edges, workspace.EdgeFrequencyCounts)
 	}
 	if m.sending_windows != nil {
 		edges = append(edges, workspace.EdgeSendingWindows)
@@ -91488,6 +92392,12 @@ func (m *WorkspaceMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case workspace.EdgeFrequencyCounts:
+		ids := make([]ent.Value, 0, len(m.frequency_counts))
+		for id := range m.frequency_counts {
+			ids = append(ids, id)
+		}
+		return ids
 	case workspace.EdgeSendingWindows:
 		ids := make([]ent.Value, 0, len(m.sending_windows))
 		for id := range m.sending_windows {
@@ -91702,7 +92612,7 @@ func (m *WorkspaceMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *WorkspaceMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 58)
+	edges := make([]string, 0, 59)
 	if m.removedcontacts != nil {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -91771,6 +92681,9 @@ func (m *WorkspaceMutation) RemovedEdges() []string {
 	}
 	if m.removedfrequency_caps != nil {
 		edges = append(edges, workspace.EdgeFrequencyCaps)
+	}
+	if m.removedfrequency_counts != nil {
+		edges = append(edges, workspace.EdgeFrequencyCounts)
 	}
 	if m.removedsending_windows != nil {
 		edges = append(edges, workspace.EdgeSendingWindows)
@@ -92019,6 +92932,12 @@ func (m *WorkspaceMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case workspace.EdgeFrequencyCounts:
+		ids := make([]ent.Value, 0, len(m.removedfrequency_counts))
+		for id := range m.removedfrequency_counts {
+			ids = append(ids, id)
+		}
+		return ids
 	case workspace.EdgeSendingWindows:
 		ids := make([]ent.Value, 0, len(m.removedsending_windows))
 		for id := range m.removedsending_windows {
@@ -92229,7 +93148,7 @@ func (m *WorkspaceMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *WorkspaceMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 58)
+	edges := make([]string, 0, 59)
 	if m.clearedcontacts {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -92298,6 +93217,9 @@ func (m *WorkspaceMutation) ClearedEdges() []string {
 	}
 	if m.clearedfrequency_caps {
 		edges = append(edges, workspace.EdgeFrequencyCaps)
+	}
+	if m.clearedfrequency_counts {
+		edges = append(edges, workspace.EdgeFrequencyCounts)
 	}
 	if m.clearedsending_windows {
 		edges = append(edges, workspace.EdgeSendingWindows)
@@ -92457,6 +93379,8 @@ func (m *WorkspaceMutation) EdgeCleared(name string) bool {
 		return m.clearedholds
 	case workspace.EdgeFrequencyCaps:
 		return m.clearedfrequency_caps
+	case workspace.EdgeFrequencyCounts:
+		return m.clearedfrequency_counts
 	case workspace.EdgeSendingWindows:
 		return m.clearedsending_windows
 	case workspace.EdgeBroadcasts:
@@ -92614,6 +93538,9 @@ func (m *WorkspaceMutation) ResetEdge(name string) error {
 		return nil
 	case workspace.EdgeFrequencyCaps:
 		m.ResetFrequencyCaps()
+		return nil
+	case workspace.EdgeFrequencyCounts:
+		m.ResetFrequencyCounts()
 		return nil
 	case workspace.EdgeSendingWindows:
 		m.ResetSendingWindows()

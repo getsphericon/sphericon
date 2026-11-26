@@ -9,6 +9,9 @@ type Scoped struct{}
 // WorkspaceLocked is the scope that stands for the Workspace lock.
 type WorkspaceLocked struct{ *Scoped }
 
+// DestinationLocked is the scope that stands for the Destination locks.
+type DestinationLocked struct{ *Scoped }
+
 // Client is the raw client.
 type Client struct{}
 

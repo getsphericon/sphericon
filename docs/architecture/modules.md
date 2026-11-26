@@ -123,13 +123,13 @@ context above: not `broadcasts`, `automations` or `rules`, not `integrations`, `
 `emailtemplates`, and no use case.
 Content, above contacts, is one component too (`domain-content`, the glob of
 `internal/domain/content`): `emailtemplates`, `brandkits` and `versioneddefinition`, the lifecycle every Versioned
-definition shares. Sending, above content, is `outboundmessages`, `holds`, `providerlimit`,
+definition shares. Sending, above content, is `outboundmessages`, `holds`, `providerlimit`, `frequencycap`,
 `integrations`, `sendingdomains`, `bindings`, `trackingdomains`, `trackinghostchanges`, `messagetoken`,
 `linkclick`, `reputation`, `capturedmessages` and `privaterelayranges` (the spec's list), with two packages
 placed by the same rule: `preset`, the engine that reads an Integration's callbacks
 (`integrations` uses it), and `callbackinterpretation` (the Callback interpretation, which has no
 table: what the facts a Preset parsed mean, ADR 0112). The DKIM and DMARC primitives of a Sending
-domain are `sendingdomains`' own. Its raw-client holders are `bindings`, `callbackinterpretation`, `capturedmessages`,
+domain are `sendingdomains`' own. Its raw-client holders are `bindings`, `callbackinterpretation`, `capturedmessages`, `frequencycap`,
 `integrations`, `privaterelayranges`, `sendingdomains`, `trackingdomains` and `trackinghostchanges`,
 and the context is `domain-sending`. A content module imports no Integration,
 Outbound send or other sending module, and neither context imports `broadcasts`,

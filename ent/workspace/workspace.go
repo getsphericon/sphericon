@@ -119,6 +119,8 @@ const (
 	EdgeHolds = "holds"
 	// EdgeFrequencyCaps holds the string denoting the frequency_caps edge name in mutations.
 	EdgeFrequencyCaps = "frequency_caps"
+	// EdgeFrequencyCounts holds the string denoting the frequency_counts edge name in mutations.
+	EdgeFrequencyCounts = "frequency_counts"
 	// EdgeSendingWindows holds the string denoting the sending_windows edge name in mutations.
 	EdgeSendingWindows = "sending_windows"
 	// EdgeBroadcasts holds the string denoting the broadcasts edge name in mutations.
@@ -359,6 +361,13 @@ const (
 	FrequencyCapsInverseTable = "frequency_caps"
 	// FrequencyCapsColumn is the table column denoting the frequency_caps relation/edge.
 	FrequencyCapsColumn = "workspace_id"
+	// FrequencyCountsTable is the table that holds the frequency_counts relation/edge.
+	FrequencyCountsTable = "frequency_counts"
+	// FrequencyCountsInverseTable is the table name for the FrequencyCount entity.
+	// It exists in this package in order to avoid circular dependency with the "frequencycount" package.
+	FrequencyCountsInverseTable = "frequency_counts"
+	// FrequencyCountsColumn is the table column denoting the frequency_counts relation/edge.
+	FrequencyCountsColumn = "workspace_id"
 	// SendingWindowsTable is the table that holds the sending_windows relation/edge.
 	SendingWindowsTable = "sending_windows"
 	// SendingWindowsInverseTable is the table name for the SendingWindow entity.
@@ -1228,6 +1237,20 @@ func ByFrequencyCaps(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// ByFrequencyCountsCount orders the results by frequency_counts count.
+func ByFrequencyCountsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newFrequencyCountsStep(), opts...)
+	}
+}
+
+// ByFrequencyCounts orders the results by frequency_counts terms.
+func ByFrequencyCounts(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newFrequencyCountsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // BySendingWindowsCount orders the results by sending_windows count.
 func BySendingWindowsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -1876,6 +1899,13 @@ func newFrequencyCapsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(FrequencyCapsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, FrequencyCapsTable, FrequencyCapsColumn),
+	)
+}
+func newFrequencyCountsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(FrequencyCountsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, FrequencyCountsTable, FrequencyCountsColumn),
 	)
 }
 func newSendingWindowsStep() *sqlgraph.Step {

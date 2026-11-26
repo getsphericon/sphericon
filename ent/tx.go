@@ -76,6 +76,8 @@ type Tx struct {
 	EventReceipt *EventReceiptClient
 	// FrequencyCap is the client for interacting with the FrequencyCap builders.
 	FrequencyCap *FrequencyCapClient
+	// FrequencyCount is the client for interacting with the FrequencyCount builders.
+	FrequencyCount *FrequencyCountClient
 	// HeldOrderEvent is the client for interacting with the HeldOrderEvent builders.
 	HeldOrderEvent *HeldOrderEventClient
 	// Hold is the client for interacting with the Hold builders.
@@ -346,6 +348,7 @@ func (tx *Tx) init() {
 	tx.EventJournalEntry = NewEventJournalEntryClient(tx.config)
 	tx.EventReceipt = NewEventReceiptClient(tx.config)
 	tx.FrequencyCap = NewFrequencyCapClient(tx.config)
+	tx.FrequencyCount = NewFrequencyCountClient(tx.config)
 	tx.HeldOrderEvent = NewHeldOrderEventClient(tx.config)
 	tx.Hold = NewHoldClient(tx.config)
 	tx.IdentitySecret = NewIdentitySecretClient(tx.config)

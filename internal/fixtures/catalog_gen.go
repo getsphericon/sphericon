@@ -2253,8 +2253,26 @@ const (
 	ExpiredTokenSecret = "expired-token-secret-0000000000000000000"
 	// FrequencyCapAcmeSMSID is from fixtures/frequency_caps.
 	FrequencyCapAcmeSMSID = 1001
+	// FrequencyCapGlobexGermanyID is from fixtures/frequency_caps.
+	FrequencyCapGlobexGermanyID = 900
 	// FrequencyCapLacunaSMSID is from fixtures/frequency_caps.
 	FrequencyCapLacunaSMSID = 1096
+	// FrequencyCountBystanderDestination is from fixtures/frequency_counts.
+	FrequencyCountBystanderDestination = "ben@initech.test"
+	// FrequencyCountBystanderID is from fixtures/frequency_counts.
+	FrequencyCountBystanderID = 301
+	// FrequencyCountErasableDestination is from fixtures/frequency_counts.
+	FrequencyCountErasableDestination = "erin@initech.test"
+	// FrequencyCountErasableID is from fixtures/frequency_counts.
+	FrequencyCountErasableID = 300
+	// FrequencyCountExpiredDestination is from fixtures/frequency_counts.
+	FrequencyCountExpiredDestination = "usage.old@codebasics.dev"
+	// FrequencyCountExpiredID is from fixtures/frequency_counts.
+	FrequencyCountExpiredID = 1
+	// FrequencyCountRecentDestination is from fixtures/frequency_counts.
+	FrequencyCountRecentDestination = "usage.ses@codebasics.dev"
+	// FrequencyCountRecentID is from fixtures/frequency_counts.
+	FrequencyCountRecentID = 2
 	// FreshLoginAttemptEmail is from fixtures/auth_attempts.
 	FreshLoginAttemptEmail = "fresh@attempts.test"
 	// FreshLoginAttemptID is from fixtures/auth_attempts.

@@ -125,6 +125,8 @@ type OutboundMessageEdges struct {
 	Workspace *Workspace `json:"workspace,omitempty"`
 	// TrackedLinks holds the value of the tracked_links edge.
 	TrackedLinks []*TrackedLink `json:"tracked_links,omitempty"`
+	// FrequencyCounts holds the value of the frequency_counts edge.
+	FrequencyCounts []*FrequencyCount `json:"frequency_counts,omitempty"`
 	// Broadcast holds the value of the broadcast edge.
 	Broadcast *Broadcast `json:"broadcast,omitempty"`
 	// Automation holds the value of the automation edge.
@@ -143,7 +145,7 @@ type OutboundMessageEdges struct {
 	Template *EmailTemplate `json:"template,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [10]bool
+	loadedTypes [11]bool
 }
 
 // WorkspaceOrErr returns the Workspace value or an error if the edge
@@ -166,12 +168,21 @@ func (e OutboundMessageEdges) TrackedLinksOrErr() ([]*TrackedLink, error) {
 	return nil, &NotLoadedError{edge: "tracked_links"}
 }
 
+// FrequencyCountsOrErr returns the FrequencyCounts value or an error if the edge
+// was not loaded in eager-loading.
+func (e OutboundMessageEdges) FrequencyCountsOrErr() ([]*FrequencyCount, error) {
+	if e.loadedTypes[2] {
+		return e.FrequencyCounts, nil
+	}
+	return nil, &NotLoadedError{edge: "frequency_counts"}
+}
+
 // BroadcastOrErr returns the Broadcast value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e OutboundMessageEdges) BroadcastOrErr() (*Broadcast, error) {
 	if e.Broadcast != nil {
 		return e.Broadcast, nil
-	} else if e.loadedTypes[2] {
+	} else if e.loadedTypes[3] {
 		return nil, &NotFoundError{label: broadcast.Label}
 	}
 	return nil, &NotLoadedError{edge: "broadcast"}
@@ -182,7 +193,7 @@ func (e OutboundMessageEdges) BroadcastOrErr() (*Broadcast, error) {
 func (e OutboundMessageEdges) AutomationOrErr() (*Automation, error) {
 	if e.Automation != nil {
 		return e.Automation, nil
-	} else if e.loadedTypes[3] {
+	} else if e.loadedTypes[4] {
 		return nil, &NotFoundError{label: automation.Label}
 	}
 	return nil, &NotLoadedError{edge: "automation"}
@@ -193,7 +204,7 @@ func (e OutboundMessageEdges) AutomationOrErr() (*Automation, error) {
 func (e OutboundMessageEdges) AutomationVersionOrErr() (*AutomationVersion, error) {
 	if e.AutomationVersion != nil {
 		return e.AutomationVersion, nil
-	} else if e.loadedTypes[4] {
+	} else if e.loadedTypes[5] {
 		return nil, &NotFoundError{label: automationversion.Label}
 	}
 	return nil, &NotLoadedError{edge: "automation_version"}
@@ -204,7 +215,7 @@ func (e OutboundMessageEdges) AutomationVersionOrErr() (*AutomationVersion, erro
 func (e OutboundMessageEdges) IntegrationOrErr() (*Integration, error) {
 	if e.Integration != nil {
 		return e.Integration, nil
-	} else if e.loadedTypes[5] {
+	} else if e.loadedTypes[6] {
 		return nil, &NotFoundError{label: integration.Label}
 	}
 	return nil, &NotLoadedError{edge: "integration"}
@@ -215,7 +226,7 @@ func (e OutboundMessageEdges) IntegrationOrErr() (*Integration, error) {
 func (e OutboundMessageEdges) BroadcastRecipientOrErr() (*BroadcastRecipient, error) {
 	if e.BroadcastRecipient != nil {
 		return e.BroadcastRecipient, nil
-	} else if e.loadedTypes[6] {
+	} else if e.loadedTypes[7] {
 		return nil, &NotFoundError{label: broadcastrecipient.Label}
 	}
 	return nil, &NotLoadedError{edge: "broadcast_recipient"}
@@ -226,7 +237,7 @@ func (e OutboundMessageEdges) BroadcastRecipientOrErr() (*BroadcastRecipient, er
 func (e OutboundMessageEdges) AutomationRunOrErr() (*AutomationRun, error) {
 	if e.AutomationRun != nil {
 		return e.AutomationRun, nil
-	} else if e.loadedTypes[7] {
+	} else if e.loadedTypes[8] {
 		return nil, &NotFoundError{label: automationrun.Label}
 	}
 	return nil, &NotLoadedError{edge: "automation_run"}
@@ -237,7 +248,7 @@ func (e OutboundMessageEdges) AutomationRunOrErr() (*AutomationRun, error) {
 func (e OutboundMessageEdges) ContactOrErr() (*Contact, error) {
 	if e.Contact != nil {
 		return e.Contact, nil
-	} else if e.loadedTypes[8] {
+	} else if e.loadedTypes[9] {
 		return nil, &NotFoundError{label: contact.Label}
 	}
 	return nil, &NotLoadedError{edge: "contact"}
@@ -248,7 +259,7 @@ func (e OutboundMessageEdges) ContactOrErr() (*Contact, error) {
 func (e OutboundMessageEdges) TemplateOrErr() (*EmailTemplate, error) {
 	if e.Template != nil {
 		return e.Template, nil
-	} else if e.loadedTypes[9] {
+	} else if e.loadedTypes[10] {
 		return nil, &NotFoundError{label: emailtemplate.Label}
 	}
 	return nil, &NotLoadedError{edge: "template"}
@@ -588,6 +599,11 @@ func (_m *OutboundMessage) QueryWorkspace() *WorkspaceQuery {
 // QueryTrackedLinks queries the "tracked_links" edge of the OutboundMessage entity.
 func (_m *OutboundMessage) QueryTrackedLinks() *TrackedLinkQuery {
 	return NewOutboundMessageClient(_m.config).QueryTrackedLinks(_m)
+}
+
+// QueryFrequencyCounts queries the "frequency_counts" edge of the OutboundMessage entity.
+func (_m *OutboundMessage) QueryFrequencyCounts() *FrequencyCountQuery {
+	return NewOutboundMessageClient(_m.config).QueryFrequencyCounts(_m)
 }
 
 // QueryBroadcast queries the "broadcast" edge of the OutboundMessage entity.

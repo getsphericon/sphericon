@@ -98,3 +98,21 @@ func normalizedExamples() map[string]string {
 	}
 	return out
 }
+
+func TestCountryIsTheCountryOfTheNumber(t *testing.T) {
+	cases := []struct {
+		name, number, want string
+	}{
+		{"a Boston number", "+16175557740", "US"},
+		{"a Berlin number", "+49301234567", "DE"},
+		{"a Toronto number in the shared calling code", "+14165550100", "CA"},
+		{"a global service number, of no country", "+80012345678", ""},
+		{"no number", "not a number", ""},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			got := phone.Country(c.number)
+			assert.Equal(t, c.want, got)
+		})
+	}
+}

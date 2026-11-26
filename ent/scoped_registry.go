@@ -31,6 +31,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/frequencycap"
+	"github.com/getsphericon/sphericon/ent/frequencycount"
 	"github.com/getsphericon/sphericon/ent/heldorderevent"
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/identitysecret"
@@ -1735,6 +1736,48 @@ func ScopedEntities() []*ScopedEntity {
 			Refs: []ScopedRef{},
 		},
 		{
+			Kind:         Kinds["FrequencyCount"],
+			Name:         "FrequencyCount",
+			Wrapper:      reflect.TypeFor[*FrequencyCountScoped](),
+			AuditActions: []string{},
+			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
+				return c.FrequencyCount.Query().Where(frequencycount.WorkspaceID(ws)).Order(Asc(frequencycount.FieldID)).IDs(ctx)
+			},
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.FrequencyCount().Get(ctx, id)
+			},
+			Touch: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.FrequencyCount().UpdateOneID(id).Exec(ctx)
+			},
+			BulkTouch: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.FrequencyCount().Update().Where(frequencycount.ID(id)).Save(ctx)
+			},
+			Delete: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.FrequencyCount().DeleteOneID(id).Exec(ctx)
+			},
+			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.FrequencyCount().Delete().Where(frequencycount.ID(id)).Exec(ctx)
+			},
+			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
+				src, err := s.c.FrequencyCount.Get(ctx, id)
+				if err != nil {
+					return 0, err
+				}
+				_ = remap
+				b := s.FrequencyCount().Create()
+				b.SetOutboundMessageID(remap("OutboundMessage", src.OutboundMessageID))
+				b.SetChannel(src.Channel)
+				b.SetDestination(src.Destination)
+				b.SetCountedAt(src.CountedAt)
+				created, err := b.Save(ctx)
+				if err != nil {
+					return 0, err
+				}
+				return created.WorkspaceID, nil
+			},
+			Refs: []ScopedRef{},
+		},
+		{
 			Kind:         Kinds["HeldOrderEvent"],
 			Name:         "HeldOrderEvent",
 			Wrapper:      reflect.TypeFor[*HeldOrderEventScoped](),
@@ -2489,6 +2532,12 @@ func ScopedEntities() []*ScopedEntity {
 					Name: "tracked_links", Target: "TrackedLink",
 					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
 						return s.OutboundMessage().UpdateOneID(id).AddTrackedLinkIDs(target).Exec(ctx)
+					},
+				},
+				{
+					Name: "frequency_counts", Target: "FrequencyCount",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.OutboundMessage().UpdateOneID(id).AddFrequencyCountIDs(target).Exec(ctx)
 					},
 				},
 				{

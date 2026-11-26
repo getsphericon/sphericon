@@ -99,6 +99,9 @@ type EventReceipt func(*sql.Selector)
 // FrequencyCap is the predicate function for frequencycap builders.
 type FrequencyCap func(*sql.Selector)
 
+// FrequencyCount is the predicate function for frequencycount builders.
+type FrequencyCount func(*sql.Selector)
+
 // HeldOrderEvent is the predicate function for heldorderevent builders.
 type HeldOrderEvent func(*sql.Selector)
 

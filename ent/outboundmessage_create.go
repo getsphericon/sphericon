@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
+	"github.com/getsphericon/sphericon/ent/frequencycount"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/trackedlink"
@@ -604,6 +605,21 @@ func (_c *OutboundMessageCreate) AddTrackedLinks(v ...*TrackedLink) *OutboundMes
 	return _c.AddTrackedLinkIDs(ids...)
 }
 
+// AddFrequencyCountIDs adds the "frequency_counts" edge to the FrequencyCount entity by IDs.
+func (_c *OutboundMessageCreate) AddFrequencyCountIDs(ids ...int64) *OutboundMessageCreate {
+	_c.mutation.AddFrequencyCountIDs(ids...)
+	return _c
+}
+
+// AddFrequencyCounts adds the "frequency_counts" edges to the FrequencyCount entity.
+func (_c *OutboundMessageCreate) AddFrequencyCounts(v ...*FrequencyCount) *OutboundMessageCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddFrequencyCountIDs(ids...)
+}
+
 // SetBroadcast sets the "broadcast" edge to the Broadcast entity.
 func (_c *OutboundMessageCreate) SetBroadcast(v *Broadcast) *OutboundMessageCreate {
 	return _c.SetBroadcastID(v.ID)
@@ -961,6 +977,22 @@ func (_c *OutboundMessageCreate) createSpec() (*OutboundMessage, *sqlgraph.Creat
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(trackedlink.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.FrequencyCountsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   outboundmessage.FrequencyCountsTable,
+			Columns: []string{outboundmessage.FrequencyCountsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(frequencycount.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

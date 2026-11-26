@@ -35,6 +35,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/eventjournalentry"
 	"github.com/getsphericon/sphericon/ent/eventreceipt"
 	"github.com/getsphericon/sphericon/ent/frequencycap"
+	"github.com/getsphericon/sphericon/ent/frequencycount"
 	"github.com/getsphericon/sphericon/ent/heldorderevent"
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/identitysecret"
@@ -887,6 +888,25 @@ func init() {
 	frequencycap.DefaultUpdatedAt = frequencycapDescUpdatedAt.Default.(func() time.Time)
 	// frequencycap.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	frequencycap.UpdateDefaultUpdatedAt = frequencycapDescUpdatedAt.UpdateDefault.(func() time.Time)
+	frequencycountMixin := schema.FrequencyCount{}.Mixin()
+	frequencycountMixinFields0 := frequencycountMixin[0].Fields()
+	_ = frequencycountMixinFields0
+	frequencycountFields := schema.FrequencyCount{}.Fields()
+	_ = frequencycountFields
+	// frequencycountDescCreatedAt is the schema descriptor for created_at field.
+	frequencycountDescCreatedAt := frequencycountMixinFields0[0].Descriptor()
+	// frequencycount.DefaultCreatedAt holds the default value on creation for the created_at field.
+	frequencycount.DefaultCreatedAt = frequencycountDescCreatedAt.Default.(func() time.Time)
+	// frequencycountDescUpdatedAt is the schema descriptor for updated_at field.
+	frequencycountDescUpdatedAt := frequencycountMixinFields0[1].Descriptor()
+	// frequencycount.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	frequencycount.DefaultUpdatedAt = frequencycountDescUpdatedAt.Default.(func() time.Time)
+	// frequencycount.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	frequencycount.UpdateDefaultUpdatedAt = frequencycountDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// frequencycountDescDestination is the schema descriptor for destination field.
+	frequencycountDescDestination := frequencycountFields[3].Descriptor()
+	// frequencycount.DestinationValidator is a validator for the "destination" field. It is called by the builders before save.
+	frequencycount.DestinationValidator = frequencycountDescDestination.Validators[0].(func(string) error)
 	heldordereventMixin := schema.HeldOrderEvent{}.Mixin()
 	heldordereventMixinFields0 := heldordereventMixin[0].Fields()
 	_ = heldordereventMixinFields0

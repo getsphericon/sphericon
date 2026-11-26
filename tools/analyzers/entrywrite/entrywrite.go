@@ -96,6 +96,7 @@ var owners = map[string]string{
 	"EventJournalEntry":          "internal/infra/events",
 	"EventReceipt":               "internal/infra/events",
 	"FrequencyCap":               "internal/domain/identity/workspaces",
+	"FrequencyCount":             "internal/domain/sending/frequencycap",
 	"HeldOrderEvent":             "internal/domain/contacts/orders",
 	"Hold":                       "internal/domain/sending/holds",
 	"IdentitySecret":             "internal/domain/contacts/identitytokens",

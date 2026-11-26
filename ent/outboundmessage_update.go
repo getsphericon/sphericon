@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
+	"github.com/getsphericon/sphericon/ent/frequencycount"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
@@ -752,6 +753,21 @@ func (_u *OutboundMessageUpdate) AddTrackedLinks(v ...*TrackedLink) *OutboundMes
 	return _u.AddTrackedLinkIDs(ids...)
 }
 
+// AddFrequencyCountIDs adds the "frequency_counts" edge to the FrequencyCount entity by IDs.
+func (_u *OutboundMessageUpdate) AddFrequencyCountIDs(ids ...int64) *OutboundMessageUpdate {
+	_u.mutation.AddFrequencyCountIDs(ids...)
+	return _u
+}
+
+// AddFrequencyCounts adds the "frequency_counts" edges to the FrequencyCount entity.
+func (_u *OutboundMessageUpdate) AddFrequencyCounts(v ...*FrequencyCount) *OutboundMessageUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddFrequencyCountIDs(ids...)
+}
+
 // SetBroadcast sets the "broadcast" edge to the Broadcast entity.
 func (_u *OutboundMessageUpdate) SetBroadcast(v *Broadcast) *OutboundMessageUpdate {
 	return _u.SetBroadcastID(v.ID)
@@ -822,6 +838,27 @@ func (_u *OutboundMessageUpdate) RemoveTrackedLinks(v ...*TrackedLink) *Outbound
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveTrackedLinkIDs(ids...)
+}
+
+// ClearFrequencyCounts clears all "frequency_counts" edges to the FrequencyCount entity.
+func (_u *OutboundMessageUpdate) ClearFrequencyCounts() *OutboundMessageUpdate {
+	_u.mutation.ClearFrequencyCounts()
+	return _u
+}
+
+// RemoveFrequencyCountIDs removes the "frequency_counts" edge to FrequencyCount entities by IDs.
+func (_u *OutboundMessageUpdate) RemoveFrequencyCountIDs(ids ...int64) *OutboundMessageUpdate {
+	_u.mutation.RemoveFrequencyCountIDs(ids...)
+	return _u
+}
+
+// RemoveFrequencyCounts removes "frequency_counts" edges to FrequencyCount entities.
+func (_u *OutboundMessageUpdate) RemoveFrequencyCounts(v ...*FrequencyCount) *OutboundMessageUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveFrequencyCountIDs(ids...)
 }
 
 // ClearBroadcast clears the "broadcast" edge to the Broadcast entity.
@@ -1179,6 +1216,51 @@ func (_u *OutboundMessageUpdate) sqlSave(ctx context.Context) (_node int, err er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(trackedlink.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.FrequencyCountsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   outboundmessage.FrequencyCountsTable,
+			Columns: []string{outboundmessage.FrequencyCountsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(frequencycount.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedFrequencyCountsIDs(); len(nodes) > 0 && !_u.mutation.FrequencyCountsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   outboundmessage.FrequencyCountsTable,
+			Columns: []string{outboundmessage.FrequencyCountsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(frequencycount.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.FrequencyCountsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   outboundmessage.FrequencyCountsTable,
+			Columns: []string{outboundmessage.FrequencyCountsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(frequencycount.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -2148,6 +2230,21 @@ func (_u *OutboundMessageUpdateOne) AddTrackedLinks(v ...*TrackedLink) *Outbound
 	return _u.AddTrackedLinkIDs(ids...)
 }
 
+// AddFrequencyCountIDs adds the "frequency_counts" edge to the FrequencyCount entity by IDs.
+func (_u *OutboundMessageUpdateOne) AddFrequencyCountIDs(ids ...int64) *OutboundMessageUpdateOne {
+	_u.mutation.AddFrequencyCountIDs(ids...)
+	return _u
+}
+
+// AddFrequencyCounts adds the "frequency_counts" edges to the FrequencyCount entity.
+func (_u *OutboundMessageUpdateOne) AddFrequencyCounts(v ...*FrequencyCount) *OutboundMessageUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddFrequencyCountIDs(ids...)
+}
+
 // SetBroadcast sets the "broadcast" edge to the Broadcast entity.
 func (_u *OutboundMessageUpdateOne) SetBroadcast(v *Broadcast) *OutboundMessageUpdateOne {
 	return _u.SetBroadcastID(v.ID)
@@ -2218,6 +2315,27 @@ func (_u *OutboundMessageUpdateOne) RemoveTrackedLinks(v ...*TrackedLink) *Outbo
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveTrackedLinkIDs(ids...)
+}
+
+// ClearFrequencyCounts clears all "frequency_counts" edges to the FrequencyCount entity.
+func (_u *OutboundMessageUpdateOne) ClearFrequencyCounts() *OutboundMessageUpdateOne {
+	_u.mutation.ClearFrequencyCounts()
+	return _u
+}
+
+// RemoveFrequencyCountIDs removes the "frequency_counts" edge to FrequencyCount entities by IDs.
+func (_u *OutboundMessageUpdateOne) RemoveFrequencyCountIDs(ids ...int64) *OutboundMessageUpdateOne {
+	_u.mutation.RemoveFrequencyCountIDs(ids...)
+	return _u
+}
+
+// RemoveFrequencyCounts removes "frequency_counts" edges to FrequencyCount entities.
+func (_u *OutboundMessageUpdateOne) RemoveFrequencyCounts(v ...*FrequencyCount) *OutboundMessageUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveFrequencyCountIDs(ids...)
 }
 
 // ClearBroadcast clears the "broadcast" edge to the Broadcast entity.
@@ -2605,6 +2723,51 @@ func (_u *OutboundMessageUpdateOne) sqlSave(ctx context.Context) (_node *Outboun
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(trackedlink.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.FrequencyCountsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   outboundmessage.FrequencyCountsTable,
+			Columns: []string{outboundmessage.FrequencyCountsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(frequencycount.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedFrequencyCountsIDs(); len(nodes) > 0 && !_u.mutation.FrequencyCountsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   outboundmessage.FrequencyCountsTable,
+			Columns: []string{outboundmessage.FrequencyCountsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(frequencycount.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.FrequencyCountsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   outboundmessage.FrequencyCountsTable,
+			Columns: []string{outboundmessage.FrequencyCountsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(frequencycount.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

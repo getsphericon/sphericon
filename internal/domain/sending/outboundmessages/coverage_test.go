@@ -29,9 +29,12 @@ import (
 const staleClaimKey = "transactional:fixture-stale-claim"
 
 // onOutboundMutation installs a hook on the OutboundMessage client the module under
-// test shares, letting a test observe or fail a specific write the module makes.
+// test shares, and on the client of every transaction of its bus (a claim is written in one, under
+// its Destination locks), letting a test observe or fail a specific write the module makes. A write
+// the hook makes itself goes through the mutation's own client (m.Client()), the transaction's when
+// there is one.
 func onOutboundMutation(env *testhelper.TestEnv, fn func(ctx context.Context, m *ent.OutboundMessageMutation, next ent.Mutator) (ent.Value, error)) {
-	env.DB.OutboundMessage.Use(func(next ent.Mutator) ent.Mutator {
+	hook := func(next ent.Mutator) ent.Mutator {
 		return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
 			om, ok := m.(*ent.OutboundMessageMutation)
 			if !ok {
@@ -39,7 +42,9 @@ func onOutboundMutation(env *testhelper.TestEnv, fn func(ctx context.Context, m 
 			}
 			return fn(ctx, om, next)
 		})
-	})
+	}
+	env.DB.OutboundMessage.Use(hook)
+	env.Bus.Use(hook)
 }
 
 // cancelingSenders resolves the sender but cancels the context on the way, so the
@@ -409,7 +414,7 @@ func TestClaimErrors(t *testing.T) {
 				raced = true
 				// Another attempt records the same key as sent between our replay check and insert.
 				// test writes: a concurrent write simulated inside a hook is the race under test
-				env.DB.OutboundMessage.Create().SetWorkspaceID(fixtures.AcmeID).SetKind(outboundmessage.KindTransactional).
+				m.Client().OutboundMessage.Create().SetWorkspaceID(fixtures.AcmeID).SetKind(outboundmessage.KindTransactional).
 					SetIdempotencyKey("tx:race").SetDestination("a@example.com").SetClaimedAt(time.Now()).
 					SetStatus(outboundmessage.StatusSent).ExecX(ctx)
 				// The real insert now meets the key and inserts nothing.
@@ -430,7 +435,7 @@ func TestClaimErrors(t *testing.T) {
 			if m.Op().Is(ent.OpCreate) && !raced {
 				raced = true
 				// test writes: a concurrent write simulated inside a hook is the race under test
-				env.DB.OutboundMessage.Create().SetWorkspaceID(fixtures.AcmeID).SetKind(outboundmessage.KindTransactional).
+				m.Client().OutboundMessage.Create().SetWorkspaceID(fixtures.AcmeID).SetKind(outboundmessage.KindTransactional).
 					SetIdempotencyKey("tx:race").SetDestination("a@example.com").SetClaimedAt(time.Now()).ExecX(ctx)
 				// The real insert now meets the key and inserts nothing.
 			}
@@ -448,7 +453,7 @@ func TestClaimErrors(t *testing.T) {
 			if m.Op().Is(ent.OpCreate) && !raced {
 				raced = true
 				// test writes: a concurrent write simulated inside a hook is the race under test
-				env.DB.OutboundMessage.Create().SetWorkspaceID(fixtures.AcmeID).SetKind(outboundmessage.KindTransactional).
+				m.Client().OutboundMessage.Create().SetWorkspaceID(fixtures.AcmeID).SetKind(outboundmessage.KindTransactional).
 					SetIdempotencyKey("tx:race").SetDestination("a@example.com").
 					SetClaimedAt(time.Now().Add(-time.Hour)).ExecX(ctx)
 				// The real insert now meets the key and inserts nothing.
@@ -485,14 +490,16 @@ func TestClaimErrors(t *testing.T) {
 			}
 			return next.Mutate(ctx, m)
 		})
-		env.DB.OutboundMessage.Intercept(ent.InterceptFunc(func(next ent.Querier) ent.Querier {
+		lag := ent.InterceptFunc(func(next ent.Querier) ent.Querier {
 			return ent.QuerierFunc(func(ctx context.Context, q ent.Query) (ent.Value, error) {
-				if failFind {
+				if _, ok := q.(*ent.OutboundMessageQuery); ok && failFind {
 					return nil, errors.New("replica lag")
 				}
 				return next.Query(ctx, q)
 			})
-		}))
+		})
+		env.DB.OutboundMessage.Intercept(lag)
+		env.Bus.Intercept(lag) // the claim's re-read runs in its transaction
 		_, err := newModule(env, time.Now).Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:findfail", "a@example.com"))
 		assert.ErrorContains(t, err, "replica lag")
 	})

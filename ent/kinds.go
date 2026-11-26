@@ -51,6 +51,7 @@ var Kinds = map[string]Kind{
 	"EventJournalEntry":          {Table: "event_journal_entries", Kind: schema.Kind{}},
 	"EventReceipt":               {Table: "event_receipts", Kind: schema.Kind{}},
 	"FrequencyCap":               {Table: "frequency_caps", Kind: schema.Kind{WorkspaceOwned: true}},
+	"FrequencyCount":             {Table: "frequency_counts", Kind: schema.Kind{WorkspaceOwned: true}},
 	"HeldOrderEvent":             {Table: "held_order_events", Kind: schema.Kind{WorkspaceOwned: true}},
 	"Hold":                       {Table: "holds", Kind: schema.Kind{WorkspaceOwned: true}},
 	"IdentitySecret":             {Table: "identity_secrets", Kind: schema.Kind{WorkspaceOwned: true, Singleton: true}},

@@ -12,7 +12,9 @@
 //     left the send is Skipped (final for that destination), recorded as a decided message under
 //     the Request's idempotency key with no claim taken first;
 //   - claim: the Outbound message row is taken before the provider is called, under
-//     the Request's idempotency key, with a lease against racing retries;
+//     the Request's idempotency key, with a lease against racing retries; a new claim of a
+//     marketing message is written with its Frequency cap count, under the lock of each
+//     Destination a cap holds (frequencycap, ADR 0178);
 //   - render, the Provider limit and the Send cap, the provider call;
 //   - the record of the result and the Channel's sent Event, in one transaction.
 //
@@ -51,6 +53,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
+	"github.com/getsphericon/sphericon/internal/domain/sending/frequencycap"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
@@ -282,6 +285,8 @@ type Module struct {
 	contacts    *contacts.Module
 	// consents answers a Destination's effective Engagement tracking consent (ADR 0120).
 	consents *engagementtracking.Module
+	// caps holds the Destination locks of a claim and its count (ADR 0178).
+	caps *frequencycap.Module
 }
 
 // TrackingHosts names the host a Workspace's links are built on: its current Tracking domain
@@ -304,6 +309,9 @@ type Modules struct {
 	Standing *integrations.Standing
 	// Consents answers whether a Destination consents to being tracked (ADR 0120).
 	Consents *engagementtracking.Module
+	// Caps takes the Destination locks a claim is written under and counts a marketing message at
+	// each Destination it is claimed for (ADR 0178).
+	Caps *frequencycap.Module
 }
 
 // Deps are the collaborators of the module's optional parts, each passed by the wiring; a nil one
@@ -366,7 +374,7 @@ func New(bus *events.Bus, hs *holds.Holds, senders Senders, tracker *messagetoke
 		sendCaps: cfg.SendCaps, lease: cmp.Or(cfg.Lease, DefaultLease), now: now,
 		buckets: providerlimit.NewBuckets(bus.WithinAuditTx, now), limits: mods.Limits,
 		standing: mods.Standing, chats: mods.Chats,
-		eligibility: eligibility.New(), contacts: mods.Contacts, consents: mods.Consents,
+		eligibility: eligibility.New(), contacts: mods.Contacts, consents: mods.Consents, caps: mods.Caps,
 	}
 	m.channels = map[channels.Channel]channel{channels.Email: emailChannel{m: m}, channels.Telegram: telegramChannel{m: m}, channels.SMS: smsChannel{m: m}}
 	return m
@@ -547,12 +555,9 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 	}
 
 	// The Sending window and the Frequency cap sit here, between Send-eligibility and the claim
-	// (ADR 0178), and read whether the message's kind is held to them.
-	if _, err := recipientLimitsOf(req.Kind()); err != nil {
-		return Result{}, err
-	}
-
-	msg, replay, err := m.claim(ctx, s, req, dest, g, existing)
+	// (ADR 0178): a new claim is written with its count, under the lock of each Destination a cap
+	// holds (claimNew).
+	msg, replay, err := m.claim(ctx, s, req, dest, g, existing, eligible)
 	if err != nil {
 		return Result{}, err
 	}
@@ -757,8 +762,8 @@ func (m *Module) stopOf(ctx context.Context, s *ent.Scoped, g gateResult, req Re
 	return nil, nil
 }
 
-// dropTarget removes a target its provider said reaches no one, in a transaction of its own, and
-// returns the Skipped reason the target now has.
+// dropTarget removes a target its provider said reaches no one, in a transaction of its own that
+// also frees the message's place at it, and returns the Skipped reason the target now has.
 func (m *Module) dropTarget(ctx context.Context, s *ent.Scoped, req Request, g gateResult, t target, messageID int64) (skipreason.Reason, error) {
 	ch, err := m.channel(req.Channel())
 	if err != nil {
@@ -767,8 +772,11 @@ func (m *Module) dropTarget(ctx context.Context, s *ent.Scoped, req Request, g g
 	var skip skipreason.Reason
 	err = m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
 		var uerr error
-		skip, uerr = ch.unreachable(ctx, ts, pub, g.route.Integration, req, t, messageID)
-		return uerr
+		if skip, uerr = ch.unreachable(ctx, ts, pub, g.route.Integration, req, t, messageID); uerr != nil {
+			return uerr
+		}
+		// The message never reaches the target: it frees its place there (ADR 0178).
+		return m.caps.Uncount(ctx, ts, frequencycap.UncountInput{MessageID: messageID, Destination: t.dest})
 	})
 	return skip, err
 }
@@ -1108,14 +1116,19 @@ func (m *Module) ListTransactional(ctx context.Context, s *ent.Scoped, p paginat
 }
 
 // recordOptedOut records that the person at target stopped at the provider, which refused the send
-// for it: the Channel's opt-out (channel.optedOut), in a transaction of its own.
+// for it: the Channel's opt-out (channel.optedOut), in a transaction of its own that also frees the
+// message's place at it.
 func (m *Module) recordOptedOut(ctx context.Context, s *ent.Scoped, req Request, g gateResult, msg *ent.OutboundMessage, t target) error {
 	ch, err := m.channel(req.Channel())
 	if err != nil {
 		return err
 	}
 	return m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
-		return ch.optedOut(ctx, ts, pub, g.route.Integration, msg, t, m.now())
+		if err := ch.optedOut(ctx, ts, pub, g.route.Integration, msg, t, m.now()); err != nil {
+			return err
+		}
+		// The message never reaches the target: it frees its place there (ADR 0178).
+		return m.caps.Uncount(ctx, ts, frequencycap.UncountInput{MessageID: msg.ID, Destination: t.dest})
 	})
 }
 

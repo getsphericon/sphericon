@@ -2,7 +2,7 @@
 # workspaces.yml, under 1000 + its id, as Creation.CreateIn and the sending_rules migration write it.
 
 # --- Globex (workspace 2) foreign row, first by id: a stricter cap for Germany — DO NOT change ---
-- id: 900
+- id: 900 # fixture: FrequencyCapGlobexGermany
   workspace_id: 2
   channel: sms
   country: DE
