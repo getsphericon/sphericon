@@ -2279,6 +2279,10 @@ const (
 	FrequencyCountExpiredDestination = "usage.old@codebasics.dev"
 	// FrequencyCountExpiredID is from fixtures/frequency_counts.
 	FrequencyCountExpiredID = 1
+	// FrequencyCountGlobexDestination is from fixtures/frequency_counts.
+	FrequencyCountGlobexDestination = "usage@globex.test"
+	// FrequencyCountGlobexID is from fixtures/frequency_counts.
+	FrequencyCountGlobexID = 200
 	// FrequencyCountRecentDestination is from fixtures/frequency_counts.
 	FrequencyCountRecentDestination = "usage.ses@codebasics.dev"
 	// FrequencyCountRecentID is from fixtures/frequency_counts.

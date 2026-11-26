@@ -457,7 +457,7 @@ type Request struct {
 	digest string
 
 	// window is what the Sending window said of the send at this attempt, which its message keeps
-	// (whether a single zone judged it). Only Send sets it, once it has read the window.
+	// (how many zones judged it, windowZones). Only Send sets it, once it has read the window.
 	window sendingwindow.Judgement
 }
 
