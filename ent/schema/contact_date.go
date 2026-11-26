@@ -17,9 +17,9 @@ import (
 // the local calendar computes each one's moment from the Contact itself. The key is the date read
 // in UTC, which no Workspace time zone moves, so a zone change rewrites no row. The contacts
 // module writes the rows with the Contact, in the same transaction, from the values it writes;
-// they die with it. A row is never updated: a write that gives the field another key replaces it,
-// so its write time and its send lock are those of the write that set its key, and a write that
-// leaves the key as it was keeps both.
+// they die with it. A row is never updated: a write that gives the field another value replaces
+// it, so its write time and its send lock are those of the write that set its value, and a write
+// that leaves the value as it was keeps both.
 type ContactDate struct {
 	ent.Schema
 }
@@ -60,17 +60,17 @@ func (ContactDate) Fields() []ent.Field {
 		// band is a set of them.
 		field.Int("month_day").
 			Immutable(),
-		// When the write that set the key was made, on the Instance clock (decision 15 of #1613): an
+		// When the write that set the field's value was made, on the Instance clock (decision 15 of #1613): an
 		// occurrence of the date is `missed` only when the date was written by its moment; one
 		// written after it is a date set late.
 		field.Time("written_at").
-			Annotations(Attribute("a fact of the write that set the key, fixed with the row; the date scheduler compares it with an occurrence's moment")).
+			Annotations(Attribute("a fact of the write that set the value, fixed with the row; the date scheduler compares it with an occurrence's moment")).
 			Immutable(),
-		// The write that set the key came through a Connection without mcp:send (ADR 0132 as amended
-		// by ADR 0126): an occurrence of a date Trigger on it enrolls no one. A write of another key
-		// without the mark replaces the row, and lifts it.
+		// The write that set the value came through a Connection without mcp:send (ADR 0132 as
+		// amended by ADR 0126): an occurrence of a date Trigger on it enrolls no one. A write of
+		// another value without the mark replaces the row, and lifts it.
 		field.Bool("send_locked").
-			Annotations(Attribute("a fact of the write that set the key, fixed with the row, which a write of another key replaces")).
+			Annotations(Attribute("a fact of the write that set the value, fixed with the row, which a write of another value replaces")).
 			Immutable(),
 	}
 }

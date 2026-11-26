@@ -2,6 +2,7 @@ package contacts
 
 import (
 	"context"
+	"reflect"
 
 	"github.com/samber/lo"
 
@@ -37,21 +38,24 @@ func DatesOf(c *ent.Contact) datetrigger.Holder {
 }
 
 // keepDates keeps the dates of the Contact once a write in ctx took it from before (nil for a
-// Contact the write made) to after, in the transaction s is bound to. A field whose key the write
-// changed gets a new row, written now and send-locked when ctx carries the mark; a field that no
-// longer holds a date loses its row; a field whose key is as it was keeps its row, its write time
-// and its send lock.
+// Contact the write made) to after, in the transaction s is bound to. A field whose stored value
+// the write changed gets a new row, written now and send-locked when ctx carries the mark, even
+// when its key stays the same (ADR 0132 as amended by ADR 0126: a write of the field without the
+// mark lifts it); a field that no longer holds a date loses its row; a field whose value is as it
+// was keeps its row, its write time and its send lock.
 func (m *Module) keepDates(ctx context.Context, s *ent.Scoped, before, after *ent.Contact) error {
-	held := keyMap(DatesOf(before).Keys())
-	keys := DatesOf(after).Keys()
+	was, is := DatesOf(before), DatesOf(after)
+	held := keyMap(was.Keys())
+	keys := is.Keys()
+	same := func(f datetrigger.Field) bool { return sameValue(was, is, f) }
 	fresh := lo.Filter(keys, func(k datetrigger.Keyed, _ int) bool {
-		key, ok := held[k.Field]
-		return !ok || key != k.Key
+		_, ok := held[k.Field]
+		return !ok || !same(k.Field)
 	})
 	kept := keyMap(keys)
 	gone := lo.Filter(lo.Keys(held), func(f datetrigger.Field, _ int) bool {
-		key, ok := kept[f]
-		return !ok || key != held[f]
+		_, ok := kept[f]
+		return !ok || !same(f)
 	})
 	if len(gone) > 0 {
 		fields := lo.Map(gone, func(f datetrigger.Field, _ int) predicate.ContactDate {
@@ -81,4 +85,16 @@ func (m *Module) keepDates(ctx context.Context, s *ent.Scoped, before, after *en
 // keyMap is the keys by their field.
 func keyMap(keys []datetrigger.Keyed) map[datetrigger.Field]localcalendar.Date {
 	return lo.SliceToMap(keys, func(k datetrigger.Keyed) (datetrigger.Field, localcalendar.Date) { return k.Field, k.Key })
+}
+
+// sameValue reports whether the two holdings store the same value in the field: the same birthday,
+// or the same Custom field value as stored (storedValue).
+func sameValue(was, is datetrigger.Holder, f datetrigger.Field) bool {
+	switch f.Kind {
+	case datetrigger.Birthday:
+		return was.Birthday != nil && is.Birthday != nil && was.Birthday.Equal(*is.Birthday)
+	case datetrigger.CustomField:
+		return reflect.DeepEqual(storedValue(was.CustomFields[f.Key]), storedValue(is.CustomFields[f.Key]))
+	}
+	return false
 }

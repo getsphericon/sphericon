@@ -397,6 +397,23 @@ func TestADateWrittenDuringAnOutageAfterItsOccurrenceIsNotMissed(t *testing.T) {
 	assert.Equal(t, []automationskippedentry.Reason{automationskippedentry.ReasonMissed}, c.skips(id, fixtures.ContactExportSubjectID))
 }
 
+// The send lock follows the stored value of the date (ADR 0132 as amended by ADR 0126): a write
+// without the mark that changes the value lifts it, even when the value's date in UTC stays the same.
+func TestAWriteWithoutTheMarkThatChangesTheValueLiftsTheSendLock(t *testing.T) {
+	c := newDateCase(t, at(2027, time.March, 19, 12, 0))
+	id := c.publish(datetrigger.Date{
+		Field:      datetrigger.Field{Kind: datetrigger.CustomField, Key: fixtures.CustomFieldAcmeTrialEndsAtKey},
+		Recurrence: localcalendar.Once, LocalTime: "10:00",
+	})
+	c.write(events.SendLocked(t.Context()), fixtures.ContactAliceID, contacts.Core{}, map[string]any{fixtures.CustomFieldAcmeTrialEndsAtKey: "2027-03-20T08:00:00Z"})
+	c.write(t.Context(), fixtures.ContactAliceID, contacts.Core{}, map[string]any{fixtures.CustomFieldAcmeTrialEndsAtKey: "2027-03-20T09:00:00Z"})
+
+	c.tickAt(id, at(2027, time.March, 20, 10, 5))
+
+	assert.Equal(t, []time.Time{at(2027, time.March, 20, 10, 0)}, c.beganAt(id, fixtures.ContactAliceID))
+	assert.Empty(t, c.skips(id, fixtures.ContactAliceID))
+}
+
 // After an outage of years each year's occurrence is decided `missed` once, and a tick that comes
 // round again records none twice.
 func TestEveryOccurrenceOfAnOutageIsMissedOnce(t *testing.T) {
