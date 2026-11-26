@@ -790,7 +790,7 @@ test('scheduling an SMS broadcast shows the share its Sending window holds and w
 
   await expect.element(screen.getByText(/10 recipients/)).toBeVisible()
   await expect
-    .element(screen.getByText(/4 of them \(40%\) would wait for their Sending window/))
+    .element(screen.getByText(/4 of them \(40%\) would wait for their sending window/))
     .toBeVisible()
   await expect
     .element(
@@ -819,7 +819,7 @@ test('scheduling an email broadcast says nothing of a Sending window', async () 
   await screen.getByRole('button', { name: 'Schedule', exact: true }).click()
 
   await expect.element(screen.getByText(/10 recipients/)).toBeVisible()
-  await expect.element(screen.getByText(/Sending window/)).not.toBeInTheDocument()
+  await expect.element(screen.getByText(/sending window/i)).not.toBeInTheDocument()
   expect(asked).toEqual([])
 })
 
