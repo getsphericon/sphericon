@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
+	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 )
 
 // AutomationRunUpdate is the builder for updating AutomationRun entities.
@@ -167,6 +168,46 @@ func (_u *AutomationRunUpdate) SetNillableResumeAt(v *time.Time) *AutomationRunU
 // ClearResumeAt clears the value of the "resume_at" field.
 func (_u *AutomationRunUpdate) ClearResumeAt() *AutomationRunUpdate {
 	_u.mutation.ClearResumeAt()
+	return _u
+}
+
+// SetDeferredSince sets the "deferred_since" field.
+func (_u *AutomationRunUpdate) SetDeferredSince(v time.Time) *AutomationRunUpdate {
+	_u.mutation.SetDeferredSince(v)
+	return _u
+}
+
+// SetNillableDeferredSince sets the "deferred_since" field if the given value is not nil.
+func (_u *AutomationRunUpdate) SetNillableDeferredSince(v *time.Time) *AutomationRunUpdate {
+	if v != nil {
+		_u.SetDeferredSince(*v)
+	}
+	return _u
+}
+
+// ClearDeferredSince clears the value of the "deferred_since" field.
+func (_u *AutomationRunUpdate) ClearDeferredSince() *AutomationRunUpdate {
+	_u.mutation.ClearDeferredSince()
+	return _u
+}
+
+// SetDeferralCause sets the "deferral_cause" field.
+func (_u *AutomationRunUpdate) SetDeferralCause(v deferralcause.Cause) *AutomationRunUpdate {
+	_u.mutation.SetDeferralCause(v)
+	return _u
+}
+
+// SetNillableDeferralCause sets the "deferral_cause" field if the given value is not nil.
+func (_u *AutomationRunUpdate) SetNillableDeferralCause(v *deferralcause.Cause) *AutomationRunUpdate {
+	if v != nil {
+		_u.SetDeferralCause(*v)
+	}
+	return _u
+}
+
+// ClearDeferralCause clears the value of the "deferral_cause" field.
+func (_u *AutomationRunUpdate) ClearDeferralCause() *AutomationRunUpdate {
+	_u.mutation.ClearDeferralCause()
 	return _u
 }
 
@@ -329,6 +370,11 @@ func (_u *AutomationRunUpdate) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "AutomationRun.status": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.DeferralCause(); ok {
+		if err := automationrun.DeferralCauseValidator(v); err != nil {
+			return &ValidationError{Name: "deferral_cause", err: fmt.Errorf(`ent: validator failed for field "AutomationRun.deferral_cause": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.FailureKind(); ok {
 		if err := automationrun.FailureKindValidator(v); err != nil {
 			return &ValidationError{Name: "failure_kind", err: fmt.Errorf(`ent: validator failed for field "AutomationRun.failure_kind": %w`, err)}
@@ -405,6 +451,18 @@ func (_u *AutomationRunUpdate) sqlSave(ctx context.Context) (_node int, err erro
 	}
 	if _u.mutation.ResumeAtCleared() {
 		_spec.ClearField(automationrun.FieldResumeAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.DeferredSince(); ok {
+		_spec.SetField(automationrun.FieldDeferredSince, field.TypeTime, value)
+	}
+	if _u.mutation.DeferredSinceCleared() {
+		_spec.ClearField(automationrun.FieldDeferredSince, field.TypeTime)
+	}
+	if value, ok := _u.mutation.DeferralCause(); ok {
+		_spec.SetField(automationrun.FieldDeferralCause, field.TypeEnum, value)
+	}
+	if _u.mutation.DeferralCauseCleared() {
+		_spec.ClearField(automationrun.FieldDeferralCause, field.TypeEnum)
 	}
 	if value, ok := _u.mutation.FailureKind(); ok {
 		_spec.SetField(automationrun.FieldFailureKind, field.TypeEnum, value)
@@ -701,6 +759,46 @@ func (_u *AutomationRunUpdateOne) ClearResumeAt() *AutomationRunUpdateOne {
 	return _u
 }
 
+// SetDeferredSince sets the "deferred_since" field.
+func (_u *AutomationRunUpdateOne) SetDeferredSince(v time.Time) *AutomationRunUpdateOne {
+	_u.mutation.SetDeferredSince(v)
+	return _u
+}
+
+// SetNillableDeferredSince sets the "deferred_since" field if the given value is not nil.
+func (_u *AutomationRunUpdateOne) SetNillableDeferredSince(v *time.Time) *AutomationRunUpdateOne {
+	if v != nil {
+		_u.SetDeferredSince(*v)
+	}
+	return _u
+}
+
+// ClearDeferredSince clears the value of the "deferred_since" field.
+func (_u *AutomationRunUpdateOne) ClearDeferredSince() *AutomationRunUpdateOne {
+	_u.mutation.ClearDeferredSince()
+	return _u
+}
+
+// SetDeferralCause sets the "deferral_cause" field.
+func (_u *AutomationRunUpdateOne) SetDeferralCause(v deferralcause.Cause) *AutomationRunUpdateOne {
+	_u.mutation.SetDeferralCause(v)
+	return _u
+}
+
+// SetNillableDeferralCause sets the "deferral_cause" field if the given value is not nil.
+func (_u *AutomationRunUpdateOne) SetNillableDeferralCause(v *deferralcause.Cause) *AutomationRunUpdateOne {
+	if v != nil {
+		_u.SetDeferralCause(*v)
+	}
+	return _u
+}
+
+// ClearDeferralCause clears the value of the "deferral_cause" field.
+func (_u *AutomationRunUpdateOne) ClearDeferralCause() *AutomationRunUpdateOne {
+	_u.mutation.ClearDeferralCause()
+	return _u
+}
+
 // SetFailureKind sets the "failure_kind" field.
 func (_u *AutomationRunUpdateOne) SetFailureKind(v automationrun.FailureKind) *AutomationRunUpdateOne {
 	_u.mutation.SetFailureKind(v)
@@ -873,6 +971,11 @@ func (_u *AutomationRunUpdateOne) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "AutomationRun.status": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.DeferralCause(); ok {
+		if err := automationrun.DeferralCauseValidator(v); err != nil {
+			return &ValidationError{Name: "deferral_cause", err: fmt.Errorf(`ent: validator failed for field "AutomationRun.deferral_cause": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.FailureKind(); ok {
 		if err := automationrun.FailureKindValidator(v); err != nil {
 			return &ValidationError{Name: "failure_kind", err: fmt.Errorf(`ent: validator failed for field "AutomationRun.failure_kind": %w`, err)}
@@ -966,6 +1069,18 @@ func (_u *AutomationRunUpdateOne) sqlSave(ctx context.Context) (_node *Automatio
 	}
 	if _u.mutation.ResumeAtCleared() {
 		_spec.ClearField(automationrun.FieldResumeAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.DeferredSince(); ok {
+		_spec.SetField(automationrun.FieldDeferredSince, field.TypeTime, value)
+	}
+	if _u.mutation.DeferredSinceCleared() {
+		_spec.ClearField(automationrun.FieldDeferredSince, field.TypeTime)
+	}
+	if value, ok := _u.mutation.DeferralCause(); ok {
+		_spec.SetField(automationrun.FieldDeferralCause, field.TypeEnum, value)
+	}
+	if _u.mutation.DeferralCauseCleared() {
+		_spec.ClearField(automationrun.FieldDeferralCause, field.TypeEnum)
 	}
 	if value, ok := _u.mutation.FailureKind(); ok {
 		_spec.SetField(automationrun.FieldFailureKind, field.TypeEnum, value)

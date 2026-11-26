@@ -24,6 +24,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 )
 
@@ -209,6 +210,34 @@ func (_c *OutboundMessageCreate) SetFailure(v string) *OutboundMessageCreate {
 func (_c *OutboundMessageCreate) SetNillableFailure(v *string) *OutboundMessageCreate {
 	if v != nil {
 		_c.SetFailure(*v)
+	}
+	return _c
+}
+
+// SetDeferredSince sets the "deferred_since" field.
+func (_c *OutboundMessageCreate) SetDeferredSince(v time.Time) *OutboundMessageCreate {
+	_c.mutation.SetDeferredSince(v)
+	return _c
+}
+
+// SetNillableDeferredSince sets the "deferred_since" field if the given value is not nil.
+func (_c *OutboundMessageCreate) SetNillableDeferredSince(v *time.Time) *OutboundMessageCreate {
+	if v != nil {
+		_c.SetDeferredSince(*v)
+	}
+	return _c
+}
+
+// SetDeferralCause sets the "deferral_cause" field.
+func (_c *OutboundMessageCreate) SetDeferralCause(v deferralcause.Cause) *OutboundMessageCreate {
+	_c.mutation.SetDeferralCause(v)
+	return _c
+}
+
+// SetNillableDeferralCause sets the "deferral_cause" field if the given value is not nil.
+func (_c *OutboundMessageCreate) SetNillableDeferralCause(v *deferralcause.Cause) *OutboundMessageCreate {
+	if v != nil {
+		_c.SetDeferralCause(*v)
 	}
 	return _c
 }
@@ -728,6 +757,11 @@ func (_c *OutboundMessageCreate) check() error {
 			return &ValidationError{Name: "skipped_reason", err: fmt.Errorf(`ent: validator failed for field "OutboundMessage.skipped_reason": %w`, err)}
 		}
 	}
+	if v, ok := _c.mutation.DeferralCause(); ok {
+		if err := outboundmessage.DeferralCauseValidator(v); err != nil {
+			return &ValidationError{Name: "deferral_cause", err: fmt.Errorf(`ent: validator failed for field "OutboundMessage.deferral_cause": %w`, err)}
+		}
+	}
 	if _, ok := _c.mutation.ClaimedAt(); !ok {
 		return &ValidationError{Name: "claimed_at", err: errors.New(`ent: missing required field "OutboundMessage.claimed_at"`)}
 	}
@@ -824,6 +858,14 @@ func (_c *OutboundMessageCreate) createSpec() (*OutboundMessage, *sqlgraph.Creat
 	if value, ok := _c.mutation.Failure(); ok {
 		_spec.SetField(outboundmessage.FieldFailure, field.TypeString, value)
 		_node.Failure = &value
+	}
+	if value, ok := _c.mutation.DeferredSince(); ok {
+		_spec.SetField(outboundmessage.FieldDeferredSince, field.TypeTime, value)
+		_node.DeferredSince = &value
+	}
+	if value, ok := _c.mutation.DeferralCause(); ok {
+		_spec.SetField(outboundmessage.FieldDeferralCause, field.TypeEnum, value)
+		_node.DeferralCause = &value
 	}
 	if value, ok := _c.mutation.ClaimedAt(); ok {
 		_spec.SetField(outboundmessage.FieldClaimedAt, field.TypeTime, value)
@@ -1303,6 +1345,42 @@ func (u *OutboundMessageUpsert) UpdateFailure() *OutboundMessageUpsert {
 // ClearFailure clears the value of the "failure" field.
 func (u *OutboundMessageUpsert) ClearFailure() *OutboundMessageUpsert {
 	u.SetNull(outboundmessage.FieldFailure)
+	return u
+}
+
+// SetDeferredSince sets the "deferred_since" field.
+func (u *OutboundMessageUpsert) SetDeferredSince(v time.Time) *OutboundMessageUpsert {
+	u.Set(outboundmessage.FieldDeferredSince, v)
+	return u
+}
+
+// UpdateDeferredSince sets the "deferred_since" field to the value that was provided on create.
+func (u *OutboundMessageUpsert) UpdateDeferredSince() *OutboundMessageUpsert {
+	u.SetExcluded(outboundmessage.FieldDeferredSince)
+	return u
+}
+
+// ClearDeferredSince clears the value of the "deferred_since" field.
+func (u *OutboundMessageUpsert) ClearDeferredSince() *OutboundMessageUpsert {
+	u.SetNull(outboundmessage.FieldDeferredSince)
+	return u
+}
+
+// SetDeferralCause sets the "deferral_cause" field.
+func (u *OutboundMessageUpsert) SetDeferralCause(v deferralcause.Cause) *OutboundMessageUpsert {
+	u.Set(outboundmessage.FieldDeferralCause, v)
+	return u
+}
+
+// UpdateDeferralCause sets the "deferral_cause" field to the value that was provided on create.
+func (u *OutboundMessageUpsert) UpdateDeferralCause() *OutboundMessageUpsert {
+	u.SetExcluded(outboundmessage.FieldDeferralCause)
+	return u
+}
+
+// ClearDeferralCause clears the value of the "deferral_cause" field.
+func (u *OutboundMessageUpsert) ClearDeferralCause() *OutboundMessageUpsert {
+	u.SetNull(outboundmessage.FieldDeferralCause)
 	return u
 }
 
@@ -1983,6 +2061,48 @@ func (u *OutboundMessageUpsertOne) UpdateFailure() *OutboundMessageUpsertOne {
 func (u *OutboundMessageUpsertOne) ClearFailure() *OutboundMessageUpsertOne {
 	return u.Update(func(s *OutboundMessageUpsert) {
 		s.ClearFailure()
+	})
+}
+
+// SetDeferredSince sets the "deferred_since" field.
+func (u *OutboundMessageUpsertOne) SetDeferredSince(v time.Time) *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.SetDeferredSince(v)
+	})
+}
+
+// UpdateDeferredSince sets the "deferred_since" field to the value that was provided on create.
+func (u *OutboundMessageUpsertOne) UpdateDeferredSince() *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.UpdateDeferredSince()
+	})
+}
+
+// ClearDeferredSince clears the value of the "deferred_since" field.
+func (u *OutboundMessageUpsertOne) ClearDeferredSince() *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.ClearDeferredSince()
+	})
+}
+
+// SetDeferralCause sets the "deferral_cause" field.
+func (u *OutboundMessageUpsertOne) SetDeferralCause(v deferralcause.Cause) *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.SetDeferralCause(v)
+	})
+}
+
+// UpdateDeferralCause sets the "deferral_cause" field to the value that was provided on create.
+func (u *OutboundMessageUpsertOne) UpdateDeferralCause() *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.UpdateDeferralCause()
+	})
+}
+
+// ClearDeferralCause clears the value of the "deferral_cause" field.
+func (u *OutboundMessageUpsertOne) ClearDeferralCause() *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.ClearDeferralCause()
 	})
 }
 
@@ -2895,6 +3015,48 @@ func (u *OutboundMessageUpsertBulk) UpdateFailure() *OutboundMessageUpsertBulk {
 func (u *OutboundMessageUpsertBulk) ClearFailure() *OutboundMessageUpsertBulk {
 	return u.Update(func(s *OutboundMessageUpsert) {
 		s.ClearFailure()
+	})
+}
+
+// SetDeferredSince sets the "deferred_since" field.
+func (u *OutboundMessageUpsertBulk) SetDeferredSince(v time.Time) *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.SetDeferredSince(v)
+	})
+}
+
+// UpdateDeferredSince sets the "deferred_since" field to the value that was provided on create.
+func (u *OutboundMessageUpsertBulk) UpdateDeferredSince() *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.UpdateDeferredSince()
+	})
+}
+
+// ClearDeferredSince clears the value of the "deferred_since" field.
+func (u *OutboundMessageUpsertBulk) ClearDeferredSince() *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.ClearDeferredSince()
+	})
+}
+
+// SetDeferralCause sets the "deferral_cause" field.
+func (u *OutboundMessageUpsertBulk) SetDeferralCause(v deferralcause.Cause) *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.SetDeferralCause(v)
+	})
+}
+
+// UpdateDeferralCause sets the "deferral_cause" field to the value that was provided on create.
+func (u *OutboundMessageUpsertBulk) UpdateDeferralCause() *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.UpdateDeferralCause()
+	})
+}
+
+// ClearDeferralCause clears the value of the "deferral_cause" field.
+func (u *OutboundMessageUpsertBulk) ClearDeferralCause() *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.ClearDeferralCause()
 	})
 }
 

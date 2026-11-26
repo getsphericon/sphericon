@@ -89,8 +89,14 @@ model EnrollmentResource {
   /** Id of the Step of its version the Enrollment stands on (ADR 0122): a wait while it waits, the Step it ended on once it ended; absent only for a version of no Steps */
   currentStepId?: StepId;
 
-  /** When the wait the Enrollment stands on is due: computed once, when it reached the wait (ADR 0124) */
+  /** When the wait the Enrollment stands on is due: a wait Step's, computed once when it reached the wait (ADR 0124), or, while the send of its Step is deferred, when the send is tried again (ADR 0178) */
   resumeAt?: Timestamp;
+
+  /** Since when the send of the Step the Enrollment stands on waits: the first Deferral at the Step (ADR 0178); absent once it moves on, and while its send is not deferred */
+  deferredSince?: Timestamp;
+
+  /** Why the send of the Step the Enrollment stands on waits: the cause of its latest Deferral; absent whenever `deferredSince` is */
+  deferralCause?: DeferralCause;
 
   /** Present on a failed Enrollment whose failure an HTTP step recorded */
   failure?: EnrollmentFailure;

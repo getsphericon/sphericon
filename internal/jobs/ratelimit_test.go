@@ -13,6 +13,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/broadcast"
+	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/sending/linkclick"
@@ -203,6 +204,77 @@ func TestAutomationStepDeferredBySendCapAsksAgainWithinTheBound(t *testing.T) {
 		assert.Equal(t, env.StepIDAt(t, runID, 0), lo.FromPtr(run.CurrentStepID), "the enrollment keeps its place")
 		assert.Empty(t, fs.sent, "the step has not sent")
 	})
+}
+
+// An Automation send the Send cap defers records its wait on the Enrollment (ADR 0178): since when
+// it waits at the step, the cause and until when. A second Deferral at the step keeps the first
+// moment and moves the until. Once the send goes, the Enrollment's record is cleared and the
+// Outbound message keeps since when and why it waited.
+func TestAnAutomationSendTheSendCapDefersRecordsItsWait(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		env := testhelper.Setup(t)
+		ctx := context.Background()
+		fs := &fakeSender{}
+		mod := outboundmessages.New(env.Bus, env.CoreHolds(), resolvingTo(fs), messagetoken.New("test-secret", "http://local", time.Now), env.OutboundModules(env.Bus, time.Now), outboundmessages.Deps{}, outboundmessages.Config{SendCaps: true}, time.Now)
+		env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSendCap(1).ExecX(ctx)
+		// The day's one token went to another send just now.
+		env.DB.SendCapLimiter.UpdateOneID(fixtures.SendCapLimiterAcmeID).SetDayTokens(0).SetRefilledAt(time.Now()).ExecX(ctx)
+		require.NoError(t, testhelper.Module[*automations.StepExecution](env).OnEvent(ctx, env.DB.Scoped(fixtures.AcmeID), automations.OnEventInput{ContactID: fixtures.ContactHoldDemoID, Event: automations.Event{Action: "hold_demo", OccurredAt: time.Now()}}))
+		runID := env.DB.AutomationRun.Query().Where(automationrun.AutomationID(fixtures.AutomationHoldDemoID)).OnlyIDX(ctx)
+		step := stepperWith(env, mod)
+
+		first := time.Now()
+		require.True(t, env.RunNextStep(t, step))
+		deferred := env.DB.AutomationRun.GetX(ctx, runID)
+		firstRetry := env.JobSchedules(t, automations.RunStepArgs{}.Kind())[0]
+		require.NotNil(t, deferred.DeferredSince)
+		assert.WithinDuration(t, first, *deferred.DeferredSince, time.Microsecond, "since the first Deferral at the step")
+		assert.Equal(t, deferralcause.SendCap, lo.FromPtr(deferred.DeferralCause))
+		require.NotNil(t, deferred.ResumeAt)
+		assert.WithinDuration(t, firstRetry, *deferred.ResumeAt, time.Microsecond, "until it is tried again")
+
+		testhelper.Elapse(firstRetry.Sub(time.Now()))
+		require.True(t, env.RunNextStep(t, step))
+		again := env.DB.AutomationRun.GetX(ctx, runID)
+		require.NotNil(t, again.DeferredSince)
+		assert.WithinDuration(t, first, *again.DeferredSince, time.Microsecond, "a second Deferral keeps the first moment")
+		assert.Equal(t, deferralcause.SendCap, lo.FromPtr(again.DeferralCause))
+		require.NotNil(t, again.ResumeAt)
+		assert.True(t, again.ResumeAt.After(firstRetry), "and waits until its own retry")
+		assert.Empty(t, fs.sent, "the step has not sent")
+
+		// A token is back.
+		env.DB.SendCapLimiter.UpdateOneID(fixtures.SendCapLimiterAcmeID).SetDayTokens(1).SetRefilledAt(time.Now()).ExecX(ctx)
+		testhelper.Elapse(again.ResumeAt.Sub(time.Now()))
+		require.True(t, env.RunNextStep(t, step))
+		require.Len(t, fs.sent, 1, "the step sends")
+		sent := env.DB.AutomationRun.GetX(ctx, runID)
+		assert.Equal(t, automationrun.StatusCompleted, sent.Status)
+		assert.Nil(t, sent.DeferredSince, "the Enrollment no longer waits")
+		assert.Nil(t, sent.DeferralCause)
+		msg := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationRunID(runID)).OnlyX(ctx)
+		assert.Equal(t, outboundmessage.StatusSent, msg.Status)
+		require.NotNil(t, msg.DeferredSince)
+		assert.WithinDuration(t, first, *msg.DeferredSince, time.Microsecond, "the message keeps since when it waited")
+		assert.Equal(t, deferralcause.SendCap, lo.FromPtr(msg.DeferralCause), "and why")
+	})
+}
+
+// A send that never waited leaves no wait on its Outbound message.
+func TestAnAutomationSendThatNeverWaitedRecordsNoWait(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	fs := &fakeSender{}
+	mod := outboundmessages.New(env.Bus, env.CoreHolds(), resolvingTo(fs), messagetoken.New("test-secret", "http://local", time.Now), env.OutboundModules(env.Bus, time.Now), outboundmessages.Deps{}, outboundmessages.Config{}, time.Now)
+	require.NoError(t, testhelper.Module[*automations.StepExecution](env).OnEvent(ctx, env.DB.Scoped(fixtures.AcmeID), automations.OnEventInput{ContactID: fixtures.ContactHoldDemoID, Event: automations.Event{Action: "hold_demo", OccurredAt: time.Now()}}))
+	runID := env.DB.AutomationRun.Query().Where(automationrun.AutomationID(fixtures.AutomationHoldDemoID)).OnlyIDX(ctx)
+
+	require.True(t, env.RunNextStep(t, stepperWith(env, mod)))
+
+	msg := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationRunID(runID)).OnlyX(ctx)
+	assert.Equal(t, outboundmessage.StatusSent, msg.Status)
+	assert.Nil(t, msg.DeferredSince)
+	assert.Nil(t, msg.DeferralCause)
 }
 
 // Automation steps and Broadcast recipients draw on one Integration's limit.

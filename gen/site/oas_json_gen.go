@@ -16857,6 +16857,52 @@ func (s *DateTriggerKind) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes DeferralCause as json.
+func (s DeferralCause) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes DeferralCause from json.
+func (s *DeferralCause) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode DeferralCause to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch DeferralCause(v) {
+	case DeferralCauseProviderLimit:
+		*s = DeferralCauseProviderLimit
+	case DeferralCauseSendCap:
+		*s = DeferralCauseSendCap
+	case DeferralCauseProvider:
+		*s = DeferralCauseProvider
+	case DeferralCauseSendingWindow:
+		*s = DeferralCauseSendingWindow
+	case DeferralCauseFrequencyCap:
+		*s = DeferralCauseFrequencyCap
+	default:
+		*s = DeferralCause(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s DeferralCause) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *DeferralCause) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode implements json.Marshaler.
 func (s *DnsRecord) Encode(e *jx.Encoder) {
 	e.ObjStart()
@@ -20484,6 +20530,18 @@ func (s *EnrollmentResource) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.DeferredSince.Set {
+			e.FieldStart("deferredSince")
+			s.DeferredSince.Encode(e)
+		}
+	}
+	{
+		if s.DeferralCause.Set {
+			e.FieldStart("deferralCause")
+			s.DeferralCause.Encode(e)
+		}
+	}
+	{
 		if s.Failure.Set {
 			e.FieldStart("failure")
 			s.Failure.Encode(e)
@@ -20499,7 +20557,7 @@ func (s *EnrollmentResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfEnrollmentResource = [12]string{
+var jsonFieldsNameOfEnrollmentResource = [14]string{
 	0:  "id",
 	1:  "automationId",
 	2:  "contactId",
@@ -20509,9 +20567,11 @@ var jsonFieldsNameOfEnrollmentResource = [12]string{
 	6:  "occurrence",
 	7:  "currentStepId",
 	8:  "resumeAt",
-	9:  "failure",
-	10: "createdAt",
-	11: "updatedAt",
+	9:  "deferredSince",
+	10: "deferralCause",
+	11: "failure",
+	12: "createdAt",
+	13: "updatedAt",
 }
 
 // Decode decodes EnrollmentResource from json.
@@ -20615,6 +20675,26 @@ func (s *EnrollmentResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"resumeAt\"")
 			}
+		case "deferredSince":
+			if err := func() error {
+				s.DeferredSince.Reset()
+				if err := s.DeferredSince.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"deferredSince\"")
+			}
+		case "deferralCause":
+			if err := func() error {
+				s.DeferralCause.Reset()
+				if err := s.DeferralCause.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"deferralCause\"")
+			}
 		case "failure":
 			if err := func() error {
 				s.Failure.Reset()
@@ -20626,7 +20706,7 @@ func (s *EnrollmentResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"failure\"")
 			}
 		case "createdAt":
-			requiredBitSet[1] |= 1 << 2
+			requiredBitSet[1] |= 1 << 4
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -20636,7 +20716,7 @@ func (s *EnrollmentResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"createdAt\"")
 			}
 		case "updatedAt":
-			requiredBitSet[1] |= 1 << 3
+			requiredBitSet[1] |= 1 << 5
 			if err := func() error {
 				if err := s.UpdatedAt.Decode(d); err != nil {
 					return err
@@ -20656,7 +20736,7 @@ func (s *EnrollmentResource) Decode(d *jx.Decoder) error {
 	var failures []validate.FieldError
 	for i, mask := range [2]uint8{
 		0b00011111,
-		0b00001100,
+		0b00110000,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -27505,6 +27585,39 @@ func (s OptCustomFieldType) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *OptCustomFieldType) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes DeferralCause as json.
+func (o OptDeferralCause) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	e.Str(string(o.Value))
+}
+
+// Decode decodes DeferralCause from json.
+func (o *OptDeferralCause) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptDeferralCause to nil")
+	}
+	o.Set = true
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptDeferralCause) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptDeferralCause) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

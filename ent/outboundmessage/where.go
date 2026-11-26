@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 )
 
@@ -106,6 +107,11 @@ func ProviderMessageID(v string) predicate.OutboundMessage {
 // Failure applies equality check predicate on the "failure" field. It's identical to FailureEQ.
 func Failure(v string) predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldEQ(FieldFailure, v))
+}
+
+// DeferredSince applies equality check predicate on the "deferred_since" field. It's identical to DeferredSinceEQ.
+func DeferredSince(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldEQ(FieldDeferredSince, v))
 }
 
 // ClaimedAt applies equality check predicate on the "claimed_at" field. It's identical to ClaimedAtEQ.
@@ -917,6 +923,96 @@ func FailureEqualFold(v string) predicate.OutboundMessage {
 // FailureContainsFold applies the ContainsFold predicate on the "failure" field.
 func FailureContainsFold(v string) predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldContainsFold(FieldFailure, v))
+}
+
+// DeferredSinceEQ applies the EQ predicate on the "deferred_since" field.
+func DeferredSinceEQ(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldEQ(FieldDeferredSince, v))
+}
+
+// DeferredSinceNEQ applies the NEQ predicate on the "deferred_since" field.
+func DeferredSinceNEQ(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNEQ(FieldDeferredSince, v))
+}
+
+// DeferredSinceIn applies the In predicate on the "deferred_since" field.
+func DeferredSinceIn(vs ...time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldIn(FieldDeferredSince, vs...))
+}
+
+// DeferredSinceNotIn applies the NotIn predicate on the "deferred_since" field.
+func DeferredSinceNotIn(vs ...time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNotIn(FieldDeferredSince, vs...))
+}
+
+// DeferredSinceGT applies the GT predicate on the "deferred_since" field.
+func DeferredSinceGT(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldGT(FieldDeferredSince, v))
+}
+
+// DeferredSinceGTE applies the GTE predicate on the "deferred_since" field.
+func DeferredSinceGTE(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldGTE(FieldDeferredSince, v))
+}
+
+// DeferredSinceLT applies the LT predicate on the "deferred_since" field.
+func DeferredSinceLT(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldLT(FieldDeferredSince, v))
+}
+
+// DeferredSinceLTE applies the LTE predicate on the "deferred_since" field.
+func DeferredSinceLTE(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldLTE(FieldDeferredSince, v))
+}
+
+// DeferredSinceIsNil applies the IsNil predicate on the "deferred_since" field.
+func DeferredSinceIsNil() predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldIsNull(FieldDeferredSince))
+}
+
+// DeferredSinceNotNil applies the NotNil predicate on the "deferred_since" field.
+func DeferredSinceNotNil() predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNotNull(FieldDeferredSince))
+}
+
+// DeferralCauseEQ applies the EQ predicate on the "deferral_cause" field.
+func DeferralCauseEQ(v deferralcause.Cause) predicate.OutboundMessage {
+	vc := v
+	return predicate.OutboundMessage(sql.FieldEQ(FieldDeferralCause, vc))
+}
+
+// DeferralCauseNEQ applies the NEQ predicate on the "deferral_cause" field.
+func DeferralCauseNEQ(v deferralcause.Cause) predicate.OutboundMessage {
+	vc := v
+	return predicate.OutboundMessage(sql.FieldNEQ(FieldDeferralCause, vc))
+}
+
+// DeferralCauseIn applies the In predicate on the "deferral_cause" field.
+func DeferralCauseIn(vs ...deferralcause.Cause) predicate.OutboundMessage {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.OutboundMessage(sql.FieldIn(FieldDeferralCause, v...))
+}
+
+// DeferralCauseNotIn applies the NotIn predicate on the "deferral_cause" field.
+func DeferralCauseNotIn(vs ...deferralcause.Cause) predicate.OutboundMessage {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.OutboundMessage(sql.FieldNotIn(FieldDeferralCause, v...))
+}
+
+// DeferralCauseIsNil applies the IsNil predicate on the "deferral_cause" field.
+func DeferralCauseIsNil() predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldIsNull(FieldDeferralCause))
+}
+
+// DeferralCauseNotNil applies the NotNil predicate on the "deferral_cause" field.
+func DeferralCauseNotNil() predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNotNull(FieldDeferralCause))
 }
 
 // ClaimedAtEQ applies the EQ predicate on the "claimed_at" field.

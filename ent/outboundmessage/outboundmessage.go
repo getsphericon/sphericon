@@ -9,6 +9,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 )
 
@@ -47,6 +48,10 @@ const (
 	FieldSkippedReason = "skipped_reason"
 	// FieldFailure holds the string denoting the failure field in the database.
 	FieldFailure = "failure"
+	// FieldDeferredSince holds the string denoting the deferred_since field in the database.
+	FieldDeferredSince = "deferred_since"
+	// FieldDeferralCause holds the string denoting the deferral_cause field in the database.
+	FieldDeferralCause = "deferral_cause"
 	// FieldClaimedAt holds the string denoting the claimed_at field in the database.
 	FieldClaimedAt = "claimed_at"
 	// FieldSentAt holds the string denoting the sent_at field in the database.
@@ -207,6 +212,8 @@ var Columns = []string{
 	FieldStatus,
 	FieldSkippedReason,
 	FieldFailure,
+	FieldDeferredSince,
+	FieldDeferralCause,
 	FieldClaimedAt,
 	FieldSentAt,
 	FieldDeliveredAt,
@@ -335,6 +342,16 @@ func SkippedReasonValidator(sr skipreason.Reason) error {
 	}
 }
 
+// DeferralCauseValidator is a validator for the "deferral_cause" field enum values. It is called by the builders before save.
+func DeferralCauseValidator(dc deferralcause.Cause) error {
+	switch dc {
+	case "provider_limit", "send_cap", "provider", "sending_window", "frequency_cap":
+		return nil
+	default:
+		return fmt.Errorf("outboundmessage: invalid enum value for deferral_cause field: %q", dc)
+	}
+}
+
 // OrderOption defines the ordering options for the OutboundMessage queries.
 type OrderOption func(*sql.Selector)
 
@@ -411,6 +428,16 @@ func BySkippedReason(opts ...sql.OrderTermOption) OrderOption {
 // ByFailure orders the results by the failure field.
 func ByFailure(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldFailure, opts...).ToFunc()
+}
+
+// ByDeferredSince orders the results by the deferred_since field.
+func ByDeferredSince(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDeferredSince, opts...).ToFunc()
+}
+
+// ByDeferralCause orders the results by the deferral_cause field.
+func ByDeferralCause(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDeferralCause, opts...).ToFunc()
 }
 
 // ByClaimedAt orders the results by the claimed_at field.

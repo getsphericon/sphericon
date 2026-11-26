@@ -4,14 +4,19 @@ import (
 	"context"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/infra/messaging/twilio/twiliotest"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -125,4 +130,43 @@ func TestExternalEnrollmentsShowTheOnceOccurrence(t *testing.T) {
 	occurrence, ok := listed.Items[0].Occurrence.Get()
 	require.True(t, ok)
 	assert.JSONEq(t, `{"recurrence":"once"}`, testhelper.JSONOf(t, &occurrence))
+}
+
+// An Enrollment whose send waits at its step reads since when, why and until when (ADR 0178); once
+// it moves on, it reads none. Twilio answers the first text "too many requests": the provider's own
+// Deferral.
+func TestExternalEnrollmentsReadTheWaitOfADeferredSend(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	s := env.DB.Scoped(fixtures.AcmeID)
+	// The test's database is one transaction on one connection, so the send is not fenced against
+	// an exit on a connection of its own.
+	unfenced := func(ctx context.Context, _ *ent.Scoped, _ int64, effect func(context.Context) error) error { return effect(ctx) }
+	step := automations.NewStepExecution(env.Bus, env.OutboundModule(), testhelper.Module[*contacts.Module](env), unfenced, env.Cipher, nil, time.Now)
+	c := env.ExternalScoped(t, apitokens.ScopeEnrollmentsRead)
+	env.AcmeTwilio(t)
+	runID := int64(fixtures.AutomationRunJobsSMSHelloConfirmedID)
+	params := externalapi.EnrollmentsGetParams{AutomationId: entityIDString(fixtures.AutomationJobsSMSHelloID), EnrollmentId: entityIDString(runID)}
+	env.Twilio.RefuseNextSend(twiliotest.TooManyRequests)
+
+	deferredAt := time.Now()
+	require.NoError(t, step.Step(ctx, s, runID, env.StepIDAt(t, runID, 0)))
+	retry := env.JobSchedules(t, automations.RunStepArgs{}.Kind())[0]
+	waiting, err := c.EnrollmentsGet(ctx, params)
+	require.NoError(t, err)
+	since, ok := waiting.DeferredSince.Get()
+	require.True(t, ok, "since when it waits")
+	assert.WithinDuration(t, deferredAt, time.Time(since), time.Second)
+	assert.Equal(t, externalapi.NewOptDeferralCause(externalapi.DeferralCauseProvider), waiting.DeferralCause, "why")
+	until, ok := waiting.ResumeAt.Get()
+	require.True(t, ok, "until when")
+	assert.WithinDuration(t, retry, time.Time(until), time.Second)
+
+	env.RunQueuedSteps(t, step)
+	moved, err := c.EnrollmentsGet(ctx, params)
+	require.NoError(t, err)
+	assert.Equal(t, externalapi.EnrollmentStatusCompleted, moved.Status)
+	assert.False(t, moved.DeferredSince.Set)
+	assert.False(t, moved.DeferralCause.Set)
+	assert.False(t, moved.ResumeAt.Set)
 }

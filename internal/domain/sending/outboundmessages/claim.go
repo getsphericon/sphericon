@@ -68,6 +68,7 @@ func (m *Module) claim(ctx context.Context, s *ent.Scoped, req Request, dest str
 		create.SetContactID(contactID)
 	}
 	req.Ref.stamp(create)
+	req.Waited.stamp(create)
 	if req.digest != "" {
 		create.SetRequestDigest(req.digest)
 	}
@@ -114,7 +115,7 @@ func (m *Module) adopt(ctx context.Context, s *ent.Scoped, req Request, existing
 	if err != nil || withdrawn {
 		return nil, withdrawnResult(withdrawn), err
 	}
-	msg, err := m.takeOver(ctx, s, existing)
+	msg, err := m.takeOver(ctx, s, req, existing)
 	return msg, nil, err
 }
 
@@ -178,15 +179,17 @@ func withdrawnResult(withdrawn bool) *Result {
 // takeOver adopts a pending claim, but only when its lease has expired (a crashed
 // or abandoned attempt). The update is conditional on the claim being exactly the
 // one we read, so of several racing retries exactly one wins; everyone else, and
-// any retry that finds a live claim, gets ErrInProgress.
-func (m *Module) takeOver(ctx context.Context, s *ent.Scoped, existing *ent.OutboundMessage) (*ent.OutboundMessage, error) {
+// any retry that finds a live claim, gets ErrInProgress. The claim takes the wait of req, the
+// attempt that now holds it.
+func (m *Module) takeOver(ctx context.Context, s *ent.Scoped, req Request, existing *ent.OutboundMessage) (*ent.OutboundMessage, error) {
 	if m.now().Sub(existing.ClaimedAt) < m.lease {
 		return nil, ErrInProgress
 	}
-	n, err := s.OutboundMessage().Update().
+	u := s.OutboundMessage().Update().
 		Where(ownsClaim(existing)...).
-		SetClaimedAt(m.claimTime()).
-		Save(ctx)
+		SetClaimedAt(m.claimTime())
+	req.Waited.restamp(u)
+	n, err := u.Save(ctx)
 	if err != nil {
 		return nil, err
 	}

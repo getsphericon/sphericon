@@ -7,6 +7,8 @@ import (
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
+
+	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 )
 
 // BroadcastRecipient is the per-recipient delivery log for a Broadcast. It is
@@ -16,10 +18,12 @@ type BroadcastRecipient struct {
 	ent.Schema
 }
 
+// Annotations adds to the enum checks that a recipient's Deferral cause stands beside its release
+// moment.
 func (BroadcastRecipient) Annotations() []schema.Annotation {
-	return []schema.Annotation{
-		entsql.Annotation{Table: "broadcast_recipients"},
-	}
+	a := TableWithEnumChecks("broadcast_recipients", BroadcastRecipient{}.Fields())
+	a.Checks["broadcast_recipients_deferral_check"] = "deferral_cause IS NULL OR deferred_until IS NOT NULL"
+	return []schema.Annotation{a}
 }
 
 func (BroadcastRecipient) Mixin() []ent.Mixin {
@@ -44,6 +48,12 @@ func (BroadcastRecipient) Fields() []ent.Field {
 		// backlog a deferred job waits behind counts only pending recipients that are
 		// awake: no deferral recorded, or one that has passed.
 		field.Time("deferred_until").
+			Optional().
+			Nillable(),
+		// Why the recipient waits until deferred_until (ADR 0178): the cause of its latest
+		// Deferral. Both are cleared when its send is decided.
+		field.Enum("deferral_cause").
+			GoType(deferralcause.Cause("")).
 			Optional().
 			Nillable(),
 		// When this recipient unsubscribed from the Broadcast's email: set once, so the

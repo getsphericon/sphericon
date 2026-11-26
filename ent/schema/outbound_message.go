@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/schema/index"
 
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
@@ -40,6 +41,7 @@ func (OutboundMessage) Annotations() []schema.Annotation {
 	a.Checks["outbound_messages_final_report_check"] = "delivered_at IS NULL OR undelivered_at IS NULL"
 	a.Checks["outbound_messages_provenance_check"] = variantCheck("kind", outboundProvenance)
 	a.Checks["outbound_messages_outcome_check"] = variantCheck("status", outboundOutcome)
+	a.Checks["outbound_messages_deferral_check"] = "(deferred_since IS NULL) = (deferral_cause IS NULL)"
 	return []schema.Annotation{WithLowerCheck(a, "destination")}
 }
 
@@ -138,6 +140,18 @@ func (OutboundMessage) Fields() []ent.Field {
 		// message but a failed one (outbound_messages_outcome_check). An Erasure blanks the
 		// number it quotes (ADR 0021).
 		field.String("failure").
+			Optional().
+			Nillable(),
+		// Since when and why the send waited before it was decided (ADR 0178), from its Request:
+		// the moment its first Deferral at its place began and the cause of its latest. Null for a
+		// send that never waited (outbound_messages_deferral_check: both or neither). A Step record
+		// of a send Step reads its wait here.
+		field.Time("deferred_since").
+			Annotations(Attribute("records since when the send waited, written with its claim")).
+			Optional().
+			Nillable(),
+		field.Enum("deferral_cause").
+			GoType(deferralcause.Cause("")).
 			Optional().
 			Nillable(),
 		// Lease: a pending claim may be taken over by a retry only when its

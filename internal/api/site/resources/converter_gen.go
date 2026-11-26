@@ -1189,6 +1189,24 @@ func (c *ConverterImpl) DateTriggerToResource(source datetrigger.Date) site.Date
 	siteapiDateTrigger.LocalTime = site.LocalTime(source.LocalTime)
 	return siteapiDateTrigger
 }
+func (c *ConverterImpl) DeferralCauseToResource(source deferralcause.Cause) site.DeferralCause {
+	var siteapiDeferralCause site.DeferralCause
+	switch source {
+	case deferralcause.FrequencyCap:
+		siteapiDeferralCause = site.DeferralCauseFrequencyCap
+	case deferralcause.ProviderLimit:
+		siteapiDeferralCause = site.DeferralCauseProviderLimit
+	case deferralcause.SendCap:
+		siteapiDeferralCause = site.DeferralCauseSendCap
+	case deferralcause.SendingWindow:
+		siteapiDeferralCause = site.DeferralCauseSendingWindow
+	case deferralcause.SlowDown:
+		siteapiDeferralCause = site.DeferralCauseProvider
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiDeferralCause
+}
 func (c *ConverterImpl) DeletedWorkspaceToResource(source *ent.Workspace) site.SiteDeletedWorkspaceResource {
 	var siteapiSiteDeletedWorkspaceResource site.SiteDeletedWorkspaceResource
 	if source != nil {
@@ -1409,6 +1427,8 @@ func (c *ConverterImpl) EnrollmentToResource(source *ent.AutomationRun) site.Enr
 		siteapiEnrollmentResource.Occurrence = enrollmentOccurrence((*source).Occurrence)
 		siteapiEnrollmentResource.CurrentStepId = optStepID((*source).CurrentStepID)
 		siteapiEnrollmentResource.ResumeAt = optTimestamp((*source).ResumeAt)
+		siteapiEnrollmentResource.DeferredSince = optTimestamp((*source).DeferredSince)
+		siteapiEnrollmentResource.DeferralCause = optDeferralCause(c, (*source).DeferralCause)
 		siteapiEnrollmentResource.Failure = enrollmentFailure(c, (*source))
 		siteapiEnrollmentResource.CreatedAt = timestamp((*source).CreatedAt)
 		siteapiEnrollmentResource.UpdatedAt = timestamp((*source).UpdatedAt)
