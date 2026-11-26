@@ -19,7 +19,7 @@ import { useConfirmation } from '../../hooks/useConfirmation.tsx'
 import { useNotify } from '../../hooks/useNotify.ts'
 import { Route as automationsRoute } from '../../routes/workspaces/$workspaceId/automations/index.tsx'
 import { canvasFigures } from './canvasFigures.ts'
-import { allSteps, forkPaths, holdsKept, isFork } from './definition.ts'
+import { allSteps, forkPaths, holdsKept } from './definition.ts'
 import type { Flow } from './definition.ts'
 import { automationOutcomeTexts } from './draftActions.ts'
 import { automationAdapter, editedFlow, editorSession } from './editorSession.ts'
@@ -38,9 +38,8 @@ import {
   updateStep,
   updateTrigger,
 } from './flowEdits.ts'
-import { forkError, invalidForks } from './forkRules.ts'
-import type { ForkError } from './forkRules.ts'
 import { LeaveGuard } from './LeaveGuard.tsx'
+import { useNodeErrors } from './nodeErrors.ts'
 import { useStepInfo } from './stepKinds.ts'
 import { StepPanel } from './StepPanel.tsx'
 import type { ForkControls } from './StepPanel.tsx'
@@ -97,7 +96,8 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
   const [selected, setSelected] = useState<string | null>(null)
   // The check of the open Step's form, which the Save runs first.
   const validatorRef = useRef<(() => boolean) | null>(null)
-  // The forks checked on blur or on Save: their nodes show their errors from then on.
+  // The nodes checked on blur or on Save (the Trigger, forks, Wait until Steps): they show their
+  // errors from then on.
   const [checked, setChecked] = useState<ReadonlySet<string>>(new Set())
   const check = useCallback(
     (ids: string[]) => setChecked((current) => new Set([...current, ...ids])),
@@ -143,12 +143,15 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
     effects,
   })
 
-  // The check a Save and a "Save mine over it" run before they send: every fork is checked, its
-  // panel open or not, and its node shows the error from then on; the open Step's form is checked;
-  // the first invalid fork whose panel is closed opens. False when anything is invalid.
+  const nodeErrors = useNodeErrors(flow)
+
+  // The check a Save and a "Save mine over it" run before they send: every node is checked (the
+  // Trigger's date, forks, Wait until Steps), its panel open or not, and it shows its error from
+  // then on; the open panel's form is checked; the first invalid node whose panel is closed opens.
+  // False when anything is invalid.
   const checkBeforeSending = (): boolean => {
-    const invalid = invalidForks(latest.current)
-    check(invalid.map((fork) => fork.id))
+    const invalid = nodeErrors(latest.current)
+    check(invalid.map((node) => node.id))
     if (validatorRef.current?.() === false) {
       return false
     }
@@ -231,22 +234,9 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
       onConfirm,
     })
   }
-  const forkErrorText = (error: ForkError): string => {
-    switch (error.kind) {
-      case 'condition':
-        return t(($) => $.automations.forkConditionError, { number: error.index + 1 })
-      case 'weight':
-        return t(($) => $.automations.forkWeightError, { number: error.index + 1 })
-      case 'sum':
-      default:
-        return t(($) => $.automations.weightSumError, { sum: error.sum })
-    }
-  }
-  const errorOf = (id: string): string | null => {
-    const step = checked.has(id) ? allSteps(flow.path).find((s) => s.id === id) : undefined
-    const error = step !== undefined && isFork(step) ? forkError(step) : null
-    return error === null ? null : forkErrorText(error)
-  }
+  const errors = nodeErrors(flow)
+  const errorOf = (id: string): string | null =>
+    checked.has(id) ? (errors.find((node) => node.id === id)?.message ?? null) : null
   const forks: ForkControls = {
     checked: (id) => checked.has(id),
     onChecked: (id) => check([id]),

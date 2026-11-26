@@ -15,7 +15,7 @@ import { zUpdateAutomationInput } from '../../generated/site/zod.gen.ts'
 import { stepId, testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { worker } from '../../test/worker.ts'
-import { definitionOf, flowOf } from './definition.ts'
+import { flowOf } from './definition.ts'
 import type { Flow } from './definition.ts'
 import { automationSubmission, editorSession } from './editorSession.ts'
 import { automationSnapshot } from './leaveSnapshot.ts'
@@ -242,9 +242,8 @@ test('a flow holding a kept Step has no submission', () => {
   expect(automationSubmission('Kept', kept)).toBeNull()
 })
 
-// A version whose Trigger is a date (ADR 0126), which the editor does not edit yet, is never saved,
-// and reads back the Trigger as stored, so nothing drops it.
-test('a flow holding a date Trigger has no submission and keeps the Trigger', () => {
+// A date Trigger (ADR 0126) is saved as stored, with no Entry policy, cooldown or Enrollment key.
+test('a flow holding a date Trigger is submitted with the Trigger as stored', () => {
   const trigger = {
     kind: 'date' as const,
     field: { kind: 'customField' as const, key: 'trial_ends_at' },
@@ -254,8 +253,28 @@ test('a flow holding a date Trigger has no submission and keeps the Trigger', ()
   }
   const dated = flowOf({ ...DRAFT, trigger })
 
-  expect(automationSubmission('Dated', dated)).toBeNull()
-  expect(definitionOf(dated).trigger).toEqual(trigger)
+  expect(automationSubmission('Dated', dated)?.body.trigger).toEqual(trigger)
+})
+
+// A date Trigger whose date is not chosen yet is never sent: the Save stops on it first.
+test('a flow holding a date Trigger without its date has no submission', () => {
+  const flow = flowOf(DRAFT)
+  const undated = {
+    ...flow,
+    trigger: {
+      ...flow.trigger,
+      kind: 'date' as const,
+      date: {
+        field: null,
+        recurrence: 'yearly' as const,
+        days: 0,
+        sign: 1 as const,
+        localTime: '',
+      },
+    },
+  }
+
+  expect(automationSubmission('Undated', undated)).toBeNull()
 })
 
 // A Branch path whose Condition is still being typed is never sent: the Save stops on it first.

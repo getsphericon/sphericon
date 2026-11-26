@@ -49,4 +49,5 @@ export const stepSchemas = {
   wait: z.object({ seconds: z.union([z.literal(''), z.number()]).pipe(z.int().min(1)) }),
   apply_tag: z.object({ tag: z.string().trim().min(1) }),
   remove_tag: z.object({ tag: z.string().trim().min(1) }),
-} satisfies { [K in EditedKind]: z.ZodType<unknown, StepDrafts[K]> }
+  // A Wait until's form holds the form of its moment (MomentForms.tsx), whose rules are momentRules'.
+} satisfies { [K in Exclude<EditedKind, 'wait_until'>]: z.ZodType<unknown, StepDrafts[K]> }

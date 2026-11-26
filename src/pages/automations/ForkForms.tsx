@@ -1,20 +1,18 @@
 import { ActionIcon, Box, Button, Group, NumberInput, Stack, Text } from '@mantine/core'
 import { IconArrowDown, IconArrowUp, IconPlus, IconTrash } from '@tabler/icons-react'
-import { useMount } from 'ahooks'
 import { useTranslation } from 'react-i18next'
 
 import { emptyGroup } from '../../components/conditions/condition.ts'
 import { ConditionBuilder } from '../../components/conditions/ConditionBuilder.tsx'
 import { zSplitPathInput } from '../../generated/site/zod.gen.ts'
 import { useSchemaForm } from '../../resources/schemaForm.ts'
-import type { SchemaForm } from '../../resources/schemaForm.ts'
 import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
 import { boundsOf } from '../../utils/bounds.ts'
 import { branchConditionOf, filterText } from './definition.ts'
 import type { BranchStep, ForkStep, SplitStep } from './definition.ts'
 import type { PathPatch } from './flowEdits.ts'
 import { canAddPath, canRemovePath, forkError, forkSchemas, weightSum } from './forkRules.ts'
-import { useValidator } from './stepValidator.ts'
+import { useShownErrors, useValidator } from './stepValidator.ts'
 import type { StepValidator } from './stepValidator.ts'
 
 // The range of a Split path's weight, as the contract bounds it.
@@ -32,21 +30,6 @@ export interface ForkFormProps<S extends ForkStep> {
   onAddPath: () => void
   onRemovePath: (pathId: string) => void
   onMovePath: (pathId: string, by: -1 | 1) => void
-}
-
-// useShownErrors shows the errors of the fields given as the form opens, for a fork already
-// checked.
-function useShownErrors<TValues extends object, TOutput>(
-  form: SchemaForm<TValues, TOutput>,
-  checked: boolean,
-  fields: string[],
-) {
-  // Only as the form opens: from then on a field is checked on blur.
-  useMount(() => {
-    if (checked) {
-      form.validateFields(fields)
-    }
-  })
 }
 
 // The buttons beside a path: move it up or down the order (a Branch's), and remove it.

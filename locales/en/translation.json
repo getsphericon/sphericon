@@ -356,6 +356,26 @@
     "count_other": "{{count, number}} automations",
     "createdLabel": "Created",
     "createTitle": "New automation",
+    "date": {
+      "birthday": "Birthday",
+      "birthdayYearly": "A birthday comes every year, so it can only repeat every year.",
+      "daysBound": "Enter at most {{max}} days.",
+      "daysLabel": "Days",
+      "direction": {
+        "after": "After the date",
+        "before": "Before the date"
+      },
+      "directionLabel": "Before or after",
+      "fieldGroupContact": "Contact",
+      "fieldGroupCustom": "Custom fields",
+      "fieldLabel": "Date",
+      "notDatetime": "{{key}} is not a datetime custom field.",
+      "recurrence": {
+        "once": "Once",
+        "yearly": "Every year"
+      },
+      "recurrenceLabel": "Repeats"
+    },
     "deactivate": "Deactivate",
     "delivered": "Delivered",
     "editMessage": "Edit message",
@@ -398,6 +418,7 @@
       "network": "The receiver could not be reached",
       "timeout": "The receiver did not answer in time"
     },
+    "fieldRequired": "{{field}} is required.",
     "forkConditionError": "Path {{number}} needs a condition",
     "forkWeightError": "Path {{number}} needs a weight of at least 1%",
     "goalEventAdd": "Add goal event",
@@ -421,10 +442,12 @@
     "integrationDefault": "Workspace default",
     "integrationDeleted": "{{name}} (deleted)",
     "integrationLabel": "Integration",
-    "keptReadOnly": "This version holds a step or a trigger of a kind this editor does not know. It is shown read-only; publishing or reverting it keeps them.",
+    "keptReadOnly": "This version holds a step of a kind this editor does not know. It is shown read-only; publishing or reverting it keeps it.",
     "keptReadOnlyTitle": "Read-only version",
     "leaveMessage": "Your changes to this automation are not saved.",
     "liveVersion": "Live version {{number}}",
+    "localTimeHint": "Each contact's own time, or {{zone}} for a contact without a time zone.",
+    "localTimeLabel": "Local time",
     "messageDone": "Done",
     "movePathDown": "Move path down",
     "movePathUp": "Move path up",
@@ -550,6 +573,11 @@
     "triggerFilterIncompleteTitle": "Filter incomplete",
     "triggerFilterLabel": "Filter",
     "triggerHint": "The event that enrolls a contact into this automation.",
+    "triggerKind": {
+      "date": "A date",
+      "event": "An event"
+    },
+    "triggerKindLabel": "Enroll on",
     "triggerLabel": "Trigger event",
     "triggerOnDate": "On a date the contact holds",
     "waitingUntil": "Waiting until",
@@ -563,6 +591,23 @@
       "step": "Step",
       "title": "Wait until steps"
     },
+    "waitUntilForm": {
+      "date": "A date",
+      "time_of_day": "A time of day"
+    },
+    "waitUntilFormLabel": "Wait for",
+    "waitUntilNodeDescription": "Pause until a time of day or a date the contact holds.",
+    "weekday": {
+      "friday": "Friday",
+      "monday": "Monday",
+      "saturday": "Saturday",
+      "sunday": "Sunday",
+      "thursday": "Thursday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday"
+    },
+    "weekdaysHint": "None chosen is every day.",
+    "weekdaysLabel": "Weekdays",
     "weightSum": "Total: {{sum}}%",
     "weightSumError": "The weights sum to {{sum}}%, not 100%"
   },

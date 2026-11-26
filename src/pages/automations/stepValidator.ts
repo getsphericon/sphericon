@@ -1,3 +1,4 @@
+import { useMount } from 'ahooks'
 import { useEffect } from 'react'
 import type { RefObject } from 'react'
 
@@ -24,4 +25,19 @@ export function useValidator<TValues extends object, TOutput>(
       validatorRef.current = null
     }
   }, [form, validatorRef, checked])
+}
+
+// useShownErrors shows the errors of the fields given (else of every top-level field) as the form
+// opens, for a node already checked on blur or on Save: its node shows them too.
+export function useShownErrors<TValues extends object, TOutput>(
+  form: SchemaForm<TValues, TOutput>,
+  checked: boolean,
+  fields?: string[],
+) {
+  // Only as the form opens: from then on a field is checked on blur.
+  useMount(() => {
+    if (checked) {
+      form.validateFields(fields ?? Object.keys(form.getValues()))
+    }
+  })
 }

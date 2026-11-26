@@ -212,20 +212,95 @@ test('a Step of a kind the editor does not know, inside a fork path, keeps the v
   expect(pathInputOf(flow)).toBeNull()
 })
 
-// Until the editor knows a Wait until (ADR 0126), a version holding one opens with the Step kept
-// as stored and is never saved from the editor, so nothing can drop it.
-test('a Wait until is kept as stored and keeps the version unsaved', () => {
-  const waitUntil: AutomationStep = {
-    id: stepId(31),
-    type: 'wait_until',
-    until: { form: 'time_of_day', localTime: '09:00', weekdays: ['monday', 'friday'] },
+// A Wait until (ADR 0126) round-trips in each of its forms, every Step keeping its id.
+test('a Wait until on a time of day or on a date round-trips', () => {
+  const waits: AutomationStep[] = [
+    {
+      id: stepId(31),
+      type: 'wait_until',
+      until: { form: 'time_of_day', localTime: '09:00', weekdays: ['monday', 'friday'] },
+    },
+    {
+      id: stepId(32),
+      type: 'wait_until',
+      until: {
+        form: 'date',
+        field: { kind: 'customField', key: 'trial_ends_at' },
+        recurrence: 'once',
+        offsetDays: -3,
+        localTime: '10:00',
+      },
+    },
+    {
+      id: stepId(33),
+      type: 'wait_until',
+      until: {
+        form: 'date',
+        field: { kind: 'birthday' },
+        recurrence: 'yearly',
+        offsetDays: 0,
+        localTime: '08:30',
+      },
+    },
+  ]
+
+  const flow = flowOf(version(waits))
+
+  expect(holdsKept(flow)).toBe(false)
+  expect(pathInputOf(flow)).toEqual({ id: ROOT, steps: waits })
+})
+
+// A Wait until whose moment is not set yet (no local time, no date) is never saved.
+test('a Wait until without its local time or its date keeps the version unsaved', () => {
+  const flow = flowOf(version([]))
+  const pending: Flow = {
+    ...flow,
+    path: {
+      ...flow.path,
+      steps: [
+        {
+          id: stepId(31),
+          kind: 'wait_until',
+          draft: {
+            form: 'time_of_day',
+            timeOfDay: { localTime: '', weekdays: [] },
+            date: { field: null, recurrence: 'yearly', days: 0, sign: 1, localTime: '' },
+          },
+        },
+      ],
+    },
   }
 
-  const flow = flowOf(version([...STEPS, waitUntil]))
+  expect(pathInputOf(pending)).toBeNull()
+})
 
-  expect(flow.path.steps.at(-1)).toEqual({ id: stepId(31), kind: 'kept', step: waitUntil })
-  expect(holdsKept(flow)).toBe(true)
-  expect(pathInputOf(flow)).toBeNull()
+// A date Trigger (ADR 0126) round-trips, its offset read as days before or after the date.
+test('a date Trigger round-trips, its offset as days before or after', () => {
+  const stored: AutomationVersion = {
+    ...version([]),
+    trigger: {
+      kind: 'date',
+      field: { kind: 'customField', key: 'trial_ends_at' },
+      recurrence: 'once',
+      offsetDays: -3,
+      localTime: '10:00',
+    },
+  }
+
+  expect(flowOf(stored).trigger).toMatchObject({
+    kind: 'date',
+    date: {
+      field: { kind: 'customField', key: 'trial_ends_at' },
+      recurrence: 'once',
+      days: 3,
+      sign: -1,
+      localTime: '10:00',
+    },
+  })
+  expect(definitionOf(flowOf(stored))).toMatchObject({
+    trigger: stored.trigger,
+    filterIncomplete: false,
+  })
 })
 
 test('an email step written in the editor is saved as its document alone', () => {
@@ -493,4 +568,34 @@ test('a half-typed filter of an exit or goal is dropped, a complete one kept', (
 
   expect(withoutHalfTypedFilter(halfTyped)).toEqual({ action: 'order.closed', filterText: '' })
   expect(withoutHalfTypedFilter(complete)).toEqual(complete)
+})
+
+// A Trigger switched to a date saves the date alone: the Event's action, its filter (complete or
+// half-typed), its Entry policy, cooldown and Enrollment key stay in the draft, unsent.
+test('a Trigger switched to a date saves no Event matcher or entry settings', () => {
+  const saved = definitionOf(
+    triggered({
+      kind: 'date',
+      filterText: BLANK_KEY,
+      entryPolicy: 'again',
+      cooldown: 7200,
+      enrollmentKey: 'order_id',
+      date: {
+        field: { kind: 'birthday' },
+        recurrence: 'yearly',
+        days: 0,
+        sign: -1,
+        localTime: '10:00',
+      },
+    }),
+  )
+
+  expect(saved.filterIncomplete).toBe(false)
+  expect(saved.trigger).toEqual({
+    kind: 'date',
+    field: { kind: 'birthday' },
+    recurrence: 'yearly',
+    offsetDays: 0,
+    localTime: '10:00',
+  })
 })
