@@ -19,10 +19,11 @@ type BroadcastRecipient struct {
 }
 
 // Annotations adds to the enum checks that a recipient's Deferral cause stands beside its release
-// moment.
+// moment, and since when it waits beside its cause.
 func (BroadcastRecipient) Annotations() []schema.Annotation {
 	a := TableWithEnumChecks("broadcast_recipients", BroadcastRecipient{}.Fields())
 	a.Checks["broadcast_recipients_deferral_check"] = "deferral_cause IS NULL OR deferred_until IS NOT NULL"
+	a.Checks["broadcast_recipients_deferred_since_check"] = "deferred_since IS NULL OR deferral_cause IS NOT NULL"
 	return []schema.Annotation{a}
 }
 
@@ -54,6 +55,12 @@ func (BroadcastRecipient) Fields() []ent.Field {
 		// Deferral. Both are cleared when its send is decided.
 		field.Enum("deferral_cause").
 			GoType(deferralcause.Cause("")).
+			Optional().
+			Nillable(),
+		// Since when the recipient waits (ADR 0178): the moment of its first Deferral, kept across
+		// the later ones and cleared with the cause when its send is decided. Its Outbound message
+		// keeps it once decided.
+		field.Time("deferred_since").
 			Optional().
 			Nillable(),
 		// When this recipient unsubscribed from the Broadcast's email: set once, so the

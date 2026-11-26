@@ -53,7 +53,9 @@ func BroadcastContent(b *ent.Broadcast) (Content, error) {
 
 // BroadcastRecipient is the Request for one Broadcast recipient's message on the Broadcast's
 // Channel. Its Destination is the Contact's on that Channel: on email the address, which a Contact
-// with none is Skipped for; a Channel of Bindings reads them when the message is sent.
+// with none is Skipped for; a Channel of Bindings reads them when the message is sent. The
+// recipient's wait so far (since its first Deferral, and the cause of its latest) is the Request's,
+// which its message keeps once decided (ADR 0178).
 func BroadcastRecipient(b *ent.Broadcast, rec *ent.BroadcastRecipient, c *ent.Contact) (Request, error) {
 	content, err := BroadcastContent(b)
 	if err != nil {
@@ -67,6 +69,7 @@ func BroadcastRecipient(b *ent.Broadcast, rec *ent.BroadcastRecipient, c *ent.Co
 		Track:         true,
 		Ref:           BroadcastRef{BroadcastID: b.ID, RecipientID: rec.ID},
 		IntegrationID: b.IntegrationID,
+		Waited:        Waited{Since: lo.FromPtr(rec.DeferredSince), Cause: lo.FromPtr(rec.DeferralCause)},
 	}, nil
 }
 

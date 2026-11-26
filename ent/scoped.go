@@ -20949,6 +20949,24 @@ func (x *BroadcastRecipientScopedCreate) SetNillableDeferralCause(v *deferralcau
 
 const RoleOf_BroadcastRecipientScopedCreate_SetNillableDeferralCause = RoleStep
 
+// SetDeferredSince sets the "deferred_since" field.
+func (x *BroadcastRecipientScopedCreate) SetDeferredSince(v time.Time) *BroadcastRecipientScopedCreate {
+	x.set = append(x.set, func(b *BroadcastRecipientCreate) { b.SetDeferredSince(v) })
+	return x
+}
+
+const RoleOf_BroadcastRecipientScopedCreate_SetDeferredSince = RoleStep
+
+// SetNillableDeferredSince sets the "deferred_since" field if the given value is not nil.
+func (x *BroadcastRecipientScopedCreate) SetNillableDeferredSince(v *time.Time) *BroadcastRecipientScopedCreate {
+	if v != nil {
+		x.SetDeferredSince(*v)
+	}
+	return x
+}
+
+const RoleOf_BroadcastRecipientScopedCreate_SetNillableDeferredSince = RoleStep
+
 // SetUnsubscribedAt sets the "unsubscribed_at" field.
 func (x *BroadcastRecipientScopedCreate) SetUnsubscribedAt(v time.Time) *BroadcastRecipientScopedCreate {
 	x.set = append(x.set, func(b *BroadcastRecipientCreate) { b.SetUnsubscribedAt(v) })
@@ -21183,6 +21201,30 @@ func (u *BroadcastRecipientScopedUpsert) ClearDeferralCause() *BroadcastRecipien
 }
 
 const RoleOf_BroadcastRecipientScopedUpsert_ClearDeferralCause = RoleStep
+
+// SetDeferredSince sets the "deferred_since" field.
+func (u *BroadcastRecipientScopedUpsert) SetDeferredSince(v time.Time) *BroadcastRecipientScopedUpsert {
+	u.u.Set(broadcastrecipient.FieldDeferredSince, v)
+	return u
+}
+
+const RoleOf_BroadcastRecipientScopedUpsert_SetDeferredSince = RoleStep
+
+// UpdateDeferredSince sets the "deferred_since" field to the value that was provided on create.
+func (u *BroadcastRecipientScopedUpsert) UpdateDeferredSince() *BroadcastRecipientScopedUpsert {
+	u.u.SetExcluded(broadcastrecipient.FieldDeferredSince)
+	return u
+}
+
+const RoleOf_BroadcastRecipientScopedUpsert_UpdateDeferredSince = RoleStep
+
+// ClearDeferredSince clears the value of the "deferred_since" field.
+func (u *BroadcastRecipientScopedUpsert) ClearDeferredSince() *BroadcastRecipientScopedUpsert {
+	u.u.SetNull(broadcastrecipient.FieldDeferredSince)
+	return u
+}
+
+const RoleOf_BroadcastRecipientScopedUpsert_ClearDeferredSince = RoleStep
 
 // SetUnsubscribedAt sets the "unsubscribed_at" field.
 func (u *BroadcastRecipientScopedUpsert) SetUnsubscribedAt(v time.Time) *BroadcastRecipientScopedUpsert {
@@ -21511,6 +21553,32 @@ func (x *BroadcastRecipientScopedUpdateOne) ClearDeferralCause() *BroadcastRecip
 
 const RoleOf_BroadcastRecipientScopedUpdateOne_ClearDeferralCause = RoleStep
 
+// SetDeferredSince sets the "deferred_since" field.
+func (x *BroadcastRecipientScopedUpdateOne) SetDeferredSince(v time.Time) *BroadcastRecipientScopedUpdateOne {
+	x.set = append(x.set, func(b *BroadcastRecipientUpdateOne) { b.SetDeferredSince(v) })
+	return x
+}
+
+const RoleOf_BroadcastRecipientScopedUpdateOne_SetDeferredSince = RoleStep
+
+// SetNillableDeferredSince sets the "deferred_since" field if the given value is not nil.
+func (x *BroadcastRecipientScopedUpdateOne) SetNillableDeferredSince(v *time.Time) *BroadcastRecipientScopedUpdateOne {
+	if v != nil {
+		x.SetDeferredSince(*v)
+	}
+	return x
+}
+
+const RoleOf_BroadcastRecipientScopedUpdateOne_SetNillableDeferredSince = RoleStep
+
+// ClearDeferredSince clears the value of the "deferred_since" field.
+func (x *BroadcastRecipientScopedUpdateOne) ClearDeferredSince() *BroadcastRecipientScopedUpdateOne {
+	x.set = append(x.set, func(b *BroadcastRecipientUpdateOne) { b.ClearDeferredSince() })
+	return x
+}
+
+const RoleOf_BroadcastRecipientScopedUpdateOne_ClearDeferredSince = RoleStep
+
 // SetUnsubscribedAt sets the "unsubscribed_at" field.
 func (x *BroadcastRecipientScopedUpdateOne) SetUnsubscribedAt(v time.Time) *BroadcastRecipientScopedUpdateOne {
 	x.set = append(x.set, func(b *BroadcastRecipientUpdateOne) { b.SetUnsubscribedAt(v) })
@@ -21755,6 +21823,32 @@ func (x *BroadcastRecipientScopedUpdate) ClearDeferralCause() *BroadcastRecipien
 }
 
 const RoleOf_BroadcastRecipientScopedUpdate_ClearDeferralCause = RoleStep
+
+// SetDeferredSince sets the "deferred_since" field.
+func (x *BroadcastRecipientScopedUpdate) SetDeferredSince(v time.Time) *BroadcastRecipientScopedUpdate {
+	x.set = append(x.set, func(b *BroadcastRecipientUpdate) { b.SetDeferredSince(v) })
+	return x
+}
+
+const RoleOf_BroadcastRecipientScopedUpdate_SetDeferredSince = RoleStep
+
+// SetNillableDeferredSince sets the "deferred_since" field if the given value is not nil.
+func (x *BroadcastRecipientScopedUpdate) SetNillableDeferredSince(v *time.Time) *BroadcastRecipientScopedUpdate {
+	if v != nil {
+		x.SetDeferredSince(*v)
+	}
+	return x
+}
+
+const RoleOf_BroadcastRecipientScopedUpdate_SetNillableDeferredSince = RoleStep
+
+// ClearDeferredSince clears the value of the "deferred_since" field.
+func (x *BroadcastRecipientScopedUpdate) ClearDeferredSince() *BroadcastRecipientScopedUpdate {
+	x.set = append(x.set, func(b *BroadcastRecipientUpdate) { b.ClearDeferredSince() })
+	return x
+}
+
+const RoleOf_BroadcastRecipientScopedUpdate_ClearDeferredSince = RoleStep
 
 // SetUnsubscribedAt sets the "unsubscribed_at" field.
 func (x *BroadcastRecipientScopedUpdate) SetUnsubscribedAt(v time.Time) *BroadcastRecipientScopedUpdate {

@@ -172,3 +172,37 @@ func TestAnAutomationTextOutsideTheWindowWaitsAtItsStepUntilItOpens(t *testing.T
 	assert.Equal(t, deferralcause.SendingWindow, lo.FromPtr(msg.DeferralCause), "the message keeps why it waited")
 	assert.True(t, msg.WindowSingleZone)
 }
+
+// Lacuna texts from 9:00 to 17:00 and its news Broadcast reaches Ada's Boston number at 6:00 in New
+// York: her text waits, and waits again at 7:00. When her window opens it goes out, and its message
+// keeps since when it waited, the first Deferral's moment, and why.
+func TestABroadcastTextHeldByTheWindowKeepsItsWaitOnItsMessage(t *testing.T) {
+	first := tomorrowAt(newYork, 6)
+	c := testhelper.NewClock(first)
+	env := testhelper.Setup(t, testhelper.WithClock(c.Now))
+	ctx := t.Context()
+	env.LacunaTwilio(t)
+	mod := env.OutboundModule()
+	id := int64(fixtures.BroadcastLacunaSmsHelloID)
+	windowSMS(t, env, env.DB.Scoped(fixtures.LacunaID), 9, 17)
+	_, err := planAudience(ctx, env.DB, mod, id)
+	require.NoError(t, err)
+	env.DB.Broadcast.UpdateOneID(id).SetStatus(broadcast.StatusSending).ExecX(ctx)
+	ada := env.DB.BroadcastRecipient.Query().Where(broadcastrecipient.BroadcastID(id), broadcastrecipient.ContactID(fixtures.ContactLacunaAdaID)).OnlyX(ctx)
+	require.Error(t, deliverRecipient(ctx, env.DB, mod, ada.ID), "6:00 is outside the window")
+	c.Set(tomorrowAt(newYork, 7))
+	require.Error(t, deliverRecipient(ctx, env.DB, mod, ada.ID), "so is 7:00")
+	waiting := env.DB.BroadcastRecipient.GetX(ctx, ada.ID)
+	require.NotNil(t, waiting.DeferredUntil)
+
+	c.Set(*waiting.DeferredUntil)
+	require.NoError(t, deliverRecipient(ctx, env.DB, mod, ada.ID))
+
+	msg := env.DB.OutboundMessage.Query().Where(outboundmessage.BroadcastRecipientID(ada.ID)).OnlyX(ctx)
+	assert.Equal(t, outboundmessage.StatusSent, msg.Status)
+	require.NotNil(t, msg.DeferredSince, "the message keeps since when it waited")
+	assert.WithinDuration(t, first, *msg.DeferredSince, time.Second, "since the first Deferral, not the latest")
+	assert.Equal(t, deferralcause.SendingWindow, lo.FromPtr(msg.DeferralCause))
+	decided := env.DB.BroadcastRecipient.GetX(ctx, ada.ID)
+	assert.Nil(t, decided.DeferredSince, "a decided recipient waits no more")
+}

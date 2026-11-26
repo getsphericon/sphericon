@@ -873,6 +873,7 @@ var (
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "deferred_until", Type: field.TypeTime, Nullable: true},
 		{Name: "deferral_cause", Type: field.TypeEnum, Nullable: true, Enums: []string{"provider_limit", "send_cap", "provider", "sending_window", "frequency_cap"}},
+		{Name: "deferred_since", Type: field.TypeTime, Nullable: true},
 		{Name: "unsubscribed_at", Type: field.TypeTime, Nullable: true},
 		{Name: "broadcast_id", Type: field.TypeInt64},
 		{Name: "contact_id", Type: field.TypeInt64, Nullable: true},
@@ -886,19 +887,19 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "broadcast_recipients_broadcasts_recipients",
-				Columns:    []*schema.Column{BroadcastRecipientsColumns[6]},
+				Columns:    []*schema.Column{BroadcastRecipientsColumns[7]},
 				RefColumns: []*schema.Column{BroadcastsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "broadcast_recipients_contacts_contact",
-				Columns:    []*schema.Column{BroadcastRecipientsColumns[7]},
+				Columns:    []*schema.Column{BroadcastRecipientsColumns[8]},
 				RefColumns: []*schema.Column{ContactsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "broadcast_recipients_workspaces_broadcast_recipients",
-				Columns:    []*schema.Column{BroadcastRecipientsColumns[8]},
+				Columns:    []*schema.Column{BroadcastRecipientsColumns[9]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -907,12 +908,12 @@ var (
 			{
 				Name:    "broadcast_recipients_workspace_id_broadcast_id_contact_id",
 				Unique:  true,
-				Columns: []*schema.Column{BroadcastRecipientsColumns[8], BroadcastRecipientsColumns[6], BroadcastRecipientsColumns[7]},
+				Columns: []*schema.Column{BroadcastRecipientsColumns[9], BroadcastRecipientsColumns[7], BroadcastRecipientsColumns[8]},
 			},
 			{
 				Name:    "broadcast_recipients_workspace_id_contact_id",
 				Unique:  false,
-				Columns: []*schema.Column{BroadcastRecipientsColumns[8], BroadcastRecipientsColumns[7]},
+				Columns: []*schema.Column{BroadcastRecipientsColumns[9], BroadcastRecipientsColumns[8]},
 			},
 		},
 	}
@@ -4091,6 +4092,7 @@ func init() {
 	BroadcastRecipientsTable.Annotation.Checks = map[string]string{
 		"broadcast_recipients_deferral_cause_check": "deferral_cause IN ('provider_limit', 'send_cap', 'provider', 'sending_window', 'frequency_cap')",
 		"broadcast_recipients_deferral_check":       "deferral_cause IS NULL OR deferred_until IS NOT NULL",
+		"broadcast_recipients_deferred_since_check": "deferred_since IS NULL OR deferral_cause IS NOT NULL",
 	}
 	CapturedMessagesTable.ForeignKeys[0].RefTable = OutboundMessagesTable
 	CapturedMessagesTable.ForeignKeys[1].RefTable = IntegrationsTable

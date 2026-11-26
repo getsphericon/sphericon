@@ -108,6 +108,20 @@ func (_c *BroadcastRecipientCreate) SetNillableDeferralCause(v *deferralcause.Ca
 	return _c
 }
 
+// SetDeferredSince sets the "deferred_since" field.
+func (_c *BroadcastRecipientCreate) SetDeferredSince(v time.Time) *BroadcastRecipientCreate {
+	_c.mutation.SetDeferredSince(v)
+	return _c
+}
+
+// SetNillableDeferredSince sets the "deferred_since" field if the given value is not nil.
+func (_c *BroadcastRecipientCreate) SetNillableDeferredSince(v *time.Time) *BroadcastRecipientCreate {
+	if v != nil {
+		_c.SetDeferredSince(*v)
+	}
+	return _c
+}
+
 // SetUnsubscribedAt sets the "unsubscribed_at" field.
 func (_c *BroadcastRecipientCreate) SetUnsubscribedAt(v time.Time) *BroadcastRecipientCreate {
 	_c.mutation.SetUnsubscribedAt(v)
@@ -261,6 +275,10 @@ func (_c *BroadcastRecipientCreate) createSpec() (*BroadcastRecipient, *sqlgraph
 	if value, ok := _c.mutation.DeferralCause(); ok {
 		_spec.SetField(broadcastrecipient.FieldDeferralCause, field.TypeEnum, value)
 		_node.DeferralCause = &value
+	}
+	if value, ok := _c.mutation.DeferredSince(); ok {
+		_spec.SetField(broadcastrecipient.FieldDeferredSince, field.TypeTime, value)
+		_node.DeferredSince = &value
 	}
 	if value, ok := _c.mutation.UnsubscribedAt(); ok {
 		_spec.SetField(broadcastrecipient.FieldUnsubscribedAt, field.TypeTime, value)
@@ -459,6 +477,24 @@ func (u *BroadcastRecipientUpsert) ClearDeferralCause() *BroadcastRecipientUpser
 	return u
 }
 
+// SetDeferredSince sets the "deferred_since" field.
+func (u *BroadcastRecipientUpsert) SetDeferredSince(v time.Time) *BroadcastRecipientUpsert {
+	u.Set(broadcastrecipient.FieldDeferredSince, v)
+	return u
+}
+
+// UpdateDeferredSince sets the "deferred_since" field to the value that was provided on create.
+func (u *BroadcastRecipientUpsert) UpdateDeferredSince() *BroadcastRecipientUpsert {
+	u.SetExcluded(broadcastrecipient.FieldDeferredSince)
+	return u
+}
+
+// ClearDeferredSince clears the value of the "deferred_since" field.
+func (u *BroadcastRecipientUpsert) ClearDeferredSince() *BroadcastRecipientUpsert {
+	u.SetNull(broadcastrecipient.FieldDeferredSince)
+	return u
+}
+
 // SetUnsubscribedAt sets the "unsubscribed_at" field.
 func (u *BroadcastRecipientUpsert) SetUnsubscribedAt(v time.Time) *BroadcastRecipientUpsert {
 	u.Set(broadcastrecipient.FieldUnsubscribedAt, v)
@@ -630,6 +666,27 @@ func (u *BroadcastRecipientUpsertOne) UpdateDeferralCause() *BroadcastRecipientU
 func (u *BroadcastRecipientUpsertOne) ClearDeferralCause() *BroadcastRecipientUpsertOne {
 	return u.Update(func(s *BroadcastRecipientUpsert) {
 		s.ClearDeferralCause()
+	})
+}
+
+// SetDeferredSince sets the "deferred_since" field.
+func (u *BroadcastRecipientUpsertOne) SetDeferredSince(v time.Time) *BroadcastRecipientUpsertOne {
+	return u.Update(func(s *BroadcastRecipientUpsert) {
+		s.SetDeferredSince(v)
+	})
+}
+
+// UpdateDeferredSince sets the "deferred_since" field to the value that was provided on create.
+func (u *BroadcastRecipientUpsertOne) UpdateDeferredSince() *BroadcastRecipientUpsertOne {
+	return u.Update(func(s *BroadcastRecipientUpsert) {
+		s.UpdateDeferredSince()
+	})
+}
+
+// ClearDeferredSince clears the value of the "deferred_since" field.
+func (u *BroadcastRecipientUpsertOne) ClearDeferredSince() *BroadcastRecipientUpsertOne {
+	return u.Update(func(s *BroadcastRecipientUpsert) {
+		s.ClearDeferredSince()
 	})
 }
 
@@ -973,6 +1030,27 @@ func (u *BroadcastRecipientUpsertBulk) UpdateDeferralCause() *BroadcastRecipient
 func (u *BroadcastRecipientUpsertBulk) ClearDeferralCause() *BroadcastRecipientUpsertBulk {
 	return u.Update(func(s *BroadcastRecipientUpsert) {
 		s.ClearDeferralCause()
+	})
+}
+
+// SetDeferredSince sets the "deferred_since" field.
+func (u *BroadcastRecipientUpsertBulk) SetDeferredSince(v time.Time) *BroadcastRecipientUpsertBulk {
+	return u.Update(func(s *BroadcastRecipientUpsert) {
+		s.SetDeferredSince(v)
+	})
+}
+
+// UpdateDeferredSince sets the "deferred_since" field to the value that was provided on create.
+func (u *BroadcastRecipientUpsertBulk) UpdateDeferredSince() *BroadcastRecipientUpsertBulk {
+	return u.Update(func(s *BroadcastRecipientUpsert) {
+		s.UpdateDeferredSince()
+	})
+}
+
+// ClearDeferredSince clears the value of the "deferred_since" field.
+func (u *BroadcastRecipientUpsertBulk) ClearDeferredSince() *BroadcastRecipientUpsertBulk {
+	return u.Update(func(s *BroadcastRecipientUpsert) {
+		s.ClearDeferredSince()
 	})
 }
 

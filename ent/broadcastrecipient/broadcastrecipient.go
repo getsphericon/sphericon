@@ -30,6 +30,8 @@ const (
 	FieldDeferredUntil = "deferred_until"
 	// FieldDeferralCause holds the string denoting the deferral_cause field in the database.
 	FieldDeferralCause = "deferral_cause"
+	// FieldDeferredSince holds the string denoting the deferred_since field in the database.
+	FieldDeferredSince = "deferred_since"
 	// FieldUnsubscribedAt holds the string denoting the unsubscribed_at field in the database.
 	FieldUnsubscribedAt = "unsubscribed_at"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
@@ -73,6 +75,7 @@ var Columns = []string{
 	FieldContactID,
 	FieldDeferredUntil,
 	FieldDeferralCause,
+	FieldDeferredSince,
 	FieldUnsubscribedAt,
 }
 
@@ -146,6 +149,11 @@ func ByDeferredUntil(opts ...sql.OrderTermOption) OrderOption {
 // ByDeferralCause orders the results by the deferral_cause field.
 func ByDeferralCause(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDeferralCause, opts...).ToFunc()
+}
+
+// ByDeferredSince orders the results by the deferred_since field.
+func ByDeferredSince(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDeferredSince, opts...).ToFunc()
 }
 
 // ByUnsubscribedAt orders the results by the unsubscribed_at field.

@@ -1067,6 +1067,9 @@ func ScopedEntities() []*ScopedEntity {
 				if src.DeferralCause != nil {
 					b.SetDeferralCause(*src.DeferralCause)
 				}
+				if src.DeferredSince != nil {
+					b.SetDeferredSince(*src.DeferredSince)
+				}
 				if src.UnsubscribedAt != nil {
 					b.SetUnsubscribedAt(*src.UnsubscribedAt)
 				}
