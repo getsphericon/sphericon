@@ -1,5 +1,6 @@
 import { ActionIcon, Box, Button, Group, NumberInput, Stack, Text } from '@mantine/core'
 import { IconArrowDown, IconArrowUp, IconPlus, IconTrash } from '@tabler/icons-react'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { emptyGroup } from '../../components/conditions/condition.ts'
@@ -144,7 +145,7 @@ export function BranchForm({
   const { t } = useTranslation()
   const { workspaceId } = workspaceRoute.useParams()
   const infoOf = useStepInfo()
-  const messageSteps = messageStepsOf(infoOf, root, step)
+  const messageSteps = useMemo(() => messageStepsOf(infoOf, root, step), [infoOf, root, step])
   const form = useSchemaForm(
     forkSchemas.branch,
     { paths: step.paths.map(({ id, conditionText }) => ({ id, conditionText })) },
