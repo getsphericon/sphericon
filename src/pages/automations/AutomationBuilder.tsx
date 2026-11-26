@@ -47,6 +47,7 @@ import { TRIGGER_NODE_ID } from './flowLayout.ts'
 import { LeaveGuard } from './LeaveGuard.tsx'
 import { useNodeErrors } from './nodeErrors.ts'
 import { refusedNodes } from './refusedNodes.ts'
+import type { NodeRefusal } from './refusedNodes.ts'
 import { useStepInfo } from './stepKinds.ts'
 import { StepPanel } from './StepPanel.tsx'
 import type { ForkControls } from './StepPanel.tsx'
@@ -123,7 +124,7 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
   // The body the last Save sent, and the nodes a refusal of it is about, each with the server's
   // message: shown on the node and in its panel until the node is edited or Save is run again.
   const sent = useRef<unknown>(null)
-  const [refused, setRefused] = useState<ReadonlyMap<string, string>>(new Map())
+  const [refused, setRefused] = useState<ReadonlyMap<string, NodeRefusal>>(new Map())
   const unrefuse = (id: string) =>
     setRefused((current) => {
       if (!current.has(id)) {
@@ -274,7 +275,7 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
   const errors = nodeErrors(flow)
   const errorOf = (id: string): string | null =>
     (checked.has(id) ? errors.find((node) => node.id === id)?.message : undefined) ??
-    refused.get(id) ??
+    refused.get(id)?.message ??
     null
   const forks: ForkControls = {
     checked: (id) => checked.has(id),

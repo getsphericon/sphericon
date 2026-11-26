@@ -1,6 +1,6 @@
 import { HttpResponse } from 'msw'
 import { beforeEach, expect, test } from 'vitest'
-import { page } from 'vitest/browser'
+import { page, userEvent } from 'vitest/browser'
 
 import {
   handleSiteAutomationReportsGet,
@@ -355,6 +355,33 @@ test("a Wait until's error shows on its node and in its properties, and stops th
   expect(saved()).toEqual([])
 })
 
+test("a Wait until's and a date Trigger's errors show on their node and in their properties once a field is left", async () => {
+  const { screen, saved } = await editing(EVENT, [TAG])
+
+  await screen.getByRole('button', { name: 'Add a step here' }).first().click()
+  await screen.getByRole('menuitem', { name: 'Wait until' }).click()
+  await panel(screen, 'Wait until').getByLabelText('Local time').click()
+  // Back out of it: a Tab moves on within its hour and minute.
+  await userEvent.tab({ shift: true })
+
+  await expect.element(screen.getByText('Local time is required.')).toBeVisible()
+  await expect
+    .element(panel(screen, 'Wait until').getByText('This field is required'))
+    .toBeVisible()
+
+  await nodeButton(screen, 'Trigger').click()
+  await panel(screen, 'Trigger').getByText('A date').click()
+  await select(screen, 'Trigger', 'Date').click()
+  await userEvent.keyboard('{Escape}')
+  await userEvent.tab()
+
+  await expect.element(screen.getByText('Date is required.')).toBeVisible()
+  await expect
+    .element(panel(screen, 'Trigger').getByText('This field is required').first())
+    .toBeVisible()
+  expect(saved()).toEqual([])
+})
+
 test('a Save stopped on a date Trigger whose panel is closed opens it, showing the error', async () => {
   const { screen, saved } = await editing(EVENT, [TAG])
 
@@ -387,10 +414,13 @@ test("a refused save shows the error on the Wait until's node and in its propert
 
   await save(screen)
 
-  await expect.element(panel(screen, 'Wait until').getByText(refusal)).toBeVisible()
+  const properties = panel(screen, 'Wait until')
+  await expect.element(properties.getByText(refusal)).toBeVisible()
   // On the Wait until's node, and in its panel.
   expect(screen.getByText(refusal).elements()).toHaveLength(2)
-  await expect.element(screen.getByText('Failed to save automation')).not.toBeInTheDocument()
+  // Titled in the panel, and no toast besides.
+  await expect.element(properties.getByText('Failed to save automation')).toBeVisible()
+  expect(screen.getByText('Failed to save automation').elements()).toHaveLength(1)
 })
 
 test("a refused save shows the error on the date Trigger's node and in its properties", async () => {
@@ -411,6 +441,41 @@ test("a refused save shows the error on the date Trigger's node and in its prope
 
   await save(screen)
 
-  await expect.element(panel(screen, 'Trigger').getByText(refusal)).toBeVisible()
+  const properties = panel(screen, 'Trigger')
+  await expect.element(properties.getByText(refusal)).toBeVisible()
   expect(screen.getByText(refusal).elements()).toHaveLength(2)
+  await expect.element(properties.getByText('Failed to save automation')).toBeVisible()
+  expect(screen.getByText('Failed to save automation').elements()).toHaveLength(1)
+})
+
+// A refusal of the request's shape lists each field it refused under one general detail: each node
+// shows its own.
+test('a refusal of two nodes shows each its own error, on its node and in its properties', async () => {
+  const triggerError = 'localTime: must match "^([01][0-9]|2[0-3]):[0-5][0-9]$"'
+  const waitError = 'offsetDays: must be at most 365'
+  const { screen } = await editing(DATE_TRIGGER, [TAG, ...WAITS.slice(1)])
+  worker.use(
+    handleSiteAutomationsUpdate(() =>
+      problem(422, {
+        title: 'Unprocessable Entity',
+        detail: 'The request is not valid.',
+        errors: {
+          'trigger.localTime': [triggerError],
+          'steps.steps.1.until.offsetDays': [waitError],
+        },
+      }),
+    ),
+  )
+
+  await save(screen)
+
+  // The first refused node is opened.
+  await expect.element(panel(screen, 'Trigger').getByText(triggerError)).toBeVisible()
+  expect(screen.getByText(triggerError).elements()).toHaveLength(2)
+  expect(screen.getByText(waitError).elements()).toHaveLength(1)
+  await expect.element(screen.getByText('The request is not valid.')).not.toBeInTheDocument()
+
+  await nodeButton(screen, 'Wait until').click()
+  await expect.element(panel(screen, 'Wait until').getByText(waitError)).toBeVisible()
+  expect(screen.getByText(waitError).elements()).toHaveLength(2)
 })

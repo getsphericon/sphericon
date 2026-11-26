@@ -21,12 +21,18 @@ function stepAt(sent: unknown, location: string): string | null {
   return step
 }
 
-// refusedNodes is each node a refused Save's errors are about, with the first message of each, in
-// the order the server listed them; null when the refusal lists none, or one no node holds (the
-// name's), which the page then shows as it shows any refusal.
-export function refusedNodes(error: unknown, sent: unknown): Map<string, string> | null {
+// A refused Save as one node shows it: the refusal, and the server's first message about the node.
+export interface NodeRefusal {
+  error: unknown
+  message: string
+}
+
+// refusedNodes is each node a refused Save's errors are about, in the order the server listed them;
+// null when the refusal lists none, or one no node holds (the name's), which the page then shows as
+// it shows any refusal.
+export function refusedNodes(error: unknown, sent: unknown): Map<string, NodeRefusal> | null {
   const errors = Object.entries(getFieldErrors(error) ?? {})
-  const placed = new Map<string, string>()
+  const placed = new Map<string, NodeRefusal>()
   for (const [location, [message] = []] of errors) {
     const node =
       location === 'trigger' || location.startsWith('trigger.')
@@ -35,7 +41,7 @@ export function refusedNodes(error: unknown, sent: unknown): Map<string, string>
     if (node === null || message === undefined) {
       return null
     }
-    placed.set(node, message)
+    placed.set(node, { error, message })
   }
   return placed.size === 0 ? null : placed
 }

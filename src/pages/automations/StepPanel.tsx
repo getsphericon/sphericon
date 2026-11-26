@@ -1,6 +1,6 @@
 import {
   ActionIcon,
-  Alert,
+  Box,
   CloseButton,
   Fieldset,
   Group,
@@ -12,11 +12,13 @@ import {
 import { IconCopy } from '@tabler/icons-react'
 import { useTranslation } from 'react-i18next'
 
+import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
 import { allSteps, forkPaths } from './definition.ts'
 import type { EditedStep, Flow, FlowStep, TriggerDraft } from './definition.ts'
 import type { PathPatch } from './flowEdits.ts'
 import { TRIGGER_NODE_ID } from './flowLayout.ts'
 import { BranchForm, SplitForm } from './ForkForms.tsx'
+import type { NodeRefusal } from './refusedNodes.ts'
 import { StepForm } from './StepForms.tsx'
 import { useStepInfo } from './stepKinds.ts'
 import type { StepValidator } from './stepValidator.ts'
@@ -102,8 +104,9 @@ export function StepPanel({
   selected: string
   editable: boolean
   validatorRef: StepValidator
-  // Why the last Save was refused over what is selected, as the server said it.
-  refusal: string | null
+  // Why the last Save was refused over what is selected: the refusal, and the server's message about
+  // what is selected.
+  refusal: NodeRefusal | null
   onTrigger: (patch: Partial<TriggerDraft>) => void
   onStep: (step: EditedStep) => void
   forks: ForkControls
@@ -150,9 +153,13 @@ export function StepPanel({
           </Group>
         </Group>
         {refusal !== null && (
-          <Alert color="red" mb="md">
-            {refusal}
-          </Alert>
+          <Box mb="md">
+            <ApiErrorAlert
+              error={refusal.error}
+              title={t(($) => $.alerts.automationSaveErrorTitle)}
+              message={refusal.message}
+            />
+          </Box>
         )}
         <Fieldset disabled={!editable} variant="unstyled" m={0} miw={0}>
           {step === undefined ? (
