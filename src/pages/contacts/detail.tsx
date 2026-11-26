@@ -10,7 +10,7 @@ import {
   Text,
   Title,
 } from '@mantine/core'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { DataTable } from 'mantine-datatable'
 import type { ReactNode } from 'react'
@@ -20,6 +20,7 @@ import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
 import { CountryFlag } from '../../components/CountryFlag.tsx'
 import { EventRowDetails } from '../../components/EventRowDetails.tsx'
 import { EventSummary } from '../../components/EventSummary.tsx'
+import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { RelativeTime } from '../../components/RelativeTime.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
 import { PageSkeleton } from '../../components/Skeletons.tsx'
@@ -309,20 +310,22 @@ function ContactDetails({ contact }: { contact: SiteContactResource }) {
 
 export function ContactDetailPage() {
   const { t } = useTranslation()
+  return (
+    <QueryBoundary
+      fallback={<PageSkeleton />}
+      errorTitle={t(($) => $.alerts.contactLoadErrorTitle)}
+    >
+      <ContactDetail />
+    </QueryBoundary>
+  )
+}
+
+function ContactDetail() {
+  const { t } = useTranslation()
   const { workspaceId, contactId } = contactsDetailRoute.useParams()
-  const contactQuery = useQuery(siteContactsGetOptions({ path: { workspaceId, id: contactId } }))
-
-  const contact = contactQuery.data
-
-  if (contactQuery.isLoading) {
-    return <PageSkeleton />
-  }
-
-  if (contactQuery.isError || !contact) {
-    return (
-      <ApiErrorAlert error={contactQuery.error} title={t(($) => $.alerts.contactLoadErrorTitle)} />
-    )
-  }
+  const { data: contact } = useSuspenseQuery(
+    siteContactsGetOptions({ path: { workspaceId, id: contactId } }),
+  )
 
   const fullName = contactFullName(contact)
 
