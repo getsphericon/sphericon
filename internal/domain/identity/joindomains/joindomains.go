@@ -17,7 +17,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"net"
 	"slices"
 	"strings"
 	"time"
@@ -309,8 +308,7 @@ func (m *Module) published(ctx context.Context, d *ent.JoinDomain) (bool, error)
 	// Fully qualified: a relative name would be retried through the host's resolv.conf
 	// search suffixes, which can turn a SERVFAIL into a misleading "not found".
 	records, err := m.lookup(ctx, host+".")
-	var dnsErr *net.DNSError
-	if errors.As(err, &dnsErr) && dnsErr.IsNotFound {
+	if domainname.NotFound(err) {
 		return false, nil
 	}
 	if err != nil {

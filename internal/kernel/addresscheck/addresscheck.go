@@ -8,7 +8,6 @@ package addresscheck
 
 import (
 	"context"
-	"errors"
 	"net"
 	"net/netip"
 	"strings"
@@ -133,25 +132,18 @@ func lookup(ctx context.Context, r Resolver, domain string) Verdict {
 			return NoMail
 		}
 		return Accepts
-	case err != nil && !notFound(err):
+	case err != nil && !domainname.NotFound(err):
 		return Unknown
 	}
 	addrs, err := r.LookupNetIP(ctx, "ip", domain)
 	switch {
 	case err == nil && len(addrs) > 0:
 		return Accepts
-	case err == nil || notFound(err):
+	case err == nil || domainname.NotFound(err):
 		return NoMail
 	default:
 		return Unknown
 	}
-}
-
-// notFound is DNS's definite "no such record": NXDOMAIN or a name without records of the type.
-// A timeout or a server failure is not.
-func notFound(err error) bool {
-	var dnsErr *net.DNSError
-	return errors.As(err, &dnsErr) && dnsErr.IsNotFound && !dnsErr.IsTimeout && !dnsErr.IsTemporary
 }
 
 // AllAccept is the Resolver of an Instance whose addresses are at no real domain (the e2e suite,

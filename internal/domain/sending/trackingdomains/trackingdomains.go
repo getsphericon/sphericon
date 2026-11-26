@@ -24,7 +24,6 @@ import (
 	"errors"
 	"io"
 	"log/slog"
-	"net"
 	"net/http"
 	"slices"
 	"strings"
@@ -580,8 +579,7 @@ func (c *Checker) held(ctx context.Context, row *ent.TrackingDomain) (bool, erro
 // with a nil error; another resolver failure is returned.
 func (c *Checker) owns(ctx context.Context, row *ent.TrackingDomain) (bool, error) {
 	values, err := c.TXT(ctx, OwnershipName(row.Host))
-	var dnsErr *net.DNSError
-	if errors.As(err, &dnsErr) && dnsErr.IsNotFound {
+	if domainname.NotFound(err) {
 		return false, nil
 	}
 	if err != nil {
@@ -595,8 +593,7 @@ func (c *Checker) owns(ctx context.Context, row *ent.TrackingDomain) (bool, erro
 // false with a nil error; so is an answer of the host itself (no CNAME).
 func (c *Checker) pointsAtTarget(ctx context.Context, host string) (bool, error) {
 	cname, err := c.Lookup(ctx, host)
-	var dnsErr *net.DNSError
-	if errors.As(err, &dnsErr) && dnsErr.IsNotFound {
+	if domainname.NotFound(err) {
 		return false, nil
 	}
 	if err != nil {

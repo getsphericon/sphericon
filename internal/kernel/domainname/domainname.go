@@ -6,6 +6,7 @@ package domainname
 
 import (
 	"context"
+	"errors"
 	"net"
 	"strings"
 
@@ -36,4 +37,12 @@ func Normalize(raw string) (string, bool) {
 		return "", false
 	}
 	return ascii, true
+}
+
+// NotFound reports whether err is DNS's definite "no such record": NXDOMAIN, or a name without
+// records of the type asked for. A timeout or a server failure is not, so a check that reads a
+// missing record as an answer never takes an unreachable resolver for one.
+func NotFound(err error) bool {
+	dnsErr, ok := errors.AsType[*net.DNSError](err)
+	return ok && dnsErr.IsNotFound && !dnsErr.IsTimeout && !dnsErr.IsTemporary
 }
