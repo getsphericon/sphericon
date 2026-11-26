@@ -40,71 +40,140 @@ func (m *Module) find(ctx context.Context, s *ent.Scoped, key string) (*ent.Outb
 	return msg, err
 }
 
+// claimed is a claim Send goes on with: the claimed message and the targets it goes to.
+type claimed struct {
+	msg     *ent.OutboundMessage
+	targets []target
+}
+
 // claim takes the right to send under req.Key to targets: it inserts the pending row before
-// the provider is called (claimNew). If a row already exists (existing, from Send's replay
+// the provider is called (claimNew), with the targets under their Frequency caps, or decides the
+// send Skipped when none is (a Result). If a row already exists (existing, from Send's replay
 // check, or one that appears in a race) it is replayed when final, taken over when
 // its lease has expired, and otherwise reported as ErrInProgress. A claim taken over counts nothing
-// new: its rows have held its places since it was written (ADR 0178).
-func (m *Module) claim(ctx context.Context, s *ent.Scoped, req Request, dest string, g gateResult, existing *ent.OutboundMessage, targets []target) (*ent.OutboundMessage, *Result, error) {
+// new and is not capped again: its rows have held its places since it was written (ADR 0178), and it
+// goes to targets as resolved now.
+func (m *Module) claim(ctx context.Context, s *ent.Scoped, req Request, dest string, g gateResult, existing *ent.OutboundMessage, targets []target) (claimed, *Result, error) {
 	if existing == nil {
-		id, holder, err := m.claimNew(ctx, s, req, dest, g, targets)
+		n, err := m.claimNew(ctx, s, req, dest, g, targets)
 		if err != nil {
-			return nil, nil, err
+			return claimed{}, nil, err
 		}
-		if holder == nil {
-			msg, err := s.OutboundMessage().Get(ctx, id)
-			if err != nil {
-				return nil, nil, err
-			}
-			withdrawn, err := withdrawIfStopped(ctx, s, req.Stopped, msg.ID, ownsClaim(msg)...)
-			if err != nil || withdrawn {
-				return nil, withdrawnResult(withdrawn), err
-			}
-			return msg, nil, nil
+		if n.holder == nil {
+			return m.decidedNew(ctx, s, req, n)
 		}
-		existing = holder
+		existing = n.holder
 	}
 	if existing.Status != outboundmessage.StatusPending {
 		r := replayResult(existing)
-		return nil, &r, nil
+		return claimed{}, &r, nil
 	}
-	return m.adopt(ctx, s, req, existing)
+	msg, replay, err := m.adopt(ctx, s, req, existing)
+	return claimed{msg: msg, targets: targets}, replay, err
 }
 
-// claimNew writes the new claim under req.Key in one transaction with its count (ADR 0178): a
-// marketing message counts at the Destination of each of targets, and the transaction holds the lock
-// of each of them a Frequency cap holds (frequencycap.Module.Within, whose rule decides). A message
-// that does not count (recipientLimitsOf) takes no lock and writes no row. id and holder are
-// insert's; the source's stop is asked once the transaction commits (claim), so a stop committed
-// meanwhile finds the row.
-func (m *Module) claimNew(ctx context.Context, s *ent.Scoped, req Request, dest string, g gateResult, targets []target) (id int64, holder *ent.OutboundMessage, err error) {
+// decidedNew is what a new row claimNew wrote comes to once its transaction committed: the source's
+// stop is asked first, so a stop committed meanwhile finds the row and withdraws it; else the claim
+// goes on to its targets, or the Skipped decided under the locks is the Result.
+func (m *Module) decidedNew(ctx context.Context, s *ent.Scoped, req Request, n newRow) (claimed, *Result, error) {
+	if n.skip != "" {
+		res, err := decidedSkipped(ctx, s, req, n.id, n.skip)
+		return claimed{}, &res, err
+	}
+	msg, err := s.OutboundMessage().Get(ctx, n.id)
+	if err != nil {
+		return claimed{}, nil, err
+	}
+	withdrawn, err := withdrawIfStopped(ctx, s, req.Stopped, msg.ID, ownsClaim(msg)...)
+	if err != nil || withdrawn {
+		return claimed{}, withdrawnResult(withdrawn), err
+	}
+	return claimed{msg: msg, targets: n.targets}, nil, nil
+}
+
+// newRow is the row claimNew wrote under req.Key: a claim to targets, or, with skip, a Skipped
+// decided under the locks; or, with holder, none, since holder held the key (insert).
+type newRow struct {
+	id      int64
+	holder  *ent.OutboundMessage
+	targets []target
+	skip    skipreason.Reason
+}
+
+// claimNew writes the new row under req.Key in one transaction with its count (ADR 0178): a
+// marketing message is checked against the Frequency cap of the Destination of each of targets, under
+// the lock of each of them a cap holds (frequencycap.Module.Within, whose rule decides). A target
+// over its cap is dropped, as an ineligible one is; the claim goes to the rest and counts at each of
+// them. When none is left, the send is decided there (overCap), so two sends cannot both take a
+// Destination's last place. A message that does not count (recipientLimitsOf) takes no lock, is not
+// capped and writes no count row. The source's stop is asked once the transaction commits
+// (decidedNew), so a stop committed meanwhile finds the row.
+func (m *Module) claimNew(ctx context.Context, s *ent.Scoped, req Request, dest string, g gateResult, targets []target) (newRow, error) {
 	limits, err := recipientLimitsOf(req.Kind())
 	if err != nil {
-		return 0, nil, err
+		return newRow{}, err
 	}
 	in := frequencycap.Claim{Channel: req.Channel()}
 	if limits.counts {
-		in.Destinations = lo.Map(targets, func(t target, _ int) string { return t.dest })
+		in.Destinations = destinationsOf(targets)
 	}
-	err = m.caps.Within(ctx, s, in, func(l *ent.DestinationLocked) error {
-		var werr error
-		id, holder, werr = m.writeClaim(ctx, l, req, dest, g, in)
+	var n newRow
+	err = m.caps.Within(ctx, s, in, func(l *ent.DestinationLocked, sts frequencycap.Standings) error {
+		room := lo.Filter(targets, func(t target, _ int) bool { return !sts.Over(t.dest) })
+		if len(room) == 0 {
+			skip, werr := overCap(req)
+			if werr != nil {
+				return werr
+			}
+			id, holder, werr := m.insert(ctx, l.Scope(), req, m.skippedMessage(l.Scope(), req, dest, g, skip))
+			n = newRow{id: id, holder: holder, skip: skip}
+			return werr
+		}
+		count := frequencycap.CountInput{Channel: in.Channel}
+		if limits.counts {
+			count.Destinations = destinationsOf(room)
+		}
+		id, holder, werr := m.writeClaim(ctx, l, req, dest, g, count)
+		n = newRow{id: id, holder: holder, targets: room}
 		return werr
 	})
-	return id, holder, err
+	return n, err
+}
+
+// overCap decides a send none of whose targets has a place under its Frequency cap (ADR 0137, ADR
+// 0178), by the surface that asked: the one place the cap's Outcome is chosen. Its switch has no
+// default, so a new kind of Outbound message fails the exhaustive linter until it says what the cap
+// does to it.
+func overCap(req Request) (skipreason.Reason, error) {
+	switch kind := req.Kind(); kind {
+	case outboundmessage.KindBroadcast, outboundmessage.KindAutomation:
+		// A Broadcast Recipient over the cap is Skipped, so a Broadcast is not delivered days late. An
+		// Automation send is Skipped too, until it can wait at its step for a place to free.
+		return skipreason.FrequencyCap, nil
+	case outboundmessage.KindTransactional, outboundmessage.KindConfirmation:
+		// Neither counts, so neither is ever over a cap (recipientLimitsOf).
+		return "", fmt.Errorf("outbound: a message of kind %q is never over a Frequency cap", kind)
+	}
+	return "", fmt.Errorf("outbound: no Frequency cap Outcome for kind %q", req.Kind())
+}
+
+// destinationsOf is the Destination of each of targets.
+func destinationsOf(targets []target) []string {
+	return lo.Map(targets, func(t target, _ int) string { return t.dest })
 }
 
 // writeClaim inserts the claim under req.Key and, when it is new, counts it at in's Destinations, in
 // the transaction that holds their locks: it takes the scope that stands for them, so no claim is
 // written without them. An insert that loses the key writes no row: holder is judged as one found up
 // front.
-func (m *Module) writeClaim(ctx context.Context, l *ent.DestinationLocked, req Request, dest string, g gateResult, in frequencycap.Claim) (int64, *ent.OutboundMessage, error) {
+func (m *Module) writeClaim(ctx context.Context, l *ent.DestinationLocked, req Request, dest string, g gateResult, in frequencycap.CountInput) (int64, *ent.OutboundMessage, error) {
 	ls := l.Scope()
 	id, holder, err := m.insert(ctx, ls, req, m.newMessage(ls, req, dest, g))
 	if err != nil || holder != nil || len(in.Destinations) == 0 {
 		return id, holder, err
 	}
-	return id, nil, m.caps.Count(ctx, l, frequencycap.CountInput{MessageID: id, Channel: in.Channel, Destinations: in.Destinations})
+	in.MessageID = id
+	return id, nil, m.caps.Count(ctx, l, in)
 }
 
 // skipUnclaimed records a send Skipped before any claim (no Destination, Send-eligibility) as a
@@ -114,17 +183,12 @@ func (m *Module) writeClaim(ctx context.Context, l *ent.DestinationLocked, req R
 // asked once the row is written (Request.Stopped), so a stopped source gains no Skipped row.
 func (m *Module) skipUnclaimed(ctx context.Context, s *ent.Scoped, req Request, dest string, g gateResult, existing *ent.OutboundMessage, reason skipreason.Reason) (Result, error) {
 	if existing == nil {
-		create := m.newMessage(s, req, dest, g).SetStatus(outboundmessage.StatusSkipped).SetSkippedReason(reason)
-		id, holder, err := m.insert(ctx, s, req, create)
+		id, holder, err := m.insert(ctx, s, req, m.skippedMessage(s, req, dest, g, reason))
 		if err != nil {
 			return Result{}, err
 		}
 		if holder == nil {
-			withdrawn, err := withdrawIfStopped(ctx, s, req.Stopped, id, outboundmessage.StatusEQ(outboundmessage.StatusSkipped))
-			if err != nil || withdrawn {
-				return lo.FromPtr(withdrawnResult(withdrawn)), err
-			}
-			return Result{Outcome: Skipped, SkippedReason: reason, MessageID: id}, nil
+			return decidedSkipped(ctx, s, req, id, reason)
 		}
 		existing = holder
 	}
@@ -136,6 +200,21 @@ func (m *Module) skipUnclaimed(ctx context.Context, s *ent.Scoped, req Request, 
 		return lo.FromPtr(replay), err
 	}
 	return m.skip(ctx, s, msg, reason)
+}
+
+// decidedSkipped is the Result of a Skipped row written before any claim, once written: the source's
+// stop is asked (Request.Stopped), and a stopped source has the row withdrawn.
+func decidedSkipped(ctx context.Context, s *ent.Scoped, req Request, id int64, reason skipreason.Reason) (Result, error) {
+	withdrawn, err := withdrawIfStopped(ctx, s, req.Stopped, id, outboundmessage.StatusEQ(outboundmessage.StatusSkipped))
+	if err != nil || withdrawn {
+		return lo.FromPtr(withdrawnResult(withdrawn)), err
+	}
+	return Result{Outcome: Skipped, SkippedReason: reason, MessageID: id}, nil
+}
+
+// skippedMessage is the new Outbound message of req decided Skipped with reason before any claim.
+func (m *Module) skippedMessage(s *ent.Scoped, req Request, dest string, g gateResult, reason skipreason.Reason) *ent.OutboundMessageScopedCreate {
+	return m.newMessage(s, req, dest, g).SetStatus(outboundmessage.StatusSkipped).SetSkippedReason(reason)
 }
 
 // newMessage is the new Outbound message of req under its key, as a claim and a Skipped decided

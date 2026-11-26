@@ -305,6 +305,12 @@
   period_minutes: 1440
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+# Lacuna: a Telegram row with no maximum, so no cap, which a test gives a maximum to cap Tia's chats.
+- id: 1196 # fixture: FrequencyCapLacunaTelegram
+  workspace_id: 96
+  channel: telegram
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
 - id: 1097
   workspace_id: 97
   channel: sms

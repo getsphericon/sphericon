@@ -19,7 +19,7 @@ import (
 
 // The count of the Frequency cap (ADR 0178), observed at the Outbound send seam: every Broadcast's
 // and Automation's message takes a place at each Destination it is claimed for, under the lock of
-// each Destination a cap holds. No cap is enforced yet.
+// each Destination a cap holds. What the cap does to a send over it is frequencycap_test.go's.
 
 // Tia's two chats on Lacuna's bot (fixtures/bindings.yml).
 const (

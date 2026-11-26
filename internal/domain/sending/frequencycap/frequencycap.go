@@ -1,8 +1,10 @@
 // Package frequencycap is the Frequency cap of the sending context (ADR 0137, ADR 0178): the rule
 // of a Channel and a country that says which cap holds a Destination, the transaction that takes the
-// lock of each Destination a cap holds, and the count of marketing messages per Destination that the
-// claim of each writes in it. It owns the count's table; the Workspace's caps are the Workspace's
-// settings (internal/domain/identity/workspaces), which it reads.
+// lock of each Destination a cap holds and reads under it where each stands against its cap, the
+// count of marketing messages per Destination that the claim of each writes in it, and a read-only
+// probe of the same standing at any moment, for a preview and the reports. It owns the count's
+// table; the Workspace's caps are the Workspace's settings (internal/domain/identity/workspaces),
+// which it reads.
 package frequencycap
 
 import (
@@ -15,6 +17,7 @@ import (
 	entcap "github.com/getsphericon/sphericon/ent/frequencycap"
 	"github.com/getsphericon/sphericon/ent/frequencycount"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
+	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/postgres"
@@ -93,6 +96,12 @@ func (r Rule) locks(dest string) bool {
 	return capped
 }
 
+// Rule reads the Frequency cap rule of the scoped Workspace's Channel ch: which of its caps holds
+// each Destination.
+func (m *Module) Rule(ctx context.Context, s *ent.Scoped, ch channels.Channel) (Rule, error) {
+	return ruleOf(ctx, s, ch)
+}
+
 // ruleOf reads the rule of the scoped Workspace's Channel ch from its cap rows.
 func ruleOf(ctx context.Context, s *ent.Scoped, ch channels.Channel) (Rule, error) {
 	rows, err := s.FrequencyCap().Query().Where(entcap.ChannelEQ(ch)).All(ctx)
@@ -114,6 +123,107 @@ func ruleOf(ctx context.Context, s *ent.Scoped, ch channels.Channel) (Rule, erro
 	return rule, nil
 }
 
+// Standing is where a Destination stands against its Frequency cap at a moment.
+type Standing struct {
+	// Cap is the cap that holds the Destination, and Capped whether one does; without one the
+	// Destination is never over and the rest is zero.
+	Cap    Cap
+	Capped bool
+	// Count is how many places the Destination's count holds in the cap's period up to the moment:
+	// the rows of its messages still pending or sent.
+	Count int
+	// Release is, for a Destination over its cap, when enough of its counted places leave the period
+	// for one to free: the counted moment of the (Count - Max + 1)-th oldest of them plus the period.
+	// It is zero while a place is free.
+	Release time.Time
+}
+
+// Over reports whether the Destination has no place left under its cap: a message to it now would
+// go beyond the cap.
+func (st Standing) Over() bool { return st.Capped && st.Count >= st.Cap.Max }
+
+// Standings are the Standing of each of a set of Destinations, by Destination.
+type Standings map[string]Standing
+
+// Over reports whether dest has no place left under its cap; a Destination not in the set has one.
+func (sts Standings) Over(dest string) bool { return sts[dest].Over() }
+
+// standingsAt reads where each of dests on ch stands at the moment at under rule, through s: in the
+// transaction that holds their locks for a claim, or outside any for a probe.
+func standingsAt(ctx context.Context, s *ent.Scoped, rule Rule, ch channels.Channel, dests []string, at time.Time) (Standings, error) {
+	sts := Standings{}
+	var capped []string
+	var longest time.Duration
+	for _, dest := range dests {
+		c, ok := rule.Cap(dest)
+		sts[dest] = Standing{Cap: c, Capped: ok}
+		if ok {
+			capped = append(capped, dest)
+			longest = max(longest, c.Period)
+		}
+	}
+	if len(capped) == 0 {
+		return sts, nil
+	}
+	rows, err := s.FrequencyCount().Query().
+		Where(append(holdingPlaces(ch, at.Add(-longest)), frequencycount.DestinationIn(capped...), frequencycount.CountedAtLTE(at))...).
+		Order(frequencycount.ByCountedAt()).
+		All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("frequencycap: read the counts: %w", err)
+	}
+	for _, dest := range capped {
+		sts[dest] = standingOf(sts[dest], rows, dest, at)
+	}
+	return sts, nil
+}
+
+// standingOf is st with the count of dest's rows (oldest first) inside its cap's period up to at,
+// and its release moment when the count is at or over the cap.
+func standingOf(st Standing, rows []*ent.FrequencyCount, dest string, at time.Time) Standing {
+	since := at.Add(-st.Cap.Period)
+	var counted []time.Time
+	for _, r := range rows {
+		if r.Destination == dest && r.CountedAt.After(since) {
+			counted = append(counted, r.CountedAt)
+		}
+	}
+	st.Count = len(counted)
+	if st.Over() && st.Cap.Max > 0 {
+		st.Release = counted[st.Count-st.Cap.Max].Add(st.Cap.Period)
+	}
+	return st
+}
+
+// holdingPlaces is the condition of the count rows of ch that hold a place after since: counted
+// after it, of a message still pending or sent. A message that failed or was skipped frees its
+// places.
+func holdingPlaces(ch channels.Channel, since time.Time) []predicate.FrequencyCount {
+	return []predicate.FrequencyCount{
+		frequencycount.ChannelEQ(ch),
+		frequencycount.CountedAtGT(since),
+		frequencycount.HasOutboundMessageWith(outboundmessage.StatusIn(outboundmessage.StatusPending, outboundmessage.StatusSent)),
+	}
+}
+
+// ProbeInput is a set of Destinations on Channel, and the moment At they are read at.
+type ProbeInput struct {
+	Channel      channels.Channel
+	Destinations []string
+	At           time.Time
+}
+
+// Probe reads where each of in's Destinations stands against its cap at in.At: its count and, over
+// the cap, when a place frees. It takes no lock and writes nothing, so its answer may be stale by the
+// time a send claims: for a preview or a report, never for the claim (Within).
+func (m *Module) Probe(ctx context.Context, s *ent.Scoped, in ProbeInput) (Standings, error) {
+	rule, err := ruleOf(ctx, s, in.Channel)
+	if err != nil {
+		return nil, err
+	}
+	return standingsAt(ctx, s, rule, in.Channel, in.Destinations, in.At)
+}
+
 // Claim is a message about to be claimed on Channel: Destinations are the ones it counts at (none
 // for a message that does not count).
 type Claim struct {
@@ -122,26 +232,19 @@ type Claim struct {
 }
 
 // Within runs fn in one transaction that first takes the lock of each of in's Destinations a cap
-// holds (the rule of in's Channel), and hands it the scope that stands for those locks: the claim and
-// its count rows are written there, so two sends to a capped Destination count and claim one after
-// the other. A Destination no cap holds takes no lock; with none, fn runs in a transaction that holds
-// no lock at all. The locks are held to the commit only: fn calls no provider.
-func (m *Module) Within(ctx context.Context, s *ent.Scoped, in Claim, fn func(l *ent.DestinationLocked) error) error {
-	keys, err := m.lockKeys(ctx, s, in)
-	if err != nil {
-		return err
-	}
-	return m.bus.WithinDestinationLockTx(ctx, s, keys, fn)
-}
-
-// lockKeys are the keys of the Destination locks a claim of in takes.
-func (m *Module) lockKeys(ctx context.Context, s *ent.Scoped, in Claim) ([]int64, error) {
+// holds (the rule of in's Channel), and hands it the scope that stands for those locks and the
+// Standing of each Destination read under them, at the Instance clock's now: the claim and its count
+// rows are written there, only at the Destinations with a place, so two sends to a capped
+// Destination count and claim one after the other and cannot both take its last place. A
+// Destination no cap holds takes no lock; with none, fn runs in a transaction that holds no lock at
+// all. The locks are held to the commit only: fn calls no provider.
+func (m *Module) Within(ctx context.Context, s *ent.Scoped, in Claim, fn func(l *ent.DestinationLocked, sts Standings) error) error {
 	if len(in.Destinations) == 0 {
-		return nil, nil
+		return m.bus.WithinDestinationLockTx(ctx, s, nil, func(l *ent.DestinationLocked) error { return fn(l, Standings{}) })
 	}
 	rule, err := ruleOf(ctx, s, in.Channel)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	var keys []int64
 	for _, dest := range in.Destinations {
@@ -149,7 +252,13 @@ func (m *Module) lockKeys(ctx context.Context, s *ent.Scoped, in Claim) ([]int64
 			keys = append(keys, postgres.DestinationKey(LockKind, s.WorkspaceID(), string(in.Channel), dest))
 		}
 	}
-	return keys, nil
+	return m.bus.WithinDestinationLockTx(ctx, s, keys, func(l *ent.DestinationLocked) error {
+		sts, err := standingsAt(ctx, l.Scope(), rule, in.Channel, in.Destinations, m.now())
+		if err != nil {
+			return err
+		}
+		return fn(l, sts)
+	})
 }
 
 // CountInput is a claimed message to count: one place on Channel at each of its Destinations.
@@ -204,12 +313,9 @@ type CountedInput struct {
 // Counted is how many places the Destination's count holds after in.Since: the rows of its messages
 // still pending or sent. A message that failed or was skipped frees its places.
 func (m *Module) Counted(ctx context.Context, s *ent.Scoped, in CountedInput) (int, error) {
-	n, err := s.FrequencyCount().Query().Where(
-		frequencycount.ChannelEQ(in.Channel),
-		frequencycount.Destination(in.Destination),
-		frequencycount.CountedAtGT(in.Since),
-		frequencycount.HasOutboundMessageWith(outboundmessage.StatusIn(outboundmessage.StatusPending, outboundmessage.StatusSent)),
-	).Count(ctx)
+	n, err := s.FrequencyCount().Query().
+		Where(append(holdingPlaces(in.Channel, in.Since), frequencycount.Destination(in.Destination))...).
+		Count(ctx)
 	if err != nil {
 		return 0, fmt.Errorf("frequencycap: read the count: %w", err)
 	}

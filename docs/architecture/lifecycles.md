@@ -99,7 +99,10 @@ two sends never wait for each other in a cycle. The bus hands its callback `*ent
 (`ent/template/scoped_destination_lock.tmpl`) and is the one caller of `ent.Scoped.LockDestinations`
 (forbidigo). Which Destinations are locked is the `frequencycap` rule's (`frequencycap.Module.Within`):
 those a Frequency cap holds, by the Channel and the number's country; where none does, the type is
-handed out all the same and stands for no lock. The writer of a claim and its count rows
+handed out all the same and stands for no lock. Under the locks `Within` reads where each
+Destination stands against its cap and hands the standings to the callback: a target over its cap is
+dropped, and a send with none left is decided there (Skipped with `frequency_cap`), so two sends
+cannot both take a Destination's last place. The writer of a claim and its count rows
 (`outboundmessages.writeClaim`, `frequencycap.Module.Count`) takes the type, so no claim is written
 without it. The locks are held from the count to the claim's commit, never over the provider call,
 and join no lock order with the Contact's or the Workspace's.
