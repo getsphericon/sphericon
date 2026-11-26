@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"slices"
-	"time"
 
 	"github.com/samber/lo"
 
@@ -13,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/localcalendar"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
@@ -130,10 +130,23 @@ func (m *Module) HasCustomField(ctx context.Context, s *ent.Scoped, key string) 
 	return ok, nil
 }
 
+// CustomFieldByKey returns the Workspace's Custom field of the key, nil when its catalogue has
+// none.
+func (m *Module) CustomFieldByKey(ctx context.Context, s *ent.Scoped, key string) (*ent.CustomField, error) {
+	field, err := s.CustomField().Query().Where(customfield.Key(key)).Only(ctx)
+	if ent.IsNotFound(err) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("look up custom field %q: %w", key, err)
+	}
+	return field, nil
+}
+
 // inferFieldType maps a JSON-decoded value to a CustomField type. Numbers decode to
 // float64 (encoding/json) or json.Number; booleans to bool; a string in one of the ISO forms of a
-// date is a datetime (isoDate); everything else (other strings, objects, arrays, null) is treated
-// as a string definition.
+// date is a datetime (localcalendar.IsISODate); everything else (other strings, objects, arrays,
+// null) is treated as a string definition.
 func inferFieldType(v any) customfield.Type {
 	switch val := v.(type) {
 	case bool:
@@ -141,25 +154,11 @@ func inferFieldType(v any) customfield.Type {
 	case float64, float32, int, int64, json.Number:
 		return customfield.TypeNumber
 	case string:
-		if isoDate(val) {
+		if localcalendar.IsISODate(val) {
 			return customfield.TypeDatetime
 		}
 		return customfield.TypeString
 	default:
 		return customfield.TypeString
 	}
-}
-
-// dateLayouts are the ISO forms of a date a value makes a datetime field from (#817): a date-time
-// with an offset (RFC 3339, "Z" or "+03:00", fractional seconds allowed), one without an offset and
-// a bare date, the last two read in the Workspace time zone (ADR 0087). A slash form such as
-// 01/15/2026 is read month-first by some tools and day-first by others, so it stays a string.
-var dateLayouts = []string{time.RFC3339Nano, "2006-01-02T15:04:05.999999999", time.DateOnly}
-
-// isoDate reports whether s is a valid date in one of dateLayouts.
-func isoDate(s string) bool {
-	return slices.ContainsFunc(dateLayouts, func(layout string) bool {
-		_, err := time.Parse(layout, s)
-		return err == nil
-	})
 }

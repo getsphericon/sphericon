@@ -40,7 +40,9 @@ import (
 	automationstep "github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	channels "github.com/getsphericon/sphericon/internal/kernel/channels"
 	conditiontree "github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	datetrigger "github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 	httpheader "github.com/getsphericon/sphericon/internal/kernel/httpheader"
+	localcalendar "github.com/getsphericon/sphericon/internal/kernel/localcalendar"
 	pagination "github.com/getsphericon/sphericon/internal/kernel/pagination"
 	ruleaction "github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 	telegramrender "github.com/getsphericon/sphericon/internal/kernel/telegramrender"
@@ -88,11 +90,11 @@ func (c *InputsImpl) AutomationCreate(source *site.CreateAutomationInput) (autom
 	var automationsCreateInput automations.CreateInput
 	if source != nil {
 		automationsCreateInput.Name = nameIn((*source).Name)
-		eventmatcherMatcher, err := automationTriggerIn((*source).Trigger)
+		automationsTrigger, err := automationTriggerIn(c, (*source).Trigger)
 		if err != nil {
 			return automationsCreateInput, err
 		}
-		automationsCreateInput.Trigger = eventmatcherMatcher
+		automationsCreateInput.Trigger = automationsTrigger
 		automationsCreateInput.Entry = automationEntryIn(c, (*source).Trigger)
 		eventmatcherMatcherList, err := automationExitsIn((*source).ExitEvents)
 		if err != nil {
@@ -157,11 +159,11 @@ func (c *InputsImpl) AutomationUpdate(source *site.UpdateAutomationInput) (autom
 	if source != nil {
 		automationsUpdateInput.Revision = revisionIn((*source).Revision)
 		automationsUpdateInput.Name = namePtrIn((*source).Name)
-		pEventmatcherMatcher, err := automationTriggerPtrIn((*source).Trigger)
+		automationsTrigger, err := automationTriggerPtrIn(c, (*source).Trigger)
 		if err != nil {
 			return automationsUpdateInput, err
 		}
-		automationsUpdateInput.Trigger = pEventmatcherMatcher
+		automationsUpdateInput.Trigger = automationsTrigger
 		automationsUpdateInput.Entry = automationEntryPtrIn(c, (*source).Trigger)
 		pEventmatcherMatcherList, err := automationExitsPtrIn((*source).ExitEvents)
 		if err != nil {
@@ -421,6 +423,26 @@ func (c *InputsImpl) CustomFieldUpdate(source *site.UpdateCustomFieldInput) cont
 	}
 	return contactsCustomFieldUpdateInput
 }
+func (c *InputsImpl) DateRecurrence(source site.DateRecurrence) localcalendar.Recurrence {
+	var localcalendarRecurrence localcalendar.Recurrence
+	switch source {
+	case site.DateRecurrenceOnce:
+		localcalendarRecurrence = localcalendar.Once
+	case site.DateRecurrenceYearly:
+		localcalendarRecurrence = localcalendar.Yearly
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return localcalendarRecurrence
+}
+func (c *InputsImpl) DateTriggerIn(source site.DateTriggerInput) datetrigger.Date {
+	var datetriggerDate datetrigger.Date
+	datetriggerDate.Field = dateFieldIn(source.Field)
+	datetriggerDate.Recurrence = c.DateRecurrence(source.Recurrence)
+	datetriggerDate.OffsetDays = dateOffsetDaysIn(source.OffsetDays)
+	datetriggerDate.LocalTime = string(source.LocalTime)
+	return datetriggerDate
+}
 func (c *InputsImpl) EmailBroadcastContentIn(source site.EmailBroadcastContentInput) broadcasts.EmailContentInput {
 	var broadcastsEmailContentInput broadcasts.EmailContentInput
 	broadcastsEmailContentInput.Subject = stringPtrIn(source.Subject)
@@ -662,6 +684,7 @@ func (c *InputsImpl) PathStepInputSum(source site.PathStepInputSum) site.Automat
 	siteapiAutomationStepInputSum.TelegramStepInput = source.TelegramStepInput
 	siteapiAutomationStepInputSum.SmsStepInput = source.SmsStepInput
 	siteapiAutomationStepInputSum.WaitStepInput = source.WaitStepInput
+	siteapiAutomationStepInputSum.WaitUntilStepInput = source.WaitUntilStepInput
 	siteapiAutomationStepInputSum.ApplyTagStepInput = source.ApplyTagStepInput
 	siteapiAutomationStepInputSum.RemoveTagStepInput = source.RemoveTagStepInput
 	siteapiAutomationStepInputSum.HttpStepInput = source.HttpStepInput
@@ -693,6 +716,8 @@ func (c *InputsImpl) PathStepInputType(source site.PathStepInputSumType) site.Au
 		siteapiAutomationStepInputSumType = site.TelegramStepInputAutomationStepInputSum
 	case site.WaitStepInputPathStepInputSum:
 		siteapiAutomationStepInputSumType = site.WaitStepInputAutomationStepInputSum
+	case site.WaitUntilStepInputPathStepInputSum:
+		siteapiAutomationStepInputSumType = site.WaitUntilStepInputAutomationStepInputSum
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
@@ -1100,6 +1125,7 @@ func (c *InputsImpl) SplitPathStepInputSum(source site.SplitPathStepInputSum) si
 	siteapiAutomationStepInputSum.TelegramStepInput = source.TelegramStepInput
 	siteapiAutomationStepInputSum.SmsStepInput = source.SmsStepInput
 	siteapiAutomationStepInputSum.WaitStepInput = source.WaitStepInput
+	siteapiAutomationStepInputSum.WaitUntilStepInput = source.WaitUntilStepInput
 	siteapiAutomationStepInputSum.ApplyTagStepInput = source.ApplyTagStepInput
 	siteapiAutomationStepInputSum.RemoveTagStepInput = source.RemoveTagStepInput
 	siteapiAutomationStepInputSum.HttpStepInput = source.HttpStepInput
@@ -1131,6 +1157,8 @@ func (c *InputsImpl) SplitPathStepInputType(source site.SplitPathStepInputSumTyp
 		siteapiAutomationStepInputSumType = site.TelegramStepInputAutomationStepInputSum
 	case site.WaitStepInputSplitPathStepInputSum:
 		siteapiAutomationStepInputSumType = site.WaitStepInputAutomationStepInputSum
+	case site.WaitUntilStepInputSplitPathStepInputSum:
+		siteapiAutomationStepInputSumType = site.WaitUntilStepInputAutomationStepInputSum
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
@@ -1255,6 +1283,34 @@ func (c *InputsImpl) WaitStepIn(source site.WaitStepInput) automationstep.Wait {
 	automationstepWait.Seconds = int32ToInt(source.Seconds)
 	return automationstepWait
 }
+func (c *InputsImpl) WaitUntilDateIn(source site.WaitUntilDateInput) datetrigger.Date {
+	var datetriggerDate datetrigger.Date
+	datetriggerDate.Field = dateFieldIn(source.Field)
+	datetriggerDate.Recurrence = c.DateRecurrence(source.Recurrence)
+	datetriggerDate.OffsetDays = dateOffsetDaysIn(source.OffsetDays)
+	datetriggerDate.LocalTime = string(source.LocalTime)
+	return datetriggerDate
+}
+func (c *InputsImpl) WaitUntilStepIn(source site.WaitUntilStepInput) (automationstep.WaitUntil, error) {
+	var automationstepWaitUntil automationstep.WaitUntil
+	automationstepUntil, err := waitUntilMomentIn(c, source.Until)
+	if err != nil {
+		return automationstepWaitUntil, err
+	}
+	automationstepWaitUntil.Until = automationstepUntil
+	return automationstepWaitUntil, nil
+}
+func (c *InputsImpl) WaitUntilTimeOfDayIn(source site.WaitUntilTimeOfDayInput) automationstep.TimeOfDay {
+	var automationstepTimeOfDay automationstep.TimeOfDay
+	automationstepTimeOfDay.LocalTime = string(source.LocalTime)
+	if source.Weekdays != nil {
+		automationstepTimeOfDay.Weekdays = make([]localcalendar.Weekday, len(source.Weekdays))
+		for i := 0; i < len(source.Weekdays); i++ {
+			automationstepTimeOfDay.Weekdays[i] = c.WeekdayIn(source.Weekdays[i])
+		}
+	}
+	return automationstepTimeOfDay
+}
 func (c *InputsImpl) WebhookCreate(source *site.CreateWebhookInput) webhookendpoints.CreateInput {
 	var webhookendpointsCreateInput webhookendpoints.CreateInput
 	if source != nil {
@@ -1278,6 +1334,28 @@ func (c *InputsImpl) WebhookUpdate(source *site.UpdateWebhookInput) webhookendpo
 		webhookendpointsUpdateInput.Enabled = boolPatch((*source).Enabled)
 	}
 	return webhookendpointsUpdateInput
+}
+func (c *InputsImpl) WeekdayIn(source site.Weekday) localcalendar.Weekday {
+	var localcalendarWeekday localcalendar.Weekday
+	switch source {
+	case site.WeekdayFriday:
+		localcalendarWeekday = localcalendar.Friday
+	case site.WeekdayMonday:
+		localcalendarWeekday = localcalendar.Monday
+	case site.WeekdaySaturday:
+		localcalendarWeekday = localcalendar.Saturday
+	case site.WeekdaySunday:
+		localcalendarWeekday = localcalendar.Sunday
+	case site.WeekdayThursday:
+		localcalendarWeekday = localcalendar.Thursday
+	case site.WeekdayTuesday:
+		localcalendarWeekday = localcalendar.Tuesday
+	case site.WeekdayWednesday:
+		localcalendarWeekday = localcalendar.Wednesday
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return localcalendarWeekday
 }
 func (c *InputsImpl) WorkspaceCreate(source *site.SiteCreateWorkspaceInput) workspaceview.CreateInput {
 	var workspaceviewCreateInput workspaceview.CreateInput

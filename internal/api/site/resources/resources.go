@@ -6,14 +6,17 @@ package resources
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"time"
 
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 	"github.com/getsphericon/sphericon/internal/kernel/httpheader"
+	"github.com/getsphericon/sphericon/internal/kernel/localcalendar"
 	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
@@ -136,6 +139,13 @@ import (
 // goverter:extend telegramStepType
 // goverter:extend smsStepType
 // goverter:extend waitStepType
+// goverter:extend waitUntilStepType
+// goverter:extend waitUntilMoment
+// goverter:extend dateField
+// goverter:extend dateOffsetDays
+// goverter:extend dateTriggerKind
+// goverter:extend waitUntilDateForm
+// goverter:extend waitUntilTimeOfDayForm
 // goverter:extend applyTagStepType
 // goverter:extend removeTagStepType
 // goverter:extend httpStepType
@@ -432,6 +442,12 @@ type Converter interface {
 	// goverter:map IntegrationID IntegrationId
 	SmsStepToResource(source automations.SMSView) siteapi.SmsStep
 	WaitStepToResource(source automations.WaitView) siteapi.WaitStep
+	WaitUntilStepToResource(source automations.WaitUntilView) (siteapi.WaitUntilStep, error)
+	// goverter:map . Form | waitUntilTimeOfDayForm
+	// goverter:useEmptyOnNil:slice
+	WaitUntilTimeOfDayToResource(source automationstep.TimeOfDay) siteapi.WaitUntilTimeOfDay
+	// goverter:enum:transform value
+	WeekdayToResource(source localcalendar.Weekday) siteapi.Weekday
 	ApplyTagStepToResource(source automations.TagView) siteapi.ApplyTagStep
 	RemoveTagStepToResource(source automations.TagView) siteapi.RemoveTagStep
 	HttpStepToResource(source automations.HTTPView) siteapi.HttpStep
@@ -475,6 +491,13 @@ type Converter interface {
 	TelegramConfigToResource(source integrations.RedactedTelegram) siteapi.TelegramConfig
 	// goverter:enum:transform value
 	EntryPolicyToResource(source automationversion.EntryPolicy) siteapi.EntryPolicy
+	// goverter:enum:transform value
+	DateRecurrenceToResource(source localcalendar.Recurrence) siteapi.DateRecurrence
+	// A date Trigger and a Wait until on a date show the same occurrence of a date (ADR 0126).
+	// goverter:map . Kind | dateTriggerKind
+	DateTriggerToResource(source datetrigger.Date) siteapi.DateTrigger
+	// goverter:map . Form | waitUntilDateForm
+	WaitUntilDateToResource(source datetrigger.Date) siteapi.WaitUntilDate
 	// goverter:enum:transform value
 	SmsFromKindToResource(source messaging.SMSFromKind) siteapi.SmsFromKind
 	// goverter:map . Kind | twilioConfigKind
@@ -612,6 +635,7 @@ type Converter interface {
 	RuleDryRunToResource(source rules.DryRun) siteapi.RuleDryRunResource
 
 	// goverter:map . Failure | enrollmentFailure
+	// goverter:map Occurrence | enrollmentOccurrence
 	EnrollmentToResource(source *ent.AutomationRun) siteapi.EnrollmentResource
 	// The store names the triggering Event's source id; the contract says whose it is.
 	// goverter:map SourceID EventSourceId
@@ -1217,6 +1241,12 @@ func stepSum(c Converter, v automations.StepView) (siteapi.AutomationStepSum, er
 		return siteapi.NewSmsStepAutomationStepSum(c.SmsStepToResource(v)), nil
 	case automations.WaitView:
 		return siteapi.NewWaitStepAutomationStepSum(c.WaitStepToResource(v)), nil
+	case automations.WaitUntilView:
+		w, err := c.WaitUntilStepToResource(v)
+		if err != nil {
+			return siteapi.AutomationStepSum{}, err
+		}
+		return siteapi.NewWaitUntilStepAutomationStepSum(w), nil
 	case automations.TagView:
 		// The module shows both tag kinds as one view; the union has an arm for each.
 		switch v.Type {
@@ -1272,6 +1302,27 @@ func telegramStepType(automationstep.Kind) siteapi.TelegramStepType {
 }
 func smsStepType(automationstep.Kind) siteapi.SmsStepType   { return siteapi.SmsStepTypeSMS }
 func waitStepType(automationstep.Kind) siteapi.WaitStepType { return siteapi.WaitStepTypeWait }
+func waitUntilStepType(automationstep.Kind) siteapi.WaitUntilStepType {
+	return siteapi.WaitUntilStepTypeWaitUntil
+}
+func waitUntilTimeOfDayForm(automationstep.TimeOfDay) siteapi.WaitUntilTimeOfDayForm {
+	return siteapi.WaitUntilTimeOfDayFormTimeOfDay
+}
+
+// waitUntilMoment is the arm of a Wait until's moment: a oneOf is beyond goverter, so only the
+// switch is written here. A moment with no arm fails the response.
+func waitUntilMoment(c Converter, u automationstep.Until) (siteapi.WaitUntilMoment, error) {
+	switch u := u.(type) {
+	case automationstep.TimeOfDay:
+		return siteapi.WaitUntilMoment{OneOf: siteapi.NewWaitUntilTimeOfDayWaitUntilMomentSum(c.WaitUntilTimeOfDayToResource(u))}, nil
+	case automationstep.OnDate:
+		return siteapi.WaitUntilMoment{OneOf: siteapi.NewWaitUntilDateWaitUntilMomentSum(c.WaitUntilDateToResource(u.Date))}, nil
+	case nil:
+		return siteapi.WaitUntilMoment{}, errors.New("a wait until without a moment")
+	}
+	return siteapi.WaitUntilMoment{}, fmt.Errorf("the moment %T has no arm", u)
+}
+
 func applyTagStepType(automationstep.Kind) siteapi.ApplyTagStepType {
 	return siteapi.ApplyTagStepTypeApplyTag
 }
@@ -1300,20 +1351,48 @@ func segmentCondition(g conditiontree.Segment) (siteapi.SegmentCondition, error)
 // automationTrigger maps a version's Trigger into the typed DTO by its kind: an Event matcher whose
 // filter is checked as a stored Condition is (convert.Document).
 func automationTrigger(c Converter, v *ent.AutomationVersion) (siteapi.AutomationTrigger, error) {
-	m := automations.TriggerOf(v)
-	ev := siteapi.EventTrigger{
-		Kind: siteapi.EventTriggerKindEvent, Action: m.Action,
-		EntryPolicy: c.EntryPolicyToResource(v.EntryPolicy), Cooldown: siteapi.EntryCooldown(narrow.Int32(v.CooldownSeconds)),
-		EnrollmentKey: optString(v.EnrollmentKey),
-	}
-	if m.Filter != nil {
-		f, err := convert.Document[siteapi.EventFilter](*m.Filter)
-		if err != nil {
-			return siteapi.AutomationTrigger{}, err
+	switch t := automations.TriggerOf(v).(type) {
+	case automations.DateTrigger:
+		return siteapi.AutomationTrigger{OneOf: siteapi.NewDateTriggerAutomationTriggerSum(c.DateTriggerToResource(t.Date))}, nil
+	case automations.EventTrigger:
+		ev := siteapi.EventTrigger{
+			Kind: siteapi.EventTriggerKindEvent, Action: t.Matcher.Action,
+			EntryPolicy: c.EntryPolicyToResource(v.EntryPolicy), Cooldown: siteapi.EntryCooldown(narrow.Int32(v.CooldownSeconds)),
+			EnrollmentKey: optString(v.EnrollmentKey),
 		}
-		ev.Filter = siteapi.NewOptEventFilter(f)
+		if t.Matcher.Filter != nil {
+			f, err := convert.Document[siteapi.EventFilter](*t.Matcher.Filter)
+			if err != nil {
+				return siteapi.AutomationTrigger{}, err
+			}
+			ev.Filter = siteapi.NewOptEventFilter(f)
+		}
+		return siteapi.AutomationTrigger{OneOf: siteapi.NewEventTriggerAutomationTriggerSum(ev)}, nil
 	}
-	return siteapi.AutomationTrigger{OneOf: siteapi.NewEventTriggerAutomationTriggerSum(ev)}, nil
+	return siteapi.AutomationTrigger{}, fmt.Errorf("version %d has a trigger of no kind", v.ID)
+}
+
+func dateTriggerKind(datetrigger.Date) siteapi.DateTriggerKind { return siteapi.DateTriggerKindDate }
+func waitUntilDateForm(datetrigger.Date) siteapi.WaitUntilDateForm {
+	return siteapi.WaitUntilDateFormDate
+}
+
+// dateOffsetDays is a date's offset in days, within the contract's bound when it was stored.
+func dateOffsetDays(days int) siteapi.DateOffsetDays {
+	return siteapi.DateOffsetDays(narrow.Int32(days))
+}
+
+// dateField maps a date Trigger's field into the typed DTO by its kind. A stored field is checked
+// when it is written, so a kind it does not know is the birthday's never.
+func dateField(f datetrigger.Field) siteapi.DateField {
+	switch f.Kind {
+	case datetrigger.CustomField:
+		return siteapi.DateField{OneOf: siteapi.NewCustomFieldDateFieldDateFieldSum(siteapi.CustomFieldDateField{
+			Kind: siteapi.CustomFieldDateFieldKindCustomField, Key: f.Key,
+		})}
+	case datetrigger.Birthday:
+	}
+	return siteapi.DateField{OneOf: siteapi.NewBirthdayDateFieldDateFieldSum(siteapi.BirthdayDateField{Kind: siteapi.BirthdayDateFieldKindBirthday})}
 }
 
 // eventMatcher maps an exit or goal event into the typed DTO, its filter checked as a stored
@@ -1429,6 +1508,26 @@ func inviterEmail(inv ent.Invitation) siteapi.OptNilString {
 		return siteapi.OptNilString{}
 	}
 	return siteapi.NewOptNilString(inv.Edges.Inviter.Email)
+}
+
+// enrollmentOccurrence is the occurrence of a date Trigger the enrollment was made for (ADR 0126):
+// its anniversary year, or a once date's one occurrence; absent for one an Event or a rule began.
+func enrollmentOccurrence(stored *datetrigger.StoredOccurrence) siteapi.OptEnrollmentOccurrence {
+	if stored == nil {
+		return siteapi.OptEnrollmentOccurrence{}
+	}
+	var sum siteapi.EnrollmentOccurrenceSum
+	switch o := stored.Occurrence().(type) {
+	case datetrigger.Yearly:
+		sum = siteapi.NewYearlyEnrollmentOccurrenceEnrollmentOccurrenceSum(siteapi.YearlyEnrollmentOccurrence{
+			Recurrence: siteapi.YearlyEnrollmentOccurrenceRecurrenceYearly, Year: count(o.Year),
+		})
+	case datetrigger.Once:
+		sum = siteapi.NewOnceEnrollmentOccurrenceEnrollmentOccurrenceSum(siteapi.OnceEnrollmentOccurrence{
+			Recurrence: siteapi.OnceEnrollmentOccurrenceRecurrenceOnce,
+		})
+	}
+	return siteapi.NewOptEnrollmentOccurrence(siteapi.EnrollmentOccurrence{OneOf: sum})
 }
 
 // enrollmentFailure is the enrollment's failure detail; absent unless it failed.

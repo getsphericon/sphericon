@@ -69,3 +69,39 @@ func TestSiteSkippedEntriesOfAContact(t *testing.T) {
 	})
 	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 }
+
+// An Enrollment of a date Trigger carries the occurrence it was made for (ADR 0126): its
+// anniversary year (fixture Birthday greeting: Alice's for 2026).
+func TestSiteEnrollmentsShowTheAnniversaryYearOfADateTrigger(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+
+	dated, err := c.SiteEnrollmentsGet(t.Context(), siteapi.SiteEnrollmentsGetParams{
+		WorkspaceId:  fixtures.AcmePublicID,
+		AutomationId: siteapi.EntityId(fixtures.AutomationBirthdayGreetingID),
+		EnrollmentId: siteapi.EntityId(fixtures.AutomationRunBirthdayGreetingAliceID),
+	})
+	require.NoError(t, err)
+
+	occurrence, ok := dated.Occurrence.Get()
+	require.True(t, ok)
+	assert.JSONEq(t, `{"recurrence":"yearly","year":2026}`, testhelper.JSONOf(t, &occurrence))
+}
+
+// An Enrollment of a once date Trigger carries the once date's one occurrence, and no year
+// (fixture Renewal notice: Alice's).
+func TestSiteEnrollmentsShowTheOnceOccurrence(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+
+	listed, err := c.SiteEnrollmentsList(t.Context(), siteapi.SiteEnrollmentsListParams{
+		WorkspaceId: fixtures.AcmePublicID, AutomationId: siteapi.EntityId(fixtures.AutomationRenewalNoticeID),
+	})
+	require.NoError(t, err)
+
+	require.Len(t, listed.Items, 1)
+	assert.Equal(t, siteapi.EntityId(fixtures.AutomationRunRenewalNoticeAliceID), listed.Items[0].ID)
+	occurrence, ok := listed.Items[0].Occurrence.Get()
+	require.True(t, ok)
+	assert.JSONEq(t, `{"recurrence":"once"}`, testhelper.JSONOf(t, &occurrence))
+}

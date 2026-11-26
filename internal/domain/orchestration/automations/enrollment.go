@@ -94,7 +94,7 @@ type origin struct {
 // stored before the trigger job is queued (#751); an Event no longer stored (Retention or an Erasure
 // removed it) gives no properties.
 func originOf(ctx context.Context, s *ent.Scoped, ev Event) (origin, error) {
-	o := origin{Action: ev.Action, OccurredAt: ev.OccurredAt, Cause: cause{sourceID: ev.SourceID}, Chain: ev.Chain}
+	o := origin{Action: ev.Action, OccurredAt: ev.OccurredAt, Cause: eventCause(ev.SourceID), Chain: ev.Chain}
 	stored, err := storedEvent(ctx, s, ev.SourceID)
 	if err != nil || stored == nil {
 		return o, err
@@ -133,12 +133,12 @@ func (m *StepExecution) enrollOnRule(ctx context.Context, s *ent.Scoped, pub eve
 	if err != nil {
 		return entered{}, err
 	}
-	o := origin{OccurredAt: now, Cause: cause{firingID: in.FiringID}, Chain: in.Chain}
+	o := origin{OccurredAt: now, Cause: firingCause(in.FiringID), Chain: in.Chain}
 	if fired != nil {
 		o.Action, o.Properties, o.OccurredAt = fired.Action, events.BoundedProperties(fired.Properties), fired.OccurredAt
 		o.BegunOnSourceID = in.SourceID
 	}
-	return m.enroll(ctx, s, pub, automationID, contactID, o, func(a *ent.Automation) (bool, error) {
+	return m.enroll(ctx, s, pub, automationID, contactID, o, func(a *ent.Automation, _ *ent.Contact, _ *origin) (bool, error) {
 		if !active(a) {
 			return false, ErrInactive
 		}
@@ -154,13 +154,13 @@ func (m *StepExecution) enrollOnRule(ctx context.Context, s *ent.Scoped, pub eve
 // action and its filter (matchesEvent): a filter miss is the first entry check, no entry and no
 // skipped entry (ADR 0133).
 func (m *StepExecution) enrollOnTrigger(ctx context.Context, s *ent.Scoped, pub events.Publisher, automationID, contactID int64, o origin) (entered, error) {
-	return m.enroll(ctx, s, pub, automationID, contactID, o, func(a *ent.Automation) (bool, error) {
+	return m.enroll(ctx, s, pub, automationID, contactID, o, func(a *ent.Automation, _ *ent.Contact, _ *origin) (bool, error) {
 		live := a.Edges.LiveVersion
 		if !active(a) || live == nil || live.TriggerAction != o.Action {
 			return false, nil
 		}
 		// The first entry check: an Event its filter misses is no entry, and nothing is recorded.
-		return matchesEvent(ctx, s, TriggerOf(live), o.Action, event.SourceID(o.Cause.sourceID))
+		return matchesEvent(ctx, s, eventMatcherOf(live), o.Action, event.SourceID(sourceOf(o.Cause)))
 	})
 }
 
@@ -180,7 +180,8 @@ var _ = db.Declare(
 )
 
 // enroll makes the Enrollment that began on the Event of o when admits, called under the share lock
-// with the Automation and its live version, accepts it, and the entry checks let it through
+// with the Automation and its live version and under the Contact's lock with the Contact, accepts
+// it (it may set when the entry begins, o.OccurredAt, from what it reads there), and the entry checks let it through
 // (judgeEntry), and copies o's action and properties onto it (#752). A live version with an
 // Enrollment key reads the key's value from o's stored Event (keyValueOf) before the checks judge
 // the entry, and the Enrollment keeps it (ADR 0165). admits answers whether the
@@ -193,7 +194,7 @@ var _ = db.Declare(
 // nothing is made, when the entry is refused or its Event or Firing made an Enrollment already (an
 // entry handled again). The Contact's lock is held to the end of the transaction s is
 // bound to.
-func (m *StepExecution) enroll(ctx context.Context, s *ent.Scoped, pub events.Publisher, automationID, contactID int64, o origin, admits func(*ent.Automation) (bool, error)) (entered, error) {
+func (m *StepExecution) enroll(ctx context.Context, s *ent.Scoped, pub events.Publisher, automationID, contactID int64, o origin, admits func(*ent.Automation, *ent.Contact, *origin) (bool, error)) (entered, error) {
 	held, locked, err := m.lockContact(ctx, s, contactID)
 	if err != nil {
 		return entered{}, err
@@ -212,7 +213,7 @@ func (m *StepExecution) enroll(ctx context.Context, s *ent.Scoped, pub events.Pu
 	if err != nil {
 		return entered{}, err
 	}
-	admitted, err := admits(a.row)
+	admitted, err := admits(a.row, held.Contact(), &o)
 	if err != nil || !admitted {
 		return entered{}, err
 	}
@@ -237,11 +238,14 @@ func (m *StepExecution) enroll(ctx context.Context, s *ent.Scoped, pub events.Pu
 	// The Enrollment reaches its first Step as it is made; a wait there is due from now (ADR 0124).
 	now := m.now()
 	first, stepping := automationstep.First(a.row.Edges.LiveVersion.Steps)
-	var due *time.Time
+	var arrived automationstep.Due
 	if stepping && !ended {
-		due = dueOf(first, now)
+		arrived, err = arrive(first, now, func() (automationstep.Contact, error) { return calendarOf(ctx, s, held.Contact()) })
+		if err != nil {
+			return entered{}, err
+		}
 	}
-	runID, inserted, err := begin(ctx, s, held, a, o, judged.ordinal, due)
+	runID, inserted, err := begin(ctx, s, held, a, o, judged.ordinal, dueAt(arrived))
 	if err != nil || !inserted {
 		return entered{}, err
 	}
@@ -267,7 +271,7 @@ func (m *StepExecution) enroll(ctx context.Context, s *ent.Scoped, pub events.Pu
 		}
 		return entered{runID: runID}, nil
 	}
-	if err := reach(ctx, s, runID, first.ID, now, due); err != nil {
+	if err := reach(ctx, s, runID, first.ID, now, arrived); err != nil {
 		return entered{}, err
 	}
 	return entered{runID: runID, stepping: true}, nil
@@ -552,7 +556,7 @@ func triggeredBy(ctx context.Context, s *ent.Scoped, ev Event) ([]int64, error) 
 	}
 	var ids []int64
 	for _, a := range candidates {
-		ok, err := matchesEvent(ctx, s, TriggerOf(a.Edges.LiveVersion), ev.Action, event.SourceID(ev.SourceID))
+		ok, err := matchesEvent(ctx, s, eventMatcherOf(a.Edges.LiveVersion), ev.Action, event.SourceID(ev.SourceID))
 		if err != nil {
 			return nil, err
 		}

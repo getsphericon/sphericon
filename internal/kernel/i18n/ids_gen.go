@@ -96,6 +96,7 @@ var (
 	ErrorsAuditRetentionUnlicensed                        = ID{key: "errors.audit_retention_unlicensed"}
 	ErrorsAuditUnlicensed                                 = ID{key: "errors.audit_unlicensed"}
 	ErrorsAutomationArchived                              = ID{key: "errors.automation_archived"}
+	ErrorsAutomationDateTriggerEnrolledInto               = ID{key: "errors.automation_date_trigger_enrolled_into"}
 	ErrorsAutomationExitEventInvalid                      = ID{key: "errors.automation_exit_event_invalid"}
 	ErrorsAutomationGoalEventInvalid                      = ID{key: "errors.automation_goal_event_invalid"}
 	ErrorsAutomationInactive                              = ID{key: "errors.automation_inactive"}

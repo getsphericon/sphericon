@@ -31,6 +31,7 @@ const (
 	KindTelegram  Kind = "telegram"
 	KindSMS       Kind = "sms"
 	KindWait      Kind = "wait"
+	KindWaitUntil Kind = "wait_until"
 	KindApplyTag  Kind = "apply_tag"
 	KindRemoveTag Kind = "remove_tag"
 	KindHTTP      Kind = "http"
@@ -86,8 +87,8 @@ type Step struct {
 // New is a Step with no id yet: Identify gives it one.
 func New(p Payload) Step { return Step{Payload: p} }
 
-// Payload is what a Step does, one type per kind: Email, Telegram, SMS, Wait, ApplyTag, RemoveTag,
-// HTTP, End, Branch and Split.
+// Payload is what a Step does, one type per kind: Email, Telegram, SMS, Wait, WaitUntil, ApplyTag,
+// RemoveTag, HTTP, End, Branch and Split.
 type Payload interface {
 	Kind() Kind
 	// Stored is the payload as a version stores it: tag names, a Telegram step's image and
@@ -231,22 +232,32 @@ func (b Branch) Conditions() []conditiontree.Branch {
 // its paths through it, and a new fork kind implements it.
 type Fork interface {
 	Payload
-	// Forks are the fork's paths, in the order the walker visits them: a Branch's listed paths,
-	// then otherwise, then unknown when it has one.
-	Forks() []Path
+	// Forks are the fork's paths, each with where it lies in the Step's document, in the order the
+	// walker visits them: a Branch's listed paths, then otherwise, then unknown when it has one.
+	Forks() []PlacedPath
 	// WithForks is the fork with its paths replaced by paths, given in the order Forks gives them;
 	// what else it holds (a path's Condition) is kept.
 	WithForks(paths []Path) Fork
 }
 
-func (b Branch) Forks() []Path {
-	out := make([]Path, 0, len(b.Paths)+2)
-	for _, p := range b.Paths {
-		out = append(out, Path{ID: p.ID, Steps: p.Steps})
+// PlacedPath is a path of a fork and where it lies in its Step's document (`paths.0`,
+// `otherwise`): a refusal of a Step in it is placed through it (Locations).
+type PlacedPath struct {
+	Place string
+	Path  Path
+}
+
+// listedPlace is where the i-th listed path of a fork lies in its Step's document.
+func listedPlace(i int) string { return "paths." + strconv.Itoa(i) }
+
+func (b Branch) Forks() []PlacedPath {
+	out := make([]PlacedPath, 0, len(b.Paths)+2)
+	for i, p := range b.Paths {
+		out = append(out, PlacedPath{Place: listedPlace(i), Path: Path{ID: p.ID, Steps: p.Steps}})
 	}
-	out = append(out, b.Otherwise)
+	out = append(out, PlacedPath{Place: "otherwise", Path: b.Otherwise})
 	if b.Unknown != nil {
-		out = append(out, *b.Unknown)
+		out = append(out, PlacedPath{Place: "unknown", Path: *b.Unknown})
 	}
 	return out
 }
@@ -265,8 +276,8 @@ func (b Branch) WithForks(paths []Path) Fork {
 }
 
 // Split sends an Enrollment down one of its Paths by weight (ADR 0124): a draw of its Contact, its
-// Step and its ordinal (Draw) lands on a path by the running total of the weights (At). An empty
-// path is a holdout, sent nothing. Its paths rejoin at the Step after it.
+// Step and its round (Draw) lands on a path by the running total of the weights (At). An empty path
+// is a holdout, sent nothing. Its paths rejoin at the Step after it.
 type Split struct {
 	Paths []SplitPath `json:"paths"`
 }
@@ -278,10 +289,10 @@ type SplitPath struct {
 	Steps  []Step `json:"steps"`
 }
 
-func (s Split) Forks() []Path {
-	out := make([]Path, len(s.Paths))
+func (s Split) Forks() []PlacedPath {
+	out := make([]PlacedPath, len(s.Paths))
 	for i, p := range s.Paths {
-		out[i] = Path{ID: p.ID, Steps: p.Steps}
+		out[i] = PlacedPath{Place: listedPlace(i), Path: Path{ID: p.ID, Steps: p.Steps}}
 	}
 	return out
 }
@@ -311,12 +322,13 @@ func (s Split) At(draw int) ID {
 	return s.Paths[len(s.Paths)-1].ID
 }
 
-// Draw is the draw, 0 to 99, of the Contact at the Split's Step for the Enrollment of the ordinal
-// (ADR 0124, ADR 0127): the first eight bytes of the SHA-256 of "<contact>:<step>:<ordinal>",
-// big-endian, mod 100. It holds no random state, so the same Enrollment always draws the same, and
-// a new Enrollment of the Contact draws again.
-func Draw(contactID int64, step ID, ordinal int) int {
-	sum := sha256.Sum256(fmt.Appendf(nil, "%d:%s:%d", contactID, step, ordinal))
+// Draw is the draw, 0 to 99, of the Contact at the Split's Step in the round (ADR 0124): the first
+// eight bytes of the SHA-256 of "<contact>:<step>:<round>", big-endian, mod 100. The round is the
+// Enrollment's ordinal (ADR 0127), or the anniversary year of one a yearly date Trigger made (ADR
+// 0126). It holds no random state, so the same round always draws the same, and a new one draws
+// again.
+func Draw(contactID int64, step ID, round int) int {
+	sum := sha256.Sum256(fmt.Appendf(nil, "%d:%s:%d", contactID, step, round))
 	return int(binary.BigEndian.Uint64(sum[:8]) % 100)
 }
 
@@ -374,6 +386,7 @@ var decoders = map[Kind]func([]byte) (Payload, error){
 	KindTelegram:  decodeAs[Telegram],
 	KindSMS:       decodeAs[SMS],
 	KindWait:      decodeAs[Wait],
+	KindWaitUntil: decodeAs[WaitUntil],
 	KindApplyTag:  decodeAs[ApplyTag],
 	KindRemoveTag: decodeAs[RemoveTag],
 	KindHTTP:      decodeAs[HTTP],
@@ -520,7 +533,7 @@ func Identify(p Path, mint func() ID) (Path, error) {
 			return Step{ID: id, Payload: st.Payload}, nil
 		}
 		// A fork's paths are claimed after the fork and before their Steps, which Map reaches next.
-		paths := f.Forks()
+		paths := forkPaths(f)
 		for i := range paths {
 			if paths[i].ID, err = claim(paths[i].ID, nil); err != nil {
 				return Step{}, err

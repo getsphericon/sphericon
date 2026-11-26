@@ -102,6 +102,9 @@ func (Contact) Edges() []ent.Edge {
 			Annotations(entsql.OnDelete(entsql.Cascade)),
 		edge.To("start_tokens", StartToken.Type).
 			Annotations(entsql.OnDelete(entsql.Cascade)),
+		// The dates it holds, by their keys (ContactDate): derived from its row, they die with it.
+		edge.To("dates", ContactDate.Type).
+			Annotations(entsql.OnDelete(entsql.Cascade)),
 		// Presence-only labels (GLOSSARY: Tag), many-to-many via contact_tags.
 		edge.To("tags", Tag.Type).
 			Through("contact_tags", ContactTag.Type),

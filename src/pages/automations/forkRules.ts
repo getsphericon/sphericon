@@ -2,8 +2,8 @@ import * as z from 'zod'
 
 import { zBranchStepInput, zSplitPathInput, zSplitStepInput } from '../../generated/site/zod.gen.ts'
 import { maxItemsOf, minItemsOf } from '../../utils/bounds.ts'
-import { allSteps, branchConditionOf, isFork } from './definition.ts'
-import type { Flow, ForkStep, SplitPathDraft } from './definition.ts'
+import { branchConditionOf } from './definition.ts'
+import type { ForkStep, SplitPathDraft } from './definition.ts'
 
 // What the server asks of a fork (ADR 0124), checked in the editor before a Save sends it: the
 // contract's bounds on a fork's paths and a Split path's weight, a Condition that tests something
@@ -77,13 +77,6 @@ export function forkError(step: ForkStep): ForkError | null {
   }
   const sum = weightSum(step.paths)
   return sum === SPLIT_WHOLE ? null : { kind: 'sum', sum }
-}
-
-// The forks of the flow, at any depth, that a Save would send with an error.
-export function invalidForks(flow: Flow): ForkStep[] {
-  return allSteps(flow.path).flatMap((step) =>
-    isFork(step) && forkError(step) !== null ? [step] : [],
-  )
 }
 
 // Whether a path can be added to the fork: it lists fewer than the contract allows.

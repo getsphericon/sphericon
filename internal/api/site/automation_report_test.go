@@ -3,9 +3,12 @@ package site_test
 import (
 	"context"
 	"encoding/json"
+	"reflect"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -99,7 +102,7 @@ func TestTheAutomationReportGivesTheConsoleEachForkPath(t *testing.T) {
 		Otherwise: automationstep.Path{ID: otherwise, Steps: []automationstep.Step{}},
 	}}
 	root := automationstep.Root(branch)
-	a, err := m.Create(ctx, acme, automations.CreateInput{Name: "Forking", Trigger: eventmatcher.Matcher{Action: "fork.entered"}, Steps: &root})
+	a, err := m.Create(ctx, acme, automations.CreateInput{Name: "Forking", Trigger: automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: "fork.entered"}}, Steps: &root})
 	require.NoError(t, err)
 	_, err = m.Publish(ctx, acme, a.ID, testhelper.AutomationRevisionIn(ctx, t, acme, a.ID))
 	require.NoError(t, err)
@@ -116,4 +119,16 @@ func TestTheAutomationReportGivesTheConsoleEachForkPath(t *testing.T) {
 	assert.Equal(t, []siteapi.AutomationPathFigures{
 		{StepId: siteapi.StepId(branch.ID), PathId: siteapi.StepId(otherwise), Enrollments: 1},
 	}, report.Paths)
+}
+
+// The report counts each reason a Wait until lets an Enrollment go on at once under a field of its
+// own (ADR 0126): the stored reasons and the contract's figures name the same ones, so a reason
+// added on either side fails here until the other has it.
+func TestTheWaitUntilFiguresCountEveryReasonAWaitUntilGoesOn(t *testing.T) {
+	figures := reflect.TypeFor[siteapi.AutomationWaitUntilFigures]()
+	fields := lo.Times(figures.NumField(), func(i int) string { return strings.Split(figures.Field(i).Tag.Get("json"), ",")[0] })
+
+	reasons := lo.Map(automationstep.WentOn("").Values(), func(v string, _ int) string { return lo.CamelCase(v) })
+
+	assert.ElementsMatch(t, reasons, lo.Without(fields, "stepId"))
 }

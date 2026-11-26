@@ -53,6 +53,12 @@ const (
 	AutomationArchivedName = "Old referral nudge"
 	// AutomationArchivedVersionID is from fixtures/automation_versions.
 	AutomationArchivedVersionID = 107
+	// AutomationBirthdayGreetingID is from fixtures/automations.
+	AutomationBirthdayGreetingID = 1713
+	// AutomationBirthdayGreetingName is from fixtures/automations.
+	AutomationBirthdayGreetingName = "Birthday greeting"
+	// AutomationBirthdayGreetingVersionID is from fixtures/automation_versions.
+	AutomationBirthdayGreetingVersionID = 1713
 	// AutomationDuffActiveID is from fixtures/automations.
 	AutomationDuffActiveID = 7701
 	// AutomationDuffActiveName is from fixtures/automations.
@@ -363,6 +369,24 @@ const (
 	AutomationJobsWaitFirstName = "Jobs wait first"
 	// AutomationJobsWaitFirstVersionID is from fixtures/automation_versions.
 	AutomationJobsWaitFirstVersionID = 5562
+	// AutomationJobsWaitUntilBirthdayID is from fixtures/automations.
+	AutomationJobsWaitUntilBirthdayID = 5593
+	// AutomationJobsWaitUntilBirthdayName is from fixtures/automations.
+	AutomationJobsWaitUntilBirthdayName = "Jobs wait until the birthday"
+	// AutomationJobsWaitUntilBirthdayVersionID is from fixtures/automation_versions.
+	AutomationJobsWaitUntilBirthdayVersionID = 5593
+	// AutomationJobsWaitUntilDateID is from fixtures/automations.
+	AutomationJobsWaitUntilDateID = 5592
+	// AutomationJobsWaitUntilDateName is from fixtures/automations.
+	AutomationJobsWaitUntilDateName = "Jobs wait until a date"
+	// AutomationJobsWaitUntilDateVersionID is from fixtures/automation_versions.
+	AutomationJobsWaitUntilDateVersionID = 5592
+	// AutomationJobsWaitUntilID is from fixtures/automations.
+	AutomationJobsWaitUntilID = 5591
+	// AutomationJobsWaitUntilName is from fixtures/automations.
+	AutomationJobsWaitUntilName = "Jobs wait until"
+	// AutomationJobsWaitUntilVersionID is from fixtures/automation_versions.
+	AutomationJobsWaitUntilVersionID = 5591
 	// AutomationLacunaOnSmsUndeliveredID is from fixtures/automations.
 	AutomationLacunaOnSmsUndeliveredID = 7740
 	// AutomationLacunaOnSmsUndeliveredName is from fixtures/automations.
@@ -583,6 +607,12 @@ const (
 	AutomationQuahogHookUnsignedVersionID = 7652
 	// AutomationQuahogHookVersionID is from fixtures/automation_versions.
 	AutomationQuahogHookVersionID = 7653
+	// AutomationRenewalNoticeID is from fixtures/automations.
+	AutomationRenewalNoticeID = 1714
+	// AutomationRenewalNoticeName is from fixtures/automations.
+	AutomationRenewalNoticeName = "Renewal notice"
+	// AutomationRenewalNoticeVersionID is from fixtures/automation_versions.
+	AutomationRenewalNoticeVersionID = 1714
 	// AutomationRepeatPurchaseID is from fixtures/automations.
 	AutomationRepeatPurchaseID = 15540
 	// AutomationRepeatPurchaseName is from fixtures/automations.
@@ -591,6 +621,8 @@ const (
 	AutomationRepeatPurchaseVersionID = 15540
 	// AutomationRunArchivedErasableID is from fixtures/automation_runs.
 	AutomationRunArchivedErasableID = 3003
+	// AutomationRunBirthdayGreetingAliceID is from fixtures/automation_runs.
+	AutomationRunBirthdayGreetingAliceID = 17130
 	// AutomationRunBystanderHTTPFailedID is from fixtures/automation_runs.
 	AutomationRunBystanderHTTPFailedID = 3002
 	// AutomationRunErasableHTTPFailedID is from fixtures/automation_runs.
@@ -715,6 +747,8 @@ const (
 	AutomationRunQuahogHookUnsignedID = 7652
 	// AutomationRunRecoveryActiveID is from fixtures/automation_runs.
 	AutomationRunRecoveryActiveID = 7500
+	// AutomationRunRenewalNoticeAliceID is from fixtures/automation_runs.
+	AutomationRunRenewalNoticeAliceID = 17140
 	// AutomationRunRepeatPurchaseFirstID is from fixtures/automation_runs.
 	AutomationRunRepeatPurchaseFirstID = 15540
 	// AutomationRunRepeatPurchaseSecondID is from fixtures/automation_runs.
@@ -1643,6 +1677,18 @@ const (
 	CustomFieldAcmePlanKey = "plan"
 	// CustomFieldAcmePlanName is from fixtures/custom_fields.
 	CustomFieldAcmePlanName = "Plan"
+	// CustomFieldAcmeRenewalOnID is from fixtures/custom_fields.
+	CustomFieldAcmeRenewalOnID = 7
+	// CustomFieldAcmeRenewalOnKey is from fixtures/custom_fields.
+	CustomFieldAcmeRenewalOnKey = "renewal_on"
+	// CustomFieldAcmeRenewalOnName is from fixtures/custom_fields.
+	CustomFieldAcmeRenewalOnName = "Renewal on"
+	// CustomFieldAcmeTrialEndsAtID is from fixtures/custom_fields.
+	CustomFieldAcmeTrialEndsAtID = 6
+	// CustomFieldAcmeTrialEndsAtKey is from fixtures/custom_fields.
+	CustomFieldAcmeTrialEndsAtKey = "trial_ends_at"
+	// CustomFieldAcmeTrialEndsAtName is from fixtures/custom_fields.
+	CustomFieldAcmeTrialEndsAtName = "Trial ends at"
 	// CustomFieldDuffEndsOnID is from fixtures/custom_fields.
 	CustomFieldDuffEndsOnID = 7702
 	// CustomFieldDuffEndsOnKey is from fixtures/custom_fields.
@@ -3107,6 +3153,8 @@ const (
 	OAuthCodeGlobexCode = "globex-oauth-code"
 	// OAuthCodeGlobexID is from fixtures/oauth_codes.
 	OAuthCodeGlobexID = 7701
+	// OccurrenceCursorBirthdayGreetingID is from fixtures/automation_occurrence_cursors.
+	OccurrenceCursorBirthdayGreetingID = 1
 	// OllivandersAbeMembershipID is from fixtures/memberships.
 	OllivandersAbeMembershipID = 7952
 	// OllivandersCollectKey is from fixtures/workspaces.

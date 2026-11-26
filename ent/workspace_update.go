@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationfigure"
+	"github.com/getsphericon/sphericon/ent/automationoccurrencecursor"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationskippedentry"
 	"github.com/getsphericon/sphericon/ent/automationsteprecord"
@@ -28,6 +29,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/consentstamp"
 	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/contactdate"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
@@ -614,6 +616,21 @@ func (_u *WorkspaceUpdate) AddTags(v ...*Tag) *WorkspaceUpdate {
 	return _u.AddTagIDs(ids...)
 }
 
+// AddContactDateIDs adds the "contact_dates" edge to the ContactDate entity by IDs.
+func (_u *WorkspaceUpdate) AddContactDateIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.AddContactDateIDs(ids...)
+	return _u
+}
+
+// AddContactDates adds the "contact_dates" edges to the ContactDate entity.
+func (_u *WorkspaceUpdate) AddContactDates(v ...*ContactDate) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddContactDateIDs(ids...)
+}
+
 // AddSegmentIDs adds the "segments" edge to the Segment entity by IDs.
 func (_u *WorkspaceUpdate) AddSegmentIDs(ids ...int64) *WorkspaceUpdate {
 	_u.mutation.AddSegmentIDs(ids...)
@@ -957,6 +974,21 @@ func (_u *WorkspaceUpdate) AddAutomationSkippedEntries(v ...*AutomationSkippedEn
 		ids[i] = v[i].ID
 	}
 	return _u.AddAutomationSkippedEntryIDs(ids...)
+}
+
+// AddAutomationOccurrenceCursorIDs adds the "automation_occurrence_cursors" edge to the AutomationOccurrenceCursor entity by IDs.
+func (_u *WorkspaceUpdate) AddAutomationOccurrenceCursorIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.AddAutomationOccurrenceCursorIDs(ids...)
+	return _u
+}
+
+// AddAutomationOccurrenceCursors adds the "automation_occurrence_cursors" edges to the AutomationOccurrenceCursor entity.
+func (_u *WorkspaceUpdate) AddAutomationOccurrenceCursors(v ...*AutomationOccurrenceCursor) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddAutomationOccurrenceCursorIDs(ids...)
 }
 
 // AddEmailTemplateIDs adds the "email_templates" edge to the EmailTemplate entity by IDs.
@@ -1451,6 +1483,27 @@ func (_u *WorkspaceUpdate) RemoveTags(v ...*Tag) *WorkspaceUpdate {
 	return _u.RemoveTagIDs(ids...)
 }
 
+// ClearContactDates clears all "contact_dates" edges to the ContactDate entity.
+func (_u *WorkspaceUpdate) ClearContactDates() *WorkspaceUpdate {
+	_u.mutation.ClearContactDates()
+	return _u
+}
+
+// RemoveContactDateIDs removes the "contact_dates" edge to ContactDate entities by IDs.
+func (_u *WorkspaceUpdate) RemoveContactDateIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.RemoveContactDateIDs(ids...)
+	return _u
+}
+
+// RemoveContactDates removes "contact_dates" edges to ContactDate entities.
+func (_u *WorkspaceUpdate) RemoveContactDates(v ...*ContactDate) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveContactDateIDs(ids...)
+}
+
 // ClearSegments clears all "segments" edges to the Segment entity.
 func (_u *WorkspaceUpdate) ClearSegments() *WorkspaceUpdate {
 	_u.mutation.ClearSegments()
@@ -1932,6 +1985,27 @@ func (_u *WorkspaceUpdate) RemoveAutomationSkippedEntries(v ...*AutomationSkippe
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveAutomationSkippedEntryIDs(ids...)
+}
+
+// ClearAutomationOccurrenceCursors clears all "automation_occurrence_cursors" edges to the AutomationOccurrenceCursor entity.
+func (_u *WorkspaceUpdate) ClearAutomationOccurrenceCursors() *WorkspaceUpdate {
+	_u.mutation.ClearAutomationOccurrenceCursors()
+	return _u
+}
+
+// RemoveAutomationOccurrenceCursorIDs removes the "automation_occurrence_cursors" edge to AutomationOccurrenceCursor entities by IDs.
+func (_u *WorkspaceUpdate) RemoveAutomationOccurrenceCursorIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.RemoveAutomationOccurrenceCursorIDs(ids...)
+	return _u
+}
+
+// RemoveAutomationOccurrenceCursors removes "automation_occurrence_cursors" edges to AutomationOccurrenceCursor entities.
+func (_u *WorkspaceUpdate) RemoveAutomationOccurrenceCursors(v ...*AutomationOccurrenceCursor) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveAutomationOccurrenceCursorIDs(ids...)
 }
 
 // ClearEmailTemplates clears all "email_templates" edges to the EmailTemplate entity.
@@ -2900,6 +2974,51 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(tag.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ContactDatesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ContactDatesTable,
+			Columns: []string{workspace.ContactDatesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contactdate.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedContactDatesIDs(); len(nodes) > 0 && !_u.mutation.ContactDatesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ContactDatesTable,
+			Columns: []string{workspace.ContactDatesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contactdate.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ContactDatesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ContactDatesTable,
+			Columns: []string{workspace.ContactDatesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contactdate.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -3935,6 +4054,51 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(automationskippedentry.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.AutomationOccurrenceCursorsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.AutomationOccurrenceCursorsTable,
+			Columns: []string{workspace.AutomationOccurrenceCursorsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationoccurrencecursor.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedAutomationOccurrenceCursorsIDs(); len(nodes) > 0 && !_u.mutation.AutomationOccurrenceCursorsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.AutomationOccurrenceCursorsTable,
+			Columns: []string{workspace.AutomationOccurrenceCursorsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationoccurrencecursor.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.AutomationOccurrenceCursorsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.AutomationOccurrenceCursorsTable,
+			Columns: []string{workspace.AutomationOccurrenceCursorsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationoccurrencecursor.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -5739,6 +5903,21 @@ func (_u *WorkspaceUpdateOne) AddTags(v ...*Tag) *WorkspaceUpdateOne {
 	return _u.AddTagIDs(ids...)
 }
 
+// AddContactDateIDs adds the "contact_dates" edge to the ContactDate entity by IDs.
+func (_u *WorkspaceUpdateOne) AddContactDateIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.AddContactDateIDs(ids...)
+	return _u
+}
+
+// AddContactDates adds the "contact_dates" edges to the ContactDate entity.
+func (_u *WorkspaceUpdateOne) AddContactDates(v ...*ContactDate) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddContactDateIDs(ids...)
+}
+
 // AddSegmentIDs adds the "segments" edge to the Segment entity by IDs.
 func (_u *WorkspaceUpdateOne) AddSegmentIDs(ids ...int64) *WorkspaceUpdateOne {
 	_u.mutation.AddSegmentIDs(ids...)
@@ -6082,6 +6261,21 @@ func (_u *WorkspaceUpdateOne) AddAutomationSkippedEntries(v ...*AutomationSkippe
 		ids[i] = v[i].ID
 	}
 	return _u.AddAutomationSkippedEntryIDs(ids...)
+}
+
+// AddAutomationOccurrenceCursorIDs adds the "automation_occurrence_cursors" edge to the AutomationOccurrenceCursor entity by IDs.
+func (_u *WorkspaceUpdateOne) AddAutomationOccurrenceCursorIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.AddAutomationOccurrenceCursorIDs(ids...)
+	return _u
+}
+
+// AddAutomationOccurrenceCursors adds the "automation_occurrence_cursors" edges to the AutomationOccurrenceCursor entity.
+func (_u *WorkspaceUpdateOne) AddAutomationOccurrenceCursors(v ...*AutomationOccurrenceCursor) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddAutomationOccurrenceCursorIDs(ids...)
 }
 
 // AddEmailTemplateIDs adds the "email_templates" edge to the EmailTemplate entity by IDs.
@@ -6576,6 +6770,27 @@ func (_u *WorkspaceUpdateOne) RemoveTags(v ...*Tag) *WorkspaceUpdateOne {
 	return _u.RemoveTagIDs(ids...)
 }
 
+// ClearContactDates clears all "contact_dates" edges to the ContactDate entity.
+func (_u *WorkspaceUpdateOne) ClearContactDates() *WorkspaceUpdateOne {
+	_u.mutation.ClearContactDates()
+	return _u
+}
+
+// RemoveContactDateIDs removes the "contact_dates" edge to ContactDate entities by IDs.
+func (_u *WorkspaceUpdateOne) RemoveContactDateIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.RemoveContactDateIDs(ids...)
+	return _u
+}
+
+// RemoveContactDates removes "contact_dates" edges to ContactDate entities.
+func (_u *WorkspaceUpdateOne) RemoveContactDates(v ...*ContactDate) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveContactDateIDs(ids...)
+}
+
 // ClearSegments clears all "segments" edges to the Segment entity.
 func (_u *WorkspaceUpdateOne) ClearSegments() *WorkspaceUpdateOne {
 	_u.mutation.ClearSegments()
@@ -7057,6 +7272,27 @@ func (_u *WorkspaceUpdateOne) RemoveAutomationSkippedEntries(v ...*AutomationSki
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveAutomationSkippedEntryIDs(ids...)
+}
+
+// ClearAutomationOccurrenceCursors clears all "automation_occurrence_cursors" edges to the AutomationOccurrenceCursor entity.
+func (_u *WorkspaceUpdateOne) ClearAutomationOccurrenceCursors() *WorkspaceUpdateOne {
+	_u.mutation.ClearAutomationOccurrenceCursors()
+	return _u
+}
+
+// RemoveAutomationOccurrenceCursorIDs removes the "automation_occurrence_cursors" edge to AutomationOccurrenceCursor entities by IDs.
+func (_u *WorkspaceUpdateOne) RemoveAutomationOccurrenceCursorIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.RemoveAutomationOccurrenceCursorIDs(ids...)
+	return _u
+}
+
+// RemoveAutomationOccurrenceCursors removes "automation_occurrence_cursors" edges to AutomationOccurrenceCursor entities.
+func (_u *WorkspaceUpdateOne) RemoveAutomationOccurrenceCursors(v ...*AutomationOccurrenceCursor) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveAutomationOccurrenceCursorIDs(ids...)
 }
 
 // ClearEmailTemplates clears all "email_templates" edges to the EmailTemplate entity.
@@ -8055,6 +8291,51 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(tag.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ContactDatesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ContactDatesTable,
+			Columns: []string{workspace.ContactDatesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contactdate.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedContactDatesIDs(); len(nodes) > 0 && !_u.mutation.ContactDatesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ContactDatesTable,
+			Columns: []string{workspace.ContactDatesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contactdate.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ContactDatesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ContactDatesTable,
+			Columns: []string{workspace.ContactDatesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contactdate.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -9090,6 +9371,51 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(automationskippedentry.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.AutomationOccurrenceCursorsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.AutomationOccurrenceCursorsTable,
+			Columns: []string{workspace.AutomationOccurrenceCursorsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationoccurrencecursor.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedAutomationOccurrenceCursorsIDs(); len(nodes) > 0 && !_u.mutation.AutomationOccurrenceCursorsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.AutomationOccurrenceCursorsTable,
+			Columns: []string{workspace.AutomationOccurrenceCursorsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationoccurrencecursor.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.AutomationOccurrenceCursorsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.AutomationOccurrenceCursorsTable,
+			Columns: []string{workspace.AutomationOccurrenceCursorsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationoccurrencecursor.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

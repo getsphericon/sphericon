@@ -84,17 +84,17 @@ func TestTelegramBoundTriggersExitsAndCompletesButTelegramSentDoesNot(t *testing
 	goal := systemevent.TelegramUnbound
 
 	created, err := m.Create(t.Context(), s, automations.CreateInput{
-		Name: "Bound", Trigger: eventmatcher.Matcher{Action: systemevent.TelegramBound}, ExitEvents: []eventmatcher.Matcher{{Action: systemevent.TelegramUnsubscribed}}, GoalEvent: &eventmatcher.Matcher{Action: goal},
+		Name: "Bound", Trigger: automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: systemevent.TelegramBound}}, ExitEvents: []eventmatcher.Matcher{{Action: systemevent.TelegramUnsubscribed}}, GoalEvent: &eventmatcher.Matcher{Action: goal},
 	})
 	require.NoError(t, err)
 	assert.NotZero(t, created.ID)
 
-	_, err = m.Create(t.Context(), s, automations.CreateInput{Name: "Sent", Trigger: eventmatcher.Matcher{Action: systemevent.TelegramSent}, ExitEvents: []eventmatcher.Matcher{}})
+	_, err = m.Create(t.Context(), s, automations.CreateInput{Name: "Sent", Trigger: automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: systemevent.TelegramSent}}, ExitEvents: []eventmatcher.Matcher{}})
 	require.ErrorIs(t, err, automations.ErrInvalidTrigger)
-	_, err = m.Create(t.Context(), s, automations.CreateInput{Name: "Exit", Trigger: eventmatcher.Matcher{Action: systemevent.TelegramBound}, ExitEvents: []eventmatcher.Matcher{{Action: systemevent.TelegramSent}}})
+	_, err = m.Create(t.Context(), s, automations.CreateInput{Name: "Exit", Trigger: automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: systemevent.TelegramBound}}, ExitEvents: []eventmatcher.Matcher{{Action: systemevent.TelegramSent}}})
 	require.ErrorIs(t, err, automations.ErrInvalidExitEvent)
 	sent := systemevent.TelegramSent
-	_, err = m.Create(t.Context(), s, automations.CreateInput{Name: "Goal", Trigger: eventmatcher.Matcher{Action: systemevent.TelegramBound}, ExitEvents: []eventmatcher.Matcher{}, GoalEvent: &eventmatcher.Matcher{Action: sent}})
+	_, err = m.Create(t.Context(), s, automations.CreateInput{Name: "Goal", Trigger: automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: systemevent.TelegramBound}}, ExitEvents: []eventmatcher.Matcher{}, GoalEvent: &eventmatcher.Matcher{Action: sent}})
 	require.ErrorIs(t, err, automations.ErrInvalidGoalEvent)
 }
 

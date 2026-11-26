@@ -2226,6 +2226,11 @@ type AutomationReport struct {
 	// then by the fork's place there and the path's place in the fork: one entry per path an enrollment
 	// took, so a path none took has none.
 	Paths []AutomationPathFigures `json:"paths"`
+	// Each Wait until by its Step id, summed over every version that had it: the enrollments that left it
+	// in the current period without waiting, because its date had no moment ahead within 366 days (ADR
+	// 0126). In Step id order: one entry per Wait until any enrollment left so, so one that every
+	// enrollment waited on has none.
+	WaitUntilSteps []AutomationWaitUntilFigures `json:"waitUntilSteps"`
 }
 
 // GetOpens returns the value of Opens.
@@ -2288,6 +2293,11 @@ func (s *AutomationReport) GetPaths() []AutomationPathFigures {
 	return s.Paths
 }
 
+// GetWaitUntilSteps returns the value of WaitUntilSteps.
+func (s *AutomationReport) GetWaitUntilSteps() []AutomationWaitUntilFigures {
+	return s.WaitUntilSteps
+}
+
 // SetOpens sets the value of Opens.
 func (s *AutomationReport) SetOpens(val int32) {
 	s.Opens = val
@@ -2346,6 +2356,11 @@ func (s *AutomationReport) SetVersionSteps(val []AutomationVersionStepFigures) {
 // SetPaths sets the value of Paths.
 func (s *AutomationReport) SetPaths(val []AutomationPathFigures) {
 	s.Paths = val
+}
+
+// SetWaitUntilSteps sets the value of WaitUntilSteps.
+func (s *AutomationReport) SetWaitUntilSteps(val []AutomationWaitUntilFigures) {
+	s.WaitUntilSteps = val
 }
 
 // The length of the period an automation's results are read over, in Report days (ADR 0057), today
@@ -2668,6 +2683,14 @@ type AutomationSkippedCounts struct {
 	NoEnrollmentKey int32 `json:"noEnrollmentKey"`
 	// Entries of a contact that had 10 active enrollments in the keyed automation, or 10 begun in a day.
 	EnrollmentCeiling int32 `json:"enrollmentCeiling"`
+	// Occurrences of a date Trigger (ADR 0126) the scheduler reached 24 hours late or more while their
+	// date was already set at their moment, which enroll no one; a date set after its occurrence counts
+	// nothing.
+	Missed int32 `json:"missed"`
+	// Occurrences of a date Trigger whose date was set through a Connection without mcp:send, which enroll
+	// no one while it stays so; a later write of another value without the mark may still enroll the same
+	// occurrence within 24 hours, which then counts as entered too.
+	SendLocked int32 `json:"sendLocked"`
 }
 
 // GetCycle returns the value of Cycle.
@@ -2700,6 +2723,16 @@ func (s *AutomationSkippedCounts) GetEnrollmentCeiling() int32 {
 	return s.EnrollmentCeiling
 }
 
+// GetMissed returns the value of Missed.
+func (s *AutomationSkippedCounts) GetMissed() int32 {
+	return s.Missed
+}
+
+// GetSendLocked returns the value of SendLocked.
+func (s *AutomationSkippedCounts) GetSendLocked() int32 {
+	return s.SendLocked
+}
+
 // SetCycle sets the value of Cycle.
 func (s *AutomationSkippedCounts) SetCycle(val int32) {
 	s.Cycle = val
@@ -2728,6 +2761,16 @@ func (s *AutomationSkippedCounts) SetNoEnrollmentKey(val int32) {
 // SetEnrollmentCeiling sets the value of EnrollmentCeiling.
 func (s *AutomationSkippedCounts) SetEnrollmentCeiling(val int32) {
 	s.EnrollmentCeiling = val
+}
+
+// SetMissed sets the value of Missed.
+func (s *AutomationSkippedCounts) SetMissed(val int32) {
+	s.Missed = val
+}
+
+// SetSendLocked sets the value of SendLocked.
+func (s *AutomationSkippedCounts) SetSendLocked(val int32) {
+	s.SendLocked = val
 }
 
 // Automation lifecycle status: active enrolls Contacts, inactive enrolls nobody.
@@ -2855,6 +2898,7 @@ type AutomationStepInputSum struct {
 	TelegramStepInput  TelegramStepInput
 	SmsStepInput       SmsStepInput
 	WaitStepInput      WaitStepInput
+	WaitUntilStepInput WaitUntilStepInput
 	ApplyTagStepInput  ApplyTagStepInput
 	RemoveTagStepInput RemoveTagStepInput
 	HttpStepInput      HttpStepInput
@@ -2872,6 +2916,7 @@ const (
 	TelegramStepInputAutomationStepInputSum  AutomationStepInputSumType = "telegram"
 	SmsStepInputAutomationStepInputSum       AutomationStepInputSumType = "sms"
 	WaitStepInputAutomationStepInputSum      AutomationStepInputSumType = "wait"
+	WaitUntilStepInputAutomationStepInputSum AutomationStepInputSumType = "wait_until"
 	ApplyTagStepInputAutomationStepInputSum  AutomationStepInputSumType = "apply_tag"
 	RemoveTagStepInputAutomationStepInputSum AutomationStepInputSumType = "remove_tag"
 	HttpStepInputAutomationStepInputSum      AutomationStepInputSumType = "http"
@@ -2898,6 +2943,11 @@ func (s AutomationStepInputSum) IsSmsStepInput() bool {
 // IsWaitStepInput reports whether AutomationStepInputSum is WaitStepInput.
 func (s AutomationStepInputSum) IsWaitStepInput() bool {
 	return s.Type == WaitStepInputAutomationStepInputSum
+}
+
+// IsWaitUntilStepInput reports whether AutomationStepInputSum is WaitUntilStepInput.
+func (s AutomationStepInputSum) IsWaitUntilStepInput() bool {
+	return s.Type == WaitUntilStepInputAutomationStepInputSum
 }
 
 // IsApplyTagStepInput reports whether AutomationStepInputSum is ApplyTagStepInput.
@@ -3011,6 +3061,27 @@ func (s AutomationStepInputSum) GetWaitStepInput() (v WaitStepInput, ok bool) {
 func NewWaitStepInputAutomationStepInputSum(v WaitStepInput) AutomationStepInputSum {
 	var s AutomationStepInputSum
 	s.SetWaitStepInput(v)
+	return s
+}
+
+// SetWaitUntilStepInput sets AutomationStepInputSum to WaitUntilStepInput.
+func (s *AutomationStepInputSum) SetWaitUntilStepInput(v WaitUntilStepInput) {
+	s.Type = WaitUntilStepInputAutomationStepInputSum
+	s.WaitUntilStepInput = v
+}
+
+// GetWaitUntilStepInput returns WaitUntilStepInput and true boolean if AutomationStepInputSum is WaitUntilStepInput.
+func (s AutomationStepInputSum) GetWaitUntilStepInput() (v WaitUntilStepInput, ok bool) {
+	if !s.IsWaitUntilStepInput() {
+		return v, false
+	}
+	return s.WaitUntilStepInput, true
+}
+
+// NewWaitUntilStepInputAutomationStepInputSum returns new AutomationStepInputSum from WaitUntilStepInput.
+func NewWaitUntilStepInputAutomationStepInputSum(v WaitUntilStepInput) AutomationStepInputSum {
+	var s AutomationStepInputSum
+	s.SetWaitUntilStepInput(v)
 	return s
 }
 
@@ -3148,6 +3219,7 @@ type AutomationStepSum struct {
 	TelegramStep  TelegramStep
 	SmsStep       SmsStep
 	WaitStep      WaitStep
+	WaitUntilStep WaitUntilStep
 	ApplyTagStep  ApplyTagStep
 	RemoveTagStep RemoveTagStep
 	HttpStep      HttpStep
@@ -3165,6 +3237,7 @@ const (
 	TelegramStepAutomationStepSum  AutomationStepSumType = "telegram"
 	SmsStepAutomationStepSum       AutomationStepSumType = "sms"
 	WaitStepAutomationStepSum      AutomationStepSumType = "wait"
+	WaitUntilStepAutomationStepSum AutomationStepSumType = "wait_until"
 	ApplyTagStepAutomationStepSum  AutomationStepSumType = "apply_tag"
 	RemoveTagStepAutomationStepSum AutomationStepSumType = "remove_tag"
 	HttpStepAutomationStepSum      AutomationStepSumType = "http"
@@ -3184,6 +3257,9 @@ func (s AutomationStepSum) IsSmsStep() bool { return s.Type == SmsStepAutomation
 
 // IsWaitStep reports whether AutomationStepSum is WaitStep.
 func (s AutomationStepSum) IsWaitStep() bool { return s.Type == WaitStepAutomationStepSum }
+
+// IsWaitUntilStep reports whether AutomationStepSum is WaitUntilStep.
+func (s AutomationStepSum) IsWaitUntilStep() bool { return s.Type == WaitUntilStepAutomationStepSum }
 
 // IsApplyTagStep reports whether AutomationStepSum is ApplyTagStep.
 func (s AutomationStepSum) IsApplyTagStep() bool { return s.Type == ApplyTagStepAutomationStepSum }
@@ -3284,6 +3360,27 @@ func (s AutomationStepSum) GetWaitStep() (v WaitStep, ok bool) {
 func NewWaitStepAutomationStepSum(v WaitStep) AutomationStepSum {
 	var s AutomationStepSum
 	s.SetWaitStep(v)
+	return s
+}
+
+// SetWaitUntilStep sets AutomationStepSum to WaitUntilStep.
+func (s *AutomationStepSum) SetWaitUntilStep(v WaitUntilStep) {
+	s.Type = WaitUntilStepAutomationStepSum
+	s.WaitUntilStep = v
+}
+
+// GetWaitUntilStep returns WaitUntilStep and true boolean if AutomationStepSum is WaitUntilStep.
+func (s AutomationStepSum) GetWaitUntilStep() (v WaitUntilStep, ok bool) {
+	if !s.IsWaitUntilStep() {
+		return v, false
+	}
+	return s.WaitUntilStep, true
+}
+
+// NewWaitUntilStepAutomationStepSum returns new AutomationStepSum from WaitUntilStep.
+func NewWaitUntilStepAutomationStepSum(v WaitUntilStep) AutomationStepSum {
+	var s AutomationStepSum
+	s.SetWaitUntilStep(v)
 	return s
 }
 
@@ -3413,7 +3510,7 @@ func NewSplitStepAutomationStepSum(v SplitStep) AutomationStepSum {
 	return s
 }
 
-// What enrolls a Contact in an automation, by `kind`: an Event matcher.
+// What enrolls a Contact in an automation, by `kind`: an Event matcher or a date.
 // Ref: #/components/schemas/AutomationTrigger
 type AutomationTrigger struct {
 	OneOf AutomationTriggerSum
@@ -3429,7 +3526,7 @@ func (s *AutomationTrigger) SetOneOf(val AutomationTriggerSum) {
 	s.OneOf = val
 }
 
-// What enrolls a Contact in an automation, by `kind`: an Event matcher.
+// What enrolls a Contact in an automation, by `kind`: an Event matcher or a date.
 // Ref: #/components/schemas/AutomationTriggerInput
 type AutomationTriggerInput struct {
 	OneOf AutomationTriggerInputSum
@@ -3450,6 +3547,7 @@ type AutomationTriggerInputSum struct {
 	// Type selects the active sum variant, switch on this field.
 	Type              AutomationTriggerInputSumType
 	EventTriggerInput EventTriggerInput
+	DateTriggerInput  DateTriggerInput
 }
 
 // AutomationTriggerInputSumType is oneOf type of AutomationTriggerInputSum.
@@ -3458,11 +3556,17 @@ type AutomationTriggerInputSumType string
 // Possible values for AutomationTriggerInputSumType.
 const (
 	EventTriggerInputAutomationTriggerInputSum AutomationTriggerInputSumType = "event"
+	DateTriggerInputAutomationTriggerInputSum  AutomationTriggerInputSumType = "date"
 )
 
 // IsEventTriggerInput reports whether AutomationTriggerInputSum is EventTriggerInput.
 func (s AutomationTriggerInputSum) IsEventTriggerInput() bool {
 	return s.Type == EventTriggerInputAutomationTriggerInputSum
+}
+
+// IsDateTriggerInput reports whether AutomationTriggerInputSum is DateTriggerInput.
+func (s AutomationTriggerInputSum) IsDateTriggerInput() bool {
+	return s.Type == DateTriggerInputAutomationTriggerInputSum
 }
 
 // SetEventTriggerInput sets AutomationTriggerInputSum to EventTriggerInput.
@@ -3486,11 +3590,33 @@ func NewEventTriggerInputAutomationTriggerInputSum(v EventTriggerInput) Automati
 	return s
 }
 
+// SetDateTriggerInput sets AutomationTriggerInputSum to DateTriggerInput.
+func (s *AutomationTriggerInputSum) SetDateTriggerInput(v DateTriggerInput) {
+	s.Type = DateTriggerInputAutomationTriggerInputSum
+	s.DateTriggerInput = v
+}
+
+// GetDateTriggerInput returns DateTriggerInput and true boolean if AutomationTriggerInputSum is DateTriggerInput.
+func (s AutomationTriggerInputSum) GetDateTriggerInput() (v DateTriggerInput, ok bool) {
+	if !s.IsDateTriggerInput() {
+		return v, false
+	}
+	return s.DateTriggerInput, true
+}
+
+// NewDateTriggerInputAutomationTriggerInputSum returns new AutomationTriggerInputSum from DateTriggerInput.
+func NewDateTriggerInputAutomationTriggerInputSum(v DateTriggerInput) AutomationTriggerInputSum {
+	var s AutomationTriggerInputSum
+	s.SetDateTriggerInput(v)
+	return s
+}
+
 // AutomationTriggerSum represents sum type.
 type AutomationTriggerSum struct {
 	// Type selects the active sum variant, switch on this field.
 	Type         AutomationTriggerSumType
 	EventTrigger EventTrigger
+	DateTrigger  DateTrigger
 }
 
 // AutomationTriggerSumType is oneOf type of AutomationTriggerSum.
@@ -3499,12 +3625,16 @@ type AutomationTriggerSumType string
 // Possible values for AutomationTriggerSumType.
 const (
 	EventTriggerAutomationTriggerSum AutomationTriggerSumType = "event"
+	DateTriggerAutomationTriggerSum  AutomationTriggerSumType = "date"
 )
 
 // IsEventTrigger reports whether AutomationTriggerSum is EventTrigger.
 func (s AutomationTriggerSum) IsEventTrigger() bool {
 	return s.Type == EventTriggerAutomationTriggerSum
 }
+
+// IsDateTrigger reports whether AutomationTriggerSum is DateTrigger.
+func (s AutomationTriggerSum) IsDateTrigger() bool { return s.Type == DateTriggerAutomationTriggerSum }
 
 // SetEventTrigger sets AutomationTriggerSum to EventTrigger.
 func (s *AutomationTriggerSum) SetEventTrigger(v EventTrigger) {
@@ -3524,6 +3654,27 @@ func (s AutomationTriggerSum) GetEventTrigger() (v EventTrigger, ok bool) {
 func NewEventTriggerAutomationTriggerSum(v EventTrigger) AutomationTriggerSum {
 	var s AutomationTriggerSum
 	s.SetEventTrigger(v)
+	return s
+}
+
+// SetDateTrigger sets AutomationTriggerSum to DateTrigger.
+func (s *AutomationTriggerSum) SetDateTrigger(v DateTrigger) {
+	s.Type = DateTriggerAutomationTriggerSum
+	s.DateTrigger = v
+}
+
+// GetDateTrigger returns DateTrigger and true boolean if AutomationTriggerSum is DateTrigger.
+func (s AutomationTriggerSum) GetDateTrigger() (v DateTrigger, ok bool) {
+	if !s.IsDateTrigger() {
+		return v, false
+	}
+	return s.DateTrigger, true
+}
+
+// NewDateTriggerAutomationTriggerSum returns new AutomationTriggerSum from DateTrigger.
+func NewDateTriggerAutomationTriggerSum(v DateTrigger) AutomationTriggerSum {
+	var s AutomationTriggerSum
+	s.SetDateTrigger(v)
 	return s
 }
 
@@ -3645,6 +3796,60 @@ func (s *AutomationVersionStepFigures) SetSent(val int32) {
 // SetSkipped sets the value of Skipped.
 func (s *AutomationVersionStepFigures) SetSkipped(val int32) {
 	s.Skipped = val
+}
+
+// The enrollments that went on at once from one Wait until on a date instead of waiting, by why: read
+// from what each kept when it reached the Step, counted on the moment it left it.
+// Ref: #/components/schemas/AutomationWaitUntilFigures
+type AutomationWaitUntilFigures struct {
+	// The Wait until's Step id, the same in every version.
+	StepId StepId `json:"stepId"`
+	// Its moment had passed: a once date before the arrival.
+	Past int32 `json:"past"`
+	// The contact held no date in the field, or a value that is no date.
+	NoDate int32 `json:"noDate"`
+	// Its moment lay more than 366 days ahead, such as a yearly date whose value is itself in the future.
+	BeyondBound int32 `json:"beyondBound"`
+}
+
+// GetStepId returns the value of StepId.
+func (s *AutomationWaitUntilFigures) GetStepId() StepId {
+	return s.StepId
+}
+
+// GetPast returns the value of Past.
+func (s *AutomationWaitUntilFigures) GetPast() int32 {
+	return s.Past
+}
+
+// GetNoDate returns the value of NoDate.
+func (s *AutomationWaitUntilFigures) GetNoDate() int32 {
+	return s.NoDate
+}
+
+// GetBeyondBound returns the value of BeyondBound.
+func (s *AutomationWaitUntilFigures) GetBeyondBound() int32 {
+	return s.BeyondBound
+}
+
+// SetStepId sets the value of StepId.
+func (s *AutomationWaitUntilFigures) SetStepId(val StepId) {
+	s.StepId = val
+}
+
+// SetPast sets the value of Past.
+func (s *AutomationWaitUntilFigures) SetPast(val int32) {
+	s.Past = val
+}
+
+// SetNoDate sets the value of NoDate.
+func (s *AutomationWaitUntilFigures) SetNoDate(val int32) {
+	s.NoDate = val
+}
+
+// SetBeyondBound sets the value of BeyondBound.
+func (s *AutomationWaitUntilFigures) SetBeyondBound(val int32) {
+	s.BeyondBound = val
 }
 
 // Paginated response.
@@ -3790,6 +3995,106 @@ func (s *BearerAuth) SetToken(val string) {
 // SetRoles sets the value of Roles.
 func (s *BearerAuth) SetRoles(val []string) {
 	s.Roles = val
+}
+
+// The Contact's date of birth, a date field every Contact has.
+// Ref: #/components/schemas/BirthdayDateField
+type BirthdayDateField struct {
+	Kind BirthdayDateFieldKind `json:"kind"`
+}
+
+// GetKind returns the value of Kind.
+func (s *BirthdayDateField) GetKind() BirthdayDateFieldKind {
+	return s.Kind
+}
+
+// SetKind sets the value of Kind.
+func (s *BirthdayDateField) SetKind(val BirthdayDateFieldKind) {
+	s.Kind = val
+}
+
+// The Contact's date of birth, a date field every Contact has.
+// Ref: #/components/schemas/BirthdayDateFieldInput
+type BirthdayDateFieldInput struct {
+	Kind BirthdayDateFieldInputKind `json:"kind"`
+}
+
+// GetKind returns the value of Kind.
+func (s *BirthdayDateFieldInput) GetKind() BirthdayDateFieldInputKind {
+	return s.Kind
+}
+
+// SetKind sets the value of Kind.
+func (s *BirthdayDateFieldInput) SetKind(val BirthdayDateFieldInputKind) {
+	s.Kind = val
+}
+
+type BirthdayDateFieldInputKind string
+
+const (
+	BirthdayDateFieldInputKindBirthday BirthdayDateFieldInputKind = "birthday"
+)
+
+// AllValues returns all BirthdayDateFieldInputKind values.
+func (BirthdayDateFieldInputKind) AllValues() []BirthdayDateFieldInputKind {
+	return []BirthdayDateFieldInputKind{
+		BirthdayDateFieldInputKindBirthday,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s BirthdayDateFieldInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case BirthdayDateFieldInputKindBirthday:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *BirthdayDateFieldInputKind) UnmarshalText(data []byte) error {
+	switch BirthdayDateFieldInputKind(data) {
+	case BirthdayDateFieldInputKindBirthday:
+		*s = BirthdayDateFieldInputKindBirthday
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type BirthdayDateFieldKind string
+
+const (
+	BirthdayDateFieldKindBirthday BirthdayDateFieldKind = "birthday"
+)
+
+// AllValues returns all BirthdayDateFieldKind values.
+func (BirthdayDateFieldKind) AllValues() []BirthdayDateFieldKind {
+	return []BirthdayDateFieldKind{
+		BirthdayDateFieldKindBirthday,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s BirthdayDateFieldKind) MarshalText() ([]byte, error) {
+	switch s {
+	case BirthdayDateFieldKindBirthday:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *BirthdayDateFieldKind) UnmarshalText(data []byte) error {
+	switch BirthdayDateFieldKind(data) {
+	case BirthdayDateFieldKindBirthday:
+		*s = BirthdayDateFieldKindBirthday
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
 }
 
 // A test of the Contact's date of birth.
@@ -10136,6 +10441,134 @@ func (s *CustomFieldConditionTests) SetPresence(val []PresenceOperator) {
 	s.Presence = val
 }
 
+// A datetime Custom field of the Workspace, its key in a field of its own. Its value's calendar date
+// is read in the Workspace time zone: a value with an offset is moved into it, one without an offset
+// or a bare date keeps its own date.
+// Ref: #/components/schemas/CustomFieldDateField
+type CustomFieldDateField struct {
+	Kind CustomFieldDateFieldKind `json:"kind"`
+	// The Custom field's key.
+	Key string `json:"key"`
+}
+
+// GetKind returns the value of Kind.
+func (s *CustomFieldDateField) GetKind() CustomFieldDateFieldKind {
+	return s.Kind
+}
+
+// GetKey returns the value of Key.
+func (s *CustomFieldDateField) GetKey() string {
+	return s.Key
+}
+
+// SetKind sets the value of Kind.
+func (s *CustomFieldDateField) SetKind(val CustomFieldDateFieldKind) {
+	s.Kind = val
+}
+
+// SetKey sets the value of Key.
+func (s *CustomFieldDateField) SetKey(val string) {
+	s.Key = val
+}
+
+// A datetime Custom field of the Workspace, its key in a field of its own. Its value's calendar date
+// is read in the Workspace time zone: a value with an offset is moved into it, one without an offset
+// or a bare date keeps its own date.
+// Ref: #/components/schemas/CustomFieldDateFieldInput
+type CustomFieldDateFieldInput struct {
+	Kind CustomFieldDateFieldInputKind `json:"kind"`
+	// The Custom field's key.
+	Key string `json:"key"`
+}
+
+// GetKind returns the value of Kind.
+func (s *CustomFieldDateFieldInput) GetKind() CustomFieldDateFieldInputKind {
+	return s.Kind
+}
+
+// GetKey returns the value of Key.
+func (s *CustomFieldDateFieldInput) GetKey() string {
+	return s.Key
+}
+
+// SetKind sets the value of Kind.
+func (s *CustomFieldDateFieldInput) SetKind(val CustomFieldDateFieldInputKind) {
+	s.Kind = val
+}
+
+// SetKey sets the value of Key.
+func (s *CustomFieldDateFieldInput) SetKey(val string) {
+	s.Key = val
+}
+
+type CustomFieldDateFieldInputKind string
+
+const (
+	CustomFieldDateFieldInputKindCustomField CustomFieldDateFieldInputKind = "customField"
+)
+
+// AllValues returns all CustomFieldDateFieldInputKind values.
+func (CustomFieldDateFieldInputKind) AllValues() []CustomFieldDateFieldInputKind {
+	return []CustomFieldDateFieldInputKind{
+		CustomFieldDateFieldInputKindCustomField,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s CustomFieldDateFieldInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case CustomFieldDateFieldInputKindCustomField:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *CustomFieldDateFieldInputKind) UnmarshalText(data []byte) error {
+	switch CustomFieldDateFieldInputKind(data) {
+	case CustomFieldDateFieldInputKindCustomField:
+		*s = CustomFieldDateFieldInputKindCustomField
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type CustomFieldDateFieldKind string
+
+const (
+	CustomFieldDateFieldKindCustomField CustomFieldDateFieldKind = "customField"
+)
+
+// AllValues returns all CustomFieldDateFieldKind values.
+func (CustomFieldDateFieldKind) AllValues() []CustomFieldDateFieldKind {
+	return []CustomFieldDateFieldKind{
+		CustomFieldDateFieldKindCustomField,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s CustomFieldDateFieldKind) MarshalText() ([]byte, error) {
+	switch s {
+	case CustomFieldDateFieldKindCustomField:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *CustomFieldDateFieldKind) UnmarshalText(data []byte) error {
+	switch CustomFieldDateFieldKind(data) {
+	case CustomFieldDateFieldKindCustomField:
+		*s = CustomFieldDateFieldKindCustomField
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // A test of a Custom field of the Workspace, its key in a field of its own.
 // Ref: #/components/schemas/CustomFieldLeaf
 type CustomFieldLeaf struct {
@@ -10838,6 +11271,425 @@ func (s *CustomFieldsListOK) SetTotalItems(val int32) {
 // SetTotalPages sets the value of TotalPages.
 func (s *CustomFieldsListOK) SetTotalPages(val int32) {
 	s.TotalPages = val
+}
+
+// A date a Contact holds, by `kind`: its `birthday`, or a datetime Custom field.
+// Ref: #/components/schemas/DateField
+type DateField struct {
+	OneOf DateFieldSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *DateField) GetOneOf() DateFieldSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *DateField) SetOneOf(val DateFieldSum) {
+	s.OneOf = val
+}
+
+// A date a Contact holds, by `kind`, as a request writes it.
+// Ref: #/components/schemas/DateFieldInput
+type DateFieldInput struct {
+	OneOf DateFieldInputSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *DateFieldInput) GetOneOf() DateFieldInputSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *DateFieldInput) SetOneOf(val DateFieldInputSum) {
+	s.OneOf = val
+}
+
+// DateFieldInputSum represents sum type.
+type DateFieldInputSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type                      DateFieldInputSumType
+	BirthdayDateFieldInput    BirthdayDateFieldInput
+	CustomFieldDateFieldInput CustomFieldDateFieldInput
+}
+
+// DateFieldInputSumType is oneOf type of DateFieldInputSum.
+type DateFieldInputSumType string
+
+// Possible values for DateFieldInputSumType.
+const (
+	BirthdayDateFieldInputDateFieldInputSum    DateFieldInputSumType = "birthday"
+	CustomFieldDateFieldInputDateFieldInputSum DateFieldInputSumType = "customField"
+)
+
+// IsBirthdayDateFieldInput reports whether DateFieldInputSum is BirthdayDateFieldInput.
+func (s DateFieldInputSum) IsBirthdayDateFieldInput() bool {
+	return s.Type == BirthdayDateFieldInputDateFieldInputSum
+}
+
+// IsCustomFieldDateFieldInput reports whether DateFieldInputSum is CustomFieldDateFieldInput.
+func (s DateFieldInputSum) IsCustomFieldDateFieldInput() bool {
+	return s.Type == CustomFieldDateFieldInputDateFieldInputSum
+}
+
+// SetBirthdayDateFieldInput sets DateFieldInputSum to BirthdayDateFieldInput.
+func (s *DateFieldInputSum) SetBirthdayDateFieldInput(v BirthdayDateFieldInput) {
+	s.Type = BirthdayDateFieldInputDateFieldInputSum
+	s.BirthdayDateFieldInput = v
+}
+
+// GetBirthdayDateFieldInput returns BirthdayDateFieldInput and true boolean if DateFieldInputSum is BirthdayDateFieldInput.
+func (s DateFieldInputSum) GetBirthdayDateFieldInput() (v BirthdayDateFieldInput, ok bool) {
+	if !s.IsBirthdayDateFieldInput() {
+		return v, false
+	}
+	return s.BirthdayDateFieldInput, true
+}
+
+// NewBirthdayDateFieldInputDateFieldInputSum returns new DateFieldInputSum from BirthdayDateFieldInput.
+func NewBirthdayDateFieldInputDateFieldInputSum(v BirthdayDateFieldInput) DateFieldInputSum {
+	var s DateFieldInputSum
+	s.SetBirthdayDateFieldInput(v)
+	return s
+}
+
+// SetCustomFieldDateFieldInput sets DateFieldInputSum to CustomFieldDateFieldInput.
+func (s *DateFieldInputSum) SetCustomFieldDateFieldInput(v CustomFieldDateFieldInput) {
+	s.Type = CustomFieldDateFieldInputDateFieldInputSum
+	s.CustomFieldDateFieldInput = v
+}
+
+// GetCustomFieldDateFieldInput returns CustomFieldDateFieldInput and true boolean if DateFieldInputSum is CustomFieldDateFieldInput.
+func (s DateFieldInputSum) GetCustomFieldDateFieldInput() (v CustomFieldDateFieldInput, ok bool) {
+	if !s.IsCustomFieldDateFieldInput() {
+		return v, false
+	}
+	return s.CustomFieldDateFieldInput, true
+}
+
+// NewCustomFieldDateFieldInputDateFieldInputSum returns new DateFieldInputSum from CustomFieldDateFieldInput.
+func NewCustomFieldDateFieldInputDateFieldInputSum(v CustomFieldDateFieldInput) DateFieldInputSum {
+	var s DateFieldInputSum
+	s.SetCustomFieldDateFieldInput(v)
+	return s
+}
+
+// DateFieldSum represents sum type.
+type DateFieldSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type                 DateFieldSumType
+	BirthdayDateField    BirthdayDateField
+	CustomFieldDateField CustomFieldDateField
+}
+
+// DateFieldSumType is oneOf type of DateFieldSum.
+type DateFieldSumType string
+
+// Possible values for DateFieldSumType.
+const (
+	BirthdayDateFieldDateFieldSum    DateFieldSumType = "birthday"
+	CustomFieldDateFieldDateFieldSum DateFieldSumType = "customField"
+)
+
+// IsBirthdayDateField reports whether DateFieldSum is BirthdayDateField.
+func (s DateFieldSum) IsBirthdayDateField() bool { return s.Type == BirthdayDateFieldDateFieldSum }
+
+// IsCustomFieldDateField reports whether DateFieldSum is CustomFieldDateField.
+func (s DateFieldSum) IsCustomFieldDateField() bool {
+	return s.Type == CustomFieldDateFieldDateFieldSum
+}
+
+// SetBirthdayDateField sets DateFieldSum to BirthdayDateField.
+func (s *DateFieldSum) SetBirthdayDateField(v BirthdayDateField) {
+	s.Type = BirthdayDateFieldDateFieldSum
+	s.BirthdayDateField = v
+}
+
+// GetBirthdayDateField returns BirthdayDateField and true boolean if DateFieldSum is BirthdayDateField.
+func (s DateFieldSum) GetBirthdayDateField() (v BirthdayDateField, ok bool) {
+	if !s.IsBirthdayDateField() {
+		return v, false
+	}
+	return s.BirthdayDateField, true
+}
+
+// NewBirthdayDateFieldDateFieldSum returns new DateFieldSum from BirthdayDateField.
+func NewBirthdayDateFieldDateFieldSum(v BirthdayDateField) DateFieldSum {
+	var s DateFieldSum
+	s.SetBirthdayDateField(v)
+	return s
+}
+
+// SetCustomFieldDateField sets DateFieldSum to CustomFieldDateField.
+func (s *DateFieldSum) SetCustomFieldDateField(v CustomFieldDateField) {
+	s.Type = CustomFieldDateFieldDateFieldSum
+	s.CustomFieldDateField = v
+}
+
+// GetCustomFieldDateField returns CustomFieldDateField and true boolean if DateFieldSum is CustomFieldDateField.
+func (s DateFieldSum) GetCustomFieldDateField() (v CustomFieldDateField, ok bool) {
+	if !s.IsCustomFieldDateField() {
+		return v, false
+	}
+	return s.CustomFieldDateField, true
+}
+
+// NewCustomFieldDateFieldDateFieldSum returns new DateFieldSum from CustomFieldDateField.
+func NewCustomFieldDateFieldDateFieldSum(v CustomFieldDateField) DateFieldSum {
+	var s DateFieldSum
+	s.SetCustomFieldDateField(v)
+	return s
+}
+
+type DateOffsetDays int32
+
+// How often a date comes: `yearly` on each anniversary, from the year after the date's own; `once` on
+// the date itself. The birthday is always past, so it is only yearly.
+// Ref: #/components/schemas/DateRecurrence
+type DateRecurrence string
+
+const (
+	DateRecurrenceYearly DateRecurrence = "yearly"
+	DateRecurrenceOnce   DateRecurrence = "once"
+)
+
+// AllValues returns all DateRecurrence values.
+func (DateRecurrence) AllValues() []DateRecurrence {
+	return []DateRecurrence{
+		DateRecurrenceYearly,
+		DateRecurrenceOnce,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s DateRecurrence) MarshalText() ([]byte, error) {
+	switch s {
+	case DateRecurrenceYearly:
+		return []byte(s), nil
+	case DateRecurrenceOnce:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *DateRecurrence) UnmarshalText(data []byte) error {
+	switch DateRecurrence(data) {
+	case DateRecurrenceYearly:
+		*s = DateRecurrenceYearly
+		return nil
+	case DateRecurrenceOnce:
+		*s = DateRecurrenceOnce
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A Trigger that enrolls a Contact on a date it holds (ADR 0126): on each anniversary of its birthday
+// or of a datetime Custom field, or once on such a field, `offsetDays` before or after it, at
+// `localTime` in the Contact's time zone, or in the Workspace time zone when the Contact has no valid
+// one. A yearly date enrolls a Contact at most once per anniversary year, the year of the date the
+// offset counts from, and a once date at most once ever; an occurrence while the previous enrollment
+// is still active is skipped. Only occurrences after the automation was published enroll, at most 24
+// hours late, and the enrollment begins at the occurrence's moment with no triggering Event. A date
+// Trigger has no entry policy, cooldown or Enrollment key, and no rule's enroll action may name its
+// automation.
+// Ref: #/components/schemas/DateTrigger
+type DateTrigger struct {
+	Kind DateTriggerKind `json:"kind"`
+	// The date the occurrences come from.
+	Field DateField `json:"field"`
+	// Every year, or once.
+	Recurrence DateRecurrence `json:"recurrence"`
+	// Days before (negative) or after the date.
+	OffsetDays DateOffsetDays `json:"offsetDays"`
+	// The time of day of each occurrence, in the Contact's time zone.
+	LocalTime LocalTime `json:"localTime"`
+}
+
+// GetKind returns the value of Kind.
+func (s *DateTrigger) GetKind() DateTriggerKind {
+	return s.Kind
+}
+
+// GetField returns the value of Field.
+func (s *DateTrigger) GetField() DateField {
+	return s.Field
+}
+
+// GetRecurrence returns the value of Recurrence.
+func (s *DateTrigger) GetRecurrence() DateRecurrence {
+	return s.Recurrence
+}
+
+// GetOffsetDays returns the value of OffsetDays.
+func (s *DateTrigger) GetOffsetDays() DateOffsetDays {
+	return s.OffsetDays
+}
+
+// GetLocalTime returns the value of LocalTime.
+func (s *DateTrigger) GetLocalTime() LocalTime {
+	return s.LocalTime
+}
+
+// SetKind sets the value of Kind.
+func (s *DateTrigger) SetKind(val DateTriggerKind) {
+	s.Kind = val
+}
+
+// SetField sets the value of Field.
+func (s *DateTrigger) SetField(val DateField) {
+	s.Field = val
+}
+
+// SetRecurrence sets the value of Recurrence.
+func (s *DateTrigger) SetRecurrence(val DateRecurrence) {
+	s.Recurrence = val
+}
+
+// SetOffsetDays sets the value of OffsetDays.
+func (s *DateTrigger) SetOffsetDays(val DateOffsetDays) {
+	s.OffsetDays = val
+}
+
+// SetLocalTime sets the value of LocalTime.
+func (s *DateTrigger) SetLocalTime(val LocalTime) {
+	s.LocalTime = val
+}
+
+// A Trigger that enrolls a Contact on a date it holds (ADR 0126), as a request writes it.
+// Ref: #/components/schemas/DateTriggerInput
+type DateTriggerInput struct {
+	Kind DateTriggerInputKind `json:"kind"`
+	// The date the occurrences come from: the birthday, or a datetime Custom field of the Workspace's
+	// catalogue.
+	Field DateFieldInput `json:"field"`
+	// Every year, or once; the birthday is only yearly.
+	Recurrence DateRecurrence `json:"recurrence"`
+	// Days before (negative) or after the date, within 365.
+	OffsetDays DateOffsetDays `json:"offsetDays"`
+	// The time of day of each occurrence, `HH:MM`, in the Contact's time zone.
+	LocalTime LocalTime `json:"localTime"`
+}
+
+// GetKind returns the value of Kind.
+func (s *DateTriggerInput) GetKind() DateTriggerInputKind {
+	return s.Kind
+}
+
+// GetField returns the value of Field.
+func (s *DateTriggerInput) GetField() DateFieldInput {
+	return s.Field
+}
+
+// GetRecurrence returns the value of Recurrence.
+func (s *DateTriggerInput) GetRecurrence() DateRecurrence {
+	return s.Recurrence
+}
+
+// GetOffsetDays returns the value of OffsetDays.
+func (s *DateTriggerInput) GetOffsetDays() DateOffsetDays {
+	return s.OffsetDays
+}
+
+// GetLocalTime returns the value of LocalTime.
+func (s *DateTriggerInput) GetLocalTime() LocalTime {
+	return s.LocalTime
+}
+
+// SetKind sets the value of Kind.
+func (s *DateTriggerInput) SetKind(val DateTriggerInputKind) {
+	s.Kind = val
+}
+
+// SetField sets the value of Field.
+func (s *DateTriggerInput) SetField(val DateFieldInput) {
+	s.Field = val
+}
+
+// SetRecurrence sets the value of Recurrence.
+func (s *DateTriggerInput) SetRecurrence(val DateRecurrence) {
+	s.Recurrence = val
+}
+
+// SetOffsetDays sets the value of OffsetDays.
+func (s *DateTriggerInput) SetOffsetDays(val DateOffsetDays) {
+	s.OffsetDays = val
+}
+
+// SetLocalTime sets the value of LocalTime.
+func (s *DateTriggerInput) SetLocalTime(val LocalTime) {
+	s.LocalTime = val
+}
+
+type DateTriggerInputKind string
+
+const (
+	DateTriggerInputKindDate DateTriggerInputKind = "date"
+)
+
+// AllValues returns all DateTriggerInputKind values.
+func (DateTriggerInputKind) AllValues() []DateTriggerInputKind {
+	return []DateTriggerInputKind{
+		DateTriggerInputKindDate,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s DateTriggerInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case DateTriggerInputKindDate:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *DateTriggerInputKind) UnmarshalText(data []byte) error {
+	switch DateTriggerInputKind(data) {
+	case DateTriggerInputKindDate:
+		*s = DateTriggerInputKindDate
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type DateTriggerKind string
+
+const (
+	DateTriggerKindDate DateTriggerKind = "date"
+)
+
+// AllValues returns all DateTriggerKind values.
+func (DateTriggerKind) AllValues() []DateTriggerKind {
+	return []DateTriggerKind{
+		DateTriggerKindDate,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s DateTriggerKind) MarshalText() ([]byte, error) {
+	switch s {
+	case DateTriggerKindDate:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *DateTriggerKind) UnmarshalText(data []byte) error {
+	switch DateTriggerKind(data) {
+	case DateTriggerKindDate:
+		*s = DateTriggerKindDate
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
 }
 
 // A TXT record the caller publishes: a Sending domain's DKIM key, or a Tracking domain's ownership.
@@ -12843,6 +13695,92 @@ func (s *EnrollmentFailureKind) UnmarshalText(data []byte) error {
 	}
 }
 
+// The occurrence of a date Trigger an Enrollment was made for (ADR 0126), by `recurrence`: a contact
+// is enrolled at most once per occurrence.
+// Ref: #/components/schemas/EnrollmentOccurrence
+type EnrollmentOccurrence struct {
+	OneOf EnrollmentOccurrenceSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *EnrollmentOccurrence) GetOneOf() EnrollmentOccurrenceSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *EnrollmentOccurrence) SetOneOf(val EnrollmentOccurrenceSum) {
+	s.OneOf = val
+}
+
+// EnrollmentOccurrenceSum represents sum type.
+type EnrollmentOccurrenceSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type                       EnrollmentOccurrenceSumType
+	YearlyEnrollmentOccurrence YearlyEnrollmentOccurrence
+	OnceEnrollmentOccurrence   OnceEnrollmentOccurrence
+}
+
+// EnrollmentOccurrenceSumType is oneOf type of EnrollmentOccurrenceSum.
+type EnrollmentOccurrenceSumType string
+
+// Possible values for EnrollmentOccurrenceSumType.
+const (
+	YearlyEnrollmentOccurrenceEnrollmentOccurrenceSum EnrollmentOccurrenceSumType = "yearly"
+	OnceEnrollmentOccurrenceEnrollmentOccurrenceSum   EnrollmentOccurrenceSumType = "once"
+)
+
+// IsYearlyEnrollmentOccurrence reports whether EnrollmentOccurrenceSum is YearlyEnrollmentOccurrence.
+func (s EnrollmentOccurrenceSum) IsYearlyEnrollmentOccurrence() bool {
+	return s.Type == YearlyEnrollmentOccurrenceEnrollmentOccurrenceSum
+}
+
+// IsOnceEnrollmentOccurrence reports whether EnrollmentOccurrenceSum is OnceEnrollmentOccurrence.
+func (s EnrollmentOccurrenceSum) IsOnceEnrollmentOccurrence() bool {
+	return s.Type == OnceEnrollmentOccurrenceEnrollmentOccurrenceSum
+}
+
+// SetYearlyEnrollmentOccurrence sets EnrollmentOccurrenceSum to YearlyEnrollmentOccurrence.
+func (s *EnrollmentOccurrenceSum) SetYearlyEnrollmentOccurrence(v YearlyEnrollmentOccurrence) {
+	s.Type = YearlyEnrollmentOccurrenceEnrollmentOccurrenceSum
+	s.YearlyEnrollmentOccurrence = v
+}
+
+// GetYearlyEnrollmentOccurrence returns YearlyEnrollmentOccurrence and true boolean if EnrollmentOccurrenceSum is YearlyEnrollmentOccurrence.
+func (s EnrollmentOccurrenceSum) GetYearlyEnrollmentOccurrence() (v YearlyEnrollmentOccurrence, ok bool) {
+	if !s.IsYearlyEnrollmentOccurrence() {
+		return v, false
+	}
+	return s.YearlyEnrollmentOccurrence, true
+}
+
+// NewYearlyEnrollmentOccurrenceEnrollmentOccurrenceSum returns new EnrollmentOccurrenceSum from YearlyEnrollmentOccurrence.
+func NewYearlyEnrollmentOccurrenceEnrollmentOccurrenceSum(v YearlyEnrollmentOccurrence) EnrollmentOccurrenceSum {
+	var s EnrollmentOccurrenceSum
+	s.SetYearlyEnrollmentOccurrence(v)
+	return s
+}
+
+// SetOnceEnrollmentOccurrence sets EnrollmentOccurrenceSum to OnceEnrollmentOccurrence.
+func (s *EnrollmentOccurrenceSum) SetOnceEnrollmentOccurrence(v OnceEnrollmentOccurrence) {
+	s.Type = OnceEnrollmentOccurrenceEnrollmentOccurrenceSum
+	s.OnceEnrollmentOccurrence = v
+}
+
+// GetOnceEnrollmentOccurrence returns OnceEnrollmentOccurrence and true boolean if EnrollmentOccurrenceSum is OnceEnrollmentOccurrence.
+func (s EnrollmentOccurrenceSum) GetOnceEnrollmentOccurrence() (v OnceEnrollmentOccurrence, ok bool) {
+	if !s.IsOnceEnrollmentOccurrence() {
+		return v, false
+	}
+	return s.OnceEnrollmentOccurrence, true
+}
+
+// NewOnceEnrollmentOccurrenceEnrollmentOccurrenceSum returns new EnrollmentOccurrenceSum from OnceEnrollmentOccurrence.
+func NewOnceEnrollmentOccurrenceEnrollmentOccurrenceSum(v OnceEnrollmentOccurrence) EnrollmentOccurrenceSum {
+	var s EnrollmentOccurrenceSum
+	s.SetOnceEnrollmentOccurrence(v)
+	return s
+}
+
 // One Contact's progress through an Automation. Erased with the Contact.
 // Ref: #/components/schemas/EnrollmentResource
 type EnrollmentResource struct {
@@ -12860,6 +13798,10 @@ type EnrollmentResource struct {
 	// The value of the automation's Enrollment key the triggering Event carried, the property's string
 	// form (ADR 0165); absent for an automation with no key.
 	KeyValue OptString `json:"keyValue"`
+	// The occurrence of the automation's date Trigger the Enrollment was made for (ADR 0126): which year's
+	// anniversary, or the once date's one occurrence; absent for an Enrollment an Event or a rule's enroll
+	// action began.
+	Occurrence OptEnrollmentOccurrence `json:"occurrence"`
 	// Id of the Step of its version the Enrollment stands on (ADR 0122): a wait while it waits, the Step
 	// it ended on once it ended; absent only for a version of no Steps.
 	CurrentStepId OptStepId `json:"currentStepId"`
@@ -12901,6 +13843,11 @@ func (s *EnrollmentResource) GetOrdinal() int32 {
 // GetKeyValue returns the value of KeyValue.
 func (s *EnrollmentResource) GetKeyValue() OptString {
 	return s.KeyValue
+}
+
+// GetOccurrence returns the value of Occurrence.
+func (s *EnrollmentResource) GetOccurrence() OptEnrollmentOccurrence {
+	return s.Occurrence
 }
 
 // GetCurrentStepId returns the value of CurrentStepId.
@@ -12956,6 +13903,11 @@ func (s *EnrollmentResource) SetOrdinal(val int32) {
 // SetKeyValue sets the value of KeyValue.
 func (s *EnrollmentResource) SetKeyValue(val OptString) {
 	s.KeyValue = val
+}
+
+// SetOccurrence sets the value of Occurrence.
+func (s *EnrollmentResource) SetOccurrence(val OptEnrollmentOccurrence) {
+	s.Occurrence = val
 }
 
 // SetCurrentStepId sets the value of CurrentStepId.
@@ -16244,6 +17196,8 @@ func (s *LintFinding) SetDetail(val OptString) {
 	s.Detail = val
 }
 
+type LocalTime string
+
 type LocaleTag string
 
 type MaxPerDay int32
@@ -17238,6 +18192,56 @@ func (s *NumberTestKind) UnmarshalText(data []byte) error {
 	}
 }
 
+// The occurrence of a once date Trigger an Enrollment was made for: the one it has.
+// Ref: #/components/schemas/OnceEnrollmentOccurrence
+type OnceEnrollmentOccurrence struct {
+	Recurrence OnceEnrollmentOccurrenceRecurrence `json:"recurrence"`
+}
+
+// GetRecurrence returns the value of Recurrence.
+func (s *OnceEnrollmentOccurrence) GetRecurrence() OnceEnrollmentOccurrenceRecurrence {
+	return s.Recurrence
+}
+
+// SetRecurrence sets the value of Recurrence.
+func (s *OnceEnrollmentOccurrence) SetRecurrence(val OnceEnrollmentOccurrenceRecurrence) {
+	s.Recurrence = val
+}
+
+type OnceEnrollmentOccurrenceRecurrence string
+
+const (
+	OnceEnrollmentOccurrenceRecurrenceOnce OnceEnrollmentOccurrenceRecurrence = "once"
+)
+
+// AllValues returns all OnceEnrollmentOccurrenceRecurrence values.
+func (OnceEnrollmentOccurrenceRecurrence) AllValues() []OnceEnrollmentOccurrenceRecurrence {
+	return []OnceEnrollmentOccurrenceRecurrence{
+		OnceEnrollmentOccurrenceRecurrenceOnce,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s OnceEnrollmentOccurrenceRecurrence) MarshalText() ([]byte, error) {
+	switch s {
+	case OnceEnrollmentOccurrenceRecurrenceOnce:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *OnceEnrollmentOccurrenceRecurrence) UnmarshalText(data []byte) error {
+	switch OnceEnrollmentOccurrenceRecurrence(data) {
+	case OnceEnrollmentOccurrenceRecurrenceOnce:
+		*s = OnceEnrollmentOccurrenceRecurrenceOnce
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // NewOptAuditAction returns new OptAuditAction with value set to v.
 func NewOptAuditAction(v AuditAction) OptAuditAction {
 	return OptAuditAction{
@@ -18060,6 +19064,52 @@ func (o OptEnrollmentFailure) Get() (v EnrollmentFailure, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptEnrollmentFailure) Or(d EnrollmentFailure) EnrollmentFailure {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptEnrollmentOccurrence returns new OptEnrollmentOccurrence with value set to v.
+func NewOptEnrollmentOccurrence(v EnrollmentOccurrence) OptEnrollmentOccurrence {
+	return OptEnrollmentOccurrence{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptEnrollmentOccurrence is optional EnrollmentOccurrence.
+type OptEnrollmentOccurrence struct {
+	Value EnrollmentOccurrence
+	Set   bool
+}
+
+// IsSet returns true if OptEnrollmentOccurrence was set.
+func (o OptEnrollmentOccurrence) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptEnrollmentOccurrence) Reset() {
+	var v EnrollmentOccurrence
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptEnrollmentOccurrence) SetTo(v EnrollmentOccurrence) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptEnrollmentOccurrence) Get() (v EnrollmentOccurrence, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptEnrollmentOccurrence) Or(d EnrollmentOccurrence) EnrollmentOccurrence {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -20849,6 +21899,7 @@ type PathStepInputSum struct {
 	TelegramStepInput  TelegramStepInput
 	SmsStepInput       SmsStepInput
 	WaitStepInput      WaitStepInput
+	WaitUntilStepInput WaitUntilStepInput
 	ApplyTagStepInput  ApplyTagStepInput
 	RemoveTagStepInput RemoveTagStepInput
 	HttpStepInput      HttpStepInput
@@ -20866,6 +21917,7 @@ const (
 	TelegramStepInputPathStepInputSum  PathStepInputSumType = "telegram"
 	SmsStepInputPathStepInputSum       PathStepInputSumType = "sms"
 	WaitStepInputPathStepInputSum      PathStepInputSumType = "wait"
+	WaitUntilStepInputPathStepInputSum PathStepInputSumType = "wait_until"
 	ApplyTagStepInputPathStepInputSum  PathStepInputSumType = "apply_tag"
 	RemoveTagStepInputPathStepInputSum PathStepInputSumType = "remove_tag"
 	HttpStepInputPathStepInputSum      PathStepInputSumType = "http"
@@ -20887,6 +21939,11 @@ func (s PathStepInputSum) IsSmsStepInput() bool { return s.Type == SmsStepInputP
 
 // IsWaitStepInput reports whether PathStepInputSum is WaitStepInput.
 func (s PathStepInputSum) IsWaitStepInput() bool { return s.Type == WaitStepInputPathStepInputSum }
+
+// IsWaitUntilStepInput reports whether PathStepInputSum is WaitUntilStepInput.
+func (s PathStepInputSum) IsWaitUntilStepInput() bool {
+	return s.Type == WaitUntilStepInputPathStepInputSum
+}
 
 // IsApplyTagStepInput reports whether PathStepInputSum is ApplyTagStepInput.
 func (s PathStepInputSum) IsApplyTagStepInput() bool {
@@ -20991,6 +22048,27 @@ func (s PathStepInputSum) GetWaitStepInput() (v WaitStepInput, ok bool) {
 func NewWaitStepInputPathStepInputSum(v WaitStepInput) PathStepInputSum {
 	var s PathStepInputSum
 	s.SetWaitStepInput(v)
+	return s
+}
+
+// SetWaitUntilStepInput sets PathStepInputSum to WaitUntilStepInput.
+func (s *PathStepInputSum) SetWaitUntilStepInput(v WaitUntilStepInput) {
+	s.Type = WaitUntilStepInputPathStepInputSum
+	s.WaitUntilStepInput = v
+}
+
+// GetWaitUntilStepInput returns WaitUntilStepInput and true boolean if PathStepInputSum is WaitUntilStepInput.
+func (s PathStepInputSum) GetWaitUntilStepInput() (v WaitUntilStepInput, ok bool) {
+	if !s.IsWaitUntilStepInput() {
+		return v, false
+	}
+	return s.WaitUntilStepInput, true
+}
+
+// NewWaitUntilStepInputPathStepInputSum returns new PathStepInputSum from WaitUntilStepInput.
+func NewWaitUntilStepInputPathStepInputSum(v WaitUntilStepInput) PathStepInputSum {
+	var s PathStepInputSum
+	s.SetWaitUntilStepInput(v)
 	return s
 }
 
@@ -21128,6 +22206,7 @@ type PathStepSum struct {
 	TelegramStep  TelegramStep
 	SmsStep       SmsStep
 	WaitStep      WaitStep
+	WaitUntilStep WaitUntilStep
 	ApplyTagStep  ApplyTagStep
 	RemoveTagStep RemoveTagStep
 	HttpStep      HttpStep
@@ -21145,6 +22224,7 @@ const (
 	TelegramStepPathStepSum  PathStepSumType = "telegram"
 	SmsStepPathStepSum       PathStepSumType = "sms"
 	WaitStepPathStepSum      PathStepSumType = "wait"
+	WaitUntilStepPathStepSum PathStepSumType = "wait_until"
 	ApplyTagStepPathStepSum  PathStepSumType = "apply_tag"
 	RemoveTagStepPathStepSum PathStepSumType = "remove_tag"
 	HttpStepPathStepSum      PathStepSumType = "http"
@@ -21164,6 +22244,9 @@ func (s PathStepSum) IsSmsStep() bool { return s.Type == SmsStepPathStepSum }
 
 // IsWaitStep reports whether PathStepSum is WaitStep.
 func (s PathStepSum) IsWaitStep() bool { return s.Type == WaitStepPathStepSum }
+
+// IsWaitUntilStep reports whether PathStepSum is WaitUntilStep.
+func (s PathStepSum) IsWaitUntilStep() bool { return s.Type == WaitUntilStepPathStepSum }
 
 // IsApplyTagStep reports whether PathStepSum is ApplyTagStep.
 func (s PathStepSum) IsApplyTagStep() bool { return s.Type == ApplyTagStepPathStepSum }
@@ -21264,6 +22347,27 @@ func (s PathStepSum) GetWaitStep() (v WaitStep, ok bool) {
 func NewWaitStepPathStepSum(v WaitStep) PathStepSum {
 	var s PathStepSum
 	s.SetWaitStep(v)
+	return s
+}
+
+// SetWaitUntilStep sets PathStepSum to WaitUntilStep.
+func (s *PathStepSum) SetWaitUntilStep(v WaitUntilStep) {
+	s.Type = WaitUntilStepPathStepSum
+	s.WaitUntilStep = v
+}
+
+// GetWaitUntilStep returns WaitUntilStep and true boolean if PathStepSum is WaitUntilStep.
+func (s PathStepSum) GetWaitUntilStep() (v WaitUntilStep, ok bool) {
+	if !s.IsWaitUntilStep() {
+		return v, false
+	}
+	return s.WaitUntilStep, true
+}
+
+// NewWaitUntilStepPathStepSum returns new PathStepSum from WaitUntilStep.
+func NewWaitUntilStepPathStepSum(v WaitUntilStep) PathStepSum {
+	var s PathStepSum
+	s.SetWaitUntilStep(v)
 	return s
 }
 
@@ -26924,7 +28028,10 @@ func (s *SkippedEntriesListOK) SetTotalPages(val int32) {
 // key value in the automation before, under the `once` entry policy), `cooldown` (under `again`, the
 // cooldown from the beginning of the contact's previous enrollment for the key value had not passed)
 // or `enrollment_ceiling` (the keyed automation's contact had 10 active enrollments, or 10 begun in a
-// day).
+// day). An occurrence of a date Trigger (ADR 0126) is skipped as `active_enrollment` (an enrollment of
+// the contact was active at its moment), `missed` (it was reached 24 hours late or more while its date
+// was already set at its moment) or `send_locked` (its date was set through a Connection without
+// mcp:send; a later write of another value without the mark may still enroll it within 24 hours).
 // Ref: #/components/schemas/SkippedEntryReason
 type SkippedEntryReason string
 
@@ -26935,6 +28042,8 @@ const (
 	SkippedEntryReasonOnce              SkippedEntryReason = "once"
 	SkippedEntryReasonCooldown          SkippedEntryReason = "cooldown"
 	SkippedEntryReasonEnrollmentCeiling SkippedEntryReason = "enrollment_ceiling"
+	SkippedEntryReasonMissed            SkippedEntryReason = "missed"
+	SkippedEntryReasonSendLocked        SkippedEntryReason = "send_locked"
 )
 
 // AllValues returns all SkippedEntryReason values.
@@ -26946,6 +28055,8 @@ func (SkippedEntryReason) AllValues() []SkippedEntryReason {
 		SkippedEntryReasonOnce,
 		SkippedEntryReasonCooldown,
 		SkippedEntryReasonEnrollmentCeiling,
+		SkippedEntryReasonMissed,
+		SkippedEntryReasonSendLocked,
 	}
 }
 
@@ -26963,6 +28074,10 @@ func (s SkippedEntryReason) MarshalText() ([]byte, error) {
 	case SkippedEntryReasonCooldown:
 		return []byte(s), nil
 	case SkippedEntryReasonEnrollmentCeiling:
+		return []byte(s), nil
+	case SkippedEntryReasonMissed:
+		return []byte(s), nil
+	case SkippedEntryReasonSendLocked:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -26990,6 +28105,12 @@ func (s *SkippedEntryReason) UnmarshalText(data []byte) error {
 	case SkippedEntryReasonEnrollmentCeiling:
 		*s = SkippedEntryReasonEnrollmentCeiling
 		return nil
+	case SkippedEntryReasonMissed:
+		*s = SkippedEntryReasonMissed
+		return nil
+	case SkippedEntryReasonSendLocked:
+		*s = SkippedEntryReasonSendLocked
+		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
 	}
@@ -27008,11 +28129,12 @@ type SkippedEntryResource struct {
 	// Why the entry was skipped.
 	Reason SkippedEntryReason `json:"reason"`
 	// The source id of the triggering Event (its dedupKey when it had one); absent when a rule's enroll
-	// action tried.
+	// action or a date Trigger's occurrence tried.
 	EventSourceId OptString `json:"eventSourceId"`
 	// The rule firing whose enroll action tried; absent when the automation's trigger did.
 	FiringId OptEntityId `json:"firingId"`
-	// When the enrollment would have begun: when its Event occurred.
+	// When the enrollment would have begun: when its Event occurred, or the moment of the date Trigger's
+	// occurrence.
 	OccurredAt Timestamp `json:"occurredAt"`
 	// When the entry was skipped.
 	CreatedAt Timestamp `json:"createdAt"`
@@ -28231,6 +29353,7 @@ type SplitPathStepInputSum struct {
 	TelegramStepInput  TelegramStepInput
 	SmsStepInput       SmsStepInput
 	WaitStepInput      WaitStepInput
+	WaitUntilStepInput WaitUntilStepInput
 	ApplyTagStepInput  ApplyTagStepInput
 	RemoveTagStepInput RemoveTagStepInput
 	HttpStepInput      HttpStepInput
@@ -28248,6 +29371,7 @@ const (
 	TelegramStepInputSplitPathStepInputSum  SplitPathStepInputSumType = "telegram"
 	SmsStepInputSplitPathStepInputSum       SplitPathStepInputSumType = "sms"
 	WaitStepInputSplitPathStepInputSum      SplitPathStepInputSumType = "wait"
+	WaitUntilStepInputSplitPathStepInputSum SplitPathStepInputSumType = "wait_until"
 	ApplyTagStepInputSplitPathStepInputSum  SplitPathStepInputSumType = "apply_tag"
 	RemoveTagStepInputSplitPathStepInputSum SplitPathStepInputSumType = "remove_tag"
 	HttpStepInputSplitPathStepInputSum      SplitPathStepInputSumType = "http"
@@ -28274,6 +29398,11 @@ func (s SplitPathStepInputSum) IsSmsStepInput() bool {
 // IsWaitStepInput reports whether SplitPathStepInputSum is WaitStepInput.
 func (s SplitPathStepInputSum) IsWaitStepInput() bool {
 	return s.Type == WaitStepInputSplitPathStepInputSum
+}
+
+// IsWaitUntilStepInput reports whether SplitPathStepInputSum is WaitUntilStepInput.
+func (s SplitPathStepInputSum) IsWaitUntilStepInput() bool {
+	return s.Type == WaitUntilStepInputSplitPathStepInputSum
 }
 
 // IsApplyTagStepInput reports whether SplitPathStepInputSum is ApplyTagStepInput.
@@ -28387,6 +29516,27 @@ func (s SplitPathStepInputSum) GetWaitStepInput() (v WaitStepInput, ok bool) {
 func NewWaitStepInputSplitPathStepInputSum(v WaitStepInput) SplitPathStepInputSum {
 	var s SplitPathStepInputSum
 	s.SetWaitStepInput(v)
+	return s
+}
+
+// SetWaitUntilStepInput sets SplitPathStepInputSum to WaitUntilStepInput.
+func (s *SplitPathStepInputSum) SetWaitUntilStepInput(v WaitUntilStepInput) {
+	s.Type = WaitUntilStepInputSplitPathStepInputSum
+	s.WaitUntilStepInput = v
+}
+
+// GetWaitUntilStepInput returns WaitUntilStepInput and true boolean if SplitPathStepInputSum is WaitUntilStepInput.
+func (s SplitPathStepInputSum) GetWaitUntilStepInput() (v WaitUntilStepInput, ok bool) {
+	if !s.IsWaitUntilStepInput() {
+		return v, false
+	}
+	return s.WaitUntilStepInput, true
+}
+
+// NewWaitUntilStepInputSplitPathStepInputSum returns new SplitPathStepInputSum from WaitUntilStepInput.
+func NewWaitUntilStepInputSplitPathStepInputSum(v WaitUntilStepInput) SplitPathStepInputSum {
+	var s SplitPathStepInputSum
+	s.SetWaitUntilStepInput(v)
 	return s
 }
 
@@ -28524,6 +29674,7 @@ type SplitPathStepSum struct {
 	TelegramStep  TelegramStep
 	SmsStep       SmsStep
 	WaitStep      WaitStep
+	WaitUntilStep WaitUntilStep
 	ApplyTagStep  ApplyTagStep
 	RemoveTagStep RemoveTagStep
 	HttpStep      HttpStep
@@ -28541,6 +29692,7 @@ const (
 	TelegramStepSplitPathStepSum  SplitPathStepSumType = "telegram"
 	SmsStepSplitPathStepSum       SplitPathStepSumType = "sms"
 	WaitStepSplitPathStepSum      SplitPathStepSumType = "wait"
+	WaitUntilStepSplitPathStepSum SplitPathStepSumType = "wait_until"
 	ApplyTagStepSplitPathStepSum  SplitPathStepSumType = "apply_tag"
 	RemoveTagStepSplitPathStepSum SplitPathStepSumType = "remove_tag"
 	HttpStepSplitPathStepSum      SplitPathStepSumType = "http"
@@ -28560,6 +29712,9 @@ func (s SplitPathStepSum) IsSmsStep() bool { return s.Type == SmsStepSplitPathSt
 
 // IsWaitStep reports whether SplitPathStepSum is WaitStep.
 func (s SplitPathStepSum) IsWaitStep() bool { return s.Type == WaitStepSplitPathStepSum }
+
+// IsWaitUntilStep reports whether SplitPathStepSum is WaitUntilStep.
+func (s SplitPathStepSum) IsWaitUntilStep() bool { return s.Type == WaitUntilStepSplitPathStepSum }
 
 // IsApplyTagStep reports whether SplitPathStepSum is ApplyTagStep.
 func (s SplitPathStepSum) IsApplyTagStep() bool { return s.Type == ApplyTagStepSplitPathStepSum }
@@ -28660,6 +29815,27 @@ func (s SplitPathStepSum) GetWaitStep() (v WaitStep, ok bool) {
 func NewWaitStepSplitPathStepSum(v WaitStep) SplitPathStepSum {
 	var s SplitPathStepSum
 	s.SetWaitStep(v)
+	return s
+}
+
+// SetWaitUntilStep sets SplitPathStepSum to WaitUntilStep.
+func (s *SplitPathStepSum) SetWaitUntilStep(v WaitUntilStep) {
+	s.Type = WaitUntilStepSplitPathStepSum
+	s.WaitUntilStep = v
+}
+
+// GetWaitUntilStep returns WaitUntilStep and true boolean if SplitPathStepSum is WaitUntilStep.
+func (s SplitPathStepSum) GetWaitUntilStep() (v WaitUntilStep, ok bool) {
+	if !s.IsWaitUntilStep() {
+		return v, false
+	}
+	return s.WaitUntilStep, true
+}
+
+// NewWaitUntilStepSplitPathStepSum returns new SplitPathStepSum from WaitUntilStep.
+func NewWaitUntilStepSplitPathStepSum(v WaitUntilStep) SplitPathStepSum {
+	var s SplitPathStepSum
+	s.SetWaitUntilStep(v)
 	return s
 }
 
@@ -28791,8 +29967,9 @@ func NewSplitStepSplitPathStepSum(v SplitStep) SplitPathStepSum {
 
 // A Step that sends each Enrollment down one of its paths by weight (ADR 0124): a hash of the Contact,
 // the Split and the Enrollment's ordinal chooses the path, so the same Enrollment always takes the
-// same path and a new Enrollment of the Contact draws again. An empty path is a holdout. The paths
-// rejoin at the Step after the Split.
+// same path and a new Enrollment of the Contact draws again. In an Automation with a yearly date
+// Trigger the anniversary year takes the ordinal's place, so the Contact draws again each year (ADR
+// 0126). An empty path is a holdout. The paths rejoin at the Step after the Split.
 // Ref: #/components/schemas/SplitStep
 type SplitStep struct {
 	// The Step's id.
@@ -32701,6 +33878,676 @@ func (s *WaitStepType) UnmarshalText(data []byte) error {
 	}
 }
 
+// Wait until the next occurrence of a date the Contact holds (ADR 0126), at or after the moment the
+// Enrollment reaches the Step: `offsetDays` before or after the date, at `localTime` in the Contact's
+// time zone, or the Workspace time zone when the Contact has no valid one. A yearly date waits for its
+// next anniversary, from the year after the date's own; a once date for the date itself. When there is
+// no such moment within 366 days the Enrollment goes on at once, and the report counts why: the moment
+// has passed (`past`), the Contact holds no date in the field (`no_date`), or it lies more than 366
+// days ahead (`beyond_bound`).
+// Ref: #/components/schemas/WaitUntilDate
+type WaitUntilDate struct {
+	Form WaitUntilDateForm `json:"form"`
+	// The date the occurrences come from.
+	Field DateField `json:"field"`
+	// Every year, or once.
+	Recurrence DateRecurrence `json:"recurrence"`
+	// Days before (negative) or after the date.
+	OffsetDays DateOffsetDays `json:"offsetDays"`
+	// The time of day of each occurrence, in the Contact's time zone.
+	LocalTime LocalTime `json:"localTime"`
+}
+
+// GetForm returns the value of Form.
+func (s *WaitUntilDate) GetForm() WaitUntilDateForm {
+	return s.Form
+}
+
+// GetField returns the value of Field.
+func (s *WaitUntilDate) GetField() DateField {
+	return s.Field
+}
+
+// GetRecurrence returns the value of Recurrence.
+func (s *WaitUntilDate) GetRecurrence() DateRecurrence {
+	return s.Recurrence
+}
+
+// GetOffsetDays returns the value of OffsetDays.
+func (s *WaitUntilDate) GetOffsetDays() DateOffsetDays {
+	return s.OffsetDays
+}
+
+// GetLocalTime returns the value of LocalTime.
+func (s *WaitUntilDate) GetLocalTime() LocalTime {
+	return s.LocalTime
+}
+
+// SetForm sets the value of Form.
+func (s *WaitUntilDate) SetForm(val WaitUntilDateForm) {
+	s.Form = val
+}
+
+// SetField sets the value of Field.
+func (s *WaitUntilDate) SetField(val DateField) {
+	s.Field = val
+}
+
+// SetRecurrence sets the value of Recurrence.
+func (s *WaitUntilDate) SetRecurrence(val DateRecurrence) {
+	s.Recurrence = val
+}
+
+// SetOffsetDays sets the value of OffsetDays.
+func (s *WaitUntilDate) SetOffsetDays(val DateOffsetDays) {
+	s.OffsetDays = val
+}
+
+// SetLocalTime sets the value of LocalTime.
+func (s *WaitUntilDate) SetLocalTime(val LocalTime) {
+	s.LocalTime = val
+}
+
+type WaitUntilDateForm string
+
+const (
+	WaitUntilDateFormDate WaitUntilDateForm = "date"
+)
+
+// AllValues returns all WaitUntilDateForm values.
+func (WaitUntilDateForm) AllValues() []WaitUntilDateForm {
+	return []WaitUntilDateForm{
+		WaitUntilDateFormDate,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s WaitUntilDateForm) MarshalText() ([]byte, error) {
+	switch s {
+	case WaitUntilDateFormDate:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *WaitUntilDateForm) UnmarshalText(data []byte) error {
+	switch WaitUntilDateForm(data) {
+	case WaitUntilDateFormDate:
+		*s = WaitUntilDateFormDate
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Wait until the next occurrence of a date the Contact holds, as a request writes it.
+// Ref: #/components/schemas/WaitUntilDateInput
+type WaitUntilDateInput struct {
+	Form WaitUntilDateInputForm `json:"form"`
+	// The date the occurrences come from: the birthday, or a datetime Custom field of the Workspace's
+	// catalogue.
+	Field DateFieldInput `json:"field"`
+	// Every year, or once; the birthday is only yearly.
+	Recurrence DateRecurrence `json:"recurrence"`
+	// Days before (negative) or after the date, within 365.
+	OffsetDays DateOffsetDays `json:"offsetDays"`
+	// The time of day of each occurrence, `HH:MM`, in the Contact's time zone.
+	LocalTime LocalTime `json:"localTime"`
+}
+
+// GetForm returns the value of Form.
+func (s *WaitUntilDateInput) GetForm() WaitUntilDateInputForm {
+	return s.Form
+}
+
+// GetField returns the value of Field.
+func (s *WaitUntilDateInput) GetField() DateFieldInput {
+	return s.Field
+}
+
+// GetRecurrence returns the value of Recurrence.
+func (s *WaitUntilDateInput) GetRecurrence() DateRecurrence {
+	return s.Recurrence
+}
+
+// GetOffsetDays returns the value of OffsetDays.
+func (s *WaitUntilDateInput) GetOffsetDays() DateOffsetDays {
+	return s.OffsetDays
+}
+
+// GetLocalTime returns the value of LocalTime.
+func (s *WaitUntilDateInput) GetLocalTime() LocalTime {
+	return s.LocalTime
+}
+
+// SetForm sets the value of Form.
+func (s *WaitUntilDateInput) SetForm(val WaitUntilDateInputForm) {
+	s.Form = val
+}
+
+// SetField sets the value of Field.
+func (s *WaitUntilDateInput) SetField(val DateFieldInput) {
+	s.Field = val
+}
+
+// SetRecurrence sets the value of Recurrence.
+func (s *WaitUntilDateInput) SetRecurrence(val DateRecurrence) {
+	s.Recurrence = val
+}
+
+// SetOffsetDays sets the value of OffsetDays.
+func (s *WaitUntilDateInput) SetOffsetDays(val DateOffsetDays) {
+	s.OffsetDays = val
+}
+
+// SetLocalTime sets the value of LocalTime.
+func (s *WaitUntilDateInput) SetLocalTime(val LocalTime) {
+	s.LocalTime = val
+}
+
+type WaitUntilDateInputForm string
+
+const (
+	WaitUntilDateInputFormDate WaitUntilDateInputForm = "date"
+)
+
+// AllValues returns all WaitUntilDateInputForm values.
+func (WaitUntilDateInputForm) AllValues() []WaitUntilDateInputForm {
+	return []WaitUntilDateInputForm{
+		WaitUntilDateInputFormDate,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s WaitUntilDateInputForm) MarshalText() ([]byte, error) {
+	switch s {
+	case WaitUntilDateInputFormDate:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *WaitUntilDateInputForm) UnmarshalText(data []byte) error {
+	switch WaitUntilDateInputForm(data) {
+	case WaitUntilDateInputFormDate:
+		*s = WaitUntilDateInputFormDate
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// The moment a Wait until holds an Enrollment until, by `form`.
+// Ref: #/components/schemas/WaitUntilMoment
+type WaitUntilMoment struct {
+	OneOf WaitUntilMomentSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *WaitUntilMoment) GetOneOf() WaitUntilMomentSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *WaitUntilMoment) SetOneOf(val WaitUntilMomentSum) {
+	s.OneOf = val
+}
+
+// The moment a Wait until holds an Enrollment until, by `form`, as a request writes it.
+// Ref: #/components/schemas/WaitUntilMomentInput
+type WaitUntilMomentInput struct {
+	OneOf WaitUntilMomentInputSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *WaitUntilMomentInput) GetOneOf() WaitUntilMomentInputSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *WaitUntilMomentInput) SetOneOf(val WaitUntilMomentInputSum) {
+	s.OneOf = val
+}
+
+// WaitUntilMomentInputSum represents sum type.
+type WaitUntilMomentInputSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type                    WaitUntilMomentInputSumType
+	WaitUntilTimeOfDayInput WaitUntilTimeOfDayInput
+	WaitUntilDateInput      WaitUntilDateInput
+}
+
+// WaitUntilMomentInputSumType is oneOf type of WaitUntilMomentInputSum.
+type WaitUntilMomentInputSumType string
+
+// Possible values for WaitUntilMomentInputSumType.
+const (
+	WaitUntilTimeOfDayInputWaitUntilMomentInputSum WaitUntilMomentInputSumType = "time_of_day"
+	WaitUntilDateInputWaitUntilMomentInputSum      WaitUntilMomentInputSumType = "date"
+)
+
+// IsWaitUntilTimeOfDayInput reports whether WaitUntilMomentInputSum is WaitUntilTimeOfDayInput.
+func (s WaitUntilMomentInputSum) IsWaitUntilTimeOfDayInput() bool {
+	return s.Type == WaitUntilTimeOfDayInputWaitUntilMomentInputSum
+}
+
+// IsWaitUntilDateInput reports whether WaitUntilMomentInputSum is WaitUntilDateInput.
+func (s WaitUntilMomentInputSum) IsWaitUntilDateInput() bool {
+	return s.Type == WaitUntilDateInputWaitUntilMomentInputSum
+}
+
+// SetWaitUntilTimeOfDayInput sets WaitUntilMomentInputSum to WaitUntilTimeOfDayInput.
+func (s *WaitUntilMomentInputSum) SetWaitUntilTimeOfDayInput(v WaitUntilTimeOfDayInput) {
+	s.Type = WaitUntilTimeOfDayInputWaitUntilMomentInputSum
+	s.WaitUntilTimeOfDayInput = v
+}
+
+// GetWaitUntilTimeOfDayInput returns WaitUntilTimeOfDayInput and true boolean if WaitUntilMomentInputSum is WaitUntilTimeOfDayInput.
+func (s WaitUntilMomentInputSum) GetWaitUntilTimeOfDayInput() (v WaitUntilTimeOfDayInput, ok bool) {
+	if !s.IsWaitUntilTimeOfDayInput() {
+		return v, false
+	}
+	return s.WaitUntilTimeOfDayInput, true
+}
+
+// NewWaitUntilTimeOfDayInputWaitUntilMomentInputSum returns new WaitUntilMomentInputSum from WaitUntilTimeOfDayInput.
+func NewWaitUntilTimeOfDayInputWaitUntilMomentInputSum(v WaitUntilTimeOfDayInput) WaitUntilMomentInputSum {
+	var s WaitUntilMomentInputSum
+	s.SetWaitUntilTimeOfDayInput(v)
+	return s
+}
+
+// SetWaitUntilDateInput sets WaitUntilMomentInputSum to WaitUntilDateInput.
+func (s *WaitUntilMomentInputSum) SetWaitUntilDateInput(v WaitUntilDateInput) {
+	s.Type = WaitUntilDateInputWaitUntilMomentInputSum
+	s.WaitUntilDateInput = v
+}
+
+// GetWaitUntilDateInput returns WaitUntilDateInput and true boolean if WaitUntilMomentInputSum is WaitUntilDateInput.
+func (s WaitUntilMomentInputSum) GetWaitUntilDateInput() (v WaitUntilDateInput, ok bool) {
+	if !s.IsWaitUntilDateInput() {
+		return v, false
+	}
+	return s.WaitUntilDateInput, true
+}
+
+// NewWaitUntilDateInputWaitUntilMomentInputSum returns new WaitUntilMomentInputSum from WaitUntilDateInput.
+func NewWaitUntilDateInputWaitUntilMomentInputSum(v WaitUntilDateInput) WaitUntilMomentInputSum {
+	var s WaitUntilMomentInputSum
+	s.SetWaitUntilDateInput(v)
+	return s
+}
+
+// WaitUntilMomentSum represents sum type.
+type WaitUntilMomentSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type               WaitUntilMomentSumType
+	WaitUntilTimeOfDay WaitUntilTimeOfDay
+	WaitUntilDate      WaitUntilDate
+}
+
+// WaitUntilMomentSumType is oneOf type of WaitUntilMomentSum.
+type WaitUntilMomentSumType string
+
+// Possible values for WaitUntilMomentSumType.
+const (
+	WaitUntilTimeOfDayWaitUntilMomentSum WaitUntilMomentSumType = "time_of_day"
+	WaitUntilDateWaitUntilMomentSum      WaitUntilMomentSumType = "date"
+)
+
+// IsWaitUntilTimeOfDay reports whether WaitUntilMomentSum is WaitUntilTimeOfDay.
+func (s WaitUntilMomentSum) IsWaitUntilTimeOfDay() bool {
+	return s.Type == WaitUntilTimeOfDayWaitUntilMomentSum
+}
+
+// IsWaitUntilDate reports whether WaitUntilMomentSum is WaitUntilDate.
+func (s WaitUntilMomentSum) IsWaitUntilDate() bool { return s.Type == WaitUntilDateWaitUntilMomentSum }
+
+// SetWaitUntilTimeOfDay sets WaitUntilMomentSum to WaitUntilTimeOfDay.
+func (s *WaitUntilMomentSum) SetWaitUntilTimeOfDay(v WaitUntilTimeOfDay) {
+	s.Type = WaitUntilTimeOfDayWaitUntilMomentSum
+	s.WaitUntilTimeOfDay = v
+}
+
+// GetWaitUntilTimeOfDay returns WaitUntilTimeOfDay and true boolean if WaitUntilMomentSum is WaitUntilTimeOfDay.
+func (s WaitUntilMomentSum) GetWaitUntilTimeOfDay() (v WaitUntilTimeOfDay, ok bool) {
+	if !s.IsWaitUntilTimeOfDay() {
+		return v, false
+	}
+	return s.WaitUntilTimeOfDay, true
+}
+
+// NewWaitUntilTimeOfDayWaitUntilMomentSum returns new WaitUntilMomentSum from WaitUntilTimeOfDay.
+func NewWaitUntilTimeOfDayWaitUntilMomentSum(v WaitUntilTimeOfDay) WaitUntilMomentSum {
+	var s WaitUntilMomentSum
+	s.SetWaitUntilTimeOfDay(v)
+	return s
+}
+
+// SetWaitUntilDate sets WaitUntilMomentSum to WaitUntilDate.
+func (s *WaitUntilMomentSum) SetWaitUntilDate(v WaitUntilDate) {
+	s.Type = WaitUntilDateWaitUntilMomentSum
+	s.WaitUntilDate = v
+}
+
+// GetWaitUntilDate returns WaitUntilDate and true boolean if WaitUntilMomentSum is WaitUntilDate.
+func (s WaitUntilMomentSum) GetWaitUntilDate() (v WaitUntilDate, ok bool) {
+	if !s.IsWaitUntilDate() {
+		return v, false
+	}
+	return s.WaitUntilDate, true
+}
+
+// NewWaitUntilDateWaitUntilMomentSum returns new WaitUntilMomentSum from WaitUntilDate.
+func NewWaitUntilDateWaitUntilMomentSum(v WaitUntilDate) WaitUntilMomentSum {
+	var s WaitUntilMomentSum
+	s.SetWaitUntilDate(v)
+	return s
+}
+
+// A Step that holds the Enrollment until a calendar moment (ADR 0126): the moment is computed once,
+// from when the Enrollment reaches the Step, and kept, so neither a restart nor a time zone changed
+// during the wait moves it. A moment equal to the arrival waits zero.
+// Ref: #/components/schemas/WaitUntilStep
+type WaitUntilStep struct {
+	// The Step's id.
+	ID   StepId            `json:"id"`
+	Type WaitUntilStepType `json:"type"`
+	// The moment the Enrollment waits for.
+	Until WaitUntilMoment `json:"until"`
+}
+
+// GetID returns the value of ID.
+func (s *WaitUntilStep) GetID() StepId {
+	return s.ID
+}
+
+// GetType returns the value of Type.
+func (s *WaitUntilStep) GetType() WaitUntilStepType {
+	return s.Type
+}
+
+// GetUntil returns the value of Until.
+func (s *WaitUntilStep) GetUntil() WaitUntilMoment {
+	return s.Until
+}
+
+// SetID sets the value of ID.
+func (s *WaitUntilStep) SetID(val StepId) {
+	s.ID = val
+}
+
+// SetType sets the value of Type.
+func (s *WaitUntilStep) SetType(val WaitUntilStepType) {
+	s.Type = val
+}
+
+// SetUntil sets the value of Until.
+func (s *WaitUntilStep) SetUntil(val WaitUntilMoment) {
+	s.Until = val
+}
+
+// A Step that holds the Enrollment until a calendar moment, as a request writes it.
+// Ref: #/components/schemas/WaitUntilStepInput
+type WaitUntilStepInput struct {
+	// The Step's id; omitted, the Step is given one.
+	ID   OptStepId              `json:"id"`
+	Type WaitUntilStepInputType `json:"type"`
+	// The moment the Enrollment waits for.
+	Until WaitUntilMomentInput `json:"until"`
+}
+
+// GetID returns the value of ID.
+func (s *WaitUntilStepInput) GetID() OptStepId {
+	return s.ID
+}
+
+// GetType returns the value of Type.
+func (s *WaitUntilStepInput) GetType() WaitUntilStepInputType {
+	return s.Type
+}
+
+// GetUntil returns the value of Until.
+func (s *WaitUntilStepInput) GetUntil() WaitUntilMomentInput {
+	return s.Until
+}
+
+// SetID sets the value of ID.
+func (s *WaitUntilStepInput) SetID(val OptStepId) {
+	s.ID = val
+}
+
+// SetType sets the value of Type.
+func (s *WaitUntilStepInput) SetType(val WaitUntilStepInputType) {
+	s.Type = val
+}
+
+// SetUntil sets the value of Until.
+func (s *WaitUntilStepInput) SetUntil(val WaitUntilMomentInput) {
+	s.Until = val
+}
+
+type WaitUntilStepInputType string
+
+const (
+	WaitUntilStepInputTypeWaitUntil WaitUntilStepInputType = "wait_until"
+)
+
+// AllValues returns all WaitUntilStepInputType values.
+func (WaitUntilStepInputType) AllValues() []WaitUntilStepInputType {
+	return []WaitUntilStepInputType{
+		WaitUntilStepInputTypeWaitUntil,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s WaitUntilStepInputType) MarshalText() ([]byte, error) {
+	switch s {
+	case WaitUntilStepInputTypeWaitUntil:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *WaitUntilStepInputType) UnmarshalText(data []byte) error {
+	switch WaitUntilStepInputType(data) {
+	case WaitUntilStepInputTypeWaitUntil:
+		*s = WaitUntilStepInputTypeWaitUntil
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type WaitUntilStepType string
+
+const (
+	WaitUntilStepTypeWaitUntil WaitUntilStepType = "wait_until"
+)
+
+// AllValues returns all WaitUntilStepType values.
+func (WaitUntilStepType) AllValues() []WaitUntilStepType {
+	return []WaitUntilStepType{
+		WaitUntilStepTypeWaitUntil,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s WaitUntilStepType) MarshalText() ([]byte, error) {
+	switch s {
+	case WaitUntilStepTypeWaitUntil:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *WaitUntilStepType) UnmarshalText(data []byte) error {
+	switch WaitUntilStepType(data) {
+	case WaitUntilStepTypeWaitUntil:
+		*s = WaitUntilStepTypeWaitUntil
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Wait until the next moment a local time comes, on chosen weekdays or on any day, in the Contact's
+// time zone, or the Workspace time zone when the Contact has no valid one (ADR 0126).
+// Ref: #/components/schemas/WaitUntilTimeOfDay
+type WaitUntilTimeOfDay struct {
+	Form WaitUntilTimeOfDayForm `json:"form"`
+	// The local time of day.
+	LocalTime LocalTime `json:"localTime"`
+	// The weekdays the local time counts on; empty is every day.
+	Weekdays []Weekday `json:"weekdays"`
+}
+
+// GetForm returns the value of Form.
+func (s *WaitUntilTimeOfDay) GetForm() WaitUntilTimeOfDayForm {
+	return s.Form
+}
+
+// GetLocalTime returns the value of LocalTime.
+func (s *WaitUntilTimeOfDay) GetLocalTime() LocalTime {
+	return s.LocalTime
+}
+
+// GetWeekdays returns the value of Weekdays.
+func (s *WaitUntilTimeOfDay) GetWeekdays() []Weekday {
+	return s.Weekdays
+}
+
+// SetForm sets the value of Form.
+func (s *WaitUntilTimeOfDay) SetForm(val WaitUntilTimeOfDayForm) {
+	s.Form = val
+}
+
+// SetLocalTime sets the value of LocalTime.
+func (s *WaitUntilTimeOfDay) SetLocalTime(val LocalTime) {
+	s.LocalTime = val
+}
+
+// SetWeekdays sets the value of Weekdays.
+func (s *WaitUntilTimeOfDay) SetWeekdays(val []Weekday) {
+	s.Weekdays = val
+}
+
+type WaitUntilTimeOfDayForm string
+
+const (
+	WaitUntilTimeOfDayFormTimeOfDay WaitUntilTimeOfDayForm = "time_of_day"
+)
+
+// AllValues returns all WaitUntilTimeOfDayForm values.
+func (WaitUntilTimeOfDayForm) AllValues() []WaitUntilTimeOfDayForm {
+	return []WaitUntilTimeOfDayForm{
+		WaitUntilTimeOfDayFormTimeOfDay,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s WaitUntilTimeOfDayForm) MarshalText() ([]byte, error) {
+	switch s {
+	case WaitUntilTimeOfDayFormTimeOfDay:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *WaitUntilTimeOfDayForm) UnmarshalText(data []byte) error {
+	switch WaitUntilTimeOfDayForm(data) {
+	case WaitUntilTimeOfDayFormTimeOfDay:
+		*s = WaitUntilTimeOfDayFormTimeOfDay
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Wait until the next moment a local time comes, as a request writes it.
+// Ref: #/components/schemas/WaitUntilTimeOfDayInput
+type WaitUntilTimeOfDayInput struct {
+	Form WaitUntilTimeOfDayInputForm `json:"form"`
+	// The local time of day.
+	LocalTime LocalTime `json:"localTime"`
+	// The weekdays the local time counts on, each at most once; omitted or empty is every day.
+	Weekdays []Weekday `json:"weekdays"`
+}
+
+// GetForm returns the value of Form.
+func (s *WaitUntilTimeOfDayInput) GetForm() WaitUntilTimeOfDayInputForm {
+	return s.Form
+}
+
+// GetLocalTime returns the value of LocalTime.
+func (s *WaitUntilTimeOfDayInput) GetLocalTime() LocalTime {
+	return s.LocalTime
+}
+
+// GetWeekdays returns the value of Weekdays.
+func (s *WaitUntilTimeOfDayInput) GetWeekdays() []Weekday {
+	return s.Weekdays
+}
+
+// SetForm sets the value of Form.
+func (s *WaitUntilTimeOfDayInput) SetForm(val WaitUntilTimeOfDayInputForm) {
+	s.Form = val
+}
+
+// SetLocalTime sets the value of LocalTime.
+func (s *WaitUntilTimeOfDayInput) SetLocalTime(val LocalTime) {
+	s.LocalTime = val
+}
+
+// SetWeekdays sets the value of Weekdays.
+func (s *WaitUntilTimeOfDayInput) SetWeekdays(val []Weekday) {
+	s.Weekdays = val
+}
+
+type WaitUntilTimeOfDayInputForm string
+
+const (
+	WaitUntilTimeOfDayInputFormTimeOfDay WaitUntilTimeOfDayInputForm = "time_of_day"
+)
+
+// AllValues returns all WaitUntilTimeOfDayInputForm values.
+func (WaitUntilTimeOfDayInputForm) AllValues() []WaitUntilTimeOfDayInputForm {
+	return []WaitUntilTimeOfDayInputForm{
+		WaitUntilTimeOfDayInputFormTimeOfDay,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s WaitUntilTimeOfDayInputForm) MarshalText() ([]byte, error) {
+	switch s {
+	case WaitUntilTimeOfDayInputFormTimeOfDay:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *WaitUntilTimeOfDayInputForm) UnmarshalText(data []byte) error {
+	switch WaitUntilTimeOfDayInputForm(data) {
+	case WaitUntilTimeOfDayInputFormTimeOfDay:
+		*s = WaitUntilTimeOfDayInputFormTimeOfDay
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // Why an endpoint is off. A closed set: `owner` (a member turned it off), `gone` (the receiver
 // answered 410 Gone) and `persistent_failure` (deliveries failed for longer than the window). Absent
 // while the endpoint is enabled.
@@ -33111,6 +34958,84 @@ func (s *WebhooksListOK) SetTotalPages(val int32) {
 	s.TotalPages = val
 }
 
+// A day of the week, by its ISO name in lower case.
+// Ref: #/components/schemas/Weekday
+type Weekday string
+
+const (
+	WeekdayMonday    Weekday = "monday"
+	WeekdayTuesday   Weekday = "tuesday"
+	WeekdayWednesday Weekday = "wednesday"
+	WeekdayThursday  Weekday = "thursday"
+	WeekdayFriday    Weekday = "friday"
+	WeekdaySaturday  Weekday = "saturday"
+	WeekdaySunday    Weekday = "sunday"
+)
+
+// AllValues returns all Weekday values.
+func (Weekday) AllValues() []Weekday {
+	return []Weekday{
+		WeekdayMonday,
+		WeekdayTuesday,
+		WeekdayWednesday,
+		WeekdayThursday,
+		WeekdayFriday,
+		WeekdaySaturday,
+		WeekdaySunday,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s Weekday) MarshalText() ([]byte, error) {
+	switch s {
+	case WeekdayMonday:
+		return []byte(s), nil
+	case WeekdayTuesday:
+		return []byte(s), nil
+	case WeekdayWednesday:
+		return []byte(s), nil
+	case WeekdayThursday:
+		return []byte(s), nil
+	case WeekdayFriday:
+		return []byte(s), nil
+	case WeekdaySaturday:
+		return []byte(s), nil
+	case WeekdaySunday:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *Weekday) UnmarshalText(data []byte) error {
+	switch Weekday(data) {
+	case WeekdayMonday:
+		*s = WeekdayMonday
+		return nil
+	case WeekdayTuesday:
+		*s = WeekdayTuesday
+		return nil
+	case WeekdayWednesday:
+		*s = WeekdayWednesday
+		return nil
+	case WeekdayThursday:
+		*s = WeekdayThursday
+		return nil
+	case WeekdayFriday:
+		*s = WeekdayFriday
+		return nil
+	case WeekdaySaturday:
+		*s = WeekdaySaturday
+		return nil
+	case WeekdaySunday:
+		*s = WeekdaySunday
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // A test of a moment: within the last `days` days up to now, so a moment still to come is not within.
 // A moment is read as for the moment test.
 // Ref: #/components/schemas/WithinLastTest
@@ -33346,4 +35271,66 @@ func (s *WorkspaceResource) SetSendCap(val OptNilSendCap) {
 // SetRevision sets the value of Revision.
 func (s *WorkspaceResource) SetRevision(val Revision) {
 	s.Revision = val
+}
+
+// The occurrence of a yearly date Trigger an Enrollment was made for: its anniversary year.
+// Ref: #/components/schemas/YearlyEnrollmentOccurrence
+type YearlyEnrollmentOccurrence struct {
+	Recurrence YearlyEnrollmentOccurrenceRecurrence `json:"recurrence"`
+	// The anniversary year: the year of the date the Trigger's offset counts from.
+	Year int32 `json:"year"`
+}
+
+// GetRecurrence returns the value of Recurrence.
+func (s *YearlyEnrollmentOccurrence) GetRecurrence() YearlyEnrollmentOccurrenceRecurrence {
+	return s.Recurrence
+}
+
+// GetYear returns the value of Year.
+func (s *YearlyEnrollmentOccurrence) GetYear() int32 {
+	return s.Year
+}
+
+// SetRecurrence sets the value of Recurrence.
+func (s *YearlyEnrollmentOccurrence) SetRecurrence(val YearlyEnrollmentOccurrenceRecurrence) {
+	s.Recurrence = val
+}
+
+// SetYear sets the value of Year.
+func (s *YearlyEnrollmentOccurrence) SetYear(val int32) {
+	s.Year = val
+}
+
+type YearlyEnrollmentOccurrenceRecurrence string
+
+const (
+	YearlyEnrollmentOccurrenceRecurrenceYearly YearlyEnrollmentOccurrenceRecurrence = "yearly"
+)
+
+// AllValues returns all YearlyEnrollmentOccurrenceRecurrence values.
+func (YearlyEnrollmentOccurrenceRecurrence) AllValues() []YearlyEnrollmentOccurrenceRecurrence {
+	return []YearlyEnrollmentOccurrenceRecurrence{
+		YearlyEnrollmentOccurrenceRecurrenceYearly,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s YearlyEnrollmentOccurrenceRecurrence) MarshalText() ([]byte, error) {
+	switch s {
+	case YearlyEnrollmentOccurrenceRecurrenceYearly:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *YearlyEnrollmentOccurrenceRecurrence) UnmarshalText(data []byte) error {
+	switch YearlyEnrollmentOccurrenceRecurrence(data) {
+	case YearlyEnrollmentOccurrenceRecurrenceYearly:
+		*s = YearlyEnrollmentOccurrenceRecurrenceYearly
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
 }

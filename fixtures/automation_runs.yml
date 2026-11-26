@@ -1792,3 +1792,35 @@
     created_at: '{{daysAgo 1}}',
     updated_at: '{{daysAgo 1}}',
   }
+# Birthday greeting (1713, a yearly date Trigger, ADR 0126): Alice's Enrollment for the anniversary
+# year 2026, completed as it began on a version of no Steps.
+- {
+    id: 17130, # fixture: AutomationRunBirthdayGreetingAlice
+    automation_id: 1713,
+    version_id: 1713,
+    contact_id: 1,
+    ordinal: 1,
+    occurrence: 2026,
+    workspace_id: 1,
+    status: completed,
+    began_at: '{{daysAgo 2}}',
+    ended_at: '{{daysAgo 2}}',
+    created_at: '{{daysAgo 2}}',
+    updated_at: '{{daysAgo 2}}',
+  }
+# Renewal notice (1714, a once date Trigger, ADR 0126): Alice's Enrollment for the date's one
+# occurrence, completed as it began on a version of no Steps.
+- {
+    id: 17140, # fixture: AutomationRunRenewalNoticeAlice
+    automation_id: 1714,
+    version_id: 1714,
+    contact_id: 1,
+    ordinal: 1,
+    occurrence: 0,
+    workspace_id: 1,
+    status: completed,
+    began_at: '{{daysAgo 2}}',
+    ended_at: '{{daysAgo 2}}',
+    created_at: '{{daysAgo 2}}',
+    updated_at: '{{daysAgo 2}}',
+  }

@@ -1,6 +1,9 @@
 package automationstep
 
-import "iter"
+import (
+	"iter"
+	"strconv"
+)
 
 // The walker is the one way a reader visits a version's stored Steps: no reader indexes into the
 // decoded Steps, so a change of their shape changes this walker, not its readers. A version's Steps
@@ -53,9 +56,36 @@ func Own(p Path) iter.Seq[*Step] {
 // any other Step.
 func Forks(st *Step) []Path {
 	if f, ok := st.Payload.(Fork); ok {
-		return f.Forks()
+		return forkPaths(f)
 	}
 	return nil
+}
+
+// Locations are where each Step of the tree lies in the path's document, as a request writes it,
+// by its id: `steps.1` for the second Step of the path, `steps.1.paths.0.steps.0` for the first of
+// the first listed path of that fork, `steps.1.otherwise.steps.0` in a Branch's otherwise. A
+// refusal of a Step is placed there.
+func Locations(p Path) map[ID]string {
+	out := map[ID]string{}
+	locate(p, "", out)
+	return out
+}
+
+// locate adds the location of each Step of the path p and of its forks' paths to out, each under
+// the prefix of p's own location ("" for the root).
+func locate(p Path, prefix string, out map[ID]string) {
+	for i := range p.Steps {
+		st := &p.Steps[i]
+		at := prefix + "steps." + strconv.Itoa(i)
+		out[st.ID] = at
+		f, ok := st.Payload.(Fork)
+		if !ok {
+			continue
+		}
+		for _, sub := range f.Forks() {
+			locate(sub.Path, at+"."+sub.Place+".", out)
+		}
+	}
 }
 
 // Paths yields every path of the tree: the root, then the paths of each fork in the order the
@@ -134,7 +164,7 @@ func mapPath(p Path, pos *int, rewrite func(pos int, st *Step) (Step, error)) (P
 		}
 		*pos++
 		if f, ok := made.Payload.(Fork); ok {
-			subs := f.Forks()
+			subs := forkPaths(f)
 			mapped := make([]Path, len(subs))
 			for j, sub := range subs {
 				if mapped[j], err = mapPath(sub, pos, rewrite); err != nil {
@@ -153,6 +183,16 @@ func Rewrite(p Path, rewrite func(pos int, st *Step) Step) Path {
 	out, err := Map(p, func(pos int, st *Step) (Step, error) { return rewrite(pos, st), nil })
 	if err != nil {
 		return Path{} // rewrite returns no error
+	}
+	return out
+}
+
+// forkPaths are the paths of the fork, in the order Forks gives them, without their places.
+func forkPaths(f Fork) []Path {
+	placed := f.Forks()
+	out := make([]Path, len(placed))
+	for i, p := range placed {
+		out[i] = p.Path
 	}
 	return out
 }

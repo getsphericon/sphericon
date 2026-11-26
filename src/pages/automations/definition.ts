@@ -8,17 +8,26 @@ import type {
   BranchConditionInput,
   AutomationTriggerInput,
   AutomationVersion,
+  DateFieldInput,
+  DateOccurrence,
+  DateOccurrenceInput,
+  DateRecurrence,
   EditorDocument,
   EntryPolicy,
   EventFilterInput,
   EventMatcher,
   EventMatcherInput,
   TelegramButton,
+  WaitUntilMoment,
+  WaitUntilMomentInput,
+  Weekday,
 } from '../../generated/site/types.gen.ts'
 import {
   zBranchConditionInput,
+  zDateOccurrenceInput,
   zEntryPolicy,
   zEventFilterInput,
+  zWaitUntilTimeOfDayInput,
 } from '../../generated/site/zod.gen.ts'
 import { jsonText } from '../../utils/jsonText.ts'
 import { completeButtons } from '../../utils/telegramContent.ts'
@@ -26,6 +35,28 @@ import { completeButtons } from '../../utils/telegramContent.ts'
 // The editor's model is the version's Step tree (ADR 0122): the Trigger with its exit and goal
 // events, and the root path of Steps, each Step with the id it keeps across versions. The canvas
 // draws it and the side panel edits it; nothing else holds the flow.
+
+// Whether an offset counts days before the date (-1) or after it (1).
+export type OffsetSign = -1 | 1
+
+// A date a Contact holds, as the date form edits it (ADR 0126): the one model of the date Trigger
+// and of a Wait until on a date. The field is null until one is chosen, the offset is whole days
+// ('' while blank) before or after the date, by its sign, and the local time is `HH:MM` ('' while
+// blank).
+export interface DateDraft {
+  field: DateFieldInput | null
+  recurrence: DateRecurrence
+  days: number | ''
+  sign: OffsetSign
+  localTime: string
+}
+
+// A Wait until's time of day as its form edits it: the local time ('' while blank) and the
+// weekdays it counts on, none being every day.
+export interface TimeOfDayDraft {
+  localTime: string
+  weekdays: Weekday[]
+}
 
 // What the side panel edits of each kind: every field a person types, as the form holds it.
 export interface StepDrafts {
@@ -51,6 +82,12 @@ export interface StepDrafts {
     secret: string
   }
   wait: { seconds: number | '' }
+  // The form the Wait until waits on, and the draft of each form: switching keeps the other's.
+  wait_until: {
+    form: WaitUntilMomentInput['form']
+    timeOfDay: TimeOfDayDraft
+    date: DateDraft
+  }
   apply_tag: { tag: string }
   remove_tag: { tag: string }
 }
@@ -116,15 +153,19 @@ export type InsertedKind = EditedKind | ForkStep['kind'] | EndStep['kind']
 // as the builder leaves it (filterText: '' for none, complete or still being typed).
 export type EndingDraft = Pick<EventMatcherInput, 'action'> & { filterText: string }
 
-// The Trigger as its panel edits it: the Event matcher that enrolls a Contact (ADR 0133), its Entry
-// policy and cooldown in seconds (ADR 0127, null for the server's default), its Enrollment key (''
-// for none, ADR 0165), and the events that end an Enrollment early or at its goal (#751).
+// The Trigger as its panel edits it, by kind: an Event matcher that enrolls a Contact (ADR 0133),
+// with its Entry policy and cooldown in seconds (ADR 0127, null for the server's default) and its
+// Enrollment key ('' for none, ADR 0165); or a date the Contact holds (ADR 0126), which has none of
+// them. Switching the kind keeps the other kind's draft. The events that end an Enrollment early or
+// at its goal (#751) are either kind's.
 export interface TriggerDraft {
+  kind: AutomationTriggerInput['kind']
   action: string
   filterText: string
   entryPolicy: EntryPolicy
   cooldown: number | null
   enrollmentKey: string
+  date: DateDraft
   exits: EndingDraft[]
   goal: EndingDraft | null
 }
@@ -192,6 +233,8 @@ function flowStepOf(step: AutomationStep): FlowStep {
       }
     case 'wait':
       return { id, kind: 'wait', draft: { seconds: step.seconds } }
+    case 'wait_until':
+      return { id, kind: 'wait_until', draft: waitUntilDraftOf(step.until) }
     case 'apply_tag':
       return { id, kind: 'apply_tag', draft: { tag: step.tag } }
     case 'remove_tag':
@@ -220,17 +263,91 @@ function flowStepOf(step: AutomationStep): FlowStep {
   }
 }
 
-// The Trigger of a version as its panel edits it.
+// A date a new Trigger or Wait until starts with: no field and no local time chosen yet, every
+// year, on the date itself.
+export function newDateDraft(): DateDraft {
+  return { field: null, recurrence: 'yearly', days: 0, sign: 1, localTime: '' }
+}
+
+// A new Wait until's time of day: no local time chosen yet, every day.
+export function newTimeOfDayDraft(): TimeOfDayDraft {
+  return { localTime: '', weekdays: [] }
+}
+
+// The draft of a stored date: its offset as days before or after the date.
+function dateDraftOf({ field, recurrence, offsetDays, localTime }: DateOccurrence): DateDraft {
+  return {
+    field,
+    recurrence,
+    days: Math.abs(offsetDays),
+    sign: offsetDays < 0 ? -1 : 1,
+    localTime,
+  }
+}
+
+// The draft of a stored Wait until's moment: its own form's, and the other form's new.
+function waitUntilDraftOf(until: WaitUntilMoment): StepDrafts['wait_until'] {
+  if (until.form === 'date') {
+    return { form: 'date', timeOfDay: newTimeOfDayDraft(), date: dateDraftOf(until) }
+  }
+  const { localTime, weekdays } = until
+  return { form: 'time_of_day', timeOfDay: { localTime, weekdays }, date: newDateDraft() }
+}
+
+// The date a draft saves, or null while it is not one the contract takes (no field, no local
+// time, a blank offset): such a draft is never saved.
+function dateOccurrenceOf(draft: DateDraft): DateOccurrenceInput | null {
+  const { field, recurrence, days, sign, localTime } = draft
+  // A zero offset is the date itself, whatever its sign.
+  const offsetDays = days === 0 ? 0 : sign * Number(days)
+  const parsed = zDateOccurrenceInput.safeParse({
+    field,
+    recurrence,
+    offsetDays: days === '' ? undefined : offsetDays,
+    localTime,
+  })
+  return parsed.success ? parsed.data : null
+}
+
+// The moment a Wait until's draft saves, by its form; null as for dateOccurrenceOf.
+function waitUntilMomentOf(draft: StepDrafts['wait_until']): WaitUntilMomentInput | null {
+  if (draft.form === 'date') {
+    const date = dateOccurrenceOf(draft.date)
+    return date === null ? null : { form: 'date', ...date }
+  }
+  const parsed = zWaitUntilTimeOfDayInput.safeParse({ form: 'time_of_day', ...draft.timeOfDay })
+  return parsed.success ? parsed.data : null
+}
+
+// The Trigger of a version as its panel edits it: the stored kind's draft, and the other kind's
+// new.
 function triggerDraftOf(version: AutomationVersion): TriggerDraft {
   const { trigger } = version
+  const endings = {
+    exits: version.exitEvents.map((exit) => endingDraft(exit)),
+    goal: version.goalEvent === null ? null : endingDraft(version.goalEvent),
+  }
+  if (trigger.kind === 'date') {
+    return {
+      kind: 'date',
+      action: '',
+      filterText: '',
+      entryPolicy: 'once',
+      cooldown: null,
+      enrollmentKey: '',
+      date: dateDraftOf(trigger),
+      ...endings,
+    }
+  }
   return {
+    kind: 'event',
     action: trigger.action,
     filterText: trigger.filter ? filterText(trigger.filter) : '',
     entryPolicy: trigger.entryPolicy,
     cooldown: trigger.cooldown,
     enrollmentKey: trigger.enrollmentKey ?? '',
-    exits: version.exitEvents.map((exit) => endingDraft(exit)),
-    goal: version.goalEvent === null ? null : endingDraft(version.goalEvent),
+    date: newDateDraft(),
+    ...endings,
   }
 }
 
@@ -271,8 +388,8 @@ export function sendsMessage(step: FlowStep): boolean {
   return step.kind === 'email' || step.kind === 'telegram' || step.kind === 'sms'
 }
 
-// holdsKept tells whether the flow holds, at any depth, a Step the editor does not edit: the version
-// is then read-only here.
+// holdsKept tells whether the flow holds, at any depth, a Step the editor does not edit: the
+// version is then read-only here.
 export function holdsKept(flow: Flow): boolean {
   return allSteps(flow.path).some((step) => step.kind === 'kept')
 }
@@ -352,10 +469,18 @@ function endingRead(
     : [matcherOf(draft.action, draft.filterText)]
 }
 
-// triggerOf reads the Trigger off its draft: its matcher (matcherOf), its Entry policy, its
-// cooldown, none being the server's default, and its Enrollment key trimmed, a blank one being
-// none.
-function triggerOf(draft: TriggerDraft): { trigger: AutomationTriggerInput; incomplete: boolean } {
+// triggerOf reads the Trigger off its draft. An Event Trigger is its matcher (matcherOf), its
+// Entry policy, its cooldown, none being the server's default, and its Enrollment key trimmed, a
+// blank one being none. A date Trigger is its date alone (dateOccurrenceOf), null while it is not
+// one to save.
+function triggerOf(draft: TriggerDraft): {
+  trigger: AutomationTriggerInput | null
+  incomplete: boolean
+} {
+  if (draft.kind === 'date') {
+    const date = dateOccurrenceOf(draft.date)
+    return { trigger: date === null ? null : { kind: 'date', ...date }, incomplete: false }
+  }
   const { matcher, incomplete } = matcherOf(draft.action, draft.filterText)
   const trigger: AutomationTriggerInput = {
     kind: 'event',
@@ -370,6 +495,11 @@ function triggerOf(draft: TriggerDraft): { trigger: AutomationTriggerInput; inco
     trigger.enrollmentKey = key
   }
   return { trigger, incomplete }
+}
+
+// The Trigger a flow saves; null while its date is not one to save (triggerOf).
+export function triggerInputOf(flow: Flow): AutomationTriggerInput | null {
+  return triggerOf(flow.trigger).trigger
 }
 
 // stepHeaders are the headers a step saves: a row left wholly blank is dropped, and a header
@@ -387,8 +517,8 @@ function via(integrationId: string) {
 }
 
 // The Step a draft saves, with its id: what is left blank is left out, a switch left on is the
-// server's default.
-function stepInputOf(step: EditedStep): AutomationStepInput {
+// server's default. Null for a Wait until whose moment is not one to save (waitUntilMomentOf).
+function stepInputOf(step: EditedStep): AutomationStepInput | null {
   const { id } = step
   switch (step.kind) {
     case 'email': {
@@ -436,6 +566,10 @@ function stepInputOf(step: EditedStep): AutomationStepInput {
     }
     case 'wait':
       return { id, type: 'wait', seconds: Math.trunc(Number(step.draft.seconds)) || 0 }
+    case 'wait_until': {
+      const until = waitUntilMomentOf(step.draft)
+      return until === null ? null : { id, type: 'wait_until', until }
+    }
     case 'apply_tag':
     case 'remove_tag':
     default:
@@ -453,8 +587,8 @@ export function branchConditionOf(text: string): BranchConditionInput | undefine
   return parsed.success && parsed.data.entries.length > 0 ? parsed.data : undefined
 }
 
-// The path a flow's path saves, or null when it holds what is never saved: a kept Step, or a Branch
-// path whose Condition is missing or still being typed.
+// The path a flow's path saves, or null when it holds what is never saved: a kept Step, a Branch
+// path whose Condition is missing or still being typed, or a Wait until whose moment is not set.
 function pathInput(path: FlowPath): AutomationPathInput | null {
   const steps: AutomationStepInput[] = []
   for (const step of path.steps) {
@@ -517,32 +651,42 @@ function branchInput(step: BranchStep): AutomationStepInput | null {
   }
 }
 
-// What a flow saves as the version's definition: the Trigger, its exit and goal events and the root
-// path, each Step and path with its id. `filterIncomplete` says a filter of the Trigger, an exit or
-// the goal is still being typed, and is left out. A flow that is never saved as it stands (a kept
-// Step, a Branch path's Condition missing or being typed: pathInputOf) shows its root path as the
-// editor holds it, which tells one such flow from another.
-export function definitionOf(flow: Flow): {
-  trigger: AutomationTriggerInput
+// A part of a flow as Save sends it (`sends`), or as the editor holds the part (`holds`) while it is
+// not one to save, which tells one such flow from another.
+type Sendable<Input, Draft> = { sends: Input } | { holds: Draft }
+
+// A flow's definition: the Trigger, its exit and goal events and the root path, each Step and path
+// with its id. `filterIncomplete` says a filter of the Trigger, an exit or the goal is still being
+// typed, and is left out. The Trigger is held while its date is not set (triggerInputOf), the root
+// path while it holds a kept Step, a Branch path's Condition missing or being typed, or a Wait
+// until not set (pathInputOf).
+export interface FlowDefinition {
+  trigger: Sendable<AutomationTriggerInput, TriggerDraft>
   filterIncomplete: boolean
   exitEvents: EventMatcherInput[]
   goalEvent: EventMatcherInput | null
-  steps: AutomationPathInput | FlowPath
-} {
+  steps: Sendable<AutomationPathInput, FlowPath>
+}
+
+// definitionOf is the flow's definition (FlowDefinition): what Save sends, and what the editor
+// holds of a part it cannot send yet.
+export function definitionOf(flow: Flow): FlowDefinition {
   const { trigger, incomplete } = triggerOf(flow.trigger)
   const exits = flow.trigger.exits.flatMap((draft) => endingRead(draft))
   const [goal] = endingRead(flow.trigger.goal)
+  const steps = pathInputOf(flow)
   return {
-    trigger,
+    trigger: trigger === null ? { holds: flow.trigger } : { sends: trigger },
     filterIncomplete: incomplete || [...exits, ...(goal ? [goal] : [])].some((e) => e.incomplete),
     exitEvents: exits.map(({ matcher }) => matcher),
     goalEvent: goal?.matcher ?? null,
-    steps: pathInputOf(flow) ?? flow.path,
+    steps: steps === null ? { holds: flow.path } : { sends: steps },
   }
 }
 
 // The root path a flow saves; null when it holds a kept Step, which the editor never saves, or a
-// Branch path whose Condition is missing or still being typed, which the Save stops on first.
+// Branch path whose Condition is missing or still being typed, or a Wait until not set, which the
+// Save stops on first.
 export function pathInputOf(flow: Flow): AutomationPathInput | null {
   return pathInput(flow.path)
 }

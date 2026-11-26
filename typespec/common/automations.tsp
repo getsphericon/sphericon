@@ -2,6 +2,7 @@
 // bodies, HTTP step dry run and report.
 
 import "./engagement.tsp";
+import "./local-calendar.tsp";
 import "./segments.tsp";
 import "./signing-secret.tsp";
 
@@ -208,6 +209,85 @@ model WaitStepInput {
   seconds: int32;
 }
 
+/** Wait until the next moment a local time comes, on chosen weekdays or on any day, in the
+ * Contact's time zone, or the Workspace time zone when the Contact has no valid one (ADR 0126) */
+model WaitUntilTimeOfDay {
+  form: "time_of_day";
+
+  /** The local time of day */
+  localTime: LocalTime;
+
+  /** The weekdays the local time counts on; empty is every day */
+  weekdays: Weekday[];
+}
+
+/** Wait until the next moment a local time comes, as a request writes it */
+model WaitUntilTimeOfDayInput {
+  form: "time_of_day";
+
+  /** The local time of day */
+  localTime: LocalTime;
+
+  /** The weekdays the local time counts on, each at most once; omitted or empty is every day */
+  weekdays?: Weekday[];
+}
+
+/** Wait until the next occurrence of a date the Contact holds (ADR 0126), at or after the moment
+ * the Enrollment reaches the Step: `offsetDays` before or after the date, at `localTime` in the
+ * Contact's time zone, or the Workspace time zone when the Contact has no valid one. A yearly date
+ * waits for its next anniversary, from the year after the date's own; a once date for the date
+ * itself. When there is no such moment within 366 days the Enrollment goes on at once, and the
+ * report counts why: the moment has passed (`past`), the Contact holds no date in the field
+ * (`no_date`), or it lies more than 366 days ahead (`beyond_bound`). */
+model WaitUntilDate {
+  form: "date";
+  ...DateOccurrence;
+}
+
+/** Wait until the next occurrence of a date the Contact holds, as a request writes it */
+model WaitUntilDateInput {
+  form: "date";
+  ...DateOccurrenceInput;
+}
+
+/** The moment a Wait until holds an Enrollment until, by `form` */
+@discriminated(#{ envelope: "none", discriminatorPropertyName: "form" })
+union WaitUntilMoment {
+  time_of_day: WaitUntilTimeOfDay,
+  date: WaitUntilDate,
+}
+
+/** The moment a Wait until holds an Enrollment until, by `form`, as a request writes it */
+@discriminated(#{ envelope: "none", discriminatorPropertyName: "form" })
+union WaitUntilMomentInput {
+  time_of_day: WaitUntilTimeOfDayInput,
+  date: WaitUntilDateInput,
+}
+
+/** A Step that holds the Enrollment until a calendar moment (ADR 0126): the moment is computed
+ * once, from when the Enrollment reaches the Step, and kept, so neither a restart nor a time zone
+ * changed during the wait moves it. A moment equal to the arrival waits zero. */
+model WaitUntilStep {
+  /** The Step's id */
+  id: StepId;
+
+  type: "wait_until";
+
+  /** The moment the Enrollment waits for */
+  until: WaitUntilMoment;
+}
+
+/** A Step that holds the Enrollment until a calendar moment, as a request writes it */
+model WaitUntilStepInput {
+  /** The Step's id; omitted, the Step is given one */
+  id?: StepId;
+
+  type: "wait_until";
+
+  /** The moment the Enrollment waits for */
+  until: WaitUntilMomentInput;
+}
+
 /** A Step that applies a Tag to the enrolled Contact */
 model ApplyTagStep {
   /** The Step's id */
@@ -409,8 +489,9 @@ model SplitPathInput {
 
 /** A Step that sends each Enrollment down one of its paths by weight (ADR 0124): a hash of the
  * Contact, the Split and the Enrollment's ordinal chooses the path, so the same Enrollment always
- * takes the same path and a new Enrollment of the Contact draws again. An empty path is a holdout.
- * The paths rejoin at the Step after the Split. */
+ * takes the same path and a new Enrollment of the Contact draws again. In an Automation with a
+ * yearly date Trigger the anniversary year takes the ordinal's place, so the Contact draws again
+ * each year (ADR 0126). An empty path is a holdout. The paths rejoin at the Step after the Split. */
 model SplitStep {
   /** The Step's id */
   id: StepId;
@@ -441,6 +522,7 @@ union AutomationStep {
   telegram: TelegramStep,
   sms: SmsStep,
   wait: WaitStep,
+  wait_until: WaitUntilStep,
   apply_tag: ApplyTagStep,
   remove_tag: RemoveTagStep,
   http: HttpStep,
@@ -456,6 +538,7 @@ union AutomationStepInput {
   telegram: TelegramStepInput,
   sms: SmsStepInput,
   wait: WaitStepInput,
+  wait_until: WaitUntilStepInput,
   apply_tag: ApplyTagStepInput,
   remove_tag: RemoveTagStepInput,
   http: HttpStepInput,
@@ -476,6 +559,7 @@ union PathStep {
   telegram: TelegramStep,
   sms: SmsStep,
   wait: WaitStep,
+  wait_until: WaitUntilStep,
   apply_tag: ApplyTagStep,
   remove_tag: RemoveTagStep,
   http: HttpStep,
@@ -491,6 +575,7 @@ union PathStepInput {
   telegram: TelegramStepInput,
   sms: SmsStepInput,
   wait: WaitStepInput,
+  wait_until: WaitUntilStepInput,
   apply_tag: ApplyTagStepInput,
   remove_tag: RemoveTagStepInput,
   http: HttpStepInput,
@@ -506,6 +591,7 @@ union SplitPathStep {
   telegram: TelegramStep,
   sms: SmsStep,
   wait: WaitStep,
+  wait_until: WaitUntilStep,
   apply_tag: ApplyTagStep,
   remove_tag: RemoveTagStep,
   http: HttpStep,
@@ -521,6 +607,7 @@ union SplitPathStepInput {
   telegram: TelegramStepInput,
   sms: SmsStepInput,
   wait: WaitStepInput,
+  wait_until: WaitUntilStepInput,
   apply_tag: ApplyTagStepInput,
   remove_tag: RemoveTagStepInput,
   http: HttpStepInput,
@@ -625,16 +712,38 @@ model EventTriggerInput {
   enrollmentKey?: string;
 }
 
-/** What enrolls a Contact in an automation, by `kind`: an Event matcher */
+/** A Trigger that enrolls a Contact on a date it holds (ADR 0126): on each anniversary of its
+ * birthday or of a datetime Custom field, or once on such a field, `offsetDays` before or after it,
+ * at `localTime` in the Contact's time zone, or in the Workspace time zone when the Contact has no
+ * valid one. A yearly date enrolls a Contact at most once per anniversary year, the year of the date
+ * the offset counts from, and a once date at most once ever; an occurrence while the previous
+ * enrollment is still active is skipped. Only occurrences after the automation was published
+ * enroll, at most 24 hours late, and the enrollment begins at the occurrence's moment with no
+ * triggering Event. A date Trigger has no entry policy, cooldown or Enrollment key, and no rule's
+ * enroll action may name its automation. */
+model DateTrigger {
+  kind: "date";
+  ...DateOccurrence;
+}
+
+/** A Trigger that enrolls a Contact on a date it holds (ADR 0126), as a request writes it */
+model DateTriggerInput {
+  kind: "date";
+  ...DateOccurrenceInput;
+}
+
+/** What enrolls a Contact in an automation, by `kind`: an Event matcher or a date */
 @discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
 union AutomationTrigger {
   event: EventTrigger,
+  date: DateTrigger,
 }
 
-/** What enrolls a Contact in an automation, by `kind`: an Event matcher */
+/** What enrolls a Contact in an automation, by `kind`: an Event matcher or a date */
 @discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
 union AutomationTriggerInput {
   event: EventTriggerInput,
+  date: DateTriggerInput,
 }
 
 /** An Event matcher that ends an enrollment (ADR 0133): an action, and an optional filter on that
@@ -808,6 +917,16 @@ model AutomationSkippedCounts {
   /** Entries of a contact that had 10 active enrollments in the keyed automation, or 10 begun in a
    * day */
   enrollmentCeiling: int32;
+
+  /** Occurrences of a date Trigger (ADR 0126) the scheduler reached 24 hours late or more while
+   * their date was already set at their moment, which enroll no one; a date set after its
+   * occurrence counts nothing */
+  missed: int32;
+
+  /** Occurrences of a date Trigger whose date was set through a Connection without mcp:send, which
+   * enroll no one while it stays so; a later write of another value without the mark may still enroll the same
+   * occurrence within 24 hours, which then counts as entered too */
+  sendLocked: int32;
 }
 
 /** One Report day of an automation's results */
@@ -878,6 +997,29 @@ model AutomationReport {
    * newest of those versions, then by the fork's place there and the path's place in the fork:
    * one entry per path an enrollment took, so a path none took has none */
   paths: AutomationPathFigures[];
+
+  /** Each Wait until by its Step id, summed over every version that had it: the enrollments that
+   * left it in the current period without waiting, because its date had no moment ahead within 366
+   * days (ADR 0126). In Step id order: one entry per Wait until any enrollment left so, so one that
+   * every enrollment waited on has none */
+  waitUntilSteps: AutomationWaitUntilFigures[];
+}
+
+/** The enrollments that went on at once from one Wait until on a date instead of waiting, by why:
+ * read from what each kept when it reached the Step, counted on the moment it left it */
+model AutomationWaitUntilFigures {
+  /** The Wait until's Step id, the same in every version */
+  stepId: StepId;
+
+  /** Its moment had passed: a once date before the arrival */
+  past: int32;
+
+  /** The contact held no date in the field, or a value that is no date */
+  noDate: int32;
+
+  /** Its moment lay more than 366 days ahead, such as a yearly date whose value is itself in the
+   * future */
+  beyondBound: int32;
 }
 
 /** The enrollments that took one path of a fork, over every version that had it */

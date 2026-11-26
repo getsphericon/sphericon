@@ -112,6 +112,29 @@
   created_at: '{{daysAgo 3}}'
   updated_at: '{{daysAgo 3}}'
 
+# A date Trigger (ADR 0126): each Acme Contact's birthday at 10:00, active and stepless, with its
+# scheduler's cursor in automation_occurrence_cursors.yml.
+- id: 1713 # fixture: AutomationBirthdayGreeting
+  revision: 1
+  name: Birthday greeting
+  status: active
+  activated_at: '{{daysAgo 3}}'
+  live_version_id: 1713
+  workspace_id: 1
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 3}}'
+
+# A once date Trigger (ADR 0126): each Acme Contact's renewal_on at 10:00. Inactive, so the date
+# scheduler's tick never reaches it; it keeps Alice's Enrollment of its one occurrence.
+- id: 1714 # fixture: AutomationRenewalNotice
+  revision: 1
+  name: Renewal notice
+  status: inactive
+  live_version_id: 1714
+  workspace_id: 1
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 3}}'
+
 # Globex (workspace 2).
 - id: 900 # fixture: AutomationGlobex
   revision: 1
@@ -249,6 +272,38 @@
   name: Jobs ends early
   status: active
   live_version_id: 5590
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+
+# Waits until the next weekday at 09:00 in the Contact's zone, then sends an email (ADR 0126). Steps
+# in automation_versions.yml.
+- id: 5591 # fixture: AutomationJobsWaitUntil
+  revision: 1
+  name: Jobs wait until
+  status: active
+  live_version_id: 5591
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+
+# Waits until 3 days before the Contact's trial_ends_at at 10:00 in its zone, then sends an email
+# (ADR 0126). Steps in automation_versions.yml.
+- id: 5592 # fixture: AutomationJobsWaitUntilDate
+  revision: 1
+  name: Jobs wait until a date
+  status: active
+  live_version_id: 5592
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+
+# Waits until the Contact's next birthday at 10:00 in its zone, then sends an email (ADR 0126).
+- id: 5593 # fixture: AutomationJobsWaitUntilBirthday
+  revision: 1
+  name: Jobs wait until the birthday
+  status: active
+  live_version_id: 5593
   workspace_id: 1
   created_at: '{{daysAgo 12}}'
   updated_at: '{{daysAgo 12}}'

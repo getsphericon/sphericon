@@ -54,6 +54,28 @@
   created_at: '{{daysAgo 10}}'
   updated_at: '{{daysAgo 10}}'
 
+# The Birthday greeting's date Trigger (ADR 0126): no action, the date in trigger_date.
+- id: 1713 # fixture: AutomationBirthdayGreetingVersion
+  automation_id: 1713
+  trigger_action: ''
+  trigger_date: '{"field":{"kind":"birthday"},"recurrence":"yearly","offsetDays":0,"localTime":"10:00"}'
+  version: 1
+  steps: '{"id":"7c2b1f4e-1713-4d1a-9a1e-1713a0000001","steps":[]}'
+  workspace_id: 1
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 3}}'
+
+# The Renewal notice's once date Trigger (ADR 0126).
+- id: 1714 # fixture: AutomationRenewalNoticeVersion
+  automation_id: 1714
+  trigger_action: ''
+  trigger_date: '{"field":{"kind":"customField","key":"renewal_on"},"recurrence":"once","offsetDays":0,"localTime":"10:00"}'
+  version: 1
+  steps: '{"id":"7c2b1f4e-1714-4d1a-9a1e-1714a0000001","steps":[]}'
+  workspace_id: 1
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 3}}'
+
 - id: 104 # fixture: AutomationTagOnEngagementVersion
   automation_id: 104
   trigger_action: tag_demo
@@ -293,6 +315,37 @@
   trigger_action: job_ends_early
   version: 1
   steps: '{"id":"bba2a0fe-bd67-4ea1-aec2-4a6728cd41e6","steps":[{"id":"c2398f66-473f-4905-9f1a-6cbc18844b90","type":"apply_tag","tag":"before-end"},{"id":"5a415a9d-1353-4b5f-a2e3-5554b218c7fc","type":"end"},{"id":"a5788e00-5268-417c-a1e3-6faccb116215","type":"apply_tag","tag":"after-end"}]}'
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+
+# A Wait until the next weekday at 09:00, then an email; an exit Event ends an Enrollment on the wait.
+- id: 5591 # fixture: AutomationJobsWaitUntilVersion
+  automation_id: 5591
+  trigger_action: job_wait_until
+  exits: '[{"action":"job_wait_until_left"}]'
+  version: 1
+  steps: '{"id":"287c18e6-ee49-4691-9601-be72e2fb33b0","steps":[{"id":"54f5ffa4-d699-45a1-b75a-ecec8ec74cd5","type":"wait_until","until":{"form":"time_of_day","localTime":"09:00","weekdays":["monday","tuesday","wednesday","thursday","friday"]}},{"id":"d72e4e9a-ebf4-4504-9328-c64cbe0c14e9","type":"email","subject":"Good morning","body":"<p>Good morning</p>"}]}'
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+
+# A Wait until 3 days before trial_ends_at at 10:00, then an email.
+- id: 5592 # fixture: AutomationJobsWaitUntilDateVersion
+  automation_id: 5592
+  trigger_action: job_wait_until_date
+  version: 1
+  steps: '{"id":"9a3c1e52-5592-4b6e-8a1d-6f2c3b4a5d01","steps":[{"id":"9a3c1e52-5592-4b6e-8a1d-6f2c3b4a5d02","type":"wait_until","until":{"form":"date","field":{"kind":"customField","key":"trial_ends_at"},"recurrence":"once","offsetDays":-3,"localTime":"10:00"}},{"id":"9a3c1e52-5592-4b6e-8a1d-6f2c3b4a5d03","type":"email","subject":"Your trial ends soon","body":"<p>Your trial ends soon</p>"}]}'
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+
+# A Wait until the next birthday at 10:00, then an email.
+- id: 5593 # fixture: AutomationJobsWaitUntilBirthdayVersion
+  automation_id: 5593
+  trigger_action: job_wait_until_birthday
+  version: 1
+  steps: '{"id":"9a3c1e52-5593-4b6e-8a1d-6f2c3b4a5d01","steps":[{"id":"9a3c1e52-5593-4b6e-8a1d-6f2c3b4a5d02","type":"wait_until","until":{"form":"date","field":{"kind":"birthday"},"recurrence":"yearly","offsetDays":0,"localTime":"10:00"}},{"id":"9a3c1e52-5593-4b6e-8a1d-6f2c3b4a5d03","type":"email","subject":"Happy birthday","body":"<p>Happy birthday</p>"}]}'
   workspace_id: 1
   created_at: '{{daysAgo 12}}'
   updated_at: '{{daysAgo 12}}'

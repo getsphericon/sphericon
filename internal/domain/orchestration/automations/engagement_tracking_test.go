@@ -29,11 +29,11 @@ func TestEngagementTrackingConsentTriggersExitsAndCompletes(t *testing.T) {
 	for _, pair := range pairs {
 		denied, granted := pair[0], pair[1]
 		onRefusal, err := m.Create(t.Context(), s, automations.CreateInput{
-			Name: "On " + denied, Trigger: eventmatcher.Matcher{Action: denied}, ExitEvents: []eventmatcher.Matcher{{Action: granted}},
+			Name: "On " + denied, Trigger: automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: denied}}, ExitEvents: []eventmatcher.Matcher{{Action: granted}},
 		})
 		require.NoError(t, err, denied)
 		onGrant, err := m.Create(t.Context(), s, automations.CreateInput{
-			Name: "On " + granted, Trigger: eventmatcher.Matcher{Action: granted}, ExitEvents: []eventmatcher.Matcher{},
+			Name: "On " + granted, Trigger: automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: granted}}, ExitEvents: []eventmatcher.Matcher{},
 			GoalEvent: &eventmatcher.Matcher{Action: denied},
 		})
 		require.NoError(t, err, granted)

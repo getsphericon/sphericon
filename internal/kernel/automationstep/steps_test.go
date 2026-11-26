@@ -9,6 +9,8 @@ import (
 	"pgregory.net/rapid"
 
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
+	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
+	"github.com/getsphericon/sphericon/internal/kernel/localcalendar"
 )
 
 // Every non-sending kind is independent of the send dependency. Inserting an email anywhere
@@ -136,4 +138,65 @@ func TestAStoredEndHoldsNoFieldsOfItsOwn(t *testing.T) {
 	assert.Equal(t, automationstep.KindEnd, st.Kind())
 	assert.JSONEq(t, stored, string(written))
 	assert.Error(t, refused)
+}
+
+// A Wait until is stored with its moment as a union by form (ADR 0126): the time-of-day form keeps
+// its local time and weekdays, and reads back as it was.
+func TestAStoredWaitUntilRoundTripsWithItsForm(t *testing.T) {
+	stored := `{"id":"5b0c6a52-4f0e-4f65-9a70-0d4a1c0e1a03","type":"wait_until",` +
+		`"until":{"form":"time_of_day","localTime":"09:00","weekdays":["monday","friday"]}}`
+	var st automationstep.Step
+	require.NoError(t, json.Unmarshal([]byte(stored), &st))
+
+	written, err := json.Marshal(st)
+
+	require.NoError(t, err)
+	assert.Equal(t, automationstep.KindWaitUntil, st.Kind())
+	assert.Equal(t, automationstep.WaitUntil{Until: automationstep.TimeOfDay{
+		LocalTime: "09:00", Weekdays: []localcalendar.Weekday{localcalendar.Monday, localcalendar.Friday},
+	}}, st.Payload)
+	assert.JSONEq(t, stored, string(written))
+}
+
+// A Wait until's moment is closed as the Step is: a form nobody knows, no form, and a field its
+// form does not hold are refused rather than dropped.
+func TestAStoredWaitUntilRefusesAnUnknownFormOrField(t *testing.T) {
+	for name, until := range map[string]string{
+		"an unknown form":  `{"form":"lunar","localTime":"09:00"}`,
+		"no form":          `{"localTime":"09:00"}`,
+		"an unknown field": `{"form":"time_of_day","localTime":"09:00","weekdays":[],"offsetDays":3}`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			var st automationstep.Step
+			err := json.Unmarshal([]byte(`{"id":"5b0c6a52-4f0e-4f65-9a70-0d4a1c0e1a03","type":"wait_until","until":`+until+`}`), &st)
+			assert.Error(t, err)
+		})
+	}
+}
+
+// A Wait until's date form is stored as the date Trigger's model beside its form (ADR 0126): the
+// field by its kind, the recurrence, the offset and the local time, and reads back as it was.
+func TestAStoredWaitUntilOnADateRoundTripsWithItsField(t *testing.T) {
+	stored := `{"id":"5b0c6a52-4f0e-4f65-9a70-0d4a1c0e1a04","type":"wait_until",` +
+		`"until":{"form":"date","field":{"kind":"customField","key":"trial_ends_at"},"recurrence":"once","offsetDays":-3,"localTime":"10:00"}}`
+	var st automationstep.Step
+	require.NoError(t, json.Unmarshal([]byte(stored), &st))
+
+	written, err := json.Marshal(st)
+
+	require.NoError(t, err)
+	assert.Equal(t, automationstep.WaitUntil{Until: automationstep.OnDate{
+		Field:      datetrigger.Field{Kind: datetrigger.CustomField, Key: "trial_ends_at"},
+		Recurrence: localcalendar.Once, OffsetDays: -3, LocalTime: "10:00",
+	}}, st.Payload)
+	assert.JSONEq(t, stored, string(written))
+}
+
+// The date form is closed as the time-of-day form is: a field it does not hold is refused.
+func TestAStoredWaitUntilOnADateRefusesAnUnknownField(t *testing.T) {
+	var st automationstep.Step
+	err := json.Unmarshal([]byte(`{"id":"5b0c6a52-4f0e-4f65-9a70-0d4a1c0e1a04","type":"wait_until","until":`+
+		`{"form":"date","field":{"kind":"birthday"},"recurrence":"yearly","offsetDays":0,"localTime":"10:00","weekdays":[]}}`), &st)
+
+	assert.Error(t, err)
 }

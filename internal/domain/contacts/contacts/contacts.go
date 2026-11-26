@@ -179,6 +179,8 @@ type Module struct {
 	// tracking records the Engagement tracking consent an intake row carries.
 	tracking *engagementtracking.Module
 	mail     addresscheck.Resolver
+	// now is the Instance clock a date a Contact holds is written by (keepDates).
+	now func() time.Time
 }
 
 // New builds the module. The bus opens the transaction of a change and publishes its System events
@@ -186,9 +188,10 @@ type Module struct {
 // records the SMS consent an intake row carries, over the same bus, dated by its clock: when it
 // reached the Workspace (ADR 0154); tracking records its Engagement tracking consent; mail is the
 // DNS the Contact intake reads an address's domain from (ADR 0117), nil when there is none, so
-// every domain is Unknown and the intake refuses no address for its domain.
-func New(bus *events.Bus, catalogue *tags.Module, confs *confirmations.Module, tracking *engagementtracking.Module, mail addresscheck.Resolver) *Module {
-	return &Module{bus: bus, tags: catalogue, locks: contactlock.New(), confirmations: confs, tracking: tracking, mail: mail}
+// every domain is Unknown and the intake refuses no address for its domain; now is the Instance
+// clock the dates a Contact holds are written by.
+func New(bus *events.Bus, catalogue *tags.Module, confs *confirmations.Module, tracking *engagementtracking.Module, mail addresscheck.Resolver, now func() time.Time) *Module {
+	return &Module{bus: bus, tags: catalogue, locks: contactlock.New(), confirmations: confs, tracking: tracking, mail: mail, now: now}
 }
 
 // Create makes a Contact from the given door (its Contact source, kept for good), gives it its
@@ -226,6 +229,9 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, src contact.Source, 
 			q = q.SetCustomFields(typed)
 		}
 		if err := constraints.Write(ctx, ts, func() (err error) { c, err = q.Save(ctx); return err }); err != nil {
+			return err
+		}
+		if err := m.keepDates(ctx, ts, nil, c); err != nil {
 			return err
 		}
 		if err := m.publishCreated(ctx, ts, c); err != nil {
@@ -287,6 +293,9 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		var after *ent.Contact
 		err = constraints.Write(ctx, ts, func() (err error) { after, err = q.Save(ctx); return err })
 		if err != nil {
+			return err
+		}
+		if err := m.keepDates(ctx, ts, before, after); err != nil {
 			return err
 		}
 		if err := m.publishFieldChanges(ctx, ts, after, before.CustomFields); err != nil {
@@ -434,6 +443,9 @@ func (m *Module) upsertIn(ctx context.Context, s *ent.Scoped, src contact.Source
 	if err := constraints.Write(ctx, s, func() (err error) { c, err = q.Save(ctx); return err }); err != nil {
 		return Result{}, err
 	}
+	if err := m.keepDates(ctx, s, nil, c); err != nil {
+		return Result{}, err
+	}
 	if err := m.publishCreated(ctx, s, c); err != nil {
 		return Result{}, err
 	}
@@ -511,8 +523,14 @@ func (m *Module) enrich(ctx context.Context, s *ent.Scoped, id int64, in UpsertI
 		q.SetCustomFields(lo.Assign(existing.CustomFields, typed))
 	}
 	var c *ent.Contact
-	if err := constraints.Write(ctx, s, func() (err error) { c, err = q.Save(ctx); return err }); err != nil || ch != recordChanges {
-		return c, err
+	if err := constraints.Write(ctx, s, func() (err error) { c, err = q.Save(ctx); return err }); err != nil {
+		return nil, err
+	}
+	if err := m.keepDates(ctx, s, existing, c); err != nil {
+		return nil, err
+	}
+	if ch != recordChanges {
+		return c, nil
 	}
 	return c, m.publishFieldChanges(ctx, s, c, existing.CustomFields)
 }

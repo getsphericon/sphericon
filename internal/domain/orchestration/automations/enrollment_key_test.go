@@ -42,7 +42,7 @@ func keyedAutomation(t *testing.T, env *testhelper.TestEnv, policy automationver
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := testhelper.Module[*automations.Module](env)
 	created, err := m.Create(ctx, s, automations.CreateInput{
-		Name: "Post-purchase", Trigger: eventmatcher.Matcher{Action: orderPlaced},
+		Name: "Post-purchase", Trigger: automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: orderPlaced}},
 		Entry:      automations.Entry{Policy: policy, Key: new("order_id")},
 		ExitEvents: []eventmatcher.Matcher{{Action: orderCancelled}},
 		GoalEvent:  &eventmatcher.Matcher{Action: orderPaid},
@@ -304,7 +304,7 @@ func TestTheEnrollmentKeyIsWrittenWithTheTriggerAndCheckedForForm(t *testing.T) 
 	revision := func() int64 { return testhelper.AutomationRevisionIn(ctx, t, s, automationID) }
 
 	rekeyed, err := m.Update(ctx, s, automationID, automations.UpdateInput{
-		Revision: revision(), Trigger: &eventmatcher.Matcher{Action: orderPlaced}, Entry: &automations.Entry{Key: new("invoice_id")},
+		Revision: revision(), Trigger: automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: orderPlaced}}, Entry: &automations.Entry{Key: new("invoice_id")},
 	})
 	require.NoError(t, err)
 	live, draft := automations.LiveAndDraft(rekeyed)
@@ -313,14 +313,14 @@ func TestTheEnrollmentKeyIsWrittenWithTheTriggerAndCheckedForForm(t *testing.T) 
 	assert.Equal(t, new("invoice_id"), draft.EnrollmentKey)
 
 	unkeyed, err := m.Update(ctx, s, automationID, automations.UpdateInput{
-		Revision: revision(), Trigger: &eventmatcher.Matcher{Action: orderPlaced}, Entry: &automations.Entry{},
+		Revision: revision(), Trigger: automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: orderPlaced}}, Entry: &automations.Entry{},
 	})
 	require.NoError(t, err)
 	_, draft = automations.LiveAndDraft(unkeyed)
 	assert.Nil(t, draft.EnrollmentKey)
 
 	_, refused := m.Update(ctx, s, automationID, automations.UpdateInput{
-		Revision: revision(), Trigger: &eventmatcher.Matcher{Action: orderPlaced}, Entry: &automations.Entry{Key: new("")},
+		Revision: revision(), Trigger: automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: orderPlaced}}, Entry: &automations.Entry{Key: new("")},
 	})
 	require.ErrorIs(t, refused, automations.ErrInvalidTrigger)
 	assert.ErrorContains(t, refused, "property key is required")

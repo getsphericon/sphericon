@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/contactdate"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/order"
 	"github.com/getsphericon/sphericon/ent/predicate"
@@ -359,6 +360,21 @@ func (_u *ContactUpdate) AddStartTokens(v ...*StartToken) *ContactUpdate {
 	return _u.AddStartTokenIDs(ids...)
 }
 
+// AddDateIDs adds the "dates" edge to the ContactDate entity by IDs.
+func (_u *ContactUpdate) AddDateIDs(ids ...int64) *ContactUpdate {
+	_u.mutation.AddDateIDs(ids...)
+	return _u
+}
+
+// AddDates adds the "dates" edges to the ContactDate entity.
+func (_u *ContactUpdate) AddDates(v ...*ContactDate) *ContactUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddDateIDs(ids...)
+}
+
 // AddTagIDs adds the "tags" edge to the Tag entity by IDs.
 func (_u *ContactUpdate) AddTagIDs(ids ...int64) *ContactUpdate {
 	_u.mutation.AddTagIDs(ids...)
@@ -476,6 +492,27 @@ func (_u *ContactUpdate) RemoveStartTokens(v ...*StartToken) *ContactUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveStartTokenIDs(ids...)
+}
+
+// ClearDates clears all "dates" edges to the ContactDate entity.
+func (_u *ContactUpdate) ClearDates() *ContactUpdate {
+	_u.mutation.ClearDates()
+	return _u
+}
+
+// RemoveDateIDs removes the "dates" edge to ContactDate entities by IDs.
+func (_u *ContactUpdate) RemoveDateIDs(ids ...int64) *ContactUpdate {
+	_u.mutation.RemoveDateIDs(ids...)
+	return _u
+}
+
+// RemoveDates removes "dates" edges to ContactDate entities.
+func (_u *ContactUpdate) RemoveDates(v ...*ContactDate) *ContactUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveDateIDs(ids...)
 }
 
 // ClearTags clears all "tags" edges to the Tag entity.
@@ -846,6 +883,51 @@ func (_u *ContactUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(starttoken.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.DatesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   contact.DatesTable,
+			Columns: []string{contact.DatesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contactdate.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedDatesIDs(); len(nodes) > 0 && !_u.mutation.DatesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   contact.DatesTable,
+			Columns: []string{contact.DatesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contactdate.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.DatesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   contact.DatesTable,
+			Columns: []string{contact.DatesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contactdate.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -1333,6 +1415,21 @@ func (_u *ContactUpdateOne) AddStartTokens(v ...*StartToken) *ContactUpdateOne {
 	return _u.AddStartTokenIDs(ids...)
 }
 
+// AddDateIDs adds the "dates" edge to the ContactDate entity by IDs.
+func (_u *ContactUpdateOne) AddDateIDs(ids ...int64) *ContactUpdateOne {
+	_u.mutation.AddDateIDs(ids...)
+	return _u
+}
+
+// AddDates adds the "dates" edges to the ContactDate entity.
+func (_u *ContactUpdateOne) AddDates(v ...*ContactDate) *ContactUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddDateIDs(ids...)
+}
+
 // AddTagIDs adds the "tags" edge to the Tag entity by IDs.
 func (_u *ContactUpdateOne) AddTagIDs(ids ...int64) *ContactUpdateOne {
 	_u.mutation.AddTagIDs(ids...)
@@ -1450,6 +1547,27 @@ func (_u *ContactUpdateOne) RemoveStartTokens(v ...*StartToken) *ContactUpdateOn
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveStartTokenIDs(ids...)
+}
+
+// ClearDates clears all "dates" edges to the ContactDate entity.
+func (_u *ContactUpdateOne) ClearDates() *ContactUpdateOne {
+	_u.mutation.ClearDates()
+	return _u
+}
+
+// RemoveDateIDs removes the "dates" edge to ContactDate entities by IDs.
+func (_u *ContactUpdateOne) RemoveDateIDs(ids ...int64) *ContactUpdateOne {
+	_u.mutation.RemoveDateIDs(ids...)
+	return _u
+}
+
+// RemoveDates removes "dates" edges to ContactDate entities.
+func (_u *ContactUpdateOne) RemoveDates(v ...*ContactDate) *ContactUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveDateIDs(ids...)
 }
 
 // ClearTags clears all "tags" edges to the Tag entity.
@@ -1850,6 +1968,51 @@ func (_u *ContactUpdateOne) sqlSave(ctx context.Context) (_node *Contact, err er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(starttoken.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.DatesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   contact.DatesTable,
+			Columns: []string{contact.DatesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contactdate.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedDatesIDs(); len(nodes) > 0 && !_u.mutation.DatesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   contact.DatesTable,
+			Columns: []string{contact.DatesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contactdate.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.DatesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   contact.DatesTable,
+			Columns: []string{contact.DatesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contactdate.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

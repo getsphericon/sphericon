@@ -29,7 +29,7 @@ import { insertableKinds, TRIGGER_ICON, useStepInfo, useStepKinds } from './step
 
 // What the nodes of the canvas do: they select what the side panel edits, insert a Step at their
 // place, remove theirs and add a path to a fork. Nothing on the canvas edits the flow but through
-// these. `errorOf` is the error a fork's node shows once it was checked (on blur or on Save).
+// these. `errorOf` is the error a node shows once it was checked (on blur or on Save).
 // `figures` are the report's, null until it is read: the nodes show none then.
 interface CanvasControls {
   flow: Flow
@@ -131,16 +131,32 @@ function NodeBox({
   )
 }
 
-function TriggerNodeView() {
+// What the Trigger node says beside its kind: the event, or the date it enrolls on.
+function useTriggerDetail(): string {
   const { t } = useTranslation()
   const { flow } = useControls()
+  const { trigger } = flow
+  if (trigger.kind === 'event') {
+    return trigger.action
+  }
+  const { field } = trigger.date
+  if (field === null) {
+    return ''
+  }
+  return field.kind === 'birthday' ? t(($) => $.automations.date.birthday) : field.key
+}
+
+function TriggerNodeView() {
+  const { t } = useTranslation()
+  const { errorOf } = useControls()
   return (
     <>
       <NodeBox
         id={TRIGGER_NODE_ID}
         icon={TRIGGER_ICON}
         label={t(($) => $.automations.stepTrigger)}
-        detail={flow.trigger.action}
+        detail={useTriggerDetail()}
+        error={errorOf(TRIGGER_NODE_ID)}
       />
       <Handle type="source" position={Position.Bottom} isConnectable={false} />
     </>
@@ -148,7 +164,7 @@ function TriggerNodeView() {
 }
 
 // What a Step's node says beside its kind: an email's subject, a tag step's Tag, a Split's
-// weights.
+// weights, the local time a Wait until waits for.
 function stepDetail(step: FlowStep): string {
   switch (step.kind) {
     case 'email':
@@ -161,6 +177,8 @@ function stepDetail(step: FlowStep): string {
       return step.draft.text
     case 'split':
       return step.paths.map((path) => `${path.weight === '' ? '?' : path.weight}%`).join(' / ')
+    case 'wait_until':
+      return step.draft.form === 'date' ? step.draft.date.localTime : step.draft.timeOfDay.localTime
     case 'http':
     case 'wait':
     case 'branch':

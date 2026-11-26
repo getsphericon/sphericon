@@ -140,6 +140,9 @@ func (_u *AutomationSkippedEntryUpdate) sqlSave(ctx context.Context) (_node int,
 	if _u.mutation.SourceIDCleared() {
 		_spec.ClearField(automationskippedentry.FieldSourceID, field.TypeString)
 	}
+	if _u.mutation.OccurrenceCleared() {
+		_spec.ClearField(automationskippedentry.FieldOccurrence, field.TypeInt)
+	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -330,6 +333,9 @@ func (_u *AutomationSkippedEntryUpdateOne) sqlSave(ctx context.Context) (_node *
 	}
 	if _u.mutation.SourceIDCleared() {
 		_spec.ClearField(automationskippedentry.FieldSourceID, field.TypeString)
+	}
+	if _u.mutation.OccurrenceCleared() {
+		_spec.ClearField(automationskippedentry.FieldOccurrence, field.TypeInt)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{

@@ -58,9 +58,11 @@ import (
 	automationstep "github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	channels "github.com/getsphericon/sphericon/internal/kernel/channels"
 	conditiontree "github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	datetrigger "github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 	deferralcause "github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 	emailrender "github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	holdreason "github.com/getsphericon/sphericon/internal/kernel/holdreason"
+	localcalendar "github.com/getsphericon/sphericon/internal/kernel/localcalendar"
 	pagination "github.com/getsphericon/sphericon/internal/kernel/pagination"
 	providers "github.com/getsphericon/sphericon/internal/kernel/providers"
 	ruleaction "github.com/getsphericon/sphericon/internal/kernel/ruleaction"
@@ -436,6 +438,12 @@ func (c *ConverterImpl) AutomationReportToResource(source automations.Report) si
 		siteapiAutomationReport.Paths = make([]site.AutomationPathFigures, len(source.Paths))
 		for k := 0; k < len(source.Paths); k++ {
 			siteapiAutomationReport.Paths[k] = c.automationsPathFiguresToSiteapiAutomationPathFigures(source.Paths[k])
+		}
+	}
+	if source.WaitUntilSteps != nil {
+		siteapiAutomationReport.WaitUntilSteps = make([]site.AutomationWaitUntilFigures, len(source.WaitUntilSteps))
+		for l := 0; l < len(source.WaitUntilSteps); l++ {
+			siteapiAutomationReport.WaitUntilSteps[l] = c.automationsWaitUntilFiguresToSiteapiAutomationWaitUntilFigures(source.WaitUntilSteps[l])
 		}
 	}
 	return siteapiAutomationReport
@@ -1160,6 +1168,27 @@ func (c *ConverterImpl) CustomFieldsToResources(source []*ent.CustomField) []sit
 	}
 	return siteapiSiteCustomFieldResourceList
 }
+func (c *ConverterImpl) DateRecurrenceToResource(source localcalendar.Recurrence) site.DateRecurrence {
+	var siteapiDateRecurrence site.DateRecurrence
+	switch source {
+	case localcalendar.Once:
+		siteapiDateRecurrence = site.DateRecurrenceOnce
+	case localcalendar.Yearly:
+		siteapiDateRecurrence = site.DateRecurrenceYearly
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiDateRecurrence
+}
+func (c *ConverterImpl) DateTriggerToResource(source datetrigger.Date) site.DateTrigger {
+	var siteapiDateTrigger site.DateTrigger
+	siteapiDateTrigger.Kind = dateTriggerKind(source)
+	siteapiDateTrigger.Field = dateField(source.Field)
+	siteapiDateTrigger.Recurrence = c.DateRecurrenceToResource(source.Recurrence)
+	siteapiDateTrigger.OffsetDays = dateOffsetDays(source.OffsetDays)
+	siteapiDateTrigger.LocalTime = site.LocalTime(source.LocalTime)
+	return siteapiDateTrigger
+}
 func (c *ConverterImpl) DeletedWorkspaceToResource(source *ent.Workspace) site.SiteDeletedWorkspaceResource {
 	var siteapiSiteDeletedWorkspaceResource site.SiteDeletedWorkspaceResource
 	if source != nil {
@@ -1377,6 +1406,7 @@ func (c *ConverterImpl) EnrollmentToResource(source *ent.AutomationRun) site.Enr
 		siteapiEnrollmentResource.Status = c.EnrollmentStatusToResource((*source).Status)
 		siteapiEnrollmentResource.Ordinal = count((*source).Ordinal)
 		siteapiEnrollmentResource.KeyValue = optString((*source).KeyValue)
+		siteapiEnrollmentResource.Occurrence = enrollmentOccurrence((*source).Occurrence)
 		siteapiEnrollmentResource.CurrentStepId = optStepID((*source).CurrentStepID)
 		siteapiEnrollmentResource.ResumeAt = optTimestamp((*source).ResumeAt)
 		siteapiEnrollmentResource.Failure = enrollmentFailure(c, (*source))
@@ -1938,6 +1968,7 @@ func (c *ConverterImpl) PathStepSum(source site.AutomationStepSum) site.PathStep
 	siteapiPathStepSum.TelegramStep = source.TelegramStep
 	siteapiPathStepSum.SmsStep = source.SmsStep
 	siteapiPathStepSum.WaitStep = source.WaitStep
+	siteapiPathStepSum.WaitUntilStep = source.WaitUntilStep
 	siteapiPathStepSum.ApplyTagStep = source.ApplyTagStep
 	siteapiPathStepSum.RemoveTagStep = source.RemoveTagStep
 	siteapiPathStepSum.HttpStep = source.HttpStep
@@ -1969,6 +2000,8 @@ func (c *ConverterImpl) PathStepType(source site.AutomationStepSumType) site.Pat
 		siteapiPathStepSumType = site.TelegramStepPathStepSum
 	case site.WaitStepAutomationStepSum:
 		siteapiPathStepSumType = site.WaitStepPathStepSum
+	case site.WaitUntilStepAutomationStepSum:
+		siteapiPathStepSumType = site.WaitUntilStepPathStepSum
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
@@ -2638,10 +2671,14 @@ func (c *ConverterImpl) SkippedEntryReasonToResource(source automationskippedent
 		siteapiSkippedEntryReason = site.SkippedEntryReasonCycle
 	case automationskippedentry.ReasonEnrollmentCeiling:
 		siteapiSkippedEntryReason = site.SkippedEntryReasonEnrollmentCeiling
+	case automationskippedentry.ReasonMissed:
+		siteapiSkippedEntryReason = site.SkippedEntryReasonMissed
 	case automationskippedentry.ReasonNoEnrollmentKey:
 		siteapiSkippedEntryReason = site.SkippedEntryReasonNoEnrollmentKey
 	case automationskippedentry.ReasonOnce:
 		siteapiSkippedEntryReason = site.SkippedEntryReasonOnce
+	case automationskippedentry.ReasonSendLocked:
+		siteapiSkippedEntryReason = site.SkippedEntryReasonSendLocked
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
@@ -2768,6 +2805,7 @@ func (c *ConverterImpl) SplitPathStepSum(source site.AutomationStepSum) site.Spl
 	siteapiSplitPathStepSum.TelegramStep = source.TelegramStep
 	siteapiSplitPathStepSum.SmsStep = source.SmsStep
 	siteapiSplitPathStepSum.WaitStep = source.WaitStep
+	siteapiSplitPathStepSum.WaitUntilStep = source.WaitUntilStep
 	siteapiSplitPathStepSum.ApplyTagStep = source.ApplyTagStep
 	siteapiSplitPathStepSum.RemoveTagStep = source.RemoveTagStep
 	siteapiSplitPathStepSum.HttpStep = source.HttpStep
@@ -2799,6 +2837,8 @@ func (c *ConverterImpl) SplitPathStepType(source site.AutomationStepSumType) sit
 		siteapiSplitPathStepSumType = site.TelegramStepSplitPathStepSum
 	case site.WaitStepAutomationStepSum:
 		siteapiSplitPathStepSumType = site.WaitStepSplitPathStepSum
+	case site.WaitUntilStepAutomationStepSum:
+		siteapiSplitPathStepSumType = site.WaitUntilStepSplitPathStepSum
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
@@ -3213,6 +3253,36 @@ func (c *ConverterImpl) WaitStepToResource(source automations.WaitView) site.Wai
 	siteapiWaitStep.Seconds = count(source.Seconds)
 	return siteapiWaitStep
 }
+func (c *ConverterImpl) WaitUntilDateToResource(source datetrigger.Date) site.WaitUntilDate {
+	var siteapiWaitUntilDate site.WaitUntilDate
+	siteapiWaitUntilDate.Form = waitUntilDateForm(source)
+	siteapiWaitUntilDate.Field = dateField(source.Field)
+	siteapiWaitUntilDate.Recurrence = c.DateRecurrenceToResource(source.Recurrence)
+	siteapiWaitUntilDate.OffsetDays = dateOffsetDays(source.OffsetDays)
+	siteapiWaitUntilDate.LocalTime = site.LocalTime(source.LocalTime)
+	return siteapiWaitUntilDate
+}
+func (c *ConverterImpl) WaitUntilStepToResource(source automations.WaitUntilView) (site.WaitUntilStep, error) {
+	var siteapiWaitUntilStep site.WaitUntilStep
+	siteapiWaitUntilStep.ID = c.automationstepIDToSiteapiStepId(source.ID)
+	siteapiWaitUntilStep.Type = waitUntilStepType(source.Type)
+	siteapiWaitUntilMoment, err := waitUntilMoment(c, source.Until)
+	if err != nil {
+		return siteapiWaitUntilStep, err
+	}
+	siteapiWaitUntilStep.Until = siteapiWaitUntilMoment
+	return siteapiWaitUntilStep, nil
+}
+func (c *ConverterImpl) WaitUntilTimeOfDayToResource(source automationstep.TimeOfDay) site.WaitUntilTimeOfDay {
+	var siteapiWaitUntilTimeOfDay site.WaitUntilTimeOfDay
+	siteapiWaitUntilTimeOfDay.Form = waitUntilTimeOfDayForm(source)
+	siteapiWaitUntilTimeOfDay.LocalTime = site.LocalTime(source.LocalTime)
+	siteapiWaitUntilTimeOfDay.Weekdays = make([]site.Weekday, len(source.Weekdays))
+	for i := 0; i < len(source.Weekdays); i++ {
+		siteapiWaitUntilTimeOfDay.Weekdays[i] = c.WeekdayToResource(source.Weekdays[i])
+	}
+	return siteapiWaitUntilTimeOfDay
+}
 func (c *ConverterImpl) WebhookDisabledReasonToResource(source webhookendpoint.DisabledReason) site.WebhookDisabledReason {
 	var siteapiWebhookDisabledReason site.WebhookDisabledReason
 	switch source {
@@ -3271,6 +3341,28 @@ func (c *ConverterImpl) WebhooksListPage(source pagination.Page[site.SiteWebhook
 	siteapiSiteWebhooksListOK.TotalItems = count(source.TotalItems)
 	siteapiSiteWebhooksListOK.TotalPages = count(source.TotalPages)
 	return &siteapiSiteWebhooksListOK
+}
+func (c *ConverterImpl) WeekdayToResource(source localcalendar.Weekday) site.Weekday {
+	var siteapiWeekday site.Weekday
+	switch source {
+	case localcalendar.Friday:
+		siteapiWeekday = site.WeekdayFriday
+	case localcalendar.Monday:
+		siteapiWeekday = site.WeekdayMonday
+	case localcalendar.Saturday:
+		siteapiWeekday = site.WeekdaySaturday
+	case localcalendar.Sunday:
+		siteapiWeekday = site.WeekdaySunday
+	case localcalendar.Thursday:
+		siteapiWeekday = site.WeekdayThursday
+	case localcalendar.Tuesday:
+		siteapiWeekday = site.WeekdayTuesday
+	case localcalendar.Wednesday:
+		siteapiWeekday = site.WeekdayWednesday
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiWeekday
 }
 func (c *ConverterImpl) WorkspaceToResource(source *ent.Workspace) site.SiteWorkspaceResource {
 	var siteapiSiteWorkspaceResource site.SiteWorkspaceResource
@@ -3397,6 +3489,8 @@ func (c *ConverterImpl) automationsSkippedCountsToSiteapiAutomationSkippedCounts
 	siteapiAutomationSkippedCounts.Cooldown = count(source.Cooldown)
 	siteapiAutomationSkippedCounts.NoEnrollmentKey = count(source.NoEnrollmentKey)
 	siteapiAutomationSkippedCounts.EnrollmentCeiling = count(source.EnrollmentCeiling)
+	siteapiAutomationSkippedCounts.Missed = count(source.Missed)
+	siteapiAutomationSkippedCounts.SendLocked = count(source.SendLocked)
 	return siteapiAutomationSkippedCounts
 }
 func (c *ConverterImpl) automationsStepFiguresToSiteapiAutomationStepFigures(source automations.StepFigures) site.AutomationStepFigures {
@@ -3413,6 +3507,14 @@ func (c *ConverterImpl) automationsVersionStepFiguresToSiteapiAutomationVersionS
 	siteapiAutomationVersionStepFigures.Sent = count(source.Sent)
 	siteapiAutomationVersionStepFigures.Skipped = count(source.Skipped)
 	return siteapiAutomationVersionStepFigures
+}
+func (c *ConverterImpl) automationsWaitUntilFiguresToSiteapiAutomationWaitUntilFigures(source automations.WaitUntilFigures) site.AutomationWaitUntilFigures {
+	var siteapiAutomationWaitUntilFigures site.AutomationWaitUntilFigures
+	siteapiAutomationWaitUntilFigures.StepId = c.automationstepIDToSiteapiStepId(source.StepID)
+	siteapiAutomationWaitUntilFigures.Past = count(source.Past)
+	siteapiAutomationWaitUntilFigures.NoDate = count(source.NoDate)
+	siteapiAutomationWaitUntilFigures.BeyondBound = count(source.BeyondBound)
+	return siteapiAutomationWaitUntilFigures
 }
 func (c *ConverterImpl) automationstepIDToSiteapiStepId(source automationstep.ID) site.StepId {
 	return site.StepId(source)

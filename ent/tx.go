@@ -24,6 +24,8 @@ type Tx struct {
 	Automation *AutomationClient
 	// AutomationFigure is the client for interacting with the AutomationFigure builders.
 	AutomationFigure *AutomationFigureClient
+	// AutomationOccurrenceCursor is the client for interacting with the AutomationOccurrenceCursor builders.
+	AutomationOccurrenceCursor *AutomationOccurrenceCursorClient
 	// AutomationRun is the client for interacting with the AutomationRun builders.
 	AutomationRun *AutomationRunClient
 	// AutomationSkippedEntry is the client for interacting with the AutomationSkippedEntry builders.
@@ -52,6 +54,8 @@ type Tx struct {
 	ConsentStamp *ConsentStampClient
 	// Contact is the client for interacting with the Contact builders.
 	Contact *ContactClient
+	// ContactDate is the client for interacting with the ContactDate builders.
+	ContactDate *ContactDateClient
 	// ContactTag is the client for interacting with the ContactTag builders.
 	ContactTag *ContactTagClient
 	// CustomField is the client for interacting with the CustomField builders.
@@ -312,6 +316,7 @@ func (tx *Tx) init() {
 	tx.AuthAttempt = NewAuthAttemptClient(tx.config)
 	tx.Automation = NewAutomationClient(tx.config)
 	tx.AutomationFigure = NewAutomationFigureClient(tx.config)
+	tx.AutomationOccurrenceCursor = NewAutomationOccurrenceCursorClient(tx.config)
 	tx.AutomationRun = NewAutomationRunClient(tx.config)
 	tx.AutomationSkippedEntry = NewAutomationSkippedEntryClient(tx.config)
 	tx.AutomationStepRecord = NewAutomationStepRecordClient(tx.config)
@@ -326,6 +331,7 @@ func (tx *Tx) init() {
 	tx.ConsentRecord = NewConsentRecordClient(tx.config)
 	tx.ConsentStamp = NewConsentStampClient(tx.config)
 	tx.Contact = NewContactClient(tx.config)
+	tx.ContactDate = NewContactDateClient(tx.config)
 	tx.ContactTag = NewContactTagClient(tx.config)
 	tx.CustomField = NewCustomFieldClient(tx.config)
 	tx.DefaultSendCap = NewDefaultSendCapClient(tx.config)

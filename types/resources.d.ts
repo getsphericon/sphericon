@@ -171,16 +171,7 @@ export default interface Resources {
       "opensByHour": {
         "cell": "{{day}} {{hour}}:00, {{count, number}} open" | "{{day}} {{hour}}:00, {{count, number}} opens",
         "empty": "No opens in this window",
-        "note": "Human opens by hour of day in the workspace time zone. Opens by mail software that fetches images for the reader are left out.",
-        "weekdays": {
-          "friday": "Friday",
-          "monday": "Monday",
-          "saturday": "Saturday",
-          "sunday": "Sunday",
-          "thursday": "Thursday",
-          "tuesday": "Tuesday",
-          "wednesday": "Wednesday"
-        }
+        "note": "Human opens by hour of day in the workspace time zone. Opens by mail software that fetches images for the reader are left out."
       },
       "range": {
         "30d": "Last 30 days",
@@ -356,6 +347,26 @@ export default interface Resources {
       "count": "{{count, number}} automation" | "{{count, number}} automations",
       "createTitle": "New automation",
       "createdLabel": "Created",
+      "date": {
+        "birthday": "Birthday",
+        "birthdayYearly": "A birthday comes every year, so it can only repeat every year.",
+        "daysBound": "Enter at most {{max}} days.",
+        "daysLabel": "Days",
+        "direction": {
+          "after": "After the date",
+          "before": "Before the date"
+        },
+        "directionLabel": "Before or after",
+        "fieldGroupContact": "Contact",
+        "fieldGroupCustom": "Custom fields",
+        "fieldLabel": "Date",
+        "notDatetime": "{{key}} is not a datetime custom field.",
+        "recurrence": {
+          "once": "Once",
+          "yearly": "Every year"
+        },
+        "recurrenceLabel": "Repeats"
+      },
       "deactivate": "Deactivate",
       "delivered": "Delivered",
       "editMessage": "Edit message",
@@ -398,6 +409,7 @@ export default interface Resources {
         "network": "The receiver could not be reached",
         "timeout": "The receiver did not answer in time"
       },
+      "fieldRequired": "{{field}} is required.",
       "forkConditionError": "Path {{number}} needs a condition",
       "forkWeightError": "Path {{number}} needs a weight of at least 1%",
       "goalEventAdd": "Add goal event",
@@ -421,10 +433,12 @@ export default interface Resources {
       "integrationDefault": "Workspace default",
       "integrationDeleted": "{{name}} (deleted)",
       "integrationLabel": "Integration",
-      "keptReadOnly": "This version holds a step of a kind this editor does not know. It is shown read-only; publishing or reverting it keeps that step.",
+      "keptReadOnly": "This version holds a step of a kind this editor does not know. It is shown read-only; publishing or reverting it keeps it.",
       "keptReadOnlyTitle": "Read-only version",
       "leaveMessage": "Your changes to this automation are not saved.",
       "liveVersion": "Live version {{number}}",
+      "localTimeHint": "Each contact's own time, or {{zone}} for a contact without a time zone.",
+      "localTimeLabel": "Local time",
       "messageDone": "Done",
       "movePathDown": "Move path down",
       "movePathUp": "Move path up",
@@ -465,7 +479,7 @@ export default interface Resources {
         "exited": "Exited",
         "failed": "Failed",
         "goalReached": "Reached goal",
-        "hint": "What the enrollments did from {{from}} to {{to}}: an enrollment counts as entered on the day it began and under its outcome on the day it ended. The average duration is over the enrollments that ended, whatever the outcome; orders and revenue are those credited to this automation in the period. Contacts are the distinct contacts among those entered. A skipped entry, refused because the chain of events that caused it already passed through this automation, because an enrollment was active when its event occurred or because the contact was enrolled before, counts on the day its event occurred.",
+        "hint": "What the enrollments did from {{from}} to {{to}}: an enrollment counts as entered on the day it began and under its outcome on the day it ended. The average duration is over the enrollments that ended, whatever the outcome; orders and revenue are those credited to this automation in the period. Contacts are the distinct contacts among those entered. A skipped entry, refused because the chain of events that caused it already passed through this automation, because an enrollment was active when its event occurred or because the contact was enrolled before, counts on the day its event occurred. A date's occurrence counts on its own day: entered when it enrolled the contact, skipped when an enrollment was active, when it was reached more than 24 hours late, or when the date was set by an agent that may not send.",
         "loadError": "Failed to load the results",
         "orders": "Orders in the period",
         "periods": {
@@ -480,8 +494,10 @@ export default interface Resources {
         "skippedCooldown": "Skipped: within the cooldown",
         "skippedCycle": "Skipped: a cycle",
         "skippedEnrollmentCeiling": "Skipped: too many enrollments of one contact",
+        "skippedMissed": "Skipped: reached more than 24 hours late",
         "skippedNoEnrollmentKey": "Skipped: no enrollment key",
         "skippedOnce": "Skipped: enrolled before",
+        "skippedSendLocked": "Skipped: the date was set by an agent that may not send",
         "title": "Results"
       },
       "searchPlaceholder": "Search by name",
@@ -497,8 +513,10 @@ export default interface Resources {
         "cooldown": "Within the cooldown",
         "cycle": "Caused by this automation",
         "enrollment_ceiling": "Too many enrollments of one contact",
+        "missed": "Reached more than 24 hours late",
         "no_enrollment_key": "The event lacked the enrollment key",
-        "once": "Enrolled before"
+        "once": "Enrolled before",
+        "send_locked": "The date was set by an agent that may not send"
       },
       "smsNodeDescription": "Send a text message to the contact's phone.",
       "splitNodeDescription": "Send each contact down a path drawn by weight, as an A/B test does.",
@@ -530,6 +548,7 @@ export default interface Resources {
       "stepTelegram": "Send Telegram message",
       "stepTrigger": "Trigger",
       "stepWait": "Wait",
+      "stepWaitUntil": "Wait until",
       "stepsLabel": "Steps",
       "tagNameLabel": "Tag",
       "telegramNodeDescription": "Send a Telegram message to the contact's bound chats.",
@@ -544,10 +563,32 @@ export default interface Resources {
       "triggerFilterLabel": "Filter",
       "triggerFiltered": "where the event passes its filter",
       "triggerHint": "The event that enrolls a contact into this automation.",
+      "triggerKind": {
+        "date": "A date",
+        "event": "An event"
+      },
+      "triggerKindLabel": "Enroll on",
       "triggerLabel": "Trigger event",
+      "triggerOnDate": "On a date the contact holds",
       "waitNodeDescription": "Pause before the next step.",
       "waitSecondsLabel": "Wait (seconds)",
+      "waitUntilFigures": {
+        "beyondBound": "Over a year ahead",
+        "hint": "Contacts a Wait until on a date let go on at once in the period instead of waiting: its moment had passed, they held no date in the field, or the moment lay more than 366 days ahead.",
+        "noDate": "No date",
+        "past": "Passed",
+        "step": "Step",
+        "title": "Wait until steps"
+      },
+      "waitUntilForm": {
+        "date": "A date",
+        "time_of_day": "A time of day"
+      },
+      "waitUntilFormLabel": "Wait for",
+      "waitUntilNodeDescription": "Pause until a time of day or a date the contact holds.",
       "waitingUntil": "Waiting until",
+      "weekdaysHint": "None chosen is every day.",
+      "weekdaysLabel": "Weekdays",
       "weightSum": "Total: {{sum}}%",
       "weightSumError": "The weights sum to {{sum}}%, not 100%"
     },
@@ -2835,6 +2876,15 @@ export default interface Resources {
       "submitButton": "Set password",
       "title": "Set your password",
       "verifying": "Confirming your email…"
+    },
+    "weekday": {
+      "friday": "Friday",
+      "monday": "Monday",
+      "saturday": "Saturday",
+      "sunday": "Sunday",
+      "thursday": "Thursday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday"
     },
     "workspaceHold": {
       "actionContact": "To resolve it, contact an Owner or Admin of this workspace.",

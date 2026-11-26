@@ -15,6 +15,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/contactdate"
 	"github.com/getsphericon/sphericon/ent/contacttag"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/order"
@@ -36,6 +37,7 @@ type ContactQuery struct {
 	withVisitors    *VisitorQuery
 	withBindings    *BindingQuery
 	withStartTokens *StartTokenQuery
+	withDates       *ContactDateQuery
 	withTags        *TagQuery
 	withEvents      *EventQuery
 	withOrders      *OrderQuery
@@ -158,6 +160,28 @@ func (_q *ContactQuery) QueryStartTokens() *StartTokenQuery {
 			sqlgraph.From(contact.Table, contact.FieldID, selector),
 			sqlgraph.To(starttoken.Table, starttoken.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, contact.StartTokensTable, contact.StartTokensColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryDates chains the current query on the "dates" edge.
+func (_q *ContactQuery) QueryDates() *ContactDateQuery {
+	query := (&ContactDateClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(contact.Table, contact.FieldID, selector),
+			sqlgraph.To(contactdate.Table, contactdate.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, contact.DatesTable, contact.DatesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -449,6 +473,7 @@ func (_q *ContactQuery) Clone() *ContactQuery {
 		withVisitors:    _q.withVisitors.Clone(),
 		withBindings:    _q.withBindings.Clone(),
 		withStartTokens: _q.withStartTokens.Clone(),
+		withDates:       _q.withDates.Clone(),
 		withTags:        _q.withTags.Clone(),
 		withEvents:      _q.withEvents.Clone(),
 		withOrders:      _q.withOrders.Clone(),
@@ -501,6 +526,17 @@ func (_q *ContactQuery) WithStartTokens(opts ...func(*StartTokenQuery)) *Contact
 		opt(query)
 	}
 	_q.withStartTokens = query
+	return _q
+}
+
+// WithDates tells the query-builder to eager-load the nodes that are connected to
+// the "dates" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *ContactQuery) WithDates(opts ...func(*ContactDateQuery)) *ContactQuery {
+	query := (&ContactDateClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withDates = query
 	return _q
 }
 
@@ -626,11 +662,12 @@ func (_q *ContactQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Cont
 	var (
 		nodes       = []*Contact{}
 		_spec       = _q.querySpec()
-		loadedTypes = [8]bool{
+		loadedTypes = [9]bool{
 			_q.withWorkspace != nil,
 			_q.withVisitors != nil,
 			_q.withBindings != nil,
 			_q.withStartTokens != nil,
+			_q.withDates != nil,
 			_q.withTags != nil,
 			_q.withEvents != nil,
 			_q.withOrders != nil,
@@ -682,6 +719,13 @@ func (_q *ContactQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Cont
 		if err := _q.loadStartTokens(ctx, query, nodes,
 			func(n *Contact) { n.Edges.StartTokens = []*StartToken{} },
 			func(n *Contact, e *StartToken) { n.Edges.StartTokens = append(n.Edges.StartTokens, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withDates; query != nil {
+		if err := _q.loadDates(ctx, query, nodes,
+			func(n *Contact) { n.Edges.Dates = []*ContactDate{} },
+			func(n *Contact, e *ContactDate) { n.Edges.Dates = append(n.Edges.Dates, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -839,6 +883,36 @@ func (_q *ContactQuery) loadStartTokens(ctx context.Context, query *StartTokenQu
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "contact_id" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *ContactQuery) loadDates(ctx context.Context, query *ContactDateQuery, nodes []*Contact, init func(*Contact), assign func(*Contact, *ContactDate)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Contact)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(contactdate.FieldContactID)
+	}
+	query.Where(predicate.ContactDate(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(contact.DatesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.ContactID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "contact_id" returned %v for node %v`, fk, n.ID)
 		}
 		assign(node, n)
 	}

@@ -1,4 +1,4 @@
-import { allSteps, forkPaths, isFork } from './definition.ts'
+import { allSteps, forkPaths, isFork, newDateDraft, newTimeOfDayDraft } from './definition.ts'
 import type {
   BranchPathDraft,
   EditedKind,
@@ -57,6 +57,13 @@ function newEditedStep(kind: EditedKind): EditedStep {
       return { id, kind, draft: { stored: false, url: '', headers: [], body: '{}', secret: '' } }
     case 'wait':
       return { id, kind, draft: { seconds: NEW_WAIT_SECONDS } }
+    // A new Wait until waits on a time of day, which it asks for.
+    case 'wait_until':
+      return {
+        id,
+        kind,
+        draft: { form: 'time_of_day', timeOfDay: newTimeOfDayDraft(), date: newDateDraft() },
+      }
     case 'apply_tag':
     case 'remove_tag':
     default:

@@ -628,13 +628,24 @@ test('an email step opens its document in the editor from the properties panel',
   await expect.element(screen.getByText('Hello')).toBeInTheDocument()
 })
 
-test('a refused document shows the server reason naming the step', async () => {
+// The server places its refusal of a Step at the Step's location in the request.
+test("a refused document shows the server's reason on its step's node and in its properties", async () => {
+  const refusal = `invalid step: step ${stepId(12)} (email): heading level 9 is not allowed`
   worker.use(
-    handleSiteAutomationsGet({ body: STORED }),
+    handleSiteAutomationsGet({
+      body: {
+        ...STORED,
+        draft: withSteps([
+          { id: stepId(11), type: 'wait', seconds: 60 },
+          { id: stepId(12), type: 'email', subject: 'Hi', body: '<h9>Hi</h9>' },
+        ]),
+      },
+    }),
     handleSiteAutomationsUpdate(() =>
       problem(422, {
         title: 'Unprocessable Entity',
-        detail: 'automations: invalid step: step 2: heading level 9 is not allowed',
+        detail: refusal,
+        errors: { 'steps.steps.1': [refusal] },
       }),
     ),
   )
@@ -642,8 +653,11 @@ test('a refused document shows the server reason naming the step', async () => {
   const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
   await screen.getByRole('button', { name: 'Save' }).click()
 
-  await expect.element(screen.getByText('Failed to save automation')).toBeInTheDocument()
-  await expect.element(screen.getByText(/step 2: heading level 9/)).toBeInTheDocument()
+  const properties = screen.getByRole('region', { name: 'Send email' })
+  await expect.element(properties.getByText('Failed to save automation')).toBeVisible()
+  await expect.element(properties.getByText(refusal)).toBeVisible()
+  // On the email step's node, and in its panel.
+  expect(screen.getByText(refusal).elements()).toHaveLength(2)
 })
 
 test('the builder edits the draft and shows it pending above the live version', async () => {

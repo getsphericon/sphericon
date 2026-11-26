@@ -63,7 +63,7 @@ func TestAContactUnsubscribedFromAnAutomationReentersItUnderAgain(t *testing.T) 
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := testhelper.Module[*automations.Module](env)
 	created, err := m.Create(ctx, s, automations.CreateInput{
-		Name: "Repeat order", Trigger: eventmatcher.Matcher{Action: repeatOrder},
+		Name: "Repeat order", Trigger: automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: repeatOrder}},
 		Entry: automations.Entry{Policy: automationversion.EntryPolicyAgain},
 		Steps: new(automationstep.Root(
 			automationstep.New(automationstep.Email{Subject: "Thanks", Body: "<p>Thanks for your order.</p>"}),

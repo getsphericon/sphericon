@@ -1,16 +1,27 @@
-import { NumberInput, Stack, Text, Textarea, TextInput } from '@mantine/core'
+import {
+  Input,
+  NumberInput,
+  SegmentedControl,
+  Stack,
+  Text,
+  Textarea,
+  TextInput,
+} from '@mantine/core'
 import { useTranslation } from 'react-i18next'
 
 import { HttpHeaderRows } from '../../components/HttpHeaderRows.tsx'
 import { SmsContentEditor } from '../../components/sms/SmsContentEditor.tsx'
 import { TelegramContentEditor } from '../../components/telegram/TelegramContentEditor.tsx'
 import { TelegramUnsubscribeControl } from '../../components/telegram/TelegramUnsubscribeControl.tsx'
+import type { WaitUntilMomentInput } from '../../generated/site/types.gen.ts'
+import { zWaitUntilMomentInput } from '../../generated/site/zod.gen.ts'
 import { useSchemaForm } from '../../resources/schemaForm.ts'
 import { EVENT_ACTION_TAG } from '../../utils/mergeTags.ts'
 import type { EditedKind, EditedStep } from './definition.ts'
 import { HttpDryRun } from './HttpStepControls.tsx'
 import { IntegrationControl } from './IntegrationControl.tsx'
 import { MessageControl } from './MessageControl.tsx'
+import { DateOccurrenceForm, TimeOfDayForm } from './MomentForms.tsx'
 import { stepSchemas } from './stepSchemas.ts'
 import { useValidator } from './stepValidator.ts'
 import type { StepValidator } from './stepValidator.ts'
@@ -22,6 +33,13 @@ interface StepFormProps<K extends EditedKind> {
   // Every edit of the form, as the Step with its new draft: the flow holds what is saved.
   onEdit: (step: StepOf<K>) => void
   validatorRef: StepValidator
+}
+
+// What a Step whose node shows its errors is also given: whether it was checked (on blur or on
+// Save), and what marks it checked.
+interface CheckedProps {
+  checked: boolean
+  onChecked: () => void
 }
 
 function EmailForm({ step, onEdit, validatorRef }: StepFormProps<'email'>) {
@@ -172,16 +190,73 @@ function TagForm({ step, onEdit, validatorRef }: StepFormProps<'apply_tag' | 're
   return <TextInput label={t(($) => $.automations.tagNameLabel)} {...form.getInputProps('tag')} />
 }
 
+// The forms a Wait until waits on, in the contract's order.
+const WAIT_UNTIL_FORMS = zWaitUntilMomentInput.options.map((option) => option.shape.form.value)
+
+// A Wait until's panel (ADR 0126): the form it waits on, a time of day or a date the Contact
+// holds, and that form's own fields. The date form is the date Trigger's. Switching the form keeps
+// what the other one holds.
+function WaitUntilForm({
+  step,
+  onEdit,
+  validatorRef,
+  checked,
+  onChecked,
+}: StepFormProps<'wait_until'> & CheckedProps) {
+  const { t } = useTranslation()
+  const { draft } = step
+  const forms: Record<WaitUntilMomentInput['form'], string> = {
+    time_of_day: t(($) => $.automations.waitUntilForm.time_of_day),
+    date: t(($) => $.automations.waitUntilForm.date),
+  }
+  const moment = { validatorRef, checked, onChecked }
+
+  return (
+    <Stack>
+      <Input.Wrapper label={t(($) => $.automations.waitUntilFormLabel)}>
+        <SegmentedControl
+          display="flex"
+          data={WAIT_UNTIL_FORMS.map((form) => ({ value: form, label: forms[form] }))}
+          value={draft.form}
+          onChange={(picked) => {
+            const form = WAIT_UNTIL_FORMS.find((candidate) => candidate === picked)
+            if (form !== undefined) {
+              onEdit({ ...step, draft: { ...draft, form } })
+            }
+          }}
+        />
+      </Input.Wrapper>
+      {draft.form === 'date' ? (
+        <DateOccurrenceForm
+          key="date"
+          value={draft.date}
+          onChange={(date) => onEdit({ ...step, draft: { ...draft, date } })}
+          {...moment}
+        />
+      ) : (
+        <TimeOfDayForm
+          key="time_of_day"
+          value={draft.timeOfDay}
+          onChange={(timeOfDay) => onEdit({ ...step, draft: { ...draft, timeOfDay } })}
+          {...moment}
+        />
+      )}
+    </Stack>
+  )
+}
+
 // StepForm is the form of the Step's kind, which the side panel shows for the selected Step.
 export function StepForm({
   step,
   onEdit,
   validatorRef,
+  checked,
+  onChecked,
 }: {
   step: EditedStep
   onEdit: (step: EditedStep) => void
   validatorRef: StepValidator
-}) {
+} & CheckedProps) {
   switch (step.kind) {
     case 'email':
       return <EmailForm step={step} onEdit={onEdit} validatorRef={validatorRef} />
@@ -193,6 +268,16 @@ export function StepForm({
       return <HttpForm step={step} onEdit={onEdit} validatorRef={validatorRef} />
     case 'wait':
       return <WaitForm step={step} onEdit={onEdit} validatorRef={validatorRef} />
+    case 'wait_until':
+      return (
+        <WaitUntilForm
+          step={step}
+          onEdit={onEdit}
+          validatorRef={validatorRef}
+          checked={checked}
+          onChecked={onChecked}
+        />
+      )
     case 'apply_tag':
     case 'remove_tag':
     default:

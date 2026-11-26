@@ -510,6 +510,9 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		// The Steps of the Enrollments the trigger makes, so a test follows a chain of Automations
 		// through the jobs that carry it.
 		add(tb, p, txDB, ws, jobs.NewRunStepWorker(client, do.MustInvoke[*automations.StepExecution](injector)))
+		// The date scheduler's tick and the decision it queues per Automation (ADR 0126).
+		add(tb, p, txDB, ws, jobs.NewDateTickWorker(client, do.MustInvoke[*automations.Module](injector)))
+		add(tb, p, txDB, ws, jobs.NewDecideOccurrencesWorker(client, do.MustInvoke[*automations.StepExecution](injector)))
 		add(tb, p, txDB, ws, jobs.NewEvaluateRulesWorker(client, do.MustInvoke[*rules.Module](injector)))
 		// The Actions of the Firings the evaluation makes, so a chain runs through a Rule too.
 		add(tb, p, txDB, ws, jobs.NewRunRuleActionsWorker(client, do.MustInvoke[*rules.Module](injector),

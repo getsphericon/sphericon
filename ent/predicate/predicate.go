@@ -21,6 +21,9 @@ type Automation func(*sql.Selector)
 // AutomationFigure is the predicate function for automationfigure builders.
 type AutomationFigure func(*sql.Selector)
 
+// AutomationOccurrenceCursor is the predicate function for automationoccurrencecursor builders.
+type AutomationOccurrenceCursor func(*sql.Selector)
+
 // AutomationRun is the predicate function for automationrun builders.
 type AutomationRun func(*sql.Selector)
 
@@ -62,6 +65,9 @@ type ConsentStamp func(*sql.Selector)
 
 // Contact is the predicate function for contact builders.
 type Contact func(*sql.Selector)
+
+// ContactDate is the predicate function for contactdate builders.
+type ContactDate func(*sql.Selector)
 
 // ContactTag is the predicate function for contacttag builders.
 type ContactTag func(*sql.Selector)

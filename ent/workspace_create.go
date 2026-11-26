@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationfigure"
+	"github.com/getsphericon/sphericon/ent/automationoccurrencecursor"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationskippedentry"
 	"github.com/getsphericon/sphericon/ent/automationsteprecord"
@@ -28,6 +29,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/consentstamp"
 	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/contactdate"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
@@ -495,6 +497,21 @@ func (_c *WorkspaceCreate) AddTags(v ...*Tag) *WorkspaceCreate {
 	return _c.AddTagIDs(ids...)
 }
 
+// AddContactDateIDs adds the "contact_dates" edge to the ContactDate entity by IDs.
+func (_c *WorkspaceCreate) AddContactDateIDs(ids ...int64) *WorkspaceCreate {
+	_c.mutation.AddContactDateIDs(ids...)
+	return _c
+}
+
+// AddContactDates adds the "contact_dates" edges to the ContactDate entity.
+func (_c *WorkspaceCreate) AddContactDates(v ...*ContactDate) *WorkspaceCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddContactDateIDs(ids...)
+}
+
 // AddSegmentIDs adds the "segments" edge to the Segment entity by IDs.
 func (_c *WorkspaceCreate) AddSegmentIDs(ids ...int64) *WorkspaceCreate {
 	_c.mutation.AddSegmentIDs(ids...)
@@ -838,6 +855,21 @@ func (_c *WorkspaceCreate) AddAutomationSkippedEntries(v ...*AutomationSkippedEn
 		ids[i] = v[i].ID
 	}
 	return _c.AddAutomationSkippedEntryIDs(ids...)
+}
+
+// AddAutomationOccurrenceCursorIDs adds the "automation_occurrence_cursors" edge to the AutomationOccurrenceCursor entity by IDs.
+func (_c *WorkspaceCreate) AddAutomationOccurrenceCursorIDs(ids ...int64) *WorkspaceCreate {
+	_c.mutation.AddAutomationOccurrenceCursorIDs(ids...)
+	return _c
+}
+
+// AddAutomationOccurrenceCursors adds the "automation_occurrence_cursors" edges to the AutomationOccurrenceCursor entity.
+func (_c *WorkspaceCreate) AddAutomationOccurrenceCursors(v ...*AutomationOccurrenceCursor) *WorkspaceCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddAutomationOccurrenceCursorIDs(ids...)
 }
 
 // AddEmailTemplateIDs adds the "email_templates" edge to the EmailTemplate entity by IDs.
@@ -1635,6 +1667,22 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
+	if nodes := _c.mutation.ContactDatesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ContactDatesTable,
+			Columns: []string{workspace.ContactDatesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contactdate.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
 	if nodes := _c.mutation.SegmentsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -1996,6 +2044,22 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(automationskippedentry.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.AutomationOccurrenceCursorsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.AutomationOccurrenceCursorsTable,
+			Columns: []string{workspace.AutomationOccurrenceCursorsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationoccurrencecursor.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

@@ -256,13 +256,29 @@ export const zAutomationSkippedCounts = z.object({
   once: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   cooldown: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   noEnrollmentKey: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  enrollmentCeiling: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+  enrollmentCeiling: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  missed: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  sendLocked: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
 });
 
 /**
  * Automation lifecycle status: active enrolls Contacts, inactive enrolls nobody
  */
 export const zAutomationStatus = z.enum(['active', 'inactive']);
+
+/**
+ * The Contact's date of birth, a date field every Contact has
+ */
+export const zBirthdayDateField = z.object({
+  kind: z.enum(['birthday'])
+});
+
+/**
+ * The Contact's date of birth, a date field every Contact has
+ */
+export const zBirthdayDateFieldInput = z.strictObject({
+  kind: z.enum(['birthday'])
+});
 
 /**
  * Whether a Branch needs its unknown path (ADR 0124)
@@ -401,6 +417,26 @@ export const zCreateWebhookInput = z.strictObject({
 export const zCurrencyCode = z.string().regex(/^[A-Z]{3}$/);
 
 /**
+ * A datetime Custom field of the Workspace, its key in a field of its own. Its value's calendar
+ * date is read in the Workspace time zone: a value with an offset is moved into it, one without an
+ * offset or a bare date keeps its own date.
+ */
+export const zCustomFieldDateField = z.object({
+  kind: z.enum(['customField']),
+  key: z.string()
+});
+
+/**
+ * A datetime Custom field of the Workspace, its key in a field of its own. Its value's calendar
+ * date is read in the Workspace time zone: a value with an offset is moved into it, one without an
+ * offset or a bare date keeps its own date.
+ */
+export const zCustomFieldDateFieldInput = z.strictObject({
+  kind: z.enum(['customField']),
+  key: z.string()
+});
+
+/**
  * A Custom field's value type
  */
 export const zCustomFieldType = z.enum([
@@ -409,6 +445,33 @@ export const zCustomFieldType = z.enum([
   'bool',
   'datetime'
 ]);
+
+/**
+ * A date a Contact holds, by `kind`: its `birthday`, or a datetime Custom field
+ */
+export const zDateField = z.discriminatedUnion('kind', [
+  zBirthdayDateField.extend({ kind: z.literal('birthday') }),
+  zCustomFieldDateField.extend({ kind: z.literal('customField') })
+]);
+
+/**
+ * A date a Contact holds, by `kind`, as a request writes it
+ */
+export const zDateFieldInput = z.discriminatedUnion('kind', [
+  zBirthdayDateFieldInput.extend({ kind: z.literal('birthday') }),
+  zCustomFieldDateFieldInput.extend({ kind: z.literal('customField') })
+]);
+
+/**
+ * A whole number of days before (negative) or after the date, within a year
+ */
+export const zDateOffsetDays = z.int().gte(-365).lte(365);
+
+/**
+ * How often a date comes: `yearly` on each anniversary, from the year after the date's own;
+ * `once` on the date itself. The birthday is always past, so it is only yearly.
+ */
+export const zDateRecurrence = z.enum(['yearly', 'once']);
 
 /**
  * What a Deferral waits for: the send is not consumed and goes through every check again when it is retried
@@ -738,6 +801,65 @@ export const zLintFinding = z.object({
 });
 
 /**
+ * A local time of day, `HH:MM` in whole minutes from 00:00 to 23:59, read in a time zone the
+ * place that holds it names (`09:00`, `18:30`)
+ */
+export const zLocalTime = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
+
+/**
+ * When a date the Contact holds comes (ADR 0126), as a date Trigger enrolls on it and a Wait until
+ * waits for it: on each anniversary of the date, from the year after its own, or once on it,
+ * `offsetDays` before or after it, at `localTime` in the Contact's time zone, or in the Workspace
+ * time zone when the Contact has no valid one
+ */
+export const zDateOccurrence = z.object({
+  field: zDateField,
+  recurrence: zDateRecurrence,
+  offsetDays: zDateOffsetDays,
+  localTime: zLocalTime
+});
+
+/**
+ * When a date the Contact holds comes, as a request writes it
+ */
+export const zDateOccurrenceInput = z.object({
+  field: zDateFieldInput,
+  recurrence: zDateRecurrence,
+  offsetDays: zDateOffsetDays,
+  localTime: zLocalTime
+});
+
+/**
+ * A Trigger that enrolls a Contact on a date it holds (ADR 0126): on each anniversary of its
+ * birthday or of a datetime Custom field, or once on such a field, `offsetDays` before or after it,
+ * at `localTime` in the Contact's time zone, or in the Workspace time zone when the Contact has no
+ * valid one. A yearly date enrolls a Contact at most once per anniversary year, the year of the date
+ * the offset counts from, and a once date at most once ever; an occurrence while the previous
+ * enrollment is still active is skipped. Only occurrences after the automation was published
+ * enroll, at most 24 hours late, and the enrollment begins at the occurrence's moment with no
+ * triggering Event. A date Trigger has no entry policy, cooldown or Enrollment key, and no rule's
+ * enroll action may name its automation.
+ */
+export const zDateTrigger = z.object({
+  kind: z.enum(['date']),
+  field: zDateField,
+  recurrence: zDateRecurrence,
+  offsetDays: zDateOffsetDays,
+  localTime: zLocalTime
+});
+
+/**
+ * A Trigger that enrolls a Contact on a date it holds (ADR 0126), as a request writes it
+ */
+export const zDateTriggerInput = z.strictObject({
+  kind: z.enum(['date']),
+  field: zDateFieldInput,
+  recurrence: zDateRecurrence,
+  offsetDays: zDateOffsetDays,
+  localTime: zLocalTime
+});
+
+/**
  * A BCP 47 language tag: a language, optionally with a script and a region (`de`, `pt-BR`)
  */
 export const zLocaleTag = z.string().max(35).regex(/^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$/);
@@ -857,6 +979,13 @@ export const zNumberTestInput = z.strictObject({
   kind: z.enum(['number']),
   operator: zNumberOperator,
   value: z.number()
+});
+
+/**
+ * The occurrence of a once date Trigger an Enrollment was made for: the one it has
+ */
+export const zOnceEnrollmentOccurrence = z.object({
+  recurrence: z.enum(['once'])
 });
 
 /**
@@ -2560,7 +2689,11 @@ export const zSiteVerifyEmailInput = z.strictObject({
  * enrollment for the key value in the automation before, under the `once` entry policy),
  * `cooldown` (under `again`, the cooldown from the beginning of the contact's previous enrollment
  * for the key value had not passed) or `enrollment_ceiling` (the keyed automation's contact had 10
- * active enrollments, or 10 begun in a day).
+ * active enrollments, or 10 begun in a day). An occurrence of a date Trigger (ADR 0126) is skipped as
+ * `active_enrollment` (an enrollment of the contact was active at its moment), `missed` (it was
+ * reached 24 hours late or more while its date was already set at its moment) or `send_locked` (its
+ * date was set through a Connection without mcp:send; a later write of another value without the mark may
+ * still enroll it within 24 hours).
  */
 export const zSkippedEntryReason = z.enum([
   'no_enrollment_key',
@@ -2568,7 +2701,9 @@ export const zSkippedEntryReason = z.enum([
   'active_enrollment',
   'once',
   'cooldown',
-  'enrollment_ceiling'
+  'enrollment_ceiling',
+  'missed',
+  'send_locked'
 ]);
 
 /**
@@ -2791,6 +2926,17 @@ export const zAutomationVersionStepFigures = z.object({
 });
 
 /**
+ * The enrollments that went on at once from one Wait until on a date instead of waiting, by why:
+ * read from what each kept when it reached the Step, counted on the moment it left it
+ */
+export const zAutomationWaitUntilFigures = z.object({
+  stepId: zStepId,
+  past: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  noDate: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  beyondBound: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
  * An automation's engagement figures over its whole history and its results over a period
  */
 export const zAutomationReport = z.object({
@@ -2805,7 +2951,8 @@ export const zAutomationReport = z.object({
   results: zAutomationResults,
   steps: z.array(zAutomationStepFigures),
   versionSteps: z.array(zAutomationVersionStepFigures),
-  paths: z.array(zAutomationPathFigures)
+  paths: z.array(zAutomationPathFigures),
+  waitUntilSteps: z.array(zAutomationWaitUntilFigures)
 });
 
 /**
@@ -3578,23 +3725,6 @@ export const zContactEngagementTracking = z.object({
 export const zEngagementTrackingObservationResult = z.object({
   outcome: zEngagementTrackingOutcome,
   consent: zEngagementTrackingConsent
-});
-
-/**
- * One Contact's progress through an Automation. Erased with the Contact.
- */
-export const zEnrollmentResource = z.object({
-  id: zEntityId,
-  automationId: zEntityId,
-  contactId: zEntityId,
-  status: zEnrollmentStatus,
-  ordinal: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  keyValue: z.exactOptional(z.string()),
-  currentStepId: z.exactOptional(zStepId),
-  resumeAt: z.exactOptional(zTimestamp),
-  failure: z.exactOptional(zEnrollmentFailure),
-  createdAt: zTimestamp,
-  updatedAt: zTimestamp
 });
 
 /**
@@ -4609,6 +4739,34 @@ export const zWaitStepInput = z.strictObject({
 });
 
 /**
+ * Wait until the next occurrence of a date the Contact holds (ADR 0126), at or after the moment
+ * the Enrollment reaches the Step: `offsetDays` before or after the date, at `localTime` in the
+ * Contact's time zone, or the Workspace time zone when the Contact has no valid one. A yearly date
+ * waits for its next anniversary, from the year after the date's own; a once date for the date
+ * itself. When there is no such moment within 366 days the Enrollment goes on at once, and the
+ * report counts why: the moment has passed (`past`), the Contact holds no date in the field
+ * (`no_date`), or it lies more than 366 days ahead (`beyond_bound`).
+ */
+export const zWaitUntilDate = z.object({
+  form: z.enum(['date']),
+  field: zDateField,
+  recurrence: zDateRecurrence,
+  offsetDays: zDateOffsetDays,
+  localTime: zLocalTime
+});
+
+/**
+ * Wait until the next occurrence of a date the Contact holds, as a request writes it
+ */
+export const zWaitUntilDateInput = z.strictObject({
+  form: z.enum(['date']),
+  field: zDateFieldInput,
+  recurrence: zDateRecurrence,
+  offsetDays: zDateOffsetDays,
+  localTime: zLocalTime
+});
+
+/**
  * Why an endpoint is off. A closed set: `owner` (a member turned it off), `gone` (the
  * receiver answered 410 Gone) and `persistent_failure` (deliveries failed for longer
  * than the window). Absent while the endpoint is enabled.
@@ -4667,6 +4825,74 @@ export const zWebhookTestResult = z.object({
   delivered: z.boolean(),
   status: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
   kind: z.exactOptional(zWebhookErrorKind)
+});
+
+/**
+ * A day of the week, by its ISO name in lower case
+ */
+export const zWeekday = z.enum([
+  'monday',
+  'tuesday',
+  'wednesday',
+  'thursday',
+  'friday',
+  'saturday',
+  'sunday'
+]);
+
+/**
+ * Wait until the next moment a local time comes, on chosen weekdays or on any day, in the
+ * Contact's time zone, or the Workspace time zone when the Contact has no valid one (ADR 0126)
+ */
+export const zWaitUntilTimeOfDay = z.object({
+  form: z.enum(['time_of_day']),
+  localTime: zLocalTime,
+  weekdays: z.array(zWeekday)
+});
+
+/**
+ * The moment a Wait until holds an Enrollment until, by `form`
+ */
+export const zWaitUntilMoment = z.discriminatedUnion('form', [
+  zWaitUntilTimeOfDay.extend({ form: z.literal('time_of_day') }),
+  zWaitUntilDate.extend({ form: z.literal('date') })
+]);
+
+/**
+ * A Step that holds the Enrollment until a calendar moment (ADR 0126): the moment is computed
+ * once, from when the Enrollment reaches the Step, and kept, so neither a restart nor a time zone
+ * changed during the wait moves it. A moment equal to the arrival waits zero.
+ */
+export const zWaitUntilStep = z.object({
+  id: zStepId,
+  type: z.enum(['wait_until']),
+  until: zWaitUntilMoment
+});
+
+/**
+ * Wait until the next moment a local time comes, as a request writes it
+ */
+export const zWaitUntilTimeOfDayInput = z.strictObject({
+  form: z.enum(['time_of_day']),
+  localTime: zLocalTime,
+  weekdays: z.exactOptional(z.array(zWeekday))
+});
+
+/**
+ * The moment a Wait until holds an Enrollment until, by `form`, as a request writes it
+ */
+export const zWaitUntilMomentInput = z.discriminatedUnion('form', [
+  zWaitUntilTimeOfDayInput.extend({ form: z.literal('time_of_day') }),
+  zWaitUntilDateInput.extend({ form: z.literal('date') })
+]);
+
+/**
+ * A Step that holds the Enrollment until a calendar moment, as a request writes it
+ */
+export const zWaitUntilStepInput = z.strictObject({
+  id: z.exactOptional(zStepId),
+  type: z.enum(['wait_until']),
+  until: zWaitUntilMomentInput
 });
 
 /**
@@ -4862,6 +5088,41 @@ export const zProblemDetails = z.object({
 });
 
 /**
+ * The occurrence of a yearly date Trigger an Enrollment was made for: its anniversary year
+ */
+export const zYearlyEnrollmentOccurrence = z.object({
+  recurrence: z.enum(['yearly']),
+  year: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
+ * The occurrence of a date Trigger an Enrollment was made for (ADR 0126), by `recurrence`: a
+ * contact is enrolled at most once per occurrence
+ */
+export const zEnrollmentOccurrence = z.discriminatedUnion('recurrence', [
+  zYearlyEnrollmentOccurrence.extend({ recurrence: z.literal('yearly') }),
+  zOnceEnrollmentOccurrence.extend({ recurrence: z.literal('once') })
+]);
+
+/**
+ * One Contact's progress through an Automation. Erased with the Contact.
+ */
+export const zEnrollmentResource = z.object({
+  id: zEntityId,
+  automationId: zEntityId,
+  contactId: zEntityId,
+  status: zEnrollmentStatus,
+  ordinal: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  keyValue: z.exactOptional(z.string()),
+  occurrence: z.exactOptional(zEnrollmentOccurrence),
+  currentStepId: z.exactOptional(zStepId),
+  resumeAt: z.exactOptional(zTimestamp),
+  failure: z.exactOptional(zEnrollmentFailure),
+  createdAt: zTimestamp,
+  updatedAt: zTimestamp
+});
+
+/**
  * A path of Steps, in the order an Enrollment walks them. A version's Steps are its root path.
  */
 export const zAutomationPath = z.object({
@@ -4893,6 +5154,9 @@ export const zAutomationStep = z.union([
   z.object({
     type: z.literal('wait')
   }).and(zWaitStep),
+  z.object({
+    type: z.literal('wait_until')
+  }).and(zWaitUntilStep),
   z.object({
     type: z.literal('apply_tag')
   }).and(zApplyTagStep),
@@ -4930,6 +5194,9 @@ export const zAutomationStepInput = z.union([
     type: z.literal('wait')
   }).and(zWaitStepInput),
   z.object({
+    type: z.literal('wait_until')
+  }).and(zWaitUntilStepInput),
+  z.object({
     type: z.literal('apply_tag')
   }).and(zApplyTagStepInput),
   z.object({
@@ -4950,14 +5217,28 @@ export const zAutomationStepInput = z.union([
 ]);
 
 /**
- * What enrolls a Contact in an automation, by `kind`: an Event matcher
+ * What enrolls a Contact in an automation, by `kind`: an Event matcher or a date
  */
-export const zAutomationTrigger = z.lazy((): any => zEventTrigger);
+export const zAutomationTrigger = z.union([
+  z.object({
+    kind: z.literal('event')
+  }).and(z.lazy((): any => zEventTrigger)),
+  z.object({
+    kind: z.literal('date')
+  }).and(zDateTrigger)
+]);
 
 /**
- * What enrolls a Contact in an automation, by `kind`: an Event matcher
+ * What enrolls a Contact in an automation, by `kind`: an Event matcher or a date
  */
-export const zAutomationTriggerInput = z.lazy((): any => zEventTriggerInput);
+export const zAutomationTriggerInput = z.union([
+  z.object({
+    kind: z.literal('event')
+  }).and(z.lazy((): any => zEventTriggerInput)),
+  z.object({
+    kind: z.literal('date')
+  }).and(zDateTriggerInput)
+]);
 
 /**
  * One version of an automation's definition: what publishing makes it do (ADR 0065)
@@ -5284,6 +5565,9 @@ export const zPathStep = z.union([
     type: z.literal('wait')
   }).and(zWaitStep),
   z.object({
+    type: z.literal('wait_until')
+  }).and(zWaitUntilStep),
+  z.object({
     type: z.literal('apply_tag')
   }).and(zApplyTagStep),
   z.object({
@@ -5319,6 +5603,9 @@ export const zPathStepInput = z.union([
   z.object({
     type: z.literal('wait')
   }).and(zWaitStepInput),
+  z.object({
+    type: z.literal('wait_until')
+  }).and(zWaitUntilStepInput),
   z.object({
     type: z.literal('apply_tag')
   }).and(zApplyTagStepInput),
@@ -5544,6 +5831,9 @@ export const zSplitPathStep = z.union([
     type: z.literal('wait')
   }).and(zWaitStep),
   z.object({
+    type: z.literal('wait_until')
+  }).and(zWaitUntilStep),
+  z.object({
     type: z.literal('apply_tag')
   }).and(zApplyTagStep),
   z.object({
@@ -5580,6 +5870,9 @@ export const zSplitPathStepInput = z.union([
     type: z.literal('wait')
   }).and(zWaitStepInput),
   z.object({
+    type: z.literal('wait_until')
+  }).and(zWaitUntilStepInput),
+  z.object({
     type: z.literal('apply_tag')
   }).and(zApplyTagStepInput),
   z.object({
@@ -5602,8 +5895,9 @@ export const zSplitPathStepInput = z.union([
 /**
  * A Step that sends each Enrollment down one of its paths by weight (ADR 0124): a hash of the
  * Contact, the Split and the Enrollment's ordinal chooses the path, so the same Enrollment always
- * takes the same path and a new Enrollment of the Contact draws again. An empty path is a holdout.
- * The paths rejoin at the Step after the Split.
+ * takes the same path and a new Enrollment of the Contact draws again. In an Automation with a
+ * yearly date Trigger the anniversary year takes the ordinal's place, so the Contact draws again
+ * each year (ADR 0126). An empty path is a holdout. The paths rejoin at the Step after the Split.
  */
 export const zSplitStep = z.object({
   id: zStepId,

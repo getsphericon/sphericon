@@ -48,9 +48,11 @@ import (
 	automationstep "github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	channels "github.com/getsphericon/sphericon/internal/kernel/channels"
 	conditiontree "github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	datetrigger "github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 	emaildoc "github.com/getsphericon/sphericon/internal/kernel/emaildoc"
 	emailrender "github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	holdreason "github.com/getsphericon/sphericon/internal/kernel/holdreason"
+	localcalendar "github.com/getsphericon/sphericon/internal/kernel/localcalendar"
 	pagination "github.com/getsphericon/sphericon/internal/kernel/pagination"
 	providers "github.com/getsphericon/sphericon/internal/kernel/providers"
 	ruleaction "github.com/getsphericon/sphericon/internal/kernel/ruleaction"
@@ -209,6 +211,12 @@ func (c *ConverterImpl) AutomationReportToResource(source automations.Report) ex
 		externalapiAutomationReport.Paths = make([]external.AutomationPathFigures, len(source.Paths))
 		for l := 0; l < len(source.Paths); l++ {
 			externalapiAutomationReport.Paths[l] = c.automationsPathFiguresToExternalapiAutomationPathFigures(source.Paths[l])
+		}
+	}
+	if source.WaitUntilSteps != nil {
+		externalapiAutomationReport.WaitUntilSteps = make([]external.AutomationWaitUntilFigures, len(source.WaitUntilSteps))
+		for m := 0; m < len(source.WaitUntilSteps); m++ {
+			externalapiAutomationReport.WaitUntilSteps[m] = c.automationsWaitUntilFiguresToExternalapiAutomationWaitUntilFigures(source.WaitUntilSteps[m])
 		}
 	}
 	return externalapiAutomationReport
@@ -811,6 +819,27 @@ func (c *ConverterImpl) CustomFieldsToResources(source []*ent.CustomField) []ext
 	}
 	return externalapiCustomFieldResourceList
 }
+func (c *ConverterImpl) DateRecurrenceToResource(source localcalendar.Recurrence) external.DateRecurrence {
+	var externalapiDateRecurrence external.DateRecurrence
+	switch source {
+	case localcalendar.Once:
+		externalapiDateRecurrence = external.DateRecurrenceOnce
+	case localcalendar.Yearly:
+		externalapiDateRecurrence = external.DateRecurrenceYearly
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiDateRecurrence
+}
+func (c *ConverterImpl) DateTriggerToResource(source datetrigger.Date) external.DateTrigger {
+	var externalapiDateTrigger external.DateTrigger
+	externalapiDateTrigger.Kind = dateTriggerKind(source)
+	externalapiDateTrigger.Field = dateField(source.Field)
+	externalapiDateTrigger.Recurrence = c.DateRecurrenceToResource(source.Recurrence)
+	externalapiDateTrigger.OffsetDays = dateOffsetDays(source.OffsetDays)
+	externalapiDateTrigger.LocalTime = external.LocalTime(source.LocalTime)
+	return externalapiDateTrigger
+}
 func (c *ConverterImpl) DnsRecordToResource(source sendingdomains.Record) external.DnsRecord {
 	var externalapiDnsRecord external.DnsRecord
 	externalapiDnsRecord.Type = dnsRecordType(source)
@@ -1027,6 +1056,7 @@ func (c *ConverterImpl) EnrollmentToResource(source *ent.AutomationRun) external
 		externalapiEnrollmentResource.Status = c.EnrollmentStatusToResource((*source).Status)
 		externalapiEnrollmentResource.Ordinal = count((*source).Ordinal)
 		externalapiEnrollmentResource.KeyValue = optString((*source).KeyValue)
+		externalapiEnrollmentResource.Occurrence = enrollmentOccurrence((*source).Occurrence)
 		externalapiEnrollmentResource.CurrentStepId = optStepID((*source).CurrentStepID)
 		externalapiEnrollmentResource.ResumeAt = optTimestamp((*source).ResumeAt)
 		externalapiEnrollmentResource.Failure = enrollmentFailure(c, (*source))
@@ -1333,6 +1363,7 @@ func (c *ConverterImpl) PathStepSum(source external.AutomationStepSum) external.
 	externalapiPathStepSum.TelegramStep = source.TelegramStep
 	externalapiPathStepSum.SmsStep = source.SmsStep
 	externalapiPathStepSum.WaitStep = source.WaitStep
+	externalapiPathStepSum.WaitUntilStep = source.WaitUntilStep
 	externalapiPathStepSum.ApplyTagStep = source.ApplyTagStep
 	externalapiPathStepSum.RemoveTagStep = source.RemoveTagStep
 	externalapiPathStepSum.HttpStep = source.HttpStep
@@ -1364,6 +1395,8 @@ func (c *ConverterImpl) PathStepType(source external.AutomationStepSumType) exte
 		externalapiPathStepSumType = external.TelegramStepPathStepSum
 	case external.WaitStepAutomationStepSum:
 		externalapiPathStepSumType = external.WaitStepPathStepSum
+	case external.WaitUntilStepAutomationStepSum:
+		externalapiPathStepSumType = external.WaitUntilStepPathStepSum
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
@@ -1766,10 +1799,14 @@ func (c *ConverterImpl) SkippedEntryReasonToResource(source automationskippedent
 		externalapiSkippedEntryReason = external.SkippedEntryReasonCycle
 	case automationskippedentry.ReasonEnrollmentCeiling:
 		externalapiSkippedEntryReason = external.SkippedEntryReasonEnrollmentCeiling
+	case automationskippedentry.ReasonMissed:
+		externalapiSkippedEntryReason = external.SkippedEntryReasonMissed
 	case automationskippedentry.ReasonNoEnrollmentKey:
 		externalapiSkippedEntryReason = external.SkippedEntryReasonNoEnrollmentKey
 	case automationskippedentry.ReasonOnce:
 		externalapiSkippedEntryReason = external.SkippedEntryReasonOnce
+	case automationskippedentry.ReasonSendLocked:
+		externalapiSkippedEntryReason = external.SkippedEntryReasonSendLocked
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
@@ -1890,6 +1927,7 @@ func (c *ConverterImpl) SplitPathStepSum(source external.AutomationStepSum) exte
 	externalapiSplitPathStepSum.TelegramStep = source.TelegramStep
 	externalapiSplitPathStepSum.SmsStep = source.SmsStep
 	externalapiSplitPathStepSum.WaitStep = source.WaitStep
+	externalapiSplitPathStepSum.WaitUntilStep = source.WaitUntilStep
 	externalapiSplitPathStepSum.ApplyTagStep = source.ApplyTagStep
 	externalapiSplitPathStepSum.RemoveTagStep = source.RemoveTagStep
 	externalapiSplitPathStepSum.HttpStep = source.HttpStep
@@ -1921,6 +1959,8 @@ func (c *ConverterImpl) SplitPathStepType(source external.AutomationStepSumType)
 		externalapiSplitPathStepSumType = external.TelegramStepSplitPathStepSum
 	case external.WaitStepAutomationStepSum:
 		externalapiSplitPathStepSumType = external.WaitStepSplitPathStepSum
+	case external.WaitUntilStepAutomationStepSum:
+		externalapiSplitPathStepSumType = external.WaitUntilStepSplitPathStepSum
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
@@ -2248,6 +2288,36 @@ func (c *ConverterImpl) WaitStepToResource(source automations.WaitView) external
 	externalapiWaitStep.Seconds = count(source.Seconds)
 	return externalapiWaitStep
 }
+func (c *ConverterImpl) WaitUntilDateToResource(source datetrigger.Date) external.WaitUntilDate {
+	var externalapiWaitUntilDate external.WaitUntilDate
+	externalapiWaitUntilDate.Form = waitUntilDateForm(source)
+	externalapiWaitUntilDate.Field = dateField(source.Field)
+	externalapiWaitUntilDate.Recurrence = c.DateRecurrenceToResource(source.Recurrence)
+	externalapiWaitUntilDate.OffsetDays = dateOffsetDays(source.OffsetDays)
+	externalapiWaitUntilDate.LocalTime = external.LocalTime(source.LocalTime)
+	return externalapiWaitUntilDate
+}
+func (c *ConverterImpl) WaitUntilStepToResource(source automations.WaitUntilView) (external.WaitUntilStep, error) {
+	var externalapiWaitUntilStep external.WaitUntilStep
+	externalapiWaitUntilStep.ID = c.automationstepIDToExternalapiStepId(source.ID)
+	externalapiWaitUntilStep.Type = waitUntilStepType(source.Type)
+	externalapiWaitUntilMoment, err := waitUntilMoment(c, source.Until)
+	if err != nil {
+		return externalapiWaitUntilStep, err
+	}
+	externalapiWaitUntilStep.Until = externalapiWaitUntilMoment
+	return externalapiWaitUntilStep, nil
+}
+func (c *ConverterImpl) WaitUntilTimeOfDayToResource(source automationstep.TimeOfDay) external.WaitUntilTimeOfDay {
+	var externalapiWaitUntilTimeOfDay external.WaitUntilTimeOfDay
+	externalapiWaitUntilTimeOfDay.Form = waitUntilTimeOfDayForm(source)
+	externalapiWaitUntilTimeOfDay.LocalTime = external.LocalTime(source.LocalTime)
+	externalapiWaitUntilTimeOfDay.Weekdays = make([]external.Weekday, len(source.Weekdays))
+	for i := 0; i < len(source.Weekdays); i++ {
+		externalapiWaitUntilTimeOfDay.Weekdays[i] = c.WeekdayToResource(source.Weekdays[i])
+	}
+	return externalapiWaitUntilTimeOfDay
+}
 func (c *ConverterImpl) WebhookDisabledReasonToResource(source webhookendpoint.DisabledReason) external.WebhookDisabledReason {
 	var externalapiWebhookDisabledReason external.WebhookDisabledReason
 	switch source {
@@ -2306,6 +2376,28 @@ func (c *ConverterImpl) WebhooksListPage(source pagination.Page[external.Webhook
 	externalapiWebhooksListOK.TotalPages = count(source.TotalPages)
 	return &externalapiWebhooksListOK
 }
+func (c *ConverterImpl) WeekdayToResource(source localcalendar.Weekday) external.Weekday {
+	var externalapiWeekday external.Weekday
+	switch source {
+	case localcalendar.Friday:
+		externalapiWeekday = external.WeekdayFriday
+	case localcalendar.Monday:
+		externalapiWeekday = external.WeekdayMonday
+	case localcalendar.Saturday:
+		externalapiWeekday = external.WeekdaySaturday
+	case localcalendar.Sunday:
+		externalapiWeekday = external.WeekdaySunday
+	case localcalendar.Thursday:
+		externalapiWeekday = external.WeekdayThursday
+	case localcalendar.Tuesday:
+		externalapiWeekday = external.WeekdayTuesday
+	case localcalendar.Wednesday:
+		externalapiWeekday = external.WeekdayWednesday
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiWeekday
+}
 func (c *ConverterImpl) WorkspaceToResource(source *ent.Workspace) external.WorkspaceResource {
 	var externalapiWorkspaceResource external.WorkspaceResource
 	if source != nil {
@@ -2336,6 +2428,8 @@ func (c *ConverterImpl) automationsSkippedCountsToExternalapiAutomationSkippedCo
 	externalapiAutomationSkippedCounts.Cooldown = count(source.Cooldown)
 	externalapiAutomationSkippedCounts.NoEnrollmentKey = count(source.NoEnrollmentKey)
 	externalapiAutomationSkippedCounts.EnrollmentCeiling = count(source.EnrollmentCeiling)
+	externalapiAutomationSkippedCounts.Missed = count(source.Missed)
+	externalapiAutomationSkippedCounts.SendLocked = count(source.SendLocked)
 	return externalapiAutomationSkippedCounts
 }
 func (c *ConverterImpl) automationsStepFiguresToExternalapiAutomationStepFigures(source automations.StepFigures) external.AutomationStepFigures {
@@ -2352,6 +2446,14 @@ func (c *ConverterImpl) automationsVersionStepFiguresToExternalapiAutomationVers
 	externalapiAutomationVersionStepFigures.Sent = count(source.Sent)
 	externalapiAutomationVersionStepFigures.Skipped = count(source.Skipped)
 	return externalapiAutomationVersionStepFigures
+}
+func (c *ConverterImpl) automationsWaitUntilFiguresToExternalapiAutomationWaitUntilFigures(source automations.WaitUntilFigures) external.AutomationWaitUntilFigures {
+	var externalapiAutomationWaitUntilFigures external.AutomationWaitUntilFigures
+	externalapiAutomationWaitUntilFigures.StepId = c.automationstepIDToExternalapiStepId(source.StepID)
+	externalapiAutomationWaitUntilFigures.Past = count(source.Past)
+	externalapiAutomationWaitUntilFigures.NoDate = count(source.NoDate)
+	externalapiAutomationWaitUntilFigures.BeyondBound = count(source.BeyondBound)
+	return externalapiAutomationWaitUntilFigures
 }
 func (c *ConverterImpl) automationstepIDToExternalapiStepId(source automationstep.ID) external.StepId {
 	return external.StepId(source)

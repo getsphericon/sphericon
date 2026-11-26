@@ -86,3 +86,43 @@ func TestExternalEnrollmentsNeedTheirOwnScope(t *testing.T) {
 	})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 }
+
+// An Enrollment of a date Trigger carries the occurrence it was made for (ADR 0126): its
+// anniversary year (fixture Birthday greeting: Alice's for 2026). One an Event began carries none.
+func TestExternalEnrollmentsShowTheAnniversaryYearOfADateTrigger(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	c := env.ExternalScoped(t, apitokens.ScopeEnrollmentsRead)
+
+	dated, err := c.EnrollmentsGet(ctx, externalapi.EnrollmentsGetParams{
+		AutomationId: entityIDString(fixtures.AutomationBirthdayGreetingID),
+		EnrollmentId: entityIDString(fixtures.AutomationRunBirthdayGreetingAliceID),
+	})
+	require.NoError(t, err)
+	evented, err := c.EnrollmentsGet(ctx, externalapi.EnrollmentsGetParams{
+		AutomationId: entityIDString(fixtures.AutomationWelcomeSeriesID),
+		EnrollmentId: entityIDString(fixtures.AutomationRunWelcomeCompletedID),
+	})
+	require.NoError(t, err)
+
+	occurrence, ok := dated.Occurrence.Get()
+	require.True(t, ok)
+	assert.JSONEq(t, `{"recurrence":"yearly","year":2026}`, testhelper.JSONOf(t, &occurrence))
+	assert.False(t, evented.Occurrence.IsSet())
+}
+
+// An Enrollment of a once date Trigger carries the once date's one occurrence, and no year
+// (fixture Renewal notice: Alice's).
+func TestExternalEnrollmentsShowTheOnceOccurrence(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.ExternalScoped(t, apitokens.ScopeEnrollmentsRead)
+
+	listed, err := c.EnrollmentsList(t.Context(), externalapi.EnrollmentsListParams{AutomationId: entityIDString(fixtures.AutomationRenewalNoticeID)})
+	require.NoError(t, err)
+
+	require.Len(t, listed.Items, 1)
+	assert.Equal(t, entityIDString(fixtures.AutomationRunRenewalNoticeAliceID), listed.Items[0].ID)
+	occurrence, ok := listed.Items[0].Occurrence.Get()
+	require.True(t, ok)
+	assert.JSONEq(t, `{"recurrence":"once"}`, testhelper.JSONOf(t, &occurrence))
+}

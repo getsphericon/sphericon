@@ -57,6 +57,8 @@ const (
 	EdgeBindings = "bindings"
 	// EdgeStartTokens holds the string denoting the start_tokens edge name in mutations.
 	EdgeStartTokens = "start_tokens"
+	// EdgeDates holds the string denoting the dates edge name in mutations.
+	EdgeDates = "dates"
 	// EdgeTags holds the string denoting the tags edge name in mutations.
 	EdgeTags = "tags"
 	// EdgeEvents holds the string denoting the events edge name in mutations.
@@ -95,6 +97,13 @@ const (
 	StartTokensInverseTable = "start_tokens"
 	// StartTokensColumn is the table column denoting the start_tokens relation/edge.
 	StartTokensColumn = "contact_id"
+	// DatesTable is the table that holds the dates relation/edge.
+	DatesTable = "contact_dates"
+	// DatesInverseTable is the table name for the ContactDate entity.
+	// It exists in this package in order to avoid circular dependency with the "contactdate" package.
+	DatesInverseTable = "contact_dates"
+	// DatesColumn is the table column denoting the dates relation/edge.
+	DatesColumn = "contact_id"
 	// TagsTable is the table that holds the tags relation/edge. The primary key declared below.
 	TagsTable = "contact_tags"
 	// TagsInverseTable is the table name for the Tag entity.
@@ -335,6 +344,20 @@ func ByStartTokens(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// ByDatesCount orders the results by dates count.
+func ByDatesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newDatesStep(), opts...)
+	}
+}
+
+// ByDates orders the results by dates terms.
+func ByDates(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newDatesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByTagsCount orders the results by tags count.
 func ByTagsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -416,6 +439,13 @@ func newStartTokensStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(StartTokensInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, StartTokensTable, StartTokensColumn),
+	)
+}
+func newDatesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(DatesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, DatesTable, DatesColumn),
 	)
 }
 func newTagsStep() *sqlgraph.Step {

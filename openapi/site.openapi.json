@@ -11868,7 +11868,8 @@
           "results",
           "steps",
           "versionSteps",
-          "paths"
+          "paths",
+          "waitUntilSteps"
         ],
         "properties": {
           "opens": {
@@ -11944,6 +11945,13 @@
               "$ref": "#/components/schemas/AutomationPathFigures"
             },
             "description": "Each path of a Branch (its unknown path included) and of a Split by its fork's Step id and\nits own id: the enrollments that took it and how many of them reached the goal, over the\nautomation's whole history, each summed over every version that had the path. Sorted by the\nnewest of those versions, then by the fork's place there and the path's place in the fork:\none entry per path an enrollment took, so a path none took has none"
+          },
+          "waitUntilSteps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AutomationWaitUntilFigures"
+            },
+            "description": "Each Wait until by its Step id, summed over every version that had it: the enrollments that\nleft it in the current period without waiting, because its date had no moment ahead within 366\ndays (ADR 0126). In Step id order: one entry per Wait until any enrollment left so, so one that\nevery enrollment waited on has none"
           }
         },
         "description": "An automation's engagement figures over its whole history and its results over a period"
@@ -12067,7 +12075,9 @@
           "once",
           "cooldown",
           "noEnrollmentKey",
-          "enrollmentCeiling"
+          "enrollmentCeiling",
+          "missed",
+          "sendLocked"
         ],
         "properties": {
           "cycle": {
@@ -12099,6 +12109,16 @@
             "type": "integer",
             "format": "int32",
             "description": "Entries of a contact that had 10 active enrollments in the keyed automation, or 10 begun in a\nday"
+          },
+          "missed": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Occurrences of a date Trigger (ADR 0126) the scheduler reached 24 hours late or more while\ntheir date was already set at their moment, which enroll no one; a date set after its\noccurrence counts nothing"
+          },
+          "sendLocked": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Occurrences of a date Trigger whose date was set through a Connection without mcp:send, which\nenroll no one while it stays so; a later write of another value without the mark may still enroll the same\noccurrence within 24 hours, which then counts as entered too"
           }
         },
         "description": "How many entries into an automation were skipped, by reason"
@@ -12122,6 +12142,9 @@
           },
           {
             "$ref": "#/components/schemas/WaitStep"
+          },
+          {
+            "$ref": "#/components/schemas/WaitUntilStep"
           },
           {
             "$ref": "#/components/schemas/ApplyTagStep"
@@ -12149,6 +12172,7 @@
             "telegram": "#/components/schemas/TelegramStep",
             "sms": "#/components/schemas/SmsStep",
             "wait": "#/components/schemas/WaitStep",
+            "wait_until": "#/components/schemas/WaitUntilStep",
             "apply_tag": "#/components/schemas/ApplyTagStep",
             "remove_tag": "#/components/schemas/RemoveTagStep",
             "http": "#/components/schemas/HttpStep",
@@ -12200,6 +12224,9 @@
             "$ref": "#/components/schemas/WaitStepInput"
           },
           {
+            "$ref": "#/components/schemas/WaitUntilStepInput"
+          },
+          {
             "$ref": "#/components/schemas/ApplyTagStepInput"
           },
           {
@@ -12225,6 +12252,7 @@
             "telegram": "#/components/schemas/TelegramStepInput",
             "sms": "#/components/schemas/SmsStepInput",
             "wait": "#/components/schemas/WaitStepInput",
+            "wait_until": "#/components/schemas/WaitUntilStepInput",
             "apply_tag": "#/components/schemas/ApplyTagStepInput",
             "remove_tag": "#/components/schemas/RemoveTagStepInput",
             "http": "#/components/schemas/HttpStepInput",
@@ -12240,30 +12268,38 @@
         "oneOf": [
           {
             "$ref": "#/components/schemas/EventTrigger"
+          },
+          {
+            "$ref": "#/components/schemas/DateTrigger"
           }
         ],
         "discriminator": {
           "propertyName": "kind",
           "mapping": {
-            "event": "#/components/schemas/EventTrigger"
+            "event": "#/components/schemas/EventTrigger",
+            "date": "#/components/schemas/DateTrigger"
           }
         },
-        "description": "What enrolls a Contact in an automation, by `kind`: an Event matcher"
+        "description": "What enrolls a Contact in an automation, by `kind`: an Event matcher or a date"
       },
       "AutomationTriggerInput": {
         "type": "object",
         "oneOf": [
           {
             "$ref": "#/components/schemas/EventTriggerInput"
+          },
+          {
+            "$ref": "#/components/schemas/DateTriggerInput"
           }
         ],
         "discriminator": {
           "propertyName": "kind",
           "mapping": {
-            "event": "#/components/schemas/EventTriggerInput"
+            "event": "#/components/schemas/EventTriggerInput",
+            "date": "#/components/schemas/DateTriggerInput"
           }
         },
-        "description": "What enrolls a Contact in an automation, by `kind`: an Event matcher"
+        "description": "What enrolls a Contact in an automation, by `kind`: an Event matcher or a date"
       },
       "AutomationVersion": {
         "type": "object",
@@ -12339,6 +12375,59 @@
           }
         },
         "description": "The messages one version's send Step sent"
+      },
+      "AutomationWaitUntilFigures": {
+        "type": "object",
+        "required": ["stepId", "past", "noDate", "beyondBound"],
+        "properties": {
+          "stepId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StepId"
+              }
+            ],
+            "description": "The Wait until's Step id, the same in every version"
+          },
+          "past": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Its moment had passed: a once date before the arrival"
+          },
+          "noDate": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The contact held no date in the field, or a value that is no date"
+          },
+          "beyondBound": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Its moment lay more than 366 days ahead, such as a yearly date whose value is itself in the\nfuture"
+          }
+        },
+        "description": "The enrollments that went on at once from one Wait until on a date instead of waiting, by why:\nread from what each kept when it reached the Step, counted on the moment it left it"
+      },
+      "BirthdayDateField": {
+        "type": "object",
+        "required": ["kind"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["birthday"]
+          }
+        },
+        "description": "The Contact's date of birth, a date field every Contact has"
+      },
+      "BirthdayDateFieldInput": {
+        "type": "object",
+        "required": ["kind"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["birthday"]
+          }
+        },
+        "description": "The Contact's date of birth, a date field every Contact has",
+        "additionalProperties": false
       },
       "BirthdayLeaf": {
         "type": "object",
@@ -14247,6 +14336,37 @@
         },
         "description": "The tests a Condition's Custom field test takes on a field of one type, each with the\noperators it takes there; an empty list is a test the type does not take"
       },
+      "CustomFieldDateField": {
+        "type": "object",
+        "required": ["kind", "key"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["customField"]
+          },
+          "key": {
+            "type": "string",
+            "description": "The Custom field's key"
+          }
+        },
+        "description": "A datetime Custom field of the Workspace, its key in a field of its own. Its value's calendar\ndate is read in the Workspace time zone: a value with an offset is moved into it, one without an\noffset or a bare date keeps its own date."
+      },
+      "CustomFieldDateFieldInput": {
+        "type": "object",
+        "required": ["kind", "key"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["customField"]
+          },
+          "key": {
+            "type": "string",
+            "description": "The Custom field's key"
+          }
+        },
+        "description": "A datetime Custom field of the Workspace, its key in a field of its own. Its value's calendar\ndate is read in the Workspace time zone: a value with an offset is moved into it, one without an\noffset or a bare date keeps its own date.",
+        "additionalProperties": false
+      },
       "CustomFieldLeaf": {
         "type": "object",
         "required": ["kind", "key", "test"],
@@ -14360,6 +14480,221 @@
         "type": "string",
         "enum": ["string", "number", "bool", "datetime"],
         "description": "A Custom field's value type"
+      },
+      "DateField": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/BirthdayDateField"
+          },
+          {
+            "$ref": "#/components/schemas/CustomFieldDateField"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "birthday": "#/components/schemas/BirthdayDateField",
+            "customField": "#/components/schemas/CustomFieldDateField"
+          }
+        },
+        "description": "A date a Contact holds, by `kind`: its `birthday`, or a datetime Custom field"
+      },
+      "DateFieldInput": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/BirthdayDateFieldInput"
+          },
+          {
+            "$ref": "#/components/schemas/CustomFieldDateFieldInput"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "birthday": "#/components/schemas/BirthdayDateFieldInput",
+            "customField": "#/components/schemas/CustomFieldDateFieldInput"
+          }
+        },
+        "description": "A date a Contact holds, by `kind`, as a request writes it"
+      },
+      "DateOccurrence": {
+        "type": "object",
+        "required": ["field", "recurrence", "offsetDays", "localTime"],
+        "properties": {
+          "field": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateField"
+              }
+            ],
+            "description": "The date the occurrences come from"
+          },
+          "recurrence": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateRecurrence"
+              }
+            ],
+            "description": "Every year, or once"
+          },
+          "offsetDays": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateOffsetDays"
+              }
+            ],
+            "description": "Days before (negative) or after the date"
+          },
+          "localTime": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LocalTime"
+              }
+            ],
+            "description": "The time of day of each occurrence, in the Contact's time zone"
+          }
+        },
+        "description": "When a date the Contact holds comes (ADR 0126), as a date Trigger enrolls on it and a Wait until\nwaits for it: on each anniversary of the date, from the year after its own, or once on it,\n`offsetDays` before or after it, at `localTime` in the Contact's time zone, or in the Workspace\ntime zone when the Contact has no valid one"
+      },
+      "DateOccurrenceInput": {
+        "type": "object",
+        "required": ["field", "recurrence", "offsetDays", "localTime"],
+        "properties": {
+          "field": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateFieldInput"
+              }
+            ],
+            "description": "The date the occurrences come from: the birthday, or a datetime Custom field of the\nWorkspace's catalogue"
+          },
+          "recurrence": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateRecurrence"
+              }
+            ],
+            "description": "Every year, or once; the birthday is only yearly"
+          },
+          "offsetDays": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateOffsetDays"
+              }
+            ],
+            "description": "Days before (negative) or after the date, within 365"
+          },
+          "localTime": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LocalTime"
+              }
+            ],
+            "description": "The time of day of each occurrence, `HH:MM`, in the Contact's time zone"
+          }
+        },
+        "description": "When a date the Contact holds comes, as a request writes it"
+      },
+      "DateOffsetDays": {
+        "type": "integer",
+        "format": "int32",
+        "minimum": -365,
+        "maximum": 365,
+        "description": "A whole number of days before (negative) or after the date, within a year"
+      },
+      "DateRecurrence": {
+        "type": "string",
+        "enum": ["yearly", "once"],
+        "description": "How often a date comes: `yearly` on each anniversary, from the year after the date's own;\n`once` on the date itself. The birthday is always past, so it is only yearly."
+      },
+      "DateTrigger": {
+        "type": "object",
+        "required": ["kind", "field", "recurrence", "offsetDays", "localTime"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["date"]
+          },
+          "field": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateField"
+              }
+            ],
+            "description": "The date the occurrences come from"
+          },
+          "recurrence": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateRecurrence"
+              }
+            ],
+            "description": "Every year, or once"
+          },
+          "offsetDays": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateOffsetDays"
+              }
+            ],
+            "description": "Days before (negative) or after the date"
+          },
+          "localTime": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LocalTime"
+              }
+            ],
+            "description": "The time of day of each occurrence, in the Contact's time zone"
+          }
+        },
+        "description": "A Trigger that enrolls a Contact on a date it holds (ADR 0126): on each anniversary of its\nbirthday or of a datetime Custom field, or once on such a field, `offsetDays` before or after it,\nat `localTime` in the Contact's time zone, or in the Workspace time zone when the Contact has no\nvalid one. A yearly date enrolls a Contact at most once per anniversary year, the year of the date\nthe offset counts from, and a once date at most once ever; an occurrence while the previous\nenrollment is still active is skipped. Only occurrences after the automation was published\nenroll, at most 24 hours late, and the enrollment begins at the occurrence's moment with no\ntriggering Event. A date Trigger has no entry policy, cooldown or Enrollment key, and no rule's\nenroll action may name its automation."
+      },
+      "DateTriggerInput": {
+        "type": "object",
+        "required": ["kind", "field", "recurrence", "offsetDays", "localTime"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["date"]
+          },
+          "field": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateFieldInput"
+              }
+            ],
+            "description": "The date the occurrences come from: the birthday, or a datetime Custom field of the\nWorkspace's catalogue"
+          },
+          "recurrence": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateRecurrence"
+              }
+            ],
+            "description": "Every year, or once; the birthday is only yearly"
+          },
+          "offsetDays": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateOffsetDays"
+              }
+            ],
+            "description": "Days before (negative) or after the date, within 365"
+          },
+          "localTime": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LocalTime"
+              }
+            ],
+            "description": "The time of day of each occurrence, `HH:MM`, in the Contact's time zone"
+          }
+        },
+        "description": "A Trigger that enrolls a Contact on a date it holds (ADR 0126), as a request writes it",
+        "additionalProperties": false
       },
       "DeferralCause": {
         "type": "string",
@@ -14964,6 +15299,25 @@
         "enum": ["invalid_body", "timeout", "blocked_address", "http_status", "network"],
         "description": "Why an Enrollment failed. A closed set: `invalid_body` (an HTTP step's body did not render\nto valid JSON), `timeout` (no answer in time), `blocked_address` (the URL names an address\nthis instance does not permit), `http_status` (a non-2xx answer, see `status`) and\n`network` (any other transport failure)."
       },
+      "EnrollmentOccurrence": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/YearlyEnrollmentOccurrence"
+          },
+          {
+            "$ref": "#/components/schemas/OnceEnrollmentOccurrence"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "recurrence",
+          "mapping": {
+            "yearly": "#/components/schemas/YearlyEnrollmentOccurrence",
+            "once": "#/components/schemas/OnceEnrollmentOccurrence"
+          }
+        },
+        "description": "The occurrence of a date Trigger an Enrollment was made for (ADR 0126), by `recurrence`: a\ncontact is enrolled at most once per occurrence"
+      },
       "EnrollmentResource": {
         "type": "object",
         "required": [
@@ -15017,6 +15371,14 @@
             "type": "string",
             "description": "The value of the automation's Enrollment key the triggering Event carried, the property's\nstring form (ADR 0165); absent for an automation with no key",
             "x-untrusted": true
+          },
+          "occurrence": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EnrollmentOccurrence"
+              }
+            ],
+            "description": "The occurrence of the automation's date Trigger the Enrollment was made for (ADR 0126): which\nyear's anniversary, or the once date's one occurrence; absent for an Enrollment an Event or a\nrule's enroll action began"
           },
           "currentStepId": {
             "allOf": [
@@ -15853,6 +16215,11 @@
         },
         "description": "One finding of the lint over a message's rendered HTML. `message` is fixed text of the\nserver; `element` and `detail` quote the message or the Brand kit and are untrusted data."
       },
+      "LocalTime": {
+        "type": "string",
+        "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+        "description": "A local time of day, `HH:MM` in whole minutes from 00:00 to 23:59, read in a time zone the\nplace that holds it names (`09:00`, `18:30`)"
+      },
       "LocaleTag": {
         "type": "string",
         "maxLength": 35,
@@ -16024,6 +16391,17 @@
         "description": "A test of a number. A missing value, or one that is not a number (text, a boolean, null, a\nlist), fails it.",
         "additionalProperties": false
       },
+      "OnceEnrollmentOccurrence": {
+        "type": "object",
+        "required": ["recurrence"],
+        "properties": {
+          "recurrence": {
+            "type": "string",
+            "enum": ["once"]
+          }
+        },
+        "description": "The occurrence of a once date Trigger an Enrollment was made for: the one it has"
+      },
       "OptOutVia": {
         "type": "string",
         "enum": ["keyword", "button", "block", "link", "refused_send", "manual"],
@@ -16043,6 +16421,9 @@
           },
           {
             "$ref": "#/components/schemas/WaitStep"
+          },
+          {
+            "$ref": "#/components/schemas/WaitUntilStep"
           },
           {
             "$ref": "#/components/schemas/ApplyTagStep"
@@ -16070,6 +16451,7 @@
             "telegram": "#/components/schemas/TelegramStep",
             "sms": "#/components/schemas/SmsStep",
             "wait": "#/components/schemas/WaitStep",
+            "wait_until": "#/components/schemas/WaitUntilStep",
             "apply_tag": "#/components/schemas/ApplyTagStep",
             "remove_tag": "#/components/schemas/RemoveTagStep",
             "http": "#/components/schemas/HttpStep",
@@ -16094,6 +16476,9 @@
           },
           {
             "$ref": "#/components/schemas/WaitStepInput"
+          },
+          {
+            "$ref": "#/components/schemas/WaitUntilStepInput"
           },
           {
             "$ref": "#/components/schemas/ApplyTagStepInput"
@@ -16121,6 +16506,7 @@
             "telegram": "#/components/schemas/TelegramStepInput",
             "sms": "#/components/schemas/SmsStepInput",
             "wait": "#/components/schemas/WaitStepInput",
+            "wait_until": "#/components/schemas/WaitUntilStepInput",
             "apply_tag": "#/components/schemas/ApplyTagStepInput",
             "remove_tag": "#/components/schemas/RemoveTagStepInput",
             "http": "#/components/schemas/HttpStepInput",
@@ -23702,9 +24088,11 @@
           "active_enrollment",
           "once",
           "cooldown",
-          "enrollment_ceiling"
+          "enrollment_ceiling",
+          "missed",
+          "send_locked"
         ],
-        "description": "Why an entry into an automation was skipped, by the first entry check that refused it (ADR 0127,\nADR 0165), in their order: `no_enrollment_key` (the automation has an Enrollment key and the\ntriggering Event lacks its property), `cycle` (the chain of events that caused it already passed\nthrough the automation), `active_enrollment` (the triggering Event occurred while an enrollment\nof the contact for the key value was active, or one is active still), `once` (the contact had an\nenrollment for the key value in the automation before, under the `once` entry policy),\n`cooldown` (under `again`, the cooldown from the beginning of the contact's previous enrollment\nfor the key value had not passed) or `enrollment_ceiling` (the keyed automation's contact had 10\nactive enrollments, or 10 begun in a day)."
+        "description": "Why an entry into an automation was skipped, by the first entry check that refused it (ADR 0127,\nADR 0165), in their order: `no_enrollment_key` (the automation has an Enrollment key and the\ntriggering Event lacks its property), `cycle` (the chain of events that caused it already passed\nthrough the automation), `active_enrollment` (the triggering Event occurred while an enrollment\nof the contact for the key value was active, or one is active still), `once` (the contact had an\nenrollment for the key value in the automation before, under the `once` entry policy),\n`cooldown` (under `again`, the cooldown from the beginning of the contact's previous enrollment\nfor the key value had not passed) or `enrollment_ceiling` (the keyed automation's contact had 10\nactive enrollments, or 10 begun in a day). An occurrence of a date Trigger (ADR 0126) is skipped as\n`active_enrollment` (an enrollment of the contact was active at its moment), `missed` (it was\nreached 24 hours late or more while its date was already set at its moment) or `send_locked` (its\ndate was set through a Connection without mcp:send; a later write of another value without the mark may\nstill enroll it within 24 hours)."
       },
       "SkippedEntryResource": {
         "type": "object",
@@ -23744,7 +24132,7 @@
           },
           "eventSourceId": {
             "type": "string",
-            "description": "The source id of the triggering Event (its dedupKey when it had one); absent when a rule's\nenroll action tried",
+            "description": "The source id of the triggering Event (its dedupKey when it had one); absent when a rule's\nenroll action or a date Trigger's occurrence tried",
             "x-untrusted": true
           },
           "firingId": {
@@ -23761,7 +24149,7 @@
                 "$ref": "#/components/schemas/Timestamp"
               }
             ],
-            "description": "When the enrollment would have begun: when its Event occurred"
+            "description": "When the enrollment would have begun: when its Event occurred, or the moment of the date\nTrigger's occurrence"
           },
           "createdAt": {
             "allOf": [
@@ -24197,6 +24585,9 @@
             "$ref": "#/components/schemas/WaitStep"
           },
           {
+            "$ref": "#/components/schemas/WaitUntilStep"
+          },
+          {
             "$ref": "#/components/schemas/ApplyTagStep"
           },
           {
@@ -24222,6 +24613,7 @@
             "telegram": "#/components/schemas/TelegramStep",
             "sms": "#/components/schemas/SmsStep",
             "wait": "#/components/schemas/WaitStep",
+            "wait_until": "#/components/schemas/WaitUntilStep",
             "apply_tag": "#/components/schemas/ApplyTagStep",
             "remove_tag": "#/components/schemas/RemoveTagStep",
             "http": "#/components/schemas/HttpStep",
@@ -24246,6 +24638,9 @@
           },
           {
             "$ref": "#/components/schemas/WaitStepInput"
+          },
+          {
+            "$ref": "#/components/schemas/WaitUntilStepInput"
           },
           {
             "$ref": "#/components/schemas/ApplyTagStepInput"
@@ -24273,6 +24668,7 @@
             "telegram": "#/components/schemas/TelegramStepInput",
             "sms": "#/components/schemas/SmsStepInput",
             "wait": "#/components/schemas/WaitStepInput",
+            "wait_until": "#/components/schemas/WaitUntilStepInput",
             "apply_tag": "#/components/schemas/ApplyTagStepInput",
             "remove_tag": "#/components/schemas/RemoveTagStepInput",
             "http": "#/components/schemas/HttpStepInput",
@@ -24307,7 +24703,7 @@
             "description": "The paths, in order"
           }
         },
-        "description": "A Step that sends each Enrollment down one of its paths by weight (ADR 0124): a hash of the\nContact, the Split and the Enrollment's ordinal chooses the path, so the same Enrollment always\ntakes the same path and a new Enrollment of the Contact draws again. An empty path is a holdout.\nThe paths rejoin at the Step after the Split."
+        "description": "A Step that sends each Enrollment down one of its paths by weight (ADR 0124): a hash of the\nContact, the Split and the Enrollment's ordinal chooses the path, so the same Enrollment always\ntakes the same path and a new Enrollment of the Contact draws again. In an Automation with a\nyearly date Trigger the anniversary year takes the ordinal's place, so the Contact draws again\neach year (ADR 0126). An empty path is a holdout. The paths rejoin at the Step after the Split."
       },
       "SplitStepInput": {
         "type": "object",
@@ -25614,6 +26010,239 @@
         "description": "A Step that waits before the next one, as a request writes it",
         "additionalProperties": false
       },
+      "WaitUntilDate": {
+        "type": "object",
+        "required": ["form", "field", "recurrence", "offsetDays", "localTime"],
+        "properties": {
+          "form": {
+            "type": "string",
+            "enum": ["date"]
+          },
+          "field": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateField"
+              }
+            ],
+            "description": "The date the occurrences come from"
+          },
+          "recurrence": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateRecurrence"
+              }
+            ],
+            "description": "Every year, or once"
+          },
+          "offsetDays": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateOffsetDays"
+              }
+            ],
+            "description": "Days before (negative) or after the date"
+          },
+          "localTime": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LocalTime"
+              }
+            ],
+            "description": "The time of day of each occurrence, in the Contact's time zone"
+          }
+        },
+        "description": "Wait until the next occurrence of a date the Contact holds (ADR 0126), at or after the moment\nthe Enrollment reaches the Step: `offsetDays` before or after the date, at `localTime` in the\nContact's time zone, or the Workspace time zone when the Contact has no valid one. A yearly date\nwaits for its next anniversary, from the year after the date's own; a once date for the date\nitself. When there is no such moment within 366 days the Enrollment goes on at once, and the\nreport counts why: the moment has passed (`past`), the Contact holds no date in the field\n(`no_date`), or it lies more than 366 days ahead (`beyond_bound`)."
+      },
+      "WaitUntilDateInput": {
+        "type": "object",
+        "required": ["form", "field", "recurrence", "offsetDays", "localTime"],
+        "properties": {
+          "form": {
+            "type": "string",
+            "enum": ["date"]
+          },
+          "field": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateFieldInput"
+              }
+            ],
+            "description": "The date the occurrences come from: the birthday, or a datetime Custom field of the\nWorkspace's catalogue"
+          },
+          "recurrence": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateRecurrence"
+              }
+            ],
+            "description": "Every year, or once; the birthday is only yearly"
+          },
+          "offsetDays": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateOffsetDays"
+              }
+            ],
+            "description": "Days before (negative) or after the date, within 365"
+          },
+          "localTime": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LocalTime"
+              }
+            ],
+            "description": "The time of day of each occurrence, `HH:MM`, in the Contact's time zone"
+          }
+        },
+        "description": "Wait until the next occurrence of a date the Contact holds, as a request writes it",
+        "additionalProperties": false
+      },
+      "WaitUntilMoment": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/WaitUntilTimeOfDay"
+          },
+          {
+            "$ref": "#/components/schemas/WaitUntilDate"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "form",
+          "mapping": {
+            "time_of_day": "#/components/schemas/WaitUntilTimeOfDay",
+            "date": "#/components/schemas/WaitUntilDate"
+          }
+        },
+        "description": "The moment a Wait until holds an Enrollment until, by `form`"
+      },
+      "WaitUntilMomentInput": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/WaitUntilTimeOfDayInput"
+          },
+          {
+            "$ref": "#/components/schemas/WaitUntilDateInput"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "form",
+          "mapping": {
+            "time_of_day": "#/components/schemas/WaitUntilTimeOfDayInput",
+            "date": "#/components/schemas/WaitUntilDateInput"
+          }
+        },
+        "description": "The moment a Wait until holds an Enrollment until, by `form`, as a request writes it"
+      },
+      "WaitUntilStep": {
+        "type": "object",
+        "required": ["id", "type", "until"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StepId"
+              }
+            ],
+            "description": "The Step's id"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["wait_until"]
+          },
+          "until": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WaitUntilMoment"
+              }
+            ],
+            "description": "The moment the Enrollment waits for"
+          }
+        },
+        "description": "A Step that holds the Enrollment until a calendar moment (ADR 0126): the moment is computed\nonce, from when the Enrollment reaches the Step, and kept, so neither a restart nor a time zone\nchanged during the wait moves it. A moment equal to the arrival waits zero."
+      },
+      "WaitUntilStepInput": {
+        "type": "object",
+        "required": ["type", "until"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StepId"
+              }
+            ],
+            "description": "The Step's id; omitted, the Step is given one"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["wait_until"]
+          },
+          "until": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WaitUntilMomentInput"
+              }
+            ],
+            "description": "The moment the Enrollment waits for"
+          }
+        },
+        "description": "A Step that holds the Enrollment until a calendar moment, as a request writes it",
+        "additionalProperties": false
+      },
+      "WaitUntilTimeOfDay": {
+        "type": "object",
+        "required": ["form", "localTime", "weekdays"],
+        "properties": {
+          "form": {
+            "type": "string",
+            "enum": ["time_of_day"]
+          },
+          "localTime": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LocalTime"
+              }
+            ],
+            "description": "The local time of day"
+          },
+          "weekdays": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Weekday"
+            },
+            "description": "The weekdays the local time counts on; empty is every day"
+          }
+        },
+        "description": "Wait until the next moment a local time comes, on chosen weekdays or on any day, in the\nContact's time zone, or the Workspace time zone when the Contact has no valid one (ADR 0126)"
+      },
+      "WaitUntilTimeOfDayInput": {
+        "type": "object",
+        "required": ["form", "localTime"],
+        "properties": {
+          "form": {
+            "type": "string",
+            "enum": ["time_of_day"]
+          },
+          "localTime": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LocalTime"
+              }
+            ],
+            "description": "The local time of day"
+          },
+          "weekdays": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Weekday"
+            },
+            "description": "The weekdays the local time counts on, each at most once; omitted or empty is every day"
+          }
+        },
+        "description": "Wait until the next moment a local time comes, as a request writes it",
+        "additionalProperties": false
+      },
       "WebhookDisabledReason": {
         "type": "string",
         "enum": ["owner", "gone", "persistent_failure"],
@@ -25689,6 +26318,11 @@
         },
         "description": "What the receiver answered to a test delivery. The endpoint's failure state is not touched."
       },
+      "Weekday": {
+        "type": "string",
+        "enum": ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],
+        "description": "A day of the week, by its ISO name in lower case"
+      },
       "WithinLastTest": {
         "type": "object",
         "required": ["kind", "days"],
@@ -25728,6 +26362,22 @@
         "type": "string",
         "pattern": "^[0-9A-Za-z]{8}$",
         "description": "A Workspace id (ADR 0043): 8 random base62 characters, assigned once at creation and the\nWorkspace's one public address."
+      },
+      "YearlyEnrollmentOccurrence": {
+        "type": "object",
+        "required": ["recurrence", "year"],
+        "properties": {
+          "recurrence": {
+            "type": "string",
+            "enum": ["yearly"]
+          },
+          "year": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The anniversary year: the year of the date the Trigger's offset counts from"
+          }
+        },
+        "description": "The occurrence of a yearly date Trigger an Enrollment was made for: its anniversary year"
       }
     },
     "securitySchemes": {

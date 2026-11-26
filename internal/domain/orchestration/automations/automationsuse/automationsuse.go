@@ -27,6 +27,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 )
 
@@ -49,16 +50,36 @@ func (m *Module) UsingTag(ctx context.Context, l *ent.WorkspaceLocked, name stri
 }
 
 // UsingCustomField returns the Workspace's kept Automations whose live version or draft holds the
-// Custom field key against a retype to type t, in id order: its Trigger, exit or goal filter names
+// Custom field key against a retype to type t, in id order: its date Trigger or a Wait until waits
+// on its date (ADR 0126), which only a datetime field holds; its Trigger, exit or goal filter names
 // it (ADR 0133), a contact.field_changed matcher that tests its `key`, which any retype breaks; or
 // a Branch's Condition tests it with a leaf a field of type t does not take (ADR 0124) or names it
 // in an event test's filter (ADR 0153), the check a Rule's Condition holds a field by
 // (condition.HoldsCustomField).
 func (m *Module) UsingCustomField(ctx context.Context, l *ent.WorkspaceLocked, key string, t customfield.Type) ([]*ent.Automation, error) {
 	return using(ctx, l, func(v *ent.AutomationVersion) bool {
-		return slices.Contains(matcherNames(v).CustomFields, key) ||
+		return datesField(v, key) || slices.Contains(matcherNames(v).CustomFields, key) ||
 			slices.ContainsFunc(branchConditions(v), func(g conditiontree.Branch) bool { return condition.HoldsCustomField(g.Group, key, t) })
 	})
+}
+
+// datesField reports whether the version waits on the date the Custom field key holds: its date
+// Trigger names it, or a Wait until does, at any depth.
+func datesField(v *ent.AutomationVersion, key string) bool {
+	field := datetrigger.Field{Kind: datetrigger.CustomField, Key: key}
+	switch t := automations.TriggerOf(v).(type) {
+	case automations.DateTrigger:
+		if t.Date.Field == field {
+			return true
+		}
+	case automations.EventTrigger:
+	}
+	for _, d := range automationstep.OnDates(v.Steps) {
+		if d.Field == field {
+			return true
+		}
+	}
+	return false
 }
 
 // branchConditions are the Conditions of the paths of every Branch of the version, at any depth.
@@ -102,7 +123,13 @@ func stepsTag(v *ent.AutomationVersion, name string) bool {
 // matcherNames is what the filters of the version's Event matchers name in the catalogue
 // (condition.NamedDefinitions): its Trigger's, its exits' and its goal's.
 func matcherNames(v *ent.AutomationVersion) condition.Definitions {
-	matchers := append([]eventmatcher.Matcher{automations.TriggerOf(v)}, automations.ExitsOf(v)...)
+	var matchers []eventmatcher.Matcher
+	switch t := automations.TriggerOf(v).(type) {
+	case automations.EventTrigger:
+		matchers = append(matchers, t.Matcher)
+	case automations.DateTrigger:
+	}
+	matchers = append(matchers, automations.ExitsOf(v)...)
 	if v.Goal != nil {
 		matchers = append(matchers, *v.Goal)
 	}

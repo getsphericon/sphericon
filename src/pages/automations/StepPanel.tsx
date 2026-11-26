@@ -1,5 +1,6 @@
 import {
   ActionIcon,
+  Box,
   CloseButton,
   Fieldset,
   Group,
@@ -11,17 +12,20 @@ import {
 import { IconCopy } from '@tabler/icons-react'
 import { useTranslation } from 'react-i18next'
 
+import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
 import { allSteps, forkPaths } from './definition.ts'
 import type { EditedStep, Flow, FlowStep, TriggerDraft } from './definition.ts'
 import type { PathPatch } from './flowEdits.ts'
 import { TRIGGER_NODE_ID } from './flowLayout.ts'
 import { BranchForm, SplitForm } from './ForkForms.tsx'
+import type { NodeRefusal } from './refusedNodes.ts'
 import { StepForm } from './StepForms.tsx'
 import { useStepInfo } from './stepKinds.ts'
 import type { StepValidator } from './stepValidator.ts'
 import { TriggerPanel } from './TriggerPanel.tsx'
 
-// What the panel does to a fork of the id (ForkForms.tsx), and whether the fork was checked.
+// What the panel does to a fork of the id (ForkForms.tsx), and whether a node was checked (on blur
+// or on Save), which then shows its errors: a fork, a Wait until or the Trigger.
 export interface ForkControls {
   checked: (id: string) => boolean
   onChecked: (id: string) => void
@@ -70,7 +74,15 @@ function StepBody({
   if (step.kind === 'split') {
     return <SplitForm key={key} step={step} {...forkProps} />
   }
-  return <StepForm step={step} onEdit={onStep} validatorRef={validatorRef} />
+  return (
+    <StepForm
+      step={step}
+      onEdit={onStep}
+      validatorRef={validatorRef}
+      checked={forks.checked(step.id)}
+      onChecked={() => forks.onChecked(step.id)}
+    />
+  )
 }
 
 // The side panel edits what is selected on the canvas: the Trigger, with its exit and goal events
@@ -81,6 +93,7 @@ export function StepPanel({
   selected,
   editable,
   validatorRef,
+  refusal,
   onTrigger,
   onStep,
   forks,
@@ -91,6 +104,9 @@ export function StepPanel({
   selected: string
   editable: boolean
   validatorRef: StepValidator
+  // Why the last Save was refused over what is selected: the refusal, and the server's message about
+  // what is selected.
+  refusal: NodeRefusal | null
   onTrigger: (patch: Partial<TriggerDraft>) => void
   onStep: (step: EditedStep) => void
   forks: ForkControls
@@ -136,9 +152,24 @@ export function StepPanel({
             <CloseButton aria-label={t(($) => $.automations.closePanel)} onClick={onClose} />
           </Group>
         </Group>
+        {refusal !== null && (
+          <Box mb="md">
+            <ApiErrorAlert
+              error={refusal.error}
+              title={t(($) => $.alerts.automationSaveErrorTitle)}
+              message={refusal.message}
+            />
+          </Box>
+        )}
         <Fieldset disabled={!editable} variant="unstyled" m={0} miw={0}>
           {step === undefined ? (
-            <TriggerPanel trigger={flow.trigger} onEdit={onTrigger} />
+            <TriggerPanel
+              trigger={flow.trigger}
+              onEdit={onTrigger}
+              validatorRef={validatorRef}
+              checked={forks.checked(TRIGGER_NODE_ID)}
+              onChecked={() => forks.onChecked(TRIGGER_NODE_ID)}
+            />
           ) : (
             <StepBody step={step} validatorRef={validatorRef} onStep={onStep} forks={forks} />
           )}

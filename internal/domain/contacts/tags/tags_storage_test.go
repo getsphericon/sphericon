@@ -32,7 +32,7 @@ func closedClient(t *testing.T) (*ent.Client, *events.Bus) {
 func TestStorageFailuresSurfaceAsErrors(t *testing.T) {
 	client, bus := closedClient(t)
 	m := tags.New()
-	c := contacts.New(bus, m, confirmations.New(bus, unsubscribes.New(), time.Now), engagementtracking.New(bus, time.Now), nil)
+	c := contacts.New(bus, m, confirmations.New(bus, unsubscribes.New(), time.Now), engagementtracking.New(bus, time.Now), nil, time.Now)
 	ctx := context.Background()
 	wsID := client.Scoped(fixtures.AcmeID)
 

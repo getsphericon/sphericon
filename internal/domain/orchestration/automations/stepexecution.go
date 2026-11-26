@@ -20,6 +20,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 )
@@ -284,8 +285,9 @@ func (m *StepExecution) Step(ctx context.Context, s *ent.Scoped, runID int64, st
 	at := place{index: index, step: step}
 
 	switch p := st.Payload.(type) {
-	case automationstep.Wait:
-		// Its due moment, recorded when the Enrollment reached it, has come.
+	case automationstep.Wait, automationstep.WaitUntil:
+		// Its due moment, recorded when the Enrollment reached it, has come; or a Wait until had
+		// none to wait for, which its record says why, and goes on at once.
 		return m.advance(ctx, s, run.ID, at, stepMove{})
 
 	case automationstep.ApplyTag:
@@ -311,7 +313,7 @@ func (m *StepExecution) Step(ctx context.Context, s *ent.Scoped, runID int64, st
 		// The draw holds no random state (ADR 0124): the same Enrollment always lands on the same
 		// path, and the move down it commits behind the compare-and-set on the cursor, so a job
 		// delivered again finds the Enrollment moved on.
-		draw := automationstep.Draw(run.ContactID, at.step, run.Ordinal)
+		draw := automationstep.Draw(run.ContactID, at.step, splitRound(run))
 		return m.advance(ctx, s, run.ID, at, stepMove{path: &pathTaken{id: p.At(draw)}})
 
 	case automationstep.HTTP:
@@ -327,6 +329,21 @@ func (m *StepExecution) Step(ctx context.Context, s *ent.Scoped, runID int64, st
 		}
 		return m.fail(ctx, s, run.ID, fmt.Errorf("unknown step type %q", st.Kind()))
 	}
+}
+
+// splitRound is the round the Enrollment's Contact draws in at a Split: the anniversary year of an
+// Enrollment a yearly date Trigger made, so a holdout one year draws again the next (ADR 0126), and
+// the Enrollment's ordinal otherwise (ADR 0127), a once date's included.
+func splitRound(run *ent.AutomationRun) int {
+	if run.Occurrence == nil {
+		return run.Ordinal
+	}
+	switch o := run.Occurrence.Occurrence().(type) {
+	case datetrigger.Yearly:
+		return o.Year
+	case datetrigger.Once:
+	}
+	return run.Ordinal
 }
 
 // branch decides a Branch for the Enrollment (ADR 0124): every path's Condition is read for its
@@ -481,10 +498,14 @@ func (m *StepExecution) advance(ctx context.Context, s *ent.Scoped, runID int64,
 				return err // an erased Contact's Enrollment is erased with it
 			}
 		}
-		var due *time.Time
+		var arrived automationstep.Due
 		if more {
-			due = dueOf(next, now)
-			if err := advanceRun(ctx, ts, runID, from.step, next.ID, due); err != nil {
+			var err error
+			arrived, err = arrive(next, now, func() (automationstep.Contact, error) { return runCalendar(ctx, ts, runID) })
+			if err != nil {
+				return err
+			}
+			if err := advanceRun(ctx, ts, runID, from.step, next.ID, dueAt(arrived)); err != nil {
 				return err
 			}
 			if err := leave(ctx, ts, runID, from.step, now, mv.leaving); err != nil {
@@ -501,10 +522,10 @@ func (m *StepExecution) advance(ctx context.Context, s *ent.Scoped, runID int64,
 		if !more {
 			return nil
 		}
-		if err := reach(ctx, ts, runID, next.ID, now, due); err != nil {
+		if err := reach(ctx, ts, runID, next.ID, now, arrived); err != nil {
 			return err
 		}
-		return q.Enqueue(ctx, RunStepArgs{WorkspaceID: ts.WorkspaceID(), RunID: runID, StepID: next.ID}, scheduled(due))
+		return q.Enqueue(ctx, RunStepArgs{WorkspaceID: ts.WorkspaceID(), RunID: runID, StepID: next.ID}, scheduled(dueAt(arrived)))
 	})
 	return quiet(err)
 }

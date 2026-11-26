@@ -272,6 +272,9 @@ func (_u *AutomationStepRecordUpdate) sqlSave(ctx context.Context) (_node int, e
 	if _u.mutation.DueAtCleared() {
 		_spec.ClearField(automationsteprecord.FieldDueAt, field.TypeTime)
 	}
+	if _u.mutation.WentOnCleared() {
+		_spec.ClearField(automationsteprecord.FieldWentOn, field.TypeEnum)
+	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -591,6 +594,9 @@ func (_u *AutomationStepRecordUpdateOne) sqlSave(ctx context.Context) (_node *Au
 	}
 	if _u.mutation.DueAtCleared() {
 		_spec.ClearField(automationsteprecord.FieldDueAt, field.TypeTime)
+	}
+	if _u.mutation.WentOnCleared() {
+		_spec.ClearField(automationsteprecord.FieldWentOn, field.TypeEnum)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{

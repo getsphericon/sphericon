@@ -16,7 +16,8 @@ import (
 
 // AutomationStepRecord is what an Enrollment keeps of one Step it reached (ADR 0124): when it
 // reached and left it, how it left it (at a fork, the path it took and, at a Branch, each path's
-// outcome) and, at a wait, the moment the wait is due. One per
+// outcome) and, at a wait, the moment the wait is due or, at a Wait until that has none, why the
+// Enrollment went on at once. One per
 // Enrollment and Step: a version's Steps form a tree with no cycles. It is written in the
 // transaction of the move that reaches or leaves the Step, which the Enrollment's own
 // compare-and-set on its cursor decides, and goes with its Enrollment (ON DELETE CASCADE, so an
@@ -26,13 +27,14 @@ type AutomationStepRecord struct {
 }
 
 // Annotations adds to the enum checks that only a left Step record has an outcome (one the
-// Enrollment ended on through an exit, a goal, a failure or an unsubscribe is left with none), and
-// that only a skipped Step says why.
+// Enrollment ended on through an exit, a goal, a failure or an unsubscribe is left with none),
+// that only a skipped Step says why, and that a Wait until either waits or went on at once.
 func (AutomationStepRecord) Annotations() []schema.Annotation {
 	a := TableWithEnumChecks("automation_step_records", AutomationStepRecord{}.Fields())
 	a.Checks["automation_step_records_left_check"] = "outcome IS NULL OR left_at IS NOT NULL"
 	a.Checks["automation_step_records_reason_check"] = "outcome IS NOT NULL OR skip_reason IS NULL"
 	a.Checks["automation_step_records_skipped_check"] = variantCheck("outcome", stepOutcome)
+	a.Checks["automation_step_records_wait_check"] = "due_at IS NULL OR went_on IS NULL"
 	return []schema.Annotation{a}
 }
 
@@ -69,7 +71,8 @@ func (AutomationStepRecord) Fields() []ent.Field {
 			Annotations(Latch()).
 			Optional().
 			Nillable(),
-		// done: the Step did its work (a send's own result is its Outbound message's). skipped:
+		// done: the Step did its work (a send's own result is its Outbound message's; a Wait until
+		// that went on at once is done too, went_on saying why). skipped:
 		// the Enrollment moved on without it, for skip_reason. path: a fork sent the Enrollment
 		// down the path of path_id (ADR 0124). Null on a Step the Enrollment ended
 		// on through an exit, a goal, a failure or an unsubscribe: its end says why. Written in
@@ -101,6 +104,14 @@ func (AutomationStepRecord) Fields() []ent.Field {
 		// moves it early nor makes it wait twice. Null for any other Step.
 		field.Time("due_at").
 			Annotations(Attribute("records the due moment a wait computed once when reached; the Enrollment's resume_at is what its job reads")).
+			Optional().
+			Nillable().
+			Immutable(),
+		// Why the Enrollment went on at once from a Wait until with no moment ahead within 366 days
+		// (ADR 0126): past, no_date or beyond_bound. Decided once, when it reached the Step, as a
+		// wait's due_at is, and never both. Null for any other Step, and for a Wait until that waited.
+		field.Enum("went_on").
+			GoType(automationstep.WentOn("")).
 			Optional().
 			Nillable().
 			Immutable(),

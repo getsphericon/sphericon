@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 )
 
@@ -37,6 +38,13 @@ func (AutomationVersion) Annotations() []schema.Annotation {
 	a.Checks["automation_versions_goal_check"] = jsonCheck("goal", "object")
 	a.Checks["automation_versions_cooldown_check"] = fmt.Sprintf("cooldown_seconds >= %d", bounds.EntryCooldownMin)
 	a.Checks["automation_versions_enrollment_key_check"] = "enrollment_key IS NULL OR enrollment_key <> ''"
+	a.Checks["automation_versions_trigger_date_check"] = "trigger_date IS NULL OR " + jsonCheck("trigger_date", "object")
+	// A Trigger is an Event matcher or a date (ADR 0126): a date Trigger has no action, filter or
+	// Enrollment key, and keeps the default Entry policy and cooldown, which it does not take.
+	a.Checks["automation_versions_trigger_kind_check"] = fmt.Sprintf(
+		"(trigger_date IS NULL AND trigger_action <> '') OR (trigger_date IS NOT NULL AND trigger_action = '' AND "+
+			"trigger_filter IS NULL AND enrollment_key IS NULL AND entry_policy = 'once' AND cooldown_seconds = %d)",
+		bounds.TriggerCooldownDefault)
 	return []schema.Annotation{a}
 }
 
@@ -67,8 +75,14 @@ func (AutomationVersion) Fields() []ent.Field {
 		// starts, and the filter on that Event's own properties (conditiontree.EventFilter), a
 		// jsonb object (ADR 0169) that Postgres runs as one SQL/JSON path (ADR 0180). NULL is no
 		// filter: every Event of the action enrolls.
+		// A date Trigger (ADR 0126) leaves the action empty and stores the date in trigger_date.
 		field.String("trigger_action"),
 		field.JSON("trigger_filter", &conditiontree.EventFilter{}).
+			Optional(),
+		// A date Trigger (ADR 0126, datetrigger.Date), a jsonb object (ADR 0169): the field (the
+		// birthday or a datetime Custom field by its key), the recurrence, the offset in days and the
+		// local time of its occurrences. NULL for an Event Trigger.
+		field.JSON("trigger_date", &datetrigger.Date{}).
 			Optional(),
 		// The Event matchers that end an active Enrollment on this version early (`exited`), a
 		// jsonb list (ADR 0169), and the one that ends it as having reached its goal
@@ -113,5 +127,10 @@ func (AutomationVersion) Indexes() []ent.Index {
 	return []ent.Index{
 		// Trigger lookup: the live versions for a given event action.
 		index.Fields("workspace_id", "trigger_action"),
+		// The date scheduler's tick: the versions with a date Trigger, across Workspaces, a few
+		// among many.
+		index.Fields("workspace_id", "automation_id").
+			Annotations(entsql.IndexWhere("trigger_date IS NOT NULL")).
+			StorageKey("automation_versions_date_trigger"),
 	}
 }

@@ -8,7 +8,7 @@ import type {
   SiteAutomationResource,
   SiteAutomationsUpdateData,
 } from '../../generated/site/types.gen.ts'
-import { definitionOf, flowOf, pathInputOf } from './definition.ts'
+import { definitionOf, flowOf, holdsKept, pathInputOf, triggerInputOf } from './definition.ts'
 import type { Flow } from './definition.ts'
 import { automationSnapshot } from './leaveSnapshot.ts'
 
@@ -28,13 +28,16 @@ interface Submission {
 
 // Capture the persisted representation before any asynchronous work: neither a later edit nor a
 // query refresh may change this request or its receipt. A flow holding a Step the editor does not
-// edit (an End, a fork) is never saved, whoever asks: nothing may drop it.
+// edit (a Step of a kind newer than the editor) is never saved, whoever asks: nothing may drop it.
+// Nor is a flow with a part not set yet (a date, a Wait until's moment, a Branch path's Condition),
+// which the editor's check stops on first.
 export function automationSubmission(name: string, flow: Flow): Submission | null {
   const steps = pathInputOf(flow)
-  if (steps === null) {
+  const trigger = triggerInputOf(flow)
+  if (steps === null || trigger === null || holdsKept(flow)) {
     return null
   }
-  const { trigger, filterIncomplete, exitEvents, goalEvent } = definitionOf(flow)
+  const { filterIncomplete, exitEvents, goalEvent } = definitionOf(flow)
   return {
     body: structuredClone({ name: name.trim(), trigger, exitEvents, goalEvent, steps }),
     fingerprint: automationSnapshot(name, flow),

@@ -247,6 +247,14 @@ var Bounds = []Bound{
 	},
 	{Name: "BranchPaths", Spec: site, Schema: "BranchUnknownPathInput", Property: "conditions"},
 	{
+		Name: "DateOffsetDays", Doc: "is how many whole days before (negative) or after a Contact's date its occurrence comes (ADR 0126).",
+		Spec: site, Schema: "DateOffsetDays", Owners: []string{"internal/kernel/localcalendar"},
+	},
+	{
+		Name: "LocalTime", Doc: "is a local time of day, HH:MM in whole minutes (ADR 0126).",
+		Spec: site, Schema: "LocalTime", Owners: []string{"internal/kernel/localcalendar"},
+	},
+	{
 		Name: "SplitPaths", Doc: "are the paths of a Split (ADR 0124).",
 		Spec: site, Schema: "SplitStepInput", Property: "paths", Owners: []string{automationVersion},
 	},

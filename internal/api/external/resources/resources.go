@@ -6,13 +6,16 @@ package resources
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"time"
 
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 	"github.com/getsphericon/sphericon/internal/kernel/httpheader"
+	"github.com/getsphericon/sphericon/internal/kernel/localcalendar"
 	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
@@ -146,6 +149,12 @@ func stepSum(c Converter, v automations.StepView) (externalapi.AutomationStepSum
 		return externalapi.NewSmsStepAutomationStepSum(c.SmsStepToResource(v)), nil
 	case automations.WaitView:
 		return externalapi.NewWaitStepAutomationStepSum(c.WaitStepToResource(v)), nil
+	case automations.WaitUntilView:
+		w, err := c.WaitUntilStepToResource(v)
+		if err != nil {
+			return externalapi.AutomationStepSum{}, err
+		}
+		return externalapi.NewWaitUntilStepAutomationStepSum(w), nil
 	case automations.TagView:
 		// The module shows both tag kinds as one view; the union has an arm for each.
 		switch v.Type {
@@ -203,6 +212,27 @@ func telegramStepType(automationstep.Kind) externalapi.TelegramStepType {
 }
 func smsStepType(automationstep.Kind) externalapi.SmsStepType   { return externalapi.SmsStepTypeSMS }
 func waitStepType(automationstep.Kind) externalapi.WaitStepType { return externalapi.WaitStepTypeWait }
+func waitUntilStepType(automationstep.Kind) externalapi.WaitUntilStepType {
+	return externalapi.WaitUntilStepTypeWaitUntil
+}
+func waitUntilTimeOfDayForm(automationstep.TimeOfDay) externalapi.WaitUntilTimeOfDayForm {
+	return externalapi.WaitUntilTimeOfDayFormTimeOfDay
+}
+
+// waitUntilMoment is the arm of a Wait until's moment: a oneOf is beyond goverter, so only the
+// switch is written here. A moment with no arm fails the response.
+func waitUntilMoment(c Converter, u automationstep.Until) (externalapi.WaitUntilMoment, error) {
+	switch u := u.(type) {
+	case automationstep.TimeOfDay:
+		return externalapi.WaitUntilMoment{OneOf: externalapi.NewWaitUntilTimeOfDayWaitUntilMomentSum(c.WaitUntilTimeOfDayToResource(u))}, nil
+	case automationstep.OnDate:
+		return externalapi.WaitUntilMoment{OneOf: externalapi.NewWaitUntilDateWaitUntilMomentSum(c.WaitUntilDateToResource(u.Date))}, nil
+	case nil:
+		return externalapi.WaitUntilMoment{}, errors.New("a wait until without a moment")
+	}
+	return externalapi.WaitUntilMoment{}, fmt.Errorf("the moment %T has no arm", u)
+}
+
 func applyTagStepType(automationstep.Kind) externalapi.ApplyTagStepType {
 	return externalapi.ApplyTagStepTypeApplyTag
 }
@@ -287,6 +317,13 @@ func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {
 // goverter:extend telegramStepType
 // goverter:extend smsStepType
 // goverter:extend waitStepType
+// goverter:extend waitUntilStepType
+// goverter:extend waitUntilMoment
+// goverter:extend dateField
+// goverter:extend dateOffsetDays
+// goverter:extend dateTriggerKind
+// goverter:extend waitUntilDateForm
+// goverter:extend waitUntilTimeOfDayForm
 // goverter:extend applyTagStepType
 // goverter:extend removeTagStepType
 // goverter:extend httpStepType
@@ -423,6 +460,12 @@ type Converter interface {
 	// goverter:map IntegrationID IntegrationId
 	SmsStepToResource(source automations.SMSView) externalapi.SmsStep
 	WaitStepToResource(source automations.WaitView) externalapi.WaitStep
+	WaitUntilStepToResource(source automations.WaitUntilView) (externalapi.WaitUntilStep, error)
+	// goverter:map . Form | waitUntilTimeOfDayForm
+	// goverter:useEmptyOnNil:slice
+	WaitUntilTimeOfDayToResource(source automationstep.TimeOfDay) externalapi.WaitUntilTimeOfDay
+	// goverter:enum:transform value
+	WeekdayToResource(source localcalendar.Weekday) externalapi.Weekday
 	ApplyTagStepToResource(source automations.TagView) externalapi.ApplyTagStep
 	RemoveTagStepToResource(source automations.TagView) externalapi.RemoveTagStep
 	HttpStepToResource(source automations.HTTPView) externalapi.HttpStep
@@ -484,6 +527,13 @@ type Converter interface {
 	// goverter:enum:transform value
 	EntryPolicyToResource(source automationversion.EntryPolicy) externalapi.EntryPolicy
 	// goverter:enum:transform value
+	DateRecurrenceToResource(source localcalendar.Recurrence) externalapi.DateRecurrence
+	// A date Trigger and a Wait until on a date show the same occurrence of a date (ADR 0126).
+	// goverter:map . Kind | dateTriggerKind
+	DateTriggerToResource(source datetrigger.Date) externalapi.DateTrigger
+	// goverter:map . Form | waitUntilDateForm
+	WaitUntilDateToResource(source datetrigger.Date) externalapi.WaitUntilDate
+	// goverter:enum:transform value
 	SmsFromKindToResource(source messaging.SMSFromKind) externalapi.SmsFromKind
 	// goverter:map . Kind | twilioConfigKind
 	// goverter:map AccountSID AccountSid
@@ -525,6 +575,7 @@ type Converter interface {
 	RuleDryRunToResource(source rules.DryRun) externalapi.RuleDryRunResource
 
 	// goverter:map . Failure | enrollmentFailure
+	// goverter:map Occurrence | enrollmentOccurrence
 	EnrollmentToResource(source *ent.AutomationRun) externalapi.EnrollmentResource
 	// The store names the triggering Event's source id; the contract says whose it is.
 	// goverter:map SourceID EventSourceId
@@ -948,20 +999,50 @@ func segmentCondition(g conditiontree.Segment) (externalapi.SegmentCondition, er
 // automationTrigger maps a version's Trigger into the typed DTO by its kind: an Event matcher whose
 // filter is checked as a stored Condition is (convert.Document).
 func automationTrigger(c Converter, v *ent.AutomationVersion) (externalapi.AutomationTrigger, error) {
-	m := automations.TriggerOf(v)
-	ev := externalapi.EventTrigger{
-		Kind: externalapi.EventTriggerKindEvent, Action: m.Action,
-		EntryPolicy: c.EntryPolicyToResource(v.EntryPolicy), Cooldown: externalapi.EntryCooldown(narrow.Int32(v.CooldownSeconds)),
-		EnrollmentKey: optString(v.EnrollmentKey),
-	}
-	if m.Filter != nil {
-		f, err := convert.Document[externalapi.EventFilter](*m.Filter)
-		if err != nil {
-			return externalapi.AutomationTrigger{}, err
+	switch t := automations.TriggerOf(v).(type) {
+	case automations.DateTrigger:
+		return externalapi.AutomationTrigger{OneOf: externalapi.NewDateTriggerAutomationTriggerSum(c.DateTriggerToResource(t.Date))}, nil
+	case automations.EventTrigger:
+		ev := externalapi.EventTrigger{
+			Kind: externalapi.EventTriggerKindEvent, Action: t.Matcher.Action,
+			EntryPolicy: c.EntryPolicyToResource(v.EntryPolicy), Cooldown: externalapi.EntryCooldown(narrow.Int32(v.CooldownSeconds)),
+			EnrollmentKey: optString(v.EnrollmentKey),
 		}
-		ev.Filter = externalapi.NewOptEventFilter(f)
+		if t.Matcher.Filter != nil {
+			f, err := convert.Document[externalapi.EventFilter](*t.Matcher.Filter)
+			if err != nil {
+				return externalapi.AutomationTrigger{}, err
+			}
+			ev.Filter = externalapi.NewOptEventFilter(f)
+		}
+		return externalapi.AutomationTrigger{OneOf: externalapi.NewEventTriggerAutomationTriggerSum(ev)}, nil
 	}
-	return externalapi.AutomationTrigger{OneOf: externalapi.NewEventTriggerAutomationTriggerSum(ev)}, nil
+	return externalapi.AutomationTrigger{}, fmt.Errorf("version %d has a trigger of no kind", v.ID)
+}
+
+func dateTriggerKind(datetrigger.Date) externalapi.DateTriggerKind {
+	return externalapi.DateTriggerKindDate
+}
+func waitUntilDateForm(datetrigger.Date) externalapi.WaitUntilDateForm {
+	return externalapi.WaitUntilDateFormDate
+}
+
+// dateOffsetDays is a date's offset in days, within the contract's bound when it was stored.
+func dateOffsetDays(days int) externalapi.DateOffsetDays {
+	return externalapi.DateOffsetDays(narrow.Int32(days))
+}
+
+// dateField maps a date Trigger's field into the typed DTO by its kind. A stored field is checked
+// when it is written, so a kind it does not know is the birthday's never.
+func dateField(f datetrigger.Field) externalapi.DateField {
+	switch f.Kind {
+	case datetrigger.CustomField:
+		return externalapi.DateField{OneOf: externalapi.NewCustomFieldDateFieldDateFieldSum(externalapi.CustomFieldDateField{
+			Kind: externalapi.CustomFieldDateFieldKindCustomField, Key: f.Key,
+		})}
+	case datetrigger.Birthday:
+	}
+	return externalapi.DateField{OneOf: externalapi.NewBirthdayDateFieldDateFieldSum(externalapi.BirthdayDateField{Kind: externalapi.BirthdayDateFieldKindBirthday})}
 }
 
 // eventMatcher maps an exit or goal event into the typed DTO, its filter checked as a stored
@@ -1028,6 +1109,26 @@ func optTrackingReason(c Converter, v *trackingdomain.Reason) externalapi.OptTra
 // optSkippedReason is absent on every message but a skipped one.
 func optSkippedReason(c Converter, v *skipreason.Reason) externalapi.OptNilSkippedReason {
 	return convert.OptVia[externalapi.OptNilSkippedReason](v, c.SkippedReasonToResource)
+}
+
+// enrollmentOccurrence is the occurrence of a date Trigger the enrollment was made for (ADR 0126):
+// its anniversary year, or a once date's one occurrence; absent for one an Event or a rule began.
+func enrollmentOccurrence(stored *datetrigger.StoredOccurrence) externalapi.OptEnrollmentOccurrence {
+	if stored == nil {
+		return externalapi.OptEnrollmentOccurrence{}
+	}
+	var sum externalapi.EnrollmentOccurrenceSum
+	switch o := stored.Occurrence().(type) {
+	case datetrigger.Yearly:
+		sum = externalapi.NewYearlyEnrollmentOccurrenceEnrollmentOccurrenceSum(externalapi.YearlyEnrollmentOccurrence{
+			Recurrence: externalapi.YearlyEnrollmentOccurrenceRecurrenceYearly, Year: count(o.Year),
+		})
+	case datetrigger.Once:
+		sum = externalapi.NewOnceEnrollmentOccurrenceEnrollmentOccurrenceSum(externalapi.OnceEnrollmentOccurrence{
+			Recurrence: externalapi.OnceEnrollmentOccurrenceRecurrenceOnce,
+		})
+	}
+	return externalapi.NewOptEnrollmentOccurrence(externalapi.EnrollmentOccurrence{OneOf: sum})
 }
 
 // enrollmentFailure is the enrollment's failure detail; absent unless it failed.

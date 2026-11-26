@@ -36,8 +36,9 @@ type Definition[O, V, E, B any] interface {
 	// Store binds the generated pointer operations to the scope.
 	Store(s *ent.Scoped) ent.VersionedStore[O, V]
 	// Merge lays the edit over base (nil for a new object) and validates the result. It runs under
-	// the Workspace lock, in the transaction of the move.
-	Merge(ctx context.Context, ts *ent.Scoped, base *V, edit E) (B, error)
+	// the Workspace lock, in the transaction of the move, where what the definition names checks for
+	// it (ADR 0108): a reference it validates cannot change before the version is written.
+	Merge(ctx context.Context, l *ent.WorkspaceLocked, base *V, edit E) (B, error)
 	// Equal reports whether body is the definition v holds, compared in the canonical form a
 	// version stores, so that saving a definition unchanged stores nothing.
 	Equal(v *V, body B) bool
@@ -46,8 +47,9 @@ type Definition[O, V, E, B any] interface {
 	// of what it names (ADR 0099), so it is written under the Workspace lock (ADR 0108).
 	Write(ctx context.Context, l *ent.WorkspaceLocked, id int64, number int, draft *V, body B) (int64, error)
 	// Publishable refuses a version that cannot go live: the draft Publish promotes, or the
-	// inactive live version Publish makes active again. Either arms the object.
-	Publishable(ctx context.Context, ts *ent.Scoped, version *V) error
+	// inactive live version Publish makes active again. Either arms the object. It reads under the
+	// Workspace lock, where what may name the object checks for it (ADR 0108).
+	Publishable(ctx context.Context, l *ent.WorkspaceLocked, version *V) error
 	// Archivable refuses to archive the object while live work still needs it, read under the
 	// Workspace lock (ADR 0108).
 	Archivable(ctx context.Context, l *ent.WorkspaceLocked, row *O) error
@@ -74,12 +76,24 @@ type Errors struct {
 	RevisionChanged error
 }
 
+// Activating is a Definition whose kind keeps what its live version began to act with (an
+// Automation's date Trigger, its active span): it is told of every version a Publish makes the live
+// and active one. A kind that keeps nothing is a plain Definition, built with New.
+type Activating[O, V, E, B any] interface {
+	Definition[O, V, E, B]
+	// Published runs in the transaction of a Publish that made version the live and active one,
+	// after the move.
+	Published(ctx context.Context, l *ent.WorkspaceLocked, version *V) error
+}
+
 // Lifecycle runs the moves of one kind of Versioned definition.
 type Lifecycle[O, V, E, B any] struct {
 	bus  *events.Bus
 	def  Definition[O, V, E, B]
 	errs Errors
 	now  func() time.Time
+	// published is the Activating kind's Published, nil for a kind built with New.
+	published func(ctx context.Context, l *ent.WorkspaceLocked, version *V) error
 }
 
 // New builds the lifecycle of a kind of definition. The bus opens the transaction of each move;
@@ -89,6 +103,14 @@ func New[O, V, E, B any](bus *events.Bus, def Definition[O, V, E, B], errs Error
 		panic("drafts: a kind names every refusal of drafts.Errors")
 	}
 	return &Lifecycle[O, V, E, B]{bus: bus, def: def, errs: errs, now: now}
+}
+
+// NewActivating is New for a kind that keeps what its live version began to act with: each Publish
+// that makes a version live and active tells it (Activating.Published).
+func NewActivating[O, V, E, B any](bus *events.Bus, def Activating[O, V, E, B], errs Errors, now func() time.Time) *Lifecycle[O, V, E, B] {
+	l := New[O, V, E, B](bus, def, errs, now)
+	l.published = def.Published
+	return l
 }
 
 // errNoVersion: an object with neither a draft nor a live version to edit, which Create never
@@ -130,7 +152,7 @@ func (l *Lifecycle[O, V, E, B]) Create(ctx context.Context, s *ent.Scoped, owner
 	var id int64
 	err := l.bus.WithinWorkspaceLockTx(ctx, s, func(wl *ent.WorkspaceLocked, _ events.Publisher) error {
 		ts := wl.Scope()
-		body, err := l.def.Merge(ctx, ts, nil, edit)
+		body, err := l.def.Merge(ctx, wl, nil, edit)
 		if err != nil {
 			return err
 		}
@@ -191,7 +213,7 @@ func (l *Lifecycle[O, V, E, B]) Edit(ctx context.Context, s *ent.Scoped, id int6
 		if base == nil {
 			return errNoVersion
 		}
-		body, err := l.def.Merge(ctx, ts, base, edit)
+		body, err := l.def.Merge(ctx, wl, base, edit)
 		if err != nil {
 			return err
 		}
@@ -260,19 +282,19 @@ func (l *Lifecycle[O, V, E, B]) Publish(ctx context.Context, s *ent.Scoped, id, 
 		}
 		switch {
 		case st.Draft != nil:
-			if err := l.def.Publishable(ctx, ts, st.Draft); err != nil {
+			if err := l.def.Publishable(ctx, wl, st.Draft); err != nil {
 				return err
 			}
-			return l.publish(ctx, wl, st)
+			return l.publish(ctx, wl, st, st.Draft)
 		case st.Live == nil:
 			return l.errs.NothingToPublish
 		case st.Active:
 			return nil // live and active already
 		default:
-			if err := l.def.Publishable(ctx, ts, st.Live); err != nil {
+			if err := l.def.Publishable(ctx, wl, st.Live); err != nil {
 				return err
 			}
-			return l.publish(ctx, wl, st)
+			return l.publish(ctx, wl, st, st.Live)
 		}
 	})
 	if err != nil {
@@ -282,9 +304,16 @@ func (l *Lifecycle[O, V, E, B]) Publish(ctx context.Context, s *ent.Scoped, id, 
 }
 
 // publish makes the version st stands on live and the object active: the write that makes it Live
-// use (ADR 0099), so it takes the Workspace lock (ADR 0108).
-func (l *Lifecycle[O, V, E, B]) publish(ctx context.Context, wl *ent.WorkspaceLocked, st ent.VersionState[O, V]) error {
-	return l.move(ctx, l.def.Store(wl.Scope()), st, Publish, 0, "")
+// use (ADR 0099), so it takes the Workspace lock (ADR 0108). version is the one going live, which
+// an Activating kind is told of once it is.
+func (l *Lifecycle[O, V, E, B]) publish(ctx context.Context, wl *ent.WorkspaceLocked, st ent.VersionState[O, V], version *V) error {
+	if err := l.move(ctx, l.def.Store(wl.Scope()), st, Publish, 0, ""); err != nil {
+		return err
+	}
+	if l.published == nil {
+		return nil
+	}
+	return l.published(ctx, wl, version)
 }
 
 // Revert drops the draft: the live version is again the latest. It is refused (NothingToRevert)

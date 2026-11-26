@@ -19,10 +19,15 @@ import { useConfirmation } from '../../hooks/useConfirmation.tsx'
 import { useNotify } from '../../hooks/useNotify.ts'
 import { Route as automationsRoute } from '../../routes/workspaces/$workspaceId/automations/index.tsx'
 import { canvasFigures } from './canvasFigures.ts'
-import { allSteps, forkPaths, holdsKept, isFork } from './definition.ts'
+import { allSteps, forkPaths, holdsKept } from './definition.ts'
 import type { Flow } from './definition.ts'
 import { automationOutcomeTexts } from './draftActions.ts'
-import { automationAdapter, editedFlow, editorSession } from './editorSession.ts'
+import {
+  automationAdapter,
+  automationSubmission,
+  editedFlow,
+  editorSession,
+} from './editorSession.ts'
 import { FailedEnrollments } from './FailedEnrollments.tsx'
 import { FlowCanvas } from './FlowCanvas.tsx'
 import {
@@ -38,9 +43,11 @@ import {
   updateStep,
   updateTrigger,
 } from './flowEdits.ts'
-import { forkError, invalidForks } from './forkRules.ts'
-import type { ForkError } from './forkRules.ts'
+import { TRIGGER_NODE_ID } from './flowLayout.ts'
 import { LeaveGuard } from './LeaveGuard.tsx'
+import { useNodeErrors } from './nodeErrors.ts'
+import { refusedNodes } from './refusedNodes.ts'
+import type { NodeRefusal } from './refusedNodes.ts'
 import { useStepInfo } from './stepKinds.ts'
 import { StepPanel } from './StepPanel.tsx'
 import type { ForkControls } from './StepPanel.tsx'
@@ -97,7 +104,8 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
   const [selected, setSelected] = useState<string | null>(null)
   // The check of the open Step's form, which the Save runs first.
   const validatorRef = useRef<(() => boolean) | null>(null)
-  // The forks checked on blur or on Save: their nodes show their errors from then on.
+  // The nodes checked on blur or on Save (the Trigger, forks, Wait until Steps): they show their
+  // errors from then on.
   const [checked, setChecked] = useState<ReadonlySet<string>>(new Set())
   const check = useCallback(
     (ids: string[]) => setChecked((current) => new Set([...current, ...ids])),
@@ -113,11 +121,39 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
   const report = reportQuery.data
   const figures = useMemo(() => (report === undefined ? null : canvasFigures(report)), [report])
 
+  // The body the last Save sent, and the nodes a refusal of it is about, each with the server's
+  // message: shown on the node and in its panel until the node is edited or Save is run again.
+  const sent = useRef<unknown>(null)
+  const [refused, setRefused] = useState<ReadonlyMap<string, NodeRefusal>>(new Map())
+  const unrefuse = (id: string) =>
+    setRefused((current) => {
+      if (!current.has(id)) {
+        return current
+      }
+      const next = new Map(current)
+      next.delete(id)
+      return next
+    })
+
   const outcomeTexts = automationOutcomeTexts(t)
-  const effects = useEditorEffects<SiteAutomationResource, AutomationOperation>(
+  const editorEffects = useEditorEffects<SiteAutomationResource, AutomationOperation>(
     siteAutomationsGetQueryKey({ path: { workspaceId, id: automation.id } }),
     (operation) => outcomeTexts[operation],
   )
+  // A refused Save whose errors are each about a node shows them there (docs/standards/ui.md,
+  // Errors: under what failed), the first refused node opened; any other failure is a toast.
+  const effects: typeof editorEffects = {
+    ...editorEffects,
+    failed: (operation, error) => {
+      const nodes = operation === 'SAVE' ? refusedNodes(error, sent.current) : null
+      if (nodes === null) {
+        editorEffects.failed(operation, error)
+        return
+      }
+      setRefused(nodes)
+      setSelected(nodes.keys().next().value ?? null)
+    },
+  }
   const {
     snapshot: session,
     dirty,
@@ -143,12 +179,15 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
     effects,
   })
 
-  // The check a Save and a "Save mine over it" run before they send: every fork is checked, its
-  // panel open or not, and its node shows the error from then on; the open Step's form is checked;
-  // the first invalid fork whose panel is closed opens. False when anything is invalid.
+  const nodeErrors = useNodeErrors(flow)
+
+  // The check a Save and a "Save mine over it" run before they send: every node is checked (the
+  // Trigger's date, forks, Wait until Steps), its panel open or not, and it shows its error from
+  // then on; the open panel's form is checked; the first invalid node whose panel is closed opens.
+  // False when anything is invalid.
   const checkBeforeSending = (): boolean => {
-    const invalid = invalidForks(latest.current)
-    check(invalid.map((fork) => fork.id))
+    const invalid = nodeErrors(latest.current)
+    check(invalid.map((node) => node.id))
     if (validatorRef.current?.() === false) {
       return false
     }
@@ -161,6 +200,7 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
   }
 
   const onSave = async () => {
+    setRefused(new Map())
     if (!checkBeforeSending()) {
       return
     }
@@ -168,6 +208,7 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
       if (form.validate().hasErrors || !submission) {
         return false
       }
+      sent.current = submission.body
       if (submission.filterIncomplete) {
         notify({
           color: 'red',
@@ -231,22 +272,11 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
       onConfirm,
     })
   }
-  const forkErrorText = (error: ForkError): string => {
-    switch (error.kind) {
-      case 'condition':
-        return t(($) => $.automations.forkConditionError, { number: error.index + 1 })
-      case 'weight':
-        return t(($) => $.automations.forkWeightError, { number: error.index + 1 })
-      case 'sum':
-      default:
-        return t(($) => $.automations.weightSumError, { sum: error.sum })
-    }
-  }
-  const errorOf = (id: string): string | null => {
-    const step = checked.has(id) ? allSteps(flow.path).find((s) => s.id === id) : undefined
-    const error = step !== undefined && isFork(step) ? forkError(step) : null
-    return error === null ? null : forkErrorText(error)
-  }
+  const errors = nodeErrors(flow)
+  const errorOf = (id: string): string | null =>
+    (checked.has(id) ? errors.find((node) => node.id === id)?.message : undefined) ??
+    refused.get(id)?.message ??
+    null
   const forks: ForkControls = {
     checked: (id) => checked.has(id),
     onChecked: (id) => check([id]),
@@ -353,10 +383,15 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
             selected={selected}
             editable={editable}
             validatorRef={validatorRef}
-            onTrigger={(patch) =>
+            refusal={refused.get(selected) ?? null}
+            onTrigger={(patch) => {
+              unrefuse(TRIGGER_NODE_ID)
               edit((current) => updateTrigger(current, { ...current.trigger, ...patch }))
-            }
-            onStep={(step) => edit((current) => updateStep(current, step))}
+            }}
+            onStep={(step) => {
+              unrefuse(step.id)
+              edit((current) => updateStep(current, step))
+            }}
             forks={forks}
             onCopy={(id) => {
               const copied = copyStep(latest.current, id)
@@ -383,7 +418,11 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
                 void stored(reload)
               }}
               onOverwrite={() => {
+                setRefused(new Map())
                 if (checkBeforeSending()) {
+                  // What it sends: the same content, on the newer revision.
+                  sent.current =
+                    automationSubmission(form.getValues().name, latest.current)?.body ?? null
                   void stored(overwrite)
                 }
               }}

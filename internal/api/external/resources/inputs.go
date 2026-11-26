@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent/automationversion"
@@ -29,7 +30,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
+	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
+	"github.com/getsphericon/sphericon/internal/kernel/localcalendar"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
 	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 	"github.com/getsphericon/sphericon/internal/kernel/telegramrender"
@@ -51,6 +54,8 @@ import (
 // goverter:extend stringPatch
 // goverter:extend revisionIn
 // goverter:extend namePatch
+// goverter:extend dateFieldIn
+// goverter:extend dateOffsetDaysIn
 // goverter:extend nameIn
 // goverter:extend namePtrIn
 // goverter:extend nilStringPatch
@@ -203,6 +208,11 @@ type Inputs interface {
 	TelegramStepIn(source externalapi.TelegramStepInput) automationstep.Telegram
 	SmsStepIn(source externalapi.SmsStepInput) automationstep.SMS
 	WaitStepIn(source externalapi.WaitStepInput) automationstep.Wait
+	// goverter:map Until | waitUntilMomentIn
+	WaitUntilStepIn(source externalapi.WaitUntilStepInput) (automationstep.WaitUntil, error)
+	WaitUntilTimeOfDayIn(source externalapi.WaitUntilTimeOfDayInput) automationstep.TimeOfDay
+	// goverter:enum:transform value
+	WeekdayIn(source externalapi.Weekday) localcalendar.Weekday
 	ApplyTagStepIn(source externalapi.ApplyTagStepInput) automationstep.ApplyTag
 	RemoveTagStepIn(source externalapi.RemoveTagStepInput) automationstep.RemoveTag
 	HttpStepIn(source externalapi.HttpStepInput) automationstep.HTTP
@@ -250,6 +260,11 @@ type Inputs interface {
 	// goverter:enum:map EventTriggerInputEntryPolicyOnce EntryPolicyOnce
 	// goverter:enum:map EventTriggerInputEntryPolicyAgain EntryPolicyAgain
 	EntryPolicy(source externalapi.EventTriggerInputEntryPolicy) automationversion.EntryPolicy
+	// goverter:enum:transform value
+	DateRecurrence(source externalapi.DateRecurrence) localcalendar.Recurrence
+	// A date Trigger and a Wait until on a date take the same occurrence of a date (ADR 0126).
+	DateTriggerIn(source externalapi.DateTriggerInput) datetrigger.Date
+	WaitUntilDateIn(source externalapi.WaitUntilDateInput) datetrigger.Date
 	// goverter:enum:transform value
 	SuppressionChannel(source externalapi.SuppressionChannel) channels.Channel
 	// goverter:enum:transform value
@@ -485,6 +500,9 @@ func automationStepIn(c Inputs, s *externalapi.AutomationStepInputSum) (automati
 		return automationstep.Step{ID: stepIDIn(s.SmsStepInput.ID), Payload: c.SmsStepIn(s.SmsStepInput)}, nil
 	case externalapi.WaitStepInputAutomationStepInputSum:
 		return automationstep.Step{ID: stepIDIn(s.WaitStepInput.ID), Payload: c.WaitStepIn(s.WaitStepInput)}, nil
+	case externalapi.WaitUntilStepInputAutomationStepInputSum:
+		w, err := c.WaitUntilStepIn(s.WaitUntilStepInput)
+		return automationstep.Step{ID: stepIDIn(s.WaitUntilStepInput.ID), Payload: w}, err
 	case externalapi.ApplyTagStepInputAutomationStepInputSum:
 		return automationstep.Step{ID: stepIDIn(s.ApplyTagStepInput.ID), Payload: c.ApplyTagStepIn(s.ApplyTagStepInput)}, nil
 	case externalapi.RemoveTagStepInputAutomationStepInputSum:
@@ -499,6 +517,19 @@ func automationStepIn(c Inputs, s *externalapi.AutomationStepInputSum) (automati
 		return splitStepIn(c, &s.SplitStepInput)
 	default:
 		return automationstep.Step{}, nil // the save refuses a Step of no kind
+	}
+}
+
+// waitUntilMomentIn maps a Wait until's moment onto its form's: a oneOf is beyond goverter, so only
+// the switch is written here.
+func waitUntilMomentIn(c Inputs, in externalapi.WaitUntilMomentInput) (automationstep.Until, error) {
+	switch in.OneOf.Type {
+	case externalapi.WaitUntilTimeOfDayInputWaitUntilMomentInputSum:
+		return c.WaitUntilTimeOfDayIn(in.OneOf.WaitUntilTimeOfDayInput), nil
+	case externalapi.WaitUntilDateInputWaitUntilMomentInputSum:
+		return automationstep.OnDate{Date: c.WaitUntilDateIn(in.OneOf.WaitUntilDateInput)}, nil
+	default:
+		return nil, fmt.Errorf("the moment of form %q has no form of a wait until", in.OneOf.Type)
 	}
 }
 
@@ -562,19 +593,38 @@ func segmentConditionIn(o externalapi.OptSegmentConditionInput) (*conditiontree.
 }
 
 // automationTriggerIn is the Trigger a write gives, by its kind: an Event matcher, its filter the
-// stored Condition of the place (ADR 0169). A oneOf is beyond goverter, so the switch is written
-// here; a Trigger of no kind is no matcher, which the save refuses.
-func automationTriggerIn(t externalapi.AutomationTriggerInput) (eventmatcher.Matcher, error) {
-	if t.OneOf.Type != externalapi.EventTriggerInputAutomationTriggerInputSum {
-		return eventmatcher.Matcher{}, nil
+// stored Condition of the place (ADR 0169), or a date (ADR 0126). A oneOf is beyond goverter, so the
+// switch is written here; a Trigger of no kind is no matcher, which the save refuses.
+func automationTriggerIn(c Inputs, t externalapi.AutomationTriggerInput) (automations.Trigger, error) {
+	switch t.OneOf.Type {
+	case externalapi.EventTriggerInputAutomationTriggerInputSum:
+		ev := t.OneOf.EventTriggerInput
+		filter, err := condition.FromOptionalDTO[conditiontree.EventFilter](ev.Filter)
+		if err != nil {
+			return nil, err
+		}
+		return automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: ev.Action, Filter: filter}}, nil
+	case externalapi.DateTriggerInputAutomationTriggerInputSum:
+		return automations.DateTrigger{Date: c.DateTriggerIn(t.OneOf.DateTriggerInput)}, nil
 	}
-	ev := t.OneOf.EventTriggerInput
-	filter, err := condition.FromOptionalDTO[conditiontree.EventFilter](ev.Filter)
-	if err != nil {
-		return eventmatcher.Matcher{}, err
-	}
-	return eventmatcher.Matcher{Action: ev.Action, Filter: filter}, nil
+	// A Trigger of no kind is an Event Trigger with no action, which the save refuses.
+	return automations.EventTrigger{}, nil
 }
+
+// dateFieldIn is the date field a date Trigger names, by its kind: the birthday, or a Custom field by
+// its key. A field of no kind names none, which the save refuses.
+func dateFieldIn(f externalapi.DateFieldInput) datetrigger.Field {
+	switch f.OneOf.Type {
+	case externalapi.BirthdayDateFieldInputDateFieldInputSum:
+		return datetrigger.Field{Kind: datetrigger.Birthday}
+	case externalapi.CustomFieldDateFieldInputDateFieldInputSum:
+		return datetrigger.Field{Kind: datetrigger.CustomField, Key: f.OneOf.CustomFieldDateFieldInput.Key}
+	}
+	return datetrigger.Field{}
+}
+
+// dateOffsetDaysIn is a date's offset in days, which the save holds to its bound.
+func dateOffsetDaysIn(days externalapi.DateOffsetDays) int { return int(days) }
 
 // automationEntryIn is the Entry policy and the Enrollment key a write gives with its Trigger, an
 // Event Trigger's: an omitted field is left to the module's default, which for the key is none.
@@ -668,16 +718,12 @@ func automationGoalPatch(o externalapi.OptNilEventMatcherInput) (patch.Field[eve
 }
 
 // automationTriggerPtrIn is the Trigger an update replaces: omitted (nil) keeps the stored one.
-func automationTriggerPtrIn(o externalapi.OptAutomationTriggerInput) (*eventmatcher.Matcher, error) {
+func automationTriggerPtrIn(c Inputs, o externalapi.OptAutomationTriggerInput) (automations.Trigger, error) {
 	t, ok := o.Get()
 	if !ok {
 		return nil, nil
 	}
-	m, err := automationTriggerIn(t)
-	if err != nil {
-		return nil, err
-	}
-	return &m, nil
+	return automationTriggerIn(c, t)
 }
 
 // ruleConditionIn is a Rule's Condition the request may leave out; nil when it is absent.

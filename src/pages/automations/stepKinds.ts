@@ -2,6 +2,7 @@ import {
   IconArrowsSplit,
   IconBolt,
   IconBrandTelegram,
+  IconCalendarTime,
   IconClock,
   IconFlag,
   IconGitBranch,
@@ -47,6 +48,11 @@ export function useStepKinds(): Record<InsertedKind, StepKindInfo> {
       label: t(($) => $.automations.stepWait),
       description: t(($) => $.automations.waitNodeDescription),
       icon: IconClock,
+    },
+    wait_until: {
+      label: t(($) => $.automations.stepWaitUntil),
+      description: t(($) => $.automations.waitUntilNodeDescription),
+      icon: IconCalendarTime,
     },
     apply_tag: {
       label: t(($) => $.automations.stepApplyTag),

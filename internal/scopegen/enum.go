@@ -79,6 +79,73 @@ var SystemEventActions = Table{
 	}.Decls,
 }
 
+// Weekdays is the days of the week a local time of day counts on, from the contract's Weekday
+// enum, so the local calendar reads them from the contract (ADR 0126).
+var Weekdays = Table{
+	Spec:    siteSpec,
+	Out:     "internal/kernel/localcalendar/weekday_gen.go",
+	Package: "localcalendar",
+	Decls: Enum{
+		Schema:  "Weekday",
+		Doc:     []string{"Weekday is a day of the week by its ISO name in lower case."},
+		Type:    "Weekday",
+		List:    "Weekdays",
+		ListDoc: []string{"Weekdays is every Weekday, Monday first, in the contract's order."},
+	}.Decls,
+}
+
+// DateRecurrences is how often a date comes, from the contract's DateRecurrence enum, so the local
+// calendar reads its recurrences from the contract (ADR 0126).
+var DateRecurrences = Table{
+	Spec:    siteSpec,
+	Out:     "internal/kernel/localcalendar/recurrence_gen.go",
+	Package: "localcalendar",
+	Decls: Enum{
+		Schema: "DateRecurrence",
+		Doc: []string{
+			"Recurrence is how often a date comes: Yearly on each anniversary, from the year after the date's",
+			"own (a sign-up anniversary starts in year one), or Once on the date itself.",
+		},
+		Type:    "Recurrence",
+		List:    "Recurrences",
+		ListDoc: []string{"Recurrences is every Recurrence, in the contract's order."},
+	}.Decls,
+}
+
+// DateFieldKinds is the kinds of date a Contact holds, the discriminators of the contract's
+// DateField union, so a date Trigger and a Wait until store the contract's kinds (ADR 0126).
+var DateFieldKinds = Table{
+	Spec:    siteSpec,
+	Out:     "internal/kernel/datetrigger/fieldkind_gen.go",
+	Package: "datetrigger",
+	Decls: Discriminators{
+		Doc: []string{
+			"FieldKind is the kind of date a Contact holds: its Birthday, a calendar date already, or a",
+			"datetime CustomField of the Workspace, named by its key.",
+		},
+		Type: "FieldKind",
+		Unions: []Union{
+			{Schema: "DateField", List: "FieldKinds", Doc: []string{"FieldKinds is every FieldKind, in the contract's order."}},
+		},
+	}.Decls,
+}
+
+// WaitUntilForms is the forms of a Wait until's moment, the discriminators of the contract's
+// WaitUntilMoment union, which a stored Wait until keeps its moment under (ADR 0126).
+var WaitUntilForms = Table{
+	Spec:    siteSpec,
+	Out:     "internal/kernel/automationstep/form_gen.go",
+	Package: "automationstep",
+	Decls: Discriminators{
+		Doc:    []string{"Form is the form of a Wait until's moment: the `form` it is stored and shown under."},
+		Type:   "Form",
+		Prefix: "Form",
+		Unions: []Union{
+			{Schema: "WaitUntilMoment", List: "Forms", Doc: []string{"Forms is every Form, in the contract's order."}},
+		},
+	}.Decls,
+}
+
 // ConditionCombinators is how a condition Group joins its entries, from the
 // contract's ConditionCombinator enum.
 var ConditionCombinators = Table{

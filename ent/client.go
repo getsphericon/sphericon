@@ -20,6 +20,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/authattempt"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationfigure"
+	"github.com/getsphericon/sphericon/ent/automationoccurrencecursor"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationskippedentry"
 	"github.com/getsphericon/sphericon/ent/automationsteprecord"
@@ -34,6 +35,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/consentrecord"
 	"github.com/getsphericon/sphericon/ent/consentstamp"
 	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/contactdate"
 	"github.com/getsphericon/sphericon/ent/contacttag"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/defaultsendcap"
@@ -115,6 +117,8 @@ type Client struct {
 	Automation *AutomationClient
 	// AutomationFigure is the client for interacting with the AutomationFigure builders.
 	AutomationFigure *AutomationFigureClient
+	// AutomationOccurrenceCursor is the client for interacting with the AutomationOccurrenceCursor builders.
+	AutomationOccurrenceCursor *AutomationOccurrenceCursorClient
 	// AutomationRun is the client for interacting with the AutomationRun builders.
 	AutomationRun *AutomationRunClient
 	// AutomationSkippedEntry is the client for interacting with the AutomationSkippedEntry builders.
@@ -143,6 +147,8 @@ type Client struct {
 	ConsentStamp *ConsentStampClient
 	// Contact is the client for interacting with the Contact builders.
 	Contact *ContactClient
+	// ContactDate is the client for interacting with the ContactDate builders.
+	ContactDate *ContactDateClient
 	// ContactTag is the client for interacting with the ContactTag builders.
 	ContactTag *ContactTagClient
 	// CustomField is the client for interacting with the CustomField builders.
@@ -283,6 +289,7 @@ func (c *Client) init() {
 	c.AuthAttempt = NewAuthAttemptClient(c.config)
 	c.Automation = NewAutomationClient(c.config)
 	c.AutomationFigure = NewAutomationFigureClient(c.config)
+	c.AutomationOccurrenceCursor = NewAutomationOccurrenceCursorClient(c.config)
 	c.AutomationRun = NewAutomationRunClient(c.config)
 	c.AutomationSkippedEntry = NewAutomationSkippedEntryClient(c.config)
 	c.AutomationStepRecord = NewAutomationStepRecordClient(c.config)
@@ -297,6 +304,7 @@ func (c *Client) init() {
 	c.ConsentRecord = NewConsentRecordClient(c.config)
 	c.ConsentStamp = NewConsentStampClient(c.config)
 	c.Contact = NewContactClient(c.config)
+	c.ContactDate = NewContactDateClient(c.config)
 	c.ContactTag = NewContactTagClient(c.config)
 	c.CustomField = NewCustomFieldClient(c.config)
 	c.DefaultSendCap = NewDefaultSendCapClient(c.config)
@@ -449,89 +457,91 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:                       ctx,
-		config:                    cfg,
-		ApiToken:                  NewApiTokenClient(cfg),
-		AuditEntry:                NewAuditEntryClient(cfg),
-		AuthAttempt:               NewAuthAttemptClient(cfg),
-		Automation:                NewAutomationClient(cfg),
-		AutomationFigure:          NewAutomationFigureClient(cfg),
-		AutomationRun:             NewAutomationRunClient(cfg),
-		AutomationSkippedEntry:    NewAutomationSkippedEntryClient(cfg),
-		AutomationStepRecord:      NewAutomationStepRecordClient(cfg),
-		AutomationVersion:         NewAutomationVersionClient(cfg),
-		Binding:                   NewBindingClient(cfg),
-		BrandKit:                  NewBrandKitClient(cfg),
-		Broadcast:                 NewBroadcastClient(cfg),
-		BroadcastFigure:           NewBroadcastFigureClient(cfg),
-		BroadcastRecipient:        NewBroadcastRecipientClient(cfg),
-		CapturedMessage:           NewCapturedMessageClient(cfg),
-		Confirmation:              NewConfirmationClient(cfg),
-		ConsentRecord:             NewConsentRecordClient(cfg),
-		ConsentStamp:              NewConsentStampClient(cfg),
-		Contact:                   NewContactClient(cfg),
-		ContactTag:                NewContactTagClient(cfg),
-		CustomField:               NewCustomFieldClient(cfg),
-		DefaultSendCap:            NewDefaultSendCapClient(cfg),
-		EmailTemplate:             NewEmailTemplateClient(cfg),
-		EngagementTrackingConsent: NewEngagementTrackingConsentClient(cfg),
-		Erasure:                   NewErasureClient(cfg),
-		Event:                     NewEventClient(cfg),
-		EventJournalEntry:         NewEventJournalEntryClient(cfg),
-		EventReceipt:              NewEventReceiptClient(cfg),
-		HeldOrderEvent:            NewHeldOrderEventClient(cfg),
-		Hold:                      NewHoldClient(cfg),
-		IdentitySecret:            NewIdentitySecretClient(cfg),
-		InstanceAuditEntry:        NewInstanceAuditEntryClient(cfg),
-		InstanceState:             NewInstanceStateClient(cfg),
-		Integration:               NewIntegrationClient(cfg),
-		IntegrationProviderState:  NewIntegrationProviderStateClient(cfg),
-		Invitation:                NewInvitationClient(cfg),
-		JoinDomain:                NewJoinDomainClient(cfg),
-		LegalDocumentDraft:        NewLegalDocumentDraftClient(cfg),
-		LegalDocumentVersion:      NewLegalDocumentVersionClient(cfg),
-		Membership:                NewMembershipClient(cfg),
-		OAuthClient:               NewOAuthClientClient(cfg),
-		OAuthCode:                 NewOAuthCodeClient(cfg),
-		OAuthRefreshToken:         NewOAuthRefreshTokenClient(cfg),
-		Order:                     NewOrderClient(cfg),
-		OrderMovement:             NewOrderMovementClient(cfg),
-		OutboundMessage:           NewOutboundMessageClient(cfg),
-		Passkey:                   NewPasskeyClient(cfg),
-		PasskeyChallenge:          NewPasskeyChallengeClient(cfg),
-		PendingSignup:             NewPendingSignupClient(cfg),
-		PrivateRelayRange:         NewPrivateRelayRangeClient(cfg),
-		ProviderLimiter:           NewProviderLimiterClient(cfg),
-		RecoveryCode:              NewRecoveryCodeClient(cfg),
-		Rule:                      NewRuleClient(cfg),
-		RuleFiring:                NewRuleFiringClient(cfg),
-		RuleVersion:               NewRuleVersionClient(cfg),
-		RuleVersionTrigger:        NewRuleVersionTriggerClient(cfg),
-		SchemaState:               NewSchemaStateClient(cfg),
-		SecondFactor:              NewSecondFactorClient(cfg),
-		Segment:                   NewSegmentClient(cfg),
-		SendCapLimiter:            NewSendCapLimiterClient(cfg),
-		SendingDomain:             NewSendingDomainClient(cfg),
-		ServiceCredential:         NewServiceCredentialClient(cfg),
-		SignupItem:                NewSignupItemClient(cfg),
-		SignupSurveyResponse:      NewSignupSurveyResponseClient(cfg),
-		StaffMember:               NewStaffMemberClient(cfg),
-		StartToken:                NewStartTokenClient(cfg),
-		Suppression:               NewSuppressionClient(cfg),
-		Tag:                       NewTagClient(cfg),
-		TrackedLink:               NewTrackedLinkClient(cfg),
-		TrackingDomain:            NewTrackingDomainClient(cfg),
-		TrackingHostChange:        NewTrackingHostChangeClient(cfg),
-		Unsubscribe:               NewUnsubscribeClient(cfg),
-		Usage:                     NewUsageClient(cfg),
-		User:                      NewUserClient(cfg),
-		UserIdentity:              NewUserIdentityClient(cfg),
-		UserTombstone:             NewUserTombstoneClient(cfg),
-		Visitor:                   NewVisitorClient(cfg),
-		WebhookEndpoint:           NewWebhookEndpointClient(cfg),
-		WebhookEndpointHealth:     NewWebhookEndpointHealthClient(cfg),
-		Workspace:                 NewWorkspaceClient(cfg),
-		WorkspaceStanding:         NewWorkspaceStandingClient(cfg),
+		ctx:                        ctx,
+		config:                     cfg,
+		ApiToken:                   NewApiTokenClient(cfg),
+		AuditEntry:                 NewAuditEntryClient(cfg),
+		AuthAttempt:                NewAuthAttemptClient(cfg),
+		Automation:                 NewAutomationClient(cfg),
+		AutomationFigure:           NewAutomationFigureClient(cfg),
+		AutomationOccurrenceCursor: NewAutomationOccurrenceCursorClient(cfg),
+		AutomationRun:              NewAutomationRunClient(cfg),
+		AutomationSkippedEntry:     NewAutomationSkippedEntryClient(cfg),
+		AutomationStepRecord:       NewAutomationStepRecordClient(cfg),
+		AutomationVersion:          NewAutomationVersionClient(cfg),
+		Binding:                    NewBindingClient(cfg),
+		BrandKit:                   NewBrandKitClient(cfg),
+		Broadcast:                  NewBroadcastClient(cfg),
+		BroadcastFigure:            NewBroadcastFigureClient(cfg),
+		BroadcastRecipient:         NewBroadcastRecipientClient(cfg),
+		CapturedMessage:            NewCapturedMessageClient(cfg),
+		Confirmation:               NewConfirmationClient(cfg),
+		ConsentRecord:              NewConsentRecordClient(cfg),
+		ConsentStamp:               NewConsentStampClient(cfg),
+		Contact:                    NewContactClient(cfg),
+		ContactDate:                NewContactDateClient(cfg),
+		ContactTag:                 NewContactTagClient(cfg),
+		CustomField:                NewCustomFieldClient(cfg),
+		DefaultSendCap:             NewDefaultSendCapClient(cfg),
+		EmailTemplate:              NewEmailTemplateClient(cfg),
+		EngagementTrackingConsent:  NewEngagementTrackingConsentClient(cfg),
+		Erasure:                    NewErasureClient(cfg),
+		Event:                      NewEventClient(cfg),
+		EventJournalEntry:          NewEventJournalEntryClient(cfg),
+		EventReceipt:               NewEventReceiptClient(cfg),
+		HeldOrderEvent:             NewHeldOrderEventClient(cfg),
+		Hold:                       NewHoldClient(cfg),
+		IdentitySecret:             NewIdentitySecretClient(cfg),
+		InstanceAuditEntry:         NewInstanceAuditEntryClient(cfg),
+		InstanceState:              NewInstanceStateClient(cfg),
+		Integration:                NewIntegrationClient(cfg),
+		IntegrationProviderState:   NewIntegrationProviderStateClient(cfg),
+		Invitation:                 NewInvitationClient(cfg),
+		JoinDomain:                 NewJoinDomainClient(cfg),
+		LegalDocumentDraft:         NewLegalDocumentDraftClient(cfg),
+		LegalDocumentVersion:       NewLegalDocumentVersionClient(cfg),
+		Membership:                 NewMembershipClient(cfg),
+		OAuthClient:                NewOAuthClientClient(cfg),
+		OAuthCode:                  NewOAuthCodeClient(cfg),
+		OAuthRefreshToken:          NewOAuthRefreshTokenClient(cfg),
+		Order:                      NewOrderClient(cfg),
+		OrderMovement:              NewOrderMovementClient(cfg),
+		OutboundMessage:            NewOutboundMessageClient(cfg),
+		Passkey:                    NewPasskeyClient(cfg),
+		PasskeyChallenge:           NewPasskeyChallengeClient(cfg),
+		PendingSignup:              NewPendingSignupClient(cfg),
+		PrivateRelayRange:          NewPrivateRelayRangeClient(cfg),
+		ProviderLimiter:            NewProviderLimiterClient(cfg),
+		RecoveryCode:               NewRecoveryCodeClient(cfg),
+		Rule:                       NewRuleClient(cfg),
+		RuleFiring:                 NewRuleFiringClient(cfg),
+		RuleVersion:                NewRuleVersionClient(cfg),
+		RuleVersionTrigger:         NewRuleVersionTriggerClient(cfg),
+		SchemaState:                NewSchemaStateClient(cfg),
+		SecondFactor:               NewSecondFactorClient(cfg),
+		Segment:                    NewSegmentClient(cfg),
+		SendCapLimiter:             NewSendCapLimiterClient(cfg),
+		SendingDomain:              NewSendingDomainClient(cfg),
+		ServiceCredential:          NewServiceCredentialClient(cfg),
+		SignupItem:                 NewSignupItemClient(cfg),
+		SignupSurveyResponse:       NewSignupSurveyResponseClient(cfg),
+		StaffMember:                NewStaffMemberClient(cfg),
+		StartToken:                 NewStartTokenClient(cfg),
+		Suppression:                NewSuppressionClient(cfg),
+		Tag:                        NewTagClient(cfg),
+		TrackedLink:                NewTrackedLinkClient(cfg),
+		TrackingDomain:             NewTrackingDomainClient(cfg),
+		TrackingHostChange:         NewTrackingHostChangeClient(cfg),
+		Unsubscribe:                NewUnsubscribeClient(cfg),
+		Usage:                      NewUsageClient(cfg),
+		User:                       NewUserClient(cfg),
+		UserIdentity:               NewUserIdentityClient(cfg),
+		UserTombstone:              NewUserTombstoneClient(cfg),
+		Visitor:                    NewVisitorClient(cfg),
+		WebhookEndpoint:            NewWebhookEndpointClient(cfg),
+		WebhookEndpointHealth:      NewWebhookEndpointHealthClient(cfg),
+		Workspace:                  NewWorkspaceClient(cfg),
+		WorkspaceStanding:          NewWorkspaceStandingClient(cfg),
 	}, nil
 }
 
@@ -549,89 +559,91 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:                       ctx,
-		config:                    cfg,
-		ApiToken:                  NewApiTokenClient(cfg),
-		AuditEntry:                NewAuditEntryClient(cfg),
-		AuthAttempt:               NewAuthAttemptClient(cfg),
-		Automation:                NewAutomationClient(cfg),
-		AutomationFigure:          NewAutomationFigureClient(cfg),
-		AutomationRun:             NewAutomationRunClient(cfg),
-		AutomationSkippedEntry:    NewAutomationSkippedEntryClient(cfg),
-		AutomationStepRecord:      NewAutomationStepRecordClient(cfg),
-		AutomationVersion:         NewAutomationVersionClient(cfg),
-		Binding:                   NewBindingClient(cfg),
-		BrandKit:                  NewBrandKitClient(cfg),
-		Broadcast:                 NewBroadcastClient(cfg),
-		BroadcastFigure:           NewBroadcastFigureClient(cfg),
-		BroadcastRecipient:        NewBroadcastRecipientClient(cfg),
-		CapturedMessage:           NewCapturedMessageClient(cfg),
-		Confirmation:              NewConfirmationClient(cfg),
-		ConsentRecord:             NewConsentRecordClient(cfg),
-		ConsentStamp:              NewConsentStampClient(cfg),
-		Contact:                   NewContactClient(cfg),
-		ContactTag:                NewContactTagClient(cfg),
-		CustomField:               NewCustomFieldClient(cfg),
-		DefaultSendCap:            NewDefaultSendCapClient(cfg),
-		EmailTemplate:             NewEmailTemplateClient(cfg),
-		EngagementTrackingConsent: NewEngagementTrackingConsentClient(cfg),
-		Erasure:                   NewErasureClient(cfg),
-		Event:                     NewEventClient(cfg),
-		EventJournalEntry:         NewEventJournalEntryClient(cfg),
-		EventReceipt:              NewEventReceiptClient(cfg),
-		HeldOrderEvent:            NewHeldOrderEventClient(cfg),
-		Hold:                      NewHoldClient(cfg),
-		IdentitySecret:            NewIdentitySecretClient(cfg),
-		InstanceAuditEntry:        NewInstanceAuditEntryClient(cfg),
-		InstanceState:             NewInstanceStateClient(cfg),
-		Integration:               NewIntegrationClient(cfg),
-		IntegrationProviderState:  NewIntegrationProviderStateClient(cfg),
-		Invitation:                NewInvitationClient(cfg),
-		JoinDomain:                NewJoinDomainClient(cfg),
-		LegalDocumentDraft:        NewLegalDocumentDraftClient(cfg),
-		LegalDocumentVersion:      NewLegalDocumentVersionClient(cfg),
-		Membership:                NewMembershipClient(cfg),
-		OAuthClient:               NewOAuthClientClient(cfg),
-		OAuthCode:                 NewOAuthCodeClient(cfg),
-		OAuthRefreshToken:         NewOAuthRefreshTokenClient(cfg),
-		Order:                     NewOrderClient(cfg),
-		OrderMovement:             NewOrderMovementClient(cfg),
-		OutboundMessage:           NewOutboundMessageClient(cfg),
-		Passkey:                   NewPasskeyClient(cfg),
-		PasskeyChallenge:          NewPasskeyChallengeClient(cfg),
-		PendingSignup:             NewPendingSignupClient(cfg),
-		PrivateRelayRange:         NewPrivateRelayRangeClient(cfg),
-		ProviderLimiter:           NewProviderLimiterClient(cfg),
-		RecoveryCode:              NewRecoveryCodeClient(cfg),
-		Rule:                      NewRuleClient(cfg),
-		RuleFiring:                NewRuleFiringClient(cfg),
-		RuleVersion:               NewRuleVersionClient(cfg),
-		RuleVersionTrigger:        NewRuleVersionTriggerClient(cfg),
-		SchemaState:               NewSchemaStateClient(cfg),
-		SecondFactor:              NewSecondFactorClient(cfg),
-		Segment:                   NewSegmentClient(cfg),
-		SendCapLimiter:            NewSendCapLimiterClient(cfg),
-		SendingDomain:             NewSendingDomainClient(cfg),
-		ServiceCredential:         NewServiceCredentialClient(cfg),
-		SignupItem:                NewSignupItemClient(cfg),
-		SignupSurveyResponse:      NewSignupSurveyResponseClient(cfg),
-		StaffMember:               NewStaffMemberClient(cfg),
-		StartToken:                NewStartTokenClient(cfg),
-		Suppression:               NewSuppressionClient(cfg),
-		Tag:                       NewTagClient(cfg),
-		TrackedLink:               NewTrackedLinkClient(cfg),
-		TrackingDomain:            NewTrackingDomainClient(cfg),
-		TrackingHostChange:        NewTrackingHostChangeClient(cfg),
-		Unsubscribe:               NewUnsubscribeClient(cfg),
-		Usage:                     NewUsageClient(cfg),
-		User:                      NewUserClient(cfg),
-		UserIdentity:              NewUserIdentityClient(cfg),
-		UserTombstone:             NewUserTombstoneClient(cfg),
-		Visitor:                   NewVisitorClient(cfg),
-		WebhookEndpoint:           NewWebhookEndpointClient(cfg),
-		WebhookEndpointHealth:     NewWebhookEndpointHealthClient(cfg),
-		Workspace:                 NewWorkspaceClient(cfg),
-		WorkspaceStanding:         NewWorkspaceStandingClient(cfg),
+		ctx:                        ctx,
+		config:                     cfg,
+		ApiToken:                   NewApiTokenClient(cfg),
+		AuditEntry:                 NewAuditEntryClient(cfg),
+		AuthAttempt:                NewAuthAttemptClient(cfg),
+		Automation:                 NewAutomationClient(cfg),
+		AutomationFigure:           NewAutomationFigureClient(cfg),
+		AutomationOccurrenceCursor: NewAutomationOccurrenceCursorClient(cfg),
+		AutomationRun:              NewAutomationRunClient(cfg),
+		AutomationSkippedEntry:     NewAutomationSkippedEntryClient(cfg),
+		AutomationStepRecord:       NewAutomationStepRecordClient(cfg),
+		AutomationVersion:          NewAutomationVersionClient(cfg),
+		Binding:                    NewBindingClient(cfg),
+		BrandKit:                   NewBrandKitClient(cfg),
+		Broadcast:                  NewBroadcastClient(cfg),
+		BroadcastFigure:            NewBroadcastFigureClient(cfg),
+		BroadcastRecipient:         NewBroadcastRecipientClient(cfg),
+		CapturedMessage:            NewCapturedMessageClient(cfg),
+		Confirmation:               NewConfirmationClient(cfg),
+		ConsentRecord:              NewConsentRecordClient(cfg),
+		ConsentStamp:               NewConsentStampClient(cfg),
+		Contact:                    NewContactClient(cfg),
+		ContactDate:                NewContactDateClient(cfg),
+		ContactTag:                 NewContactTagClient(cfg),
+		CustomField:                NewCustomFieldClient(cfg),
+		DefaultSendCap:             NewDefaultSendCapClient(cfg),
+		EmailTemplate:              NewEmailTemplateClient(cfg),
+		EngagementTrackingConsent:  NewEngagementTrackingConsentClient(cfg),
+		Erasure:                    NewErasureClient(cfg),
+		Event:                      NewEventClient(cfg),
+		EventJournalEntry:          NewEventJournalEntryClient(cfg),
+		EventReceipt:               NewEventReceiptClient(cfg),
+		HeldOrderEvent:             NewHeldOrderEventClient(cfg),
+		Hold:                       NewHoldClient(cfg),
+		IdentitySecret:             NewIdentitySecretClient(cfg),
+		InstanceAuditEntry:         NewInstanceAuditEntryClient(cfg),
+		InstanceState:              NewInstanceStateClient(cfg),
+		Integration:                NewIntegrationClient(cfg),
+		IntegrationProviderState:   NewIntegrationProviderStateClient(cfg),
+		Invitation:                 NewInvitationClient(cfg),
+		JoinDomain:                 NewJoinDomainClient(cfg),
+		LegalDocumentDraft:         NewLegalDocumentDraftClient(cfg),
+		LegalDocumentVersion:       NewLegalDocumentVersionClient(cfg),
+		Membership:                 NewMembershipClient(cfg),
+		OAuthClient:                NewOAuthClientClient(cfg),
+		OAuthCode:                  NewOAuthCodeClient(cfg),
+		OAuthRefreshToken:          NewOAuthRefreshTokenClient(cfg),
+		Order:                      NewOrderClient(cfg),
+		OrderMovement:              NewOrderMovementClient(cfg),
+		OutboundMessage:            NewOutboundMessageClient(cfg),
+		Passkey:                    NewPasskeyClient(cfg),
+		PasskeyChallenge:           NewPasskeyChallengeClient(cfg),
+		PendingSignup:              NewPendingSignupClient(cfg),
+		PrivateRelayRange:          NewPrivateRelayRangeClient(cfg),
+		ProviderLimiter:            NewProviderLimiterClient(cfg),
+		RecoveryCode:               NewRecoveryCodeClient(cfg),
+		Rule:                       NewRuleClient(cfg),
+		RuleFiring:                 NewRuleFiringClient(cfg),
+		RuleVersion:                NewRuleVersionClient(cfg),
+		RuleVersionTrigger:         NewRuleVersionTriggerClient(cfg),
+		SchemaState:                NewSchemaStateClient(cfg),
+		SecondFactor:               NewSecondFactorClient(cfg),
+		Segment:                    NewSegmentClient(cfg),
+		SendCapLimiter:             NewSendCapLimiterClient(cfg),
+		SendingDomain:              NewSendingDomainClient(cfg),
+		ServiceCredential:          NewServiceCredentialClient(cfg),
+		SignupItem:                 NewSignupItemClient(cfg),
+		SignupSurveyResponse:       NewSignupSurveyResponseClient(cfg),
+		StaffMember:                NewStaffMemberClient(cfg),
+		StartToken:                 NewStartTokenClient(cfg),
+		Suppression:                NewSuppressionClient(cfg),
+		Tag:                        NewTagClient(cfg),
+		TrackedLink:                NewTrackedLinkClient(cfg),
+		TrackingDomain:             NewTrackingDomainClient(cfg),
+		TrackingHostChange:         NewTrackingHostChangeClient(cfg),
+		Unsubscribe:                NewUnsubscribeClient(cfg),
+		Usage:                      NewUsageClient(cfg),
+		User:                       NewUserClient(cfg),
+		UserIdentity:               NewUserIdentityClient(cfg),
+		UserTombstone:              NewUserTombstoneClient(cfg),
+		Visitor:                    NewVisitorClient(cfg),
+		WebhookEndpoint:            NewWebhookEndpointClient(cfg),
+		WebhookEndpointHealth:      NewWebhookEndpointHealthClient(cfg),
+		Workspace:                  NewWorkspaceClient(cfg),
+		WorkspaceStanding:          NewWorkspaceStandingClient(cfg),
 	}, nil
 }
 
@@ -662,13 +674,14 @@ func (c *Client) Close() error {
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.ApiToken, c.AuditEntry, c.AuthAttempt, c.Automation, c.AutomationFigure,
-		c.AutomationRun, c.AutomationSkippedEntry, c.AutomationStepRecord,
-		c.AutomationVersion, c.Binding, c.BrandKit, c.Broadcast, c.BroadcastFigure,
-		c.BroadcastRecipient, c.CapturedMessage, c.Confirmation, c.ConsentRecord,
-		c.ConsentStamp, c.Contact, c.ContactTag, c.CustomField, c.DefaultSendCap,
-		c.EmailTemplate, c.EngagementTrackingConsent, c.Erasure, c.Event,
-		c.EventJournalEntry, c.EventReceipt, c.HeldOrderEvent, c.Hold,
-		c.IdentitySecret, c.InstanceAuditEntry, c.InstanceState, c.Integration,
+		c.AutomationOccurrenceCursor, c.AutomationRun, c.AutomationSkippedEntry,
+		c.AutomationStepRecord, c.AutomationVersion, c.Binding, c.BrandKit,
+		c.Broadcast, c.BroadcastFigure, c.BroadcastRecipient, c.CapturedMessage,
+		c.Confirmation, c.ConsentRecord, c.ConsentStamp, c.Contact, c.ContactDate,
+		c.ContactTag, c.CustomField, c.DefaultSendCap, c.EmailTemplate,
+		c.EngagementTrackingConsent, c.Erasure, c.Event, c.EventJournalEntry,
+		c.EventReceipt, c.HeldOrderEvent, c.Hold, c.IdentitySecret,
+		c.InstanceAuditEntry, c.InstanceState, c.Integration,
 		c.IntegrationProviderState, c.Invitation, c.JoinDomain, c.LegalDocumentDraft,
 		c.LegalDocumentVersion, c.Membership, c.OAuthClient, c.OAuthCode,
 		c.OAuthRefreshToken, c.Order, c.OrderMovement, c.OutboundMessage, c.Passkey,
@@ -690,13 +703,14 @@ func (c *Client) Use(hooks ...Hook) {
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.ApiToken, c.AuditEntry, c.AuthAttempt, c.Automation, c.AutomationFigure,
-		c.AutomationRun, c.AutomationSkippedEntry, c.AutomationStepRecord,
-		c.AutomationVersion, c.Binding, c.BrandKit, c.Broadcast, c.BroadcastFigure,
-		c.BroadcastRecipient, c.CapturedMessage, c.Confirmation, c.ConsentRecord,
-		c.ConsentStamp, c.Contact, c.ContactTag, c.CustomField, c.DefaultSendCap,
-		c.EmailTemplate, c.EngagementTrackingConsent, c.Erasure, c.Event,
-		c.EventJournalEntry, c.EventReceipt, c.HeldOrderEvent, c.Hold,
-		c.IdentitySecret, c.InstanceAuditEntry, c.InstanceState, c.Integration,
+		c.AutomationOccurrenceCursor, c.AutomationRun, c.AutomationSkippedEntry,
+		c.AutomationStepRecord, c.AutomationVersion, c.Binding, c.BrandKit,
+		c.Broadcast, c.BroadcastFigure, c.BroadcastRecipient, c.CapturedMessage,
+		c.Confirmation, c.ConsentRecord, c.ConsentStamp, c.Contact, c.ContactDate,
+		c.ContactTag, c.CustomField, c.DefaultSendCap, c.EmailTemplate,
+		c.EngagementTrackingConsent, c.Erasure, c.Event, c.EventJournalEntry,
+		c.EventReceipt, c.HeldOrderEvent, c.Hold, c.IdentitySecret,
+		c.InstanceAuditEntry, c.InstanceState, c.Integration,
 		c.IntegrationProviderState, c.Invitation, c.JoinDomain, c.LegalDocumentDraft,
 		c.LegalDocumentVersion, c.Membership, c.OAuthClient, c.OAuthCode,
 		c.OAuthRefreshToken, c.Order, c.OrderMovement, c.OutboundMessage, c.Passkey,
@@ -726,6 +740,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Automation.mutate(ctx, m)
 	case *AutomationFigureMutation:
 		return c.AutomationFigure.mutate(ctx, m)
+	case *AutomationOccurrenceCursorMutation:
+		return c.AutomationOccurrenceCursor.mutate(ctx, m)
 	case *AutomationRunMutation:
 		return c.AutomationRun.mutate(ctx, m)
 	case *AutomationSkippedEntryMutation:
@@ -754,6 +770,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.ConsentStamp.mutate(ctx, m)
 	case *ContactMutation:
 		return c.Contact.mutate(ctx, m)
+	case *ContactDateMutation:
+		return c.ContactDate.mutate(ctx, m)
 	case *ContactTagMutation:
 		return c.ContactTag.mutate(ctx, m)
 	case *CustomFieldMutation:
@@ -1534,6 +1552,22 @@ func (c *AutomationClient) QueryRuns(_m *Automation) *AutomationRunQuery {
 	return query
 }
 
+// QueryOccurrenceCursor queries the occurrence_cursor edge of a Automation.
+func (c *AutomationClient) QueryOccurrenceCursor(_m *Automation) *AutomationOccurrenceCursorQuery {
+	query := (&AutomationOccurrenceCursorClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(automation.Table, automation.FieldID, id),
+			sqlgraph.To(automationoccurrencecursor.Table, automationoccurrencecursor.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, automation.OccurrenceCursorTable, automation.OccurrenceCursorColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *AutomationClient) Hooks() []Hook {
 	return c.hooks.Automation
@@ -1737,6 +1771,171 @@ func (c *AutomationFigureClient) mutate(ctx context.Context, m *AutomationFigure
 		return (&AutomationFigureDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown AutomationFigure mutation op: %q", m.Op())
+	}
+}
+
+// AutomationOccurrenceCursorClient is a client for the AutomationOccurrenceCursor schema.
+type AutomationOccurrenceCursorClient struct {
+	config
+}
+
+// NewAutomationOccurrenceCursorClient returns a client for the AutomationOccurrenceCursor from the given config.
+func NewAutomationOccurrenceCursorClient(c config) *AutomationOccurrenceCursorClient {
+	return &AutomationOccurrenceCursorClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `automationoccurrencecursor.Hooks(f(g(h())))`.
+func (c *AutomationOccurrenceCursorClient) Use(hooks ...Hook) {
+	c.hooks.AutomationOccurrenceCursor = append(c.hooks.AutomationOccurrenceCursor, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `automationoccurrencecursor.Intercept(f(g(h())))`.
+func (c *AutomationOccurrenceCursorClient) Intercept(interceptors ...Interceptor) {
+	c.inters.AutomationOccurrenceCursor = append(c.inters.AutomationOccurrenceCursor, interceptors...)
+}
+
+// Create returns a builder for creating a AutomationOccurrenceCursor entity.
+func (c *AutomationOccurrenceCursorClient) Create() *AutomationOccurrenceCursorCreate {
+	mutation := newAutomationOccurrenceCursorMutation(c.config, OpCreate)
+	return &AutomationOccurrenceCursorCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of AutomationOccurrenceCursor entities.
+func (c *AutomationOccurrenceCursorClient) CreateBulk(builders ...*AutomationOccurrenceCursorCreate) *AutomationOccurrenceCursorCreateBulk {
+	return &AutomationOccurrenceCursorCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *AutomationOccurrenceCursorClient) MapCreateBulk(slice any, setFunc func(*AutomationOccurrenceCursorCreate, int)) *AutomationOccurrenceCursorCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &AutomationOccurrenceCursorCreateBulk{err: fmt.Errorf("calling to AutomationOccurrenceCursorClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*AutomationOccurrenceCursorCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &AutomationOccurrenceCursorCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for AutomationOccurrenceCursor.
+func (c *AutomationOccurrenceCursorClient) Update() *AutomationOccurrenceCursorUpdate {
+	mutation := newAutomationOccurrenceCursorMutation(c.config, OpUpdate)
+	return &AutomationOccurrenceCursorUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *AutomationOccurrenceCursorClient) UpdateOne(_m *AutomationOccurrenceCursor) *AutomationOccurrenceCursorUpdateOne {
+	mutation := newAutomationOccurrenceCursorMutation(c.config, OpUpdateOne, withAutomationOccurrenceCursor(_m))
+	return &AutomationOccurrenceCursorUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *AutomationOccurrenceCursorClient) UpdateOneID(id int64) *AutomationOccurrenceCursorUpdateOne {
+	mutation := newAutomationOccurrenceCursorMutation(c.config, OpUpdateOne, withAutomationOccurrenceCursorID(id))
+	return &AutomationOccurrenceCursorUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for AutomationOccurrenceCursor.
+func (c *AutomationOccurrenceCursorClient) Delete() *AutomationOccurrenceCursorDelete {
+	mutation := newAutomationOccurrenceCursorMutation(c.config, OpDelete)
+	return &AutomationOccurrenceCursorDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *AutomationOccurrenceCursorClient) DeleteOne(_m *AutomationOccurrenceCursor) *AutomationOccurrenceCursorDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *AutomationOccurrenceCursorClient) DeleteOneID(id int64) *AutomationOccurrenceCursorDeleteOne {
+	builder := c.Delete().Where(automationoccurrencecursor.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &AutomationOccurrenceCursorDeleteOne{builder}
+}
+
+// Query returns a query builder for AutomationOccurrenceCursor.
+func (c *AutomationOccurrenceCursorClient) Query() *AutomationOccurrenceCursorQuery {
+	return &AutomationOccurrenceCursorQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeAutomationOccurrenceCursor},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a AutomationOccurrenceCursor entity by its id.
+func (c *AutomationOccurrenceCursorClient) Get(ctx context.Context, id int64) (*AutomationOccurrenceCursor, error) {
+	return c.Query().Where(automationoccurrencecursor.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *AutomationOccurrenceCursorClient) GetX(ctx context.Context, id int64) *AutomationOccurrenceCursor {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryWorkspace queries the workspace edge of a AutomationOccurrenceCursor.
+func (c *AutomationOccurrenceCursorClient) QueryWorkspace(_m *AutomationOccurrenceCursor) *WorkspaceQuery {
+	query := (&WorkspaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(automationoccurrencecursor.Table, automationoccurrencecursor.FieldID, id),
+			sqlgraph.To(workspace.Table, workspace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, automationoccurrencecursor.WorkspaceTable, automationoccurrencecursor.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryAutomation queries the automation edge of a AutomationOccurrenceCursor.
+func (c *AutomationOccurrenceCursorClient) QueryAutomation(_m *AutomationOccurrenceCursor) *AutomationQuery {
+	query := (&AutomationClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(automationoccurrencecursor.Table, automationoccurrencecursor.FieldID, id),
+			sqlgraph.To(automation.Table, automation.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, automationoccurrencecursor.AutomationTable, automationoccurrencecursor.AutomationColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *AutomationOccurrenceCursorClient) Hooks() []Hook {
+	return c.hooks.AutomationOccurrenceCursor
+}
+
+// Interceptors returns the client interceptors.
+func (c *AutomationOccurrenceCursorClient) Interceptors() []Interceptor {
+	return c.inters.AutomationOccurrenceCursor
+}
+
+func (c *AutomationOccurrenceCursorClient) mutate(ctx context.Context, m *AutomationOccurrenceCursorMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&AutomationOccurrenceCursorCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&AutomationOccurrenceCursorUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&AutomationOccurrenceCursorUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&AutomationOccurrenceCursorDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown AutomationOccurrenceCursor mutation op: %q", m.Op())
 	}
 }
 
@@ -4233,6 +4432,22 @@ func (c *ContactClient) QueryStartTokens(_m *Contact) *StartTokenQuery {
 	return query
 }
 
+// QueryDates queries the dates edge of a Contact.
+func (c *ContactClient) QueryDates(_m *Contact) *ContactDateQuery {
+	query := (&ContactDateClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(contact.Table, contact.FieldID, id),
+			sqlgraph.To(contactdate.Table, contactdate.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, contact.DatesTable, contact.DatesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryTags queries the tags edge of a Contact.
 func (c *ContactClient) QueryTags(_m *Contact) *TagQuery {
 	query := (&TagClient{config: c.config}).Query()
@@ -4319,6 +4534,171 @@ func (c *ContactClient) mutate(ctx context.Context, m *ContactMutation) (Value, 
 		return (&ContactDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Contact mutation op: %q", m.Op())
+	}
+}
+
+// ContactDateClient is a client for the ContactDate schema.
+type ContactDateClient struct {
+	config
+}
+
+// NewContactDateClient returns a client for the ContactDate from the given config.
+func NewContactDateClient(c config) *ContactDateClient {
+	return &ContactDateClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `contactdate.Hooks(f(g(h())))`.
+func (c *ContactDateClient) Use(hooks ...Hook) {
+	c.hooks.ContactDate = append(c.hooks.ContactDate, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `contactdate.Intercept(f(g(h())))`.
+func (c *ContactDateClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ContactDate = append(c.inters.ContactDate, interceptors...)
+}
+
+// Create returns a builder for creating a ContactDate entity.
+func (c *ContactDateClient) Create() *ContactDateCreate {
+	mutation := newContactDateMutation(c.config, OpCreate)
+	return &ContactDateCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ContactDate entities.
+func (c *ContactDateClient) CreateBulk(builders ...*ContactDateCreate) *ContactDateCreateBulk {
+	return &ContactDateCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ContactDateClient) MapCreateBulk(slice any, setFunc func(*ContactDateCreate, int)) *ContactDateCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ContactDateCreateBulk{err: fmt.Errorf("calling to ContactDateClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ContactDateCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ContactDateCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ContactDate.
+func (c *ContactDateClient) Update() *ContactDateUpdate {
+	mutation := newContactDateMutation(c.config, OpUpdate)
+	return &ContactDateUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ContactDateClient) UpdateOne(_m *ContactDate) *ContactDateUpdateOne {
+	mutation := newContactDateMutation(c.config, OpUpdateOne, withContactDate(_m))
+	return &ContactDateUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ContactDateClient) UpdateOneID(id int64) *ContactDateUpdateOne {
+	mutation := newContactDateMutation(c.config, OpUpdateOne, withContactDateID(id))
+	return &ContactDateUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ContactDate.
+func (c *ContactDateClient) Delete() *ContactDateDelete {
+	mutation := newContactDateMutation(c.config, OpDelete)
+	return &ContactDateDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ContactDateClient) DeleteOne(_m *ContactDate) *ContactDateDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ContactDateClient) DeleteOneID(id int64) *ContactDateDeleteOne {
+	builder := c.Delete().Where(contactdate.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ContactDateDeleteOne{builder}
+}
+
+// Query returns a query builder for ContactDate.
+func (c *ContactDateClient) Query() *ContactDateQuery {
+	return &ContactDateQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeContactDate},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ContactDate entity by its id.
+func (c *ContactDateClient) Get(ctx context.Context, id int64) (*ContactDate, error) {
+	return c.Query().Where(contactdate.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ContactDateClient) GetX(ctx context.Context, id int64) *ContactDate {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryWorkspace queries the workspace edge of a ContactDate.
+func (c *ContactDateClient) QueryWorkspace(_m *ContactDate) *WorkspaceQuery {
+	query := (&WorkspaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(contactdate.Table, contactdate.FieldID, id),
+			sqlgraph.To(workspace.Table, workspace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, contactdate.WorkspaceTable, contactdate.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryContact queries the contact edge of a ContactDate.
+func (c *ContactDateClient) QueryContact(_m *ContactDate) *ContactQuery {
+	query := (&ContactClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(contactdate.Table, contactdate.FieldID, id),
+			sqlgraph.To(contact.Table, contact.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, contactdate.ContactTable, contactdate.ContactColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ContactDateClient) Hooks() []Hook {
+	return c.hooks.ContactDate
+}
+
+// Interceptors returns the client interceptors.
+func (c *ContactDateClient) Interceptors() []Interceptor {
+	return c.inters.ContactDate
+}
+
+func (c *ContactDateClient) mutate(ctx context.Context, m *ContactDateMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ContactDateCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ContactDateUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ContactDateUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ContactDateDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ContactDate mutation op: %q", m.Op())
 	}
 }
 
@@ -14336,6 +14716,22 @@ func (c *WorkspaceClient) QueryContactTags(_m *Workspace) *ContactTagQuery {
 	return query
 }
 
+// QueryContactDates queries the contact_dates edge of a Workspace.
+func (c *WorkspaceClient) QueryContactDates(_m *Workspace) *ContactDateQuery {
+	query := (&ContactDateClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, id),
+			sqlgraph.To(contactdate.Table, contactdate.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.ContactDatesTable, workspace.ContactDatesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QuerySegments queries the segments edge of a Workspace.
 func (c *WorkspaceClient) QuerySegments(_m *Workspace) *SegmentQuery {
 	query := (&SegmentClient{config: c.config}).Query()
@@ -14697,6 +15093,22 @@ func (c *WorkspaceClient) QueryAutomationSkippedEntries(_m *Workspace) *Automati
 			sqlgraph.From(workspace.Table, workspace.FieldID, id),
 			sqlgraph.To(automationskippedentry.Table, automationskippedentry.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, workspace.AutomationSkippedEntriesTable, workspace.AutomationSkippedEntriesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryAutomationOccurrenceCursors queries the automation_occurrence_cursors edge of a Workspace.
+func (c *WorkspaceClient) QueryAutomationOccurrenceCursors(_m *Workspace) *AutomationOccurrenceCursorQuery {
+	query := (&AutomationOccurrenceCursorClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, id),
+			sqlgraph.To(automationoccurrencecursor.Table, automationoccurrencecursor.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.AutomationOccurrenceCursorsTable, workspace.AutomationOccurrenceCursorsColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -15329,10 +15741,11 @@ func (c *WorkspaceStandingClient) mutate(ctx context.Context, m *WorkspaceStandi
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationFigure, AutomationRun,
-		AutomationSkippedEntry, AutomationStepRecord, AutomationVersion, Binding,
-		BrandKit, Broadcast, BroadcastFigure, BroadcastRecipient, CapturedMessage,
-		Confirmation, ConsentRecord, ConsentStamp, Contact, ContactTag, CustomField,
+		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationFigure,
+		AutomationOccurrenceCursor, AutomationRun, AutomationSkippedEntry,
+		AutomationStepRecord, AutomationVersion, Binding, BrandKit, Broadcast,
+		BroadcastFigure, BroadcastRecipient, CapturedMessage, Confirmation,
+		ConsentRecord, ConsentStamp, Contact, ContactDate, ContactTag, CustomField,
 		DefaultSendCap, EmailTemplate, EngagementTrackingConsent, Erasure, Event,
 		EventJournalEntry, EventReceipt, HeldOrderEvent, Hold, IdentitySecret,
 		InstanceAuditEntry, InstanceState, Integration, IntegrationProviderState,
@@ -15348,10 +15761,11 @@ type (
 		WorkspaceStanding []ent.Hook
 	}
 	inters struct {
-		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationFigure, AutomationRun,
-		AutomationSkippedEntry, AutomationStepRecord, AutomationVersion, Binding,
-		BrandKit, Broadcast, BroadcastFigure, BroadcastRecipient, CapturedMessage,
-		Confirmation, ConsentRecord, ConsentStamp, Contact, ContactTag, CustomField,
+		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationFigure,
+		AutomationOccurrenceCursor, AutomationRun, AutomationSkippedEntry,
+		AutomationStepRecord, AutomationVersion, Binding, BrandKit, Broadcast,
+		BroadcastFigure, BroadcastRecipient, CapturedMessage, Confirmation,
+		ConsentRecord, ConsentStamp, Contact, ContactDate, ContactTag, CustomField,
 		DefaultSendCap, EmailTemplate, EngagementTrackingConsent, Erasure, Event,
 		EventJournalEntry, EventReceipt, HeldOrderEvent, Hold, IdentitySecret,
 		InstanceAuditEntry, InstanceState, Integration, IntegrationProviderState,

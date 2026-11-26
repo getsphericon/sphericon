@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationfigure"
+	"github.com/getsphericon/sphericon/ent/automationoccurrencecursor"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationskippedentry"
 	"github.com/getsphericon/sphericon/ent/automationsteprecord"
@@ -22,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/consentstamp"
 	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/contactdate"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
@@ -238,6 +240,7 @@ func eraseSteps() []eraseStep {
 		stepOf((*ent.Scoped).BroadcastFigure, broadcastfigure.IDIn),
 		stepOf((*ent.Scoped).AutomationFigure, automationfigure.IDIn),
 		stepOf((*ent.Scoped).AutomationSkippedEntry, automationskippedentry.IDIn),
+		stepOf((*ent.Scoped).AutomationOccurrenceCursor, automationoccurrencecursor.IDIn),
 		stepOf((*ent.Scoped).RuleFiring, rulefiring.IDIn),
 		stepOf((*ent.Scoped).RuleVersionTrigger, ruleversiontrigger.IDIn),
 		stepOf((*ent.Scoped).RuleVersion, ruleversion.IDIn),
@@ -265,6 +268,7 @@ func eraseSteps() []eraseStep {
 		keptStepOf((*ent.Scoped).Segment, (*ent.SegmentScoped).QueryWithArchived, (*ent.SegmentScoped).Purge, segment.IDIn),
 		stepOf((*ent.Scoped).EmailTemplate, emailtemplate.IDIn),
 		stepOf((*ent.Scoped).BrandKit, brandkit.IDIn),
+		stepOf((*ent.Scoped).ContactDate, contactdate.IDIn),
 		stepOf((*ent.Scoped).Contact, contact.IDIn),
 		stepOf((*ent.Scoped).Tag, tag.IDIn),
 		stepOf((*ent.Scoped).CustomField, customfield.IDIn),

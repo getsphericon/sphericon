@@ -568,6 +568,13 @@ export type AutomationReport = {
    * one entry per path an enrollment took, so a path none took has none
    */
   paths: Array<AutomationPathFigures>;
+  /**
+   * Each Wait until by its Step id, summed over every version that had it: the enrollments that
+   * left it in the current period without waiting, because its date had no moment ahead within 366
+   * days (ADR 0126). In Step id order: one entry per Wait until any enrollment left so, so one that
+   * every enrollment waited on has none
+   */
+  waitUntilSteps: Array<AutomationWaitUntilFigures>;
 };
 
 /**
@@ -739,6 +746,18 @@ export type AutomationSkippedCounts = {
    * day
    */
   enrollmentCeiling: number;
+  /**
+   * Occurrences of a date Trigger (ADR 0126) the scheduler reached 24 hours late or more while
+   * their date was already set at their moment, which enroll no one; a date set after its
+   * occurrence counts nothing
+   */
+  missed: number;
+  /**
+   * Occurrences of a date Trigger whose date was set through a Connection without mcp:send, which
+   * enroll no one while it stays so; a later write of another value without the mark may still enroll the same
+   * occurrence within 24 hours, which then counts as entered too
+   */
+  sendLocked: number;
 };
 
 /**
@@ -763,6 +782,8 @@ export type AutomationStep = ({
 } & SmsStep) | ({
   type: 'wait';
 } & WaitStep) | ({
+  type: 'wait_until';
+} & WaitUntilStep) | ({
   type: 'apply_tag';
 } & ApplyTagStep) | ({
   type: 'remove_tag';
@@ -807,6 +828,8 @@ export type AutomationStepInput = ({
 } & SmsStepInput) | ({
   type: 'wait';
 } & WaitStepInput) | ({
+  type: 'wait_until';
+} & WaitUntilStepInput) | ({
   type: 'apply_tag';
 } & ApplyTagStepInput) | ({
   type: 'remove_tag';
@@ -821,14 +844,22 @@ export type AutomationStepInput = ({
 } & SplitStepInput);
 
 /**
- * What enrolls a Contact in an automation, by `kind`: an Event matcher
+ * What enrolls a Contact in an automation, by `kind`: an Event matcher or a date
  */
-export type AutomationTrigger = EventTrigger;
+export type AutomationTrigger = ({
+  kind: 'event';
+} & EventTrigger) | ({
+  kind: 'date';
+} & DateTrigger);
 
 /**
- * What enrolls a Contact in an automation, by `kind`: an Event matcher
+ * What enrolls a Contact in an automation, by `kind`: an Event matcher or a date
  */
-export type AutomationTriggerInput = EventTriggerInput;
+export type AutomationTriggerInput = ({
+  kind: 'event';
+} & EventTriggerInput) | ({
+  kind: 'date';
+} & DateTriggerInput);
 
 /**
  * One version of an automation's definition: what publishing makes it do (ADR 0065)
@@ -878,6 +909,44 @@ export type AutomationVersionStepFigures = {
    * Messages skipped, as in AutomationStepFigures
    */
   skipped: number;
+};
+
+/**
+ * The enrollments that went on at once from one Wait until on a date instead of waiting, by why:
+ * read from what each kept when it reached the Step, counted on the moment it left it
+ */
+export type AutomationWaitUntilFigures = {
+  /**
+   * The Wait until's Step id, the same in every version
+   */
+  stepId: StepId;
+  /**
+   * Its moment had passed: a once date before the arrival
+   */
+  past: number;
+  /**
+   * The contact held no date in the field, or a value that is no date
+   */
+  noDate: number;
+  /**
+   * Its moment lay more than 366 days ahead, such as a yearly date whose value is itself in the
+   * future
+   */
+  beyondBound: number;
+};
+
+/**
+ * The Contact's date of birth, a date field every Contact has
+ */
+export type BirthdayDateField = {
+  kind: 'birthday';
+};
+
+/**
+ * The Contact's date of birth, a date field every Contact has
+ */
+export type BirthdayDateFieldInput = {
+  kind: 'birthday';
 };
 
 /**
@@ -2692,6 +2761,32 @@ export type CustomFieldConditionTests = {
 };
 
 /**
+ * A datetime Custom field of the Workspace, its key in a field of its own. Its value's calendar
+ * date is read in the Workspace time zone: a value with an offset is moved into it, one without an
+ * offset or a bare date keeps its own date.
+ */
+export type CustomFieldDateField = {
+  kind: 'customField';
+  /**
+   * The Custom field's key
+   */
+  key: string;
+};
+
+/**
+ * A datetime Custom field of the Workspace, its key in a field of its own. Its value's calendar
+ * date is read in the Workspace time zone: a value with an offset is moved into it, one without an
+ * offset or a bare date keeps its own date.
+ */
+export type CustomFieldDateFieldInput = {
+  kind: 'customField';
+  /**
+   * The Custom field's key
+   */
+  key: string;
+};
+
+/**
  * A test of a Custom field of the Workspace, its key in a field of its own
  */
 export type CustomFieldLeaf = {
@@ -2807,6 +2902,144 @@ export const CustomFieldType = {
  * A Custom field's value type
  */
 export type CustomFieldType = typeof CustomFieldType[keyof typeof CustomFieldType];
+
+/**
+ * A date a Contact holds, by `kind`: its `birthday`, or a datetime Custom field
+ */
+export type DateField = ({
+  kind: 'birthday';
+} & BirthdayDateField) | ({
+  kind: 'customField';
+} & CustomFieldDateField);
+
+/**
+ * A date a Contact holds, by `kind`, as a request writes it
+ */
+export type DateFieldInput = ({
+  kind: 'birthday';
+} & BirthdayDateFieldInput) | ({
+  kind: 'customField';
+} & CustomFieldDateFieldInput);
+
+/**
+ * When a date the Contact holds comes (ADR 0126), as a date Trigger enrolls on it and a Wait until
+ * waits for it: on each anniversary of the date, from the year after its own, or once on it,
+ * `offsetDays` before or after it, at `localTime` in the Contact's time zone, or in the Workspace
+ * time zone when the Contact has no valid one
+ */
+export type DateOccurrence = {
+  /**
+   * The date the occurrences come from
+   */
+  field: DateField;
+  /**
+   * Every year, or once
+   */
+  recurrence: DateRecurrence;
+  /**
+   * Days before (negative) or after the date
+   */
+  offsetDays: DateOffsetDays;
+  /**
+   * The time of day of each occurrence, in the Contact's time zone
+   */
+  localTime: LocalTime;
+};
+
+/**
+ * When a date the Contact holds comes, as a request writes it
+ */
+export type DateOccurrenceInput = {
+  /**
+   * The date the occurrences come from: the birthday, or a datetime Custom field of the
+   * Workspace's catalogue
+   */
+  field: DateFieldInput;
+  /**
+   * Every year, or once; the birthday is only yearly
+   */
+  recurrence: DateRecurrence;
+  /**
+   * Days before (negative) or after the date, within 365
+   */
+  offsetDays: DateOffsetDays;
+  /**
+   * The time of day of each occurrence, `HH:MM`, in the Contact's time zone
+   */
+  localTime: LocalTime;
+};
+
+/**
+ * A whole number of days before (negative) or after the date, within a year
+ */
+export type DateOffsetDays = number;
+
+/**
+ * How often a date comes: `yearly` on each anniversary, from the year after the date's own;
+ * `once` on the date itself. The birthday is always past, so it is only yearly.
+ */
+export const DateRecurrence = { YEARLY: 'yearly', ONCE: 'once' } as const;
+
+/**
+ * How often a date comes: `yearly` on each anniversary, from the year after the date's own;
+ * `once` on the date itself. The birthday is always past, so it is only yearly.
+ */
+export type DateRecurrence = typeof DateRecurrence[keyof typeof DateRecurrence];
+
+/**
+ * A Trigger that enrolls a Contact on a date it holds (ADR 0126): on each anniversary of its
+ * birthday or of a datetime Custom field, or once on such a field, `offsetDays` before or after it,
+ * at `localTime` in the Contact's time zone, or in the Workspace time zone when the Contact has no
+ * valid one. A yearly date enrolls a Contact at most once per anniversary year, the year of the date
+ * the offset counts from, and a once date at most once ever; an occurrence while the previous
+ * enrollment is still active is skipped. Only occurrences after the automation was published
+ * enroll, at most 24 hours late, and the enrollment begins at the occurrence's moment with no
+ * triggering Event. A date Trigger has no entry policy, cooldown or Enrollment key, and no rule's
+ * enroll action may name its automation.
+ */
+export type DateTrigger = {
+  kind: 'date';
+  /**
+   * The date the occurrences come from
+   */
+  field: DateField;
+  /**
+   * Every year, or once
+   */
+  recurrence: DateRecurrence;
+  /**
+   * Days before (negative) or after the date
+   */
+  offsetDays: DateOffsetDays;
+  /**
+   * The time of day of each occurrence, in the Contact's time zone
+   */
+  localTime: LocalTime;
+};
+
+/**
+ * A Trigger that enrolls a Contact on a date it holds (ADR 0126), as a request writes it
+ */
+export type DateTriggerInput = {
+  kind: 'date';
+  /**
+   * The date the occurrences come from: the birthday, or a datetime Custom field of the
+   * Workspace's catalogue
+   */
+  field: DateFieldInput;
+  /**
+   * Every year, or once; the birthday is only yearly
+   */
+  recurrence: DateRecurrence;
+  /**
+   * Days before (negative) or after the date, within 365
+   */
+  offsetDays: DateOffsetDays;
+  /**
+   * The time of day of each occurrence, `HH:MM`, in the Contact's time zone
+   */
+  localTime: LocalTime;
+};
 
 /**
  * What a Deferral waits for: the send is not consumed and goes through every check again when it is retried
@@ -3378,6 +3611,16 @@ export const EnrollmentFailureKind = {
 export type EnrollmentFailureKind = typeof EnrollmentFailureKind[keyof typeof EnrollmentFailureKind];
 
 /**
+ * The occurrence of a date Trigger an Enrollment was made for (ADR 0126), by `recurrence`: a
+ * contact is enrolled at most once per occurrence
+ */
+export type EnrollmentOccurrence = ({
+  recurrence: 'yearly';
+} & YearlyEnrollmentOccurrence) | ({
+  recurrence: 'once';
+} & OnceEnrollmentOccurrence);
+
+/**
  * One Contact's progress through an Automation. Erased with the Contact.
  */
 export type EnrollmentResource = {
@@ -3407,6 +3650,12 @@ export type EnrollmentResource = {
    * string form (ADR 0165); absent for an automation with no key
    */
   keyValue?: string;
+  /**
+   * The occurrence of the automation's date Trigger the Enrollment was made for (ADR 0126): which
+   * year's anniversary, or the once date's one occurrence; absent for an Enrollment an Event or a
+   * rule's enroll action began
+   */
+  occurrence?: EnrollmentOccurrence;
   /**
    * Id of the Step of its version the Enrollment stands on (ADR 0122): a wait while it waits, the Step it ended on once it ended; absent only for a version of no Steps
    */
@@ -4609,6 +4858,12 @@ export type LintFinding = {
 };
 
 /**
+ * A local time of day, `HH:MM` in whole minutes from 00:00 to 23:59, read in a time zone the
+ * place that holds it names (`09:00`, `18:30`)
+ */
+export type LocalTime = string;
+
+/**
  * A BCP 47 language tag: a language, optionally with a script and a region (`de`, `pt-BR`)
  */
 export type LocaleTag = string;
@@ -4756,6 +5011,13 @@ export type NumberTestInput = {
 };
 
 /**
+ * The occurrence of a once date Trigger an Enrollment was made for: the one it has
+ */
+export type OnceEnrollmentOccurrence = {
+  recurrence: 'once';
+};
+
+/**
  * How a person stopped on a Channel other than email (ADR 0077): a STOP keyword or `/stop` (keyword), a message's unsubscribe button (button) or link (link), a blocked bot (block), a send the provider refused because the person had stopped at the provider (refused_send), or an opt-out recorded by hand in the app or through the API, which reached the Workspace by another route (manual)
  */
 export const OptOutVia = {
@@ -4784,6 +5046,8 @@ export type PathStep = ({
 } & SmsStep) | ({
   type: 'wait';
 } & WaitStep) | ({
+  type: 'wait_until';
+} & WaitUntilStep) | ({
   type: 'apply_tag';
 } & ApplyTagStep) | ({
   type: 'remove_tag';
@@ -4809,6 +5073,8 @@ export type PathStepInput = ({
 } & SmsStepInput) | ({
   type: 'wait';
 } & WaitStepInput) | ({
+  type: 'wait_until';
+} & WaitUntilStepInput) | ({
   type: 'apply_tag';
 } & ApplyTagStepInput) | ({
   type: 'remove_tag';
@@ -6200,7 +6466,11 @@ export type SigningSecret = string;
  * enrollment for the key value in the automation before, under the `once` entry policy),
  * `cooldown` (under `again`, the cooldown from the beginning of the contact's previous enrollment
  * for the key value had not passed) or `enrollment_ceiling` (the keyed automation's contact had 10
- * active enrollments, or 10 begun in a day).
+ * active enrollments, or 10 begun in a day). An occurrence of a date Trigger (ADR 0126) is skipped as
+ * `active_enrollment` (an enrollment of the contact was active at its moment), `missed` (it was
+ * reached 24 hours late or more while its date was already set at its moment) or `send_locked` (its
+ * date was set through a Connection without mcp:send; a later write of another value without the mark may
+ * still enroll it within 24 hours).
  */
 export const SkippedEntryReason = {
   NO_ENROLLMENT_KEY: 'no_enrollment_key',
@@ -6208,7 +6478,9 @@ export const SkippedEntryReason = {
   ACTIVE_ENROLLMENT: 'active_enrollment',
   ONCE: 'once',
   COOLDOWN: 'cooldown',
-  ENROLLMENT_CEILING: 'enrollment_ceiling'
+  ENROLLMENT_CEILING: 'enrollment_ceiling',
+  MISSED: 'missed',
+  SEND_LOCKED: 'send_locked'
 } as const;
 
 /**
@@ -6220,7 +6492,11 @@ export const SkippedEntryReason = {
  * enrollment for the key value in the automation before, under the `once` entry policy),
  * `cooldown` (under `again`, the cooldown from the beginning of the contact's previous enrollment
  * for the key value had not passed) or `enrollment_ceiling` (the keyed automation's contact had 10
- * active enrollments, or 10 begun in a day).
+ * active enrollments, or 10 begun in a day). An occurrence of a date Trigger (ADR 0126) is skipped as
+ * `active_enrollment` (an enrollment of the contact was active at its moment), `missed` (it was
+ * reached 24 hours late or more while its date was already set at its moment) or `send_locked` (its
+ * date was set through a Connection without mcp:send; a later write of another value without the mark may
+ * still enroll it within 24 hours).
  */
 export type SkippedEntryReason = typeof SkippedEntryReason[keyof typeof SkippedEntryReason];
 
@@ -6247,7 +6523,7 @@ export type SkippedEntryResource = {
   reason: SkippedEntryReason;
   /**
    * The source id of the triggering Event (its dedupKey when it had one); absent when a rule's
-   * enroll action tried
+   * enroll action or a date Trigger's occurrence tried
    */
   eventSourceId?: string;
   /**
@@ -6255,7 +6531,8 @@ export type SkippedEntryResource = {
    */
   firingId?: EntityId;
   /**
-   * When the enrollment would have begun: when its Event occurred
+   * When the enrollment would have begun: when its Event occurred, or the moment of the date
+   * Trigger's occurrence
    */
   occurredAt: Timestamp;
   /**
@@ -6555,6 +6832,8 @@ export type SplitPathStep = ({
 } & SmsStep) | ({
   type: 'wait';
 } & WaitStep) | ({
+  type: 'wait_until';
+} & WaitUntilStep) | ({
   type: 'apply_tag';
 } & ApplyTagStep) | ({
   type: 'remove_tag';
@@ -6580,6 +6859,8 @@ export type SplitPathStepInput = ({
 } & SmsStepInput) | ({
   type: 'wait';
 } & WaitStepInput) | ({
+  type: 'wait_until';
+} & WaitUntilStepInput) | ({
   type: 'apply_tag';
 } & ApplyTagStepInput) | ({
   type: 'remove_tag';
@@ -6596,8 +6877,9 @@ export type SplitPathStepInput = ({
 /**
  * A Step that sends each Enrollment down one of its paths by weight (ADR 0124): a hash of the
  * Contact, the Split and the Enrollment's ordinal chooses the path, so the same Enrollment always
- * takes the same path and a new Enrollment of the Contact draws again. An empty path is a holdout.
- * The paths rejoin at the Step after the Split.
+ * takes the same path and a new Enrollment of the Contact draws again. In an Automation with a
+ * yearly date Trigger the anniversary year takes the ordinal's place, so the Contact draws again
+ * each year (ADR 0126). An empty path is a holdout. The paths rejoin at the Step after the Split.
  */
 export type SplitStep = {
   /**
@@ -7804,6 +8086,140 @@ export type WaitStepInput = {
 };
 
 /**
+ * Wait until the next occurrence of a date the Contact holds (ADR 0126), at or after the moment
+ * the Enrollment reaches the Step: `offsetDays` before or after the date, at `localTime` in the
+ * Contact's time zone, or the Workspace time zone when the Contact has no valid one. A yearly date
+ * waits for its next anniversary, from the year after the date's own; a once date for the date
+ * itself. When there is no such moment within 366 days the Enrollment goes on at once, and the
+ * report counts why: the moment has passed (`past`), the Contact holds no date in the field
+ * (`no_date`), or it lies more than 366 days ahead (`beyond_bound`).
+ */
+export type WaitUntilDate = {
+  form: 'date';
+  /**
+   * The date the occurrences come from
+   */
+  field: DateField;
+  /**
+   * Every year, or once
+   */
+  recurrence: DateRecurrence;
+  /**
+   * Days before (negative) or after the date
+   */
+  offsetDays: DateOffsetDays;
+  /**
+   * The time of day of each occurrence, in the Contact's time zone
+   */
+  localTime: LocalTime;
+};
+
+/**
+ * Wait until the next occurrence of a date the Contact holds, as a request writes it
+ */
+export type WaitUntilDateInput = {
+  form: 'date';
+  /**
+   * The date the occurrences come from: the birthday, or a datetime Custom field of the
+   * Workspace's catalogue
+   */
+  field: DateFieldInput;
+  /**
+   * Every year, or once; the birthday is only yearly
+   */
+  recurrence: DateRecurrence;
+  /**
+   * Days before (negative) or after the date, within 365
+   */
+  offsetDays: DateOffsetDays;
+  /**
+   * The time of day of each occurrence, `HH:MM`, in the Contact's time zone
+   */
+  localTime: LocalTime;
+};
+
+/**
+ * The moment a Wait until holds an Enrollment until, by `form`
+ */
+export type WaitUntilMoment = ({
+  form: 'time_of_day';
+} & WaitUntilTimeOfDay) | ({
+  form: 'date';
+} & WaitUntilDate);
+
+/**
+ * The moment a Wait until holds an Enrollment until, by `form`, as a request writes it
+ */
+export type WaitUntilMomentInput = ({
+  form: 'time_of_day';
+} & WaitUntilTimeOfDayInput) | ({
+  form: 'date';
+} & WaitUntilDateInput);
+
+/**
+ * A Step that holds the Enrollment until a calendar moment (ADR 0126): the moment is computed
+ * once, from when the Enrollment reaches the Step, and kept, so neither a restart nor a time zone
+ * changed during the wait moves it. A moment equal to the arrival waits zero.
+ */
+export type WaitUntilStep = {
+  /**
+   * The Step's id
+   */
+  id: StepId;
+  type: 'wait_until';
+  /**
+   * The moment the Enrollment waits for
+   */
+  until: WaitUntilMoment;
+};
+
+/**
+ * A Step that holds the Enrollment until a calendar moment, as a request writes it
+ */
+export type WaitUntilStepInput = {
+  /**
+   * The Step's id; omitted, the Step is given one
+   */
+  id?: StepId;
+  type: 'wait_until';
+  /**
+   * The moment the Enrollment waits for
+   */
+  until: WaitUntilMomentInput;
+};
+
+/**
+ * Wait until the next moment a local time comes, on chosen weekdays or on any day, in the
+ * Contact's time zone, or the Workspace time zone when the Contact has no valid one (ADR 0126)
+ */
+export type WaitUntilTimeOfDay = {
+  form: 'time_of_day';
+  /**
+   * The local time of day
+   */
+  localTime: LocalTime;
+  /**
+   * The weekdays the local time counts on; empty is every day
+   */
+  weekdays: Array<Weekday>;
+};
+
+/**
+ * Wait until the next moment a local time comes, as a request writes it
+ */
+export type WaitUntilTimeOfDayInput = {
+  form: 'time_of_day';
+  /**
+   * The local time of day
+   */
+  localTime: LocalTime;
+  /**
+   * The weekdays the local time counts on, each at most once; omitted or empty is every day
+   */
+  weekdays?: Array<Weekday>;
+};
+
+/**
  * Why an endpoint is off. A closed set: `owner` (a member turned it off), `gone` (the
  * receiver answered 410 Gone) and `persistent_failure` (deliveries failed for longer
  * than the window). Absent while the endpoint is enabled.
@@ -7934,6 +8350,24 @@ export type WebhookTestResult = {
 };
 
 /**
+ * A day of the week, by its ISO name in lower case
+ */
+export const Weekday = {
+  MONDAY: 'monday',
+  TUESDAY: 'tuesday',
+  WEDNESDAY: 'wednesday',
+  THURSDAY: 'thursday',
+  FRIDAY: 'friday',
+  SATURDAY: 'saturday',
+  SUNDAY: 'sunday'
+} as const;
+
+/**
+ * A day of the week, by its ISO name in lower case
+ */
+export type Weekday = typeof Weekday[keyof typeof Weekday];
+
+/**
  * A test of a moment: within the last `days` days up to now, so a moment still to come is not
  * within. A moment is read as for the moment test.
  */
@@ -8007,6 +8441,17 @@ export type WorkspaceResource = {
    * The revision of the Workspace this answer shows (ADR 0119)
    */
   revision: Revision;
+};
+
+/**
+ * The occurrence of a yearly date Trigger an Enrollment was made for: its anniversary year
+ */
+export type YearlyEnrollmentOccurrence = {
+  recurrence: 'yearly';
+  /**
+   * The anniversary year: the year of the date the Trigger's offset counts from
+   */
+  year: number;
 };
 
 /**

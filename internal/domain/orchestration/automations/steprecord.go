@@ -7,11 +7,14 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationsteprecord"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
+	"github.com/getsphericon/sphericon/internal/kernel/localcalendar"
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 )
 
@@ -25,25 +28,96 @@ var _ = db.Declare(
 		"a Step record is written by the move that puts the Enrollment on the Step, which its cursor's compare-and-set lets happen once, and a version's Steps have no cycles"),
 )
 
-// dueOf is when the Step st is due for an Enrollment that reaches it at now: a wait's delay after
-// now, computed once, when it is reached (ADR 0124); nil for any other Step, which runs at once.
-func dueOf(st *automationstep.Step, now time.Time) *time.Time {
-	w, ok := st.Payload.(automationstep.Wait)
-	if !ok {
-		return nil
+// arrive is what the Step st decides for an Enrollment that reaches it at now, computed once, then
+// kept on its Step record (ADR 0124, ADR 0126): a wait's delay after now, and a Wait until's moment
+// for its Contact, in the Contact's zone or else the Workspace's, or why it goes on at once
+// (automationstep.Reach), which contact reads only for a Wait until. Any other Step decides
+// nothing (nil) and runs at once.
+func arrive(st *automationstep.Step, now time.Time, contact func() (automationstep.Contact, error)) (automationstep.Due, error) {
+	switch p := st.Payload.(type) {
+	case automationstep.Wait:
+		return automationstep.WaitsUntil{At: now.Add(time.Duration(p.Seconds) * time.Second)}, nil
+	case automationstep.WaitUntil:
+		c, err := contact()
+		if err != nil {
+			return nil, err
+		}
+		reached, err := automationstep.Reach(p.Until, c, now)
+		if err != nil {
+			return nil, fmt.Errorf("wait until step %s: %w", st.ID, err)
+		}
+		return reached, nil
+	default:
+		return nil, nil
 	}
-	due := now.Add(time.Duration(w.Seconds) * time.Second)
-	return &due
 }
 
-// reach records that the Enrollment runID reached the Step of the id at now, due at due (a wait's
-// due moment, nil for any other Step).
-func reach(ctx context.Context, s *ent.Scoped, runID int64, stepID automationstep.ID, now time.Time, due *time.Time) error {
+// dueAt is the moment a wait holds the Enrollment until, nil for a Step it does not hold (one that
+// decided nothing on arrival, nil, or a Wait until that went on at once).
+func dueAt(d automationstep.Due) *time.Time {
+	switch d := d.(type) {
+	case automationstep.WaitsUntil:
+		return &d.At
+	case automationstep.GoesOn, nil:
+	}
+	return nil
+}
+
+// wentOn is why a Wait until let the Enrollment go on at once, nil for any other arrival.
+func wentOn(d automationstep.Due) *automationstep.WentOn {
+	switch d := d.(type) {
+	case automationstep.GoesOn:
+		return &d.Reason
+	case automationstep.WaitsUntil, nil:
+	}
+	return nil
+}
+
+// calendarOf is what a Wait until reads of the Contact c in its Workspace (contactCalendar).
+func calendarOf(ctx context.Context, s *ent.Scoped, c *ent.Contact) (automationstep.Contact, error) {
+	ws, err := s.Workspace(ctx)
+	if err != nil {
+		return automationstep.Contact{}, err
+	}
+	return contactCalendar(c, ws.Timezone)
+}
+
+// contactCalendar is what a date or a time of day reads of the Contact c in a Workspace whose time
+// zone is workspaceZone (ADR 0126): the zone its local times are read in (localcalendar.Zone), its
+// own time zone when the zone database loads it, else the Workspace's, UTC while unset; the
+// Workspace's zone, which a datetime value's date is read in; and the dates it holds. An error is a
+// Workspace zone the zone database does not load. The date scheduler and a Wait until both read a
+// Contact through it.
+func contactCalendar(c *ent.Contact, workspaceZone *string) (automationstep.Contact, error) {
+	zone, err := localcalendar.Zone(c.TimeZone, workspaceZone)
+	if err != nil {
+		return automationstep.Contact{}, err
+	}
+	workspace, err := localcalendar.Zone(nil, workspaceZone)
+	if err != nil {
+		return automationstep.Contact{}, err
+	}
+	return automationstep.Contact{Zone: zone, Workspace: workspace, Dates: contacts.DatesOf(c)}, nil
+}
+
+// runCalendar is calendarOf the Contact of the Enrollment runID.
+func runCalendar(ctx context.Context, s *ent.Scoped, runID int64) (automationstep.Contact, error) {
+	c, err := s.AutomationRun().Query().Where(automationrun.ID(runID)).QueryContact().Only(ctx)
+	if err != nil {
+		return automationstep.Contact{}, err
+	}
+	return calendarOf(ctx, s, c)
+}
+
+// reach records that the Enrollment runID reached the Step of the id at now, with what the Step
+// decided then: a wait's due moment, or why a Wait until let it go on at once.
+func reach(ctx context.Context, s *ent.Scoped, runID int64, stepID automationstep.ID, now time.Time, d automationstep.Due) error {
 	return s.AutomationStepRecord().Create().
 		SetRunID(runID).
 		SetStepID(stepID).
 		SetReachedAt(now).
-		SetNillableDueAt(due).
+		SetNillableDueAt(dueAt(d)).
+		SetNillableWentOn(wentOn(d)).
 		Exec(ctx)
 }
 

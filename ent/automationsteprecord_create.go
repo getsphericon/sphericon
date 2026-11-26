@@ -155,6 +155,20 @@ func (_c *AutomationStepRecordCreate) SetNillableDueAt(v *time.Time) *Automation
 	return _c
 }
 
+// SetWentOn sets the "went_on" field.
+func (_c *AutomationStepRecordCreate) SetWentOn(v automationstep.WentOn) *AutomationStepRecordCreate {
+	_c.mutation.SetWentOn(v)
+	return _c
+}
+
+// SetNillableWentOn sets the "went_on" field if the given value is not nil.
+func (_c *AutomationStepRecordCreate) SetNillableWentOn(v *automationstep.WentOn) *AutomationStepRecordCreate {
+	if v != nil {
+		_c.SetWentOn(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *AutomationStepRecordCreate) SetID(v int64) *AutomationStepRecordCreate {
 	_c.mutation.SetID(v)
@@ -246,6 +260,11 @@ func (_c *AutomationStepRecordCreate) check() error {
 			return &ValidationError{Name: "skip_reason", err: fmt.Errorf(`ent: validator failed for field "AutomationStepRecord.skip_reason": %w`, err)}
 		}
 	}
+	if v, ok := _c.mutation.WentOn(); ok {
+		if err := automationsteprecord.WentOnValidator(v); err != nil {
+			return &ValidationError{Name: "went_on", err: fmt.Errorf(`ent: validator failed for field "AutomationStepRecord.went_on": %w`, err)}
+		}
+	}
 	if len(_c.mutation.WorkspaceIDs()) == 0 {
 		return &ValidationError{Name: "workspace", err: errors.New(`ent: missing required edge "AutomationStepRecord.workspace"`)}
 	}
@@ -324,6 +343,10 @@ func (_c *AutomationStepRecordCreate) createSpec() (*AutomationStepRecord, *sqlg
 	if value, ok := _c.mutation.DueAt(); ok {
 		_spec.SetField(automationsteprecord.FieldDueAt, field.TypeTime, value)
 		_node.DueAt = &value
+	}
+	if value, ok := _c.mutation.WentOn(); ok {
+		_spec.SetField(automationsteprecord.FieldWentOn, field.TypeEnum, value)
+		_node.WentOn = &value
 	}
 	if nodes := _c.mutation.WorkspaceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -556,6 +579,9 @@ func (u *AutomationStepRecordUpsertOne) UpdateNewValues() *AutomationStepRecordU
 		}
 		if _, exists := u.create.mutation.DueAt(); exists {
 			s.SetIgnore(automationsteprecord.FieldDueAt)
+		}
+		if _, exists := u.create.mutation.WentOn(); exists {
+			s.SetIgnore(automationsteprecord.FieldWentOn)
 		}
 	}))
 	return u
@@ -917,6 +943,9 @@ func (u *AutomationStepRecordUpsertBulk) UpdateNewValues() *AutomationStepRecord
 			}
 			if _, exists := b.mutation.DueAt(); exists {
 				s.SetIgnore(automationsteprecord.FieldDueAt)
+			}
+			if _, exists := b.mutation.WentOn(); exists {
+				s.SetIgnore(automationsteprecord.FieldWentOn)
 			}
 		}
 	}))

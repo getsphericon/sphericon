@@ -83,9 +83,75 @@ func TestMCPToolCarriesTheStepUnionInDefs(t *testing.T) {
 	assert.Equal(t, "#/$defs/AutomationPathInput", refOf(schema.Properties["steps"]))
 	assert.Equal(t, "#/$defs/AutomationStepInput", steps["items"].(map[string]any)["$ref"])
 	assert.Equal(t, "#/$defs/WaitStepInput", mapping["wait"])
-	assert.Len(t, mapping, 10, "every kind of Step")
+	assert.Equal(t, "#/$defs/WaitUntilStepInput", mapping["wait_until"])
+	assert.Len(t, mapping, 11, "every kind of Step")
 	assert.Equal(t, "#/$defs/EndStepInput", mapping["end"])
 	assert.Equal(t, "#/$defs/BranchStepInput", mapping["branch"])
 	assert.Equal(t, "#/$defs/SplitStepInput", mapping["split"])
+	until := schema.Defs["WaitUntilMomentInput"]["discriminator"].(map[string]any)["mapping"].(map[string]any)
+	assert.Equal(t, map[string]any{"time_of_day": "#/$defs/WaitUntilTimeOfDayInput", "date": "#/$defs/WaitUntilDateInput"}, until, "a Wait until's moment is a union of its own, by form")
 	assert.Empty(t, unresolvedRefs(raw, schema.Defs))
+}
+
+// An agent writes a Wait until in the version tree and reads it back as it wrote it (ADR 0126), so
+// it can show "the next weekday at 9:00" before asking for a Publish.
+func TestMCPWritesAndReadsBackAWaitUntil(t *testing.T) {
+	env := testhelper.Setup(t)
+	s := env.MCPClient(t, env.ScopedBearer(t, apitokens.ScopeAutomationsRead, apitokens.ScopeAutomationsWrite))
+	until := map[string]any{"form": "time_of_day", "localTime": "09:00", "weekdays": []any{"monday", "friday"}}
+	created := call(t, s, "automations_create", map[string]any{"name": "Agent's mornings", "trigger": map[string]any{"kind": "event", "action": "signup"},
+		"steps": map[string]any{"steps": []any{map[string]any{"type": "wait_until", "until": until}}}})
+	require.False(t, created.IsError, text(t, created))
+	var made struct {
+		ID string `json:"id"`
+	}
+	require.NoError(t, json.Unmarshal([]byte(text(t, created)), &made))
+
+	got := call(t, s, "automations_get", map[string]any{"id": made.ID})
+
+	require.False(t, got.IsError, text(t, got))
+	var read struct {
+		Draft struct {
+			Steps readSteps `json:"steps"`
+		} `json:"draft"`
+	}
+	require.NoError(t, json.Unmarshal([]byte(text(t, got)), &read))
+	require.Len(t, read.Draft.Steps.Steps, 1)
+	step := read.Draft.Steps.Steps[0]
+	assert.Equal(t, "wait_until", step["type"])
+	assert.Equal(t, until, step["until"])
+}
+
+// An agent writes a Wait until on a date (ADR 0126) and reads it back as it wrote it; one naming a
+// Custom field that is not a datetime is refused, naming the Step.
+func TestMCPWritesAWaitUntilOnADateAndRefusesAFieldThatIsNoDatetime(t *testing.T) {
+	env := testhelper.Setup(t)
+	s := env.MCPClient(t, env.ScopedBearer(t, apitokens.ScopeAutomationsRead, apitokens.ScopeAutomationsWrite))
+	until := map[string]any{"form": "date", "field": map[string]any{"kind": "customField", "key": "trial_ends_at"},
+		"recurrence": "once", "offsetDays": float64(-3), "localTime": "10:00"}
+	created := call(t, s, "automations_create", map[string]any{"name": "Trial ending", "trigger": map[string]any{"kind": "event", "action": "signup"},
+		"steps": map[string]any{"steps": []any{map[string]any{"type": "wait_until", "until": until}}}})
+	require.False(t, created.IsError, text(t, created))
+	var made struct {
+		ID string `json:"id"`
+	}
+	require.NoError(t, json.Unmarshal([]byte(text(t, created)), &made))
+	onPlan := map[string]any{"form": "date", "field": map[string]any{"kind": "customField", "key": "plan"},
+		"recurrence": "once", "offsetDays": 0, "localTime": "10:00"}
+
+	got := call(t, s, "automations_get", map[string]any{"id": made.ID})
+	refused := call(t, s, "automations_create", map[string]any{"name": "On the plan", "trigger": map[string]any{"kind": "event", "action": "signup"},
+		"steps": map[string]any{"steps": []any{map[string]any{"type": "wait_until", "until": onPlan}}}})
+
+	require.False(t, got.IsError, text(t, got))
+	var read struct {
+		Draft struct {
+			Steps readSteps `json:"steps"`
+		} `json:"draft"`
+	}
+	require.NoError(t, json.Unmarshal([]byte(text(t, got)), &read))
+	require.Len(t, read.Draft.Steps.Steps, 1)
+	assert.Equal(t, until, read.Draft.Steps.Steps[0]["until"])
+	assert.True(t, refused.IsError)
+	assert.Contains(t, text(t, refused), "not a datetime")
 }

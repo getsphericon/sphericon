@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/getsphericon/sphericon/ent/automation"
+	"github.com/getsphericon/sphericon/ent/automationoccurrencecursor"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
@@ -57,9 +58,11 @@ type AutomationEdges struct {
 	DraftVersion *AutomationVersion `json:"draft_version,omitempty"`
 	// Runs holds the value of the runs edge.
 	Runs []*AutomationRun `json:"runs,omitempty"`
+	// OccurrenceCursor holds the value of the occurrence_cursor edge.
+	OccurrenceCursor *AutomationOccurrenceCursor `json:"occurrence_cursor,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [5]bool
+	loadedTypes [6]bool
 }
 
 // WorkspaceOrErr returns the Workspace value or an error if the edge
@@ -111,6 +114,17 @@ func (e AutomationEdges) RunsOrErr() ([]*AutomationRun, error) {
 		return e.Runs, nil
 	}
 	return nil, &NotLoadedError{edge: "runs"}
+}
+
+// OccurrenceCursorOrErr returns the OccurrenceCursor value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e AutomationEdges) OccurrenceCursorOrErr() (*AutomationOccurrenceCursor, error) {
+	if e.OccurrenceCursor != nil {
+		return e.OccurrenceCursor, nil
+	} else if e.loadedTypes[5] {
+		return nil, &NotFoundError{label: automationoccurrencecursor.Label}
+	}
+	return nil, &NotLoadedError{edge: "occurrence_cursor"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -245,6 +259,11 @@ func (_m *Automation) QueryDraftVersion() *AutomationVersionQuery {
 // QueryRuns queries the "runs" edge of the Automation entity.
 func (_m *Automation) QueryRuns() *AutomationRunQuery {
 	return NewAutomationClient(_m.config).QueryRuns(_m)
+}
+
+// QueryOccurrenceCursor queries the "occurrence_cursor" edge of the Automation entity.
+func (_m *Automation) QueryOccurrenceCursor() *AutomationOccurrenceCursorQuery {
+	return NewAutomationClient(_m.config).QueryOccurrenceCursor(_m)
 }
 
 // Update returns a builder for updating this Automation.

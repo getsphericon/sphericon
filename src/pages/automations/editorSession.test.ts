@@ -242,6 +242,41 @@ test('a flow holding a kept Step has no submission', () => {
   expect(automationSubmission('Kept', kept)).toBeNull()
 })
 
+// A date Trigger (ADR 0126) is saved as stored, with no Entry policy, cooldown or Enrollment key.
+test('a flow holding a date Trigger is submitted with the Trigger as stored', () => {
+  const trigger = {
+    kind: 'date' as const,
+    field: { kind: 'customField' as const, key: 'trial_ends_at' },
+    recurrence: 'once' as const,
+    offsetDays: -3,
+    localTime: '10:00',
+  }
+  const dated = flowOf({ ...DRAFT, trigger })
+
+  expect(automationSubmission('Dated', dated)?.body.trigger).toEqual(trigger)
+})
+
+// A date Trigger whose date is not chosen yet is never sent: the Save stops on it first.
+test('a flow holding a date Trigger without its date has no submission', () => {
+  const flow = flowOf(DRAFT)
+  const undated = {
+    ...flow,
+    trigger: {
+      ...flow.trigger,
+      kind: 'date' as const,
+      date: {
+        field: null,
+        recurrence: 'yearly' as const,
+        days: 0,
+        sign: 1 as const,
+        localTime: '',
+      },
+    },
+  }
+
+  expect(automationSubmission('Undated', undated)).toBeNull()
+})
+
 // A Branch path whose Condition is still being typed is never sent: the Save stops on it first.
 test('a flow holding a Branch path without a complete Condition has no submission', () => {
   const branching = flowOf({
