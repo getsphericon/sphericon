@@ -2,8 +2,8 @@
 // Contact's time zone and a moment, whether the Workspace's window is open in every zone that may be
 // the recipient's, and if not the next moment it is open in all of them, or that none comes within
 // a week. The zones are those the number's prefix may be in (phone.Zones: every zone of its country
-// when the prefix maps none), and the Contact's own when it is a valid one, which only narrows the
-// window. It writes nothing: the windows are the Workspace's settings
+// when the prefix maps none), and the Contact's own when it is a valid one, which narrows the window
+// and, for a number in no zone, is the one zone it is judged in. It writes nothing: the windows are the Workspace's settings
 // (internal/domain/identity/workspaces), which it reads.
 package sendingwindow
 
@@ -72,42 +72,37 @@ func (r Rule) window(number string) (Window, bool) {
 	return *r.own, true
 }
 
-// Judgement is what the Sending window says of a message to a number at a moment.
+// Judgement is what the Sending window says of a message to a number at a moment. Its zero value is
+// a message no window judged.
 type Judgement struct {
 	// Windowed is whether a window holds the number. Without one the message may go at any moment:
 	// Open is true and the rest is zero.
 	Windowed bool
 	// Zones is how many zones the window was read in: the number's, with the Contact's own when it
-	// is valid and another.
+	// is valid and another; none for a number in no zone of a Contact without a valid one.
 	Zones int
 	// Open is whether the window is open at the moment in every zone.
 	Open bool
-	// Opens is, when it is not open, the next moment it is open in every zone; zero when none comes
-	// within a week.
+	// NoLocalTime is whether no moment of the week is open in every zone, or there is no zone to
+	// read the window in: the message is Skipped rather than sent at night or kept waiting for ever
+	// (ADR 0134).
+	NoLocalTime bool
+	// Opens is, when it is neither open nor without a local time, the next moment it is open in
+	// every zone; zero otherwise.
 	Opens time.Time
 }
 
-// NoLocalTime reports whether no moment of the week is open in every zone: the message is Skipped
-// rather than sent at night or kept waiting for ever (ADR 0134).
-func (j Judgement) NoLocalTime() bool { return !j.Open && j.Opens.IsZero() }
-
-// SingleZone reports whether a window judged the message by one zone alone.
-func (j Judgement) SingleZone() bool { return j.Windowed && j.Zones == 1 }
-
 // Judge reads the window that holds number at the moment at, in every zone the recipient may be in:
 // those of the number (phone.Zones), and contactZone, the Contact's time zone, when it is a valid
-// IANA zone. A Contact's zone only narrows the window: a number in no zone at all (a global service
-// number) has no local time whatever the Contact's zone says. A zone the Instance's zone database
-// cannot load is an error, never a zone left out.
+// IANA zone. A Contact's zone narrows the window of a number in zones of its own, and is the one
+// zone a number in no zone (a global service number) is judged in; with neither, the message has no
+// local time. A zone the Instance's zone database cannot load is an error, never a zone left out.
 func (r Rule) Judge(number string, contactZone *string, at time.Time) (Judgement, error) {
 	w, ok := r.window(number)
 	if !ok {
 		return Judgement{Open: true}, nil
 	}
 	names := phone.Zones(number)
-	if len(names) == 0 {
-		return Judgement{Windowed: true}, nil
-	}
 	locs := make([]*time.Location, 0, len(names)+1)
 	for _, name := range names {
 		loc, err := reportday.Load(name)
@@ -119,9 +114,18 @@ func (r Rule) Judge(number string, contactZone *string, at time.Time) (Judgement
 	if own, ok := contactLocation(contactZone); ok && !slices.Contains(names, own.String()) {
 		locs = append(locs, own)
 	}
+	j := Judgement{Windowed: true, Zones: len(locs)}
+	if len(locs) == 0 {
+		j.NoLocalTime = true
+		return j, nil
+	}
 	opens, ok := w.Opens(at, locs)
-	j := Judgement{Windowed: true, Zones: len(locs), Open: ok && opens.Equal(at)}
-	if ok && !j.Open {
+	switch {
+	case !ok:
+		j.NoLocalTime = true
+	case opens.Equal(at):
+		j.Open = true
+	default:
 		j.Opens = opens
 	}
 	return j, nil

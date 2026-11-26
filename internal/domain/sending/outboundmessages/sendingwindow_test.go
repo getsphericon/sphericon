@@ -142,7 +142,7 @@ func TestATextAt22InItsZoneIsDeferredUntil8ThereAndThenSentUnderTheCap(t *testin
 	assert.Len(t, wt.env.Twilio.Messages(), 4)
 	msg := wt.message(t, "window:night")
 	require.NotNil(t, msg)
-	assert.True(t, msg.WindowSingleZone, "a Boston number is judged by New York alone")
+	assert.Equal(t, outboundmessage.WindowZonesOneZone, msg.WindowZones, "a Boston number is judged by New York alone")
 }
 
 // Ada texted STOP overnight: when her window opens, the text that waited is read again from the top
@@ -201,8 +201,54 @@ func TestATextToANumberWhoseZonesNeverShareAnOpenMomentIsSkippedWithNoLocalTime(
 	msg := wt.message(t, "window:nowhere")
 	require.NotNil(t, msg)
 	assert.Equal(t, skipreason.NoLocalTime, lo.FromPtr(msg.SkippedReason))
-	assert.False(t, msg.WindowSingleZone)
+	assert.Equal(t, outboundmessage.WindowZonesSeveralZones, msg.WindowZones)
 	assert.Empty(t, wt.env.Twilio.Messages())
+}
+
+// globalAda moves Ada and her Confirmation onto a global service number: of no country, so in no
+// zone of its own.
+func (wt *windowTest) globalAda(t *testing.T) {
+	t.Helper()
+	const global = "+80012345678"
+	wt.env.DB.Contact.UpdateOneID(fixtures.ContactLacunaAdaID).SetPhone(global).ExecX(t.Context())
+	wt.env.DB.Confirmation.UpdateOneID(fixtures.ConfirmationLacunaAdaID).SetDestination(global).ExecX(t.Context())
+}
+
+// Ada's global service number is in no zone, and her time zone says New York: the window is judged
+// there alone, so at 22:00 in New York her text waits until 8:00 there, and then goes, judged by
+// one zone.
+func TestATextToANumberInNoZoneIsJudgedByTheContactsZone(t *testing.T) {
+	wt := newWindowTest(t, tomorrowAt(newYork, 22))
+	wt.windowLacuna(t, 8*60, 20*60)
+	wt.globalAda(t)
+	wt.env.DB.Contact.UpdateOneID(fixtures.ContactLacunaAdaID).SetTimeZone("America/New_York").ExecX(t.Context())
+
+	waits := wt.text(t, fixtures.ContactLacunaAdaID, "window:global")
+	wt.clock.Set(waits.Until)
+	sent := wt.text(t, fixtures.ContactLacunaAdaID, "window:global")
+
+	assert.Equal(t, outboundmessages.Deferral, waits.Outcome)
+	assert.True(t, readsAt(waits.Until, newYork, 8), "until 8:00 in New York: %s", waits.Until.In(newYork))
+	assert.Equal(t, outboundmessages.Sent, sent.Outcome)
+	msg := wt.message(t, "window:global")
+	require.NotNil(t, msg)
+	assert.Equal(t, outboundmessage.WindowZonesOneZone, msg.WindowZones)
+}
+
+// Without a time zone of hers, Ada's global service number is in no zone at all: her text has no
+// local time, and its message says no zone judged it.
+func TestATextToANumberInNoZoneOfAContactWithoutOneIsSkippedWithNoLocalTime(t *testing.T) {
+	wt := newWindowTest(t, tomorrowAt(newYork, 10))
+	wt.windowLacuna(t, 8*60, 20*60)
+	wt.globalAda(t)
+
+	res := wt.text(t, fixtures.ContactLacunaAdaID, "window:global-alone")
+
+	assert.Equal(t, outboundmessages.Skipped, res.Outcome)
+	assert.Equal(t, skipreason.NoLocalTime, res.SkippedReason)
+	msg := wt.message(t, "window:global-alone")
+	require.NotNil(t, msg)
+	assert.Equal(t, outboundmessage.WindowZonesNoZone, msg.WindowZones)
 }
 
 // At 22:00 in New York it is noon in Tokyo: a Contact whose time zone says Tokyo does not open the
@@ -254,5 +300,6 @@ func TestAMarketingEmailAtNightGoesOut(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Equal(t, outboundmessages.Sent, res.Outcome)
-	assert.False(t, byKey(t, wt.env, "window:email").WindowSingleZone, "no window held it")
+	msg := byKey(t, wt.env, "window:email")
+	assert.Equal(t, outboundmessage.WindowZonesUnjudged, msg.WindowZones, "no window held it")
 }

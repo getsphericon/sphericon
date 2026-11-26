@@ -54016,7 +54016,7 @@ type OutboundMessageMutation struct {
 	failure                    *string
 	deferred_since             *time.Time
 	deferral_cause             *deferralcause.Cause
-	window_single_zone         *bool
+	window_zones               *outboundmessage.WindowZones
 	claimed_at                 *time.Time
 	sent_at                    *time.Time
 	delivered_at               *time.Time
@@ -54926,40 +54926,40 @@ func (m *OutboundMessageMutation) ResetDeferralCause() {
 	delete(m.clearedFields, outboundmessage.FieldDeferralCause)
 }
 
-// SetWindowSingleZone sets the "window_single_zone" field.
-func (m *OutboundMessageMutation) SetWindowSingleZone(b bool) {
-	m.window_single_zone = &b
+// SetWindowZones sets the "window_zones" field.
+func (m *OutboundMessageMutation) SetWindowZones(oz outboundmessage.WindowZones) {
+	m.window_zones = &oz
 }
 
-// WindowSingleZone returns the value of the "window_single_zone" field in the mutation.
-func (m *OutboundMessageMutation) WindowSingleZone() (r bool, exists bool) {
-	v := m.window_single_zone
+// WindowZones returns the value of the "window_zones" field in the mutation.
+func (m *OutboundMessageMutation) WindowZones() (r outboundmessage.WindowZones, exists bool) {
+	v := m.window_zones
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldWindowSingleZone returns the old "window_single_zone" field's value of the OutboundMessage entity.
+// OldWindowZones returns the old "window_zones" field's value of the OutboundMessage entity.
 // If the OutboundMessage object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *OutboundMessageMutation) OldWindowSingleZone(ctx context.Context) (v bool, err error) {
+func (m *OutboundMessageMutation) OldWindowZones(ctx context.Context) (v outboundmessage.WindowZones, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldWindowSingleZone is only allowed on UpdateOne operations")
+		return v, errors.New("OldWindowZones is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldWindowSingleZone requires an ID field in the mutation")
+		return v, errors.New("OldWindowZones requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldWindowSingleZone: %w", err)
+		return v, fmt.Errorf("querying old value for OldWindowZones: %w", err)
 	}
-	return oldValue.WindowSingleZone, nil
+	return oldValue.WindowZones, nil
 }
 
-// ResetWindowSingleZone resets all changes to the "window_single_zone" field.
-func (m *OutboundMessageMutation) ResetWindowSingleZone() {
-	m.window_single_zone = nil
+// ResetWindowZones resets all changes to the "window_zones" field.
+func (m *OutboundMessageMutation) ResetWindowZones() {
+	m.window_zones = nil
 }
 
 // SetClaimedAt sets the "claimed_at" field.
@@ -56536,8 +56536,8 @@ func (m *OutboundMessageMutation) Fields() []string {
 	if m.deferral_cause != nil {
 		fields = append(fields, outboundmessage.FieldDeferralCause)
 	}
-	if m.window_single_zone != nil {
-		fields = append(fields, outboundmessage.FieldWindowSingleZone)
+	if m.window_zones != nil {
+		fields = append(fields, outboundmessage.FieldWindowZones)
 	}
 	if m.claimed_at != nil {
 		fields = append(fields, outboundmessage.FieldClaimedAt)
@@ -56653,8 +56653,8 @@ func (m *OutboundMessageMutation) Field(name string) (ent.Value, bool) {
 		return m.DeferredSince()
 	case outboundmessage.FieldDeferralCause:
 		return m.DeferralCause()
-	case outboundmessage.FieldWindowSingleZone:
-		return m.WindowSingleZone()
+	case outboundmessage.FieldWindowZones:
+		return m.WindowZones()
 	case outboundmessage.FieldClaimedAt:
 		return m.ClaimedAt()
 	case outboundmessage.FieldSentAt:
@@ -56746,8 +56746,8 @@ func (m *OutboundMessageMutation) OldField(ctx context.Context, name string) (en
 		return m.OldDeferredSince(ctx)
 	case outboundmessage.FieldDeferralCause:
 		return m.OldDeferralCause(ctx)
-	case outboundmessage.FieldWindowSingleZone:
-		return m.OldWindowSingleZone(ctx)
+	case outboundmessage.FieldWindowZones:
+		return m.OldWindowZones(ctx)
 	case outboundmessage.FieldClaimedAt:
 		return m.OldClaimedAt(ctx)
 	case outboundmessage.FieldSentAt:
@@ -56924,12 +56924,12 @@ func (m *OutboundMessageMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetDeferralCause(v)
 		return nil
-	case outboundmessage.FieldWindowSingleZone:
-		v, ok := value.(bool)
+	case outboundmessage.FieldWindowZones:
+		v, ok := value.(outboundmessage.WindowZones)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetWindowSingleZone(v)
+		m.SetWindowZones(v)
 		return nil
 	case outboundmessage.FieldClaimedAt:
 		v, ok := value.(time.Time)
@@ -57391,8 +57391,8 @@ func (m *OutboundMessageMutation) ResetField(name string) error {
 	case outboundmessage.FieldDeferralCause:
 		m.ResetDeferralCause()
 		return nil
-	case outboundmessage.FieldWindowSingleZone:
-		m.ResetWindowSingleZone()
+	case outboundmessage.FieldWindowZones:
+		m.ResetWindowZones()
 		return nil
 	case outboundmessage.FieldClaimedAt:
 		m.ResetClaimedAt()

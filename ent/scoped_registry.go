@@ -2476,7 +2476,7 @@ func ScopedEntities() []*ScopedEntity {
 				if src.DeferralCause != nil {
 					b.SetDeferralCause(*src.DeferralCause)
 				}
-				b.SetWindowSingleZone(src.WindowSingleZone)
+				b.SetWindowZones(src.WindowZones)
 				b.SetClaimedAt(src.ClaimedAt)
 				if src.SentAt != nil {
 					b.SetSentAt(*src.SentAt)

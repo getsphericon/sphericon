@@ -2374,7 +2374,7 @@ var (
 		{Name: "failure", Type: field.TypeString, Nullable: true},
 		{Name: "deferred_since", Type: field.TypeTime, Nullable: true},
 		{Name: "deferral_cause", Type: field.TypeEnum, Nullable: true, Enums: []string{"provider_limit", "send_cap", "provider", "sending_window", "frequency_cap"}},
-		{Name: "window_single_zone", Type: field.TypeBool, Default: false},
+		{Name: "window_zones", Type: field.TypeEnum, Enums: []string{"unjudged", "no_zone", "one_zone", "several_zones"}, Default: "unjudged"},
 		{Name: "claimed_at", Type: field.TypeTime},
 		{Name: "sent_at", Type: field.TypeTime, Nullable: true},
 		{Name: "delivered_at", Type: field.TypeTime, Nullable: true},
@@ -4356,6 +4356,7 @@ func init() {
 		"outbound_messages_provenance_check":     "(kind = 'broadcast' AND broadcast_id IS NOT NULL AND automation_id IS NULL AND automation_version_id IS NULL AND automation_step_id IS NULL AND automation_run_id IS NULL AND template_id IS NULL) OR (kind = 'automation' AND automation_id IS NOT NULL AND automation_version_id IS NOT NULL AND automation_step_id IS NOT NULL AND broadcast_id IS NULL AND broadcast_recipient_id IS NULL AND template_id IS NULL) OR (kind = 'transactional' AND broadcast_id IS NULL AND broadcast_recipient_id IS NULL AND automation_id IS NULL AND automation_version_id IS NULL AND automation_step_id IS NULL AND automation_run_id IS NULL) OR (kind = 'confirmation' AND broadcast_id IS NULL AND broadcast_recipient_id IS NULL AND automation_id IS NULL AND automation_version_id IS NULL AND automation_step_id IS NULL AND automation_run_id IS NULL AND template_id IS NULL)",
 		"outbound_messages_skipped_reason_check": "skipped_reason IN ('suppressed', 'unsubscribed_everything', 'unsubscribed_source', 'unconfirmed', 'no_destination', 'contact_erased', 'no_local_time', 'frequency_cap')",
 		"outbound_messages_status_check":         "status IN ('pending', 'sent', 'skipped', 'failed')",
+		"outbound_messages_window_zones_check":   "window_zones IN ('unjudged', 'no_zone', 'one_zone', 'several_zones')",
 	}
 	PasskeysTable.ForeignKeys[0].RefTable = UsersTable
 	PasskeysTable.Annotation = &entsql.Annotation{

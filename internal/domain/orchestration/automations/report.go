@@ -334,7 +334,7 @@ func sentByStep(ctx context.Context, s *ent.Scoped, id int64) (map[versionStep]*
 			outboundmessage.StatusIn(outboundmessage.StatusSent, outboundmessage.StatusSkipped),
 		).
 		GroupBy(outboundmessage.FieldAutomationVersionID, outboundmessage.FieldAutomationStepID, outboundmessage.FieldStatus, outboundmessage.FieldSkippedReason).
-		Aggregate(ent.Count(), aggregates.CountTrue(outboundmessage.FieldWindowSingleZone, "single_zone")).
+		Aggregate(ent.Count(), aggregates.CountEQ(outboundmessage.FieldWindowZones, string(outboundmessage.WindowZonesOneZone), "single_zone")).
 		Scan(ctx, &rows)
 	if err != nil {
 		return nil, err

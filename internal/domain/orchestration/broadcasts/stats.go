@@ -373,7 +373,7 @@ func (m *Module) RowStatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (m
 			aggregates.CountSet(outboundmessage.FieldBouncedAt, "bounced"),
 			aggregates.CountSet(outboundmessage.FieldComplainedAt, "complained"),
 			aggregates.CountTrue(outboundmessage.FieldCaptured, "captured"),
-			aggregates.CountTrue(outboundmessage.FieldWindowSingleZone, "single_zone"),
+			aggregates.CountEQ(outboundmessage.FieldWindowZones, string(outboundmessage.WindowZonesOneZone), "single_zone"),
 		).
 		Scan(ctx, &messages); err != nil {
 		return nil, err

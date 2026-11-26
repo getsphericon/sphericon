@@ -1447,10 +1447,6 @@ func init() {
 	outboundmessageDescIdempotencyKey := outboundmessageFields[2].Descriptor()
 	// outboundmessage.IdempotencyKeyValidator is a validator for the "idempotency_key" field. It is called by the builders before save.
 	outboundmessage.IdempotencyKeyValidator = outboundmessageDescIdempotencyKey.Validators[0].(func(string) error)
-	// outboundmessageDescWindowSingleZone is the schema descriptor for window_single_zone field.
-	outboundmessageDescWindowSingleZone := outboundmessageFields[15].Descriptor()
-	// outboundmessage.DefaultWindowSingleZone holds the default value on creation for the window_single_zone field.
-	outboundmessage.DefaultWindowSingleZone = outboundmessageDescWindowSingleZone.Default.(bool)
 	// outboundmessageDescClaimedAt is the schema descriptor for claimed_at field.
 	outboundmessageDescClaimedAt := outboundmessageFields[16].Descriptor()
 	// outboundmessage.DefaultClaimedAt holds the default value on creation for the claimed_at field.

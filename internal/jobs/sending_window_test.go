@@ -170,7 +170,7 @@ func TestAnAutomationTextOutsideTheWindowWaitsAtItsStepUntilItOpens(t *testing.T
 	assert.Equal(t, automationrun.StatusCompleted, env.DB.AutomationRun.GetX(ctx, runID).Status)
 	msg := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationRunID(runID)).OnlyX(ctx)
 	assert.Equal(t, deferralcause.SendingWindow, lo.FromPtr(msg.DeferralCause), "the message keeps why it waited")
-	assert.True(t, msg.WindowSingleZone)
+	assert.Equal(t, outboundmessage.WindowZonesOneZone, msg.WindowZones)
 }
 
 // Lacuna texts from 9:00 to 17:00 and its news Broadcast reaches Ada's Boston number at 6:00 in New

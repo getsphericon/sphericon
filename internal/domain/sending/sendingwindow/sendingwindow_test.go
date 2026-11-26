@@ -18,6 +18,8 @@ import (
 const (
 	bostonNumber = "+16175550142"
 	berlinNumber = "+49301234567"
+	// globalNumber is a global service number: of no country, so in no zone.
+	globalNumber = "+80012345678"
 )
 
 var friday = utc(2027, time.January, 15, 10, 0)
@@ -74,16 +76,34 @@ func TestANumberWhoseZonesNeverShareAnOpenMomentHasNoLocalTime(t *testing.T) {
 
 	j := judge(t, globexSMS(t, env), berlinNumber, new("Asia/Tokyo"), friday)
 
-	assert.True(t, j.NoLocalTime())
+	assert.True(t, j.NoLocalTime)
+	assert.False(t, j.Open)
+	assert.True(t, j.Opens.IsZero(), "no moment opens: not one at the zero time")
 }
 
-// A global service number is in no zone, and a Contact's zone does not stand in for the number's.
-func TestANumberInNoZoneHasNoLocalTime(t *testing.T) {
+// A global service number is in no zone: a Contact's valid time zone is then the one zone the
+// recipient may be in, and the window is judged there alone.
+func TestANumberInNoZoneIsJudgedByTheContactsZoneAlone(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	j := judge(t, globexSMS(t, env), "+80012345678", new("America/New_York"), friday)
+	j := judge(t, globexSMS(t, env), globalNumber, new("America/New_York"), friday)
 
-	assert.True(t, j.NoLocalTime())
+	assert.False(t, j.NoLocalTime)
+	assert.True(t, j.Open)
+	assert.Equal(t, 1, j.Zones)
+}
+
+// A global service number of a Contact with no valid time zone is in no zone at all: it has no local
+// time.
+func TestANumberInNoZoneWithoutTheContactsZoneHasNoLocalTime(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	none := judge(t, globexSMS(t, env), globalNumber, nil, friday)
+	invalid := judge(t, globexSMS(t, env), globalNumber, new("Mars/Olympus_Mons"), friday)
+
+	assert.True(t, none.NoLocalTime)
+	assert.Zero(t, none.Zones)
+	assert.True(t, invalid.NoLocalTime)
 }
 
 // A Boston number is in one zone, and a Contact in New York adds none; a Contact in Los Angeles
@@ -96,9 +116,9 @@ func TestAWindowJudgedByOneZoneSaysSo(t *testing.T) {
 	sameZone := judge(t, rule, bostonNumber, new("America/New_York"), friday)
 	otherZone := judge(t, rule, bostonNumber, new("America/Los_Angeles"), friday)
 
-	assert.True(t, alone.SingleZone())
-	assert.True(t, sameZone.SingleZone())
-	assert.False(t, otherZone.SingleZone())
+	assert.Equal(t, 1, alone.Zones)
+	assert.Equal(t, 1, sameZone.Zones)
+	assert.Equal(t, 2, otherZone.Zones)
 }
 
 // No law sets hours for email: no window holds it.

@@ -678,7 +678,7 @@ func (m *Module) window(ctx context.Context, s *ent.Scoped, req *Request, dest s
 		return &Result{}, err
 	}
 	req.window = judged
-	if judged.NoLocalTime() {
+	if judged.NoLocalTime {
 		res, err := m.skipUnclaimed(ctx, s, *req, dest, g, existing, skipreason.NoLocalTime)
 		return &res, err
 	}

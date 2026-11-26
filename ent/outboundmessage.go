@@ -65,8 +65,8 @@ type OutboundMessage struct {
 	DeferredSince *time.Time `json:"deferred_since,omitempty"`
 	// DeferralCause holds the value of the "deferral_cause" field.
 	DeferralCause *deferralcause.Cause `json:"deferral_cause,omitempty"`
-	// WindowSingleZone holds the value of the "window_single_zone" field.
-	WindowSingleZone bool `json:"window_single_zone,omitempty"`
+	// WindowZones holds the value of the "window_zones" field.
+	WindowZones outboundmessage.WindowZones `json:"window_zones,omitempty"`
 	// ClaimedAt holds the value of the "claimed_at" field.
 	ClaimedAt time.Time `json:"claimed_at,omitempty"`
 	// SentAt holds the value of the "sent_at" field.
@@ -274,11 +274,11 @@ func (*OutboundMessage) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case outboundmessage.FieldDestinations:
 			values[i] = new([]byte)
-		case outboundmessage.FieldWindowSingleZone, outboundmessage.FieldCaptured, outboundmessage.FieldTracked:
+		case outboundmessage.FieldCaptured, outboundmessage.FieldTracked:
 			values[i] = new(sql.NullBool)
 		case outboundmessage.FieldID, outboundmessage.FieldWorkspaceID, outboundmessage.FieldContactID, outboundmessage.FieldBroadcastID, outboundmessage.FieldBroadcastRecipientID, outboundmessage.FieldAutomationID, outboundmessage.FieldAutomationRunID, outboundmessage.FieldAutomationVersionID, outboundmessage.FieldIntegrationID, outboundmessage.FieldTemplateID:
 			values[i] = new(sql.NullInt64)
-		case outboundmessage.FieldKind, outboundmessage.FieldIdempotencyKey, outboundmessage.FieldChannel, outboundmessage.FieldDestination, outboundmessage.FieldSendingSource, outboundmessage.FieldSendingDomain, outboundmessage.FieldProviderMessageID, outboundmessage.FieldStatus, outboundmessage.FieldSkippedReason, outboundmessage.FieldFailure, outboundmessage.FieldDeferralCause, outboundmessage.FieldUndeliveredCode, outboundmessage.FieldAutomationStepID, outboundmessage.FieldRequestDigest, outboundmessage.FieldSubject, outboundmessage.FieldAppOrigin:
+		case outboundmessage.FieldKind, outboundmessage.FieldIdempotencyKey, outboundmessage.FieldChannel, outboundmessage.FieldDestination, outboundmessage.FieldSendingSource, outboundmessage.FieldSendingDomain, outboundmessage.FieldProviderMessageID, outboundmessage.FieldStatus, outboundmessage.FieldSkippedReason, outboundmessage.FieldFailure, outboundmessage.FieldDeferralCause, outboundmessage.FieldWindowZones, outboundmessage.FieldUndeliveredCode, outboundmessage.FieldAutomationStepID, outboundmessage.FieldRequestDigest, outboundmessage.FieldSubject, outboundmessage.FieldAppOrigin:
 			values[i] = new(sql.NullString)
 		case outboundmessage.FieldCreatedAt, outboundmessage.FieldUpdatedAt, outboundmessage.FieldDeferredSince, outboundmessage.FieldClaimedAt, outboundmessage.FieldSentAt, outboundmessage.FieldDeliveredAt, outboundmessage.FieldBouncedAt, outboundmessage.FieldComplainedAt, outboundmessage.FieldUndeliveredAt, outboundmessage.FieldOpenedAt, outboundmessage.FieldClickedAt, outboundmessage.FieldTrackingDecidedAt, outboundmessage.FieldTrackingWithdrawnAt:
 			values[i] = new(sql.NullTime)
@@ -415,11 +415,11 @@ func (_m *OutboundMessage) assignValues(columns []string, values []any) error {
 				_m.DeferralCause = new(deferralcause.Cause)
 				*_m.DeferralCause = deferralcause.Cause(value.String)
 			}
-		case outboundmessage.FieldWindowSingleZone:
-			if value, ok := values[i].(*sql.NullBool); !ok {
-				return fmt.Errorf("unexpected type %T for field window_single_zone", values[i])
+		case outboundmessage.FieldWindowZones:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field window_zones", values[i])
 			} else if value.Valid {
-				_m.WindowSingleZone = value.Bool
+				_m.WindowZones = outboundmessage.WindowZones(value.String)
 			}
 		case outboundmessage.FieldClaimedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -744,8 +744,8 @@ func (_m *OutboundMessage) String() string {
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")
-	builder.WriteString("window_single_zone=")
-	builder.WriteString(fmt.Sprintf("%v", _m.WindowSingleZone))
+	builder.WriteString("window_zones=")
+	builder.WriteString(fmt.Sprintf("%v", _m.WindowZones))
 	builder.WriteString(", ")
 	builder.WriteString("claimed_at=")
 	builder.WriteString(_m.ClaimedAt.Format(time.ANSIC))

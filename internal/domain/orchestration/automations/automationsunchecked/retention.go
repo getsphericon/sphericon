@@ -86,7 +86,7 @@ func (c *counts) add(m *ent.OutboundMessage) {
 	switch m.Status {
 	case outboundmessage.StatusSent:
 		c.sent++
-		if m.WindowSingleZone {
+		if m.WindowZones == outboundmessage.WindowZonesOneZone {
 			c.singleZone++
 		}
 	case outboundmessage.StatusSkipped:

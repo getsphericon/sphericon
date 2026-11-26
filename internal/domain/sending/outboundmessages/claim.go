@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/domain/sending/frequencycap"
+	"github.com/getsphericon/sphericon/internal/domain/sending/sendingwindow"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
@@ -322,7 +323,7 @@ func (m *Module) newMessage(s *ent.Scoped, req Request, dest string, g gateResul
 	}
 	req.Ref.stamp(create)
 	req.Waited.stamp(create)
-	create.SetWindowSingleZone(req.window.SingleZone())
+	create.SetWindowZones(windowZones(req.window))
 	if req.digest != "" {
 		create.SetRequestDigest(req.digest)
 	}
@@ -435,7 +436,7 @@ func (m *Module) takeOver(ctx context.Context, s *ent.Scoped, req Request, exist
 		Where(ownsClaim(existing)...).
 		SetClaimedAt(m.claimTime())
 	req.Waited.restamp(u)
-	u.SetWindowSingleZone(req.window.SingleZone())
+	u.SetWindowZones(windowZones(req.window))
 	n, err := u.Save(ctx)
 	if err != nil {
 		return nil, err
@@ -501,4 +502,18 @@ func (m *Module) fail(ctx context.Context, s *ent.Scoped, msg *ent.OutboundMessa
 		return Result{}, err
 	}
 	return Result{Outcome: Failed, Failure: failure, MessageID: msg.ID}, nil
+}
+
+// windowZones is how the Sending window judged a send, as its message keeps it (ADR 0134): by no
+// window, in no zone, in one, or in several.
+func windowZones(j sendingwindow.Judgement) outboundmessage.WindowZones {
+	switch {
+	case !j.Windowed:
+		return outboundmessage.WindowZonesUnjudged
+	case j.Zones == 0:
+		return outboundmessage.WindowZonesNoZone
+	case j.Zones == 1:
+		return outboundmessage.WindowZonesOneZone
+	}
+	return outboundmessage.WindowZonesSeveralZones
 }

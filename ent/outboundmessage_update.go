@@ -291,16 +291,16 @@ func (_u *OutboundMessageUpdate) ClearDeferralCause() *OutboundMessageUpdate {
 	return _u
 }
 
-// SetWindowSingleZone sets the "window_single_zone" field.
-func (_u *OutboundMessageUpdate) SetWindowSingleZone(v bool) *OutboundMessageUpdate {
-	_u.mutation.SetWindowSingleZone(v)
+// SetWindowZones sets the "window_zones" field.
+func (_u *OutboundMessageUpdate) SetWindowZones(v outboundmessage.WindowZones) *OutboundMessageUpdate {
+	_u.mutation.SetWindowZones(v)
 	return _u
 }
 
-// SetNillableWindowSingleZone sets the "window_single_zone" field if the given value is not nil.
-func (_u *OutboundMessageUpdate) SetNillableWindowSingleZone(v *bool) *OutboundMessageUpdate {
+// SetNillableWindowZones sets the "window_zones" field if the given value is not nil.
+func (_u *OutboundMessageUpdate) SetNillableWindowZones(v *outboundmessage.WindowZones) *OutboundMessageUpdate {
 	if v != nil {
-		_u.SetWindowSingleZone(*v)
+		_u.SetWindowZones(*v)
 	}
 	return _u
 }
@@ -981,6 +981,11 @@ func (_u *OutboundMessageUpdate) check() error {
 			return &ValidationError{Name: "deferral_cause", err: fmt.Errorf(`ent: validator failed for field "OutboundMessage.deferral_cause": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.WindowZones(); ok {
+		if err := outboundmessage.WindowZonesValidator(v); err != nil {
+			return &ValidationError{Name: "window_zones", err: fmt.Errorf(`ent: validator failed for field "OutboundMessage.window_zones": %w`, err)}
+		}
+	}
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "OutboundMessage.workspace"`)
 	}
@@ -1073,8 +1078,8 @@ func (_u *OutboundMessageUpdate) sqlSave(ctx context.Context) (_node int, err er
 	if _u.mutation.DeferralCauseCleared() {
 		_spec.ClearField(outboundmessage.FieldDeferralCause, field.TypeEnum)
 	}
-	if value, ok := _u.mutation.WindowSingleZone(); ok {
-		_spec.SetField(outboundmessage.FieldWindowSingleZone, field.TypeBool, value)
+	if value, ok := _u.mutation.WindowZones(); ok {
+		_spec.SetField(outboundmessage.FieldWindowZones, field.TypeEnum, value)
 	}
 	if value, ok := _u.mutation.ClaimedAt(); ok {
 		_spec.SetField(outboundmessage.FieldClaimedAt, field.TypeTime, value)
@@ -1785,16 +1790,16 @@ func (_u *OutboundMessageUpdateOne) ClearDeferralCause() *OutboundMessageUpdateO
 	return _u
 }
 
-// SetWindowSingleZone sets the "window_single_zone" field.
-func (_u *OutboundMessageUpdateOne) SetWindowSingleZone(v bool) *OutboundMessageUpdateOne {
-	_u.mutation.SetWindowSingleZone(v)
+// SetWindowZones sets the "window_zones" field.
+func (_u *OutboundMessageUpdateOne) SetWindowZones(v outboundmessage.WindowZones) *OutboundMessageUpdateOne {
+	_u.mutation.SetWindowZones(v)
 	return _u
 }
 
-// SetNillableWindowSingleZone sets the "window_single_zone" field if the given value is not nil.
-func (_u *OutboundMessageUpdateOne) SetNillableWindowSingleZone(v *bool) *OutboundMessageUpdateOne {
+// SetNillableWindowZones sets the "window_zones" field if the given value is not nil.
+func (_u *OutboundMessageUpdateOne) SetNillableWindowZones(v *outboundmessage.WindowZones) *OutboundMessageUpdateOne {
 	if v != nil {
-		_u.SetWindowSingleZone(*v)
+		_u.SetWindowZones(*v)
 	}
 	return _u
 }
@@ -2488,6 +2493,11 @@ func (_u *OutboundMessageUpdateOne) check() error {
 			return &ValidationError{Name: "deferral_cause", err: fmt.Errorf(`ent: validator failed for field "OutboundMessage.deferral_cause": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.WindowZones(); ok {
+		if err := outboundmessage.WindowZonesValidator(v); err != nil {
+			return &ValidationError{Name: "window_zones", err: fmt.Errorf(`ent: validator failed for field "OutboundMessage.window_zones": %w`, err)}
+		}
+	}
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "OutboundMessage.workspace"`)
 	}
@@ -2597,8 +2607,8 @@ func (_u *OutboundMessageUpdateOne) sqlSave(ctx context.Context) (_node *Outboun
 	if _u.mutation.DeferralCauseCleared() {
 		_spec.ClearField(outboundmessage.FieldDeferralCause, field.TypeEnum)
 	}
-	if value, ok := _u.mutation.WindowSingleZone(); ok {
-		_spec.SetField(outboundmessage.FieldWindowSingleZone, field.TypeBool, value)
+	if value, ok := _u.mutation.WindowZones(); ok {
+		_spec.SetField(outboundmessage.FieldWindowZones, field.TypeEnum, value)
 	}
 	if value, ok := _u.mutation.ClaimedAt(); ok {
 		_spec.SetField(outboundmessage.FieldClaimedAt, field.TypeTime, value)
