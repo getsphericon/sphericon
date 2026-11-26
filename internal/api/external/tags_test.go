@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -24,7 +23,7 @@ func tagNames(items []externalapi.TagResource) []string {
 func TestExternalTagsListAndPerContact(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeContactsRead)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	listed, err := c.TagsList(ctx, externalapi.TagsListParams{})
 	require.NoError(t, err)
@@ -41,7 +40,7 @@ func TestExternalTagsListAndPerContact(t *testing.T) {
 func TestExternalTagsApplyAndRemove(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeContactsRead, apitokens.ScopeContactsWrite)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// First use creates the Tag and applies it.
 	tag, err := c.TagsApply(ctx, &externalapi.ApplyTagInput{Name: "churn-risk"}, externalapi.TagsApplyParams{ContactId: entityIDString(fixtures.ContactBobID)})
@@ -82,7 +81,7 @@ func TestExternalTagsApplyAndRemove(t *testing.T) {
 
 func TestExternalTagsRequireScopes(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	readOnly := env.ExternalScoped(t, apitokens.ScopeContactsRead)
 	_, err := readOnly.TagsApply(ctx, &externalapi.ApplyTagInput{Name: "x"}, externalapi.TagsApplyParams{ContactId: entityIDString(fixtures.ContactAliceID)})
@@ -98,7 +97,7 @@ func TestExternalTagsRequireScopes(t *testing.T) {
 func TestExternalTagsApplyRefusesAForeignContact(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeContactsRead, apitokens.ScopeContactsWrite)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := c.TagsApply(ctx, &externalapi.ApplyTagInput{Name: "brand-new"}, externalapi.TagsApplyParams{ContactId: entityIDString(fixtures.ContactGlobexID)})
 	testhelper.ExternalRefusal(t, err, http.StatusNotFound)

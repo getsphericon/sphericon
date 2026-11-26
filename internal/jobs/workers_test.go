@@ -139,14 +139,14 @@ func (e *riverEnv) workCtx() context.Context {
 // on its own. It rolls back with the test.
 func (e *riverEnv) clearQueue(t *testing.T) {
 	t.Helper()
-	_, err := e.queue.JobDeleteMany(context.Background(), river.NewJobDeleteManyParams().Queues(river.QueueDefault, broadcasts.Queue, jobs.QueueWebhooks, jobkind.QueueHTTPCalls))
+	_, err := e.queue.JobDeleteMany(t.Context(), river.NewJobDeleteManyParams().Queues(river.QueueDefault, broadcasts.Queue, jobs.QueueWebhooks, jobkind.QueueHTTPCalls))
 	require.NoError(t, err)
 }
 
 // queued returns the kinds of the jobs currently in the queue, oldest first.
 func (e *riverEnv) queued(t *testing.T) []string {
 	t.Helper()
-	res, err := e.queue.JobList(context.Background(),
+	res, err := e.queue.JobList(t.Context(),
 		river.NewJobListParams().OrderBy(river.JobListOrderByID, river.SortOrderAsc).First(1000))
 	require.NoError(t, err)
 	kinds := make([]string, 0, len(res.Jobs))
@@ -162,7 +162,7 @@ func job[T river.JobArgs](args T) *river.Job[T] {
 
 func TestClientStartAndStop(t *testing.T) {
 	e := newRiverEnv(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	require.NoError(t, e.client.Start(ctx))
 	require.NoError(t, e.client.Stop(ctx))
 }
@@ -170,12 +170,13 @@ func TestClientStartAndStop(t *testing.T) {
 // A real river runtime picks the job up and runs the registered worker.
 func TestClientRunsAnEnqueuedWelcomeJob(t *testing.T) {
 	e := newRiverEnvWithRealQueue(t)
-	ctx := context.Background()
+	// The job client is stopped by a cleanup, which runs after t.Context() is done.
+	ctx := context.WithoutCancel(t.Context())
 	// Queued before the start, so the runtime's first fetch takes it: without a listener, a job
 	// inserted later waits for the next poll.
 	e.insert(t, jobs.SendNoticeArgs{EventID: "01RUNTIME", To: "runtime@example.com", Subject: "Welcome", Text: "Run"})
 	require.NoError(t, e.client.Start(ctx))
-	t.Cleanup(func() { cleanup.Report("stop the job client", e.client.Stop(context.Background())) })
+	t.Cleanup(func() { cleanup.Report("stop the job client", e.client.Stop(context.WithoutCancel(t.Context()))) })
 
 	require.Eventually(t, func() bool { return len(e.SystemMail.To("runtime@example.com")) > 0 }, 10*time.Second, 50*time.Millisecond)
 }
@@ -213,7 +214,7 @@ func TestDispatchRetriedQueuesEachDeliveryOnce(t *testing.T) {
 // queuedEndpoints returns the endpoints of the queued webhook deliveries, oldest first.
 func (e *riverEnv) queuedEndpoints(t *testing.T) []int64 {
 	t.Helper()
-	res, err := e.queue.JobList(context.Background(), river.NewJobListParams().
+	res, err := e.queue.JobList(t.Context(), river.NewJobListParams().
 		Kinds(jobs.DeliverWebhookArgs{}.Kind()).OrderBy(river.JobListOrderByID, river.SortOrderAsc).First(1000))
 	require.NoError(t, err)
 	return lo.Map(res.Jobs, func(j *rivertype.JobRow, _ int) int64 {
@@ -240,14 +241,14 @@ func TestDispatchSendsAuditEntriesOnlyToEndpointsThatSelectThem(t *testing.T) {
 // A Notice is sent through the System sender as it was queued.
 func TestSendNoticeWorker(t *testing.T) {
 	env := testhelper.Setup(t)
-	require.NoError(t, jobs.NewSendNoticeWorker(env.SystemMail).Work(context.Background(),
+	require.NoError(t, jobs.NewSendNoticeWorker(env.SystemMail).Work(t.Context(),
 		job(jobs.SendNoticeArgs{EventID: "01NOTICE", To: "w@example.com", Subject: "Welcome", Text: "Hello Wendy"})))
 	msgs := env.SystemMail.Messages()
 	require.Len(t, msgs, 1)
 	assert.Equal(t, "w@example.com", msgs[0].To)
 	assert.Equal(t, "Hello Wendy", msgs[0].Text)
 
-	err := jobs.NewSendNoticeWorker(nil).Work(context.Background(), job(jobs.SendNoticeArgs{To: "w@example.com"}))
+	err := jobs.NewSendNoticeWorker(nil).Work(t.Context(), job(jobs.SendNoticeArgs{To: "w@example.com"}))
 	require.Error(t, err, "no system sender configured")
 }
 
@@ -307,7 +308,7 @@ const webhookSecret = "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw"
 
 func TestDeliverWebhookWorker(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	args := func(id int64) jobs.DeliverWebhookArgs {
 		return jobs.DeliverWebhookArgs{EndpointID: id, EventName: systemevent.EmailOpened, DeliveryID: "msg_1", Body: []byte(`{"a":1}`)}
 	}
@@ -346,7 +347,7 @@ func TestDeliverWebhookWorker(t *testing.T) {
 // failures keeps its start, and a 2xx clears it all. The clock is injected.
 func TestDeliverWebhookWorkerRemembersFailures(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	rcv := newWebhookReceiver(t)
 	ws := env.DB.Scoped(fixtures.AcmeID)
 	_, err := ws.WebhookEndpoint().UpdateOneID(fixtures.WebhookCodebasicsID).SetURL(rcv.srv.URL).Save(ctx)
@@ -436,7 +437,7 @@ func newDisableHarness(t *testing.T) *disableHarness {
 	t.Helper()
 	env := testhelper.Setup(t)
 	h := &disableHarness{t: t, env: env, rcv: newWebhookReceiver(t), clock: time.Date(2026, 10, 18, 9, 0, 0, 0, time.UTC)}
-	_, err := env.DB.Scoped(fixtures.AcmeID).WebhookEndpoint().UpdateOneID(fixtures.WebhookCodebasicsID).SetURL(h.rcv.srv.URL).Save(context.Background())
+	_, err := env.DB.Scoped(fixtures.AcmeID).WebhookEndpoint().UpdateOneID(fixtures.WebhookCodebasicsID).SetURL(h.rcv.srv.URL).Save(t.Context())
 	require.NoError(t, err)
 	h.w = jobs.NewDeliverWebhookWorker(env.DB, env.Cipher, webhook.NewClientAllowing(2*time.Second, h.rcv.allow), func() time.Time { return h.clock }, lowestDraw, env.Bus)
 	return h
@@ -455,7 +456,7 @@ func (h *disableHarness) endpoint() *ent.WebhookEndpoint {
 // A 410 retires the endpoint on that delivery, whatever the run of failures so far.
 func TestDeliverWebhookWorkerDisablesOnGone(t *testing.T) {
 	h := newDisableHarness(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	owners, err := h.env.DB.Scoped(fixtures.AcmeID).Membership().Query().Where(membership.RoleEQ(membership.RoleOwner)).WithUser().All(ctx)
 	require.NoError(t, err)
 	require.NotEmpty(t, owners)
@@ -494,7 +495,7 @@ func TestDeliverWebhookWorkerDisablesOnGone(t *testing.T) {
 
 func TestVerifySendingDomainWorker(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	gone := dnstest.Resolver(t, nil).LookupTXT
 
 	// Verified domain whose DNS vanished: flips, owner is emailed.
@@ -513,7 +514,7 @@ func TestVerifySendingDomainWorker(t *testing.T) {
 
 func TestRecheckSendingDomainsWorkerFansOut(t *testing.T) {
 	e := newRiverEnv(t)
-	total, err := e.DB.SendingDomain.Query().Where(sendingdomain.DiscardedAtIsNil()).Count(context.Background())
+	total, err := e.DB.SendingDomain.Query().Where(sendingdomain.DiscardedAtIsNil()).Count(t.Context())
 	require.NoError(t, err)
 
 	require.NoError(t, jobs.NewRecheckSendingDomainsWorker(sendingdomains.New(e.DB, e.Bus, nil, nil, time.Now)).Work(e.workCtx(), job(jobs.RecheckSendingDomainsArgs{})))

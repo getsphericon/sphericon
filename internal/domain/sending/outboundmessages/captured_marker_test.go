@@ -33,7 +33,7 @@ func automationRequest(t *testing.T, env *testhelper.TestEnv, key string) outbou
 // Outbound message and on the Events of the send, and a sender that delivers outside never does.
 func TestASendThroughASenderThatKeepsItsMailIsMarkedCapturedOnEverySurface(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	m := moduleThrough(env, &keepingSender{confirms: true})
 	requests := []outboundmessages.Request{
 		transactional("cap:tx", "a@example.com"),
@@ -56,7 +56,7 @@ func TestASendThroughASenderThatKeepsItsMailIsMarkedCapturedOnEverySurface(t *te
 
 func TestASendThroughASenderThatDeliversOutsideIsNotMarkedCaptured(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	m := moduleThrough(env, deliveringSender{})
 
 	req := transactional("cap:out", "a@example.com")

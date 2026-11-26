@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -18,7 +17,7 @@ import (
 func TestSiteCataloguesListForMembersOnly(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	acme := siteapi.WorkspaceId(fixtures.AcmePublicID)
 	foreign := siteapi.WorkspaceId(fixtures.GlobexPublicID)
 
@@ -60,7 +59,7 @@ func TestSiteCataloguesListForMembersOnly(t *testing.T) {
 func TestSiteListsHonorPagination(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	page, err := c.SiteWebhooksList(ctx, siteapi.SiteWebhooksListParams{
 		WorkspaceId: fixtures.AcmePublicID, Page: siteapi.NewOptInt32(1), PageSize: siteapi.NewOptInt32(1),
@@ -74,7 +73,7 @@ func TestSiteListsHonorPagination(t *testing.T) {
 func TestSiteContactsDelete(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	del := func(workspaceID siteapi.WorkspaceId, id siteapi.EntityId) error {
 		return c.SiteContactsDelete(ctx, siteapi.SiteContactsDeleteParams{WorkspaceId: workspaceID, ID: id})
 	}
@@ -90,7 +89,7 @@ func TestSiteContactsDelete(t *testing.T) {
 func TestSiteInvitationsDelete(t *testing.T) {
 	env := testhelper.Setup(t)
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	id := siteapi.EntityId(fixtures.InvitationAcmePendingID)
 	params := siteapi.SiteInvitationsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: id}

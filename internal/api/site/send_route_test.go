@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 	"time"
@@ -20,7 +19,7 @@ import (
 func TestSiteAutomationPublishIsAConflictWhileAStepsIntegrationCannotSend(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 	id := idStr(fixtures.AutomationHoldDemoID)
 	_, err := c.SiteAutomationsUpdate(ctx, &siteapi.UpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(id))),
@@ -42,7 +41,7 @@ func TestSiteAutomationPublishIsAConflictWhileAStepsIntegrationCannotSend(t *tes
 func TestSiteBroadcastScheduleIsAConflictWhileItsIntegrationCannotSend(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 	id := idStr(fixtures.BroadcastDraftID)
 	_, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(id))),

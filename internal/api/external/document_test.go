@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -40,7 +39,7 @@ func badHeadingDoc() map[string]jx.Raw {
 func TestExternalTemplatesSaveADocumentWithItsBody(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeTemplatesRead, apitokens.ScopeTemplatesWrite)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	res, err := c.TemplatesCreate(ctx, &externalapi.CreateTemplateInput{
 		Name:    "Authored",
@@ -78,7 +77,7 @@ func TestExternalTemplatesSaveADocumentWithItsBody(t *testing.T) {
 func TestExternalTemplateBodyOnlyWriteStoresNoDocument(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeTemplatesRead, apitokens.ScopeTemplatesWrite)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	res, err := c.TemplatesCreate(ctx, &externalapi.CreateTemplateInput{
 		Name: "Html", Body: externalapi.NewOptString("<p>Hi</p>"),
@@ -105,7 +104,7 @@ func TestExternalTemplateBodyOnlyWriteStoresNoDocument(t *testing.T) {
 func TestExternalTemplatesRefuseAnInvalidDocumentWithTheReasonAndStoreNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeTemplatesRead, apitokens.ScopeTemplatesWrite)
-	ctx := context.Background()
+	ctx := t.Context()
 	before := env.DB.EmailTemplate.Query().CountX(ctx)
 
 	_, err := c.TemplatesCreate(ctx, &externalapi.CreateTemplateInput{
@@ -139,7 +138,7 @@ func TestExternalTemplatesRefuseAnInvalidDocumentWithTheReasonAndStoreNothing(t 
 func TestExternalBroadcastsSaveADocumentAndRefuseAnInvalidOne(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeBroadcastsRead, apitokens.ScopeBroadcastsWrite)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	res, err := c.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{
 		Name:      "Authored",
@@ -180,7 +179,7 @@ func TestExternalBroadcastsSaveADocumentAndRefuseAnInvalidOne(t *testing.T) {
 func TestExternalAutomationEmailStepsCarryTheDocument(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeAutomationsRead, apitokens.ScopeAutomationsWrite)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	res, err := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
 		Name: "Authored", Trigger: testhelper.ExternalTrigger("authored.signup"),
@@ -234,7 +233,7 @@ func resendEmailStep(t *testing.T, step externalapi.EmailStep) externalapi.Email
 func TestExternalEmailLintTakesADocument(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeTemplatesRead)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	res, err := c.EmailLintLint(ctx, &externalapi.LintEmailInput{Doc: externalapi.NewOptEditorDocument(paragraphDoc("Hi {{ first_name }}"))})
 	require.NoError(t, err)

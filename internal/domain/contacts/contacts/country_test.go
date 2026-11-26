@@ -1,7 +1,6 @@
 package contacts_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -23,7 +22,7 @@ import (
 func TestEveryWriteReadsTheCountryAsAnISOCode(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*contacts.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
 	c, err := m.Create(ctx, s, contact.SourceManual, contacts.CreateInput{Email: new("country@example.com"), Country: new(" de ")})

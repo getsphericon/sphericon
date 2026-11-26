@@ -1,7 +1,6 @@
 package integrationdeletion_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -59,7 +58,7 @@ type integrationRace struct {
 
 func newIntegrationRace(t *testing.T) integrationRace {
 	t.Helper()
-	ctx := context.Background()
+	ctx := t.Context()
 	env := testhelper.Setup(t, testhelper.Committed())
 	s := env.DB.Scoped(fixtures.AcmeID)
 	sends := testhelper.Module[*broadcasts.Module](env)
@@ -83,7 +82,7 @@ func newIntegrationRace(t *testing.T) integrationRace {
 
 func (r integrationRace) broadcast(t *testing.T) *ent.Broadcast {
 	t.Helper()
-	b, err := r.sends.Get(context.Background(), r.scope, fixtures.BroadcastDraftID)
+	b, err := r.sends.Get(t.Context(), r.scope, fixtures.BroadcastDraftID)
 	require.NoError(t, err)
 	return b
 }
@@ -92,7 +91,7 @@ func (r integrationRace) broadcast(t *testing.T) *ent.Broadcast {
 // Workspace's lock: a promotion queued behind the Integration's deletion waits for it, then finds
 // the Integration gone, and the Channel keeps the default it had.
 func TestAPromotionQueueBehindTheDeleteOfItsIntegrationLeavesTheChannelItsDefault(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	env := testhelper.Setup(t, testhelper.Committed())
 	s := env.DB.Scoped(fixtures.AcmeID)
 	integs := testhelper.Module[*integrations.Module](env)

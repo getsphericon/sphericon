@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -19,7 +18,7 @@ import (
 
 func revenueSettings(t *testing.T, c *siteapi.Client) *siteapi.SiteRevenueSettingsResource {
 	t.Helper()
-	got, err := c.SiteWorkspacesGetRevenueSettings(context.Background(),
+	got, err := c.SiteWorkspacesGetRevenueSettings(t.Context(),
 		siteapi.SiteWorkspacesGetRevenueSettingsParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	return got
@@ -30,11 +29,11 @@ func updateRevenueSettings(t *testing.T, c *siteapi.Client, in siteapi.SiteUpdat
 	// A change names the revision it was made on (ADR 0119), so the client reads the settings first;
 	// one that may not read them is refused the change for that, whatever revision it names.
 	in.Revision = 1
-	if read, err := c.SiteWorkspacesGetRevenueSettings(context.Background(),
+	if read, err := c.SiteWorkspacesGetRevenueSettings(t.Context(),
 		siteapi.SiteWorkspacesGetRevenueSettingsParams{WorkspaceId: fixtures.AcmePublicID}); err == nil {
 		in.Revision = read.Revision
 	}
-	return c.SiteWorkspacesUpdateRevenueSettings(context.Background(), &in,
+	return c.SiteWorkspacesUpdateRevenueSettings(t.Context(), &in,
 		siteapi.SiteWorkspacesUpdateRevenueSettingsParams{WorkspaceId: fixtures.AcmePublicID})
 }
 
@@ -110,8 +109,8 @@ func TestAWindowOutsideItsBoundsIsRefused(t *testing.T) {
 
 	for _, days := range []siteapi.AttributionWindowDays{0, 91} {
 		t.Run(fmt.Sprintf("days=%d", days), func(t *testing.T) {
-			_, err := owner.SiteWorkspacesUpdateRevenueSettings(context.Background(),
-				&siteapi.SiteUpdateRevenueSettingsInput{Revision: siteapi.Revision(env.WorkspaceRevision(context.Background(), t, string(fixtures.AcmePublicID))), AttributionWindowDays: siteapi.NewOptAttributionWindowDays(days)},
+			_, err := owner.SiteWorkspacesUpdateRevenueSettings(t.Context(),
+				&siteapi.SiteUpdateRevenueSettingsInput{Revision: siteapi.Revision(env.WorkspaceRevision(t.Context(), t, string(fixtures.AcmePublicID))), AttributionWindowDays: siteapi.NewOptAttributionWindowDays(days)},
 				siteapi.SiteWorkspacesUpdateRevenueSettingsParams{WorkspaceId: fixtures.AcmePublicID})
 			testhelper.SiteRefusal(t, err, http.StatusBadRequest)
 		})

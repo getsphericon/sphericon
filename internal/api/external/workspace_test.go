@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -19,7 +18,7 @@ import (
 // a token acts in is no scope's secret, as whoami is not.
 func workspaceOf(t *testing.T, env *testhelper.TestEnv) *externalapi.WorkspaceResource {
 	t.Helper()
-	res, err := env.ExternalScoped(t, apitokens.ScopeContactsRead).WorkspaceGet(context.Background())
+	res, err := env.ExternalScoped(t, apitokens.ScopeContactsRead).WorkspaceGet(t.Context())
 	require.NoError(t, err)
 	ws := res
 	return ws
@@ -29,7 +28,7 @@ func workspaceOf(t *testing.T, env *testhelper.TestEnv) *externalapi.WorkspaceRe
 // sends over the last 24 hours, to explain or plan around a slow send.
 func TestExternalWorkspaceCarriesItsSendCapAndTheLast24HourSends(t *testing.T) {
 	env := testhelper.Setup(t)
-	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSendCap(5000).ExecX(context.Background())
+	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSendCap(5000).ExecX(t.Context())
 
 	ws := workspaceOf(t, env)
 
@@ -55,7 +54,7 @@ func TestExternalWorkspaceWithoutASendCapReadsNull(t *testing.T) {
 // On an Instance without Send caps a stored value has no effect, so none is shown either.
 func TestExternalWorkspaceOnAnInstanceWithoutSendCapsReadsNull(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithMode(config.ModeSelfHosted))
-	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSendCap(5000).ExecX(context.Background())
+	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSendCap(5000).ExecX(t.Context())
 
 	ws := workspaceOf(t, env)
 

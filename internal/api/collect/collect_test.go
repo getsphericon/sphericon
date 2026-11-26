@@ -1,7 +1,6 @@
 package collect_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 	"time"
@@ -23,7 +22,7 @@ import (
 
 func TestCollectKeyAuth(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	err := env.CollectAnonymous(t).CollectEventsCreate(ctx, &collectapi.CollectEventsInput{})
 	testhelper.CollectRefusal(t, err, http.StatusUnauthorized)
@@ -34,7 +33,7 @@ func TestCollectKeyAuth(t *testing.T) {
 
 func TestCollectKeyOfADeletedWorkspaceIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	env.DeleteWorkspace(t, fixtures.AcmeID, time.Now())
 
 	err := env.CollectAcme(t).CollectEventsCreate(ctx, &collectapi.CollectEventsInput{})
@@ -50,7 +49,7 @@ func TestCollectKeyOfADeletedWorkspaceIsRefused(t *testing.T) {
 func TestCollectIdentifyAndEvents(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.CollectAcme(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// Identify with typed traits — exercises map[string]jx.Raw -> map[string]any.
 	_, err := c.CollectIdentifyCreate(ctx, &collectapi.CollectIdentifyInput{
@@ -119,7 +118,7 @@ func TestCollectIdentifyAndEvents(t *testing.T) {
 func TestCollectIdentifyStitchesAnonymousEvents(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.CollectAcme(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// A pre-identify anonymous event from a device (as its publish would have stored it:
 	// visitor_id set, contact_id null) is in the fixtures.

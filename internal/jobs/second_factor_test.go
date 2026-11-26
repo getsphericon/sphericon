@@ -1,7 +1,6 @@
 package jobs_test
 
 import (
-	"context"
 	"errors"
 	"testing"
 	"time"
@@ -33,7 +32,7 @@ func remind(t *testing.T, env *testhelper.TestEnv, now time.Time) {
 	keys := testhelper.Module[*passkeys.Module](env)
 	factors := secondfactors.New(env.DB, env.Bus, env.Cipher, testhelper.Module[*users.Module](env), keys, memberships.New(env.DB, env.Bus, nil, nil, func() time.Time { return now }), func() time.Time { return now })
 	sweep := jobs.NewRemindSecondFactorWorker(factors)
-	require.NoError(t, sweep.Work(context.Background(), job(jobs.RemindSecondFactorArgs{})))
+	require.NoError(t, sweep.Work(t.Context(), job(jobs.RemindSecondFactorArgs{})))
 }
 
 func recipients(env *testhelper.TestEnv) []string {
@@ -100,7 +99,7 @@ func TestSecondFactorReminderIsSentAgainForARestartedRequirement(t *testing.T) {
 
 	// Switched off and on again a month later: a new grace for everyone.
 	restart := time.Date(2026, 4, 1, 0, 0, 0, 0, time.UTC)
-	_, err := env.DB.Workspace.UpdateOneID(fixtures.UmbrellaID).SetSecondFactorRequiredAt(restart).Save(context.Background())
+	_, err := env.DB.Workspace.UpdateOneID(fixtures.UmbrellaID).SetSecondFactorRequiredAt(restart).Save(t.Context())
 	require.NoError(t, err)
 
 	remind(t, env, restart.Add(6*24*time.Hour+time.Hour))

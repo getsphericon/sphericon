@@ -47,7 +47,7 @@ const raceWait = 10 * time.Second
 func (env *TestEnv) QueueBehind(tb testing.TB, release func(), writers ...Writer) map[string]error {
 	tb.Helper()
 	env.requireCommitted(tb, "QueueBehind")
-	holders, err := idleInTransaction(context.Background(), env.SQLDB)
+	holders, err := idleInTransaction(context.WithoutCancel(tb.Context()), env.SQLDB)
 	require.NoError(tb, err)
 	return env.queueBehind(tb, holders, release, writers)
 }
@@ -75,10 +75,10 @@ func (env *TestEnv) QueueBehindKey(tb testing.TB, key int64, writers ...Writer) 
 // it, and its release.
 func (env *TestEnv) holding(tb testing.TB, hold func() (release func())) (holders []int, release func()) {
 	tb.Helper()
-	before, err := idleInTransaction(context.Background(), env.SQLDB)
+	before, err := idleInTransaction(context.WithoutCancel(tb.Context()), env.SQLDB)
 	require.NoError(tb, err)
 	release = hold()
-	after, err := idleInTransaction(context.Background(), env.SQLDB)
+	after, err := idleInTransaction(context.WithoutCancel(tb.Context()), env.SQLDB)
 	require.NoError(tb, err)
 	for _, pid := range after {
 		if !slices.Contains(before, pid) {
@@ -94,7 +94,9 @@ func (env *TestEnv) queueBehind(tb testing.TB, holders []int, release func(), wr
 	release = sync.OnceFunc(release)
 	tb.Cleanup(release) // a failed assertion must not leave the writers waiting
 	require.NotEmpty(tb, holders, "no transaction is held open for the writers to queue behind")
-	ctx := context.Background()
+	// The writers and the held transactions outlive the test body: a cleanup releases them after
+	// tb.Context() is done, so every context of a race keeps its values and drops its cancel.
+	ctx := context.WithoutCancel(tb.Context())
 	queued := slices.Clone(holders)
 	results := make(map[string]chan error, len(writers))
 	for _, w := range writers {
@@ -141,7 +143,7 @@ func (env *TestEnv) HoldOpen(tb testing.TB, s *ent.Scoped, write func(ts *ent.Sc
 	tb.Helper()
 	env.requireCommitted(tb, "HoldOpen")
 	return holdTx(tb, "the held transaction's write", func(held func() error) error {
-		return env.Bus.WithinScopedTx(context.Background(), s, func(ts *ent.Scoped, pub events.Publisher) error {
+		return env.Bus.WithinScopedTx(context.WithoutCancel(tb.Context()), s, func(ts *ent.Scoped, pub events.Publisher) error {
 			if err := write(ts, pub); err != nil {
 				return err
 			}
@@ -155,11 +157,11 @@ func (env *TestEnv) HoldOpen(tb testing.TB, s *ent.Scoped, write func(ts *ent.Sc
 func (env *TestEnv) holdKey(tb testing.TB, key int64) (release func()) {
 	tb.Helper()
 	return holdTx(tb, "take the advisory lock", func(held func() error) error {
-		tx, err := env.SQLDB.BeginTx(context.Background(), nil)
+		tx, err := env.SQLDB.BeginTx(context.WithoutCancel(tb.Context()), nil)
 		if err != nil {
 			return err
 		}
-		if err := postgres.LockTx(context.Background(), tx, key); err != nil {
+		if err := postgres.LockTx(context.WithoutCancel(tb.Context()), tx, key); err != nil {
 			return fmt.Errorf("%w (rollback: %w)", err, tx.Rollback())
 		}
 		if err := held(); err != nil {
@@ -175,7 +177,7 @@ func (env *TestEnv) holdKey(tb testing.TB, key int64) (release func()) {
 func (env *TestEnv) holdWorkspaceLock(tb testing.TB, s *ent.Scoped) (release func()) {
 	tb.Helper()
 	return holdTx(tb, "take the Workspace lock", func(held func() error) error {
-		return env.Bus.WithinWorkspaceLockTx(context.Background(), s, func(*ent.WorkspaceLocked, events.Publisher) error {
+		return env.Bus.WithinWorkspaceLockTx(context.WithoutCancel(tb.Context()), s, func(*ent.WorkspaceLocked, events.Publisher) error {
 			return held()
 		})
 	})

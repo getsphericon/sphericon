@@ -1,7 +1,6 @@
 package condition_test
 
 import (
-	"context"
 	"encoding/json"
 	"testing"
 
@@ -30,7 +29,7 @@ func filterHolds(t *testing.T, env *testhelper.TestEnv, f conditiontree.EventFil
 	require.NoError(t, err)
 	on := condition.Document(json.RawMessage(doc))
 	holds := predicate.Contact(func(s *sql.Selector) { s.Where(path.On(on)) })
-	ok, err := env.DB.Scoped(fixtures.AcmeID).Contact().Query().Where(contact.ID(fixtures.ContactAliceID), holds).Exist(context.Background())
+	ok, err := env.DB.Scoped(fixtures.AcmeID).Contact().Query().Where(contact.ID(fixtures.ContactAliceID), holds).Exist(t.Context())
 	require.NoError(t, err)
 	return ok
 }

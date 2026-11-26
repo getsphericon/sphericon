@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -35,7 +34,7 @@ func inboxInput() siteapi.IntegrationConfigInput {
 
 func createInbox(t *testing.T, c *siteapi.Client, workspace siteapi.WorkspaceId) (*siteapi.SiteIntegrationResource, error) {
 	t.Helper()
-	return c.SiteIntegrationsCreate(context.Background(), &siteapi.CreateIntegrationInput{
+	return c.SiteIntegrationsCreate(t.Context(), &siteapi.CreateIntegrationInput{
 		Name: "Test inbox", Config: inboxInput(),
 	}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: workspace})
 }
@@ -44,9 +43,9 @@ func createInbox(t *testing.T, c *siteapi.Client, workspace siteapi.WorkspaceId)
 func makeDefault(t *testing.T, c *siteapi.Client, workspace siteapi.WorkspaceId, id int64) {
 	t.Helper()
 	// The choice names the revision it was made on (ADR 0119), so the client reads the Integration first.
-	read, err := c.SiteIntegrationsGet(context.Background(), siteapi.SiteIntegrationsGetParams{WorkspaceId: workspace, ID: idStr(id)})
+	read, err := c.SiteIntegrationsGet(t.Context(), siteapi.SiteIntegrationsGetParams{WorkspaceId: workspace, ID: idStr(id)})
 	require.NoError(t, err)
-	_, err = c.SiteIntegrationsUpdate(context.Background(), &siteapi.UpdateIntegrationInput{Revision: read.Revision,
+	_, err = c.SiteIntegrationsUpdate(t.Context(), &siteapi.UpdateIntegrationInput{Revision: read.Revision,
 		IsDefault: siteapi.NewOptBool(true),
 	}, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: workspace, ID: idStr(id)})
 	require.NoError(t, err)
@@ -55,7 +54,7 @@ func makeDefault(t *testing.T, c *siteapi.Client, workspace siteapi.WorkspaceId,
 func sendGlobexTransactional(t *testing.T, env *testhelper.TestEnv, to string) (*externalapi.SendTransactionalEmailResponse, error) {
 	t.Helper()
 	c := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.GlobexID, apitokens.ScopeEmailsSend))
-	return c.EmailsSend(context.Background(), &externalapi.SendTransactionalEmailInput{
+	return c.EmailsSend(t.Context(), &externalapi.SendTransactionalEmailInput{
 		TemplateId: externalapi.EntityId(fixtures.TemplateGlobexID), Destination: externalapi.EmailAddress(to),
 	}, externalapi.EmailsSendParams{})
 }
@@ -247,7 +246,7 @@ func TestABroadcastThroughSMTPWithoutAVerifiedDomainIsHeldAndNothingIsCaptured(t
 // Globex is suspended nothing is.
 func TestSuppressionAndAFreezeApplyToTheTestInboxAsToAnyIntegration(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	jane := env.SiteActor(t, fixtures.OwnerJaneEmail)
 	makeDefault(t, jane, fixtures.GlobexPublicID, fixtures.IntegrationGlobexInboxID)
 	before := env.DB.CapturedMessage.Query().Where(capturedmessage.WorkspaceID(fixtures.GlobexID)).CountX(ctx)

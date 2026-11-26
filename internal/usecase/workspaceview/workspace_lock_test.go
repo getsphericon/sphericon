@@ -1,7 +1,6 @@
 package workspaceview_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -58,7 +57,7 @@ type postalAddressRace struct {
 
 func newPostalAddressRace(t *testing.T) postalAddressRace {
 	t.Helper()
-	ctx := context.Background()
+	ctx := t.Context()
 	env := testhelper.Setup(t, testhelper.Committed())
 	member, err := testhelper.Module[*memberships.Module](env).Scope(ctx, fixtures.OwnerJaneID, fixtures.GlobexPublicID)
 	require.NoError(t, err)

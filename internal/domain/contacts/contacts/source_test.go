@@ -1,7 +1,6 @@
 package contacts_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -19,11 +18,11 @@ func TestACreatedContactKeepsTheDoorItCameThrough(t *testing.T) {
 	m := testhelper.Module[*contacts.Module](env)
 	acme := env.DB.Scoped(fixtures.AcmeID)
 
-	byHand, err := m.Create(context.Background(), acme, contact.SourceManual, contacts.CreateInput{Email: new("door-hand@example.com")})
+	byHand, err := m.Create(t.Context(), acme, contact.SourceManual, contacts.CreateInput{Email: new("door-hand@example.com")})
 	require.NoError(t, err)
-	viaAPI, err := m.Upsert(context.Background(), acme, contact.SourceAPI, contacts.UpsertInput{Email: new("door-api@example.com")})
+	viaAPI, err := m.Upsert(t.Context(), acme, contact.SourceAPI, contacts.UpsertInput{Email: new("door-api@example.com")})
 	require.NoError(t, err)
-	batch, err := m.UpsertBatch(context.Background(), acme, contact.SourceAPI, []contacts.IntakeInput{{Email: new("door-batch@example.com")}})
+	batch, err := m.UpsertBatch(t.Context(), acme, contact.SourceAPI, []contacts.IntakeInput{{Email: new("door-batch@example.com")}})
 	require.NoError(t, err)
 	require.NoError(t, batch.Items[0].Err)
 
@@ -36,7 +35,7 @@ func TestALaterUpsertLeavesTheSourceUnchanged(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*contacts.Module](env)
 
-	again, err := m.Upsert(context.Background(), env.DB.Scoped(fixtures.StarkID), contact.SourceTracker, contacts.UpsertInput{Email: new(fixtures.ContactStarkManualEmail), FirstName: patch.Set("Sam")})
+	again, err := m.Upsert(t.Context(), env.DB.Scoped(fixtures.StarkID), contact.SourceTracker, contacts.UpsertInput{Email: new(fixtures.ContactStarkManualEmail), FirstName: patch.Set("Sam")})
 	require.NoError(t, err)
 
 	assert.False(t, again.Created)

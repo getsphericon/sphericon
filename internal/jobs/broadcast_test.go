@@ -74,7 +74,7 @@ func failingResolver(err error) *SendersMock {
 
 func TestSendBroadcastDeliversToEligibleContacts(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// Eligibility is derived (ADR 0001): the audience is the workspace contacts minus the
 	// ineligible. Bob is unsubscribed from "broadcasts" in the fixtures, the email-less
@@ -129,7 +129,7 @@ func countPublished(t *testing.T, env *testhelper.TestEnv, name string, broadcas
 // unsuspend. This is why a hold is a separate outcome scope from Skipped.
 func TestSuspensionMidBroadcastPausesRecipientsAndResumes(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	fs := &fakeSender{}
 	mod := newMod(env, resolvingTo(fs), time.Now)
 
@@ -159,7 +159,7 @@ func TestSuspensionMidBroadcastPausesRecipientsAndResumes(t *testing.T) {
 // the broadcast reports it as skipped, not sent and not failed.
 func TestUnsubscribeBetweenPlanAndSendSkipsTheRecipient(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	fs := &fakeSender{}
 	mod := newMod(env, resolvingTo(fs), time.Now)
 
@@ -176,7 +176,7 @@ func TestUnsubscribeBetweenPlanAndSendSkipsTheRecipient(t *testing.T) {
 
 func TestSendBroadcastSkipsSuppressed(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	bounced := env.DB.Contact.GetX(ctx, fixtures.ContactBouncedID)
 	complained := env.DB.Contact.GetX(ctx, fixtures.ContactComplainedID)
 
@@ -199,7 +199,7 @@ func TestSendBroadcastSkipsSuppressed(t *testing.T) {
 // though it carries no per-source ("broadcasts") opt-out.
 func TestSendBroadcastSkipsUnsubscribedFromEverything(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	gone := env.DB.Contact.GetX(ctx, fixtures.ContactUnsubscribedEverythingID)
 
 	fs := &fakeSender{}
@@ -222,7 +222,7 @@ func TestSendBroadcastSkipsUnsubscribedFromEverything(t *testing.T) {
 
 func TestSendBroadcastToRuleSegment(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// Fixture broadcast 105 targets fixture rule segment 100 ("plan = pro"), so the
 	// audience is exactly the pro-plan fixture contacts (e.g. liam id 100), not the
@@ -246,7 +246,7 @@ func TestSendBroadcastToRuleSegment(t *testing.T) {
 // no Contact's (ADR 0171), is in.
 func TestSendBroadcastToContactsWithoutTelegram(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	fs := &fakeSender{}
 	require.NoError(t, env.SendBroadcastThrough(t, newMod(env, resolvingTo(fs), time.Now), fixtures.BroadcastWithoutTelegramID))
@@ -264,7 +264,7 @@ func TestSendBroadcastToContactsWithoutTelegram(t *testing.T) {
 // Telegram" Segment issues tokens for exactly the Contacts it emails, none for Liam.
 func TestABroadcastWithTheStartTagIssuesTokensOnlyForContactsWithoutTelegram(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	bot := env.AcmeTelegram(t)
 	env.MakeDefaultTelegram(t, bot)
 	before := env.DB.StartToken.Query().IDsX(ctx)
@@ -286,7 +286,7 @@ func TestABroadcastWithTheStartTagIssuesTokensOnlyForContactsWithoutTelegram(t *
 // failed_count == audience (and sent_count 0), and publishes no email.sent event.
 func TestSendBroadcastMarksFailedOnSendError(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	require.NoError(t, env.SendBroadcastThrough(t, newMod(env, resolvingTo(erroringSender{}), time.Now), fixtures.BroadcastScheduledID))
 
@@ -316,7 +316,7 @@ func TestSendBroadcastMarksFailedOnSendError(t *testing.T) {
 
 func TestSendBroadcastHoldsWithoutProvider(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// Fixture broadcast 100; the resolver reports no usable provider. That is a
 	// reversible hold on the source, not a failed broadcast.
@@ -339,7 +339,7 @@ func newMod(env *testhelper.TestEnv, resolver outboundmessages.Senders, now func
 // the Broadcast, so the pacing it records is what the river adapter would schedule by.
 func TestSendBroadcastRunsTheProductionSequence(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(10000).ExecX(ctx)
 	fs := &fakeSender{}
 
@@ -355,7 +355,7 @@ func TestSendBroadcastRunsTheProductionSequence(t *testing.T) {
 // adapter does, not from the wall.
 func TestSendBroadcastPacesFromOutboundSendsClock(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(10000).ExecX(ctx)
 	at := time.Now().Add(time.Hour)
 	mod := newMod(env, resolvingTo(&fakeSender{}), func() time.Time { return at })
@@ -371,7 +371,7 @@ func TestSendBroadcastPacesFromOutboundSendsClock(t *testing.T) {
 // Broadcast stays sent.
 func TestAPlanJobOfASentBroadcastSendsNothing(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	fs := &fakeSender{}
 	sent := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastSentID)
 	env.EnqueueJob(t, broadcasts.SendArgs{WorkspaceID: sent.WorkspaceID, BroadcastID: sent.ID})
@@ -386,7 +386,7 @@ func TestAPlanJobOfASentBroadcastSendsNothing(t *testing.T) {
 // figuresOf is a Broadcast's delivery figures, derived from its rows in its Workspace.
 func figuresOf(t *testing.T, env *testhelper.TestEnv, broadcastID int64) broadcasts.Stats {
 	t.Helper()
-	ctx := context.Background()
+	ctx := t.Context()
 	b := env.DB.Broadcast.GetX(ctx, broadcastID)
 	got, err := testhelper.Module[*broadcasts.Module](env).StatsOf(ctx, env.DB.Scoped(b.WorkspaceID), broadcastID)
 	require.NoError(t, err)

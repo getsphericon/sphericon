@@ -1,7 +1,6 @@
 package tracking_test
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -57,7 +56,7 @@ func confirmPath(t *testing.T, tr *messagetoken.Tracker, target linktarget.Confi
 // marketing.confirmed event.
 func TestConfirmEndpoint(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	tr := env.Tracker
 
 	get := func(path string) *httptest.ResponseRecorder {
@@ -121,7 +120,7 @@ func TestConfirmEndpoint(t *testing.T) {
 // re-confirmation. A narrower per-source opt-out leaves the confirmation intact.
 func TestUnsubscribeEverythingInvalidatesConfirmation(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	tr := env.Tracker
 
 	post := func(path string) {
@@ -159,7 +158,7 @@ func TestUnsubscribeEverythingInvalidatesConfirmation(t *testing.T) {
 // per-recipient token and feed first-class engagement events.
 func TestTrackingEndpoints(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	tr := env.Tracker
 
@@ -258,7 +257,7 @@ func TestTrackingEndpoints(t *testing.T) {
 // it is about the same message.
 func TestUnsubscribeEventNamesTheEmailTheLinkWasIn(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	tr := env.Tracker
 	c := env.DB.Contact.GetX(ctx, fixtures.ContactAliceID)
 	target := linktarget.Unsubscribe{
@@ -283,7 +282,7 @@ func TestUnsubscribeEventNamesTheEmailTheLinkWasIn(t *testing.T) {
 // enrollment — two effects from one action (ADR 0001).
 func TestUnsubscribeAutomationExitsEnrollment(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	tr := env.Tracker
 
 	post := func(path string) *httptest.ResponseRecorder {
@@ -319,7 +318,7 @@ func TestUnsubscribeAutomationExitsEnrollment(t *testing.T) {
 // order (ADR 0165): an opt-out is from the Sending source, not from one order.
 func TestUnsubscribeFromAKeyedAutomationExitsEveryEnrollment(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.DB.Contact.GetX(ctx, fixtures.ContactAliceID)
 
 	req := httptest.NewRequestWithContext(ctx, http.MethodPost, unsubPath(t, env.Tracker, linktarget.Unsubscribe{
@@ -341,7 +340,7 @@ func TestUnsubscribeFromAKeyedAutomationExitsEveryEnrollment(t *testing.T) {
 // scopes coexist.
 func TestUnsubscribeEverythingEscalation(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	tr := env.Tracker
 
 	get := func(path string) *httptest.ResponseRecorder {
@@ -401,7 +400,7 @@ func TestUnsubscribeEverythingEscalation(t *testing.T) {
 func figures(t *testing.T, env *testhelper.TestEnv, broadcastID int64) broadcasts.Stats {
 	t.Helper()
 	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
-	got, err := testhelper.Module[*broadcasts.Module](env).StatsOf(context.Background(), env.DB.Scoped(fixtures.AcmeID), broadcastID)
+	got, err := testhelper.Module[*broadcasts.Module](env).StatsOf(t.Context(), env.DB.Scoped(fixtures.AcmeID), broadcastID)
 	require.NoError(t, err)
 	return got[broadcastID]
 }

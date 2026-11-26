@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -16,7 +15,7 @@ import (
 // workspace and never leaking another tenant's rows.
 func TestSiteTransactionalEmailsList(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// acme's own transactional sends come from the fixtures; Globex's is the cross-tenant negative case.
 
@@ -36,6 +35,6 @@ func TestSiteTransactionalEmailsRequireAuth(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteAnonymous(t)
 
-	_, err := c.SiteTransactionalEmailsList(context.Background(), siteapi.SiteTransactionalEmailsListParams{WorkspaceId: fixtures.AcmePublicID})
+	_, err := c.SiteTransactionalEmailsList(t.Context(), siteapi.SiteTransactionalEmailsListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.Error(t, err)
 }

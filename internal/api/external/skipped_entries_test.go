@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -21,7 +20,7 @@ func TestExternalSkippedEntriesOfAContactAreReadWithAutomationsRead(t *testing.T
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeAutomationsRead)
 
-	listed, err := c.SkippedEntriesList(context.Background(), externalapi.SkippedEntriesListParams{
+	listed, err := c.SkippedEntriesList(t.Context(), externalapi.SkippedEntriesListParams{
 		AutomationId: entityIDString(fixtures.AutomationWelcomeSeriesID),
 		ContactId:    externalapi.NewOptEntityId(entityIDString(fixtures.ContactLiamID)),
 	})
@@ -39,7 +38,7 @@ func TestExternalSkippedEntriesOfAContactAreReadWithAutomationsRead(t *testing.T
 
 func TestExternalSkippedEntriesNeedAutomationsReadAndStayInTheWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	denied := env.ExternalScoped(t, apitokens.ScopeEnrollmentsRead)
 	c := env.ExternalScoped(t, apitokens.ScopeAutomationsRead)
 

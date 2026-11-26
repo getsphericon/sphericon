@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -18,7 +17,7 @@ import (
 func TestSiteContactsScopedToWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// Contacts of the owned workspace are listed (the workspace has seeded
 	// contacts; assert presence, not an exact count).
@@ -39,7 +38,7 @@ func TestSiteWorkspacesList(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	got, err := c.SiteWorkspacesList(context.Background())
+	got, err := c.SiteWorkspacesList(t.Context())
 	require.NoError(t, err)
 	require.Len(t, got, 1)
 	assert.Equal(t, siteapi.WorkspaceId(fixtures.AcmePublicID), got[0].ID)
@@ -49,7 +48,7 @@ func TestSiteWorkspacesList(t *testing.T) {
 // workspace can neither see it nor reach its scoped resources.
 func TestSiteWorkspaceRequiresMembership(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// A real, authenticated User who is a member of no workspace.
 	c := env.SiteActor(t, fixtures.OutsiderOscarEmail)
@@ -67,7 +66,7 @@ func TestSiteWorkspaceRequiresMembership(t *testing.T) {
 // A member of another tenant sees only their own workspace and cannot reach Acme.
 func TestSiteWorkspaceIsolatedBetweenTenants(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.SiteActor(t, fixtures.OwnerJaneEmail)
 
 	got, err := c.SiteWorkspacesList(ctx)

@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -15,7 +14,7 @@ import (
 
 func lookup(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceId, email string) *siteapi.SiteContactHoldings {
 	t.Helper()
-	res, err := c.SiteContactsLookup(context.Background(), siteapi.SiteContactsLookupParams{
+	res, err := c.SiteContactsLookup(t.Context(), siteapi.SiteContactsLookupParams{
 		WorkspaceId: workspaceID,
 		Email:       email,
 	})
@@ -82,7 +81,7 @@ func TestSiteContactsLookupIsOwnerAndAdminOnly(t *testing.T) {
 	lookup(t, admin, fixtures.InitechPublicID, fixtures.ContactErasableEmail)
 
 	member := env.SiteActor(t, fixtures.MemberMaryEmail)
-	_, err := member.SiteContactsLookup(context.Background(), siteapi.SiteContactsLookupParams{
+	_, err := member.SiteContactsLookup(t.Context(), siteapi.SiteContactsLookupParams{
 		WorkspaceId: fixtures.AcmePublicID,
 		Email:       fixtures.ContactExportSubjectEmail,
 	})
@@ -94,7 +93,7 @@ func TestSiteContactsLookupRejectsAnInvalidAddress(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	_, err := c.SiteContactsLookup(context.Background(), siteapi.SiteContactsLookupParams{
+	_, err := c.SiteContactsLookup(t.Context(), siteapi.SiteContactsLookupParams{
 		WorkspaceId: fixtures.AcmePublicID,
 		Email:       "not an address",
 	})

@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -16,7 +15,7 @@ import (
 func TestSiteAutomationsCRUDPublishAndDeactivate(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
 	created, err := c.SiteAutomationsCreate(ctx, &siteapi.CreateAutomationInput{

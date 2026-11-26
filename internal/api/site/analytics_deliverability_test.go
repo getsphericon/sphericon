@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -24,7 +23,7 @@ func ratesOf(domains []siteapi.SiteSendingDomainRates, domain string) (siteapi.S
 
 func overviewDeliverability(t *testing.T, env *testhelper.TestEnv) siteapi.SiteAnalyticsDeliverability {
 	t.Helper()
-	res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteAnalyticsOverview(context.Background(),
+	res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteAnalyticsOverview(t.Context(),
 		siteapi.SiteAnalyticsOverviewParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	ov := res
@@ -33,7 +32,7 @@ func overviewDeliverability(t *testing.T, env *testhelper.TestEnv) siteapi.SiteA
 
 func deliverabilityReport(t *testing.T, env *testhelper.TestEnv, email string, rng siteapi.SiteAnalyticsRange) siteapi.SiteAnalyticsDeliverability {
 	t.Helper()
-	res, err := env.SiteActor(t, email).SiteAnalyticsDeliverability(context.Background(), siteapi.SiteAnalyticsDeliverabilityParams{
+	res, err := env.SiteActor(t, email).SiteAnalyticsDeliverability(t.Context(), siteapi.SiteAnalyticsDeliverabilityParams{
 		WorkspaceId: fixtures.AcmePublicID,
 		Range:       siteapi.NewOptSiteAnalyticsRange(rng),
 	})
@@ -111,7 +110,7 @@ func TestEveryRoleReadsTheDeliverabilityReportAndTheOverviewRates(t *testing.T) 
 		report := deliverabilityReport(t, env, email, siteapi.SiteAnalyticsRange7d)
 		assert.NotEmpty(t, report.Domains, email)
 
-		res, err := env.SiteActor(t, email).SiteAnalyticsOverview(context.Background(),
+		res, err := env.SiteActor(t, email).SiteAnalyticsOverview(t.Context(),
 			siteapi.SiteAnalyticsOverviewParams{WorkspaceId: fixtures.AcmePublicID})
 		require.NoError(t, err, email)
 		overview := res
@@ -123,11 +122,11 @@ func TestEveryRoleReadsTheDeliverabilityReportAndTheOverviewRates(t *testing.T) 
 func TestSiteAnalyticsDeliverabilityRequiresAuthAndAnOwnedWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	_, err := env.SiteAnonymous(t).SiteAnalyticsDeliverability(context.Background(),
+	_, err := env.SiteAnonymous(t).SiteAnalyticsDeliverability(t.Context(),
 		siteapi.SiteAnalyticsDeliverabilityParams{WorkspaceId: fixtures.AcmePublicID})
 	require.Error(t, err)
 
-	_, err = env.SiteActor(t, fixtures.OwnerJohnEmail).SiteAnalyticsDeliverability(context.Background(),
+	_, err = env.SiteActor(t, fixtures.OwnerJohnEmail).SiteAnalyticsDeliverability(t.Context(),
 		siteapi.SiteAnalyticsDeliverabilityParams{WorkspaceId: "NoSuchWs"})
 	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 }

@@ -1,7 +1,6 @@
 package events_test
 
 import (
-	"context"
 	"errors"
 	"testing"
 
@@ -23,7 +22,7 @@ import (
 // worker re-checks that what it refers to still exists. A queued one is removed.
 func TestPurgeJobsKeepsARunningJobAndRemovesAQueuedOne(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	env.EnqueueJob(t, jobs.SendRecipientArgs{WorkspaceID: fixtures.InitechID, RecipientID: fixtures.BroadcastRecipientErasablePendingID, BroadcastID: 1})
 	env.EnqueueRunningJob(t, jobs.SendRecipientArgs{WorkspaceID: fixtures.InitechID, RecipientID: fixtures.BroadcastRecipientErasableSoloID, BroadcastID: 1})
 
@@ -42,7 +41,7 @@ func TestPurgeJobsKeepsARunningJobAndRemovesAQueuedOne(t *testing.T) {
 // all, not just the first batch.
 func TestPurgeJobsRemovesMoreThanOneBatch(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	const queued = 1001 // one more than the purge's batch
 	args := make([]river.JobArgs, queued)
 	for i := range args {
@@ -62,7 +61,7 @@ func TestPurgeJobsRemovesMoreThanOneBatch(t *testing.T) {
 // and rolls back with it.
 func TestPurgeJobsInJoinsThePurgingTransactionOfTheScope(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	env.EnqueueJob(t, jobs.SendRecipientArgs{WorkspaceID: fixtures.InitechID, RecipientID: fixtures.BroadcastRecipientErasablePendingID, BroadcastID: 1})
 	scope := env.DB.Scoped(fixtures.InitechID)
 	ids := []int64{fixtures.BroadcastRecipientErasablePendingID}
@@ -85,7 +84,7 @@ func TestPurgeJobsInJoinsThePurgingTransactionOfTheScope(t *testing.T) {
 // ErrNotPurging, one bound to none ErrNotInBusTx, and no job goes.
 func TestPurgeJobsInRefusesAScopeOutsideAPurgingTransaction(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	env.EnqueueJob(t, jobs.SendRecipientArgs{WorkspaceID: fixtures.InitechID, RecipientID: fixtures.BroadcastRecipientErasablePendingID, BroadcastID: 1})
 	scope := env.DB.Scoped(fixtures.InitechID)
 	ids := []int64{fixtures.BroadcastRecipientErasablePendingID}
@@ -103,7 +102,7 @@ func TestPurgeJobsInRefusesAScopeOutsideAPurgingTransaction(t *testing.T) {
 // Destination's and another Workspace's.
 func TestPurgeDestinationJobsRemovesTheJobsOfTheSubjectsDestinations(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	env.EnqueueJobs(t,
 		jobs.TrackingWithdrawalArgs{WorkspaceID: fixtures.InitechID, Channel: channels.SMS, Destination: erasablePhone},
 		jobs.TrackingWithdrawalArgs{WorkspaceID: fixtures.InitechID, Channel: channels.Telegram, Destination: "801001"},

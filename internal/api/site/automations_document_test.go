@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -22,7 +21,7 @@ func docStep(subject string, doc map[string]jx.Raw) siteapi.EmailStepInput {
 func TestSiteAutomationEmailStepsSaveADocumentWithItsBody(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
 	created, err := c.SiteAutomationsCreate(ctx, &siteapi.CreateAutomationInput{
@@ -74,7 +73,7 @@ func TestSiteAutomationEmailStepsSaveADocumentWithItsBody(t *testing.T) {
 func TestSiteAutomationInvalidDocumentRefusesTheWholeSaveNamingTheStep(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
 	bad := map[string]jx.Raw{"type": jx.Raw(`"doc"`), "content": jx.Raw(`[{"type":"heading","attrs":{"level":9},"content":[{"type":"text","text":"x"}]}]`)}
@@ -111,7 +110,7 @@ func TestSiteAutomationInvalidDocumentRefusesTheWholeSaveNamingTheStep(t *testin
 func TestSiteAutomationDocumentSavedAgainIsNoChange(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 	step := docStep("Hi", paragraphDoc("Hello {{ first_name }}"))
 	created, err := c.SiteAutomationsCreate(ctx, &siteapi.CreateAutomationInput{

@@ -1,7 +1,6 @@
 package jobs_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -19,7 +18,7 @@ import (
 // contact 1 (who has vip and newsletter). Tag steps send nothing.
 func TestAutomationTagSteps(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	fs := &fakeSender{}
 
 	queueStep(t, env, 1100)

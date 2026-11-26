@@ -1,7 +1,6 @@
 package messaging_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -29,7 +28,7 @@ func newTestCipher(t *testing.T) *secrets.Cipher {
 // a default SMTP integration.
 func TestResolverEmailSender(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	resolver := messaging.NewResolver(env.Cipher, registry.Default())
 
@@ -45,7 +44,7 @@ func TestResolverEmailSender(t *testing.T) {
 // A workspace without any integration has no default to resolve.
 func TestResolverNoDefault(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// The Globex fixture tenant has no integration.
 	resolver := messaging.NewResolver(newTestCipher(t), registry.Default())

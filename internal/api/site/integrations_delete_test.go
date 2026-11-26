@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 	"time"
@@ -21,7 +20,7 @@ import (
 
 func listIntegrations(t *testing.T, c *siteapi.Client) []siteapi.SiteIntegrationResource {
 	t.Helper()
-	list, err := c.SiteIntegrationsList(context.Background(), siteapi.SiteIntegrationsListParams{WorkspaceId: fixtures.AcmePublicID})
+	list, err := c.SiteIntegrationsList(t.Context(), siteapi.SiteIntegrationsListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	return list
 }
@@ -46,7 +45,7 @@ func deleteIntegrationOf(t *testing.T, c *siteapi.Client, ws siteapi.WorkspaceId
 func TestSiteIntegrationsDelete(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	id := int64(fixtures.IntegrationAcmeSesID)
 
 	require.NoError(t, deleteIntegration(t, c, id))
@@ -70,7 +69,7 @@ func TestSiteIntegrationsDelete(t *testing.T) {
 func TestSiteIntegrationsDeletingTheDefaultLeavesTheChannelWithout(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.SecondFactorSamEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	id := idStr(fixtures.IntegrationUmbrellaDefaultID)
 	const workspace = fixtures.UmbrellaPublicID
 
@@ -92,7 +91,7 @@ func TestSiteIntegrationsDeletingTheDefaultLeavesTheChannelWithout(t *testing.T)
 func TestSiteIntegrationsDeletedOneIsReadOnly(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	id := idStr(fixtures.IntegrationAcmeArchivedID)
 	path := siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: id}
 
@@ -115,7 +114,7 @@ func TestSiteIntegrationsDeletedOneIsReadOnly(t *testing.T) {
 func TestSiteSentBroadcastStillNamesItsDeletedIntegration(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	b, err := c.SiteBroadcastsGet(ctx, siteapi.SiteBroadcastsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.BroadcastSentViaArchivedIntegrationID})
 	require.NoError(t, err)

@@ -1,7 +1,6 @@
 package visitoridentification_test
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"maps"
@@ -28,7 +27,7 @@ import (
 
 func TestIdentifyCreatesTheContactBindsTheDeviceAndStitchesEarlierEvents(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// The fixtures hold an earlier anonymous event from the device, and one from another device.
 	const device, otherDevice = fixtures.EventAnonymousFirstVisitorID, fixtures.EventAnonymousSecondVisitorID
@@ -58,7 +57,7 @@ func TestIdentifyCreatesTheContactBindsTheDeviceAndStitchesEarlierEvents(t *test
 
 func TestIdentifyReusesAnExistingContactAndDevice(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	input := visitoridentification.Input{VisitorID: "dev-known", Email: lo.ToPtr(fixtures.ContactAliceEmail)}
 
 	require.NoError(t, testhelper.Module[*visitoridentification.UseCase](env).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), input))
@@ -77,7 +76,7 @@ func TestIdentifyReusesAnExistingContactAndDevice(t *testing.T) {
 // (ADR 0171), so another plan changes nothing either; one that fills an empty attribute moves both.
 func TestIdentifyThatChangesNothingLeavesTheContactAsItWas(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	identify := func(plan string) {
 		t.Helper()
 		err := testhelper.Module[*visitoridentification.UseCase](env).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), visitoridentification.Input{
@@ -118,7 +117,7 @@ func TestIdentifyThatChangesNothingLeavesTheContactAsItWas(t *testing.T) {
 // another Contact stays where it is, and the Contact the claim names is still found or created.
 func TestAClaimLeavesAVisitorOfAnotherContactWhereItIs(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	identify := func(email string) {
 		t.Helper()
 		err := testhelper.Module[*visitoridentification.UseCase](env).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), visitoridentification.Input{
@@ -142,7 +141,7 @@ func TestAClaimLeavesAVisitorOfAnotherContactWhereItIs(t *testing.T) {
 // naming her email and a phone leaves her without one.
 func TestAClaimFillsNoAliasKeyOfAContactThatExists(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	err := testhelper.Module[*visitoridentification.UseCase](env).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), visitoridentification.Input{
 		VisitorID: "dev-phone", Email: lo.ToPtr(fixtures.ContactAliceEmail), Phone: new("+14155550199"), SubjectID: new("claimed-subject"),
@@ -160,7 +159,7 @@ func TestAClaimFillsNoAliasKeyOfAContactThatExists(t *testing.T) {
 // revision.
 func TestIdentifyRepeatingTraitsOfEveryTypeLeavesTheRevision(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	traits := map[string]any{
 		"seats":    4,
 		"ratio":    json.Number("2.5"),
@@ -190,7 +189,7 @@ func TestIdentifyRepeatingTraitsOfEveryTypeLeavesTheRevision(t *testing.T) {
 
 func TestIdentifyRefusesWhatCannotBeIdentified(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	err := testhelper.Module[*visitoridentification.UseCase](env).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), visitoridentification.Input{VisitorID: "   ", Email: new("a@example.com")})
 	require.ErrorIs(t, err, visitoridentification.ErrVisitorIDRequired)
@@ -206,7 +205,7 @@ func TestIdentifyRefusesWhatCannotBeIdentified(t *testing.T) {
 // such field named, and nothing is created.
 func TestIdentifyRefusesFieldsLongerThanTheContract(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	err := testhelper.Module[*visitoridentification.UseCase](env).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), visitoridentification.Input{
 		VisitorID: "dev-overlong",
@@ -227,7 +226,7 @@ func TestIdentifyRefusesFieldsLongerThanTheContract(t *testing.T) {
 // A proven Identify writes the token's keys, so they meet the contract's bounds as a sent key does.
 func TestAProvenIdentifyRefusesATokenWhoseKeyIsLongerThanTheContract(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	secret, err := testhelper.Module[*identitytokens.Module](env).Regenerate(ctx, acme)
 	require.NoError(t, err)

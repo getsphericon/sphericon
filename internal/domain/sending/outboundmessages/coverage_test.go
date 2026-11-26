@@ -78,7 +78,7 @@ func TestSendRejectsIncompleteRequests(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			req := transactional("tx:invalid", "a@example.com")
 			tc.mutate(&req)
-			_, err := m.Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), req)
+			_, err := m.Send(t.Context(), env.DB.Scoped(fixtures.AcmeID), req)
 			assert.ErrorContains(t, err, tc.want)
 		})
 	}
@@ -88,7 +88,7 @@ func TestSendRejectsIncompleteRequests(t *testing.T) {
 func TestSendInfrastructureErrorsAreReturnedNotDecided(t *testing.T) {
 	t.Run("replay lookup fails", func(t *testing.T) {
 		env := testhelper.Setup(t)
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(t.Context())
 		cancel()
 		_, err := newModule(env, time.Now).Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:cancel", "a@example.com"))
 		assert.Error(t, err)
@@ -97,21 +97,21 @@ func TestSendInfrastructureErrorsAreReturnedNotDecided(t *testing.T) {
 	t.Run("unknown workspace", func(t *testing.T) {
 		env := testhelper.Setup(t)
 		req := transactional("tx:nows", "a@example.com")
-		_, err := newModule(env, time.Now).Send(context.Background(), env.DB.Scoped(987654), req)
+		_, err := newModule(env, time.Now).Send(t.Context(), env.DB.Scoped(987654), req)
 		assert.ErrorContains(t, err, "load workspace 987654")
 	})
 
 	t.Run("sender cannot be resolved", func(t *testing.T) {
 		env := testhelper.Setup(t)
 		m := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), senders{err: errors.New("vault down")}, nil, env.OutboundModules(env.Bus, time.Now), outboundmessages.Deps{}, outboundmessages.Config{}, time.Now)
-		_, err := m.Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), transactional("tx:nosender", "a@example.com"))
+		_, err := m.Send(t.Context(), env.DB.Scoped(fixtures.AcmeID), transactional("tx:nosender", "a@example.com"))
 		require.ErrorContains(t, err, "resolve sender")
 		assert.ErrorContains(t, err, "vault down")
 	})
 
 	t.Run("sending domain lookup fails", func(t *testing.T) {
 		env := testhelper.Setup(t)
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(t.Context())
 		defer cancel()
 		m := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), cancelingSenders{cancel: cancel, sender: env.CustomerMail}, nil, env.OutboundModules(env.Bus, time.Now), outboundmessages.Deps{}, outboundmessages.Config{}, time.Now)
 		_, err := m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:domaindb", "a@example.com"))
@@ -123,14 +123,14 @@ func TestSendInfrastructureErrorsAreReturnedNotDecided(t *testing.T) {
 // makes it active, a past one lapses it.
 func liftHold(t *testing.T, env *testhelper.TestEnv, expires time.Time) {
 	t.Helper()
-	env.DB.Hold.UpdateOneID(fixtures.HoldAcmeLapsedID).SetExpiresAt(expires).ExecX(context.Background())
+	env.DB.Hold.UpdateOneID(fixtures.HoldAcmeLapsedID).SetExpiresAt(expires).ExecX(t.Context())
 }
 
 // Send and Preflight read one gate and agree, on real rows, on an active Staff hold and a
 // lapsed one; the send goes out again once the hold lapses.
 func TestSendAndPreflightAgreeOnAStaffHold(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := newModule(env, time.Now)
 	agree := func(key string, want holdreason.Reason) {
@@ -159,7 +159,7 @@ func TestSendAndPreflightAgreeOnAStaffHold(t *testing.T) {
 
 func TestDeletionIsReportedBeforeSuspensionAndStaffHolds(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := newModule(env, time.Now)
 
@@ -180,7 +180,7 @@ func TestDeletionIsReportedBeforeSuspensionAndStaffHolds(t *testing.T) {
 // holds.
 func TestACoreOnlyInstanceIgnoresStaffHoldsButHonorsDeletionAndSuspension(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := outboundmessages.New(
 		env.Bus,
@@ -210,7 +210,7 @@ func TestACoreOnlyInstanceIgnoresStaffHoldsButHonorsDeletionAndSuspension(t *tes
 
 func TestWithLeaseControlsWhenAClaimCanBeTakenOver(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	req := transactional(staleClaimKey, "lease.demo@codebasics.dev")
 
 	// A claim ten minutes old is stale under the default five-minute lease but live
@@ -231,7 +231,7 @@ func TestWithLeaseControlsWhenAClaimCanBeTakenOver(t *testing.T) {
 
 func TestReplayReportsSkippedAndFailedOutcomes(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	m := newModule(env, time.Now)
 
 	skipped := transactional("tx:skip", suppressd)
@@ -272,7 +272,7 @@ func TestComposeBindsContactFieldsWithRequestVariablesWinning(t *testing.T) {
 		CustomFields: map[string]any{"nick": "countess", "first_name": "SHADOW", "plan": "free"},
 	}
 	req.Variables = map[string]any{"plan": "pro"}
-	res, err := m.Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), req)
+	res, err := m.Send(t.Context(), env.DB.Scoped(fixtures.AcmeID), req)
 	require.NoError(t, err)
 	require.Equal(t, outboundmessages.Sent, res.Outcome)
 	msgs := env.CustomerMail.Messages()
@@ -283,7 +283,7 @@ func TestComposeBindsContactFieldsWithRequestVariablesWinning(t *testing.T) {
 	bare := transactional("tx:bind-bare", "bare@example.com")
 	bare = withSubject(bare, "[{{ first_name }}][{{ email }}]")
 	bare.Contact = &ent.Contact{}
-	_, err = m.Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), bare)
+	_, err = m.Send(t.Context(), env.DB.Scoped(fixtures.AcmeID), bare)
 	require.NoError(t, err)
 	msgs = env.CustomerMail.Messages()
 	require.Len(t, msgs, 2)
@@ -296,7 +296,7 @@ func TestTrackedMarketingSendRewritesLinksAndAddsPixel(t *testing.T) {
 	req.Track = true
 	req = withBody(req, `<p><a href="https://example.com/x">go</a></p>`)
 
-	res, err := newModule(env, time.Now).Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), req)
+	res, err := newModule(env, time.Now).Send(t.Context(), env.DB.Scoped(fixtures.AcmeID), req)
 	require.NoError(t, err)
 	require.Equal(t, outboundmessages.Sent, res.Outcome)
 
@@ -351,7 +351,7 @@ func TestClaimRecordsTheRefOfItsKindOnTheMessage(t *testing.T) {
 		name := string(tc.ref.Kind())
 		t.Run(name, func(t *testing.T) {
 			env := testhelper.Setup(t)
-			ctx := context.Background()
+			ctx := t.Context()
 			req := transactional("refs:"+name, "refs@example.com")
 			req.ContactID = fixtures.ContactAliceID
 			req.Ref = tc.ref
@@ -386,7 +386,7 @@ func TestTheDatabaseRefusesAMessageOfOneKindWithAnotherKindsRecord(t *testing.T)
 }
 
 func TestClaimErrors(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("insert fails for a reason other than the key", func(t *testing.T) {
 		env := testhelper.Setup(t)
@@ -530,7 +530,7 @@ func TestClaimErrors(t *testing.T) {
 
 func TestEligibilityFailureReleasesTheClaimAndFailsClosed(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	logs := testhelper.CaptureLogs(t)
 
 	// The eligibility rule runs through the Workspace's Suppression query.
@@ -555,7 +555,7 @@ func TestEligibilityFailureReleasesTheClaimAndFailsClosed(t *testing.T) {
 }
 
 func TestFinishErrors(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("recording a skip fails", func(t *testing.T) {
 		env := testhelper.Setup(t)
@@ -587,7 +587,7 @@ func TestFinishErrors(t *testing.T) {
 // owns the row, and the late one is told so (ErrInProgress) and leaves it untouched.
 func TestAStaleClaimTokenCannotWriteFailed(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	req := transactional("tx:stale-failed", "a@example.com")
 	req = withSubject(req, "{% if %}broken")
 	onOutboundMutation(env, func(ctx context.Context, m *ent.OutboundMessageMutation, next ent.Mutator) (ent.Value, error) {
@@ -624,7 +624,7 @@ func (s takeoverSender) Send(ctx context.Context, msg messaging.EmailMessage) (m
 
 func TestAStaleClaimTokenCannotWriteSent(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	req := transactional("tx:stale-sent", "a@example.com")
 	slow := takeoverSender{EmailSender: env.CustomerMail, takeOver: func(ctx context.Context) {
 		env.DB.OutboundMessage.Update().Where(outboundmessage.IdempotencyKey(req.Key)).
@@ -640,7 +640,7 @@ func TestAStaleClaimTokenCannotWriteSent(t *testing.T) {
 
 func TestPreflightErrors(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := newModule(env, time.Now).Preflight(ctx, env.DB.Scoped(987654), outboundmessages.EmailContent{}, nil)
 	require.ErrorContains(t, err, "freeze check")
@@ -652,7 +652,7 @@ func TestPreflightErrors(t *testing.T) {
 }
 
 func TestSendTestOutcomes(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	req := outboundmessages.TestRequest{To: "Preview@Example.com",
 		Content: outboundmessages.EmailContent{Subject: "s", Body: htmlBody}}
 
@@ -701,7 +701,7 @@ func TestSendTestOutcomes(t *testing.T) {
 }
 
 func TestSendBroadcastTestRefusesEveryOutcomeButSent(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	from, fromName := "hello@codebasics.dev", "CodeBasics"
 	broadcast := func(subject, body string) *ent.Broadcast {
 		return &ent.Broadcast{WorkspaceID: fixtures.AcmeID, Channel: channels.Email, Subject: &subject, Body: &body, FromEmail: &from, FromName: &fromName}

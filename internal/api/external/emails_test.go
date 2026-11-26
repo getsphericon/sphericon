@@ -34,7 +34,7 @@ func templateID(tmpl *ent.EmailTemplate) externalapi.EntityId {
 func TestExternalEmailsSend(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeEmailsSend)
-	ctx := context.Background()
+	ctx := t.Context()
 	tmpl := variablesTemplate(env.DB)
 
 	res, err := c.EmailsSend(ctx, &externalapi.SendTransactionalEmailInput{
@@ -70,7 +70,7 @@ func TestExternalEmailsSendRejectsUnverifiedDomain(t *testing.T) {
 	env := testhelper.Setup(t)
 	env.CustomerMail.SetErr(messaging.ErrUnverifiedSendingDomain)
 	c := env.ExternalScoped(t, apitokens.ScopeEmailsSend)
-	ctx := context.Background()
+	ctx := t.Context()
 	tmpl := variablesTemplate(env.DB)
 
 	_, err := c.EmailsSend(ctx, &externalapi.SendTransactionalEmailInput{
@@ -90,7 +90,7 @@ func TestExternalEmailsSendRejectsUnverifiedDomain(t *testing.T) {
 func TestExternalEmailsSendSuppressed(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeEmailsSend)
-	ctx := context.Background()
+	ctx := t.Context()
 	tmpl := variablesTemplate(env.DB)
 
 	res, err := c.EmailsSend(ctx, &externalapi.SendTransactionalEmailInput{
@@ -107,7 +107,7 @@ func TestExternalEmailsSendSuppressed(t *testing.T) {
 func TestExternalEmailsSendIgnoresUnsubscribe(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeEmailsSend)
-	ctx := context.Background()
+	ctx := t.Context()
 	tmpl := variablesTemplate(env.DB)
 
 	res, err := c.EmailsSend(ctx, &externalapi.SendTransactionalEmailInput{
@@ -122,7 +122,7 @@ func TestExternalEmailsSendIgnoresUnsubscribe(t *testing.T) {
 // Multi-tenant isolation: a token cannot send with another workspace's template.
 func TestExternalEmailsSendCrossWorkspaceTemplate(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	otherTmpl := env.DB.EmailTemplate.GetX(ctx, fixtures.TemplateGlobexID)
 
@@ -140,7 +140,7 @@ func TestExternalEmailsSendMissingTemplate(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeEmailsSend)
 
-	_, err := c.EmailsSend(context.Background(), &externalapi.SendTransactionalEmailInput{
+	_, err := c.EmailsSend(t.Context(), &externalapi.SendTransactionalEmailInput{
 		TemplateId:  999999,
 		Destination: "x@example.com",
 	}, externalapi.EmailsSendParams{})
@@ -153,7 +153,7 @@ func TestExternalEmailsSendScope(t *testing.T) {
 	c := env.ExternalScoped(t, apitokens.ScopeContactsRead)
 	tmpl := variablesTemplate(env.DB)
 
-	_, err := c.EmailsSend(context.Background(), &externalapi.SendTransactionalEmailInput{
+	_, err := c.EmailsSend(t.Context(), &externalapi.SendTransactionalEmailInput{
 		TemplateId:  templateID(tmpl),
 		Destination: "x@example.com",
 	}, externalapi.EmailsSendParams{})
@@ -166,7 +166,7 @@ func TestExternalEmailsSendScope(t *testing.T) {
 func TestExternalEmailsSendRecordsTrace(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeEmailsSend)
-	ctx := context.Background()
+	ctx := t.Context()
 	tmpl := variablesTemplate(env.DB)
 
 	contact := env.DB.Contact.GetX(ctx, fixtures.ContactAliceID)
@@ -196,7 +196,7 @@ func TestExternalEmailsSendRecordsTrace(t *testing.T) {
 func TestExternalEmailsSendIdempotentReplay(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeEmailsSend)
-	ctx := context.Background()
+	ctx := t.Context()
 	tmpl := variablesTemplate(env.DB)
 
 	send := func() *externalapi.SendTransactionalEmailResponse {
@@ -226,7 +226,7 @@ func TestExternalEmailsSendIdempotentReplay(t *testing.T) {
 func TestExternalEmailsSendSuppressedRecordsNoEvent(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeEmailsSend)
-	ctx := context.Background()
+	ctx := t.Context()
 	tmpl := variablesTemplate(env.DB)
 
 	res, err := c.EmailsSend(ctx, &externalapi.SendTransactionalEmailInput{
@@ -249,7 +249,7 @@ func TestExternalEmailsSendSuppressedRecordsNoEvent(t *testing.T) {
 func TestExternalEmailsSendConflictOnPending(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeEmailsSend)
-	ctx := context.Background()
+	ctx := t.Context()
 	tmpl := variablesTemplate(env.DB)
 
 	// A concurrent request that already claimed the key and is still sending: the fixture's

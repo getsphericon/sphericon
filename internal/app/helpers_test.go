@@ -34,7 +34,7 @@ func newApp(t *testing.T) *app.App {
 	baseline(t)
 	a, err := app.New("test")
 	require.NoError(t, err)
-	t.Cleanup(func() { cleanup.Shutdown(a.Shutdown(context.Background())) })
+	t.Cleanup(func() { cleanup.Shutdown(a.Shutdown(context.WithoutCancel(t.Context()))) })
 	return a
 }
 
@@ -70,7 +70,8 @@ func lifecycleApp(t *testing.T) (a *app.App, base string) {
 // closeCtx bounds one Close.
 func closeCtx(t *testing.T) context.Context {
 	t.Helper()
-	ctx, cancel := context.WithTimeout(context.Background(), app.StopTimeout)
+	// A cleanup closes with it, after t.Context() is done.
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(t.Context()), app.StopTimeout)
 	t.Cleanup(cancel)
 	return ctx
 }

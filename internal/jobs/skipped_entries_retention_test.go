@@ -1,7 +1,6 @@
 package jobs_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -21,7 +20,7 @@ import (
 // them.
 func welcomeSkipped(t *testing.T, env *testhelper.TestEnv) []int64 {
 	t.Helper()
-	page, err := testhelper.Module[*automations.Module](env).SkippedEntries(context.Background(), env.DB.Scoped(fixtures.AcmeID),
+	page, err := testhelper.Module[*automations.Module](env).SkippedEntries(t.Context(), env.DB.Scoped(fixtures.AcmeID),
 		pagination.Params{Page: 1, PageSize: 100}, automations.SkippedEntriesFilter{AutomationID: fixtures.AutomationWelcomeSeriesID})
 	require.NoError(t, err)
 	return lo.Map(page.Items, func(e *ent.AutomationSkippedEntry, _ int) int64 { return e.ID })
@@ -31,7 +30,7 @@ func welcomeSkipped(t *testing.T, env *testhelper.TestEnv) []int64 {
 func pruneSkippedEntries(t *testing.T, env *testhelper.TestEnv, retention time.Duration) {
 	t.Helper()
 	w := jobs.NewPruneSkippedEntriesWorker(testhelper.Module[*automations.Module](env), env.DB, retention)
-	require.NoError(t, w.Work(context.Background(), job(jobs.PruneSkippedEntriesArgs{})))
+	require.NoError(t, w.Work(t.Context(), job(jobs.PruneSkippedEntriesArgs{})))
 }
 
 // Skipped entries expire with the analytical Events (ADR 0019): the one past the window goes, the

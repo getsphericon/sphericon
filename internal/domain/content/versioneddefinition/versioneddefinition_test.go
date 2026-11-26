@@ -133,7 +133,7 @@ func automationKind(env *testhelper.TestEnv) kind {
 			rows, err := env.DB.AutomationVersion.Query().
 				Where(automationversion.AutomationID(id)).
 				Order(automationversion.ByVersion()).
-				All(context.Background())
+				All(t.Context())
 			require.NoError(t, err)
 			return lo.Map(rows, func(v *ent.AutomationVersion, _ int) int { return v.Version })
 		},
@@ -198,7 +198,7 @@ func ruleKind(env *testhelper.TestEnv) kind {
 			rows, err := env.DB.RuleVersion.Query().
 				Where(ruleversion.RuleID(id)).
 				Order(ruleversion.ByVersion()).
-				All(context.Background())
+				All(t.Context())
 			require.NoError(t, err)
 			return lo.Map(rows, func(v *ent.RuleVersion, _ int) int { return v.Version })
 		},
@@ -235,7 +235,7 @@ func TestDiscardLeavesTheObjectInactiveAndTakesNoMoreMoves(t *testing.T) {
 		t.Run(row.name, func(t *testing.T) {
 			env := testhelper.Setup(t)
 			k := row.build(env)
-			ctx := context.Background()
+			ctx := t.Context()
 			s := acme(env)
 			before, err := k.get(ctx, s, k.live)
 			require.NoError(t, err)
@@ -271,7 +271,7 @@ func TestDiscardOfAnotherWorkspacesObjectIsNotFound(t *testing.T) {
 			env := testhelper.Setup(t)
 			k := row.build(env)
 
-			_, err := k.discard(context.Background(), acme(env), k.foreign)
+			_, err := k.discard(t.Context(), acme(env), k.foreign)
 
 			require.ErrorIs(t, err, k.errNotFound)
 		})
@@ -283,7 +283,7 @@ func TestArchiveOfAnotherWorkspacesObjectIsNotFound(t *testing.T) {
 		t.Run(row.name, func(t *testing.T) {
 			env := testhelper.Setup(t)
 			k := row.build(env)
-			ctx := context.Background()
+			ctx := t.Context()
 
 			_, archiveErr := k.archive(ctx, acme(env), k.foreign)
 			_, unarchiveErr := k.unarchive(ctx, acme(env), k.foreign)
@@ -303,7 +303,7 @@ func TestAnEditOfALiveObjectMakesADraftAndLeavesLive(t *testing.T) {
 		t.Run(row.name, func(t *testing.T) {
 			env := testhelper.Setup(t)
 			k := row.build(env)
-			ctx := context.Background()
+			ctx := t.Context()
 
 			got, err := k.edit(ctx, acme(env), k.live, "drafts-edited")
 
@@ -320,7 +320,7 @@ func TestASecondEditRewritesTheDraftInPlace(t *testing.T) {
 		t.Run(row.name, func(t *testing.T) {
 			env := testhelper.Setup(t)
 			k := row.build(env)
-			ctx := context.Background()
+			ctx := t.Context()
 			_, err := k.edit(ctx, acme(env), k.live, "drafts-first")
 			require.NoError(t, err)
 
@@ -340,7 +340,7 @@ func TestEditingANeverPublishedObjectRewritesItsDraft(t *testing.T) {
 		t.Run(row.name, func(t *testing.T) {
 			env := testhelper.Setup(t)
 			k := row.build(env)
-			ctx := context.Background()
+			ctx := t.Context()
 			_, err := k.edit(ctx, acme(env), k.neverPublished, "drafts-first")
 			require.NoError(t, err)
 
@@ -383,7 +383,7 @@ func TestPublishMakesTheDraftLiveAndKeepsTheOldLiveVersion(t *testing.T) {
 		t.Run(row.name, func(t *testing.T) {
 			env := testhelper.Setup(t)
 			k := row.build(env)
-			ctx := context.Background()
+			ctx := t.Context()
 			edited, err := k.edit(ctx, acme(env), k.live, "drafts-published")
 			require.NoError(t, err)
 
@@ -405,7 +405,7 @@ func TestPublishWithoutADraftReactivatesTheLiveVersion(t *testing.T) {
 		t.Run(row.name, func(t *testing.T) {
 			env := testhelper.Setup(t)
 			k := row.build(env)
-			ctx := context.Background()
+			ctx := t.Context()
 			start := time.Now()
 			stopped, err := k.deactivate(ctx, acme(env), k.live)
 			require.NoError(t, err)
@@ -430,7 +430,7 @@ func TestRevertDropsTheDraftAboveALiveVersionOnly(t *testing.T) {
 		t.Run(row.name, func(t *testing.T) {
 			env := testhelper.Setup(t)
 			k := row.build(env)
-			ctx := context.Background()
+			ctx := t.Context()
 			_, noDraft := k.revert(ctx, acme(env), k.live)
 			_, neverPublished := k.revert(ctx, acme(env), k.neverPublished)
 
@@ -457,7 +457,7 @@ func TestAnEditAfterRevertMakesANewDraft(t *testing.T) {
 		t.Run(row.name, func(t *testing.T) {
 			env := testhelper.Setup(t)
 			k := row.build(env)
-			ctx := context.Background()
+			ctx := t.Context()
 			_, err := k.revert(ctx, acme(env), k.liveWithDraft)
 			require.NoError(t, err)
 
@@ -475,7 +475,7 @@ func TestAnotherWorkspacesObjectIsNotFound(t *testing.T) {
 		t.Run(row.name, func(t *testing.T) {
 			env := testhelper.Setup(t)
 			k := row.build(env)
-			ctx := context.Background()
+			ctx := t.Context()
 			s := acme(env)
 
 			_, getErr := k.get(ctx, s, k.foreign)
@@ -500,7 +500,7 @@ func TestTheMovesAreAudited(t *testing.T) {
 		t.Run(row.name, func(t *testing.T) {
 			env := testhelper.Setup(t)
 			k := row.build(env)
-			ctx := context.Background()
+			ctx := t.Context()
 			actor := events.Actor{Kind: events.ActorUser, ID: testhelper.ID(fixtures.OwnerJohnID), Name: "John"}
 			s := env.Bus.Act(acme(env), actor)
 			_, err := k.edit(ctx, s, k.live, "drafts-audited")
@@ -534,7 +534,7 @@ func TestArchiveLeavesTheObjectInactiveAndUnarchiveDoesNotRearmIt(t *testing.T) 
 		t.Run(row.name, func(t *testing.T) {
 			env := testhelper.Setup(t)
 			k := row.build(env)
-			ctx := context.Background()
+			ctx := t.Context()
 			before, err := k.get(ctx, acme(env), k.live)
 			require.NoError(t, err)
 			require.True(t, before.active)
@@ -569,7 +569,7 @@ func TestAnArchivedObjectTakesNoOwnerMove(t *testing.T) {
 		t.Run(row.name, func(t *testing.T) {
 			env := testhelper.Setup(t)
 			k := row.build(env)
-			ctx := context.Background()
+			ctx := t.Context()
 			archived, err := k.archive(ctx, acme(env), k.live)
 			require.NoError(t, err)
 

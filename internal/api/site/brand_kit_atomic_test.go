@@ -19,7 +19,7 @@ import (
 // kit and the Templates already made with it.
 func TestSiteBrandKitFirstSaveIsAtomicWithItsStarterTemplates(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.VandelayID)
 	before := s.EmailTemplate().Query().CountX(ctx)
 	made := 0

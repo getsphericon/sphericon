@@ -27,9 +27,9 @@ type Scrape string
 // show up in Scrape. Shutdown is registered as cleanup.
 func StartMetrics(t *testing.T) {
 	t.Helper()
-	stop, err := telemetry.Setup(context.Background(), &config.Config{OtelServiceName: "sphericon-test"}, "test", telemetry.BuildInfo{})
+	stop, err := telemetry.Setup(t.Context(), &config.Config{OtelServiceName: "sphericon-test"}, "test", telemetry.BuildInfo{})
 	require.NoError(t, err)
-	t.Cleanup(func() { require.NoError(t, stop(context.Background())) })
+	t.Cleanup(func() { require.NoError(t, stop(context.WithoutCancel(t.Context()))) })
 }
 
 // ScrapeMetrics reads /metrics through the same handler the metrics listener serves.

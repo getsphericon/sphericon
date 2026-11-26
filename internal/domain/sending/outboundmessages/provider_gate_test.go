@@ -1,7 +1,6 @@
 package outboundmessages_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -36,7 +35,7 @@ func TestRealProvidersWithoutAVerifiedSendingDomainAreHeld(t *testing.T) {
 			require.NoError(t, err)
 			require.True(t, messaging.DeliversOutside(sender), "a real provider delivers outside")
 
-			res, err := moduleThrough(env, sender).Send(context.Background(), env.DB.Scoped(fixtures.GlobexID), transactional("gate:"+name, "a@example.com"))
+			res, err := moduleThrough(env, sender).Send(t.Context(), env.DB.Scoped(fixtures.GlobexID), transactional("gate:"+name, "a@example.com"))
 
 			require.NoError(t, err)
 			assert.Equal(t, outboundmessages.Held, res.Outcome)

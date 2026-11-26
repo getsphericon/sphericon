@@ -64,7 +64,7 @@ func TestParamsNormalizesOptionalPageParams(t *testing.T) {
 }
 
 func TestListReturnsTheRequestedPageWithItsEnvelope(t *testing.T) {
-	p, err := pagination.List(context.Background(), pagination.Params{Page: 2, PageSize: 2}, &numbers{n: 5})
+	p, err := pagination.List(t.Context(), pagination.Params{Page: 2, PageSize: 2}, &numbers{n: 5})
 	require.NoError(t, err)
 	assert.Equal(t, []int{2, 3}, p.Items)
 	assert.Equal(t, 2, p.Page)
@@ -75,17 +75,17 @@ func TestListReturnsTheRequestedPageWithItsEnvelope(t *testing.T) {
 
 func TestListPagesOneQueryAgainAndAgain(t *testing.T) {
 	q := &numbers{n: 5}
-	_, err := pagination.List(context.Background(), pagination.Params{Page: 2, PageSize: 2}, q)
+	_, err := pagination.List(t.Context(), pagination.Params{Page: 2, PageSize: 2}, q)
 	require.NoError(t, err)
 
-	p, err := pagination.List(context.Background(), pagination.Params{Page: 3, PageSize: 2}, q)
+	p, err := pagination.List(t.Context(), pagination.Params{Page: 3, PageSize: 2}, q)
 	require.NoError(t, err)
 	assert.Equal(t, []int{4}, p.Items)
 	assert.Equal(t, 5, p.TotalItems)
 }
 
 func TestListBeyondTheLastPageIsEmptyAndSerializesAsArray(t *testing.T) {
-	p, err := pagination.List(context.Background(), pagination.Params{Page: 9, PageSize: 2}, &numbers{n: 5})
+	p, err := pagination.List(t.Context(), pagination.Params{Page: 9, PageSize: 2}, &numbers{n: 5})
 	require.NoError(t, err)
 	assert.Empty(t, p.Items)
 	assert.Equal(t, 5, p.TotalItems)
@@ -95,7 +95,7 @@ func TestListBeyondTheLastPageIsEmptyAndSerializesAsArray(t *testing.T) {
 }
 
 func TestListNilRowsSerializeAsArray(t *testing.T) {
-	p, err := pagination.List(context.Background(), pagination.Params{Page: 1, PageSize: 2}, &numbers{none: true})
+	p, err := pagination.List(t.Context(), pagination.Params{Page: 1, PageSize: 2}, &numbers{none: true})
 	require.NoError(t, err)
 	body, err := json.Marshal(p)
 	require.NoError(t, err)
@@ -104,9 +104,9 @@ func TestListNilRowsSerializeAsArray(t *testing.T) {
 }
 
 func TestListReportsCountAndFetchErrors(t *testing.T) {
-	_, err := pagination.List(context.Background(), pagination.Params{Page: 1, PageSize: 1}, &numbers{n: 1, countErr: assert.AnError})
+	_, err := pagination.List(t.Context(), pagination.Params{Page: 1, PageSize: 1}, &numbers{n: 1, countErr: assert.AnError})
 	require.ErrorIs(t, err, assert.AnError)
 
-	_, err = pagination.List(context.Background(), pagination.Params{Page: 1, PageSize: 1}, &numbers{n: 1, allErr: assert.AnError})
+	_, err = pagination.List(t.Context(), pagination.Params{Page: 1, PageSize: 1}, &numbers{n: 1, allErr: assert.AnError})
 	assert.ErrorIs(t, err, assert.AnError)
 }

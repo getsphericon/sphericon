@@ -1,7 +1,6 @@
 package removalcheck_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -21,7 +20,7 @@ import (
 // removal that runs the Removal check is raced against the writes it reads in its use case's own
 // test. What each write answers once it runs is its own module's concern; here it only has to wait.
 func TestEveryWriteThatCreatesAUseWaitsForTheWorkspaceLock(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	env := testhelper.Setup(t, testhelper.Committed())
 	s := env.DB.Scoped(fixtures.AcmeID)
 	sends := testhelper.Module[*broadcasts.Module](env)

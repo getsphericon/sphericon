@@ -1,7 +1,6 @@
 package broadcasts_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -20,7 +19,7 @@ import (
 func TestAnArmedBroadcastHoldsNoConditionForAllContactsAndTheEmptyGroupForASegmentWithNoTests(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*broadcasts.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	schedule := func(id int64) {
 		t.Helper()

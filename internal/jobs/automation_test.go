@@ -102,7 +102,7 @@ func stepRecordsOf(t *testing.T, env *testhelper.TestEnv, runID int64) []*ent.Au
 // when it was never published.
 func triggerOf(t *testing.T, env *testhelper.TestEnv, automationID int64) string {
 	t.Helper()
-	ctx := context.Background()
+	ctx := t.Context()
 	a := env.DB.Automation.GetX(ctx, automationID)
 	versionID := a.LiveVersionID
 	if versionID == nil {
@@ -114,7 +114,7 @@ func triggerOf(t *testing.T, env *testhelper.TestEnv, automationID int64) string
 // enrollVia enrolls the Contact through the Automation's own trigger and returns its one run.
 func enrollVia(t *testing.T, env *testhelper.TestEnv, automationID, contactID int64) int64 {
 	t.Helper()
-	require.NoError(t, testhelper.Module[*automations.StepExecution](env).OnEvent(context.Background(), env.DB.Scoped(fixtures.AcmeID), automations.OnEventInput{ContactID: contactID, Event: automations.Event{Action: triggerOf(t, env, automationID), OccurredAt: time.Now()}}))
+	require.NoError(t, testhelper.Module[*automations.StepExecution](env).OnEvent(t.Context(), env.DB.Scoped(fixtures.AcmeID), automations.OnEventInput{ContactID: contactID, Event: automations.Event{Action: triggerOf(t, env, automationID), OccurredAt: time.Now()}}))
 	runIDs := enrollmentsOf(t, env, automationID, contactID)
 	require.Len(t, runIDs, 1)
 	return runIDs[0]
@@ -125,12 +125,12 @@ func enrollmentsOf(t *testing.T, env *testhelper.TestEnv, automationID, contactI
 	t.Helper()
 	return env.DB.AutomationRun.Query().
 		Where(automationrun.AutomationID(automationID), automationrun.ContactID(contactID)).
-		IDsX(context.Background())
+		IDsX(t.Context())
 }
 
 func TestAutomationEnrollAndRun(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	alice := env.DB.Contact.GetX(ctx, fixtures.ContactAliceID)
 	runID := enrollVia(t, env, fixtures.AutomationJobsGreetingID, alice.ID)
 
@@ -159,7 +159,7 @@ func TestAutomationEnrollAndRun(t *testing.T) {
 // an automation (a different sending source). Bob is opted out of broadcasts only.
 func TestAutomationUnaffectedByBroadcastUnsubscribe(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	runID := enrollVia(t, env, fixtures.AutomationJobsSingleEmailID, fixtures.ContactBobID)
 
 	fs := &fakeSender{}
@@ -188,7 +188,7 @@ func TestAutomationSendIncludesUnsubscribeFooter(t *testing.T) {
 
 func TestAutomationInactiveDoesNotEnroll(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	require.NoError(t, testhelper.Module[*automations.StepExecution](env).OnEvent(ctx, env.DB.Scoped(fixtures.AcmeID), automations.OnEventInput{ContactID: fixtures.ContactAliceID, Event: automations.Event{Action: triggerOf(t, env, fixtures.AutomationWinBackID), OccurredAt: time.Now()}}))
 	assert.Empty(t, enrollmentsOf(t, env, fixtures.AutomationWinBackID, fixtures.ContactAliceID), "the win-back automation is a draft")
@@ -368,7 +368,7 @@ func TestAStepOfAnEnrollmentErasedWithItsContactEndsQuietly(t *testing.T) {
 // where it was and queues the same step for later; the run is neither failed nor exited.
 func TestAutomationHeldStepWaitsAndResumes(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	runID := enrollVia(t, env, fixtures.AutomationHoldDemoID, fixtures.ContactHoldDemoID)
 
@@ -409,7 +409,7 @@ func TestAnAutomationWithoutAnIntegrationSendsThroughTheDefault(t *testing.T) {
 // overwriting the exit.
 func TestAutomationExitedMidStepStaysExitedAndTheLateStepFinishesQuietly(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	run := env.DB.AutomationRun.GetX(ctx, fixtures.AutomationRunJobsBrokenTemplateID)
 	queueStep(t, env, run.ID)
 
@@ -429,7 +429,7 @@ func TestAutomationExitedMidStepStaysExitedAndTheLateStepFinishesQuietly(t *test
 
 func TestStepOnAnExitedRunSendsNothingAndStaysPut(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	fs := &fakeSender{}
 	runID := int64(fixtures.AutomationRunJobsExitedOnEmailID)
 	queueStep(t, env, runID)
@@ -445,7 +445,7 @@ func TestStepOnAnExitedRunSendsNothingAndStaysPut(t *testing.T) {
 
 func TestTagStepOnAnExitedRunChangesNoTagAndDoesNotAdvance(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	runID := int64(fixtures.AutomationRunJobsExitedOnTagID)
 	run := env.DB.AutomationRun.GetX(ctx, runID)
 	queueStep(t, env, runID)
@@ -459,7 +459,7 @@ func TestTagStepOnAnExitedRunChangesNoTagAndDoesNotAdvance(t *testing.T) {
 
 func TestWaitStepOnAnExitedRunDoesNotSetResumeAt(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	runID := int64(fixtures.AutomationRunJobsExitedOnWaitID) // exited with the wait step next
 	queueStep(t, env, runID)
 
@@ -476,7 +476,7 @@ func TestWaitStepOnAnExitedRunDoesNotSetResumeAt(t *testing.T) {
 // published after (ADR 0049, ADR 0065): the next Enrollment begins on the new steps.
 func TestAutomationEnrollmentFinishesOnItsOwnVersionAfterAnEdit(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	mod := testhelper.Module[*automations.Module](env)
 

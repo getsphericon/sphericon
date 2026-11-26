@@ -1,7 +1,6 @@
 package automations_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -21,7 +20,7 @@ func TestAnAutomationAnActiveRuleEnrollsInIsNotArchived(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*automations.Module](env)
 	s := env.DB.Scoped(fixtures.AcmeID)
-	ctx := context.Background()
+	ctx := t.Context()
 	named := []liveuse.User{{Kind: liveuse.Rule, ID: fixtures.RuleEnrollWaitFirstID, Name: fixtures.RuleEnrollWaitFirstName}}
 
 	_, err := m.Archive(ctx, s, fixtures.AutomationJobsWaitFirstID)

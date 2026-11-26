@@ -1,7 +1,6 @@
 package tags_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -33,7 +32,7 @@ func TestStorageFailuresSurfaceAsErrors(t *testing.T) {
 	client, bus := closedClient(t)
 	m := tags.New()
 	c := contacts.New(bus, m, confirmations.New(bus, unsubscribes.New(), time.Now), engagementtracking.New(bus, time.Now), nil, time.Now)
-	ctx := context.Background()
+	ctx := t.Context()
 	wsID := client.Scoped(fixtures.AcmeID)
 
 	_, err := m.List(ctx, wsID)

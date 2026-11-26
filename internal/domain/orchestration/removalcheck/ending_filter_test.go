@@ -1,7 +1,6 @@
 package removalcheck_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -22,7 +21,7 @@ import (
 // and goal given, live when published and only in its draft otherwise, and returns it.
 func endingOn(t *testing.T, env *testhelper.TestEnv, workspaceID int64, name string, exits []eventmatcher.Matcher, goal *eventmatcher.Matcher, published bool) *ent.Automation {
 	t.Helper()
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(workspaceID)
 	m := testhelper.Module[*automations.Module](env)
 	a, err := m.Create(ctx, s, automations.CreateInput{Name: name, Trigger: automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: "signed_up"}}, ExitEvents: exits, GoalEvent: goal})

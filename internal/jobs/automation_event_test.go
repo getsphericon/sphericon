@@ -1,7 +1,6 @@
 package jobs_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -15,7 +14,7 @@ import (
 // storedEventOf is a stored fixture Event as its trigger job hands it on (#752).
 func storedEventOf(t *testing.T, env *testhelper.TestEnv, id int64) automations.Event {
 	t.Helper()
-	stored, err := env.DB.Event.Get(context.Background(), id)
+	stored, err := env.DB.Event.Get(t.Context(), id)
 	require.NoError(t, err)
 	return automations.Event{Action: stored.Action, SourceID: *stored.SourceID, OccurredAt: stored.OccurredAt}
 }

@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 	"time"
@@ -17,7 +16,7 @@ import (
 
 func deleteWorkspace(t *testing.T, c *siteapi.Client, id, name string) *siteapi.SiteDeletedWorkspaceResource {
 	t.Helper()
-	res, err := c.SiteWorkspacesDelete(context.Background(), &siteapi.SiteDeleteWorkspaceInput{Name: name},
+	res, err := c.SiteWorkspacesDelete(t.Context(), &siteapi.SiteDeleteWorkspaceInput{Name: name},
 		siteapi.SiteWorkspacesDeleteParams{WorkspaceId: siteapi.WorkspaceId(id)})
 	require.NoError(t, err)
 	return res
@@ -26,7 +25,7 @@ func deleteWorkspace(t *testing.T, c *siteapi.Client, id, name string) *siteapi.
 // tryDeleteWorkspace is deleteWorkspace for a test that expects the refusal.
 func tryDeleteWorkspace(t *testing.T, c *siteapi.Client, id, name string) error {
 	t.Helper()
-	_, err := c.SiteWorkspacesDelete(context.Background(), &siteapi.SiteDeleteWorkspaceInput{Name: name},
+	_, err := c.SiteWorkspacesDelete(t.Context(), &siteapi.SiteDeleteWorkspaceInput{Name: name},
 		siteapi.SiteWorkspacesDeleteParams{WorkspaceId: siteapi.WorkspaceId(id)})
 	return err
 }
@@ -34,7 +33,7 @@ func tryDeleteWorkspace(t *testing.T, c *siteapi.Client, id, name string) error 
 func TestOwnerDeletesWorkspaceByTypingItsName(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.InitechOwnerOlgaEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	deleted := deleteWorkspace(t, c, fixtures.InitechPublicID, "Initech")
 	assert.Equal(t, siteapi.WorkspaceId(fixtures.InitechPublicID), deleted.ID)
@@ -58,7 +57,7 @@ func TestDeleteWithWrongNameIsUnprocessable(t *testing.T) {
 	for _, typed := range []string{"initech", "Initech ", "", "Acme"} {
 		testhelper.SiteRefusal(t, tryDeleteWorkspace(t, c, fixtures.InitechPublicID, typed), http.StatusUnprocessableEntity, "typed %q", typed)
 	}
-	list, err := c.SiteWorkspacesList(context.Background())
+	list, err := c.SiteWorkspacesList(t.Context())
 	require.NoError(t, err)
 	assert.Len(t, list, 1, "nothing was deleted")
 }
@@ -75,7 +74,7 @@ func TestOnlyAnOwnerDeletesAWorkspace(t *testing.T) {
 
 func TestDeletedWorkspaceIsHiddenFromEveryMemberAndListedForOwners(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	owner := env.SiteActor(t, fixtures.InitechOwnerOlgaEmail)
 	deleteWorkspace(t, owner, fixtures.InitechPublicID, "Initech")
 
@@ -115,7 +114,7 @@ func TestADeletedWorkspaceOfItsOnlyOwnerSaysSo(t *testing.T) {
 
 func TestDeletingOneWorkspaceLeavesTheOthers(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	dora := env.SiteActor(t, fixtures.SoleOwnerDoraEmail)
 	deleteWorkspace(t, dora, fixtures.AviatoPublicID, fixtures.AviatoName)
 
@@ -127,7 +126,7 @@ func TestDeletingOneWorkspaceLeavesTheOthers(t *testing.T) {
 
 func TestOwnerRestoresADeletedWorkspaceWithItsMembers(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	owner := env.SiteActor(t, fixtures.InitechOwnerOlgaEmail)
 	deleteWorkspace(t, owner, fixtures.InitechPublicID, "Initech")
 
@@ -148,7 +147,7 @@ func TestOwnerRestoresADeletedWorkspaceWithItsMembers(t *testing.T) {
 
 func TestOnlyAnOwnerRestoresAndOnlyInsideTheWindow(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	deleteWorkspace(t, env.SiteActor(t, fixtures.InitechOwnerOlgaEmail), fixtures.InitechPublicID, "Initech")
 	params := siteapi.SiteWorkspacesRestoreParams{ID: fixtures.InitechPublicID}
 
@@ -169,7 +168,7 @@ func TestOnlyAnOwnerRestoresAndOnlyInsideTheWindow(t *testing.T) {
 
 func TestRestoreKeepsASuspensionInPlace(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	sally := env.SiteActor(t, fixtures.OwnerSallyEmail) // Owner of Hooli, suspended by a Staff member
 	deleteWorkspace(t, sally, fixtures.HooliPublicID, "Hooli")
 
@@ -184,14 +183,14 @@ func TestDeletingTheLastWorkspaceLeavesAnEmptyList(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	deleteWorkspace(t, c, fixtures.AcmePublicID, "Acme")
 
-	list, err := c.SiteWorkspacesList(context.Background())
+	list, err := c.SiteWorkspacesList(t.Context())
 	require.NoError(t, err)
 	assert.Empty(t, list)
 }
 
 func TestDeleteAndRestoreAreAuditEntries(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	deleteWorkspace(t, c, fixtures.AcmePublicID, "Acme")
 	_, err := c.SiteWorkspacesRestore(ctx, siteapi.SiteWorkspacesRestoreParams{ID: fixtures.AcmePublicID})

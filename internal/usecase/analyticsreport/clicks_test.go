@@ -1,7 +1,6 @@
 package analyticsreport_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -24,7 +23,7 @@ const (
 func clicksByLink(t *testing.T, w analyticsreport.Window) []analyticsreport.LinkClicks {
 	t.Helper()
 	env := testhelper.Setup(t)
-	links, err := analyticsreport.New(linkclick.New(), time.Now, 0).ClicksByLink(context.Background(), env.DB.Scoped(fixtures.AcmeID), w)
+	links, err := analyticsreport.New(linkclick.New(), time.Now, 0).ClicksByLink(t.Context(), env.DB.Scoped(fixtures.AcmeID), w)
 	require.NoError(t, err)
 	return links
 }
@@ -73,7 +72,7 @@ func TestClicksByLinkCountsOnlyTheWindow(t *testing.T) {
 
 func TestClicksByLinkEqualTheBroadcastAndAutomationReportsSummed(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
 	links, err := analyticsreport.New(linkclick.New(), time.Now, 0).ClicksByLink(ctx, s, analyticsreport.Window90Days)
@@ -99,7 +98,7 @@ func TestClicksByLinkEqualTheBroadcastAndAutomationReportsSummed(t *testing.T) {
 
 func TestClicksByLinkIsEmptyForAWorkspaceWithoutClicks(t *testing.T) {
 	env := testhelper.Setup(t)
-	links, err := analyticsreport.New(linkclick.New(), time.Now, 0).ClicksByLink(context.Background(), env.DB.Scoped(fixtures.GlobexID), analyticsreport.Window90Days)
+	links, err := analyticsreport.New(linkclick.New(), time.Now, 0).ClicksByLink(t.Context(), env.DB.Scoped(fixtures.GlobexID), analyticsreport.Window90Days)
 	require.NoError(t, err)
 	assert.Empty(t, links)
 }

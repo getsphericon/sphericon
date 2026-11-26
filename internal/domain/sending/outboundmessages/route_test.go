@@ -1,7 +1,6 @@
 package outboundmessages_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -21,7 +20,7 @@ func TestTheRouteOfTheDefaultCarriesItsIntegrationAndPace(t *testing.T) {
 	env := testhelper.Setup(t)
 	limited(t, env, new(4), nil)
 
-	route, err := newModule(env, time.Now).Route(context.Background(), acme(env), channels.Email, nil)
+	route, err := newModule(env, time.Now).Route(t.Context(), acme(env), channels.Email, nil)
 
 	require.NoError(t, err)
 	assert.False(t, route.Held())
@@ -45,7 +44,7 @@ func TestTheRouteOfANamedIntegrationThatCannotSendIsHeld(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			env := testhelper.Setup(t)
 
-			route, err := newModule(env, time.Now).Route(context.Background(), acme(env), channels.Email, &id)
+			route, err := newModule(env, time.Now).Route(t.Context(), acme(env), channels.Email, &id)
 
 			require.NoError(t, err)
 			assert.Equal(t, holdreason.NoIntegration, route.Hold)
@@ -64,16 +63,16 @@ func TestASendThroughADisabledNamedIntegrationIsHeld(t *testing.T) {
 	req := marketing(t, env, "bc:disabled", fixtures.ContactAliceID)
 	req.IntegrationID = new(int64(fixtures.IntegrationAcmeSesID))
 
-	res, err := m.Send(context.Background(), acme(env), req)
+	res, err := m.Send(t.Context(), acme(env), req)
 
 	require.NoError(t, err)
 	assert.Equal(t, outboundmessages.Held, res.Outcome)
-	route, err := m.Route(context.Background(), acme(env), channels.Email, req.IntegrationID)
+	route, err := m.Route(t.Context(), acme(env), channels.Email, req.IntegrationID)
 	require.NoError(t, err)
 	assert.Equal(t, route.Hold, res.Hold, "the send holds for the reason its route gives")
 	assert.Zero(t, res.MessageID)
 	assert.Empty(t, env.CustomerMail.Messages())
-	hold, err := m.Preflight(context.Background(), acme(env), outboundmessages.EmailContent{}, req.IntegrationID)
+	hold, err := m.Preflight(t.Context(), acme(env), outboundmessages.EmailContent{}, req.IntegrationID)
 	require.NoError(t, err)
 	assert.Equal(t, route.Hold, hold, "the plan's Preflight agrees")
 }
@@ -96,7 +95,7 @@ func TestTheProviderLimitRunsOnTheInjectedClock(t *testing.T) {
 
 	assert.Equal(t, outboundmessages.Deferral, early.Outcome, "a millisecond short of the wait")
 	assert.Equal(t, outboundmessages.Sent, due.Outcome)
-	msg, err := acme(env).OutboundMessage().Get(context.Background(), due.MessageID)
+	msg, err := acme(env).OutboundMessage().Get(t.Context(), due.MessageID)
 	require.NoError(t, err)
 	require.NotNil(t, msg.SentAt)
 	assert.WithinDuration(t, c.Now(), *msg.SentAt, time.Microsecond, "recorded sent at the module's clock")
@@ -114,7 +113,7 @@ func TestTheInstancesOutboundSendRunsOnTheInstanceClock(t *testing.T) {
 	res := send(t, env.OutboundModule(), env, "bc:1")
 
 	require.Equal(t, outboundmessages.Sent, res.Outcome)
-	msg, err := acme(env).OutboundMessage().Get(context.Background(), res.MessageID)
+	msg, err := acme(env).OutboundMessage().Get(t.Context(), res.MessageID)
 	require.NoError(t, err)
 	require.NotNil(t, msg.SentAt)
 	assert.WithinDuration(t, at, *msg.SentAt, time.Microsecond, "recorded sent at the Instance clock, an hour off the wall")
@@ -137,9 +136,9 @@ func TestTheRouteNeverGoesThroughAnotherChannelsIntegration(t *testing.T) {
 	req := marketing(t, env, "bc:sms", fixtures.ContactAliceID)
 	req.IntegrationID = new(int64(fixtures.IntegrationAcmeSmsID))
 
-	route, err := m.Route(context.Background(), acme(env), channels.Email, req.IntegrationID)
+	route, err := m.Route(t.Context(), acme(env), channels.Email, req.IntegrationID)
 	require.NoError(t, err)
-	res, err := m.Send(context.Background(), acme(env), req)
+	res, err := m.Send(t.Context(), acme(env), req)
 	require.NoError(t, err)
 
 	assert.Equal(t, holdreason.NoIntegration, route.Hold)

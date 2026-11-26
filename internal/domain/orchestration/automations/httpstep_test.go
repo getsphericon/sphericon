@@ -1,7 +1,6 @@
 package automations_test
 
 import (
-	"context"
 	"encoding/json"
 	"maps"
 	"slices"
@@ -40,7 +39,7 @@ func httpStep(url string) automationstep.HTTP {
 func TestDryRunEscapesAHostileContactNameAndKeepsTheStructure(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*automations.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	res, err := m.DryRun(ctx, env.DB.Scoped(fixtures.BabelID), fixtures.ContactHostileQuotesID, slackBody)
 	require.NoError(t, err)
@@ -57,12 +56,12 @@ func TestDryRunNamesTheErrorKindOfAnInvalidBody(t *testing.T) {
 	m := testhelper.Module[*automations.Module](env)
 	acme := env.DB.Scoped(fixtures.AcmeID)
 
-	res, err := m.DryRun(context.Background(), acme, fixtures.ContactAliceID, `{"n": {{ missing }}}`)
+	res, err := m.DryRun(t.Context(), acme, fixtures.ContactAliceID, `{"n": {{ missing }}}`)
 	require.NoError(t, err)
 	assert.Equal(t, automations.ErrorKindInvalidBody, res.ErrorKind)
 	assert.Empty(t, res.Body)
 
-	res, err = m.DryRun(context.Background(), acme, fixtures.ContactAliceID, `{"a": {% if %}}`)
+	res, err = m.DryRun(t.Context(), acme, fixtures.ContactAliceID, `{"a": {% if %}}`)
 	require.NoError(t, err)
 	assert.Equal(t, automations.ErrorKindInvalidBody, res.ErrorKind)
 }
@@ -70,7 +69,7 @@ func TestDryRunNamesTheErrorKindOfAnInvalidBody(t *testing.T) {
 func TestDryRunOfAContactOfAnotherWorkspaceIsNotFound(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*automations.Module](env)
-	_, err := m.DryRun(context.Background(), env.DB.Scoped(fixtures.GlobexID), fixtures.ContactAliceID, slackBody)
+	_, err := m.DryRun(t.Context(), env.DB.Scoped(fixtures.GlobexID), fixtures.ContactAliceID, slackBody)
 	assert.ErrorIs(t, err, automations.ErrContactNotFound)
 }
 
@@ -78,7 +77,7 @@ func TestSavingRefusesAnHTTPStepThatCannotBeSent(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*automations.Module](env)
 	acme := env.DB.Scoped(fixtures.AcmeID)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	headers := func(n int) []httpheader.Header {
 		out := make([]httpheader.Header, n)
@@ -137,7 +136,7 @@ func TestFixtureHTTPStepOpensAndItsBodyRenders(t *testing.T) {
 	m := testhelper.Module[*automations.Module](env)
 	acme := env.DB.Scoped(fixtures.AcmeID)
 
-	a, err := m.Get(context.Background(), acme, fixtures.AutomationNotifySlackID)
+	a, err := m.Get(t.Context(), acme, fixtures.AutomationNotifySlackID)
 	require.NoError(t, err)
 	steps := liveSteps(t, a)
 	opened, err := openStored(env.Cipher, steps[0])
@@ -145,7 +144,7 @@ func TestFixtureHTTPStepOpensAndItsBodyRenders(t *testing.T) {
 	assert.Equal(t, "https://hooks.slack.com/services/T000/B000/XXXX", opened.URL)
 	assert.Equal(t, "Bearer slack-demo-token", opened.Headers["Authorization"])
 
-	res, err := m.DryRun(context.Background(), acme, fixtures.ContactAliceID, steps[0].(automationstep.HTTP).Body)
+	res, err := m.DryRun(t.Context(), acme, fixtures.ContactAliceID, steps[0].(automationstep.HTTP).Body)
 	require.NoError(t, err)
 	assert.JSONEq(t, `{"text": "New signup: Alice Smith"}`, res.Body)
 }
@@ -154,7 +153,7 @@ func TestStoredHTTPStepHoldsNoPlaintextAndAnEditKeepsTheSecrets(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*automations.Module](env)
 	acme := env.DB.Scoped(fixtures.AcmeID)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	step := httpStep("https://hooks.slack.com/services/T000/SECRETPATH")
 	step.Headers = []httpheader.Header{{Name: "Authorization", Value: "Bearer hunter2"}}
@@ -214,7 +213,7 @@ func TestAnHTTPStepWithAnUnknownIDKeepsNoStoredSecret(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*automations.Module](env)
 	acme := env.DB.Scoped(fixtures.AcmeID)
-	ctx := context.Background()
+	ctx := t.Context()
 	created, err := m.Create(ctx, acme, automations.CreateInput{Name: "Notify", Trigger: automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: "signup"}}, Steps: steps(httpStep("https://hooks.example.com/x"))})
 	require.NoError(t, err)
 

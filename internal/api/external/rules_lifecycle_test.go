@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -18,7 +17,7 @@ import (
 // discardedAt set, and a write to it is not found.
 func TestExternalRulesDeleteKeepsARuleWithOrWithoutFirings(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.ExternalScoped(t, apitokens.ScopeAutomationsRead, apitokens.ScopeAutomationsWrite)
 
 	for _, rule := range []int64{fixtures.RuleTagClickedID, fixtures.RuleInactiveID} {
@@ -39,7 +38,7 @@ func TestExternalRulesDeleteKeepsARuleWithOrWithoutFirings(t *testing.T) {
 
 func TestExternalRulesDeleteNeedsTheAutomationsWriteScope(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	reader := env.ExternalScoped(t, apitokens.ScopeAutomationsRead)
 
 	err := reader.RulesDelete(ctx, externalapi.RulesDeleteParams{ID: entityIDString(fixtures.RuleInactiveID)})

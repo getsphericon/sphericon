@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 	"time"
@@ -22,7 +21,7 @@ func archiveParams(id int64) siteapi.SiteBroadcastsArchiveParams {
 
 func listBroadcasts(t *testing.T, c *siteapi.Client, archived bool) []siteapi.SiteBroadcastResource {
 	t.Helper()
-	res, err := c.SiteBroadcastsList(context.Background(), siteapi.SiteBroadcastsListParams{
+	res, err := c.SiteBroadcastsList(t.Context(), siteapi.SiteBroadcastsListParams{
 		WorkspaceId: fixtures.AcmePublicID,
 		PageSize:    siteapi.NewOptInt32(100),
 		Archived:    siteapi.NewOptBool(archived),
@@ -41,7 +40,7 @@ func broadcastIDs(items []siteapi.SiteBroadcastResource) []int64 {
 func TestSiteBroadcastsArchiveAndRestore(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	id := int64(fixtures.BroadcastSentID)
 	before := lo.FindOrElse(listBroadcasts(t, c, false), siteapi.SiteBroadcastResource{}, func(b siteapi.SiteBroadcastResource) bool { return int64(b.ID) == id })
 
@@ -75,7 +74,7 @@ func TestSiteBroadcastsArchiveAndRestore(t *testing.T) {
 func TestSiteBroadcastsArchiveRefusesWorkInFlight(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	for _, id := range []int64{fixtures.BroadcastDraftID, fixtures.BroadcastFailedID} {
 		_, err := c.SiteBroadcastsArchive(ctx, archiveParams(id))
@@ -96,7 +95,7 @@ func TestSiteBroadcastsArchiveRefusesWorkInFlight(t *testing.T) {
 func TestSiteADraftBroadcastIsArchivedAndUnarchived(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	id := int64(fixtures.BroadcastDraftID)
 
 	out, err := c.SiteBroadcastsArchive(ctx, archiveParams(id))
@@ -119,7 +118,7 @@ func TestSiteADraftBroadcastIsArchivedAndUnarchived(t *testing.T) {
 func TestSiteAnArchivedDraftBroadcastIsReadOnly(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	id := siteapi.EntityId(fixtures.BroadcastDraftID)
 	_, err := c.SiteBroadcastsArchive(ctx, archiveParams(fixtures.BroadcastDraftID))
 	require.NoError(t, err)
@@ -146,7 +145,7 @@ func TestSiteAnArchivedDraftBroadcastIsReadOnly(t *testing.T) {
 func TestSiteAnalyticsIgnoresArchiving(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	params := siteapi.SiteAnalyticsOverviewParams{
 		WorkspaceId: fixtures.AcmePublicID,
 		Range:       siteapi.NewOptSiteAnalyticsRange(siteapi.SiteAnalyticsRange90d),
@@ -170,7 +169,7 @@ func TestSiteAnalyticsIgnoresArchiving(t *testing.T) {
 func TestSiteBroadcastsArchiveIsAudited(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := c.SiteBroadcastsArchive(ctx, archiveParams(fixtures.BroadcastSentID))
 	require.NoError(t, err)

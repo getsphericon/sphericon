@@ -25,7 +25,8 @@ import (
 // does not wait for its poll, which with a listener runs only every few seconds. It runs on a
 // database of its own, since a notification is only sent on commit.
 func TestAListeningClientWorksAJobInsertedElsewhereAtOnce(t *testing.T) {
-	ctx := context.Background()
+	// The job client is stopped by a cleanup, which runs after t.Context() is done.
+	ctx := context.WithoutCancel(t.Context())
 	url := testhelper.RealDBURL(t)
 	pool, err := sql.Open("pgx", url)
 	require.NoError(t, err)
@@ -46,7 +47,7 @@ func TestAListeningClientWorksAJobInsertedElsewhereAtOnce(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.NoError(t, client.Start(ctx))
-	t.Cleanup(func() { cleanup.Report("stop the job client", client.Stop(context.Background())) })
+	t.Cleanup(func() { cleanup.Report("stop the job client", client.Stop(context.WithoutCancel(t.Context()))) })
 	require.Eventually(t, func() bool {
 		n, err := testhelper.Listeners(ctx, pool)
 		return err == nil && n > 0

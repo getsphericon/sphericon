@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -18,7 +17,7 @@ import (
 func TestExternalTrackingDomainLifecycle(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeTrackingDomainsRead, apitokens.ScopeTrackingDomainsWrite)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	set, err := c.TrackingDomainsSet(ctx, &externalapi.SetTrackingDomainInput{Host: "links.acme.com"})
 	require.NoError(t, err)
@@ -44,7 +43,7 @@ func TestExternalTrackingDomainLifecycle(t *testing.T) {
 
 func TestExternalTrackingDomainsNeedTheirScopes(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	reader := env.ExternalScoped(t, apitokens.ScopeTrackingDomainsRead)
 	_, err := reader.TrackingDomainsSet(ctx, &externalapi.SetTrackingDomainInput{Host: "links.acme.com"})

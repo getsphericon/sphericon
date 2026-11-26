@@ -76,7 +76,7 @@ func TestEverySurfaceAnswersARefusalAlike(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			for surface, of := range surfaces {
-				assert.Equal(t, tc.want, of(context.Background(), tc.err), surface)
+				assert.Equal(t, tc.want, of(t.Context(), tc.err), surface)
 			}
 		})
 	}
@@ -84,6 +84,6 @@ func TestEverySurfaceAnswersARefusalAlike(t *testing.T) {
 
 // A refusal's code reaches the external surface as its own enum member.
 func TestARefusalCodeIsTheSurfacesOwnMember(t *testing.T) {
-	got := problem.External(context.Background(), errForbidden)
+	got := problem.External(t.Context(), errForbidden)
 	assert.Equal(t, externalapi.NewOptProblemCode(externalapi.ProblemCodePermissionRequired), got.Response.Code)
 }

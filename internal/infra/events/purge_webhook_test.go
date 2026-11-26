@@ -1,7 +1,6 @@
 package events_test
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"testing"
@@ -23,7 +22,7 @@ import (
 // body is exactly what dispatch hands to a queued delivery.
 func deliveryBody(t *testing.T, env *testhelper.TestEnv, ev events.DomainEvent) []byte {
 	t.Helper()
-	ctx := context.Background()
+	ctx := t.Context()
 	before := len(env.QueuedEnvelopes(t))
 	require.NoError(t, env.Bus.WithinTx(ctx, func(_ *ent.Client, pub events.Publisher) error {
 		return pub.Publish(ctx, ev)
@@ -62,7 +61,7 @@ func withoutPath(t *testing.T, body []byte, path ...string) []byte {
 // a change to the event envelope cannot make an Erasure miss one.
 func TestPurgeWebhookJobsMatchesTheBodyDispatchBuilds(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	byID := deliveryBody(t, env, &events.ContactCreated{WorkspaceID: fixtures.InitechID, ContactID: fixtures.ContactErasableID})
 	byAddress := deliveryBody(t, env, &events.CollectedEvent{WorkspaceID: fixtures.InitechID, Action: "page_view", Email: "Erin@Initech.test"})

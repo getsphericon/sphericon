@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -24,7 +23,7 @@ func emailStepVia(id externalapi.OptNilEntityId) externalapi.EmailStepInput {
 func TestExternalAutomationStepsNameTheirIntegration(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeAutomationsRead, apitokens.ScopeAutomationsWrite)
-	ctx := context.Background()
+	ctx := t.Context()
 	mailgun := externalapi.NewOptNilEntityId(entityIDString(fixtures.IntegrationAcmeMailgunID))
 
 	res, err := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{

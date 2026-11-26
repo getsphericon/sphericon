@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -16,7 +15,7 @@ import (
 func TestSiteBroadcastsCreateRefusesAnArchivedSegmentOrIntegration(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	workspaceID := siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID}
 	before := env.DB.Broadcast.Query().CountX(ctx)
 
@@ -42,7 +41,7 @@ func TestSiteBroadcastsCreateRefusesAnArchivedSegmentOrIntegration(t *testing.T)
 func TestSiteBroadcastsUpdateRefusesAnArchivedSegmentOrIntegration(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	params := siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastDraftID)}
 	before := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID)
 

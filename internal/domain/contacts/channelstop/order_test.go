@@ -1,7 +1,6 @@
 package channelstop_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -90,12 +89,12 @@ func TestConcurrentObservationsOfANumberApplyInTheOrderTheyOccurred(t *testing.T
 	env := testhelper.Setup(t, testhelper.Committed())
 	t1 := time.Date(2026, 11, 1, 10, 0, 0, 0, time.UTC)
 	release := env.HoldOpen(t, env.DB.Scoped(fixtures.AcmeID), func(_ *ent.Scoped, pub events.Publisher) error {
-		return pub.Publish(context.Background(), &events.SmsStopObserved{
+		return pub.Publish(t.Context(), &events.SmsStopObserved{
 			WorkspaceID: fixtures.AcmeID, Phone: texter, Via: events.UnsubscribedByKeyword, DedupID: "stop", ObservedAt: t1.Add(time.Minute),
 		})
 	})
 	errs := env.QueueBehind(t, release, testhelper.Writer{Name: "older start", Run: func() error {
-		return env.Bus.Publish(context.Background(), &events.SmsStartObserved{
+		return env.Bus.Publish(t.Context(), &events.SmsStartObserved{
 			WorkspaceID: fixtures.AcmeID, Phone: texter, DedupID: "start", ObservedAt: t1,
 		})
 	}})

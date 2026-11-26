@@ -1,7 +1,6 @@
 package analyticsreport_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -17,7 +16,7 @@ import (
 func opensByHourAt(t *testing.T, env *testhelper.TestEnv, ws int64, w analyticsreport.Window, now time.Time) *analyticsreport.OpensByHour {
 	t.Helper()
 	m := analyticsreport.New(linkclick.New(), func() time.Time { return now }, 0)
-	r, err := m.OpensByHour(context.Background(), env.DB.Scoped(ws), w)
+	r, err := m.OpensByHour(t.Context(), env.DB.Scoped(ws), w)
 	require.NoError(t, err)
 	return r
 }
@@ -45,7 +44,7 @@ func TestAZoneChangeMovesTheSameOpensToAnotherHourAndDay(t *testing.T) {
 	now := time.Date(2026, 7, 20, 12, 0, 0, 0, time.UTC)
 	inNewYork := opensByHourAt(t, env, fixtures.GothamID, analyticsreport.Window30Days, now)
 
-	require.NoError(t, env.DB.Workspace.UpdateOneID(fixtures.GothamID).SetTimezone("UTC").Exec(context.Background()))
+	require.NoError(t, env.DB.Workspace.UpdateOneID(fixtures.GothamID).SetTimezone("UTC").Exec(t.Context()))
 	inUTC := opensByHourAt(t, env, fixtures.GothamID, analyticsreport.Window30Days, now)
 
 	assert.Equal(t, 2, opens(inNewYork, 2, 22), "Tuesday 22:00 in New York")

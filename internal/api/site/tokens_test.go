@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -21,7 +20,7 @@ import (
 func TestSiteTokensCreateListRevoke(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// Create returns the full secret once.
 	created, err := c.SiteTokensCreate(ctx,
@@ -53,7 +52,7 @@ func TestSiteTokensCreateListRevoke(t *testing.T) {
 func TestSiteTokensListIsInCreationOrderAndKeepsRevoked(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	list, err := c.SiteTokensList(ctx, siteapi.SiteTokensListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
@@ -71,14 +70,14 @@ func TestSiteTokensWorkspaceNotFound(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	_, err := c.SiteTokensList(context.Background(), siteapi.SiteTokensListParams{WorkspaceId: "NoSuchWs"})
+	_, err := c.SiteTokensList(t.Context(), siteapi.SiteTokensListParams{WorkspaceId: "NoSuchWs"})
 	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 }
 
 func TestSiteTokensNeedAnOwnerOrAdmin(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.MemberMaryEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := c.SiteTokensCreate(ctx,
 		&siteapi.SiteCreateTokenInput{Name: "sneaky", Scopes: []siteapi.ApiTokenScope{"contacts:write"}},
@@ -98,7 +97,7 @@ func TestSiteTokensNeedAnOwnerOrAdmin(t *testing.T) {
 func TestSiteTokensRename(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	params := siteapi.SiteTokensUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.ProductionTokenID}
 

@@ -52,7 +52,7 @@ func total(counts []secrets.Count, pick func(secrets.Count) int) int {
 // retire the old key, and read every stored secret with what is left.
 func TestRotateReencryptAndRetireLeaveEveryStoredSecretReadable(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	cfg, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 
@@ -178,7 +178,7 @@ func TestRotateReencryptAndRetireLeaveEveryStoredSecretReadable(t *testing.T) {
 // Rule is deleted: every version of a deleted Rule, its draft included, reads under the retired key.
 func TestReencryptCoversEveryVersionOfADeletedRule(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	cfg, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 
@@ -223,7 +223,7 @@ func TestReencryptCoversEveryVersionOfADeletedRule(t *testing.T) {
 // A value the keyset cannot read means a key is missing: the run stops and says where.
 func TestReencryptStopsOnAValueNoKeyReads(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	foreign, err := secrets.GenerateKeysetBase64()
 	require.NoError(t, err)
 	foreignKey := keysetCipher(t, foreign)

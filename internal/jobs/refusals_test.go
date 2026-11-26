@@ -24,7 +24,7 @@ var errRefused = validation.Refuse("test: refused", i18n.ErrorsNameEmpty)
 func TestARefusalEndsTheJobAndAnyOtherErrorRetriesIt(t *testing.T) {
 	m := &jobs.RefusalsEnd{}
 	work := func(err error) error {
-		return m.Work(context.Background(), &rivertype.JobRow{Kind: "refused"}, func(context.Context) error { return err })
+		return m.Work(t.Context(), &rivertype.JobRow{Kind: "refused"}, func(context.Context) error { return err })
 	}
 
 	var cancel *river.JobCancelError

@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 	"time"
@@ -20,7 +19,7 @@ import (
 // so retrying it replays the failure as a 409 instead of sending.
 func TestExternalEmailsSendFailedRenderSpendsTheIdempotencyKey(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.ExternalScoped(t, apitokens.ScopeEmailsSend)
 
 	send := func() error {
@@ -46,7 +45,7 @@ func TestExternalEmailsSendFailedRenderSpendsTheIdempotencyKey(t *testing.T) {
 // and records no message, so the request can succeed once the freeze is lifted.
 func TestExternalEmailsSendIsHeldWhileTheWorkspaceIsSuspended(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.ExternalScoped(t, apitokens.ScopeEmailsSend)
 	tmpl := variablesTemplate(env.DB)
 	env.SuspendWorkspace(ctx, fixtures.AcmeID, time.Now())

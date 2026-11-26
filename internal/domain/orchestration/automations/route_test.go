@@ -1,7 +1,6 @@
 package automations_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -20,7 +19,7 @@ import (
 // live version and the status stay as they were.
 func TestPublishIsRefusedWhileAnyStepsIntegrationCannotSend(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := testhelper.Module[*automations.Module](env)
 
@@ -46,7 +45,7 @@ func TestPublishIsRefusedWhileAnyStepsIntegrationCannotSend(t *testing.T) {
 // making it active again arms it anew: Publish without a draft is refused as well.
 func TestResumingAnAutomationIsRefusedOnceItsIntegrationCannotSend(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := testhelper.Module[*automations.Module](env)
 	mailgun := int64(fixtures.IntegrationAcmeMailgunID)
@@ -69,7 +68,7 @@ func TestResumingAnAutomationIsRefusedOnceItsIntegrationCannotSend(t *testing.T)
 // stops its Publish.
 func TestPublishWithoutASendStepDoesNotAskTheRoute(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := testhelper.Module[*automations.Module](env)
 	_, err := m.Update(ctx, s, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, s, fixtures.AutomationHoldDemoID),

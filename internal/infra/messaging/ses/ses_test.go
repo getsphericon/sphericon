@@ -1,7 +1,6 @@
 package ses_test
 
 import (
-	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -110,7 +109,7 @@ func TestSendRawContent(t *testing.T) {
 	api := newSESAPI(t, http.StatusOK, okBody)
 	sender := build(t, api.srv.URL)
 
-	receipt, err := sender.Send(context.Background(), messaging.EmailMessage{
+	receipt, err := sender.Send(t.Context(), messaging.EmailMessage{
 		To: "rcpt@example.com", Subject: "Hello", Text: "plain body", ListUnsubscribeURL: "https://x.test/u",
 	})
 	require.NoError(t, err)
@@ -150,7 +149,7 @@ func TestSendMessageFromOverridesDefault(t *testing.T) {
 	api := newSESAPI(t, http.StatusOK, okBody)
 	sender := build(t, api.srv.URL)
 
-	_, err := sender.Send(context.Background(), messaging.EmailMessage{
+	_, err := sender.Send(t.Context(), messaging.EmailMessage{
 		From: "news@acme.com", To: "rcpt@example.com", Subject: "s", Text: "x",
 	})
 	require.NoError(t, err)
@@ -158,7 +157,7 @@ func TestSendMessageFromOverridesDefault(t *testing.T) {
 }
 
 func TestSendErrors(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	msg := messaging.EmailMessage{To: "rcpt@example.com", Subject: "s", Text: "x"}
 
 	t.Run("invalid message never reaches the API", func(t *testing.T) {
@@ -337,7 +336,7 @@ func awsQuotaReader(t *testing.T, serverURL string) messaging.QuotaReader {
 }
 
 func TestSendQuota(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("reads the account's rate and daily quota", func(t *testing.T) {
 		api := newSESAPI(t, http.StatusOK, quotaBody("50000.0", "14.0"))
@@ -429,7 +428,7 @@ func TestSendRefusesPrivateEndpoint(t *testing.T) {
 	built, err := ses.Descriptor().Build([]byte(raw), messaging.Deps{})
 	require.NoError(t, err)
 
-	_, err = built.(messaging.EmailSender).Send(context.Background(), messaging.EmailMessage{To: "rcpt@example.com", Subject: "Hello", Text: "body"})
+	_, err = built.(messaging.EmailSender).Send(t.Context(), messaging.EmailMessage{To: "rcpt@example.com", Subject: "Hello", Text: "body"})
 	require.Error(t, err, "the production client must not dial a loopback endpoint")
 	assert.Empty(t, api.auth, "no signed request reached the endpoint")
 }
@@ -440,7 +439,7 @@ func TestSendPutsTheConfiguredReplyToOnTheMessage(t *testing.T) {
 	built, err := ses.NewDescriptor(http.DefaultClient).Build([]byte(raw), messaging.Deps{})
 	require.NoError(t, err)
 
-	_, err = built.(messaging.EmailSender).Send(context.Background(), messaging.EmailMessage{To: "rcpt@example.com", Subject: "s", Text: "x"})
+	_, err = built.(messaging.EmailSender).Send(t.Context(), messaging.EmailMessage{To: "rcpt@example.com", Subject: "s", Text: "x"})
 	require.NoError(t, err)
 
 	mime := api.rawMessage(t)

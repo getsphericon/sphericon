@@ -1,7 +1,6 @@
 package outboundmessages_test
 
 import (
-	"context"
 	"errors"
 	"testing"
 	"time"
@@ -19,7 +18,7 @@ import (
 // though its claim is long past the lease that would otherwise let it be failed.
 func TestAFinalMessageIsNeverMarkedFailed(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
 	for _, status := range []outboundmessage.Status{

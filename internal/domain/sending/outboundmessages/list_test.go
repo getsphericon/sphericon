@@ -1,7 +1,6 @@
 package outboundmessages_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -20,7 +19,7 @@ func TestListTransactionalPagesOnlyTransactionalMessagesNewestFirst(t *testing.T
 	m := newModule(env, time.Now)
 	s := env.DB.Scoped(fixtures.AcmeID)
 
-	all, err := m.ListTransactional(context.Background(), s, pagination.Params{Page: 1, PageSize: 100})
+	all, err := m.ListTransactional(t.Context(), s, pagination.Params{Page: 1, PageSize: 100})
 	require.NoError(t, err)
 	require.Greater(t, len(all.Items), 2)
 	kinds := make([]outboundmessage.Kind, len(all.Items))
@@ -33,7 +32,7 @@ func TestListTransactionalPagesOnlyTransactionalMessagesNewestFirst(t *testing.T
 	assert.Equal(t, []outboundmessage.Kind{outboundmessage.KindTransactional}, lo.Uniq(kinds))
 	assert.IsDecreasing(t, ids)
 
-	second, err := m.ListTransactional(context.Background(), s, pagination.Params{Page: 2, PageSize: 1})
+	second, err := m.ListTransactional(t.Context(), s, pagination.Params{Page: 2, PageSize: 1})
 	require.NoError(t, err)
 	require.Len(t, second.Items, 1)
 	assert.Equal(t, all.Items[1].ID, second.Items[0].ID)

@@ -1,7 +1,6 @@
 package outboundmessages_test
 
 import (
-	"context"
 	"errors"
 	"testing"
 	"time"
@@ -31,7 +30,7 @@ func TestProviderTooFastIsADeferralThenSentExactlyOnce(t *testing.T) {
 	assert.Empty(t, res.SkippedReason)
 	assert.Empty(t, res.Failure)
 
-	n, err := acme(env).OutboundMessage().Query().Where(outboundmessage.IdempotencyKey("bc:fast")).Count(context.Background())
+	n, err := acme(env).OutboundMessage().Query().Where(outboundmessage.IdempotencyKey("bc:fast")).Count(t.Context())
 	require.NoError(t, err)
 	assert.Zero(t, n, "no claim is left behind: nothing failed, no attempt is spent")
 
@@ -70,7 +69,7 @@ func TestWrappedBusyReplyIsStillADeferral(t *testing.T) {
 func TestTransactionalBusyReplyIsARetryableErrorNotADeferral(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := newModule(env, time.Now)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	env.CustomerMail.SetErr(messaging.ErrBusy)
 	res, err := m.Send(ctx, acme(env), transactional("tx:fast", "a@example.com"))
@@ -88,7 +87,7 @@ func TestGenuineProviderFailureStillFailsTheMessage(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := startClock()
 	m := configured(env, c.Now, outboundmessages.Config{Lease: time.Nanosecond})
-	ctx := context.Background()
+	ctx := t.Context()
 
 	env.CustomerMail.SetErr(errors.New("554 mailbox does not exist"))
 	_, err := m.Send(ctx, acme(env), marketing(t, env, "bc:perm", fixtures.ContactAliceID))

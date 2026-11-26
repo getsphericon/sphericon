@@ -1,7 +1,6 @@
 package logging_test
 
 import (
-	"context"
 	"io"
 	"log/slog"
 	"testing"
@@ -20,8 +19,8 @@ func TestSetupInstallsDefaultLogger(t *testing.T) {
 	logging.Setup(&config.Config{LogFormat: "json", LogLevel: slog.LevelError})
 
 	def := slog.Default()
-	warnEnabled := def.Enabled(context.Background(), slog.LevelWarn)
-	errorEnabled := def.Enabled(context.Background(), slog.LevelError)
+	warnEnabled := def.Enabled(t.Context(), slog.LevelWarn)
+	errorEnabled := def.Enabled(t.Context(), slog.LevelError)
 	require.False(t, warnEnabled, "default logger should be at error level after Setup")
 	require.True(t, errorEnabled, "default logger should emit errors after Setup")
 }
@@ -32,8 +31,8 @@ func TestNewLogsFromTheConfiguredLevel(t *testing.T) {
 		for _, level := range []slog.Level{slog.LevelDebug, slog.LevelInfo, slog.LevelWarn, slog.LevelError} {
 			logger := logging.New(&config.Config{LogFormat: format, LogLevel: level}, io.Discard)
 
-			assert.Truef(t, logger.Enabled(context.Background(), level), "%s at %v emits %v", format, level, level)
-			assert.Falsef(t, logger.Enabled(context.Background(), level-1), "%s at %v drops what is below it", format, level)
+			assert.Truef(t, logger.Enabled(t.Context(), level), "%s at %v emits %v", format, level, level)
+			assert.Falsef(t, logger.Enabled(t.Context(), level-1), "%s at %v drops what is below it", format, level)
 		}
 	}
 }

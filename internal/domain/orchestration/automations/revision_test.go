@@ -1,7 +1,6 @@
 package automations_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -18,7 +17,7 @@ import (
 func TestASaveOnARevisionAlreadyMovedPastIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*automations.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	read := env.AutomationRevision(ctx, t, fixtures.AutomationWinBackID)
 	first := []automationstep.Payload{automationstep.ApplyTag{Tag: "first"}}
@@ -40,7 +39,7 @@ func TestASaveOnARevisionAlreadyMovedPastIsRefused(t *testing.T) {
 func TestARenameAndADraftEditMoveTheRevisionOnce(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*automations.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	read := env.AutomationRevision(ctx, t, fixtures.AutomationWinBackID)
 	name := "Renamed"
@@ -58,7 +57,7 @@ func TestARenameAndADraftEditMoveTheRevisionOnce(t *testing.T) {
 func TestAPublishOnARevisionAlreadyMovedPastPublishesNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*automations.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	read := env.AutomationRevision(ctx, t, fixtures.AutomationWinBackID)
 	name := "Moved meanwhile"

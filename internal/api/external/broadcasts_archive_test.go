@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -17,7 +16,7 @@ import (
 
 func listedBroadcastIDs(t *testing.T, c *externalapi.Client, archived bool) []externalapi.EntityId {
 	t.Helper()
-	list, err := c.BroadcastsList(context.Background(), externalapi.BroadcastsListParams{
+	list, err := c.BroadcastsList(t.Context(), externalapi.BroadcastsListParams{
 		PageSize: externalapi.NewOptInt32(100),
 		Archived: externalapi.NewOptBool(archived),
 	})
@@ -30,7 +29,7 @@ func listedBroadcastIDs(t *testing.T, c *externalapi.Client, archived bool) []ex
 func TestExternalBroadcastsArchiveAndRestore(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, authorScopes...)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	archived, err := c.BroadcastsArchive(ctx, externalapi.BroadcastsArchiveParams{ID: sentBroadcast})
 	require.NoError(t, err)
@@ -59,7 +58,7 @@ func TestExternalBroadcastsArchiveAndRestore(t *testing.T) {
 func TestExternalAnArchivedDraftBroadcastIsReadOnly(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, authorScopes...)
-	ctx := context.Background()
+	ctx := t.Context()
 	_, err := c.BroadcastsArchive(ctx, externalapi.BroadcastsArchiveParams{ID: draftBroadcast})
 	require.NoError(t, err)
 
@@ -75,7 +74,7 @@ func TestExternalAnArchivedDraftBroadcastIsReadOnly(t *testing.T) {
 func TestExternalBroadcastsArchiveNeedsTheWriteScope(t *testing.T) {
 	env := testhelper.Setup(t)
 	readOnly := env.ExternalScoped(t, apitokens.ScopeBroadcastsRead)
-	ctx := context.Background()
+	ctx := t.Context()
 	id := entityIDString(fixtures.BroadcastSentID)
 
 	_, err := readOnly.BroadcastsArchive(ctx, externalapi.BroadcastsArchiveParams{ID: id})

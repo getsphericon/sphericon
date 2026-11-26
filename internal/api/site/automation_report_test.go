@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"encoding/json"
 	"reflect"
 	"strings"
@@ -42,7 +41,7 @@ func TestTheAutomationReportCountsAnEnrollmentThatEndsTodayInThePeriod(t *testin
 	}
 	before := automationResults(t, c, params)
 
-	exited, err := env.ExitEnrollment(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationTagOnEngagementID, fixtures.ContactAliceID)
+	exited, err := env.ExitEnrollment(t.Context(), env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationTagOnEngagementID, fixtures.ContactAliceID)
 	require.NoError(t, err)
 	require.True(t, exited)
 	after := automationResults(t, c, params)

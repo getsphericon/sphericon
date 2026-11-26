@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -20,7 +19,7 @@ import (
 // steps.
 func TestExternalAutomationsRead(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.ExternalScoped(t, apitokens.ScopeAutomationsRead)
 
 	listed, err := c.AutomationsList(ctx, externalapi.AutomationsListParams{})
@@ -63,7 +62,7 @@ func TestExternalAutomationsRead(t *testing.T) {
 // are validated; update and delete are workspace-scoped.
 func TestExternalAutomationsCreateUpdateDelete(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.ExternalScoped(t, apitokens.ScopeAutomationsRead, apitokens.ScopeAutomationsWrite, apitokens.ScopeAutomationsPublish)
 
 	a, err := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
@@ -114,7 +113,7 @@ func TestExternalAutomationsCreateUpdateDelete(t *testing.T) {
 // AutomationWinBack is inactive.
 func TestExternalAutomationsPublishNeedsThePublishScope(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	id := entityIDString(fixtures.AutomationWinBackID)
 
 	authoring := env.ExternalScoped(t, apitokens.ScopeAutomationsRead, apitokens.ScopeAutomationsWrite)
@@ -140,7 +139,7 @@ func TestExternalAutomationsPublishNeedsThePublishScope(t *testing.T) {
 // publish scope alone is not. AutomationWelcomeSeries is active.
 func TestExternalAutomationsDeactivateNeedsOnlyTheWriteScope(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	id := entityIDString(fixtures.AutomationWelcomeSeriesID)
 
 	publisher := env.ExternalScoped(t, apitokens.ScopeAutomationsPublish)

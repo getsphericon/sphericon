@@ -1,7 +1,6 @@
 package jobs_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -43,12 +42,12 @@ var (
 func pruneEvents(t *testing.T, env *testhelper.TestEnv, retention time.Duration) {
 	t.Helper()
 	w := jobs.NewPruneEventsWorker(env.DB, rules.New(env.Cipher, env.Bus, nil, time.Now), retention, time.Now)
-	require.NoError(t, w.Work(context.Background(), job(jobs.PruneEventsArgs{})))
+	require.NoError(t, w.Work(t.Context(), job(jobs.PruneEventsArgs{})))
 }
 
 func presentEvents(t *testing.T, env *testhelper.TestEnv, ids []int64) int {
 	t.Helper()
-	return env.DB.Event.Query().Where(event.IDIn(ids...)).CountX(context.Background())
+	return env.DB.Event.Query().Where(event.IDIn(ids...)).CountX(t.Context())
 }
 
 func TestPruneEventsDeletesAnalyticalPastWindowOnly(t *testing.T) {
@@ -70,28 +69,28 @@ func TestPruneEventsKeepsEvidentiaryRegardlessOfAge(t *testing.T) {
 
 func TestPruneEventsDisabledByZeroRetention(t *testing.T) {
 	env := testhelper.Setup(t)
-	before := env.DB.Event.Query().CountX(context.Background())
+	before := env.DB.Event.Query().CountX(t.Context())
 
 	pruneEvents(t, env, 0)
 
-	assert.Equal(t, before, env.DB.Event.Query().CountX(context.Background()))
+	assert.Equal(t, before, env.DB.Event.Query().CountX(t.Context()))
 }
 
 func TestPruneEventsIsIdempotent(t *testing.T) {
 	env := testhelper.Setup(t)
 
 	pruneEvents(t, env, eventsRetention)
-	after := env.DB.Event.Query().CountX(context.Background())
+	after := env.DB.Event.Query().CountX(t.Context())
 	pruneEvents(t, env, eventsRetention)
 
-	assert.Equal(t, after, env.DB.Event.Query().CountX(context.Background()))
+	assert.Equal(t, after, env.DB.Event.Query().CountX(t.Context()))
 }
 
 func TestPruneEventsDeletesInBoundedBatches(t *testing.T) {
 	env := testhelper.Setup(t)
 
 	// A batch of one forces several rounds; every expired row still goes.
-	deleted, err := events.PruneEvents(context.Background(), env.DB, eventsRetention, 1, time.Now())
+	deleted, err := events.PruneEvents(t.Context(), env.DB, eventsRetention, 1, time.Now())
 
 	require.NoError(t, err)
 	assert.GreaterOrEqual(t, deleted, int64(len(expiring)))
@@ -101,7 +100,7 @@ func TestPruneEventsDeletesInBoundedBatches(t *testing.T) {
 
 func firingPresent(t *testing.T, env *testhelper.TestEnv, id int64) bool {
 	t.Helper()
-	return env.DB.RuleFiring.Query().Where(rulefiring.ID(id)).ExistX(context.Background())
+	return env.DB.RuleFiring.Query().Where(rulefiring.ID(id)).ExistX(t.Context())
 }
 
 // Firings expire with the analytical window (ADR 0019): the same job, the same cutoff.

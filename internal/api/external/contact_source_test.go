@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -16,7 +15,7 @@ import (
 func TestContactsCreatedThroughTheExternalAPICarryTheAPISource(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := c.ContactsCreate(ctx, &externalapi.CreateContactInput{Email: externalapi.NewOptNilEmailAddress("source-single@example.com")})
 	require.NoError(t, err)

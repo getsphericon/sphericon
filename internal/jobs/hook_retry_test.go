@@ -83,7 +83,7 @@ func newHookRetryHarness(t *testing.T, status int, retryAfter string) *hookRetry
 func newHookRetryHarnessAt(t *testing.T, status int, retryAfter string, now time.Time) *hookRetryHarness {
 	t.Helper()
 	env := newRiverEnv(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	receiverURL, allow := newRetryReceiver(t, status, retryAfter)
 	_, err := env.DB.Scoped(fixtures.AcmeID).WebhookEndpoint().UpdateOneID(fixtures.WebhookCodebasicsID).SetURL(receiverURL).Save(ctx)
 	require.NoError(t, err)
@@ -160,7 +160,7 @@ func TestDeliverWebhookRateLimitLeavesAFailingRunAsItWas(t *testing.T) {
 	now := time.Now().UTC().Truncate(time.Second)
 	h := newHookRetryHarnessAt(t, http.StatusTooManyRequests, httpDate(now.Add(10*time.Minute)), now)
 	_, err := h.env.DB.Scoped(fixtures.AcmeID).WebhookEndpointHealth().Update().Where(webhookendpointhealth.WebhookEndpointID(fixtures.WebhookCodebasicsID)).
-		SetConsecutiveFailures(3).SetFailingSince(h.now.Add(-time.Hour)).Save(context.Background())
+		SetConsecutiveFailures(3).SetFailingSince(h.now.Add(-time.Hour)).Save(t.Context())
 	require.NoError(t, err)
 
 	res, err := h.work(webhook.HookMaxAttempts())
@@ -193,7 +193,7 @@ func TestDeliverWebhookGoneDisablesTheEndpointAndTheJobEnds(t *testing.T) {
 	assert.NotNil(t, h.endpoint().DisabledAt)
 
 	// The retry finds the endpoint disabled and drops the delivery.
-	again, err := h.worker.WorkJob(context.Background(), h.t, h.tx, res.Job)
+	again, err := h.worker.WorkJob(t.Context(), h.t, h.tx, res.Job)
 	require.NoError(t, err)
 	assert.Equal(t, rivertype.JobStateCompleted, again.Job.State)
 }

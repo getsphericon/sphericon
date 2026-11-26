@@ -1,7 +1,6 @@
 package jobs_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -25,7 +24,7 @@ func TestAFiringRunsTheLiveVersionNotTheDraft(t *testing.T) {
 
 func TestAfterPublishTheNextFiringRunsTheNewVersion(t *testing.T) {
 	env := testhelper.Setup(t)
-	_, err := rules.New(env.Cipher, env.Bus, nil, time.Now).Publish(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.RuleTagClickedID, env.RuleRevision(t.Context(), t, fixtures.RuleTagClickedID))
+	_, err := rules.New(env.Cipher, env.Bus, nil, time.Now).Publish(t.Context(), env.DB.Scoped(fixtures.AcmeID), fixtures.RuleTagClickedID, env.RuleRevision(t.Context(), t, fixtures.RuleTagClickedID))
 	require.NoError(t, err)
 
 	f := fireAndRun(t, env, fixtures.ContactBobID, "rule_click", "evt-published")
@@ -38,7 +37,7 @@ func TestAfterPublishTheNextFiringRunsTheNewVersion(t *testing.T) {
 // wait does not change what it runs.
 func TestAFiringInProgressKeepsTheVersionItBeganWith(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 	_, err := m.Publish(ctx, s, fixtures.RuleTagClickedID, testhelper.AutomationRevisionIn(ctx, t, s, fixtures.RuleTagClickedID))

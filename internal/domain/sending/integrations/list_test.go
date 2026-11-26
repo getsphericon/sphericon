@@ -1,7 +1,6 @@
 package integrations_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -17,16 +16,16 @@ func TestListPagesTheWorkspaceIntegrationsAscendingByID(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*integrations.Module](env)
 
-	first, err := m.List(context.Background(), env.DB.Scoped(fixtures.AcmeID), pagination.Params{Page: 1, PageSize: 1})
+	first, err := m.List(t.Context(), env.DB.Scoped(fixtures.AcmeID), pagination.Params{Page: 1, PageSize: 1})
 	require.NoError(t, err)
 	require.Len(t, first.Items, 1)
 	assert.Equal(t, int64(fixtures.IntegrationAcmeDefaultID), first.Items[0].Row.ID)
-	total, err := env.DB.Scoped(fixtures.AcmeID).Integration().Query().Count(context.Background())
+	total, err := env.DB.Scoped(fixtures.AcmeID).Integration().Query().Count(t.Context())
 	require.NoError(t, err)
 	assert.Equal(t, total, first.TotalItems)
 	assert.Equal(t, total, first.TotalPages, "one Integration a page")
 
-	second, err := m.List(context.Background(), env.DB.Scoped(fixtures.AcmeID), pagination.Params{Page: 2, PageSize: 1})
+	second, err := m.List(t.Context(), env.DB.Scoped(fixtures.AcmeID), pagination.Params{Page: 2, PageSize: 1})
 	require.NoError(t, err)
 	require.Len(t, second.Items, 1)
 	assert.Equal(t, int64(fixtures.IntegrationAcmeSesID), second.Items[0].Row.ID)

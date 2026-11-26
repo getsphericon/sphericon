@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 	"time"
@@ -17,7 +16,7 @@ import (
 func TestSiteTemplatesCRUD(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
 	res, err := c.SiteTemplatesCreate(ctx, &siteapi.CreateTemplateInput{
@@ -50,7 +49,7 @@ func TestSiteTemplatesCRUD(t *testing.T) {
 func TestSiteBroadcastsTestSendHeldIs422(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	env.SuspendWorkspace(ctx, fixtures.AcmeID, time.Now())
 
@@ -64,7 +63,7 @@ func TestSiteBroadcastsTestSendHeldIs422(t *testing.T) {
 func TestSiteTemplatesMapABlankNameTo422(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	welcome := env.DB.EmailTemplate.GetX(ctx, fixtures.TemplateWelcomeID)
 	_, err := c.SiteTemplatesUpdate(ctx, &siteapi.UpdateTemplateInput{Revision: siteapi.Revision(welcome.Revision), Name: siteapi.NewOptName("")},
@@ -77,7 +76,7 @@ func TestSiteTemplatesCreateMapsABlankNameTo422(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	_, err := c.SiteTemplatesCreate(context.Background(), &siteapi.CreateTemplateInput{Name: ""},
+	_, err := c.SiteTemplatesCreate(t.Context(), &siteapi.CreateTemplateInput{Name: ""},
 		siteapi.SiteTemplatesCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 }

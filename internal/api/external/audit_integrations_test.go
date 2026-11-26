@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"encoding/json"
 	"strings"
 	"testing"
@@ -22,7 +21,7 @@ import (
 // tokenActor is the actor of the one fresh token `ExternalScoped` just minted.
 func tokenActor(t *testing.T, env *testhelper.TestEnv) events.Actor {
 	t.Helper()
-	tok, err := env.DB.ApiToken.Query().Where(apitoken.Name("actor-token"), apitoken.WorkspaceID(fixtures.AcmeID)).Only(context.Background())
+	tok, err := env.DB.ApiToken.Query().Where(apitoken.Name("actor-token"), apitoken.WorkspaceID(fixtures.AcmeID)).Only(t.Context())
 	require.NoError(t, err)
 	return events.Actor{Kind: events.ActorAPIToken, ID: testhelper.ID(tok.ID), Name: tok.Name}
 }
@@ -59,7 +58,7 @@ func assertTokenAudited(t *testing.T, env *testhelper.TestEnv, targetID external
 // reach the entry.
 func TestExternalIntegrationWritesAreAuditedUnderTheToken(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.ExternalScoped(t, apitokens.ScopeIntegrationsRead, apitokens.ScopeIntegrationsWrite)
 	scoped := env.DB.Scoped(fixtures.AcmeID)
 
@@ -86,7 +85,7 @@ func TestExternalIntegrationWritesAreAuditedUnderTheToken(t *testing.T) {
 // token, the DKIM key never reaches the entry, and the owner reads the entries on /site.
 func TestExternalSendingDomainWritesAreAuditedUnderTheToken(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.ExternalScoped(t, apitokens.ScopeSendingDomainsRead, apitokens.ScopeSendingDomainsWrite)
 	scoped := env.DB.Scoped(fixtures.AcmeID)
 

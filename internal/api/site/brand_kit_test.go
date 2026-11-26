@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -36,14 +35,14 @@ func brandKitInput() *siteapi.SiteSaveBrandKitInput {
 func saveBrandKit(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceId, in *siteapi.SiteSaveBrandKitInput) *siteapi.BrandKitResource {
 	t.Helper()
 	in.Revision = getBrandKit(t, c, workspaceID).Revision
-	res, err := c.SiteBrandKitSave(context.Background(), in, siteapi.SiteBrandKitSaveParams{WorkspaceId: workspaceID})
+	res, err := c.SiteBrandKitSave(t.Context(), in, siteapi.SiteBrandKitSaveParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	return res
 }
 
 func getBrandKit(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceId) *siteapi.BrandKitResource {
 	t.Helper()
-	res, err := c.SiteBrandKitGet(context.Background(), siteapi.SiteBrandKitGetParams{WorkspaceId: workspaceID})
+	res, err := c.SiteBrandKitGet(t.Context(), siteapi.SiteBrandKitGetParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	kit := res
 	return kit
@@ -71,7 +70,7 @@ func TestSiteBrandKitIsTheDefaultsUntilItsFirstSave(t *testing.T) {
 func TestSiteBrandKitFirstSaveMakesTheStarterTemplatesAndLaterSavesDoNot(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.VandelayOwnerArtEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.VandelayID)
 	before := s.EmailTemplate().Query().CountX(ctx)
 	lastBefore := s.EmailTemplate().Query().Order(ent.Desc(emailtemplate.FieldID)).FirstX(ctx).ID
@@ -125,7 +124,7 @@ func TestSiteBrandKitSaveIsAudited(t *testing.T) {
 func TestSiteBrandKitRecreateMakesNewStartersInTheSavedBrandAndTouchesNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.InitechOwnerOlgaEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.InitechID)
 	before := s.EmailTemplate().Query().AllX(ctx)
 
@@ -151,7 +150,7 @@ func TestSiteBrandKitRecreateNeedsASavedBrandKit(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.VandelayOwnerArtEmail)
 
-	_, err := c.SiteBrandKitRecreateStarterTemplates(context.Background(), siteapi.SiteBrandKitRecreateStarterTemplatesParams{WorkspaceId: fixtures.VandelayPublicID})
+	_, err := c.SiteBrandKitRecreateStarterTemplates(t.Context(), siteapi.SiteBrandKitRecreateStarterTemplatesParams{WorkspaceId: fixtures.VandelayPublicID})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 }
 
@@ -159,7 +158,7 @@ func TestSiteBrandKitRecreateNeedsASavedBrandKit(t *testing.T) {
 func TestSiteBrandKitEditChangesNoMessageAlreadyWritten(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.InitechOwnerOlgaEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.InitechID)
 	_, err := c.SiteBrandKitRecreateStarterTemplates(ctx, siteapi.SiteBrandKitRecreateStarterTemplatesParams{WorkspaceId: fixtures.InitechPublicID})
 	require.NoError(t, err)
@@ -196,7 +195,7 @@ func TestSiteBrandKitEditChangesNoMessageAlreadyWritten(t *testing.T) {
 
 func TestSiteBrandKitIsReadByEveryMemberAndWrittenByOwnersAndAdmins(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	member := env.SiteActor(t, fixtures.InitechMemberMaxEmail)
 	kit := getBrandKit(t, member, fixtures.InitechPublicID)
@@ -216,14 +215,14 @@ func TestSiteBrandKitIsWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
 
 	outsider := env.SiteActor(t, fixtures.OutsiderOscarEmail)
-	_, err := outsider.SiteBrandKitGet(context.Background(), siteapi.SiteBrandKitGetParams{WorkspaceId: fixtures.VandelayPublicID})
+	_, err := outsider.SiteBrandKitGet(t.Context(), siteapi.SiteBrandKitGetParams{WorkspaceId: fixtures.VandelayPublicID})
 	testhelper.SiteRefusal(t, err, http.StatusNotFound)
-	_, err = outsider.SiteBrandKitSave(context.Background(), brandKitInput(), siteapi.SiteBrandKitSaveParams{WorkspaceId: fixtures.VandelayPublicID})
+	_, err = outsider.SiteBrandKitSave(t.Context(), brandKitInput(), siteapi.SiteBrandKitSaveParams{WorkspaceId: fixtures.VandelayPublicID})
 	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 
 	owner := env.SiteActor(t, fixtures.VandelayOwnerArtEmail)
 	saveBrandKit(t, owner, fixtures.VandelayPublicID, brandKitInput())
-	globex := env.DB.BrandKit.GetX(context.Background(), fixtures.BrandKitGlobexID)
+	globex := env.DB.BrandKit.GetX(t.Context(), fixtures.BrandKitGlobexID)
 	assert.Equal(t, "#cc0000", globex.AccentColor, "saving Acme's kit leaves Globex's alone")
 }
 
@@ -245,7 +244,7 @@ func TestSiteBrandKitRefusesAValueThatCannotBeWrittenIntoAMessage(t *testing.T) 
 		t.Run(name, func(t *testing.T) {
 			in := brandKitInput()
 			mutate(in)
-			_, err := c.SiteBrandKitSave(context.Background(), in, siteapi.SiteBrandKitSaveParams{WorkspaceId: fixtures.VandelayPublicID})
+			_, err := c.SiteBrandKitSave(t.Context(), in, siteapi.SiteBrandKitSaveParams{WorkspaceId: fixtures.VandelayPublicID})
 			testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 			assert.False(t, getBrandKit(t, c, fixtures.VandelayPublicID).Saved, "a refused save stores nothing")
 		})
@@ -255,7 +254,7 @@ func TestSiteBrandKitRefusesAValueThatCannotBeWrittenIntoAMessage(t *testing.T) 
 func TestSiteBrandKitFooterIsWrittenAsTextNotMarkup(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.VandelayOwnerArtEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.VandelayID)
 	lastBefore := s.EmailTemplate().Query().Order(ent.Desc(emailtemplate.FieldID)).FirstX(ctx).ID
 

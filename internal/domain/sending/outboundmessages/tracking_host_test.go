@@ -28,7 +28,7 @@ const linkHTML = `<p><a href="https://example.com/offer">Offer</a></p>`
 // returns it as built.
 func sendFrom(t *testing.T, env *testhelper.TestEnv, m *outboundmessages.Module, ws int64, key, domain string) messaging.EmailMessage {
 	t.Helper()
-	res, err := m.Send(context.Background(), env.DB.Scoped(ws), outboundmessages.Request{
+	res, err := m.Send(t.Context(), env.DB.Scoped(ws), outboundmessages.Request{
 		Ref:         broadcastIn(t, ws),
 		Key:         key,
 		Destination: "reader@example.com",
@@ -89,7 +89,7 @@ func TestNonServingOrDisabledTrackingUsesInstanceHost(t *testing.T) {
 // as Failed for good.
 func TestTrackingHostLookupErrorIsRetriedNotFailed(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	m := tracked(env, trackingDomains(env))
 	scoped := env.DB.Scoped(fixtures.UmbrellaID)
 	lookup := errors.New("connection reset")

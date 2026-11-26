@@ -17,7 +17,7 @@ func TestFenceRunsTheEffectOnAnActiveEnrollment(t *testing.T) {
 	env := testhelper.Setup(t)
 	ran := false
 
-	err := automations.FenceOn(env.DB)(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationRunJobsPendingID, func(context.Context) error {
+	err := automations.FenceOn(env.DB)(t.Context(), env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationRunJobsPendingID, func(context.Context) error {
 		ran = true
 		return nil
 	})
@@ -31,7 +31,7 @@ func TestFenceRunsNothingOnAnExitedEnrollment(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 	ran := false
 
-	err := automations.FenceOn(env.DB)(context.Background(), s, fixtures.AutomationRunJobsExitedOnEmailID, func(context.Context) error {
+	err := automations.FenceOn(env.DB)(t.Context(), s, fixtures.AutomationRunJobsExitedOnEmailID, func(context.Context) error {
 		ran = true
 		return nil
 	})

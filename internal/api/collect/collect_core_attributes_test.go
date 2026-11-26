@@ -1,7 +1,6 @@
 package collect_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/go-faster/jx"
@@ -22,7 +21,7 @@ import (
 func TestIdentifyWritesCoreAttributesFromTraitsAndFillsFromTheBrowser(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.CollectAcme(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := c.CollectIdentifyCreate(ctx, &collectapi.CollectIdentifyInput{
 		VisitorId: "v-core",

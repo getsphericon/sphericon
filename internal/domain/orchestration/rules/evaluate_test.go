@@ -1,7 +1,6 @@
 package rules_test
 
 import (
-	"context"
 	"encoding/json"
 	"strings"
 	"testing"
@@ -25,7 +24,7 @@ import (
 func evaluate(t *testing.T, env *testhelper.TestEnv, contactID int64, action, sourceID string) []int64 {
 	t.Helper()
 	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
-	fired, err := m.Evaluate(context.Background(), env.DB.Scoped(fixtures.AcmeID), rules.Event{
+	fired, err := m.Evaluate(t.Context(), env.DB.Scoped(fixtures.AcmeID), rules.Event{
 		ContactID:  contactID,
 		Action:     action,
 		SourceID:   sourceID,
@@ -55,7 +54,7 @@ func TestEvaluateFiresTheActiveRuleOfTheTriggerEvent(t *testing.T) {
 	assert.Equal(t, []int64{fixtures.RuleTagClickedID}, fired)
 	firing := env.DB.RuleFiring.Query().
 		Where(rulefiring.RuleID(fixtures.RuleTagClickedID), rulefiring.SourceID("evt-1")).
-		OnlyX(context.Background())
+		OnlyX(t.Context())
 	assert.EqualValues(t, fixtures.ContactAliceID, firing.ContactID)
 	assert.Equal(t, "rule_click", firing.Action)
 	assert.Nil(t, firing.CompletedAt, "the Actions run on a job of their own")
@@ -91,7 +90,7 @@ func TestEvaluateFiresAnEventDeliveredTwiceOnce(t *testing.T) {
 	assert.Empty(t, again)
 	firings := env.DB.RuleFiring.Query().
 		Where(rulefiring.RuleID(fixtures.RuleTagClickedID), rulefiring.SourceID("evt-twice")).
-		AllX(context.Background())
+		AllX(t.Context())
 	assert.Len(t, firings, 1)
 	queued := env.JobsOf(t, rules.ActionsKind)
 	assert.Len(t, queued, 1, "the second delivery queued nothing")
@@ -116,7 +115,7 @@ func TestEvaluateLeavesNothingWhenTheConditionIsFalse(t *testing.T) {
 
 	assert.Equal(t, []int64{fixtures.RuleVipOnlyID}, forAlice)
 	assert.Empty(t, forBob)
-	bobs := env.DB.RuleFiring.Query().Where(rulefiring.ContactID(fixtures.ContactBobID), rulefiring.SourceID("evt-vip-bob")).AllX(context.Background())
+	bobs := env.DB.RuleFiring.Query().Where(rulefiring.ContactID(fixtures.ContactBobID), rulefiring.SourceID("evt-vip-bob")).AllX(t.Context())
 	assert.Empty(t, bobs)
 }
 
@@ -137,7 +136,7 @@ func TestEvaluateNeverReplaysAnEventRecordedBeforeActivation(t *testing.T) {
 	before := evaluate(t, env, fixtures.ContactAliceID, "rule_later", "evt-before")
 
 	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
-	after, err := m.Evaluate(context.Background(), env.DB.Scoped(fixtures.AcmeID), rules.Event{
+	after, err := m.Evaluate(t.Context(), env.DB.Scoped(fixtures.AcmeID), rules.Event{
 		ContactID: fixtures.ContactAliceID, Action: "rule_later", SourceID: "evt-after", RecordedAt: time.Now().Add(2 * time.Hour),
 	})
 	require.NoError(t, err)
@@ -153,7 +152,7 @@ func TestEvaluateFiresNothingForAnotherWorkspacesContact(t *testing.T) {
 	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 
 	// The Contact belongs to Globex; the scope is Acme's.
-	fired, err := m.Evaluate(context.Background(), env.DB.Scoped(fixtures.AcmeID), rules.Event{
+	fired, err := m.Evaluate(t.Context(), env.DB.Scoped(fixtures.AcmeID), rules.Event{
 		ContactID: fixtures.ContactGlobexID, Action: "rule_click", SourceID: "evt-foreign", RecordedAt: time.Now(),
 	})
 
@@ -166,7 +165,7 @@ func TestEvaluateFiresNothingForAnotherWorkspacesContact(t *testing.T) {
 // key, a url that is not text or an Event with no properties.
 func TestEvaluateTestsTheEventsProperties(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 
@@ -191,7 +190,7 @@ func TestEvaluateTestsTheEventsProperties(t *testing.T) {
 // as text.
 func TestEvaluateComparesANumberProperty(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 	fire := func(sourceID string, score any) int {
@@ -243,7 +242,7 @@ func evaluateQueued(t *testing.T, env *testhelper.TestEnv, m *rules.Module) {
 // second rule_revisit within a week. Liam did one yesterday, Alice none.
 func TestEvaluateCountsTheEventThatFiredTheRule(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	firedFor := func(contactID int64) bool {
 		ok, err := env.DB.RuleFiring.Query().
 			Where(rulefiring.RuleID(fixtures.RuleSecondRevisitID), rulefiring.ContactID(contactID)).
@@ -268,7 +267,7 @@ func TestEvaluateSeesAnOversizedEventsPropertiesAsAbsent(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 
-	fired, err := m.Evaluate(context.Background(), env.DB.Scoped(fixtures.AcmeID), rules.Event{
+	fired, err := m.Evaluate(t.Context(), env.DB.Scoped(fixtures.AcmeID), rules.Event{
 		ContactID: fixtures.ContactAliceID, Action: "rule_url", SourceID: "evt-oversized",
 		RecordedAt: time.Now(),
 		Properties: map[string]any{"url": "https://x.test/pricing", "pad": strings.Repeat("x", events.PropertiesBound)},

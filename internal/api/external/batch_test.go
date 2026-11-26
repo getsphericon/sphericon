@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"net"
 	"net/http"
 	"testing"
@@ -37,7 +36,7 @@ func TestExternalContactsBatchUpsertMixedItems(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
 	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 
-	ok, err := c.ContactsBatchUpsert(context.Background(), &externalapi.UpsertContactsInput{
+	ok, err := c.ContactsBatchUpsert(t.Context(), &externalapi.UpsertContactsInput{
 		Contacts: []externalapi.UpsertContactInput{
 			{Email: externalapi.NewOptNilEmailAddress("batch-new@example.com"), FirstName: externalapi.NewOptNilString("New")},
 			{Email: externalapi.NewOptNilEmailAddress(fixtures.ContactAliceEmail)},
@@ -75,7 +74,7 @@ func TestExternalContactsBatchUpsertChecksAddresses(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithClock(eventsClock), testhelper.WithMailResolver(r))
 	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 
-	ok, err := c.ContactsBatchUpsert(context.Background(), &externalapi.UpsertContactsInput{
+	ok, err := c.ContactsBatchUpsert(t.Context(), &externalapi.UpsertContactsInput{
 		Contacts: []externalapi.UpsertContactInput{
 			{Email: externalapi.NewOptNilEmailAddress("ann@missing.test")},
 			{Email: externalapi.NewOptNilEmailAddress("sales@mailinator.com")},
@@ -98,7 +97,7 @@ func TestExternalContactsBatchUpsertChecksAddresses(t *testing.T) {
 
 func TestExternalContactsBatchUpsertLimitAndScope(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
-	ctx := context.Background()
+	ctx := t.Context()
 
 	writer := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 	tooMany := make([]externalapi.UpsertContactInput, 1001)
@@ -119,7 +118,7 @@ func TestExternalEventsBatchSubmitMixedItems(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
 	c := env.ExternalScoped(t, apitokens.ScopeEventsWrite)
 
-	ok, err := c.EventsBatchSubmit(context.Background(), &externalapi.RecordEventsBatchInput{
+	ok, err := c.EventsBatchSubmit(t.Context(), &externalapi.RecordEventsBatchInput{
 		Events: []externalapi.EventInput{
 			{SubjectId: "user:" + fixtures.ContactAliceEmail, Action: "batch_a"},
 			{SubjectId: "user:" + fixtures.ContactAliceEmail, Action: "  "}, // blank action
@@ -153,7 +152,7 @@ func TestExternalEventsBatchSubmitMixedItems(t *testing.T) {
 func TestExternalEventsBatchSubmitScope(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
 	c := env.ExternalScoped(t, apitokens.ScopeEventsRead)
-	_, err := c.EventsBatchSubmit(context.Background(), &externalapi.RecordEventsBatchInput{
+	_, err := c.EventsBatchSubmit(t.Context(), &externalapi.RecordEventsBatchInput{
 		Events: []externalapi.EventInput{{SubjectId: "u", Action: "a"}},
 	})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
@@ -165,7 +164,7 @@ func TestExternalEventsBatchBackfill(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
 	c := env.ExternalScoped(t, apitokens.ScopeEventsWrite)
 
-	ok, err := c.EventsBatchSubmit(context.Background(), &externalapi.RecordEventsBatchInput{
+	ok, err := c.EventsBatchSubmit(t.Context(), &externalapi.RecordEventsBatchInput{
 		Backfill: externalapi.NewOptBool(true),
 		Events: []externalapi.EventInput{
 			{
@@ -194,14 +193,14 @@ func TestExternalEventsRefuseHistoryAndReservedActionsOnTheLivePath(t *testing.T
 	c := env.ExternalScoped(t, apitokens.ScopeEventsWrite)
 	old := externalapi.NewOptNilTimestamp(externalapi.Timestamp(eventsNow.AddDate(-2, 0, 0)))
 
-	err := c.EventsCreate(context.Background(), &externalapi.RecordEventsInput{
+	err := c.EventsCreate(t.Context(), &externalapi.RecordEventsInput{
 		Events: []externalapi.EventInput{{SubjectId: "s-1", Action: "order_paid", OccurredAt: old}},
 	})
 	refused := testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 	detail := refused.Detail.Or("")
 	assert.Contains(t, detail, "backfill")
 
-	ok, err := c.EventsBatchSubmit(context.Background(), &externalapi.RecordEventsBatchInput{
+	ok, err := c.EventsBatchSubmit(t.Context(), &externalapi.RecordEventsBatchInput{
 		Events: []externalapi.EventInput{
 			{SubjectId: "s-1", Action: "order_paid", OccurredAt: old},
 			{SubjectId: "s-1", Action: systemevent.EmailOpened},
@@ -222,7 +221,7 @@ func TestExternalEventsRefuseHistoryAndReservedActionsOnTheLivePath(t *testing.T
 func TestExternalEventsRefuseSMSActions(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
 
-	err := env.ExternalScoped(t, apitokens.ScopeEventsWrite).EventsCreate(context.Background(), &externalapi.RecordEventsInput{
+	err := env.ExternalScoped(t, apitokens.ScopeEventsWrite).EventsCreate(t.Context(), &externalapi.RecordEventsInput{
 		Events: []externalapi.EventInput{{SubjectId: "s-1", Action: systemevent.SmsDelivered}},
 	})
 	refused := testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)

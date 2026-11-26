@@ -359,7 +359,7 @@ func TestHTTPStepOfAnErasedContactSendsNothing(t *testing.T) {
 	runID := int64(fixtures.AutomationRunQuahogHookID)
 	step := h.httpStepOf(runID)
 	h.Feed(t, func(tx *ent.Client) error {
-		return tx.Contact.DeleteOneID(fixtures.ContactQuahogQuinnID).Exec(context.Background())
+		return tx.Contact.DeleteOneID(fixtures.ContactQuahogQuinnID).Exec(t.Context())
 	})
 
 	require.NoError(t, h.attemptStep(h.worker(h.rcv.allow), runID, step, 1))
@@ -392,7 +392,7 @@ func TestHTTPStepRunsOnAQueueOfItsOwn(t *testing.T) {
 func TestHTTPStepOnAnExitedRunCallsNothingAndQueuesNothing(t *testing.T) {
 	h := newHTTPStepHarness(t)
 	runID := int64(fixtures.AutomationRunQuahogHookID)
-	exited, err := h.ExitEnrollment(context.Background(), h.DB.Scoped(fixtures.QuahogID), fixtures.AutomationQuahogHookID, fixtures.ContactQuahogQuinnID)
+	exited, err := h.ExitEnrollment(t.Context(), h.DB.Scoped(fixtures.QuahogID), fixtures.AutomationQuahogHookID, fixtures.ContactQuahogQuinnID)
 	require.NoError(t, err)
 	require.True(t, exited)
 

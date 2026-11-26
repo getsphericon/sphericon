@@ -1,7 +1,6 @@
 package outboundmessages_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -28,7 +27,7 @@ import (
 // exists, and records nothing that would keep the erased person's address.
 func TestSendToAnErasedContactIsDroppedAtTheChokepoint(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	req := marketing(t, env, "bc:erased", fixtures.ContactAliceID)
 
@@ -52,7 +51,7 @@ func TestSendToAnErasedContactIsDroppedAtTheChokepoint(t *testing.T) {
 // Workspace). Nothing reaches the provider and nothing is recorded.
 func TestSendToAnErasedContactIdIsRefusedAtTheClaim(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	require.NoError(t, contacterasure.New(env.Bus, testhelper.Module[*broadcasts.Module](env), testhelper.Module[*contacts.Module](env), testhelper.Module[*unsubscribes.Module](env), testhelper.Module[*bindings.Chats](env), testhelper.Module[*engagementtracking.Module](env), testhelper.Module[*outboundmessages.Module](env), testhelper.Module[*orders.Module](env), time.Now).Erase(ctx, s, contacterasure.Identifier{ContactID: fixtures.ContactAliceID},
 		contacterasure.Requester{Kind: contacterasure.RequesterAPIToken}))

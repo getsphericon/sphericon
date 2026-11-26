@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 	"time"
@@ -20,7 +19,7 @@ import (
 func TestSiteSuppressionsListPaginatesAndIsScoped(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	page, err := c.SiteSuppressionsList(ctx, siteapi.SiteSuppressionsListParams{
 		WorkspaceId: fixtures.AcmePublicID, Page: siteapi.NewOptInt32(1), PageSize: siteapi.NewOptInt32(2),
@@ -40,7 +39,7 @@ func TestSiteSuppressionsListPaginatesAndIsScoped(t *testing.T) {
 func TestSiteSuppressionsErrorBranches(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	acme, foreign := siteapi.WorkspaceId(fixtures.AcmePublicID), siteapi.WorkspaceId(fixtures.GlobexPublicID)
 
 	_, err := c.SiteSuppressionsCreate(ctx, &siteapi.SiteCreateSuppressionInput{Destination: "a@b.test"}, siteapi.SiteSuppressionsCreateParams{WorkspaceId: foreign})
@@ -65,7 +64,7 @@ func TestSiteSuppressionsErrorBranches(t *testing.T) {
 func TestSiteTokensListCreateAndRevoke(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	acme, foreign := siteapi.WorkspaceId(fixtures.AcmePublicID), siteapi.WorkspaceId(fixtures.GlobexPublicID)
 
 	list, err := c.SiteTokensList(ctx, siteapi.SiteTokensListParams{WorkspaceId: acme})
@@ -109,7 +108,7 @@ func TestSiteTokensErrorBranches(t *testing.T) {
 	env := testhelper.Setup(t)
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	member := env.SiteActor(t, fixtures.MemberMaryEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	acme, foreign := siteapi.WorkspaceId(fixtures.AcmePublicID), siteapi.WorkspaceId(fixtures.GlobexPublicID)
 	in := &siteapi.SiteCreateTokenInput{Name: "x", Scopes: []siteapi.ApiTokenScope{"contacts:read"}}
 

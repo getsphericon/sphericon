@@ -56,7 +56,7 @@ func rotated(t *testing.T) (rotation, retired *secrets.Cipher) {
 // 0169): the edit stays, and its secrets are under the new key.
 func TestReencryptRacingARuleEditKeepsTheEdit(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	module := testhelper.Module[*rules.Module](env)
 	draft := env.DB.RuleVersion.GetX(ctx, fixtures.RuleSealedDraftVersionID)
@@ -83,7 +83,7 @@ func TestReencryptRacingARuleEditKeepsTheEdit(t *testing.T) {
 // sealed under the new key.
 func TestReencryptRacingAnAutomationEditKeepsTheEdit(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	module := testhelper.Module[*automations.Module](env)
 	draft := env.DB.AutomationVersion.GetX(ctx, fixtures.AutomationSealedDraftVersionID)
@@ -112,7 +112,7 @@ func TestReencryptRacingAnAutomationEditKeepsTheEdit(t *testing.T) {
 // goes on to the other versions instead of stopping on the missing row.
 func TestReencryptGoesOnPastADraftRevertedMeanwhile(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	module := testhelper.Module[*rules.Module](env)
 	rotation, retired := rotated(t)
@@ -135,7 +135,7 @@ func TestReencryptGoesOnPastADraftRevertedMeanwhile(t *testing.T) {
 // edit holds. It leaves it to the next run, which seals the edited draft (ADR 0169).
 func TestReencryptDuringAnEditLeavesTheDraftToTheNextRun(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.Committed()) // the edit and the rotation hold transactions of their own
-	ctx := context.Background()
+	ctx := t.Context()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	module := testhelper.Module[*rules.Module](env)
 	draft := env.DB.RuleVersion.GetX(ctx, fixtures.RuleSealedDraftVersionID)

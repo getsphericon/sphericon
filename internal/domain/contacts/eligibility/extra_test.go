@@ -26,7 +26,7 @@ func TestCheckEmptyDestinationIsEligible(t *testing.T) {
 		"email under confirmation": {fixtures.LumonID, channels.Email},
 		"sms":                      {fixtures.TyrellID, channels.SMS},
 	} {
-		d, err := eligibility.New().Check(context.Background(), env.DB.Scoped(tc.ws), eligibility.CheckInput{Channel: tc.channel, Destination: "   ", Mode: eligibility.Marketing(eligibility.SourceBroadcasts)})
+		d, err := eligibility.New().Check(t.Context(), env.DB.Scoped(tc.ws), eligibility.CheckInput{Channel: tc.channel, Destination: "   ", Mode: eligibility.Marketing(eligibility.SourceBroadcasts)})
 
 		require.NoError(t, err, name)
 		assert.Equal(t, eligibility.Decision{Eligible: true}, d, name)
@@ -36,13 +36,13 @@ func TestCheckEmptyDestinationIsEligible(t *testing.T) {
 func TestCheckFailsClosedOnStoreErrorAndUnknownWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 	_, err := eligibility.New().Check(ctx, env.DB.Scoped(fixtures.AcmeID), eligibility.CheckInput{Channel: channels.Email, Destination: "a@example.com", Mode: eligibility.Marketing(eligibility.SourceBroadcasts)})
 	require.ErrorContains(t, err, "eligibility check")
 	require.ErrorIs(t, err, context.Canceled, "the store's error is wrapped, not replaced")
 
-	_, err = eligibility.New().Check(context.Background(), env.DB.Scoped(987654), eligibility.CheckInput{Channel: channels.Email, Destination: "a@example.com", Mode: eligibility.Marketing(eligibility.SourceBroadcasts)})
+	_, err = eligibility.New().Check(t.Context(), env.DB.Scoped(987654), eligibility.CheckInput{Channel: channels.Email, Destination: "a@example.com", Mode: eligibility.Marketing(eligibility.SourceBroadcasts)})
 	assert.ErrorContains(t, err, "workspace 987654 not found")
 }
 
@@ -53,7 +53,7 @@ func TestGloballyOptedOut(t *testing.T) {
 
 	emails, err := env.DB.Scoped(fixtures.TyrellID).Contact().Query().
 		Where(eligibility.GloballyOptedOut(channels.Email)).
-		Select("email").Strings(context.Background())
+		Select("email").Strings(t.Context())
 	require.NoError(t, err)
 	assert.ElementsMatch(t, []string{
 		fixtures.TyrellMatrixSuppressedEmail, fixtures.TyrellMatrixUnsubEverythingEmail,

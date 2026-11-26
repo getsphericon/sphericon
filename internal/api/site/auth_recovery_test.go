@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"net/url"
 	"strings"
@@ -42,7 +41,7 @@ func lastSystemEmail(t *testing.T, env *testhelper.TestEnv) (subject, body strin
 func TestForgotPasswordFullResetFlow(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteAnonymous(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	err := c.SiteAuthForgotPassword(ctx, &siteapi.SiteForgotPasswordInput{Email: fixtures.OwnerJohnEmail})
 	require.NoError(t, err)
@@ -67,7 +66,7 @@ func TestForgotPasswordUnknownEmailIsSilent(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteAnonymous(t)
 
-	err := c.SiteAuthForgotPassword(context.Background(),
+	err := c.SiteAuthForgotPassword(t.Context(),
 		&siteapi.SiteForgotPasswordInput{Email: "nobody@example.com"})
 	require.NoError(t, err)
 	assert.Empty(t, env.SystemMail.Messages(), "no email for an unknown address (no enumeration)")
@@ -77,7 +76,7 @@ func TestResetPasswordRejectsInvalidToken(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteAnonymous(t)
 
-	err := c.SiteAuthResetPassword(context.Background(),
+	err := c.SiteAuthResetPassword(t.Context(),
 		&siteapi.SiteResetPasswordInput{Token: "not-a-token", Password: "whatever123"})
 	testhelper.SiteRefusal(t, err, http.StatusBadRequest)
 }
@@ -85,7 +84,7 @@ func TestResetPasswordRejectsInvalidToken(t *testing.T) {
 func TestResetPasswordRejectsWrongPurposeToken(t *testing.T) {
 	env := testhelper.Setup(t)
 	pub := env.SiteAnonymous(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// Take a verify token from a Sign-up mail, then try to use it as a reset token.
 	verifyToken := signUpLink(t, env, "Grace Hopper", "grace@example.com")
@@ -98,7 +97,7 @@ func TestEmailChangeRequiresCurrentPassword(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	err := c.SiteUserEmailChange(context.Background(), &siteapi.SiteEmailChangeInput{
+	err := c.SiteUserEmailChange(t.Context(), &siteapi.SiteEmailChangeInput{
 		NewEmail:        "new@example.com",
 		CurrentPassword: "wrong",
 	})
@@ -110,7 +109,7 @@ func TestEmailChangeRequiresCurrentPassword(t *testing.T) {
 // tokenless notice and the requester no confirm link.
 func TestEmailChangeToATakenAddressAnswersLikeAFreeOneAndNoticesItsOwner(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
 	for _, target := range []string{"free@example.com", fixtures.MemberMaryEmail} {
@@ -135,7 +134,7 @@ func TestEmailChangeStopsMailingAnAddressOnceItsBudgetIsSpent(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
 	for range limit + 2 {
-		err := c.SiteUserEmailChange(context.Background(), &siteapi.SiteEmailChangeInput{
+		err := c.SiteUserEmailChange(t.Context(), &siteapi.SiteEmailChangeInput{
 			NewEmail:        fixtures.MemberMaryEmail,
 			CurrentPassword: fixtures.OwnerJohnPassword,
 		})
@@ -187,7 +186,7 @@ func TestEmailChangeConfirmSwapsEmail(t *testing.T) {
 	env := testhelper.Setup(t)
 	authed := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	pub := env.SiteAnonymous(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	err := authed.SiteUserEmailChange(ctx, &siteapi.SiteEmailChangeInput{
 		NewEmail:        "moved@example.com",

@@ -19,7 +19,7 @@ import (
 func TestTheJobQueueUIServesItsPagesAndHidesArguments(t *testing.T) {
 	ui, err := server.NewJobsUI(testhelper.Setup(t).SQLDB)
 	require.NoError(t, err)
-	ctx, stop := context.WithCancel(context.Background())
+	ctx, stop := context.WithCancel(t.Context())
 	t.Cleanup(stop)
 	require.NoError(t, ui.Start(ctx))
 

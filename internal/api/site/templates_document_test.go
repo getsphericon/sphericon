@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"strconv"
 	"testing"
@@ -27,7 +26,7 @@ func paragraphDoc(text string) map[string]jx.Raw {
 func TestSiteTemplatesSaveADocumentWithItsBody(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
 	res, err := c.SiteTemplatesCreate(ctx, &siteapi.CreateTemplateInput{
@@ -75,7 +74,7 @@ func TestSiteTemplatesSaveADocumentWithItsBody(t *testing.T) {
 func TestSiteTemplatesWithoutADocumentStayHTMLOnly(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	res, err := c.SiteTemplatesCreate(ctx, &siteapi.CreateTemplateInput{
 		Name: "Html", Body: siteapi.NewOptString("<p>Hi</p>"),
@@ -90,7 +89,7 @@ func TestSiteTemplatesWithoutADocumentStayHTMLOnly(t *testing.T) {
 func TestSiteTemplatesRefuseADocumentThatCannotBeRendered(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 	before := env.DB.EmailTemplate.Query().CountX(ctx)
 	welcome := env.DB.EmailTemplate.GetX(ctx, fixtures.TemplateWelcomeID)
@@ -121,7 +120,7 @@ func TestSiteTemplatesRefuseABodyAndADocumentTogether(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	_, err := c.SiteTemplatesCreate(context.Background(), &siteapi.CreateTemplateInput{
+	_, err := c.SiteTemplatesCreate(t.Context(), &siteapi.CreateTemplateInput{
 		Name: "Both", Body: siteapi.NewOptString("<p>x</p>"),
 		Doc: siteapi.NewOptEditorDocument(paragraphDoc("x")),
 	}, siteapi.SiteTemplatesCreateParams{WorkspaceId: fixtures.AcmePublicID})

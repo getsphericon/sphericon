@@ -1,7 +1,6 @@
 package jobs_test
 
 import (
-	"context"
 	"testing"
 	"testing/synctest"
 	"time"
@@ -139,7 +138,7 @@ func TestBroadcastLargerThanTheSendCapStaysSendingAndFinishesAsTheWindowFreesUp(
 func TestAutomationStepDefersWhenTransactionalTrafficSpendsTheLimit(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		env := testhelper.Setup(t)
-		ctx := context.Background()
+		ctx := t.Context()
 		fs := &fakeSender{}
 		mod := outboundmessages.New(env.Bus, env.CoreHolds(), resolvingTo(fs), messagetoken.New("test-secret", "http://local", time.Now), env.OutboundModules(env.Bus, time.Now), outboundmessages.Deps{}, outboundmessages.Config{}, time.Now)
 		env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(1).ExecX(ctx)
@@ -180,7 +179,7 @@ func TestAutomationStepDefersWhenTransactionalTrafficSpendsTheLimit(t *testing.T
 func TestAutomationStepDeferredBySendCapAsksAgainWithinTheBound(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		env := testhelper.Setup(t)
-		ctx := context.Background()
+		ctx := t.Context()
 		fs := &fakeSender{}
 		mod := outboundmessages.New(env.Bus, env.CoreHolds(), resolvingTo(fs), messagetoken.New("test-secret", "http://local", time.Now), env.OutboundModules(env.Bus, time.Now), outboundmessages.Deps{}, outboundmessages.Config{SendCaps: true}, time.Now)
 		env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSendCap(1).ExecX(ctx)

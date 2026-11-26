@@ -33,7 +33,7 @@ func retentionAt(env *testhelper.TestEnv, retention time.Duration, batch int, no
 // more is left, and sums what went.
 func pruneAll(t *testing.T, u *messageretention.UseCase, budget int) messageretention.Pruned {
 	t.Helper()
-	ctx := context.Background()
+	ctx := t.Context()
 	due, err := u.Due(ctx)
 	require.NoError(t, err)
 	var total messageretention.Pruned
@@ -68,7 +68,7 @@ type automationFigures struct {
 // reports reads every finished Broadcast's Stats and every Automation's message figures.
 func reports(t *testing.T, env *testhelper.TestEnv) (stats map[int64]broadcasts.Stats, figures map[int64]automationFigures) {
 	t.Helper()
-	ctx := context.Background()
+	ctx := t.Context()
 	bs := env.DB.Broadcast.Query().
 		Where(broadcast.StatusIn(broadcast.StatusSent, broadcast.StatusFailed, broadcast.StatusCancelled)).
 		AllX(ctx)
@@ -92,7 +92,7 @@ func reports(t *testing.T, env *testhelper.TestEnv) (stats map[int64]broadcasts.
 
 func TestPruneMessagesKeepsEveryReportsFigures(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	beforeStats, beforeFigures := reports(t, env)
 	require.NotEmpty(t, beforeStats)
 	require.NotEmpty(t, beforeFigures)
@@ -160,7 +160,7 @@ func TestPruneMessagesIsIdempotent(t *testing.T) {
 // frozenRows is every BroadcastFigure as text, its columns and nothing of the client.
 func frozenRows(t *testing.T, env *testhelper.TestEnv) []string {
 	t.Helper()
-	rows := env.DB.BroadcastFigure.Query().Order(broadcastfigure.ByID()).AllX(context.Background())
+	rows := env.DB.BroadcastFigure.Query().Order(broadcastfigure.ByID()).AllX(t.Context())
 	out := make([]string, 0, len(rows))
 	for _, f := range rows {
 		out = append(out, f.String())
@@ -170,7 +170,7 @@ func frozenRows(t *testing.T, env *testhelper.TestEnv) []string {
 
 func TestPruneMessagesLeavesRowsInsideTheWindow(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	messages := env.DB.OutboundMessage.Query().CountX(ctx)
 	frozen := env.DB.BroadcastFigure.Query().CountX(ctx)
 
@@ -185,7 +185,7 @@ func TestPruneMessagesLeavesRowsInsideTheWindow(t *testing.T) {
 // A send job of a frozen Broadcast's recipient finds its recipient gone and sends nothing.
 func TestAFrozenBroadcastsRecipientSendsNothing(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	messages := env.DB.OutboundMessage.Query().CountX(ctx)
 
@@ -203,7 +203,7 @@ var cancelledFigures = broadcasts.Stats{Recipients: 2, Cancelled: 2}
 // cancelledStats is the report's figures of the cancelled Broadcast.
 func cancelledStats(t *testing.T, env *testhelper.TestEnv) broadcasts.Stats {
 	t.Helper()
-	stats, err := testhelper.Module[*broadcasts.Module](env).StatsOf(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastCancelledID)
+	stats, err := testhelper.Module[*broadcasts.Module](env).StatsOf(t.Context(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastCancelledID)
 	require.NoError(t, err)
 	return stats[fixtures.BroadcastCancelledID]
 }
@@ -221,7 +221,7 @@ func cancelledRows(env *testhelper.TestEnv) (recipients int, frozen bool) {
 // 0151): its figures, cancelled included, go to its figures row and its rows are deleted.
 func TestPruneMessagesFreezesACancelledBroadcastPastTheWindow(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	before := cancelledStats(t, env)
 	require.Equal(t, cancelledFigures, before)
 	now := time.Now().Add(messagesRetention)
@@ -242,7 +242,7 @@ func TestPruneMessagesFreezesACancelledBroadcastPastTheWindow(t *testing.T) {
 // from when it was created or its recipients were resolved (four and three days ago).
 func TestPruneMessagesLeavesACancelledBroadcastInsideTheWindow(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	now := time.Now().Add(messagesRetention - 3*24*time.Hour)
 	cutoff := now.Add(-messagesRetention)
 	created := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastCancelledID).CreatedAt
@@ -264,7 +264,7 @@ func TestAFrozenBroadcastKeepsItsUntrackedCount(t *testing.T) {
 	env := testhelper.Setup(t)
 	pruneMessages(t, env, messagesRetention, past())
 
-	got, err := testhelper.Module[*broadcasts.Module](env).StatsOf(context.Background(), env.DB.Scoped(fixtures.UmbrellaID), fixtures.BroadcastUmbrellaTrackingMixID)
+	got, err := testhelper.Module[*broadcasts.Module](env).StatsOf(t.Context(), env.DB.Scoped(fixtures.UmbrellaID), fixtures.BroadcastUmbrellaTrackingMixID)
 	require.NoError(t, err)
 
 	mix := got[fixtures.BroadcastUmbrellaTrackingMixID]

@@ -1,7 +1,6 @@
 package collect_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -26,7 +25,7 @@ import (
 func TestCollectedEventPropertiesKeepTheirJSONValues(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	err := env.CollectAcme(t).CollectEventsCreate(context.Background(), &collectapi.CollectEventsInput{
+	err := env.CollectAcme(t).CollectEventsCreate(t.Context(), &collectapi.CollectEventsInput{
 		Events: []collectapi.CollectEventInput{{
 			VisitorId: "dev-props",
 			Action:    "viewed",
@@ -48,7 +47,7 @@ func TestCollectedEventPropertiesKeepTheirJSONValues(t *testing.T) {
 func TestCollectIdentifyAssertsPhoneAndSubjectID(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.CollectAcme(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := c.CollectIdentifyCreate(ctx, &collectapi.CollectIdentifyInput{
 		VisitorId: "dev-phone",
@@ -72,7 +71,7 @@ func TestCollectIdentifyAssertsPhoneAndSubjectID(t *testing.T) {
 // identifies that workspace's contact only.
 func TestCollectIdentifyIsScopedToTheKeysWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := env.CollectWithKey(t, fixtures.GlobexCollectKey).CollectIdentifyCreate(ctx, &collectapi.CollectIdentifyInput{
 		VisitorId: "shared-device",
@@ -90,7 +89,7 @@ func TestCollectIdentifyIsScopedToTheKeysWorkspace(t *testing.T) {
 
 func TestCollectIdentifyWithoutAnAliasKeyIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := env.CollectAcme(t).CollectIdentifyCreate(ctx, &collectapi.CollectIdentifyInput{VisitorId: "dev-anon-only"})
 	require.Error(t, err, "nothing to identify the visitor by")
@@ -110,7 +109,7 @@ func TestCollectIdentifyWithoutAnAliasKeyIsRefused(t *testing.T) {
 
 func TestCollectEventsCarryOccurredAtPropertiesAndTheKeysWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	at := time.Date(2026, 4, 2, 10, 30, 0, 0, time.UTC)
 
 	err := env.CollectWithKey(t, fixtures.GlobexCollectKey).CollectEventsCreate(ctx, &collectapi.CollectEventsInput{
@@ -141,7 +140,7 @@ func TestCollectEventsStorageFailureIsNotAcknowledged(t *testing.T) {
 	h := collect.NewHandlers(visitors.New(events.New(sqlDB, entclient.Core.NewTx, time.Now), time.Now), nil)
 
 	err := h.CollectEventsCreate(
-		auth.WithCollectAuth(context.Background(), &auth.CollectAuth{WorkspaceID: fixtures.AcmeID, Scoped: entclient.Core.New(sqlDB).Scoped(fixtures.AcmeID)}),
+		auth.WithCollectAuth(t.Context(), &auth.CollectAuth{WorkspaceID: fixtures.AcmeID, Scoped: entclient.Core.New(sqlDB).Scoped(fixtures.AcmeID)}),
 		&collectapi.CollectEventsInput{Events: []collectapi.CollectEventInput{{VisitorId: "dev", Action: "x"}}},
 	)
 	require.Error(t, err)

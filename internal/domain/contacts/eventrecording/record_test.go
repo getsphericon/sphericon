@@ -1,7 +1,6 @@
 package eventrecording_test
 
 import (
-	"context"
 	"strings"
 	"testing"
 	"time"
@@ -25,7 +24,7 @@ func unserializable() map[string]any { return map[string]any{"bad": make(chan in
 
 func TestRecordCarriesTheEmailAndPhoneSnapshot(t *testing.T) {
 	env := testhelper.Setup(t)
-	require.NoError(t, newModule(env).Record(context.Background(), env.DB.Scoped(fixtures.AcmeID), []eventrecording.Input{
+	require.NoError(t, newModule(env).Record(t.Context(), env.DB.Scoped(fixtures.AcmeID), []eventrecording.Input{
 		{SubjectID: "s-1", Action: "page_view", Email: new("nobody@example.com"), Phone: new("+15550100")},
 	}))
 
@@ -39,7 +38,7 @@ func TestRecordCarriesTheEmailAndPhoneSnapshot(t *testing.T) {
 func TestRecordIsAtomicAcrossTheBatch(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	err := newModule(env).Record(context.Background(), env.DB.Scoped(fixtures.AcmeID), []eventrecording.Input{
+	err := newModule(env).Record(t.Context(), env.DB.Scoped(fixtures.AcmeID), []eventrecording.Input{
 		{SubjectID: "ok", Action: "page_view"},
 		{SubjectID: "bad", Action: "page_view", Properties: unserializable()},
 	})
@@ -51,7 +50,7 @@ func TestRecordIsAtomicAcrossTheBatch(t *testing.T) {
 func TestRecordEachIsolatesItems(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	errs, err := newModule(env).RecordEach(context.Background(), env.DB.Scoped(fixtures.AcmeID), []eventrecording.Input{
+	errs, err := newModule(env).RecordEach(t.Context(), env.DB.Scoped(fixtures.AcmeID), []eventrecording.Input{
 		{SubjectID: "s-1", Action: "page_view"},
 		{SubjectID: "  ", Action: "page_view"},
 		{SubjectID: "s-3", Action: ""},
@@ -85,8 +84,8 @@ func TestRecordEachRefusesABatchOutsideTheContractsBounds(t *testing.T) {
 		tooMany[i] = eventrecording.Input{SubjectID: "s-1", Action: "page_view"}
 	}
 
-	_, empty := m.RecordEach(context.Background(), acme, nil)
-	_, overfull := m.RecordEach(context.Background(), acme, tooMany)
+	_, empty := m.RecordEach(t.Context(), acme, nil)
+	_, overfull := m.RecordEach(t.Context(), acme, tooMany)
 
 	require.ErrorIs(t, empty, validation.ErrTooFew)
 	require.ErrorIs(t, overfull, validation.ErrTooMany)
@@ -97,7 +96,7 @@ func TestRecordEachRefusesABatchOutsideTheContractsBounds(t *testing.T) {
 func TestRecordRefusesAClientEventIDTooLong(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	err := newModule(env).Record(context.Background(), env.DB.Scoped(fixtures.AcmeID), []eventrecording.Input{
+	err := newModule(env).Record(t.Context(), env.DB.Scoped(fixtures.AcmeID), []eventrecording.Input{
 		{SubjectID: "s-1", Action: "page_view", ClientEventID: strings.Repeat("a", 256)},
 	})
 
@@ -107,7 +106,7 @@ func TestRecordRefusesAClientEventIDTooLong(t *testing.T) {
 
 func TestRecordMarksBackfilledEvents(t *testing.T) {
 	env := testhelper.Setup(t)
-	require.NoError(t, newModule(env).Record(context.Background(), env.DB.Scoped(fixtures.AcmeID), []eventrecording.Input{
+	require.NoError(t, newModule(env).Record(t.Context(), env.DB.Scoped(fixtures.AcmeID), []eventrecording.Input{
 		{SubjectID: "s-1", Action: "purchase", Backfill: true, OccurredAt: testNow.AddDate(-1, 0, 0)},
 		{SubjectID: "s-2", Action: "purchase"},
 	}))
@@ -126,7 +125,7 @@ func TestRecordMarksBackfilledEvents(t *testing.T) {
 // the id is scoped to the Workspace.
 func TestRecordSkipsAnEventItAlreadyStored(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	m := newModule(env)
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	in := eventrecording.Input{SubjectID: "s-1", Action: "purchase", ClientEventID: "order-1"}
@@ -159,7 +158,7 @@ func TestRecordRefusesReservedActions(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := newModule(env)
 	for _, action := range []string{systemevent.EmailOpened, " Email.Clicked", systemevent.MarketingConfirmed, systemevent.ContactCreated, systemevent.TelegramBound, " Telegram.Unbound"} {
-		err := m.Record(context.Background(), env.DB.Scoped(fixtures.AcmeID), []eventrecording.Input{{SubjectID: "s-1", Action: action}})
+		err := m.Record(t.Context(), env.DB.Scoped(fixtures.AcmeID), []eventrecording.Input{{SubjectID: "s-1", Action: action}})
 		reason := rejected(t, err)
 		assert.Contains(t, reason, "reserved", action)
 	}
@@ -172,11 +171,11 @@ func TestRecordRefusesALiveEventThatIsHistory(t *testing.T) {
 	acme := env.DB.Scoped(fixtures.AcmeID)
 
 	stale := eventrecording.Input{SubjectID: "s-1", Action: "purchase", OccurredAt: testNow.Add(-liveWindow - time.Hour)}
-	err := m.Record(context.Background(), acme, []eventrecording.Input{stale})
+	err := m.Record(t.Context(), acme, []eventrecording.Input{stale})
 	reason := rejected(t, err)
 	assert.Contains(t, reason, "backfill")
 
-	require.NoError(t, m.Record(context.Background(), acme, []eventrecording.Input{
+	require.NoError(t, m.Record(t.Context(), acme, []eventrecording.Input{
 		{SubjectID: "s-1", Action: "purchase", OccurredAt: testNow.Add(-liveWindow + time.Hour)},
 		{SubjectID: "s-2", Action: "purchase"},
 	}), "an event inside the window, or without a time, is live")
@@ -187,7 +186,7 @@ func TestBackfillNeedsATimeThatHasPassed(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := newModule(env)
 	acme := env.DB.Scoped(fixtures.AcmeID)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	errs, err := m.RecordEach(ctx, acme, []eventrecording.Input{
 		{SubjectID: "s-1", Action: "purchase", Backfill: true},
@@ -208,7 +207,7 @@ func TestRecordPublishesARepeatedClientEventIDOnceInABatch(t *testing.T) {
 	env := testhelper.Setup(t)
 	in := eventrecording.Input{SubjectID: "s-1", Action: "purchase", ClientEventID: "order-1"}
 
-	require.NoError(t, newModule(env).Record(context.Background(), env.DB.Scoped(fixtures.AcmeID), []eventrecording.Input{in, in}))
+	require.NoError(t, newModule(env).Record(t.Context(), env.DB.Scoped(fixtures.AcmeID), []eventrecording.Input{in, in}))
 
 	assert.Len(t, queuedCollected(t, env), 1)
 	assert.Equal(t, 1, stored(t, env, "s-1"))

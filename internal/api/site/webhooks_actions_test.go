@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -22,7 +21,7 @@ import (
 
 func TestSiteWebhookRegenerateSecretReturnsTheNewSecretAndIsAudited(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	params := siteapi.SiteWebhooksRegenerateSecretParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.WebhookCodebasicsID)}
 
@@ -43,7 +42,7 @@ func TestSiteWebhookRegenerateSecretReturnsTheNewSecretAndIsAudited(t *testing.T
 }
 
 func TestSiteWebhookTestSendReportsTheAnswerAndIsAudited(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	rcv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusGone) }))
 	t.Cleanup(rcv.Close)
 	u, err := url.Parse(rcv.URL)

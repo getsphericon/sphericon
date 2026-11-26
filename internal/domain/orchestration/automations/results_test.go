@@ -1,7 +1,6 @@
 package automations_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -26,7 +25,7 @@ var gothamToday = time.Date(2026, 3, 17, 12, 0, 0, 0, time.UTC)
 func resultsAt(t *testing.T, env *testhelper.TestEnv, id int64, p automations.ReportPeriod, now time.Time) automations.Results {
 	t.Helper()
 	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), linkclick.New(), testhelper.Module[*rules.Module](env), testhelper.Module[*contacts.Module](env), func() time.Time { return now })
-	report, err := m.ReportOf(context.Background(), env.DB.Scoped(fixtures.GothamID), id, p)
+	report, err := m.ReportOf(t.Context(), env.DB.Scoped(fixtures.GothamID), id, p)
 	require.NoError(t, err)
 	return report.Results
 }
@@ -111,7 +110,7 @@ func TestAZoneChangeMovesResultsToOtherDays(t *testing.T) {
 	env := testhelper.Setup(t)
 	inNewYork := resultsAt(t, env, fixtures.AutomationGothamResultsID, automations.ReportPeriod7Days, gothamToday)
 
-	require.NoError(t, env.DB.Workspace.UpdateOneID(fixtures.GothamID).SetTimezone("UTC").Exec(context.Background()))
+	require.NoError(t, env.DB.Workspace.UpdateOneID(fixtures.GothamID).SetTimezone("UTC").Exec(t.Context()))
 	inUTC := resultsAt(t, env, fixtures.AutomationGothamResultsID, automations.ReportPeriod7Days, gothamToday)
 
 	assert.Equal(t, 1, inNewYork.Current.Completed, "in New York the completion at 03:59Z on 11 March is on 10 March")
@@ -123,7 +122,7 @@ func TestResultsOfAnotherWorkspacesAutomationAreNotFound(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*automations.Module](env)
 
-	_, err := m.ReportOf(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationGothamResultsID, automations.ReportPeriod7Days)
+	_, err := m.ReportOf(t.Context(), env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationGothamResultsID, automations.ReportPeriod7Days)
 
 	require.ErrorIs(t, err, automations.ErrNotFound)
 }

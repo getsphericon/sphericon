@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -257,7 +256,7 @@ func TestTurningConfirmedOptInOnNamesTheRevisionItWasMadeOn(t *testing.T) {
 	_, err := setUpConfirmationEmail(t, env, owner, siteapi.SiteUpdateConfirmationEmailInput{FromEmail: verifiedFrom})
 	require.NoError(t, err)
 
-	_, err = owner.SiteWorkspacesSetConfirmedOptIn(context.Background(),
+	_, err = owner.SiteWorkspacesSetConfirmedOptIn(t.Context(),
 		&siteapi.SiteSetConfirmedOptInInput{Revision: acmeRevision(t, env) - 1, Enabled: true},
 		siteapi.SiteWorkspacesSetConfirmedOptInParams{WorkspaceId: fixtures.AcmePublicID})
 

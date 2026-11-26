@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -33,7 +32,7 @@ func telegramInput(token string) siteapi.IntegrationConfigInput {
 
 func createTelegram(t *testing.T, c *siteapi.Client, token string) (*siteapi.SiteIntegrationResource, error) {
 	t.Helper()
-	return c.SiteIntegrationsCreate(context.Background(), &siteapi.CreateIntegrationInput{
+	return c.SiteIntegrationsCreate(t.Context(), &siteapi.CreateIntegrationInput{
 		Name: "Acme bot", Config: telegramInput(token),
 	}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 }
@@ -41,10 +40,10 @@ func createTelegram(t *testing.T, c *siteapi.Client, token string) (*siteapi.Sit
 func updateTelegram(t *testing.T, c *siteapi.Client, id siteapi.EntityId, in *siteapi.UpdateIntegrationInput) (*siteapi.SiteIntegrationResource, error) {
 	t.Helper()
 	// An edit names the revision it was made on (ADR 0119), so the client reads the Integration first.
-	read, err := c.SiteIntegrationsGet(context.Background(), siteapi.SiteIntegrationsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
+	read, err := c.SiteIntegrationsGet(t.Context(), siteapi.SiteIntegrationsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
 	require.NoError(t, err)
 	in.Revision = read.Revision
-	return c.SiteIntegrationsUpdate(context.Background(), in, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
+	return c.SiteIntegrationsUpdate(t.Context(), in, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
 }
 
 // connectedTelegram connects the Acme bot through the Site API and returns the Integration and the
@@ -121,7 +120,7 @@ func TestSiteTelegramRefusesWhatTelegramRefuses(t *testing.T) {
 		assert.Contains(t, errs["config"][0], "An HTTPS URL must be provided for webhook")
 	})
 
-	list, err := c.SiteIntegrationsList(context.Background(), siteapi.SiteIntegrationsListParams{WorkspaceId: fixtures.AcmePublicID})
+	list, err := c.SiteIntegrationsList(t.Context(), siteapi.SiteIntegrationsListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	bots := lo.FilterMap(list, func(row siteapi.SiteIntegrationResource, _ int) (int64, bool) {
 		return int64(row.ID), row.Provider == siteapi.IntegrationProviderTelegram
@@ -174,7 +173,7 @@ func TestSiteTelegramUpdateReconnectsTheSameBotOnly(t *testing.T) {
 func TestSiteTelegramDeletedIntegrationTouchesNoBot(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	row, _ := connectedTelegram(t, env, c)
 	err := c.SiteIntegrationsDelete(ctx, siteapi.SiteIntegrationsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: row.ID})
 	require.NoError(t, err)
@@ -194,7 +193,7 @@ func TestSiteTelegramDeletedIntegrationTouchesNoBot(t *testing.T) {
 func TestSiteTelegramWebhookFollowsTheIntegration(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	row, token := connectedTelegram(t, env, c)
 	path := siteapi.SiteIntegrationsRegenerateKeyParams{WorkspaceId: fixtures.AcmePublicID, ID: row.ID}
 
@@ -283,7 +282,7 @@ func TestSiteTelegramHookChecksTheSecret(t *testing.T) {
 func TestSiteTelegramPresetIsFixed(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	id := siteapi.EntityId(fixtures.IntegrationAcmeTelegramID)
 
 	t.Run("a Telegram integration takes no other Preset", func(t *testing.T) {

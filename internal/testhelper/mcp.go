@@ -1,7 +1,6 @@
 package testhelper
 
 import (
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -32,7 +31,7 @@ func (env *TestEnv) MCPClient(t *testing.T, token string) *mcp.ClientSession {
 		MaxRetries:           -1,
 	}
 	client := mcp.NewClient(&mcp.Implementation{Name: "sphericon-test", Version: "0"}, nil)
-	session, err := client.Connect(context.Background(), transport, nil)
+	session, err := client.Connect(t.Context(), transport, nil)
 	require.NoError(t, err, "connect MCP client")
 	t.Cleanup(func() { cleanup.Report("close the MCP session", session.Close()) })
 	return session

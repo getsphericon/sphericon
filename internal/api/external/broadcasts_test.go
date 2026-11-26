@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 	"time"
@@ -34,7 +33,7 @@ var authorScopes = []apitokens.Scope{apitokens.ScopeBroadcastsRead, apitokens.Sc
 func TestExternalBroadcastsAreCreatedAsDraftsAndEditedWhileDraft(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, authorScopes...)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	b, err := c.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{
 		Name:      "Spring sale",
@@ -70,7 +69,7 @@ func TestExternalBroadcastsAreCreatedAsDraftsAndEditedWhileDraft(t *testing.T) {
 func TestExternalBroadcastsUpdateClearsANullAndKeepsAnAbsentField(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, authorScopes...)
-	ctx := context.Background()
+	ctx := t.Context()
 	// The draft has a Segment and a From name.
 	params := externalapi.BroadcastsUpdateParams{ID: entityIDString(fixtures.BroadcastProSegmentID)}
 
@@ -86,7 +85,7 @@ func TestExternalBroadcastsListPaginates(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, authorScopes...)
 
-	page, err := c.BroadcastsList(context.Background(), externalapi.BroadcastsListParams{
+	page, err := c.BroadcastsList(t.Context(), externalapi.BroadcastsListParams{
 		Page: externalapi.NewOptInt32(2), PageSize: externalapi.NewOptInt32(2),
 	})
 	require.NoError(t, err)
@@ -100,7 +99,7 @@ func TestExternalBroadcastsListPaginates(t *testing.T) {
 func TestExternalBroadcastSegmentIsASegmentOrEveryone(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, authorScopes...)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	b, err := c.BroadcastsSetSegment(ctx, &externalapi.SetBroadcastSegmentInput{Revision: externalapi.Revision(env.BroadcastRevision(ctx, t, int64(draftBroadcast))), SegmentId: externalapi.NewNilEntityId(proSegment)},
 		externalapi.BroadcastsSetSegmentParams{ID: draftBroadcast})
@@ -127,7 +126,7 @@ func TestExternalBroadcastSegmentIsASegmentOrEveryone(t *testing.T) {
 func TestExternalBroadcastTestSendGoesToOneAddressOnly(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, authorScopes...)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	err := c.BroadcastsTestSend(ctx, &externalapi.TestSendBroadcastInput{Email: externalapi.NewOptEmailAddress("qa@test.dev")},
 		externalapi.BroadcastsTestSendParams{ID: draftBroadcast})
@@ -142,7 +141,7 @@ func TestExternalBroadcastTestSendGoesToOneAddressOnly(t *testing.T) {
 func TestExternalBroadcastReport(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, authorScopes...)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	r, err := c.BroadcastsReport(ctx, externalapi.BroadcastsReportParams{ID: failedBroadcast})
 	require.NoError(t, err)
@@ -162,7 +161,7 @@ func TestExternalBroadcastReport(t *testing.T) {
 
 func TestExternalBroadcastsRequireScopes(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	readOnly := env.ExternalScoped(t, apitokens.ScopeBroadcastsRead)
 	noScope := env.ExternalScoped(t, apitokens.ScopeContactsRead)
 
@@ -193,7 +192,7 @@ func TestExternalBroadcastsRequireScopes(t *testing.T) {
 
 func TestExternalBroadcastScheduleNeedsTheSendScope(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	when := time.Now().Add(48 * time.Hour).UTC().Truncate(time.Second)
 	body := &externalapi.ScheduleBroadcastInput{Revision: externalapi.Revision(env.BroadcastRevision(ctx, t, int64(draftBroadcast))), ScheduledAt: externalapi.Timestamp(when)}
 
@@ -228,7 +227,7 @@ func TestExternalBroadcastScheduleNeedsTheSendScope(t *testing.T) {
 
 func TestExternalBroadcastScheduleRefusesWhatCannotBeScheduled(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.ExternalScoped(t, apitokens.ScopeBroadcastsSend)
 	body := &externalapi.ScheduleBroadcastInput{Revision: externalapi.Revision(env.BroadcastRevision(ctx, t, int64(sentBroadcast))), ScheduledAt: externalapi.Timestamp(time.Now().Add(time.Hour))}
 
@@ -245,7 +244,7 @@ func TestExternalBroadcastScheduleRefusesWhatCannotBeScheduled(t *testing.T) {
 
 func TestExternalBroadcastsAreIsolatedToTheTokensWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// The Globex tenant's committed broadcast and segment.
 	foreignID := externalapi.EntityId(fixtures.BroadcastGlobexID)
@@ -286,7 +285,7 @@ func TestExternalBroadcastsAreIsolatedToTheTokensWorkspace(t *testing.T) {
 func TestExternalBroadcastSegmentRefusesAnArchivedSegment(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, authorScopes...)
-	ctx := context.Background()
+	ctx := t.Context()
 	before := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID)
 
 	_, err := c.BroadcastsSetSegment(ctx,
@@ -303,7 +302,7 @@ func TestExternalBroadcastSegmentRefusesAnArchivedSegment(t *testing.T) {
 func TestExternalBroadcastKeepsShowingItsArchivedSegment(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeBroadcastsRead)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	b, err := c.BroadcastsGet(ctx, externalapi.BroadcastsGetParams{ID: entityIDString(fixtures.BroadcastArchivedID)})
 	require.NoError(t, err)
@@ -315,7 +314,7 @@ func TestExternalBroadcastKeepsShowingItsArchivedSegment(t *testing.T) {
 func TestExternalBroadcastSegmentRefusesAForeignSegment(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, authorScopes...)
-	ctx := context.Background()
+	ctx := t.Context()
 	before := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID).SegmentID
 
 	_, err := c.BroadcastsSetSegment(ctx, &externalapi.SetBroadcastSegmentInput{Revision: externalapi.Revision(env.BroadcastRevision(ctx, t, int64(draftBroadcast))), SegmentId: externalapi.NewNilEntityId(entityIDString(fixtures.SegmentGlobexID))},
@@ -329,7 +328,7 @@ func TestExternalBroadcastSegmentRefusesAForeignSegment(t *testing.T) {
 // cancelled, none pending.
 func TestExternalBroadcastCancelEndsASendingBroadcast(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	env.PlaceRecipient(ctx, fixtures.BroadcastSendingID, fixtures.ContactAliceID)
 	c := env.ExternalScoped(t, authorScopes...)
 	sending := entityIDString(fixtures.BroadcastSendingID)
@@ -350,7 +349,7 @@ func TestExternalBroadcastCancelEndsASendingBroadcast(t *testing.T) {
 // are a 409, and an unknown one a 404.
 func TestExternalBroadcastCancelRefusesWhatIsNotSending(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.ExternalScoped(t, authorScopes...)
 	sending := entityIDString(fixtures.BroadcastSendingID)
 	_, err := c.BroadcastsCancel(ctx, externalapi.BroadcastsCancelParams{ID: sending})

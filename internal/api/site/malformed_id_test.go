@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -16,7 +15,7 @@ import (
 // each call carries a sentinel id whose public form is swapped on the wire.
 func TestSiteMalformedIDIsABadRequest(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	for _, bad := range []string{"abc", "99999999999999999999", "1.5", "AAAAAAAAAAAAAAAAAAAAAA"} {
 		t.Run(bad, func(t *testing.T) {
 			c := env.SiteActorVia(t, fixtures.OwnerJohnEmail, testhelper.RewriteURL(testhelper.ID(123456789), bad))

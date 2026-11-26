@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 	"time"
@@ -19,7 +18,7 @@ import (
 func TestSiteBroadcastsCRUD(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
 	created, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
@@ -87,7 +86,7 @@ func TestSiteBroadcastsCRUD(t *testing.T) {
 func TestSiteBroadcastsRequireOwnedWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := c.SiteBroadcastsList(ctx, siteapi.SiteBroadcastsListParams{WorkspaceId: "NoSuchWs"})
 	testhelper.SiteRefusal(t, err, http.StatusNotFound)
@@ -99,7 +98,7 @@ func TestSiteBroadcastsRequireOwnedWorkspace(t *testing.T) {
 func TestSiteBroadcastsUpdateNullClearsAbsentKeeps(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	params := siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: 100}
 
 	// Absent keys keep values: set the segment, the sender stays.
@@ -137,7 +136,7 @@ func TestSiteBroadcastsUpdateNullClearsAbsentKeeps(t *testing.T) {
 func TestSiteBroadcastsCreateRefusesAForeignSegmentOrIntegration(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	workspaceID := siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID}
 	before := env.DB.Broadcast.Query().CountX(ctx)
 
@@ -162,7 +161,7 @@ func TestSiteBroadcastsCreateRefusesAForeignSegmentOrIntegration(t *testing.T) {
 func TestSiteBroadcastsUpdateRefusesAForeignSegmentOrIntegration(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	params := siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastDraftID)}
 	before := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID)
 

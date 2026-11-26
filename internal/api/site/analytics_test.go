@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 	"time"
@@ -21,7 +20,7 @@ func TestSiteAnalyticsEventsRequireAuth(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteAnonymous(t)
 
-	_, err := c.SiteAnalyticsEvents(context.Background(), siteapi.SiteAnalyticsEventsParams{WorkspaceId: fixtures.AcmePublicID})
+	_, err := c.SiteAnalyticsEvents(t.Context(), siteapi.SiteAnalyticsEventsParams{WorkspaceId: fixtures.AcmePublicID})
 	require.Error(t, err)
 }
 
@@ -29,7 +28,7 @@ func TestSiteAnalyticsEventsRequireOwnedWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	_, err := c.SiteAnalyticsEvents(context.Background(), siteapi.SiteAnalyticsEventsParams{WorkspaceId: "NoSuchWs"})
+	_, err := c.SiteAnalyticsEvents(t.Context(), siteapi.SiteAnalyticsEventsParams{WorkspaceId: "NoSuchWs"})
 	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 }
 
@@ -37,7 +36,7 @@ func TestSiteAnalyticsEventsAreVisibleToEveryRole(t *testing.T) {
 	env := testhelper.Setup(t)
 	for _, email := range []string{fixtures.OwnerJohnEmail, fixtures.AdminAliceEmail, fixtures.MemberMaryEmail} {
 		c := env.SiteActor(t, email)
-		res, err := c.SiteAnalyticsEvents(context.Background(), siteapi.SiteAnalyticsEventsParams{
+		res, err := c.SiteAnalyticsEvents(t.Context(), siteapi.SiteAnalyticsEventsParams{
 			WorkspaceId: fixtures.AcmePublicID,
 			Range:       siteapi.NewOptSiteAnalyticsRange(siteapi.SiteAnalyticsRange7d),
 		})
@@ -56,7 +55,7 @@ func TestSiteAnalyticsRequireAuth(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteAnonymous(t)
 
-	_, err := c.SiteAnalyticsOverview(context.Background(), siteapi.SiteAnalyticsOverviewParams{WorkspaceId: fixtures.AcmePublicID})
+	_, err := c.SiteAnalyticsOverview(t.Context(), siteapi.SiteAnalyticsOverviewParams{WorkspaceId: fixtures.AcmePublicID})
 	require.Error(t, err)
 }
 
@@ -65,7 +64,7 @@ func TestSiteAnalyticsRequireOwnedWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	_, err := c.SiteAnalyticsOverview(context.Background(), siteapi.SiteAnalyticsOverviewParams{WorkspaceId: "NoSuchWs"})
+	_, err := c.SiteAnalyticsOverview(t.Context(), siteapi.SiteAnalyticsOverviewParams{WorkspaceId: "NoSuchWs"})
 	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 }
 
@@ -74,7 +73,7 @@ func TestSiteAnalyticsRequireOwnedWorkspace(t *testing.T) {
 func TestSiteAnalyticsOverviewMapsTheModule(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	res, err := c.SiteAnalyticsOverview(ctx, siteapi.SiteAnalyticsOverviewParams{
 		WorkspaceId: fixtures.AcmePublicID,
@@ -124,7 +123,7 @@ func TestSubscribedPeopleRequiresAuth(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteAnonymous(t)
 
-	_, err := c.SiteAnalyticsSubscribedPeople(context.Background(), siteapi.SiteAnalyticsSubscribedPeopleParams{WorkspaceId: fixtures.AcmePublicID})
+	_, err := c.SiteAnalyticsSubscribedPeople(t.Context(), siteapi.SiteAnalyticsSubscribedPeopleParams{WorkspaceId: fixtures.AcmePublicID})
 	require.Error(t, err)
 }
 
@@ -132,7 +131,7 @@ func TestSubscribedPeopleRequiresAuth(t *testing.T) {
 func TestSubscribedPeopleMapsTheModule(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	res, err := c.SiteAnalyticsSubscribedPeople(ctx, siteapi.SiteAnalyticsSubscribedPeopleParams{
 		WorkspaceId: fixtures.AcmePublicID,
@@ -152,7 +151,7 @@ func TestSiteAnalyticsClicksByLinkRequireAuth(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteAnonymous(t)
 
-	_, err := c.SiteAnalyticsClicksByLink(context.Background(), siteapi.SiteAnalyticsClicksByLinkParams{WorkspaceId: fixtures.AcmePublicID})
+	_, err := c.SiteAnalyticsClicksByLink(t.Context(), siteapi.SiteAnalyticsClicksByLinkParams{WorkspaceId: fixtures.AcmePublicID})
 	require.Error(t, err)
 }
 
@@ -162,7 +161,7 @@ func TestSiteAnalyticsClicksByLinkIsReadByAMemberAndCarriesTheRetention(t *testi
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.MemberMaryEmail)
 
-	res, err := c.SiteAnalyticsClicksByLink(context.Background(), siteapi.SiteAnalyticsClicksByLinkParams{
+	res, err := c.SiteAnalyticsClicksByLink(t.Context(), siteapi.SiteAnalyticsClicksByLinkParams{
 		WorkspaceId: fixtures.AcmePublicID,
 		Range:       siteapi.NewOptSiteAnalyticsRange(siteapi.SiteAnalyticsRange7d),
 	})
@@ -185,7 +184,7 @@ func TestSiteAnalyticsOpensByHourRequiresAuth(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteAnonymous(t)
 
-	_, err := c.SiteAnalyticsOpensByHour(context.Background(), siteapi.SiteAnalyticsOpensByHourParams{WorkspaceId: fixtures.AcmePublicID})
+	_, err := c.SiteAnalyticsOpensByHour(t.Context(), siteapi.SiteAnalyticsOpensByHourParams{WorkspaceId: fixtures.AcmePublicID})
 	require.Error(t, err)
 }
 
@@ -193,7 +192,7 @@ func TestSiteAnalyticsOpensByHourMapsTheModule(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	res, err := c.SiteAnalyticsOpensByHour(context.Background(), siteapi.SiteAnalyticsOpensByHourParams{WorkspaceId: fixtures.AcmePublicID})
+	res, err := c.SiteAnalyticsOpensByHour(t.Context(), siteapi.SiteAnalyticsOpensByHourParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	report := res
 
