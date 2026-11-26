@@ -7,6 +7,8 @@ import (
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
+
+	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 )
 
 // AutomationSkippedEntry is an entry into an Automation that its entry checks refused (ADR 0127):
@@ -53,8 +55,10 @@ func (AutomationSkippedEntry) Fields() []ent.Field {
 			Nillable().
 			Immutable(),
 		// The occurrence of a date Trigger the entry was for (ADR 0126): the anniversary year of a
-		// yearly date, datetrigger.OnceMark for a once date. Null for an Event's or a Rule's entry.
+		// yearly date or a once date's one (datetrigger.Occurrence, an int column). Null for an Event's or a
+		// Rule's entry.
 		field.Int("occurrence").
+			GoType(datetrigger.StoredOccurrence{}).
 			Optional().
 			Nillable().
 			Immutable(),

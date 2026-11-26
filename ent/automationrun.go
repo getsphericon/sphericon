@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/rulefiring"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
+	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 )
 
 // AutomationRun is the model entity for the AutomationRun schema.
@@ -49,7 +50,7 @@ type AutomationRun struct {
 	// FiringID holds the value of the "firing_id" field.
 	FiringID *int64 `json:"firing_id,omitempty"`
 	// Occurrence holds the value of the "occurrence" field.
-	Occurrence *int `json:"occurrence,omitempty"`
+	Occurrence *datetrigger.StoredOccurrence `json:"occurrence,omitempty"`
 	// Chain holds the value of the "chain" field.
 	Chain []int64 `json:"chain,omitempty"`
 	// Ordinal holds the value of the "ordinal" field.
@@ -151,9 +152,11 @@ func (*AutomationRun) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case automationrun.FieldOccurrence:
+			values[i] = &sql.NullScanner{S: new(datetrigger.StoredOccurrence)}
 		case automationrun.FieldEventProperties, automationrun.FieldChain:
 			values[i] = new([]byte)
-		case automationrun.FieldID, automationrun.FieldWorkspaceID, automationrun.FieldAutomationID, automationrun.FieldContactID, automationrun.FieldVersionID, automationrun.FieldFiringID, automationrun.FieldOccurrence, automationrun.FieldOrdinal, automationrun.FieldFailureStatus:
+		case automationrun.FieldID, automationrun.FieldWorkspaceID, automationrun.FieldAutomationID, automationrun.FieldContactID, automationrun.FieldVersionID, automationrun.FieldFiringID, automationrun.FieldOrdinal, automationrun.FieldFailureStatus:
 			values[i] = new(sql.NullInt64)
 		case automationrun.FieldStatus, automationrun.FieldEventAction, automationrun.FieldTriggerSourceID, automationrun.FieldKeyValue, automationrun.FieldCurrentStepID, automationrun.FieldFailureKind, automationrun.FieldFailureExcerpt:
 			values[i] = new(sql.NullString)
@@ -258,11 +261,11 @@ func (_m *AutomationRun) assignValues(columns []string, values []any) error {
 				*_m.FiringID = value.Int64
 			}
 		case automationrun.FieldOccurrence:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
+			if value, ok := values[i].(*sql.NullScanner); !ok {
 				return fmt.Errorf("unexpected type %T for field occurrence", values[i])
 			} else if value.Valid {
-				_m.Occurrence = new(int)
-				*_m.Occurrence = int(value.Int64)
+				_m.Occurrence = new(datetrigger.StoredOccurrence)
+				*_m.Occurrence = *value.S.(*datetrigger.StoredOccurrence)
 			}
 		case automationrun.FieldChain:
 			if value, ok := values[i].(*[]byte); !ok {

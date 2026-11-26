@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/rulefiring"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 )
 
 // AutomationSkippedEntryCreate is the builder for creating a AutomationSkippedEntry entity.
@@ -101,13 +102,13 @@ func (_c *AutomationSkippedEntryCreate) SetNillableFiringID(v *int64) *Automatio
 }
 
 // SetOccurrence sets the "occurrence" field.
-func (_c *AutomationSkippedEntryCreate) SetOccurrence(v int) *AutomationSkippedEntryCreate {
+func (_c *AutomationSkippedEntryCreate) SetOccurrence(v datetrigger.StoredOccurrence) *AutomationSkippedEntryCreate {
 	_c.mutation.SetOccurrence(v)
 	return _c
 }
 
 // SetNillableOccurrence sets the "occurrence" field if the given value is not nil.
-func (_c *AutomationSkippedEntryCreate) SetNillableOccurrence(v *int) *AutomationSkippedEntryCreate {
+func (_c *AutomationSkippedEntryCreate) SetNillableOccurrence(v *datetrigger.StoredOccurrence) *AutomationSkippedEntryCreate {
 	if v != nil {
 		_c.SetOccurrence(*v)
 	}

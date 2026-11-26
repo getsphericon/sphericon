@@ -9,6 +9,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
+	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 )
 
 // ID filters vertices based on their ID field.
@@ -107,7 +108,7 @@ func FiringID(v int64) predicate.AutomationRun {
 }
 
 // Occurrence applies equality check predicate on the "occurrence" field. It's identical to OccurrenceEQ.
-func Occurrence(v int) predicate.AutomationRun {
+func Occurrence(v datetrigger.StoredOccurrence) predicate.AutomationRun {
 	return predicate.AutomationRun(sql.FieldEQ(FieldOccurrence, v))
 }
 
@@ -558,42 +559,42 @@ func FiringIDNotNil() predicate.AutomationRun {
 }
 
 // OccurrenceEQ applies the EQ predicate on the "occurrence" field.
-func OccurrenceEQ(v int) predicate.AutomationRun {
+func OccurrenceEQ(v datetrigger.StoredOccurrence) predicate.AutomationRun {
 	return predicate.AutomationRun(sql.FieldEQ(FieldOccurrence, v))
 }
 
 // OccurrenceNEQ applies the NEQ predicate on the "occurrence" field.
-func OccurrenceNEQ(v int) predicate.AutomationRun {
+func OccurrenceNEQ(v datetrigger.StoredOccurrence) predicate.AutomationRun {
 	return predicate.AutomationRun(sql.FieldNEQ(FieldOccurrence, v))
 }
 
 // OccurrenceIn applies the In predicate on the "occurrence" field.
-func OccurrenceIn(vs ...int) predicate.AutomationRun {
+func OccurrenceIn(vs ...datetrigger.StoredOccurrence) predicate.AutomationRun {
 	return predicate.AutomationRun(sql.FieldIn(FieldOccurrence, vs...))
 }
 
 // OccurrenceNotIn applies the NotIn predicate on the "occurrence" field.
-func OccurrenceNotIn(vs ...int) predicate.AutomationRun {
+func OccurrenceNotIn(vs ...datetrigger.StoredOccurrence) predicate.AutomationRun {
 	return predicate.AutomationRun(sql.FieldNotIn(FieldOccurrence, vs...))
 }
 
 // OccurrenceGT applies the GT predicate on the "occurrence" field.
-func OccurrenceGT(v int) predicate.AutomationRun {
+func OccurrenceGT(v datetrigger.StoredOccurrence) predicate.AutomationRun {
 	return predicate.AutomationRun(sql.FieldGT(FieldOccurrence, v))
 }
 
 // OccurrenceGTE applies the GTE predicate on the "occurrence" field.
-func OccurrenceGTE(v int) predicate.AutomationRun {
+func OccurrenceGTE(v datetrigger.StoredOccurrence) predicate.AutomationRun {
 	return predicate.AutomationRun(sql.FieldGTE(FieldOccurrence, v))
 }
 
 // OccurrenceLT applies the LT predicate on the "occurrence" field.
-func OccurrenceLT(v int) predicate.AutomationRun {
+func OccurrenceLT(v datetrigger.StoredOccurrence) predicate.AutomationRun {
 	return predicate.AutomationRun(sql.FieldLT(FieldOccurrence, v))
 }
 
 // OccurrenceLTE applies the LTE predicate on the "occurrence" field.
-func OccurrenceLTE(v int) predicate.AutomationRun {
+func OccurrenceLTE(v datetrigger.StoredOccurrence) predicate.AutomationRun {
 	return predicate.AutomationRun(sql.FieldLTE(FieldOccurrence, v))
 }
 

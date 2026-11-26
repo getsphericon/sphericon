@@ -11,18 +11,18 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationskippedentry"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
-	"github.com/getsphericon/sphericon/internal/kernel/optional"
+	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 )
 
 // cause is what caused an entry, which enrolls a Contact in an Automation once (ADR 0127): the
 // Event whose Trigger it is, by its source id, the Rule Firing whose Enroll Action it is, or the
-// occurrence of a date Trigger (ADR 0126), by its anniversary year or datetrigger.OnceMark. An
+// occurrence of a date Trigger (ADR 0126), a datetrigger.Occurrence. An
 // entry has one or none: an Enrollment no Event, Firing or occurrence caused (a Firing run without
 // its stored Event's source id) is no cause's, and nothing makes it once only.
 type cause struct {
 	sourceID   string
 	firingID   int64
-	occurrence *int
+	occurrence datetrigger.Occurrence
 }
 
 // byEvent is whether the cause is the Event of a Trigger.
@@ -42,7 +42,7 @@ func (c cause) made(run *ent.AutomationRun) bool {
 	case c.byFiring():
 		return lo.FromPtr(run.FiringID) == c.firingID
 	case c.byOccurrence():
-		return optional.Equal(run.Occurrence, c.occurrence)
+		return run.Occurrence != nil && run.Occurrence.Occurrence == c.occurrence
 	}
 	return false
 }
@@ -61,7 +61,7 @@ func (c cause) insertRun(ctx context.Context, create *ent.AutomationRunScopedCre
 			OnConflictColumns(automationrun.FieldWorkspaceID, automationrun.FieldAutomationID, automationrun.FieldFiringID).
 			DoNothing().ID(ctx)
 	case c.byOccurrence():
-		return create.SetOccurrence(*c.occurrence).
+		return create.SetOccurrence(datetrigger.Stored(c.occurrence)).
 			OnConflictColumnsWhere(sql.NotNull(automationrun.FieldOccurrence),
 				automationrun.FieldWorkspaceID, automationrun.FieldAutomationID, automationrun.FieldContactID, automationrun.FieldOccurrence).
 			DoNothing().ID(ctx)
@@ -88,7 +88,7 @@ func (c cause) insertSkip(ctx context.Context, create *ent.AutomationSkippedEntr
 			OnConflictColumns(automationskippedentry.FieldWorkspaceID, automationskippedentry.FieldAutomationID, automationskippedentry.FieldFiringID).
 			DoNothing().Exec(ctx)
 	case c.byOccurrence():
-		return create.SetOccurrence(*c.occurrence).
+		return create.SetOccurrence(datetrigger.Stored(c.occurrence)).
 			OnConflictColumnsWhere(occurrenceSkipIndexOf(reason),
 				automationskippedentry.FieldWorkspaceID, automationskippedentry.FieldAutomationID,
 				automationskippedentry.FieldContactID, automationskippedentry.FieldOccurrence).

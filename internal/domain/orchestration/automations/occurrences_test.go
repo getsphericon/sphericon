@@ -160,7 +160,7 @@ func TestADateTriggerCountsTheAnniversaryYearOfTheDateTheOffsetCountsFrom(t *tes
 
 	require.Len(t, runs, 1)
 	assert.Equal(t, at(2026, time.December, 30, 10, 0), runs[0].BeganAt.UTC())
-	assert.Equal(t, new(2027), runs[0].Occurrence)
+	assert.Equal(t, &datetrigger.StoredOccurrence{Occurrence: datetrigger.Yearly{Year: 2027}}, runs[0].Occurrence)
 }
 
 // A Contact enrolled for this year whose birthday is then moved to a later day this year is not

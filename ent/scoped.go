@@ -7644,7 +7644,7 @@ func (x *AutomationRunScopedCreate) SetNillableFiringID(v *int64) *AutomationRun
 const RoleOf_AutomationRunScopedCreate_SetNillableFiringID = RoleStep
 
 // SetOccurrence sets the "occurrence" field.
-func (x *AutomationRunScopedCreate) SetOccurrence(v int) *AutomationRunScopedCreate {
+func (x *AutomationRunScopedCreate) SetOccurrence(v datetrigger.StoredOccurrence) *AutomationRunScopedCreate {
 	x.set = append(x.set, func(b *AutomationRunCreate) { b.SetOccurrence(v) })
 	return x
 }
@@ -7652,7 +7652,7 @@ func (x *AutomationRunScopedCreate) SetOccurrence(v int) *AutomationRunScopedCre
 const RoleOf_AutomationRunScopedCreate_SetOccurrence = RoleStep
 
 // SetNillableOccurrence sets the "occurrence" field if the given value is not nil.
-func (x *AutomationRunScopedCreate) SetNillableOccurrence(v *int) *AutomationRunScopedCreate {
+func (x *AutomationRunScopedCreate) SetNillableOccurrence(v *datetrigger.StoredOccurrence) *AutomationRunScopedCreate {
 	if v != nil {
 		x.SetOccurrence(*v)
 	}
@@ -9348,7 +9348,7 @@ func (x *AutomationSkippedEntryScopedCreate) SetNillableFiringID(v *int64) *Auto
 const RoleOf_AutomationSkippedEntryScopedCreate_SetNillableFiringID = RoleStep
 
 // SetOccurrence sets the "occurrence" field.
-func (x *AutomationSkippedEntryScopedCreate) SetOccurrence(v int) *AutomationSkippedEntryScopedCreate {
+func (x *AutomationSkippedEntryScopedCreate) SetOccurrence(v datetrigger.StoredOccurrence) *AutomationSkippedEntryScopedCreate {
 	x.set = append(x.set, func(b *AutomationSkippedEntryCreate) { b.SetOccurrence(v) })
 	return x
 }
@@ -9356,7 +9356,7 @@ func (x *AutomationSkippedEntryScopedCreate) SetOccurrence(v int) *AutomationSki
 const RoleOf_AutomationSkippedEntryScopedCreate_SetOccurrence = RoleStep
 
 // SetNillableOccurrence sets the "occurrence" field if the given value is not nil.
-func (x *AutomationSkippedEntryScopedCreate) SetNillableOccurrence(v *int) *AutomationSkippedEntryScopedCreate {
+func (x *AutomationSkippedEntryScopedCreate) SetNillableOccurrence(v *datetrigger.StoredOccurrence) *AutomationSkippedEntryScopedCreate {
 	if v != nil {
 		x.SetOccurrence(*v)
 	}

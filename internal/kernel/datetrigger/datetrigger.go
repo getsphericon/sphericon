@@ -48,23 +48,13 @@ func (d Date) Schedule() (localcalendar.Schedule, error) {
 	return localcalendar.NewSchedule(d.Recurrence, d.OffsetDays, d.LocalTime)
 }
 
-// Occurrence is the mark an occurrence is stored under (ADR 0126): its anniversary year for a
-// yearly date, OnceMark for a once date, which no year equals.
-func (d Date) Occurrence(year int) int {
+// Occurrence is the occurrence of the date in the anniversary year: the year for a yearly date,
+// the one occurrence for a once date.
+func (d Date) Occurrence(year int) Occurrence {
 	if d.Recurrence == localcalendar.Once {
-		return OnceMark
+		return Once{}
 	}
-	return year
-}
-
-// OnceMark is the occurrence of a once date: one per Contact and Automation, ever. No anniversary
-// year is 0, so a switch between yearly and once starts its own key.
-const OnceMark = 0
-
-// YearOf is the anniversary year an occurrence is stored under, the inverse of Date.Occurrence, and
-// false for OnceMark, which is no year.
-func YearOf(occurrence int) (int, bool) {
-	return occurrence, occurrence != OnceMark
+	return Yearly{Year: year}
 }
 
 // Holder is what a Contact holds of the dates: its birthday and its Custom field values.

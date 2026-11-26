@@ -122,38 +122,29 @@ func TestABandLongerThanAYearHoldsEveryKey(t *testing.T) {
 	assert.False(t, week.Holds(localcalendar.NewDate(1990, time.September, 1)))
 }
 
-// The occurrence an Enrollment of a yearly date records reads back as its anniversary year, and
-// that of a once date as no year.
-func TestAnOccurrenceReadsBackAsItsAnniversaryYearOrOnce(t *testing.T) {
-	for name, c := range map[string]struct {
-		recurrence localcalendar.Recurrence
-		year       int
-		wantYear   int
-		wantYearly bool
-	}{
-		"a yearly date's anniversary":  {recurrence: localcalendar.Yearly, year: 2027, wantYear: 2027, wantYearly: true},
-		"a yearly date's first year":   {recurrence: localcalendar.Yearly, year: 1, wantYear: 1, wantYearly: true},
-		"a once date's one occurrence": {recurrence: localcalendar.Once, year: 2027, wantYear: 0, wantYearly: false},
-	} {
-		t.Run(name, func(t *testing.T) {
-			occurrence := datetrigger.Date{Recurrence: c.recurrence}.Occurrence(c.year)
+// A yearly date's occurrence is its anniversary year, and a once date's its one occurrence.
+func TestADatesOccurrenceIsItsAnniversaryYearOrOnce(t *testing.T) {
+	yearly := datetrigger.Date{Recurrence: localcalendar.Yearly}.Occurrence(2027)
+	once := datetrigger.Date{Recurrence: localcalendar.Once}.Occurrence(2027)
 
-			year, yearly := datetrigger.YearOf(occurrence)
-
-			assert.Equal(t, c.wantYear, year)
-			assert.Equal(t, c.wantYearly, yearly)
-		})
-	}
+	assert.Equal(t, datetrigger.Yearly{Year: 2027}, yearly)
+	assert.Equal(t, datetrigger.Once{}, once)
 }
 
-// Every anniversary year a yearly date records reads back as itself.
-func TestEveryAnniversaryYearReadsBack(t *testing.T) {
+// Every occurrence a column stores reads back as itself: each anniversary year, and the one
+// occurrence of a once date.
+func TestEveryStoredOccurrenceReadsBack(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
-		want := rapid.IntRange(1, 9999).Draw(t, "year")
+		want := rapid.OneOf(
+			rapid.Map(rapid.IntRange(1, 9999), func(year int) datetrigger.Occurrence { return datetrigger.Yearly{Year: year} }),
+			rapid.Just[datetrigger.Occurrence](datetrigger.Once{}),
+		).Draw(t, "occurrence")
+		column, err := datetrigger.Stored(want).Value()
+		require.NoError(t, err)
 
-		year, yearly := datetrigger.YearOf(datetrigger.Date{Recurrence: localcalendar.Yearly}.Occurrence(want))
+		var read datetrigger.StoredOccurrence
+		require.NoError(t, read.Scan(column))
 
-		assert.Equal(t, want, year)
-		assert.True(t, yearly)
+		assert.Equal(t, want, read.Occurrence)
 	})
 }

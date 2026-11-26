@@ -1097,19 +1097,22 @@ func optSkippedReason(c Converter, v *skipreason.Reason) externalapi.OptNilSkipp
 
 // enrollmentOccurrence is the occurrence of a date Trigger the enrollment was made for (ADR 0126):
 // its anniversary year, or a once date's one occurrence; absent for one an Event or a rule began.
-func enrollmentOccurrence(occurrence *int) externalapi.OptEnrollmentOccurrence {
-	if occurrence == nil {
+func enrollmentOccurrence(stored *datetrigger.StoredOccurrence) externalapi.OptEnrollmentOccurrence {
+	if stored == nil {
 		return externalapi.OptEnrollmentOccurrence{}
 	}
-	year, yearly := datetrigger.YearOf(*occurrence)
-	if !yearly {
-		return externalapi.NewOptEnrollmentOccurrence(externalapi.EnrollmentOccurrence{OneOf: externalapi.NewOnceEnrollmentOccurrenceEnrollmentOccurrenceSum(
-			externalapi.OnceEnrollmentOccurrence{Recurrence: externalapi.OnceEnrollmentOccurrenceRecurrenceOnce},
-		)})
+	var sum externalapi.EnrollmentOccurrenceSum
+	switch o := stored.Occurrence.(type) {
+	case datetrigger.Yearly:
+		sum = externalapi.NewYearlyEnrollmentOccurrenceEnrollmentOccurrenceSum(externalapi.YearlyEnrollmentOccurrence{
+			Recurrence: externalapi.YearlyEnrollmentOccurrenceRecurrenceYearly, Year: count(o.Year),
+		})
+	case datetrigger.Once:
+		sum = externalapi.NewOnceEnrollmentOccurrenceEnrollmentOccurrenceSum(externalapi.OnceEnrollmentOccurrence{
+			Recurrence: externalapi.OnceEnrollmentOccurrenceRecurrenceOnce,
+		})
 	}
-	return externalapi.NewOptEnrollmentOccurrence(externalapi.EnrollmentOccurrence{OneOf: externalapi.NewYearlyEnrollmentOccurrenceEnrollmentOccurrenceSum(
-		externalapi.YearlyEnrollmentOccurrence{Recurrence: externalapi.YearlyEnrollmentOccurrenceRecurrenceYearly, Year: count(year)},
-	)})
+	return externalapi.NewOptEnrollmentOccurrence(externalapi.EnrollmentOccurrence{OneOf: sum})
 }
 
 // enrollmentFailure is the enrollment's failure detail; absent unless it failed.

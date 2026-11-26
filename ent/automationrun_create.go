@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/rulefiring"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
+	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 )
 
 // AutomationRunCreate is the builder for creating a AutomationRun entity.
@@ -157,13 +158,13 @@ func (_c *AutomationRunCreate) SetNillableFiringID(v *int64) *AutomationRunCreat
 }
 
 // SetOccurrence sets the "occurrence" field.
-func (_c *AutomationRunCreate) SetOccurrence(v int) *AutomationRunCreate {
+func (_c *AutomationRunCreate) SetOccurrence(v datetrigger.StoredOccurrence) *AutomationRunCreate {
 	_c.mutation.SetOccurrence(v)
 	return _c
 }
 
 // SetNillableOccurrence sets the "occurrence" field if the given value is not nil.
-func (_c *AutomationRunCreate) SetNillableOccurrence(v *int) *AutomationRunCreate {
+func (_c *AutomationRunCreate) SetNillableOccurrence(v *datetrigger.StoredOccurrence) *AutomationRunCreate {
 	if v != nil {
 		_c.SetOccurrence(*v)
 	}

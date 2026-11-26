@@ -338,8 +338,10 @@ func splitRound(run *ent.AutomationRun) int {
 	if run.Occurrence == nil {
 		return run.Ordinal
 	}
-	if year, yearly := datetrigger.YearOf(*run.Occurrence); yearly {
-		return year
+	switch o := run.Occurrence.Occurrence.(type) {
+	case datetrigger.Yearly:
+		return o.Year
+	case datetrigger.Once:
 	}
 	return run.Ordinal
 }

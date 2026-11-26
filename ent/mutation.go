@@ -6831,8 +6831,7 @@ type AutomationRunMutation struct {
 	event_action      *string
 	event_properties  *map[string]interface{}
 	trigger_source_id *string
-	occurrence        *int
-	addoccurrence     *int
+	occurrence        *datetrigger.StoredOccurrence
 	chain             *[]int64
 	appendchain       []int64
 	ordinal           *int
@@ -7450,13 +7449,12 @@ func (m *AutomationRunMutation) ResetFiringID() {
 }
 
 // SetOccurrence sets the "occurrence" field.
-func (m *AutomationRunMutation) SetOccurrence(i int) {
-	m.occurrence = &i
-	m.addoccurrence = nil
+func (m *AutomationRunMutation) SetOccurrence(do datetrigger.StoredOccurrence) {
+	m.occurrence = &do
 }
 
 // Occurrence returns the value of the "occurrence" field in the mutation.
-func (m *AutomationRunMutation) Occurrence() (r int, exists bool) {
+func (m *AutomationRunMutation) Occurrence() (r datetrigger.StoredOccurrence, exists bool) {
 	v := m.occurrence
 	if v == nil {
 		return
@@ -7467,7 +7465,7 @@ func (m *AutomationRunMutation) Occurrence() (r int, exists bool) {
 // OldOccurrence returns the old "occurrence" field's value of the AutomationRun entity.
 // If the AutomationRun object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AutomationRunMutation) OldOccurrence(ctx context.Context) (v *int, err error) {
+func (m *AutomationRunMutation) OldOccurrence(ctx context.Context) (v *datetrigger.StoredOccurrence, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldOccurrence is only allowed on UpdateOne operations")
 	}
@@ -7481,28 +7479,9 @@ func (m *AutomationRunMutation) OldOccurrence(ctx context.Context) (v *int, err 
 	return oldValue.Occurrence, nil
 }
 
-// AddOccurrence adds i to the "occurrence" field.
-func (m *AutomationRunMutation) AddOccurrence(i int) {
-	if m.addoccurrence != nil {
-		*m.addoccurrence += i
-	} else {
-		m.addoccurrence = &i
-	}
-}
-
-// AddedOccurrence returns the value that was added to the "occurrence" field in this mutation.
-func (m *AutomationRunMutation) AddedOccurrence() (r int, exists bool) {
-	v := m.addoccurrence
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
 // ClearOccurrence clears the value of the "occurrence" field.
 func (m *AutomationRunMutation) ClearOccurrence() {
 	m.occurrence = nil
-	m.addoccurrence = nil
 	m.clearedFields[automationrun.FieldOccurrence] = struct{}{}
 }
 
@@ -7515,7 +7494,6 @@ func (m *AutomationRunMutation) OccurrenceCleared() bool {
 // ResetOccurrence resets all changes to the "occurrence" field.
 func (m *AutomationRunMutation) ResetOccurrence() {
 	m.occurrence = nil
-	m.addoccurrence = nil
 	delete(m.clearedFields, automationrun.FieldOccurrence)
 }
 
@@ -8425,7 +8403,7 @@ func (m *AutomationRunMutation) SetField(name string, value ent.Value) error {
 		m.SetFiringID(v)
 		return nil
 	case automationrun.FieldOccurrence:
-		v, ok := value.(int)
+		v, ok := value.(datetrigger.StoredOccurrence)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -8502,9 +8480,6 @@ func (m *AutomationRunMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *AutomationRunMutation) AddedFields() []string {
 	var fields []string
-	if m.addoccurrence != nil {
-		fields = append(fields, automationrun.FieldOccurrence)
-	}
 	if m.addordinal != nil {
 		fields = append(fields, automationrun.FieldOrdinal)
 	}
@@ -8519,8 +8494,6 @@ func (m *AutomationRunMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *AutomationRunMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
-	case automationrun.FieldOccurrence:
-		return m.AddedOccurrence()
 	case automationrun.FieldOrdinal:
 		return m.AddedOrdinal()
 	case automationrun.FieldFailureStatus:
@@ -8534,13 +8507,6 @@ func (m *AutomationRunMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *AutomationRunMutation) AddField(name string, value ent.Value) error {
 	switch name {
-	case automationrun.FieldOccurrence:
-		v, ok := value.(int)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddOccurrence(v)
-		return nil
 	case automationrun.FieldOrdinal:
 		v, ok := value.(int)
 		if !ok {
@@ -8882,8 +8848,7 @@ type AutomationSkippedEntryMutation struct {
 	created_at        *time.Time
 	updated_at        *time.Time
 	source_id         *string
-	occurrence        *int
-	addoccurrence     *int
+	occurrence        *datetrigger.StoredOccurrence
 	reason            *automationskippedentry.Reason
 	occurred_at       *time.Time
 	clearedFields     map[string]struct{}
@@ -9283,13 +9248,12 @@ func (m *AutomationSkippedEntryMutation) ResetFiringID() {
 }
 
 // SetOccurrence sets the "occurrence" field.
-func (m *AutomationSkippedEntryMutation) SetOccurrence(i int) {
-	m.occurrence = &i
-	m.addoccurrence = nil
+func (m *AutomationSkippedEntryMutation) SetOccurrence(do datetrigger.StoredOccurrence) {
+	m.occurrence = &do
 }
 
 // Occurrence returns the value of the "occurrence" field in the mutation.
-func (m *AutomationSkippedEntryMutation) Occurrence() (r int, exists bool) {
+func (m *AutomationSkippedEntryMutation) Occurrence() (r datetrigger.StoredOccurrence, exists bool) {
 	v := m.occurrence
 	if v == nil {
 		return
@@ -9300,7 +9264,7 @@ func (m *AutomationSkippedEntryMutation) Occurrence() (r int, exists bool) {
 // OldOccurrence returns the old "occurrence" field's value of the AutomationSkippedEntry entity.
 // If the AutomationSkippedEntry object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AutomationSkippedEntryMutation) OldOccurrence(ctx context.Context) (v *int, err error) {
+func (m *AutomationSkippedEntryMutation) OldOccurrence(ctx context.Context) (v *datetrigger.StoredOccurrence, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldOccurrence is only allowed on UpdateOne operations")
 	}
@@ -9314,28 +9278,9 @@ func (m *AutomationSkippedEntryMutation) OldOccurrence(ctx context.Context) (v *
 	return oldValue.Occurrence, nil
 }
 
-// AddOccurrence adds i to the "occurrence" field.
-func (m *AutomationSkippedEntryMutation) AddOccurrence(i int) {
-	if m.addoccurrence != nil {
-		*m.addoccurrence += i
-	} else {
-		m.addoccurrence = &i
-	}
-}
-
-// AddedOccurrence returns the value that was added to the "occurrence" field in this mutation.
-func (m *AutomationSkippedEntryMutation) AddedOccurrence() (r int, exists bool) {
-	v := m.addoccurrence
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
 // ClearOccurrence clears the value of the "occurrence" field.
 func (m *AutomationSkippedEntryMutation) ClearOccurrence() {
 	m.occurrence = nil
-	m.addoccurrence = nil
 	m.clearedFields[automationskippedentry.FieldOccurrence] = struct{}{}
 }
 
@@ -9348,7 +9293,6 @@ func (m *AutomationSkippedEntryMutation) OccurrenceCleared() bool {
 // ResetOccurrence resets all changes to the "occurrence" field.
 func (m *AutomationSkippedEntryMutation) ResetOccurrence() {
 	m.occurrence = nil
-	m.addoccurrence = nil
 	delete(m.clearedFields, automationskippedentry.FieldOccurrence)
 }
 
@@ -9713,7 +9657,7 @@ func (m *AutomationSkippedEntryMutation) SetField(name string, value ent.Value) 
 		m.SetFiringID(v)
 		return nil
 	case automationskippedentry.FieldOccurrence:
-		v, ok := value.(int)
+		v, ok := value.(datetrigger.StoredOccurrence)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -9741,9 +9685,6 @@ func (m *AutomationSkippedEntryMutation) SetField(name string, value ent.Value) 
 // this mutation.
 func (m *AutomationSkippedEntryMutation) AddedFields() []string {
 	var fields []string
-	if m.addoccurrence != nil {
-		fields = append(fields, automationskippedentry.FieldOccurrence)
-	}
 	return fields
 }
 
@@ -9752,8 +9693,6 @@ func (m *AutomationSkippedEntryMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *AutomationSkippedEntryMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
-	case automationskippedentry.FieldOccurrence:
-		return m.AddedOccurrence()
 	}
 	return nil, false
 }
@@ -9763,13 +9702,6 @@ func (m *AutomationSkippedEntryMutation) AddedField(name string) (ent.Value, boo
 // type.
 func (m *AutomationSkippedEntryMutation) AddField(name string, value ent.Value) error {
 	switch name {
-	case automationskippedentry.FieldOccurrence:
-		v, ok := value.(int)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddOccurrence(v)
-		return nil
 	}
 	return fmt.Errorf("unknown AutomationSkippedEntry numeric field %s", name)
 }

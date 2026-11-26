@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/schema/index"
 
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
+	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 )
 
 // AutomationRun is one contact's progress through an Automation, an Enrollment. A Contact may have
@@ -96,10 +97,11 @@ func (AutomationRun) Fields() []ent.Field {
 			Nillable().
 			Immutable(),
 		// The occurrence of a date Trigger the Enrollment was made for (ADR 0126): the anniversary
-		// year of a yearly date, datetrigger.OnceMark for a once date. It belongs to the Automation,
+		// year of a yearly date or a once date's one (datetrigger.Occurrence, an int column). It belongs to the Automation,
 		// not the version: one Enrollment per Contact and occurrence, whatever field a later version
 		// names. Null for an Enrollment an Event or a Rule began.
 		field.Int("occurrence").
+			GoType(datetrigger.StoredOccurrence{}).
 			Optional().
 			Nillable().
 			Immutable(),

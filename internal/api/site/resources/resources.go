@@ -1493,19 +1493,22 @@ func inviterEmail(inv ent.Invitation) siteapi.OptNilString {
 
 // enrollmentOccurrence is the occurrence of a date Trigger the enrollment was made for (ADR 0126):
 // its anniversary year, or a once date's one occurrence; absent for one an Event or a rule began.
-func enrollmentOccurrence(occurrence *int) siteapi.OptEnrollmentOccurrence {
-	if occurrence == nil {
+func enrollmentOccurrence(stored *datetrigger.StoredOccurrence) siteapi.OptEnrollmentOccurrence {
+	if stored == nil {
 		return siteapi.OptEnrollmentOccurrence{}
 	}
-	year, yearly := datetrigger.YearOf(*occurrence)
-	if !yearly {
-		return siteapi.NewOptEnrollmentOccurrence(siteapi.EnrollmentOccurrence{OneOf: siteapi.NewOnceEnrollmentOccurrenceEnrollmentOccurrenceSum(
-			siteapi.OnceEnrollmentOccurrence{Recurrence: siteapi.OnceEnrollmentOccurrenceRecurrenceOnce},
-		)})
+	var sum siteapi.EnrollmentOccurrenceSum
+	switch o := stored.Occurrence.(type) {
+	case datetrigger.Yearly:
+		sum = siteapi.NewYearlyEnrollmentOccurrenceEnrollmentOccurrenceSum(siteapi.YearlyEnrollmentOccurrence{
+			Recurrence: siteapi.YearlyEnrollmentOccurrenceRecurrenceYearly, Year: count(o.Year),
+		})
+	case datetrigger.Once:
+		sum = siteapi.NewOnceEnrollmentOccurrenceEnrollmentOccurrenceSum(siteapi.OnceEnrollmentOccurrence{
+			Recurrence: siteapi.OnceEnrollmentOccurrenceRecurrenceOnce,
+		})
 	}
-	return siteapi.NewOptEnrollmentOccurrence(siteapi.EnrollmentOccurrence{OneOf: siteapi.NewYearlyEnrollmentOccurrenceEnrollmentOccurrenceSum(
-		siteapi.YearlyEnrollmentOccurrence{Recurrence: siteapi.YearlyEnrollmentOccurrenceRecurrenceYearly, Year: count(year)},
-	)})
+	return siteapi.NewOptEnrollmentOccurrence(siteapi.EnrollmentOccurrence{OneOf: sum})
 }
 
 // enrollmentFailure is the enrollment's failure detail; absent unless it failed.

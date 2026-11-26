@@ -305,7 +305,7 @@ func yearsIn(d datetrigger.Date, w window, c *ent.Contact, workspaceZone *string
 // begins at the moment with an empty `event` (enroll).
 func (m *StepExecution) decideOccurrence(ctx context.Context, s *ent.Scoped, c occurrenceCase) error {
 	occurrence := c.date.Occurrence(c.year)
-	o := origin{Cause: cause{occurrence: &occurrence}}
+	o := origin{Cause: cause{occurrence: occurrence}}
 	_, err := m.start(ctx, s, func(ts *ent.Scoped, pub events.Publisher) (entered, error) {
 		return m.enroll(ctx, ts, pub, c.automationID, c.contactID, o, func(a *ent.Automation, held *ent.Contact, o *origin) (bool, error) {
 			live := a.Edges.LiveVersion
@@ -349,9 +349,10 @@ func (m *StepExecution) decideOccurrence(ctx context.Context, s *ent.Scoped, c o
 // decided: an Enrollment was made for it, or a skipped entry other than `send_locked` records it.
 // It is read under the Contact's lock, which every decision of the occurrence takes, across the two
 // tables each of whose partial unique indexes holds one decision.
-func occurrenceDecided(ctx context.Context, s *ent.Scoped, automationID, contactID int64, occurrence int) (bool, error) {
+func occurrenceDecided(ctx context.Context, s *ent.Scoped, automationID, contactID int64, occurrence datetrigger.Occurrence) (bool, error) {
+	stored := datetrigger.Stored(occurrence)
 	enrolled, err := s.AutomationRun().Query().
-		Where(automationrun.AutomationID(automationID), automationrun.ContactID(contactID), automationrun.Occurrence(occurrence)).
+		Where(automationrun.AutomationID(automationID), automationrun.ContactID(contactID), automationrun.Occurrence(stored)).
 		Exist(ctx)
 	if err != nil || enrolled {
 		return enrolled, err
@@ -360,7 +361,7 @@ func occurrenceDecided(ctx context.Context, s *ent.Scoped, automationID, contact
 		Where(
 			automationskippedentry.AutomationID(automationID),
 			automationskippedentry.ContactID(contactID),
-			automationskippedentry.Occurrence(occurrence),
+			automationskippedentry.Occurrence(stored),
 			automationskippedentry.ReasonNEQ(automationskippedentry.ReasonSendLocked),
 		).
 		Exist(ctx)
