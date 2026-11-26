@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/internal/kernel/localcalendar"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
 // testingT is a *testing.T or a *rapid.T.
@@ -235,14 +236,14 @@ func TestTheConstructorsRefuseWhatIsOutOfBounds(t *testing.T) {
 		localTime  string
 		want       error
 	}{
-		{"an offset beyond a year after", localcalendar.Yearly, 366, "10:00", localcalendar.ErrOffset},
-		{"an offset beyond a year before", localcalendar.Yearly, -366, "10:00", localcalendar.ErrOffset},
+		{"an offset beyond a year after", localcalendar.Yearly, 366, "10:00", validation.ErrOutOfRange},
+		{"an offset beyond a year before", localcalendar.Yearly, -366, "10:00", validation.ErrOutOfRange},
 		{"an unknown recurrence", "monthly", 0, "10:00", localcalendar.ErrRecurrence},
-		{"a one-digit hour", localcalendar.Yearly, 0, "9:00", localcalendar.ErrLocalTime},
-		{"24:00", localcalendar.Yearly, 0, "24:00", localcalendar.ErrLocalTime},
-		{"a minute past the hour's end", localcalendar.Yearly, 0, "10:60", localcalendar.ErrLocalTime},
-		{"seconds", localcalendar.Yearly, 0, "10:00:00", localcalendar.ErrLocalTime},
-		{"a sign", localcalendar.Yearly, 0, "+1:00", localcalendar.ErrLocalTime},
+		{"a one-digit hour", localcalendar.Yearly, 0, "9:00", validation.ErrPatternMismatch},
+		{"24:00", localcalendar.Yearly, 0, "24:00", validation.ErrPatternMismatch},
+		{"a minute past the hour's end", localcalendar.Yearly, 0, "10:60", validation.ErrPatternMismatch},
+		{"seconds", localcalendar.Yearly, 0, "10:00:00", validation.ErrPatternMismatch},
+		{"a sign", localcalendar.Yearly, 0, "+1:00", validation.ErrPatternMismatch},
 	}
 	for _, c := range schedules {
 		t.Run(c.name, func(t *testing.T) {
@@ -260,7 +261,7 @@ func TestTheConstructorsRefuseWhatIsOutOfBounds(t *testing.T) {
 		{"a repeated weekday", "09:00", []localcalendar.Weekday{localcalendar.Monday, localcalendar.Monday}, localcalendar.ErrRepeatedWeekday},
 		{"an unknown weekday", "09:00", []localcalendar.Weekday{"funday"}, localcalendar.ErrWeekday},
 		{"a weekday not in lower case", "09:00", []localcalendar.Weekday{"Monday"}, localcalendar.ErrWeekday},
-		{"a malformed local time", "9am", nil, localcalendar.ErrLocalTime},
+		{"a malformed local time", "9am", nil, validation.ErrPatternMismatch},
 	}
 	for _, c := range timesOfDay {
 		t.Run(c.name, func(t *testing.T) {
@@ -391,9 +392,9 @@ func TestTheConstructorsRefuseEveryPartOutOfBoundsAtOnce(t *testing.T) {
 	_, timeOfDayErr := localcalendar.NewTimeOfDay("7pm", []localcalendar.Weekday{localcalendar.Monday, localcalendar.Monday, "someday"})
 
 	require.ErrorIs(t, scheduleErr, localcalendar.ErrRecurrence)
-	require.ErrorIs(t, scheduleErr, localcalendar.ErrOffset)
-	require.ErrorIs(t, scheduleErr, localcalendar.ErrLocalTime)
-	require.ErrorIs(t, timeOfDayErr, localcalendar.ErrLocalTime)
+	require.ErrorIs(t, scheduleErr, validation.ErrOutOfRange)
+	require.ErrorIs(t, scheduleErr, validation.ErrPatternMismatch)
+	require.ErrorIs(t, timeOfDayErr, validation.ErrPatternMismatch)
 	require.ErrorIs(t, timeOfDayErr, localcalendar.ErrRepeatedWeekday)
 	require.ErrorIs(t, timeOfDayErr, localcalendar.ErrWeekday)
 }

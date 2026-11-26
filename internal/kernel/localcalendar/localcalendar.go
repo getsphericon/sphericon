@@ -10,14 +10,15 @@ package localcalendar
 import (
 	"errors"
 	"fmt"
-	"regexp"
 	"slices"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/getsphericon/sphericon/internal/kernel/bounds"
+	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/reportday"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
 // Date is a calendar date, with no time or zone.
@@ -144,11 +145,12 @@ const (
 	Once Recurrence = "once"
 )
 
-// The refusals of a constructor, matched with errors.Is.
+// The refusals of a constructor beside the contract's bounds, matched with errors.Is. A bound the
+// contract declares, an offset in days (DateOffsetDays) or a local time (LocalTime), is refused in
+// the kernel's one form: validation.ErrOutOfRange or validation.ErrPatternMismatch on its field.
 var (
+	// ErrRecurrence is a recurrence that is no DateRecurrence of the contract.
 	ErrRecurrence = errors.New("unknown recurrence")
-	ErrOffset     = errors.New("offset out of range")
-	ErrLocalTime  = errors.New("malformed local time")
 	// ErrWeekday is a name that is no Weekday of the contract.
 	ErrWeekday         = errors.New("unknown weekday")
 	ErrRepeatedWeekday = errors.New("repeated weekday")
@@ -159,18 +161,16 @@ type hhmm struct {
 	hour, minute int
 }
 
-// localTimePattern is the contract's shape of a local time: HH:MM from 00:00 to 23:59.
-var localTimePattern = regexp.MustCompile(bounds.LocalTimePattern)
-
-// parseLocalTime reads a local time of the contract's shape.
+// parseLocalTime reads a local time of the contract's shape (LocalTime: HH:MM from 00:00 to
+// 23:59), or refuses it on its field (validation.Pattern).
 func parseLocalTime(s string) (hhmm, error) {
-	if !localTimePattern.MatchString(s) {
-		return hhmm{}, fmt.Errorf("%w: %q", ErrLocalTime, s)
+	if err := validation.Pattern(fieldname.LocalTime, s, bounds.LocalTimePattern); err != nil {
+		return hhmm{}, err
 	}
 	hour, hourErr := strconv.Atoi(s[0:2])
 	minute, minuteErr := strconv.Atoi(s[3:5])
 	if err := errors.Join(hourErr, minuteErr); err != nil {
-		return hhmm{}, fmt.Errorf("%w: %q: %w", ErrLocalTime, s, err)
+		return hhmm{}, fmt.Errorf("local time %q: %w", s, err)
 	}
 	return hhmm{hour: hour, minute: minute}, nil
 }
@@ -219,15 +219,15 @@ type Schedule struct {
 }
 
 // NewSchedule is the schedule of the recurrence, offset and local time given, or the refusal of
-// every one out of bounds, joined: ErrRecurrence, ErrOffset (beyond the contract's DateOffsetDays) and
-// ErrLocalTime.
+// every one out of bounds, joined: ErrRecurrence, an offset beyond the contract's DateOffsetDays
+// (validation.Range) and a local time not of its LocalTime (validation.Pattern).
 func NewSchedule(recurrence Recurrence, offsetDays int, localTime string) (Schedule, error) {
 	var errs []error
 	if recurrence != Yearly && recurrence != Once {
 		errs = append(errs, fmt.Errorf("%w: %q", ErrRecurrence, recurrence))
 	}
-	if offsetDays < bounds.DateOffsetDaysMin || offsetDays > bounds.DateOffsetDaysMax {
-		errs = append(errs, fmt.Errorf("%w: %d days", ErrOffset, offsetDays))
+	if err := validation.Range(fieldname.OffsetDays, offsetDays, bounds.DateOffsetDaysMin, bounds.DateOffsetDaysMax); err != nil {
+		errs = append(errs, err)
 	}
 	at, err := parseLocalTime(localTime)
 	if err != nil {
@@ -289,7 +289,8 @@ type TimeOfDay struct {
 }
 
 // NewTimeOfDay is the local time on the weekdays named, or the refusal of every part out of bounds,
-// joined: ErrLocalTime, ErrWeekday and ErrRepeatedWeekday.
+// joined: a local time not of the contract's LocalTime (validation.Pattern), ErrWeekday and
+// ErrRepeatedWeekday.
 func NewTimeOfDay(localTime string, weekdays []Weekday) (TimeOfDay, error) {
 	var errs []error
 	at, err := parseLocalTime(localTime)

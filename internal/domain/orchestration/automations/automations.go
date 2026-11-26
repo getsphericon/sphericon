@@ -124,25 +124,51 @@ func refuse(st *automationstep.Step, why string) error {
 }
 
 // stepRefusalError is ErrInvalidStep of one Step, which its detail names by its id and kind, reported
-// against the request field at the Step's location once the save placed it ("" before).
+// against the request field at the Step's location once the save placed it ("" before). A bound of
+// the contract a part of the Step breaks is the kernel's refusal instead (bound, refuseStep), in its
+// one form, reported against the part's field within the Step's (boundAt).
 type stepRefusalError struct {
-	step   automationstep.ID
-	field  string
-	detail string
+	step    automationstep.ID
+	field   string
+	detail  string
+	bound   *validation.RefusalError
+	boundAt string
 }
 
 func (e *stepRefusalError) Error() string { return e.refusal().Error() }
 func (e *stepRefusalError) Unwrap() error { return e.refusal() }
 
 func (e *stepRefusalError) refusal() error {
-	if e.field == "" {
+	switch {
+	case e.bound != nil && e.field == "":
+		return e.bound
+	case e.bound != nil:
+		return e.bound.On(e.field + "." + e.boundAt)
+	case e.field == "":
 		return ErrInvalidStep.With(e.detail)
 	}
 	return ErrInvalidStep.On(e.field).With(e.detail)
 }
 
 // stepsField is the json name of the request field that writes a version's steps.
-const stepsField = "steps"
+const stepsField = fieldname.Steps
+
+// boundRefusal is the bound of the contract the kernel refused in err (validation.Range, Pattern),
+// reported against the field it checked, which a save places under the request field of the part
+// that holds it.
+func boundRefusal(err error) (*validation.RefusalError, bool) {
+	refused, ok := errors.AsType[*validation.RefusalError](err)
+	return refused, ok && refused.Field() != ""
+}
+
+// refuseUntil refuses a Wait until's moment for err: a bound of the contract in the kernel's form,
+// under the Step's `until`, or else ErrInvalidStep naming the Step and why.
+func refuseUntil(st *automationstep.Step, err error) error {
+	if bound, ok := boundRefusal(err); ok {
+		return &stepRefusalError{step: st.ID, bound: bound, boundAt: fieldname.Until + "." + bound.Field()}
+	}
+	return refuse(st, err.Error())
+}
 
 // placeStep places a refusal of one of the steps a save writes at the Step's location in the
 // request (`steps.steps.1`), where a client shows it beside the Step; any other error is as it is.
@@ -155,7 +181,9 @@ func placeStep(err error, steps automationstep.Path) error {
 	if !ok {
 		return err
 	}
-	return &stepRefusalError{step: refused.step, field: stepsField + "." + at, detail: refused.detail}
+	placed := *refused
+	placed.field = stepsField + "." + at
+	return &placed
 }
 
 // MaxStepsPerVersion bounds a version's tree (ADR 0122, ADR 0124): its Steps over all paths. The
@@ -218,7 +246,7 @@ func validateStep(st *automationstep.Step, linkLength int) error {
 		}
 	case automationstep.WaitUntil:
 		if err := checkUntil(s.Until); err != nil {
-			return refuse(st, err.Error())
+			return refuseUntil(st, err)
 		}
 	case automationstep.Tagging:
 		if strings.TrimSpace(s.TagName()) == "" {
@@ -249,37 +277,35 @@ func checkUntil(u automationstep.Until) error {
 		_, err := u.Calendar()
 		return err
 	case automationstep.OnDate:
-		if problem := dateProblem(u.Date); problem != "" {
-			return errors.New(problem)
-		}
-		return nil
+		return dateProblem(u.Date)
 	case nil:
 		return errors.New("a wait until needs the moment it waits for")
 	}
 	return nil
 }
 
-// dateProblem says why the date a date Trigger or a Wait until names cannot be stored (ADR 0126), by
+// dateProblem is why the date a date Trigger or a Wait until names cannot be stored (ADR 0126), by
 // the rules that need no catalogue: its schedule out of the calendar's bounds
-// (localcalendar.NewSchedule), a field of no known kind or a Custom field without a key, and `once`
-// on the birthday, which is always past (decision 5 of #1613). Empty when it can.
-func dateProblem(d datetrigger.Date) string {
+// (localcalendar.NewSchedule, a bound of the contract in the kernel's form), a field of no known
+// kind or a Custom field without a key, and `once` on the birthday, which is always past (decision
+// 5 of #1613). Nil when it can.
+func dateProblem(d datetrigger.Date) error {
 	if _, err := d.Schedule(); err != nil {
-		return err.Error()
+		return err
 	}
 	switch d.Field.Kind {
 	case datetrigger.Birthday:
 		if d.Recurrence == localcalendar.Once {
-			return "a birthday is always past, so it is only yearly"
+			return errors.New("a birthday is always past, so it is only yearly")
 		}
-		return ""
+		return nil
 	case datetrigger.CustomField:
 		if d.Field.Key == "" {
-			return "the custom field has no key"
+			return errors.New("the custom field has no key")
 		}
-		return ""
+		return nil
 	}
-	return fmt.Sprintf("%q is not a date field", d.Field.Kind)
+	return fmt.Errorf("%q is not a date field", d.Field.Kind)
 }
 
 // validateBranch checks the shape of a Branch (ADR 0124): the contract's count of listed paths
@@ -716,8 +742,11 @@ const errDateTriggerEntry = "a date trigger takes no entry policy, cooldown or e
 // the Workspace's catalogue cannot hold (dateFieldProblem): such a Trigger would never fire. A Wait
 // until's date form is held to the same checks (checkUntil, checkDateFields).
 func (m *Module) checkDate(ctx context.Context, s *ent.Scoped, d datetrigger.Date) error {
-	if problem := dateProblem(d); problem != "" {
-		return errDateTriggerRefused.With(problem)
+	if err := dateProblem(d); err != nil {
+		if bound, ok := boundRefusal(err); ok {
+			return bound.On(fieldname.Trigger + "." + bound.Field())
+		}
+		return errDateTriggerRefused.With(err.Error())
 	}
 	problem, err := m.dateFieldProblem(ctx, s, d)
 	if err != nil {
@@ -731,7 +760,7 @@ func (m *Module) checkDate(ctx context.Context, s *ent.Scoped, d datetrigger.Dat
 
 // errDateTriggerRefused is ErrInvalidTrigger of a date Trigger, reported against the request's
 // `trigger`, where a client shows it beside the Trigger.
-var errDateTriggerRefused = ErrInvalidTrigger.On("trigger")
+var errDateTriggerRefused = ErrInvalidTrigger.On(fieldname.Trigger)
 
 // normalizeMatcher turns an Event matcher into its stored form: its action trimmed.
 func normalizeMatcher(m eventmatcher.Matcher) eventmatcher.Matcher {
