@@ -249,6 +249,18 @@ func (f ContactFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, err
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ContactMutation", m)
 }
 
+// The ContactDateFunc type is an adapter to allow the use of ordinary
+// function as ContactDate mutator.
+type ContactDateFunc func(context.Context, *ent.ContactDateMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ContactDateFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ContactDateMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ContactDateMutation", m)
+}
+
 // The ContactTagFunc type is an adapter to allow the use of ordinary
 // function as ContactTag mutator.
 type ContactTagFunc func(context.Context, *ent.ContactTagMutation) (ent.Value, error)

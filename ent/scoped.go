@@ -29,6 +29,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/consentstamp"
 	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/contactdate"
 	"github.com/getsphericon/sphericon/ent/contacttag"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
@@ -454,6 +455,22 @@ func (s *Scoped) verifyContact(ctx context.Context, ids []int64) error {
 	}
 	if n != len(ids) {
 		return fmt.Errorf("Contact: %w", ErrNotInWorkspace)
+	}
+	return nil
+}
+
+// verifyContactDate fails with ErrNotInWorkspace unless every id is a ContactDate of the Workspace.
+func (s *Scoped) verifyContactDate(ctx context.Context, ids []int64) error {
+	ids = uniqueIDs(ids)
+	if len(ids) == 0 {
+		return nil
+	}
+	n, err := s.c.ContactDate.Query().Where(s.inContactDate(contactdate.IDIn(ids...))...).Count(ctx)
+	if err != nil {
+		return err
+	}
+	if n != len(ids) {
+		return fmt.Errorf("ContactDate: %w", ErrNotInWorkspace)
 	}
 	return nil
 }
@@ -24034,6 +24051,15 @@ func (s *Scoped) checkContact(ctx context.Context, ms ...*ContactMutation) error
 	{
 		var ids []int64
 		for _, m := range ms {
+			ids = append(ids, m.DatesIDs()...)
+		}
+		if err := s.verifyContactDate(ctx, ids); err != nil {
+			return fmt.Errorf("dates: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, m := range ms {
 			ids = append(ids, m.EventsIDs()...)
 		}
 		if err := s.verifyEvent(ctx, ids); err != nil {
@@ -24477,6 +24503,22 @@ func (x *ContactScopedCreate) AddStartTokens(v ...*StartToken) *ContactScopedCre
 }
 
 const RoleOf_ContactScopedCreate_AddStartTokens = RoleStep
+
+// AddDateIDs adds the "dates" edge to the ContactDate entity by IDs.
+func (x *ContactScopedCreate) AddDateIDs(ids ...int64) *ContactScopedCreate {
+	x.set = append(x.set, func(b *ContactCreate) { b.AddDateIDs(ids...) })
+	return x
+}
+
+const RoleOf_ContactScopedCreate_AddDateIDs = RoleStep
+
+// AddDates adds the "dates" edges to the ContactDate entity.
+func (x *ContactScopedCreate) AddDates(v ...*ContactDate) *ContactScopedCreate {
+	x.set = append(x.set, func(b *ContactCreate) { b.AddDates(v...) })
+	return x
+}
+
+const RoleOf_ContactScopedCreate_AddDates = RoleStep
 
 // AddEventIDs adds the "events" edge to the Event entity by IDs.
 func (x *ContactScopedCreate) AddEventIDs(ids ...int64) *ContactScopedCreate {
@@ -25717,6 +25759,46 @@ func (x *ContactScopedUpdateOne) RemoveStartTokens(v ...*StartToken) *ContactSco
 
 const RoleOf_ContactScopedUpdateOne_RemoveStartTokens = RoleStep
 
+// AddDateIDs adds the "dates" edge to the ContactDate entity by IDs.
+func (x *ContactScopedUpdateOne) AddDateIDs(ids ...int64) *ContactScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactUpdateOne) { b.AddDateIDs(ids...) })
+	return x
+}
+
+const RoleOf_ContactScopedUpdateOne_AddDateIDs = RoleStep
+
+// AddDates adds the "dates" edges to the ContactDate entity.
+func (x *ContactScopedUpdateOne) AddDates(v ...*ContactDate) *ContactScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactUpdateOne) { b.AddDates(v...) })
+	return x
+}
+
+const RoleOf_ContactScopedUpdateOne_AddDates = RoleStep
+
+// ClearDates clears the "dates" edges to the ContactDate entity.
+func (x *ContactScopedUpdateOne) ClearDates() *ContactScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactUpdateOne) { b.ClearDates() })
+	return x
+}
+
+const RoleOf_ContactScopedUpdateOne_ClearDates = RoleStep
+
+// RemoveDateIDs removes the "dates" edge to ContactDate entities by IDs.
+func (x *ContactScopedUpdateOne) RemoveDateIDs(ids ...int64) *ContactScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactUpdateOne) { b.RemoveDateIDs(ids...) })
+	return x
+}
+
+const RoleOf_ContactScopedUpdateOne_RemoveDateIDs = RoleStep
+
+// RemoveDates removes "dates" edges to ContactDate entities.
+func (x *ContactScopedUpdateOne) RemoveDates(v ...*ContactDate) *ContactScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactUpdateOne) { b.RemoveDates(v...) })
+	return x
+}
+
+const RoleOf_ContactScopedUpdateOne_RemoveDates = RoleStep
+
 // AddEventIDs adds the "events" edge to the Event entity by IDs.
 func (x *ContactScopedUpdateOne) AddEventIDs(ids ...int64) *ContactScopedUpdateOne {
 	x.set = append(x.set, func(b *ContactUpdateOne) { b.AddEventIDs(ids...) })
@@ -26335,6 +26417,46 @@ func (x *ContactScopedUpdate) RemoveStartTokens(v ...*StartToken) *ContactScoped
 
 const RoleOf_ContactScopedUpdate_RemoveStartTokens = RoleStep
 
+// AddDateIDs adds the "dates" edge to the ContactDate entity by IDs.
+func (x *ContactScopedUpdate) AddDateIDs(ids ...int64) *ContactScopedUpdate {
+	x.set = append(x.set, func(b *ContactUpdate) { b.AddDateIDs(ids...) })
+	return x
+}
+
+const RoleOf_ContactScopedUpdate_AddDateIDs = RoleStep
+
+// AddDates adds the "dates" edges to the ContactDate entity.
+func (x *ContactScopedUpdate) AddDates(v ...*ContactDate) *ContactScopedUpdate {
+	x.set = append(x.set, func(b *ContactUpdate) { b.AddDates(v...) })
+	return x
+}
+
+const RoleOf_ContactScopedUpdate_AddDates = RoleStep
+
+// ClearDates clears the "dates" edges to the ContactDate entity.
+func (x *ContactScopedUpdate) ClearDates() *ContactScopedUpdate {
+	x.set = append(x.set, func(b *ContactUpdate) { b.ClearDates() })
+	return x
+}
+
+const RoleOf_ContactScopedUpdate_ClearDates = RoleStep
+
+// RemoveDateIDs removes the "dates" edge to ContactDate entities by IDs.
+func (x *ContactScopedUpdate) RemoveDateIDs(ids ...int64) *ContactScopedUpdate {
+	x.set = append(x.set, func(b *ContactUpdate) { b.RemoveDateIDs(ids...) })
+	return x
+}
+
+const RoleOf_ContactScopedUpdate_RemoveDateIDs = RoleStep
+
+// RemoveDates removes "dates" edges to ContactDate entities.
+func (x *ContactScopedUpdate) RemoveDates(v ...*ContactDate) *ContactScopedUpdate {
+	x.set = append(x.set, func(b *ContactUpdate) { b.RemoveDates(v...) })
+	return x
+}
+
+const RoleOf_ContactScopedUpdate_RemoveDates = RoleStep
+
 // AddEventIDs adds the "events" edge to the Event entity by IDs.
 func (x *ContactScopedUpdate) AddEventIDs(ids ...int64) *ContactScopedUpdate {
 	x.set = append(x.set, func(b *ContactUpdate) { b.AddEventIDs(ids...) })
@@ -26456,6 +26578,782 @@ const (
 	RoleOf_ContactScopedUpdate_Modify = RoleStep
 	RoleOf_ContactScopedUpdate_Save   = RoleStep
 	RoleOf_ContactScopedUpdate_Exec   = RoleStep
+)
+
+// ContactDateScoped reaches ContactDate entities of one Workspace.
+type ContactDateScoped struct{ s *Scoped }
+
+// ContactDate returns the ContactDate entities of the Workspace.
+func (s *Scoped) ContactDate() *ContactDateScoped { return &ContactDateScoped{s: s} }
+
+const (
+	TypeOf_ContactDateScoped             = TypeWrapper
+	EntityOf_ContactDateScoped           = "ContactDate"
+	RoleOf_Scoped_ContactDate            = RoleNone
+	RoleOf_ContactDateScoped_Query       = RoleRead
+	RoleOf_ContactDateScoped_Get         = RoleRead
+	RoleOf_ContactDateScoped_DeleteOneID = RoleStart
+	RoleOf_ContactDateScoped_UpdateOneID = RoleStart
+	RoleOf_ContactDateScoped_Delete      = RoleStart
+	RoleOf_ContactDateScoped_Create      = RoleStart
+	RoleOf_ContactDateScoped_CreateBulk  = RoleStart
+	RoleOf_ContactDateScoped_Update      = RoleStart
+)
+
+// inContactDate confines predicates of ContactDate rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inContactDate(ps ...predicate.ContactDate) []predicate.ContactDate {
+	return append([]predicate.ContactDate{contactdate.WorkspaceID(s.ws)}, ps...)
+}
+
+// Query returns a ContactDate query already confined to the Workspace.
+func (t *ContactDateScoped) Query() *ContactDateQuery {
+	return t.s.c.ContactDate.Query().Where(t.s.inContactDate()...)
+}
+
+// Get returns the ContactDate with the id; a row of another Workspace is not found.
+func (t *ContactDateScoped) Get(ctx context.Context, id int64) (*ContactDate, error) {
+	return t.Query().Where(contactdate.ID(id)).Only(ctx)
+}
+
+// writeContactDate runs a write of ContactDate rows: run builds it on the client of the scope it is
+// given and executes it, and reaches no other client. The
+// entity is not audited, so run gets the scope itself.
+func (s *Scoped) writeContactDate(ctx context.Context, verb string, where []predicate.ContactDate, unchanged unchangedRows, run func(s *Scoped) ([]int64, error)) error {
+	_, _, _ = verb, where, unchanged
+	_, err := run(s)
+	return err
+}
+
+// checkContactDate verifies every reference the mutations set against the Workspace of s, one query per
+// reference for all of them.
+func (s *Scoped) checkContactDate(ctx context.Context, ms ...*ContactDateMutation) error {
+	{
+		var ids []int64
+		for _, m := range ms {
+			ids = append(ids, m.ContactIDs()...)
+		}
+		if err := s.verifyContact(ctx, ids); err != nil {
+			return fmt.Errorf("contact: %w", err)
+		}
+	}
+	return nil
+}
+
+// ContactDateScopedDeleteOne deletes one ContactDate: it keeps the row's id and its fences, and builds the
+// ent delete on the client the delete runs on.
+type ContactDateScopedDeleteOne struct {
+	s     *Scoped
+	id    int64
+	where []predicate.ContactDate
+}
+
+// DeleteOneID deletes the ContactDate with the id; a row of another Workspace is not found.
+func (t *ContactDateScoped) DeleteOneID(id int64) *ContactDateScopedDeleteOne {
+	return &ContactDateScopedDeleteOne{s: t.s, id: id}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *ContactDateScopedDeleteOne) Where(ps ...predicate.ContactDate) *ContactDateScopedDeleteOne {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+const (
+	TypeOf_ContactDateScopedDeleteOne       = TypeScopedDelete
+	EntityOf_ContactDateScopedDeleteOne     = "ContactDate"
+	RoleOf_ContactDateScopedDeleteOne_Where = RoleStep
+	RoleOf_ContactDateScopedDeleteOne_Exec  = RoleStep
+)
+
+// Exec deletes the row; a missing row is a NotFoundError.
+func (x *ContactDateScopedDeleteOne) Exec(ctx context.Context) error {
+	where := x.s.inContactDate(x.where...)
+	return x.s.writeContactDate(ctx, "delete", append([]predicate.ContactDate{contactdate.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
+		return nil, s.c.ContactDate.DeleteOneID(x.id).Where(where...).Exec(ctx)
+	})
+}
+
+// ContactDateScopedDelete deletes the ContactDate rows of one Workspace that match its predicates, which it
+// keeps until the delete is built on the client it runs on.
+type ContactDateScopedDelete struct {
+	s     *Scoped
+	where []predicate.ContactDate
+}
+
+// Delete deletes the ContactDate entities of the Workspace that match the predicates.
+func (t *ContactDateScoped) Delete() *ContactDateScopedDelete {
+	return &ContactDateScopedDelete{s: t.s}
+}
+
+// Where appends predicates the rows must match.
+func (x *ContactDateScopedDelete) Where(ps ...predicate.ContactDate) *ContactDateScopedDelete {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+const (
+	TypeOf_ContactDateScopedDelete       = TypeScopedDelete
+	EntityOf_ContactDateScopedDelete     = "ContactDate"
+	RoleOf_ContactDateScopedDelete_Where = RoleStep
+	RoleOf_ContactDateScopedDelete_Exec  = RoleStep
+)
+
+// Exec deletes the rows and returns how many were deleted.
+func (x *ContactDateScopedDelete) Exec(ctx context.Context) (int, error) {
+	where := x.s.inContactDate(x.where...)
+	var n int
+	err := x.s.writeContactDate(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		var err error
+		n, err = s.c.ContactDate.Delete().Where(where...).Exec(ctx)
+		return nil, err
+	})
+	return written(n, err)
+}
+
+// ---------------------------------------------------------------- create
+
+// ContactDateScopedCreate creates a ContactDate of one Workspace. It has no way to name a Workspace: it
+// keeps what its setters set and builds the ent create, in its Workspace, on the client the create
+// runs on.
+type ContactDateScopedCreate struct {
+	s   *Scoped
+	set []func(*ContactDateCreate)
+}
+
+// Create starts a ContactDate in the Workspace.
+func (t *ContactDateScoped) Create() *ContactDateScopedCreate {
+	return &ContactDateScopedCreate{s: t.s}
+}
+
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *ContactDateScopedCreate) raw(s *Scoped) *ContactDateCreate {
+	b := s.c.ContactDate.Create().SetWorkspaceID(s.ws)
+	for _, set := range x.set {
+		set(b)
+	}
+	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *ContactDateScopedCreate) build(ctx context.Context, s *Scoped) (*ContactDateCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkContactDate(ctx, b.Mutation()))
+}
+
+// SetContactID sets the "contact_id" field.
+func (x *ContactDateScopedCreate) SetContactID(v int64) *ContactDateScopedCreate {
+	x.set = append(x.set, func(b *ContactDateCreate) { b.SetContactID(v) })
+	return x
+}
+
+const RoleOf_ContactDateScopedCreate_SetContactID = RoleStep
+
+// SetKind sets the "kind" field.
+func (x *ContactDateScopedCreate) SetKind(v datetrigger.FieldKind) *ContactDateScopedCreate {
+	x.set = append(x.set, func(b *ContactDateCreate) { b.SetKind(v) })
+	return x
+}
+
+const RoleOf_ContactDateScopedCreate_SetKind = RoleStep
+
+// SetKey sets the "key" field.
+func (x *ContactDateScopedCreate) SetKey(v string) *ContactDateScopedCreate {
+	x.set = append(x.set, func(b *ContactDateCreate) { b.SetKey(v) })
+	return x
+}
+
+const RoleOf_ContactDateScopedCreate_SetKey = RoleStep
+
+// SetDate sets the "date" field.
+func (x *ContactDateScopedCreate) SetDate(v time.Time) *ContactDateScopedCreate {
+	x.set = append(x.set, func(b *ContactDateCreate) { b.SetDate(v) })
+	return x
+}
+
+const RoleOf_ContactDateScopedCreate_SetDate = RoleStep
+
+// SetMonthDay sets the "month_day" field.
+func (x *ContactDateScopedCreate) SetMonthDay(v int16) *ContactDateScopedCreate {
+	x.set = append(x.set, func(b *ContactDateCreate) { b.SetMonthDay(v) })
+	return x
+}
+
+const RoleOf_ContactDateScopedCreate_SetMonthDay = RoleStep
+
+// SetContact sets the "contact" edge to the Contact entity.
+func (x *ContactDateScopedCreate) SetContact(v *Contact) *ContactDateScopedCreate {
+	x.set = append(x.set, func(b *ContactDateCreate) { b.SetContact(v) })
+	return x
+}
+
+const RoleOf_ContactDateScopedCreate_SetContact = RoleStep
+
+const (
+	TypeOf_ContactDateScopedCreate                        = TypeScopedCreate
+	EntityOf_ContactDateScopedCreate                      = "ContactDate"
+	RoleOf_ContactDateScopedCreate_Save                   = RoleStep
+	RoleOf_ContactDateScopedCreate_Exec                   = RoleStep
+	RoleOf_ContactDateScopedCreate_OnConflictColumns      = RoleStart
+	RoleOf_ContactDateScopedCreate_OnConflictColumnsWhere = RoleStart
+)
+
+// Save verifies the references against the Workspace, then creates the ContactDate.
+func (x *ContactDateScopedCreate) Save(ctx context.Context) (*ContactDate, error) {
+	var created *ContactDate
+	err := x.s.writeContactDate(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if created, err = b.Save(ctx); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+	return written(created, err)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *ContactDateScopedCreate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- create bulk
+
+// ContactDateScopedCreateBulk creates several ContactDate entities of one Workspace at once.
+type ContactDateScopedCreateBulk struct {
+	s  *Scoped
+	xs []*ContactDateScopedCreate
+}
+
+// CreateBulk batches creates started on this Workspace.
+func (t *ContactDateScoped) CreateBulk(xs ...*ContactDateScopedCreate) *ContactDateScopedCreateBulk {
+	return &ContactDateScopedCreateBulk{s: t.s, xs: xs}
+}
+
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *ContactDateScopedCreateBulk) refuseForeign() error {
+	for _, x := range b.xs {
+		if x.s.ws != b.s.ws {
+			return fmt.Errorf("ContactDate: builder of another scope: %w", ErrNotInWorkspace)
+		}
+	}
+	return nil
+}
+
+// build makes the ent bulk create on the client of s, every create of it in the Workspace, and
+// verifies the references of all of them, one query per reference rather than one per row.
+func (b *ContactDateScopedCreateBulk) build(ctx context.Context, s *Scoped) (*ContactDateCreateBulk, error) {
+	builders := make([]*ContactDateCreate, len(b.xs))
+	ms := make([]*ContactDateMutation, len(b.xs))
+	for i, x := range b.xs {
+		builders[i] = x.raw(s)
+		ms[i] = builders[i].Mutation()
+	}
+	if err := s.checkContactDate(ctx, ms...); err != nil {
+		return nil, err
+	}
+	return s.c.ContactDate.CreateBulk(builders...), nil
+}
+
+// Save verifies every builder's references, then creates the ContactDate entities.
+func (b *ContactDateScopedCreateBulk) Save(ctx context.Context) ([]*ContactDate, error) {
+	if err := b.refuseForeign(); err != nil {
+		return nil, err
+	}
+	var created []*ContactDate
+	err := b.s.writeContactDate(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		raw, err := b.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if created, err = raw.Save(ctx); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+	return written(created, err)
+}
+
+// Exec is like Save, discarding the entities.
+func (b *ContactDateScopedCreateBulk) Exec(ctx context.Context) error {
+	_, err := b.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_ContactDateScopedCreateBulk                   = TypeScopedCreate
+	EntityOf_ContactDateScopedCreateBulk                 = "ContactDate"
+	RoleOf_ContactDateScopedCreateBulk_Save              = RoleStep
+	RoleOf_ContactDateScopedCreateBulk_Exec              = RoleStep
+	RoleOf_ContactDateScopedCreateBulk_OnConflictColumns = RoleStart
+)
+
+// ---------------------------------------------------------------- upsert
+
+// ContactDateScopedUpsert is the "ON CONFLICT ... DO UPDATE" setter. It cannot move a row to
+// another Workspace or point a reference at a value that was not verified on create.
+type ContactDateScopedUpsert struct{ u *sql.UpdateSet }
+
+const (
+	TypeOf_ContactDateScopedUpsert   = TypeScopedUpsert
+	EntityOf_ContactDateScopedUpsert = "ContactDate"
+)
+
+// SetDate sets the "date" field.
+func (u *ContactDateScopedUpsert) SetDate(v time.Time) *ContactDateScopedUpsert {
+	u.u.Set(contactdate.FieldDate, v)
+	return u
+}
+
+const RoleOf_ContactDateScopedUpsert_SetDate = RoleStep
+
+// UpdateDate sets the "date" field to the value that was provided on create.
+func (u *ContactDateScopedUpsert) UpdateDate() *ContactDateScopedUpsert {
+	u.u.SetExcluded(contactdate.FieldDate)
+	return u
+}
+
+const RoleOf_ContactDateScopedUpsert_UpdateDate = RoleStep
+
+// SetMonthDay sets the "month_day" field.
+func (u *ContactDateScopedUpsert) SetMonthDay(v int16) *ContactDateScopedUpsert {
+	u.u.Set(contactdate.FieldMonthDay, v)
+	return u
+}
+
+const RoleOf_ContactDateScopedUpsert_SetMonthDay = RoleStep
+
+// AddMonthDay adds v to the "month_day" field.
+func (u *ContactDateScopedUpsert) AddMonthDay(v int16) *ContactDateScopedUpsert {
+	u.u.Add(contactdate.FieldMonthDay, v)
+	return u
+}
+
+const RoleOf_ContactDateScopedUpsert_AddMonthDay = RoleStep
+
+// UpdateMonthDay sets the "month_day" field to the value that was provided on create.
+func (u *ContactDateScopedUpsert) UpdateMonthDay() *ContactDateScopedUpsert {
+	u.u.SetExcluded(contactdate.FieldMonthDay)
+	return u
+}
+
+const RoleOf_ContactDateScopedUpsert_UpdateMonthDay = RoleStep
+
+// conflictOptions confines the DO UPDATE part to rows of the Workspace.
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *ContactDateScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
+		sql.ConflictColumns(columns...),
+		sql.UpdateWhere(sql.EQ(contactdate.FieldWorkspaceID, t.s.ws)),
+	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
+}
+
+// ContactDateScopedUpsertOne is the "upsert" of one ContactDate: the create it was started on, which a setter
+// called later still changes, and what to do on a conflict.
+type ContactDateScopedUpsertOne struct {
+	x        *ContactDateScopedCreate
+	conflict []sql.ConflictOption
+	set      []func(*ContactDateUpsertOne)
+	// doNothing: the conflict action is DO NOTHING (the only upsert an audited entity allows).
+	doNothing bool
+}
+
+const (
+	TypeOf_ContactDateScopedUpsertOne                 = TypeScopedUpsert
+	EntityOf_ContactDateScopedUpsertOne               = "ContactDate"
+	RoleOf_ContactDateScopedUpsertOne_UpdateNewValues = RoleStep
+	RoleOf_ContactDateScopedUpsertOne_Ignore          = RoleStep
+	RoleOf_ContactDateScopedUpsertOne_DoNothing       = RoleStep
+	RoleOf_ContactDateScopedUpsertOne_Update          = RoleStep
+	RoleOf_ContactDateScopedUpsertOne_Exec            = RoleStep
+	RoleOf_ContactDateScopedUpsertOne_ID              = RoleStep
+)
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (x *ContactDateScopedCreate) OnConflictColumns(columns ...string) *ContactDateScopedUpsertOne {
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *ContactDateScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *ContactDateScopedUpsertOne {
+	return &ContactDateScopedUpsertOne{x: x, conflict: (&ContactDateScoped{s: x.s}).conflictOptions(columns, target)}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *ContactDateScopedUpsertOne) UpdateNewValues() *ContactDateScopedUpsertOne {
+	u.set = append(u.set, func(r *ContactDateUpsertOne) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *ContactDateScopedUpsertOne) Ignore() *ContactDateScopedUpsertOne {
+	u.set = append(u.set, func(r *ContactDateUpsertOne) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *ContactDateScopedUpsertOne) DoNothing() *ContactDateScopedUpsertOne {
+	u.set = append(u.set, func(r *ContactDateUpsertOne) { r.DoNothing() })
+	u.doNothing = true
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *ContactDateScopedUpsertOne) Update(set func(*ContactDateScopedUpsert)) *ContactDateScopedUpsertOne {
+	u.set = append(u.set, func(r *ContactDateUpsertOne) {
+		r.Update(func(s *ContactDateUpsert) { set(&ContactDateScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// build makes the ent upsert on the client of s and verifies the create's references.
+func (u *ContactDateScopedUpsertOne) build(ctx context.Context, s *Scoped) (*ContactDateUpsertOne, error) {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
+		return nil, err
+	}
+	r := b.OnConflict(u.conflict...)
+	for _, set := range u.set {
+		set(r)
+	}
+	return r, nil
+}
+
+// Exec verifies the references, then executes the upsert.
+func (u *ContactDateScopedUpsertOne) Exec(ctx context.Context) error {
+	_, err := u.ID(ctx)
+	return err
+}
+
+// ID is like Exec, returning the inserted or updated id.
+func (u *ContactDateScopedUpsertOne) ID(ctx context.Context) (int64, error) {
+	var id int64
+	err := u.x.s.writeContactDate(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		r, err := u.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if id, err = r.ID(ctx); err != nil {
+			return nil, err
+		}
+		return []int64{id}, nil
+	})
+	return written(id, err)
+}
+
+// ContactDateScopedUpsertBulk is the "upsert" of several ContactDate entities.
+type ContactDateScopedUpsertBulk struct {
+	b       *ContactDateScopedCreateBulk
+	t       *ContactDateScoped
+	columns []string
+	set     []func(*ContactDateUpsertBulk)
+}
+
+const (
+	TypeOf_ContactDateScopedUpsertBulk                 = TypeScopedUpsert
+	EntityOf_ContactDateScopedUpsertBulk               = "ContactDate"
+	RoleOf_ContactDateScopedUpsertBulk_UpdateNewValues = RoleStep
+	RoleOf_ContactDateScopedUpsertBulk_Ignore          = RoleStep
+	RoleOf_ContactDateScopedUpsertBulk_DoNothing       = RoleStep
+	RoleOf_ContactDateScopedUpsertBulk_Update          = RoleStep
+	RoleOf_ContactDateScopedUpsertBulk_Exec            = RoleStep
+)
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (b *ContactDateScopedCreateBulk) OnConflictColumns(columns ...string) *ContactDateScopedUpsertBulk {
+	return &ContactDateScopedUpsertBulk{b: b, t: &ContactDateScoped{s: b.s}, columns: columns}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *ContactDateScopedUpsertBulk) UpdateNewValues() *ContactDateScopedUpsertBulk {
+	u.set = append(u.set, func(r *ContactDateUpsertBulk) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *ContactDateScopedUpsertBulk) Ignore() *ContactDateScopedUpsertBulk {
+	u.set = append(u.set, func(r *ContactDateUpsertBulk) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *ContactDateScopedUpsertBulk) DoNothing() *ContactDateScopedUpsertBulk {
+	u.set = append(u.set, func(r *ContactDateUpsertBulk) { r.DoNothing() })
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *ContactDateScopedUpsertBulk) Update(set func(*ContactDateScopedUpsert)) *ContactDateScopedUpsertBulk {
+	u.set = append(u.set, func(r *ContactDateUpsertBulk) {
+		r.Update(func(s *ContactDateUpsert) { set(&ContactDateScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// Exec verifies every builder's references, then executes the upsert.
+func (u *ContactDateScopedUpsertBulk) Exec(ctx context.Context) error {
+	if err := u.b.refuseForeign(); err != nil {
+		return err
+	}
+	return u.b.s.writeContactDate(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		raw, err := u.b.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
+		for _, set := range u.set {
+			set(r)
+		}
+		return nil, r.Exec(ctx)
+	})
+}
+
+// ---------------------------------------------------------------- update
+
+// ContactDateScopedUpdateOne updates one ContactDate. It has no way to move the row to another Workspace: it
+// keeps the row's id, its fences and what its setters set, and builds the ent update on the client
+// the update runs on.
+type ContactDateScopedUpdateOne struct {
+	s     *Scoped
+	id    int64
+	where []predicate.ContactDate
+	set   []func(*ContactDateUpdateOne)
+}
+
+// UpdateOneID updates the ContactDate with the id; a row of another Workspace is not found.
+func (t *ContactDateScoped) UpdateOneID(id int64) *ContactDateScopedUpdateOne {
+	return &ContactDateScopedUpdateOne{s: t.s, id: id}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *ContactDateScopedUpdateOne) Where(ps ...predicate.ContactDate) *ContactDateScopedUpdateOne {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+// SetDate sets the "date" field.
+func (x *ContactDateScopedUpdateOne) SetDate(v time.Time) *ContactDateScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactDateUpdateOne) { b.SetDate(v) })
+	return x
+}
+
+const RoleOf_ContactDateScopedUpdateOne_SetDate = RoleStep
+
+// SetNillableDate sets the "date" field if the given value is not nil.
+func (x *ContactDateScopedUpdateOne) SetNillableDate(v *time.Time) *ContactDateScopedUpdateOne {
+	if v != nil {
+		x.SetDate(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactDateScopedUpdateOne_SetNillableDate = RoleStep
+
+// SetMonthDay sets the "month_day" field.
+func (x *ContactDateScopedUpdateOne) SetMonthDay(v int16) *ContactDateScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactDateUpdateOne) { b.SetMonthDay(v) })
+	return x
+}
+
+const RoleOf_ContactDateScopedUpdateOne_SetMonthDay = RoleStep
+
+// SetNillableMonthDay sets the "month_day" field if the given value is not nil.
+func (x *ContactDateScopedUpdateOne) SetNillableMonthDay(v *int16) *ContactDateScopedUpdateOne {
+	if v != nil {
+		x.SetMonthDay(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactDateScopedUpdateOne_SetNillableMonthDay = RoleStep
+
+// AddMonthDay adds value to the "month_day" field.
+func (x *ContactDateScopedUpdateOne) AddMonthDay(v int16) *ContactDateScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactDateUpdateOne) { b.AddMonthDay(v) })
+	return x
+}
+
+const RoleOf_ContactDateScopedUpdateOne_AddMonthDay = RoleStep
+
+// Save verifies the references against the Workspace, then updates the ContactDate.
+func (x *ContactDateScopedUpdateOne) Save(ctx context.Context) (*ContactDate, error) {
+	return x.save(ctx, "update", skipUnchanged)
+}
+
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *ContactDateScopedUpdateOne) build(ctx context.Context, s *Scoped) (*ContactDateUpdateOne, error) {
+	b := s.c.ContactDate.UpdateOneID(x.id).Where(s.inContactDate(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkContactDate(ctx, b.Mutation()))
+}
+
+// save is Save under a verb, doing with an unchanged row what unchanged says.
+func (x *ContactDateScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*ContactDate, error) {
+	where := x.s.inContactDate(x.where...)
+	var updated *ContactDate
+	err := x.s.writeContactDate(ctx, verb, append([]predicate.ContactDate{contactdate.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		updated, err = b.Save(ctx)
+		return nil, err
+	})
+	return written(updated, err)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *ContactDateScopedUpdateOne) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_ContactDateScopedUpdateOne       = TypeScopedUpdate
+	EntityOf_ContactDateScopedUpdateOne     = "ContactDate"
+	RoleOf_ContactDateScopedUpdateOne_Where = RoleStep
+	RoleOf_ContactDateScopedUpdateOne_Save  = RoleStep
+	RoleOf_ContactDateScopedUpdateOne_Exec  = RoleStep
+)
+
+// ContactDateScopedUpdate is a conditional bulk update of one Workspace: it keeps its predicates and
+// what its setters and modifiers set, and builds the ent update on the client the update runs on.
+type ContactDateScopedUpdate struct {
+	s     *Scoped
+	where []predicate.ContactDate
+	set   []func(*ContactDateUpdate)
+	// modErr is set when a Modify modifier tried to assign workspace_id.
+	modErr error
+}
+
+// Update updates the ContactDate entities of the Workspace that match the predicates.
+func (t *ContactDateScoped) Update() *ContactDateScopedUpdate {
+	return &ContactDateScopedUpdate{s: t.s}
+}
+
+// Where appends predicates the rows must match.
+func (x *ContactDateScopedUpdate) Where(ps ...predicate.ContactDate) *ContactDateScopedUpdate {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+// Modify adds a statement modifier for computed assignments the typed setters cannot
+// express (SET col = LEAST(col + ..., ...)). A modifier gets assignment-only access
+// (ScopedAssign), so it cannot widen the Workspace predicate; an assignment to
+// workspace_id is refused: each modifier is probed against a scratch statement here, and
+// Save fails with ErrWorkspaceAssign.
+func (x *ContactDateScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *ContactDateScopedUpdate {
+	for _, m := range modifiers {
+		probe := &ScopedAssign{u: sql.Update(contactdate.Table)}
+		m(probe)
+		if probe.workspace {
+			x.modErr = ErrWorkspaceAssign
+		}
+		x.set = append(x.set, func(b *ContactDateUpdate) {
+			b.Modify(func(u *sql.UpdateBuilder) { m(&ScopedAssign{u: u}) })
+		})
+	}
+	return x
+}
+
+// SetDate sets the "date" field.
+func (x *ContactDateScopedUpdate) SetDate(v time.Time) *ContactDateScopedUpdate {
+	x.set = append(x.set, func(b *ContactDateUpdate) { b.SetDate(v) })
+	return x
+}
+
+const RoleOf_ContactDateScopedUpdate_SetDate = RoleStep
+
+// SetNillableDate sets the "date" field if the given value is not nil.
+func (x *ContactDateScopedUpdate) SetNillableDate(v *time.Time) *ContactDateScopedUpdate {
+	if v != nil {
+		x.SetDate(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactDateScopedUpdate_SetNillableDate = RoleStep
+
+// SetMonthDay sets the "month_day" field.
+func (x *ContactDateScopedUpdate) SetMonthDay(v int16) *ContactDateScopedUpdate {
+	x.set = append(x.set, func(b *ContactDateUpdate) { b.SetMonthDay(v) })
+	return x
+}
+
+const RoleOf_ContactDateScopedUpdate_SetMonthDay = RoleStep
+
+// SetNillableMonthDay sets the "month_day" field if the given value is not nil.
+func (x *ContactDateScopedUpdate) SetNillableMonthDay(v *int16) *ContactDateScopedUpdate {
+	if v != nil {
+		x.SetMonthDay(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactDateScopedUpdate_SetNillableMonthDay = RoleStep
+
+// AddMonthDay adds value to the "month_day" field.
+func (x *ContactDateScopedUpdate) AddMonthDay(v int16) *ContactDateScopedUpdate {
+	x.set = append(x.set, func(b *ContactDateUpdate) { b.AddMonthDay(v) })
+	return x
+}
+
+const RoleOf_ContactDateScopedUpdate_AddMonthDay = RoleStep
+
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *ContactDateScopedUpdate) build(ctx context.Context, s *Scoped) (*ContactDateUpdate, error) {
+	b := s.c.ContactDate.Update().Where(s.inContactDate(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkContactDate(ctx, b.Mutation()))
+}
+
+// Save verifies the references against the Workspace, then updates the rows and
+// returns how many changed.
+func (x *ContactDateScopedUpdate) Save(ctx context.Context) (int, error) {
+	if x.modErr != nil {
+		return 0, x.modErr
+	}
+	where := x.s.inContactDate(x.where...)
+	var n int
+	err := x.s.writeContactDate(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		n, err = b.Save(ctx)
+		return nil, err
+	})
+	return written(n, err)
+}
+
+// Exec is like Save, discarding the count.
+func (x *ContactDateScopedUpdate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_ContactDateScopedUpdate        = TypeScopedUpdate
+	EntityOf_ContactDateScopedUpdate      = "ContactDate"
+	RoleOf_ContactDateScopedUpdate_Where  = RoleStep
+	RoleOf_ContactDateScopedUpdate_Modify = RoleStep
+	RoleOf_ContactDateScopedUpdate_Save   = RoleStep
+	RoleOf_ContactDateScopedUpdate_Exec   = RoleStep
 )
 
 // ContactTagScoped reaches ContactTag entities of one Workspace.

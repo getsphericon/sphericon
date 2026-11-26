@@ -79,6 +79,8 @@ const (
 	EdgeTags = "tags"
 	// EdgeContactTags holds the string denoting the contact_tags edge name in mutations.
 	EdgeContactTags = "contact_tags"
+	// EdgeContactDates holds the string denoting the contact_dates edge name in mutations.
+	EdgeContactDates = "contact_dates"
 	// EdgeSegments holds the string denoting the segments edge name in mutations.
 	EdgeSegments = "segments"
 	// EdgeEvents holds the string denoting the events edge name in mutations.
@@ -213,6 +215,13 @@ const (
 	ContactTagsInverseTable = "contact_tags"
 	// ContactTagsColumn is the table column denoting the contact_tags relation/edge.
 	ContactTagsColumn = "workspace_id"
+	// ContactDatesTable is the table that holds the contact_dates relation/edge.
+	ContactDatesTable = "contact_dates"
+	// ContactDatesInverseTable is the table name for the ContactDate entity.
+	// It exists in this package in order to avoid circular dependency with the "contactdate" package.
+	ContactDatesInverseTable = "contact_dates"
+	// ContactDatesColumn is the table column denoting the contact_dates relation/edge.
+	ContactDatesColumn = "workspace_id"
 	// SegmentsTable is the table that holds the segments relation/edge.
 	SegmentsTable = "segments"
 	// SegmentsInverseTable is the table name for the Segment entity.
@@ -918,6 +927,20 @@ func ByContactTagsCount(opts ...sql.OrderTermOption) OrderOption {
 func ByContactTags(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newContactTagsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByContactDatesCount orders the results by contact_dates count.
+func ByContactDatesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newContactDatesStep(), opts...)
+	}
+}
+
+// ByContactDates orders the results by contact_dates terms.
+func ByContactDates(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newContactDatesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
 
@@ -1667,6 +1690,13 @@ func newContactTagsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ContactTagsInverseTable, ContactTagsColumn),
 		sqlgraph.Edge(sqlgraph.O2M, false, ContactTagsTable, ContactTagsColumn),
+	)
+}
+func newContactDatesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ContactDatesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ContactDatesTable, ContactDatesColumn),
 	)
 }
 func newSegmentsStep() *sqlgraph.Step {

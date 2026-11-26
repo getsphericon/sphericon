@@ -54,6 +54,8 @@ type Tx struct {
 	ConsentStamp *ConsentStampClient
 	// Contact is the client for interacting with the Contact builders.
 	Contact *ContactClient
+	// ContactDate is the client for interacting with the ContactDate builders.
+	ContactDate *ContactDateClient
 	// ContactTag is the client for interacting with the ContactTag builders.
 	ContactTag *ContactTagClient
 	// CustomField is the client for interacting with the CustomField builders.
@@ -329,6 +331,7 @@ func (tx *Tx) init() {
 	tx.ConsentRecord = NewConsentRecordClient(tx.config)
 	tx.ConsentStamp = NewConsentStampClient(tx.config)
 	tx.Contact = NewContactClient(tx.config)
+	tx.ContactDate = NewContactDateClient(tx.config)
 	tx.ContactTag = NewContactTagClient(tx.config)
 	tx.CustomField = NewCustomFieldClient(tx.config)
 	tx.DefaultSendCap = NewDefaultSendCapClient(tx.config)

@@ -85,6 +85,7 @@ var owners = map[string]string{
 	"ConsentRecord":              "internal/domain/identity/consentrecords",
 	"ConsentStamp":               "internal/domain/contacts/consentstamps",
 	"Contact":                    "internal/domain/contacts/contacts",
+	"ContactDate":                "internal/domain/contacts/contacts",
 	"ContactTag":                 "internal/domain/contacts/contacts",
 	"CustomField":                "internal/domain/contacts/contacts",
 	"DefaultSendCap":             "internal/domain/identity/suspension",

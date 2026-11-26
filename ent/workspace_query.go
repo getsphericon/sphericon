@@ -31,6 +31,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/consentstamp"
 	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/contactdate"
 	"github.com/getsphericon/sphericon/ent/contacttag"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
@@ -84,6 +85,7 @@ type WorkspaceQuery struct {
 	withCustomFields                *CustomFieldQuery
 	withTags                        *TagQuery
 	withContactTags                 *ContactTagQuery
+	withContactDates                *ContactDateQuery
 	withSegments                    *SegmentQuery
 	withEvents                      *EventQuery
 	withEventJournalEntries         *EventJournalEntryQuery
@@ -254,6 +256,28 @@ func (_q *WorkspaceQuery) QueryContactTags() *ContactTagQuery {
 			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
 			sqlgraph.To(contacttag.Table, contacttag.WorkspaceColumn),
 			sqlgraph.Edge(sqlgraph.O2M, false, workspace.ContactTagsTable, workspace.ContactTagsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryContactDates chains the current query on the "contact_dates" edge.
+func (_q *WorkspaceQuery) QueryContactDates() *ContactDateQuery {
+	query := (&ContactDateClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
+			sqlgraph.To(contactdate.Table, contactdate.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.ContactDatesTable, workspace.ContactDatesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -1601,6 +1625,7 @@ func (_q *WorkspaceQuery) Clone() *WorkspaceQuery {
 		withCustomFields:                _q.withCustomFields.Clone(),
 		withTags:                        _q.withTags.Clone(),
 		withContactTags:                 _q.withContactTags.Clone(),
+		withContactDates:                _q.withContactDates.Clone(),
 		withSegments:                    _q.withSegments.Clone(),
 		withEvents:                      _q.withEvents.Clone(),
 		withEventJournalEntries:         _q.withEventJournalEntries.Clone(),
@@ -1701,6 +1726,17 @@ func (_q *WorkspaceQuery) WithContactTags(opts ...func(*ContactTagQuery)) *Works
 		opt(query)
 	}
 	_q.withContactTags = query
+	return _q
+}
+
+// WithContactDates tells the query-builder to eager-load the nodes that are connected to
+// the "contact_dates" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *WorkspaceQuery) WithContactDates(opts ...func(*ContactDateQuery)) *WorkspaceQuery {
+	query := (&ContactDateClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withContactDates = query
 	return _q
 }
 
@@ -2354,11 +2390,12 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 	var (
 		nodes       = []*Workspace{}
 		_spec       = _q.querySpec()
-		loadedTypes = [56]bool{
+		loadedTypes = [57]bool{
 			_q.withContacts != nil,
 			_q.withCustomFields != nil,
 			_q.withTags != nil,
 			_q.withContactTags != nil,
+			_q.withContactDates != nil,
 			_q.withSegments != nil,
 			_q.withEvents != nil,
 			_q.withEventJournalEntries != nil,
@@ -2459,6 +2496,13 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 		if err := _q.loadContactTags(ctx, query, nodes,
 			func(n *Workspace) { n.Edges.ContactTags = []*ContactTag{} },
 			func(n *Workspace, e *ContactTag) { n.Edges.ContactTags = append(n.Edges.ContactTags, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withContactDates; query != nil {
+		if err := _q.loadContactDates(ctx, query, nodes,
+			func(n *Workspace) { n.Edges.ContactDates = []*ContactDate{} },
+			func(n *Workspace, e *ContactDate) { n.Edges.ContactDates = append(n.Edges.ContactDates, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -2965,6 +3009,36 @@ func (_q *WorkspaceQuery) loadContactTags(ctx context.Context, query *ContactTag
 		node, ok := nodeids[fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "workspace_id" returned %v for node %v`, fk, n)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *WorkspaceQuery) loadContactDates(ctx context.Context, query *ContactDateQuery, nodes []*Workspace, init func(*Workspace), assign func(*Workspace, *ContactDate)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Workspace)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(contactdate.FieldWorkspaceID)
+	}
+	query.Where(predicate.ContactDate(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(workspace.ContactDatesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.WorkspaceID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "workspace_id" returned %v for node %v`, fk, n.ID)
 		}
 		assign(node, n)
 	}

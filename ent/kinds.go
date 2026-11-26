@@ -40,6 +40,7 @@ var Kinds = map[string]Kind{
 	"ConsentRecord":              {Table: "consent_records", Kind: schema.Kind{}},
 	"ConsentStamp":               {Table: "consent_stamps", Kind: schema.Kind{WorkspaceOwned: true}},
 	"Contact":                    {Table: "contacts", Kind: schema.Kind{WorkspaceOwned: true, Revised: true}},
+	"ContactDate":                {Table: "contact_dates", Kind: schema.Kind{WorkspaceOwned: true}},
 	"ContactTag":                 {Table: "contact_tags", Kind: schema.Kind{WorkspaceOwned: true}},
 	"CustomField":                {Table: "custom_fields", Kind: schema.Kind{WorkspaceOwned: true, Revised: true}},
 	"DefaultSendCap":             {Table: "default_send_cap", Kind: schema.Kind{}},

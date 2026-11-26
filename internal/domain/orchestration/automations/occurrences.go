@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationskippedentry"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/contactdate"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/schema"
 	"github.com/getsphericon/sphericon/internal/infra/db"
@@ -61,14 +62,8 @@ const lateBound = 24 * time.Hour
 // after the tick's read may carry an earlier stamp. A Contact read twice is decided once.
 const changeOverlap = 10 * time.Minute
 
-// bandMargin is how many calendar days the band of a window reaches past it on each side: a local
-// day lies within 14 hours of UTC, and a datetime value with an offset falls on its own date or the
-// day either side of it in the Workspace time zone.
-const bandMargin = 3
-
-// maxBandDays is the widest band narrowed by its days: a window longer than a year reads every
-// Contact that holds the field.
-const maxBandDays = 400
+// candidatePage is how many candidates a band read loads at once: a page of Contacts, by id.
+const candidatePage = 500
 
 // DateDue returns the active, kept Automations whose live version has a date Trigger, across
 // Workspaces, each with its id and its Workspace: the date scheduler's tick queues one job per
@@ -196,39 +191,67 @@ func later(a, b time.Time) time.Time {
 }
 
 // latestChange is the latest updated_at of the Workspace's Contacts, nil when it has none: the
-// stamp, on the clock that writes the rows, the next tick reads the changes after.
+// stamp, on the clock that writes the rows, the next tick reads the changes after. It reads the
+// stamp alone, no Contact.
 func latestChange(ctx context.Context, s *ent.Scoped) (*time.Time, error) {
-	last, err := s.Contact().Query().Order(ent.Desc(contact.FieldUpdatedAt)).Select(contact.FieldUpdatedAt).First(ctx)
-	if ent.IsNotFound(err) {
-		return nil, nil
+	var last []struct {
+		UpdatedAt time.Time `json:"updated_at"`
 	}
+	err := s.Contact().Query().Order(ent.Desc(contact.FieldUpdatedAt)).Limit(1).Select(contact.FieldUpdatedAt).Scan(ctx, &last)
+	if err != nil || len(last) == 0 {
+		return nil, err
+	}
+	return &last[0].UpdatedAt, nil
+}
+
+// decideWindow decides the occurrences of c's date in c's window of the Contacts that hold a key
+// of its field in the band of the window, those changed after changedAfter only when it is given,
+// a page at a time.
+func (m *StepExecution) decideWindow(ctx context.Context, s *ent.Scoped, c occurrenceCase, changedAfter *time.Time) error {
+	band := c.date.Band(c.window.from, c.window.to)
+	var after int64
+	for {
+		page, err := candidates(ctx, s, c.date.Field, band, changedAfter, after)
+		if err != nil {
+			return err
+		}
+		for _, candidate := range page {
+			after = candidate.ID
+			for _, year := range yearsIn(c.date, c.window, candidate, c.workspaceZone) {
+				one := c
+				one.contactID, one.year = candidate.ID, year
+				if err := m.decideOccurrence(ctx, s, one); err != nil {
+					return fmt.Errorf("decide occurrence %d of contact %d: %w", year, candidate.ID, err)
+				}
+			}
+		}
+		if len(page) < candidatePage {
+			return nil
+		}
+	}
+}
+
+// candidates is the page of the Contacts after the one after, by id, that hold a key of the field
+// in the band (ContactDate, on its indexes), those changed after changedAfter only when it is
+// given (on the Contacts' index of their change time).
+func candidates(ctx context.Context, s *ent.Scoped, f datetrigger.Field, band datetrigger.Band, changedAfter *time.Time, after int64) ([]*ent.Contact, error) {
+	// ent generates no range predicate of an edge's column: the keyset's is written with its builder.
+	q := s.ContactDate().Query().
+		Where(contactdate.KindEQ(f.Kind), contactdate.Key(f.Key), predicate.ContactDate(sql.FieldGT(contactdate.FieldContactID, after)))
+	if first, last, ok := band.Range(); ok {
+		q = q.Where(contactdate.DateGTE(first.Midnight()), contactdate.DateLTE(last.Midnight()))
+	}
+	if days, ok := band.MonthDays(); ok {
+		q = q.Where(contactdate.MonthDayIn(lo.Map(days, func(d int, _ int) int16 { return int16(d) })...))
+	}
+	if changedAfter != nil {
+		q = q.Where(contactdate.HasContactWith(contact.WorkspaceID(s.WorkspaceID()), contact.UpdatedAtGT(*changedAfter)))
+	}
+	held, err := q.Order(ent.Asc(contactdate.FieldContactID)).Limit(candidatePage).WithContact().All(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return &last.UpdatedAt, nil
-}
-
-// decideWindow decides the occurrences of c's date in c's window of the Contacts in the band of the
-// window (datePredicate), those changed after changedAfter only when it is given.
-func (m *StepExecution) decideWindow(ctx context.Context, s *ent.Scoped, c occurrenceCase, changedAfter *time.Time) error {
-	q := s.Contact().Query().Where(datePredicate(c.date, c.window))
-	if changedAfter != nil {
-		q = q.Where(contact.UpdatedAtGT(*changedAfter))
-	}
-	candidates, err := q.Order(ent.Asc(contact.FieldID)).All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, candidate := range candidates {
-		for _, year := range yearsIn(c.date, c.window, candidate, c.workspaceZone) {
-			one := c
-			one.contactID, one.year = candidate.ID, year
-			if err := m.decideOccurrence(ctx, s, one); err != nil {
-				return fmt.Errorf("decide occurrence %d of contact %d: %w", year, candidate.ID, err)
-			}
-		}
-	}
-	return nil
+	return lo.Map(held, func(d *ent.ContactDate, _ int) *ent.Contact { return d.Edges.Contact }), nil
 }
 
 // momentOf is the moment of the date's occurrence in the anniversary year for the Contact, read in
@@ -324,79 +347,4 @@ func occurrenceDecided(ctx context.Context, s *ent.Scoped, automationID, contact
 			automationskippedentry.ReasonNEQ(automationskippedentry.ReasonSendLocked),
 		).
 		Exist(ctx)
-}
-
-// datePredicate narrows the Contacts to those whose date in the field may have an occurrence in the
-// window: the calendar days of the band (bandDays) its date falls on, by month and day for a yearly
-// date and in full for a once date. 29 February goes with 28 February, its day in a common year.
-// A band too wide to list reads every Contact that holds the field.
-func datePredicate(d datetrigger.Date, w window) predicate.Contact {
-	days, narrowed := bandDays(d, w)
-	layout := "01-02"
-	if d.Recurrence == localcalendar.Once {
-		layout = time.DateOnly
-	}
-	var values []any
-	for _, day := range days {
-		values = append(values, day.Format(layout))
-		if d.Recurrence != localcalendar.Once && day.Month() == time.February && day.Day() == 28 {
-			values = append(values, "02-29")
-		}
-	}
-	values = lo.Uniq(values)
-	return func(sel *sql.Selector) {
-		// raw sql: ent has no expression of a date's month and day, nor of a text property of a jsonb
-		// column; the format, the key and the days are bound arguments, the substring's bounds
-		// constants of this function.
-		held := sql.P(func(b *sql.Builder) {
-			switch d.Field.Kind {
-			case datetrigger.Birthday:
-				b.WriteString("to_char(").WriteString(sel.C(contact.FieldBirthday)).WriteString(", ")
-				b.Arg(pgDateFormat(d.Recurrence)).WriteString(")")
-			case datetrigger.CustomField:
-				b.WriteString("substring(").WriteString(sel.C(contact.FieldCustomFields)).WriteString(" ->> ").Arg(d.Field.Key)
-				b.WriteString(fmt.Sprintf(" from %d for %d)", pgDateStart(d.Recurrence), len(layout)))
-			}
-			if !narrowed {
-				b.WriteString(" IS NOT NULL")
-				return
-			}
-			b.WriteString(" IN (").Args(values...).WriteString(")")
-		})
-		sel.Where(held)
-	}
-}
-
-// pgDateFormat is the Postgres format of a birthday's text the band compares: its month and day for
-// a yearly date, the whole date for a once date.
-func pgDateFormat(r localcalendar.Recurrence) string {
-	if r == localcalendar.Once {
-		return "YYYY-MM-DD"
-	}
-	return "MM-DD"
-}
-
-// pgDateStart is where, in a datetime value's ISO text, the part the band compares starts: its
-// month for a yearly date, its year for a once date.
-func pgDateStart(r localcalendar.Recurrence) int {
-	if r == localcalendar.Once {
-		return 1
-	}
-	return len("2006-") + 1
-}
-
-// bandDays are the calendar days a field's date may fall on for an occurrence in the window: the
-// days of the window, bandMargin each side, moved back by the offset; false when they are more
-// than maxBandDays, which narrows nothing.
-func bandDays(d datetrigger.Date, w window) ([]time.Time, bool) {
-	first := w.from.UTC().Truncate(24*time.Hour).AddDate(0, 0, -bandMargin)
-	last := w.to.UTC().Truncate(24*time.Hour).AddDate(0, 0, bandMargin)
-	if last.Sub(first) > maxBandDays*24*time.Hour {
-		return nil, false
-	}
-	var days []time.Time
-	for day := first; !day.After(last); day = day.AddDate(0, 0, 1) {
-		days = append(days, day.AddDate(0, 0, -d.OffsetDays))
-	}
-	return days, true
 }

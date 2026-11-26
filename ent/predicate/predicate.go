@@ -66,6 +66,9 @@ type ConsentStamp func(*sql.Selector)
 // Contact is the predicate function for contact builders.
 type Contact func(*sql.Selector)
 
+// ContactDate is the predicate function for contactdate builders.
+type ContactDate func(*sql.Selector)
+
 // ContactTag is the predicate function for contacttag builders.
 type ContactTag func(*sql.Selector)
 
