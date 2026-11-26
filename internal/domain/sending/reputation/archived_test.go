@@ -1,7 +1,6 @@
 package reputation_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -16,7 +15,7 @@ import (
 // An archived Sending domain still has its rates: archiving never changes past figures.
 func TestRatesIncludeArchivedDomains(t *testing.T) {
 	env := testhelper.Setup(t)
-	rates, err := reputation.New().Rates(context.Background(), env.DB.Scoped(fixtures.AcmeID), reputation.Trailing(7*day, time.Now()))
+	rates, err := reputation.New().Rates(t.Context(), env.DB.Scoped(fixtures.AcmeID), reputation.Trailing(7*day, time.Now()))
 	require.NoError(t, err)
 
 	byName := byDomain(t, rates)

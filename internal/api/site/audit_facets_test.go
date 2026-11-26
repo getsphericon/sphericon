@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -22,7 +21,7 @@ type facetActor struct {
 
 func auditFacets(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceId) *siteapi.SiteAuditFacets {
 	t.Helper()
-	res, err := c.SiteAuditFacets(context.Background(), siteapi.SiteAuditFacetsParams{WorkspaceId: workspaceID})
+	res, err := c.SiteAuditFacets(t.Context(), siteapi.SiteAuditFacetsParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	return res
 }

@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -17,7 +16,7 @@ import (
 func TestExternalHTTPStepIsMaskedOnRead(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeAutomationsRead, apitokens.ScopeAutomationsWrite)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	res, err := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
 		Name: "Notify", Trigger: testhelper.ExternalTrigger("signup"),
@@ -40,7 +39,7 @@ func TestExternalHTTPStepIsMaskedOnRead(t *testing.T) {
 
 func TestExternalHTTPStepDryRunNeedsAutomationsWriteAndContactsRead(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	in := &externalapi.DryRunHttpStepInput{Body: `{"name":"{{ first_name }}"}`, ContactId: externalapi.EntityId(fixtures.ContactAliceID)}
 
 	_, err := env.ExternalScoped(t, apitokens.ScopeAutomationsWrite).AutomationsDryRunHttpStep(ctx, in)

@@ -1,7 +1,6 @@
 package trackingwithdrawal_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -43,7 +42,7 @@ const (
 // and the withdrawal itself, each in a transaction of its own.
 func writers(t *testing.T, env *testhelper.TestEnv) map[string]testhelper.Writer {
 	t.Helper()
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.EmporiumID)
 	token, err := env.Tracker.Token(env.Tracked(t, message))
 	require.NoError(t, err)
@@ -81,7 +80,7 @@ func writers(t *testing.T, env *testhelper.TestEnv) map[string]testhelper.Writer
 // tables it raced on.
 func requireNothingRecorded(t *testing.T, env *testhelper.TestEnv, errs map[string]error) {
 	t.Helper()
-	ctx := context.Background()
+	ctx := t.Context()
 	for name, err := range errs {
 		require.NoError(t, err, name)
 	}
@@ -114,7 +113,7 @@ func TestWorkThatMeetsAWithdrawalInFlightWaitsAndRecordsNothing(t *testing.T) {
 	// The click Event held by a transaction of its own: the withdrawal takes the message's row,
 	// then waits on the Event it deletes.
 	release := env.HoldOpen(t, env.DB.Scoped(fixtures.EmporiumID), func(ts *ent.Scoped, _ events.Publisher) error {
-		_, err := ts.Event().Query().Where(event.ID(fixtures.EventClickerBroadcastClickID)).ForUpdate().Only(context.Background())
+		_, err := ts.Event().Query().Where(event.ID(fixtures.EventClickerBroadcastClickID)).ForUpdate().Only(t.Context())
 		return err
 	})
 
@@ -132,7 +131,7 @@ func TestAWithdrawalThatMeetsWorkInFlightWaitsAndDeletesWhatItRecorded(t *testin
 	// take the message's row and then wait on the Contact their Event and Order name; the projection
 	// waits on the message's row.
 	release := env.HoldOpen(t, env.DB.Scoped(fixtures.EmporiumID), func(ts *ent.Scoped, _ events.Publisher) error {
-		ctx := context.Background()
+		ctx := t.Context()
 		if _, err := ts.Contact().Query().Where(contact.ID(clicker)).ForUpdate().Only(ctx); err != nil {
 			return err
 		}

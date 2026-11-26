@@ -1,7 +1,6 @@
 package tagdeletion_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/samber/lo"
@@ -26,7 +25,7 @@ func names(ts []*ent.Tag) []string {
 // saving a Segment takes the same lock (ADR 0099): a Segment saved first, naming the Tag, is what
 // the delete then finds, so the Tag is kept instead of vanishing under it.
 func TestDeletingATagWaitsForASegmentSavedNamingIt(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	env := testhelper.Setup(t, testhelper.Committed())
 	scope := env.DB.Scoped(fixtures.AcmeID)
 	s := scope

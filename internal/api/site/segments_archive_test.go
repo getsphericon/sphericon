@@ -18,7 +18,7 @@ import (
 
 func listSegments(t *testing.T, c *siteapi.Client, archived bool) []int64 {
 	t.Helper()
-	list, err := c.SiteSegmentsList(context.Background(), siteapi.SiteSegmentsListParams{
+	list, err := c.SiteSegmentsList(t.Context(), siteapi.SiteSegmentsListParams{
 		WorkspaceId: fixtures.AcmePublicID,
 		PageSize:    siteapi.NewOptInt32(100),
 		Archived:    siteapi.NewOptBool(archived),
@@ -102,7 +102,7 @@ func TestSiteSegmentOfAScheduledBroadcastIsArchived(t *testing.T) {
 func TestSiteSegmentArchiveAndRestore(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	id := int64(fixtures.SegmentRetiredID)
 
 	archived, err := archiveSegment(c, id)
@@ -132,7 +132,7 @@ func TestSiteSegmentArchiveAndRestore(t *testing.T) {
 func TestSiteSentBroadcastStillNamesItsArchivedSegment(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	broadcast, err := c.SiteBroadcastsGet(ctx, siteapi.SiteBroadcastsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastArchivedID)})
 	require.NoError(t, err)
@@ -150,7 +150,7 @@ func TestSiteSegmentNameIsFreeAfterArchive(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	_, err := c.SiteSegmentsCreate(context.Background(), &siteapi.CreateSegmentInput{
+	_, err := c.SiteSegmentsCreate(t.Context(), &siteapi.CreateSegmentInput{
 		Name:      fixtures.SegmentArchivedName,
 		Condition: testhelper.ConditionInput[siteapi.SegmentConditionInput](t, `{"kind":"group","combinator":"and","entries":[]}`),
 	}, siteapi.SiteSegmentsCreateParams{WorkspaceId: fixtures.AcmePublicID})

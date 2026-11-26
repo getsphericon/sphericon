@@ -1,7 +1,6 @@
 package contacts_test
 
 import (
-	"context"
 	"slices"
 	"testing"
 
@@ -17,7 +16,7 @@ func TestCustomFieldsListTheWorkspaceCatalogueAscendingByKey(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
 
-	fields, err := testhelper.Module[*contacts.Module](env).CustomFields(context.Background(), s)
+	fields, err := testhelper.Module[*contacts.Module](env).CustomFields(t.Context(), s)
 	require.NoError(t, err)
 
 	keys := make([]string, len(fields))
@@ -34,7 +33,7 @@ func TestGetLoadsTheContactTagsSortedByName(t *testing.T) {
 	m := testhelper.Module[*contacts.Module](env)
 	s := env.DB.Scoped(fixtures.AcmeID)
 
-	c, err := m.Get(context.Background(), s, fixtures.ContactAliceID)
+	c, err := m.Get(t.Context(), s, fixtures.ContactAliceID)
 	require.NoError(t, err)
 
 	names := make([]string, len(c.Edges.Tags))
@@ -49,6 +48,6 @@ func TestGetReportsAContactOfAnotherWorkspaceAsNotFound(t *testing.T) {
 	m := testhelper.Module[*contacts.Module](env)
 	other := env.DB.Scoped(fixtures.GlobexID)
 
-	_, err := m.Get(context.Background(), other, fixtures.ContactAliceID)
+	_, err := m.Get(t.Context(), other, fixtures.ContactAliceID)
 	assert.ErrorIs(t, err, contacts.ErrNotFound)
 }

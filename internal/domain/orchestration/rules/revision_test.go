@@ -1,7 +1,6 @@
 package rules_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -18,7 +17,7 @@ import (
 func TestASaveOfARuleOnARevisionAlreadyMovedPastIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
-	ctx := context.Background()
+	ctx := t.Context()
 	read := env.RuleRevision(ctx, t, fixtures.RuleVipOnlyID)
 	first, second := conditionOf(2), conditionOf(3)
 

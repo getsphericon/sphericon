@@ -1,7 +1,6 @@
 package automations_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -31,7 +30,7 @@ type ending struct {
 // stays active, ended by the matchers of e, and publishes it. It returns its id.
 func liveEnding(t *testing.T, env *testhelper.TestEnv, trigger eventmatcher.Matcher, e ending) int64 {
 	t.Helper()
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := testhelper.Module[*automations.Module](env)
 	a, err := m.Create(ctx, s, automations.CreateInput{
@@ -65,7 +64,7 @@ func handLast(t *testing.T, env *testhelper.TestEnv, contactID int64, action str
 	require.NotEmpty(t, stored)
 	last := stored[len(stored)-1]
 	in := automations.OnEventInput{ContactID: contactID, Event: automations.Event{Action: last.Action, SourceID: *last.SourceID, OccurredAt: last.OccurredAt}}
-	require.NoError(t, testhelper.Module[*automations.StepExecution](env).OnEvent(context.Background(), env.DB.Scoped(fixtures.AcmeID), in))
+	require.NoError(t, testhelper.Module[*automations.StepExecution](env).OnEvent(t.Context(), env.DB.Scoped(fixtures.AcmeID), in))
 }
 
 // A Trigger on contact.tagged where tag is trial and a goal on contact.tagged where tag is
@@ -74,7 +73,7 @@ func TestATagGoalOnTheTriggersActionReachesTheGoalOnItsTagOnly(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
 	for _, name := range []string{"trial", "qualified"} {
-		_, err := tags.New().EnsureIn(context.Background(), s, name)
+		_, err := tags.New().EnsureIn(t.Context(), s, name)
 		require.NoError(t, err)
 	}
 	id := liveEnding(t, env, eventmatcher.Matcher{Action: systemevent.ContactTagged, Filter: propertyEq(t, "tag", "trial")},
@@ -174,10 +173,10 @@ func TestAnEnrollmentIsMadeEndedByTheFirstMatchingEventSinceItsTrigger(t *testin
 			id := closing(t, env)
 			c := enrollable(t, env.DB.Scoped(fixtures.AcmeID), 0)
 			triggered := time.Now().Add(-time.Hour)
-			require.NoError(t, env.Publisher().Publish(context.Background(), collected(c.ID, "order.placed", triggered, nil)))
+			require.NoError(t, env.Publisher().Publish(t.Context(), collected(c.ID, "order.placed", triggered, nil)))
 			for i, properties := range tc.since {
 				at := triggered.Add(time.Duration(i+1) * time.Minute)
-				require.NoError(t, env.Publisher().Publish(context.Background(), collected(c.ID, "order.closed", at, properties)))
+				require.NoError(t, env.Publisher().Publish(t.Context(), collected(c.ID, "order.closed", at, properties)))
 			}
 
 			handLast(t, env, c.ID, "order.placed")
@@ -195,7 +194,7 @@ func firedOn(
 	t *testing.T, env *testhelper.TestEnv, automationID, contactID int64, action string,
 ) (firingID int64, sourceID string) {
 	t.Helper()
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := testhelper.Module[*rules.Module](env)
 	r, err := m.Create(ctx, s, rules.CreateInput{
@@ -226,7 +225,7 @@ func TestTheEventARuleFiredOnNeverEndsTheEnrollmentItMade(t *testing.T) {
 	handStored(t, env, c.ID, "order.completed", collected(c.ID, "order.completed", time.Now().Add(-time.Minute), nil))
 	firingID, sourceID := firedOn(t, env, id, c.ID, "order.completed")
 
-	_, err := testhelper.Module[*automations.StepExecution](env).EnrollOnRule(context.Background(), s,
+	_, err := testhelper.Module[*automations.StepExecution](env).EnrollOnRule(t.Context(), s,
 		automations.EnrollOnRuleInput{AutomationID: id, ContactID: c.ID, FiringID: firingID, SourceID: sourceID})
 	require.NoError(t, err)
 	asMade := onlyRunOf(t, env, id, c.ID)

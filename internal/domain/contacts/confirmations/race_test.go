@@ -1,7 +1,6 @@
 package confirmations_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -27,7 +26,7 @@ var evidence = confirmations.Evidence{Wording: "Text me offers", Source: "checko
 func TestAConfirmationThatLosesTheRaceAnswersWithTheOneThatStands(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.Committed())
 	scope := env.DB.Scoped(fixtures.AcmeID)
-	ctx := context.Background()
+	ctx := t.Context()
 	const number = "+14155550199"
 	confs := testhelper.Module[*confirmations.Module](env)
 
@@ -60,7 +59,7 @@ func TestAConfirmationThatLosesTheRaceAnswersWithTheOneThatStands(t *testing.T) 
 // address, unlinked, rather than failing on the Contact's foreign key.
 func TestAConfirmationOfAnErasedContactIsRecordedUnlinked(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	const address = "gone@example.com"
 
 	err := testhelper.Module[*confirmations.Module](env).RecordConfirmation(ctx, env.DB.Scoped(fixtures.AcmeID), linktarget.Confirmation{

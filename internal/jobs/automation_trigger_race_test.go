@@ -36,7 +36,7 @@ func holdEventLog(t *testing.T, e *realEnv) (release func()) {
 func raceThePick(t *testing.T, meanwhile func(ctx context.Context, mod *automations.Module, s *ent.Scoped) error) []int64 {
 	t.Helper()
 	e := newRealEnv(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	mod := testhelper.Module[*automations.Module](e.env)
 	steps := e.enrollments()
 	probe := e.env.SQLDB

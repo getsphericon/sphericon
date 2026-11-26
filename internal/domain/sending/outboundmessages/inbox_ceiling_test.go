@@ -1,7 +1,6 @@
 package outboundmessages_test
 
 import (
-	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -55,7 +54,7 @@ func sendToReader(t *testing.T, env *testhelper.TestEnv, m *outboundmessages.Mod
 // Automation is Deferred like any rate-limited send, and is sent once capacity returns.
 func TestTestInboxDefersTheMessageAfterItsDailyCeilingAndSendsItLater(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := startClock()
 	m := pinewoodInboxModule(t, env, c, outboundmessages.Config{})
 	s := env.DB.Scoped(fixtures.PinewoodID)
@@ -79,7 +78,7 @@ func TestTestInboxDefersTheMessageAfterItsDailyCeilingAndSendsItLater(t *testing
 // A lower limit the user sets on the Test inbox applies as for any Integration.
 func TestTestInboxHonoursALowerUserLimit(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := startClock()
 	m := pinewoodInboxModule(t, env, c, outboundmessages.Config{})
 	env.DB.Integration.UpdateOneID(fixtures.IntegrationPinewoodInboxID).SetMaxPerDay(2).ExecX(ctx)

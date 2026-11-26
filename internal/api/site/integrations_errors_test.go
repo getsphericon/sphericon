@@ -2,7 +2,6 @@ package site_test
 
 import (
 	"cmp"
-	"context"
 	"net/http"
 	"slices"
 	"testing"
@@ -19,7 +18,7 @@ import (
 func TestSiteIntegrationsErrorBranches(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	acme, foreign := siteapi.WorkspaceId(fixtures.AcmePublicID), siteapi.WorkspaceId(fixtures.GlobexPublicID)
 
 	id := siteapi.EntityId(fixtures.IntegrationAcmeGenericAID)

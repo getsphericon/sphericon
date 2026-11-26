@@ -1,7 +1,6 @@
 package unsubscriberecording_test
 
 import (
-	"context"
 	"strconv"
 	"testing"
 
@@ -17,7 +16,7 @@ import (
 
 func TestUnsubscribeValidatesTheSourceAndIsIdempotent(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
 	_, err := testhelper.Module[*unsubscriberecording.UseCase](env).Unsubscribe(ctx, s, "  ", eligibility.SourceBroadcasts)
@@ -39,7 +38,7 @@ func TestUnsubscribeValidatesTheSourceAndIsIdempotent(t *testing.T) {
 
 func TestUnsubscribeAcceptsAnAutomationOfTheWorkspaceOnly(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	source := "automation:" + strconv.Itoa(fixtures.AutomationWelcomeSeriesID)
 
 	got, err := testhelper.Module[*unsubscriberecording.UseCase](env).Unsubscribe(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceEmail, source)

@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"encoding/json"
 	"testing"
 
@@ -21,7 +20,7 @@ import (
 func TestTagChangesRecordSystemEvents(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeContactsRead, apitokens.ScopeContactsWrite)
-	ctx := context.Background()
+	ctx := t.Context()
 	bob := entityIDString(fixtures.ContactBobID)
 	vip := map[string]any{"contactId": fixtures.ContactBobID, "tag": "vip"}
 	apply := func() {
@@ -55,7 +54,7 @@ func TestTagChangesRecordSystemEvents(t *testing.T) {
 func TestContactUpdateRecordsFieldChanges(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeContactsRead, apitokens.ScopeContactsWrite)
-	ctx := context.Background()
+	ctx := t.Context()
 	bob := entityIDString(fixtures.ContactBobID)
 	update := func(fields externalapi.JsonObject) {
 		t.Helper()
@@ -84,7 +83,7 @@ func TestBatchImportRecordsNoFieldChanges(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeContactsRead, apitokens.ScopeContactsWrite)
 
-	_, err := c.ContactsBatchUpsert(context.Background(), &externalapi.UpsertContactsInput{Contacts: []externalapi.UpsertContactInput{
+	_, err := c.ContactsBatchUpsert(t.Context(), &externalapi.UpsertContactsInput{Contacts: []externalapi.UpsertContactInput{
 		{
 			Email:        externalapi.NewOptNilEmailAddress("imported@example.org"),
 			CustomFields: externalapi.NewOptNilJsonObject(externalapi.JsonObject{"plan": jx.Raw(`"pro"`)}),

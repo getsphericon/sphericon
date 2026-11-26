@@ -36,10 +36,10 @@ func TestNewFailsOnABadEncryptionKey(t *testing.T) {
 
 func TestShutdownIsIdempotentAndReportsOnce(t *testing.T) {
 	a := newApp(t)
-	first := a.Shutdown(context.Background())
+	first := a.Shutdown(t.Context())
 	require.NotNil(t, first)
 	assert.Empty(t, first.Errors)
-	assert.Same(t, first, a.Shutdown(context.Background()), "a second shutdown returns the first report")
+	assert.Same(t, first, a.Shutdown(t.Context()), "a second shutdown returns the first report")
 }
 
 func TestCommandAppHasNothingToServe(t *testing.T) {
@@ -47,12 +47,12 @@ func TestCommandAppHasNothingToServe(t *testing.T) {
 	t.Setenv("SPHERICON_METRICS_ADDR", freeAddr(t))
 	a, err := app.NewCommandApp("test")
 	require.NoError(t, err)
-	t.Cleanup(func() { cleanup.Shutdown(a.Shutdown(context.Background())) })
+	t.Cleanup(func() { cleanup.Shutdown(a.Shutdown(context.WithoutCancel(t.Context()))) })
 
 	require.NotNil(t, a.Config)
 	assert.Nil(t, a.Server)
 	assert.Nil(t, a.Metrics, "staff commands expose no metrics listener")
-	assert.ErrorIs(t, a.Start(context.Background()), app.ErrNotServable)
+	assert.ErrorIs(t, a.Start(t.Context()), app.ErrNotServable)
 }
 
 // Each module and use case a staff member command calls comes from the command app's container.
@@ -60,7 +60,7 @@ func TestCommandAppBuildsWhatTheCommandsCall(t *testing.T) {
 	baseline(t)
 	a, err := app.NewCommandApp("test")
 	require.NoError(t, err)
-	t.Cleanup(func() { cleanup.Shutdown(a.Shutdown(context.Background())) })
+	t.Cleanup(func() { cleanup.Shutdown(a.Shutdown(context.WithoutCancel(t.Context()))) })
 
 	built := func(v any, err error) any {
 		t.Helper()

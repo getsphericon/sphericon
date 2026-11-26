@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -18,7 +17,7 @@ import (
 func TestSiteSegmentContactsListReturnsOnlyMatchingContacts(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	res, err := c.SiteSegmentContactsList(ctx, siteapi.SiteSegmentContactsListParams{
 		WorkspaceId: fixtures.AcmePublicID,
@@ -38,7 +37,7 @@ func TestSiteSegmentContactsListUnknownSegmentIsNotFound(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	_, err := c.SiteSegmentContactsList(context.Background(), siteapi.SiteSegmentContactsListParams{
+	_, err := c.SiteSegmentContactsList(t.Context(), siteapi.SiteSegmentContactsListParams{
 		WorkspaceId: fixtures.AcmePublicID,
 		SegmentId:   siteapi.EntityId(999999),
 	})

@@ -1,7 +1,6 @@
 package condition_test
 
 import (
-	"context"
 	"encoding/json"
 	"testing"
 	"time"
@@ -79,7 +78,7 @@ func TestCustomFieldMustBeInTheWorkspaceCatalogue(t *testing.T) {
 		"declared by another Workspace":  fixtures.CustomFieldGlobexKey,
 		"injection that nobody declared": "x' IS NOT NULL AND (SELECT count(*) FROM users)>0 AND 'a",
 	} {
-		_, err := condition.New(time.Now).Compile(context.Background(), ws, segmentOf(customField(key, text("eq", "a"))))
+		_, err := condition.New(time.Now).Compile(t.Context(), ws, segmentOf(customField(key, text("eq", "a"))))
 		require.Error(t, err, name)
 		assert.Contains(t, err.Error(), "unknown custom field", name)
 	}
@@ -108,7 +107,7 @@ func TestCompileRefusesWhatTheTreeDoesNotAllow(t *testing.T) {
 		"a Custom field leaf with no key": {customField("", text("eq", "x")), "custom field key is required"},
 		"not set on a Custom field":       {customField("plan", presence("notSet")), `takes no presence test "notSet"`},
 	} {
-		_, err := condition.New(time.Now).Compile(context.Background(), env.DB.Scoped(fixtures.AcmeID), segmentOf(tc.leaf))
+		_, err := condition.New(time.Now).Compile(t.Context(), env.DB.Scoped(fixtures.AcmeID), segmentOf(tc.leaf))
 		require.Error(t, err, name)
 		assert.Contains(t, err.Error(), tc.msg, name)
 		assert.Contains(t, err.Error(), "entry 0", "%s: the error names the offending entry", name)
@@ -134,7 +133,7 @@ func TestCompileRefusesAnEventLeafOutOfRange(t *testing.T) {
 		"a zero window":            {zeroWindow, "withinDays must be at least 1"},
 		"a negative window":        {eventLeaf("signup", "atLeast", 1, -1), "withinDays must be at least 1"},
 	} {
-		_, err := condition.New(time.Now).Compile(context.Background(), env.DB.Scoped(fixtures.AcmeID), segmentOf(tc.leaf))
+		_, err := condition.New(time.Now).Compile(t.Context(), env.DB.Scoped(fixtures.AcmeID), segmentOf(tc.leaf))
 		require.Error(t, err, name)
 		assert.Contains(t, err.Error(), tc.msg, name)
 		assert.Contains(t, err.Error(), "entry 0", "%s: the error names the offending entry", name)
@@ -143,7 +142,7 @@ func TestCompileRefusesAnEventLeafOutOfRange(t *testing.T) {
 
 func TestCompileRefusesMalformedEntries(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	ws := env.DB.Scoped(fixtures.AcmeID)
 	compile := func(entry string) error {
 		g := conditiontree.Group{Kind: conditiontree.KindGroup, Combinator: conditiontree.And, Entries: []json.RawMessage{json.RawMessage(entry)}}
@@ -170,7 +169,7 @@ func TestCompileRefusesMalformedEntries(t *testing.T) {
 // every Contact.
 func TestCompileRefusesAGroupWithoutEntries(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	ws := env.DB.Scoped(fixtures.AcmeID)
 	var root conditiontree.Segment
 	require.NoError(t, json.Unmarshal([]byte(`{"kind":"group","combinator":"and"}`), &root))
@@ -187,7 +186,7 @@ func TestCompileRefusesAGroupWithoutEntries(t *testing.T) {
 
 func TestCompileRefusesInvalidConditions(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	ws := env.DB.Scoped(fixtures.AcmeID)
 
 	_, err := condition.New(time.Now).Compile(ctx, ws, testhelper.SegmentCondition(t, `{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":"nope","test":{"kind":"text","operator":"eq","value":"x"}}]}`))

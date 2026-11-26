@@ -78,7 +78,7 @@ func TestRunStepOutcomes(t *testing.T) {
 
 func TestEvaluateTriggerEnrollsOnlyMatchingActiveAutomations(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// The greeting's trigger is shared by an active and an inactive automation; Bob is in neither.
 	require.NoError(t, testhelper.Module[*automations.StepExecution](env).OnEvent(ctx, env.DB.Scoped(fixtures.AcmeID), automations.OnEventInput{ContactID: fixtures.ContactBobID, Event: automations.Event{Action: triggerOf(t, env, fixtures.AutomationJobsGreetingID), OccurredAt: time.Now()}}))
@@ -91,7 +91,7 @@ func TestEvaluateTriggerEnrollsOnlyMatchingActiveAutomations(t *testing.T) {
 // one then delivers it: the suspension stands either way.
 func TestOwnerNoticeIsRetriedWhenTheSystemSenderFails(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	env.SystemMail.SetErr(errors.New("smtp down"))
 	_, err := testhelper.Module[*suspension.Suspender](env).Suspend(ctx, fixtures.AcmeID, suspension.SuspendInput{By: suspension.System, Reason: "complaints"})
 	require.NoError(t, err)
@@ -108,7 +108,7 @@ func TestOwnerNoticeIsRetriedWhenTheSystemSenderFails(t *testing.T) {
 // the check.
 func TestSendingDomainVerifyNotifiesOnFlip(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	gone := dnstest.Resolver(t, nil).LookupTXT
 	w := jobs.NewVerifySendingDomainWorker(env.DB, sendingdomains.New(env.DB, env.Bus, nil, gone, time.Now))
 

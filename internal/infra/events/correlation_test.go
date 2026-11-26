@@ -85,7 +85,7 @@ func (chainedArgs) Kind() string { return "chained" }
 // A job queued while handling an event keeps the event's chain, and an event the job publishes,
 // even in a context of its own, is caused by the handled one.
 func TestAJobKeepsTheChainItWasQueuedIn(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	env := testhelper.Setup(t, testhelper.Committed())
 	sqlDB, bus := env.SQLDB, env.Bus
 	cfg := &river.Config{Middleware: []rivertype.Middleware{events.JobCorrelation()}}
@@ -115,7 +115,7 @@ func TestAJobKeepsTheChainItWasQueuedIn(t *testing.T) {
 // A job queued while handling an event that passed through Automations keeps them, and an event the
 // job publishes carries them.
 func TestAJobKeepsTheAutomationsItsChainPassedThrough(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	env := testhelper.Setup(t, testhelper.Committed())
 	sqlDB, bus := env.SQLDB, env.Bus
 	cfg := &river.Config{Middleware: []rivertype.Middleware{events.JobCorrelation()}}

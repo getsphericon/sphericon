@@ -142,7 +142,7 @@ var (
 // TypeSpec row schema, so a stream that drifts from its contract fails every test here.
 func readExportStream(t *testing.T, c *externalapi.Client, stream exportStream, cursor string, limit int32) exportPage {
 	t.Helper()
-	body, next, err := stream.call(context.Background(), c, exportParams{cursor: cursor, limit: limit})
+	body, next, err := stream.call(t.Context(), c, exportParams{cursor: cursor, limit: limit})
 	require.NoErrorf(t, err, "%s", stream.name)
 	raw, err := io.ReadAll(body)
 	require.NoError(t, err)
@@ -203,7 +203,7 @@ func TestExportEventsPagingLosesNothingAcrossEqualUpdatedAt(t *testing.T) {
 
 func TestExportEventsDeliversAStitchedAnonymousEventAgain(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := exportClient(t, env, fixtures.InitechID)
 	before := readExportEvents(t, c, "", 0)
 	require.Nil(t, before.row(fixtures.EventErasableAnonymousID)["contact_id"])
@@ -239,7 +239,7 @@ func TestExportEventsNeedsTheExportReadScope(t *testing.T) {
 	env := testhelper.Setup(t)
 	for _, scopes := range [][]apitokens.Scope{{}, {apitokens.ScopeContactsRead}, {apitokens.ScopeContactsRead, apitokens.ScopeEventsRead, apitokens.ScopeAuditRead}} {
 		c := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.InitechID, scopes...))
-		_, err := c.ExportEvents(context.Background(), externalapi.ExportEventsParams{})
+		_, err := c.ExportEvents(t.Context(), externalapi.ExportEventsParams{})
 		testhelper.ExternalRefusal(t, err, http.StatusForbidden, "scopes %v are refused", scopes)
 	}
 }
@@ -248,7 +248,7 @@ func TestExportEventsAnswers404WithoutTheLicense(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithoutLicense())
 	c := exportClient(t, env, fixtures.InitechID)
 
-	_, err := c.ExportEvents(context.Background(), externalapi.ExportEventsParams{})
+	_, err := c.ExportEvents(t.Context(), externalapi.ExportEventsParams{})
 
 	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 }
@@ -267,7 +267,7 @@ func TestExportEventsRefuseAMalformedCursor(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := exportClient(t, env, fixtures.InitechID)
 
-	_, err := c.ExportEvents(context.Background(), externalapi.ExportEventsParams{
+	_, err := c.ExportEvents(t.Context(), externalapi.ExportEventsParams{
 		Cursor: externalapi.NewOptString("not-a-cursor"),
 	})
 
@@ -307,7 +307,7 @@ func TestEveryExportStreamOfADeletedWorkspaceDoesNotAuthenticate(t *testing.T) {
 	for _, stream := range allExportStreams {
 		t.Run(stream.name, func(t *testing.T) {
 			env := testhelper.Setup(t)
-			ctx := context.Background()
+			ctx := t.Context()
 			c := exportClient(t, env, stream.workspaceID)
 			readExportStream(t, c, stream, "", 0)
 			env.DeleteWorkspace(t, stream.workspaceID, time.Now())

@@ -1,7 +1,6 @@
 package rules_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -22,7 +21,7 @@ const hookURL = "https://hooks.example.com/services/T000/B000/secret-path"
 
 func newHTTPRule(t *testing.T, env *testhelper.TestEnv, m *rules.Module) (id int64, actionID string) {
 	t.Helper()
-	r, err := m.Create(context.Background(), env.DB.Scoped(fixtures.AcmeID), rules.CreateInput{
+	r, err := m.Create(t.Context(), env.DB.Scoped(fixtures.AcmeID), rules.CreateInput{
 		Name:          "Call the hook",
 		TriggerEvents: []string{"rule_http"},
 		Actions: []ruleaction.Action{{
@@ -42,7 +41,7 @@ func TestAnHTTPActionIsStoredSealed(t *testing.T) {
 
 	id, _ := newHTTPRule(t, env, m)
 
-	r, err := m.Get(context.Background(), env.DB.Scoped(fixtures.AcmeID), id)
+	r, err := m.Get(t.Context(), env.DB.Scoped(fixtures.AcmeID), id)
 	require.NoError(t, err)
 	for _, secret := range []string{hookURL, "hooks.example.com", "hunter2", testSigner} {
 		assert.NotContains(t, testhelper.Document(t, draftOf(t, r).Actions), secret, "the stored Actions hold only ciphertext")
@@ -70,10 +69,10 @@ func TestEditingAnHTTPActionKeepsWhatIsNotResent(t *testing.T) {
 	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 	s := env.DB.Scoped(fixtures.AcmeID)
 	id, actionID := newHTTPRule(t, env, m)
-	_, err := m.Publish(context.Background(), s, id, testhelper.RuleRevisionIn(t.Context(), t, s, id))
+	_, err := m.Publish(t.Context(), s, id, testhelper.RuleRevisionIn(t.Context(), t, s, id))
 	require.NoError(t, err)
 
-	r, err := m.Update(context.Background(), s, id, rules.UpdateInput{Revision: testhelper.RuleRevisionIn(t.Context(), t, s, id), Actions: &[]ruleaction.Action{{
+	r, err := m.Update(t.Context(), s, id, rules.UpdateInput{Revision: testhelper.RuleRevisionIn(t.Context(), t, s, id), Actions: &[]ruleaction.Action{{
 		Type: ruleaction.HTTP, ID: actionID, Body: `{"changed":true}`,
 		Headers: []httpheader.Header{{Name: "Authorization"}},
 	}}})
@@ -102,7 +101,7 @@ func TestAnInvalidHTTPActionIsRefused(t *testing.T) {
 	}
 	for name, a := range cases {
 		t.Run(name, func(t *testing.T) {
-			_, err := m.Create(context.Background(), env.DB.Scoped(fixtures.AcmeID), rules.CreateInput{
+			_, err := m.Create(t.Context(), env.DB.Scoped(fixtures.AcmeID), rules.CreateInput{
 				Name: "Bad", TriggerEvents: []string{"rule_http"}, Actions: []ruleaction.Action{a},
 			})
 			assert.ErrorIs(t, err, rules.ErrInvalid)

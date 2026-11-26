@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"encoding/json"
 	"testing"
 
@@ -20,7 +19,7 @@ func TestExternalBatchUpsertRecordsOneImportEntry(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalAnchor(t)
 
-	_, err := c.ContactsBatchUpsert(context.Background(), &externalapi.UpsertContactsInput{Contacts: []externalapi.UpsertContactInput{
+	_, err := c.ContactsBatchUpsert(t.Context(), &externalapi.UpsertContactsInput{Contacts: []externalapi.UpsertContactInput{
 		{Email: externalapi.NewOptNilEmailAddress("import.one@example.org")},
 		{Email: externalapi.NewOptNilEmailAddress("import.two@example.org")},
 		{Email: externalapi.NewOptNilEmailAddress(fixtures.ContactAliceEmail)},
@@ -48,7 +47,7 @@ func TestExternalBatchUpsertRecordsOneImportEntry(t *testing.T) {
 func TestExternalContactEditIsAuditedWithNamesOnly(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite, apitokens.ScopeContactsErase)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := c.ContactsUpdate(ctx, &externalapi.UpdateContactInput{Revision: externalapi.Revision(env.ContactRevision(ctx, t, int64(entityIDString(fixtures.ContactBobID)))), FirstName: externalapi.NewOptNilString("Renamed")},
 		externalapi.ContactsUpdateParams{ID: entityIDString(fixtures.ContactBobID)})

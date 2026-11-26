@@ -1,7 +1,6 @@
 package automations_test
 
 import (
-	"context"
 	"slices"
 	"testing"
 	"time"
@@ -38,7 +37,7 @@ const (
 // month's wait, keeps an Enrollment active until then.
 func keyedAutomation(t *testing.T, env *testhelper.TestEnv, policy automationversion.EntryPolicy) int64 {
 	t.Helper()
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := testhelper.Module[*automations.Module](env)
 	created, err := m.Create(ctx, s, automations.CreateInput{
@@ -142,7 +141,7 @@ func TestExitEndsEveryKeyedEnrollmentOfTheContact(t *testing.T) {
 	order(t, env, c.ID, orderPlaced, moment(50), keyed("A"))
 	order(t, env, c.ID, orderPlaced, moment(40), keyed("B"))
 
-	exited, err := env.ExitEnrollment(context.Background(), env.DB.Scoped(fixtures.AcmeID), automationID, c.ID)
+	exited, err := env.ExitEnrollment(t.Context(), env.DB.Scoped(fixtures.AcmeID), automationID, c.ID)
 
 	require.NoError(t, err)
 	assert.True(t, exited)
@@ -271,7 +270,7 @@ func enrollOnStored(t *testing.T, env *testhelper.TestEnv, automationID, contact
 	t.Helper()
 	stored := env.StoredEvents(t, action)
 	require.NotEmpty(t, stored)
-	made, err := testhelper.Module[*automations.StepExecution](env).EnrollOnRule(context.Background(), env.DB.Scoped(fixtures.AcmeID),
+	made, err := testhelper.Module[*automations.StepExecution](env).EnrollOnRule(t.Context(), env.DB.Scoped(fixtures.AcmeID),
 		automations.EnrollOnRuleInput{AutomationID: automationID, ContactID: contactID, FiringID: firingID, SourceID: *stored[len(stored)-1].SourceID})
 	require.NoError(t, err)
 	return made
@@ -283,9 +282,9 @@ func TestARulesEnrollActionReadsTheKeyFromTheEventTheRuleFiredOn(t *testing.T) {
 	env := testhelper.Setup(t)
 	automationID := keyedAutomation(t, env, automationversion.EntryPolicyOnce)
 	c := enrollable(t, env.DB.Scoped(fixtures.AcmeID), 0)
-	require.NoError(t, env.Publisher().Publish(context.Background(), collected(c.ID, "order.reviewed", moment(30), keyed("R"))))
+	require.NoError(t, env.Publisher().Publish(t.Context(), collected(c.ID, "order.reviewed", moment(30), keyed("R"))))
 	made := enrollOnStored(t, env, automationID, c.ID, fixtures.RuleFiringDoneID, "order.reviewed")
-	require.NoError(t, env.Publisher().Publish(context.Background(), collected(c.ID, "order.reviewed", moment(20), nil)))
+	require.NoError(t, env.Publisher().Publish(t.Context(), collected(c.ID, "order.reviewed", moment(20), nil)))
 	refused := enrollOnStored(t, env, automationID, c.ID, fixtures.RuleFiringPendingID, "order.reviewed")
 
 	assert.Equal(t, automations.EnrollOnRuleResult{Enrolled: true}, made)
@@ -297,7 +296,7 @@ func TestARulesEnrollActionReadsTheKeyFromTheEventTheRuleFiredOn(t *testing.T) {
 // the Trigger without it removes it, and a key that is no property name is refused.
 func TestTheEnrollmentKeyIsWrittenWithTheTriggerAndCheckedForForm(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := testhelper.Module[*automations.Module](env)
 	automationID := keyedAutomation(t, env, automationversion.EntryPolicyOnce)
@@ -338,7 +337,7 @@ func TestTheReportCountsTheKeyedSkips(t *testing.T) {
 	order(t, env, c.ID, orderPlaced, moment(50), keyed("eleventh"))
 	order(t, env, c.ID, orderPlaced, moment(40), nil)
 
-	report, err := testhelper.Module[*automations.Module](env).ReportOf(context.Background(), env.DB.Scoped(fixtures.AcmeID), automationID, automations.ReportPeriod7Days)
+	report, err := testhelper.Module[*automations.Module](env).ReportOf(t.Context(), env.DB.Scoped(fixtures.AcmeID), automationID, automations.ReportPeriod7Days)
 
 	require.NoError(t, err)
 	current := report.Results.Current

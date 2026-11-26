@@ -1,7 +1,6 @@
 package events_test
 
 import (
-	"context"
 	"errors"
 	"testing"
 
@@ -30,7 +29,7 @@ func auditEntry(actorKind string) *events.AuditEntry {
 // writes no Event row, so no segment or trigger can ever see it.
 func TestAuditEntryIsNotProjectedToAnEvent(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	before, err := env.DB.Event.Query().Count(ctx)
 	require.NoError(t, err)
 
@@ -51,7 +50,7 @@ func TestAuditEntryIsNotProjectedToAnEvent(t *testing.T) {
 // actor) never reaches the log.
 func TestRecordAuditSkipsIngestAndAnonymousActors(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	require.NoError(t, env.Bus.WithinTx(ctx, func(_ *ent.Client, pub events.Publisher) error {
 		require.NoError(t, events.RecordAudit(ctx, pub, auditEntry(events.ActorIngest)))
@@ -63,7 +62,7 @@ func TestRecordAuditSkipsIngestAndAnonymousActors(t *testing.T) {
 // A rolled-back mutation leaves no Audit entry.
 func TestRecordAuditRollsBackWithTheMutation(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	boom := errors.New("mutation failed")
 
 	err := env.Bus.WithinTx(ctx, func(_ *ent.Client, pub events.Publisher) error {

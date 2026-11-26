@@ -147,6 +147,12 @@ linters:
       # Where a context is in scope, a line is logged with it (slog.*Context), so the logger
       # tags the line with the request id and the correlation id it carries.
       context: scope
+    usetesting:
+      # A test's context is t.Context(), cancelled when the test ends, so work it started stops with
+      # it. What a cleanup stops or releases (a runtime, a held transaction) runs on
+      # context.WithoutCancel(t.Context()): the cleanups run after t.Context() is done.
+      context-background: true
+      context-todo: true
     forbidigo:
       analyze-types: true
       forbid:

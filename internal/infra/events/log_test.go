@@ -1,7 +1,6 @@
 package events_test
 
 import (
-	"context"
 	"sort"
 	"testing"
 	"time"
@@ -22,7 +21,7 @@ var firstPage = pagination.Params{Page: 1, PageSize: 100}
 func TestListLogFiltersByActionAndOrdersNewestFirst(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	p, err := events.ListLog(context.Background(), env.DB.Scoped(fixtures.AcmeID), events.LogFilter{Action: "purchase"}, firstPage)
+	p, err := events.ListLog(t.Context(), env.DB.Scoped(fixtures.AcmeID), events.LogFilter{Action: "purchase"}, firstPage)
 	require.NoError(t, err)
 	require.GreaterOrEqual(t, len(p.Items), 2)
 	assert.Equal(t, len(p.Items), p.TotalItems)
@@ -36,7 +35,7 @@ func TestListLogFiltersByActionAndOrdersNewestFirst(t *testing.T) {
 func TestListLogBreaksCreatedAtTiesByIDDescending(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	p, err := events.ListLog(context.Background(), env.DB.Scoped(fixtures.AcmeID), events.LogFilter{Action: "tie_probe"}, firstPage)
+	p, err := events.ListLog(t.Context(), env.DB.Scoped(fixtures.AcmeID), events.LogFilter{Action: "tie_probe"}, firstPage)
 	require.NoError(t, err)
 	require.Len(t, p.Items, 2)
 	assert.Equal(t, int64(fixtures.EventTieSecondID), p.Items[0].ID)
@@ -47,7 +46,7 @@ func TestListLogFiltersByContactID(t *testing.T) {
 	env := testhelper.Setup(t)
 	cid := int64(fixtures.ContactAliceID)
 
-	p, err := events.ListLog(context.Background(), env.DB.Scoped(fixtures.AcmeID), events.LogFilter{ContactID: &cid}, firstPage)
+	p, err := events.ListLog(t.Context(), env.DB.Scoped(fixtures.AcmeID), events.LogFilter{ContactID: &cid}, firstPage)
 	require.NoError(t, err)
 	require.NotEmpty(t, p.Items)
 	for _, e := range p.Items {
@@ -58,7 +57,7 @@ func TestListLogFiltersByContactID(t *testing.T) {
 func TestListLogFiltersByEmailCaseInsensitively(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	p, err := events.ListLog(context.Background(), env.DB.Scoped(fixtures.AcmeID), events.LogFilter{Email: "ALICE@Example.com"}, firstPage)
+	p, err := events.ListLog(t.Context(), env.DB.Scoped(fixtures.AcmeID), events.LogFilter{Email: "ALICE@Example.com"}, firstPage)
 	require.NoError(t, err)
 	require.NotEmpty(t, p.Items)
 	for _, e := range p.Items {
@@ -69,7 +68,7 @@ func TestListLogFiltersByEmailCaseInsensitively(t *testing.T) {
 
 func TestListLogPagesAndStaysInTheWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	all, err := events.ListLog(ctx, env.DB.Scoped(fixtures.AcmeID), events.LogFilter{}, firstPage)
 	require.NoError(t, err)
@@ -86,7 +85,7 @@ func TestListLogPagesAndStaysInTheWorkspace(t *testing.T) {
 
 func TestDistinctActionsAreDistinctSortedAndWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// The fixtures hold many page_view Events: the action is listed once.
 	got, err := events.DistinctActions(ctx, env.DB.Scoped(fixtures.AcmeID))

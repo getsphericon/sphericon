@@ -51,7 +51,7 @@ func TestSenderThatDeliversNowhereIsSentThroughWithoutAVerifiedSendingDomain(t *
 
 	req := transactional("tx:kept", "a@example.com")
 	req = sentFrom(req, "noreply@news.acme.com") // fixture domain id 2: unverified
-	res, err := moduleThrough(env, kept).Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), req)
+	res, err := moduleThrough(env, kept).Send(t.Context(), env.DB.Scoped(fixtures.AcmeID), req)
 	require.NoError(t, err)
 
 	assert.Equal(t, outboundmessages.Sent, res.Outcome)
@@ -61,7 +61,7 @@ func TestSenderThatDeliversNowhereIsSentThroughWithoutAVerifiedSendingDomain(t *
 
 func TestSenderThatConfirmsOnAcceptanceIsStampedDeliveredOnce(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	m := moduleThrough(env, &keepingSender{confirms: true})
 
 	res, err := m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:confirmed", "a@example.com"))
@@ -80,7 +80,7 @@ func TestSenderThatConfirmsOnAcceptanceIsStampedDeliveredOnce(t *testing.T) {
 
 func TestSenderThatDoesNotConfirmIsNotStampedDelivered(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	res, err := moduleThrough(env, &keepingSender{}).Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:plain", "a@example.com"))
 	require.NoError(t, err)

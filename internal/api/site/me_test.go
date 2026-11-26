@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -25,7 +24,7 @@ func TestSiteUserGetMe(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	me, err := c.SiteUserGetMe(context.Background())
+	me, err := c.SiteUserGetMe(t.Context())
 	require.NoError(t, err)
 	assert.Equal(t, "John", me.Name)
 	assert.Equal(t, siteapi.EmailAddress(fixtures.OwnerJohnEmail), me.Email)
@@ -34,7 +33,7 @@ func TestSiteUserGetMe(t *testing.T) {
 func TestSiteUserUpdateMeName(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	res, err := c.SiteUserUpdateMe(ctx, &siteapi.SiteUpdateMeInput{Name: siteapi.NewOptUserName("Renamed")})
 	require.NoError(t, err)
@@ -51,7 +50,7 @@ func TestSiteUserUpdateMeRejectsBlankName(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	_, err := c.SiteUserUpdateMe(context.Background(),
+	_, err := c.SiteUserUpdateMe(t.Context(),
 		&siteapi.SiteUpdateMeInput{Name: siteapi.NewOptUserName("   ")})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 }
@@ -61,7 +60,7 @@ func TestSiteUserUpdateMeRejectsBlankName(t *testing.T) {
 func TestSiteUserUpdateMeTimezone(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	me, err := c.SiteUserGetMe(ctx)
 	require.NoError(t, err)
@@ -88,7 +87,7 @@ func TestSiteUserUpdateMeRejectsUnknownTimezone(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	_, err := c.SiteUserUpdateMe(context.Background(),
+	_, err := c.SiteUserUpdateMe(t.Context(),
 		&siteapi.SiteUpdateMeInput{Timezone: siteapi.NewOptNilTimeZoneName("Mars/Olympus")})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 }
@@ -98,7 +97,7 @@ func TestSiteUserUpdateMeRejectsUnknownTimezone(t *testing.T) {
 func TestSiteUserUpdateMeRegionalFormat(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	me, err := c.SiteUserGetMe(ctx)
 	require.NoError(t, err)
@@ -124,7 +123,7 @@ func TestSiteUserUpdateMeRegionalFormat(t *testing.T) {
 func TestSiteUserUpdateMeRejectsMalformedRegionalFormat(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	for _, tag := range []string{"xx-??", "not a tag", "   "} {
 		t.Run(tag, func(t *testing.T) {
@@ -141,7 +140,7 @@ func TestSiteUserUpdateMePasswordWrongCurrent(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	_, err := c.SiteUserUpdateMe(context.Background(), &siteapi.SiteUpdateMeInput{
+	_, err := c.SiteUserUpdateMe(t.Context(), &siteapi.SiteUpdateMeInput{
 		CurrentPassword: siteapi.NewOptString("wrong"),
 		NewPassword:     siteapi.NewOptString("newsecret123"),
 	})
@@ -155,7 +154,7 @@ func TestSiteUserUpdateMePasswordChange(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	_, err := c.SiteUserUpdateMe(context.Background(), &siteapi.SiteUpdateMeInput{
+	_, err := c.SiteUserUpdateMe(t.Context(), &siteapi.SiteUpdateMeInput{
 		CurrentPassword: siteapi.NewOptString(fixtures.OwnerJohnPassword),
 		NewPassword:     siteapi.NewOptString("newsecret123"),
 	})

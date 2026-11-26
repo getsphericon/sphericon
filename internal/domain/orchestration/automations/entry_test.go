@@ -1,7 +1,6 @@
 package automations_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -23,13 +22,13 @@ import (
 func handSourcedEvent(t *testing.T, env *testhelper.TestEnv, contactID int64, action, sourceID string, at time.Time) {
 	t.Helper()
 	in := automations.OnEventInput{ContactID: contactID, Event: automations.Event{Action: action, SourceID: sourceID, OccurredAt: at}}
-	require.NoError(t, testhelper.Module[*automations.StepExecution](env).OnEvent(context.Background(), env.DB.Scoped(fixtures.AcmeID), in))
+	require.NoError(t, testhelper.Module[*automations.StepExecution](env).OnEvent(t.Context(), env.DB.Scoped(fixtures.AcmeID), in))
 }
 
 // skippedOf is the Contact's skipped entries into the Automation, read through the module.
 func skippedOf(t *testing.T, env *testhelper.TestEnv, automationID, contactID int64) []*ent.AutomationSkippedEntry {
 	t.Helper()
-	page, err := testhelper.Module[*automations.Module](env).SkippedEntries(context.Background(), env.DB.Scoped(fixtures.AcmeID),
+	page, err := testhelper.Module[*automations.Module](env).SkippedEntries(t.Context(), env.DB.Scoped(fixtures.AcmeID),
 		pagination.Params{Page: 1, PageSize: 100}, automations.SkippedEntriesFilter{AutomationID: automationID, ContactID: contactID})
 	require.NoError(t, err)
 	return page.Items
@@ -114,7 +113,7 @@ func TestTheSameEventHandledTwiceMakesOneEnrollmentAndAtMostOneSkippedEntry(t *t
 // enrollOnFiring runs a Rule Firing's Enroll Action for the Contact in the Automation.
 func enrollOnFiring(t *testing.T, env *testhelper.TestEnv, automationID, contactID, firingID int64) bool {
 	t.Helper()
-	made, err := testhelper.Module[*automations.StepExecution](env).EnrollOnRule(context.Background(), env.DB.Scoped(fixtures.AcmeID),
+	made, err := testhelper.Module[*automations.StepExecution](env).EnrollOnRule(t.Context(), env.DB.Scoped(fixtures.AcmeID),
 		automations.EnrollOnRuleInput{AutomationID: automationID, ContactID: contactID, FiringID: firingID, SourceID: "evt-not-stored"})
 	require.NoError(t, err)
 	return made.Enrolled

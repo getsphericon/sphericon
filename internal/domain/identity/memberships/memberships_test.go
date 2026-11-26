@@ -1,7 +1,6 @@
 package memberships_test
 
 import (
-	"context"
 	"sync"
 	"testing"
 
@@ -21,7 +20,7 @@ import (
 func TestChangeMembershipRoleInvariants(t *testing.T) {
 	env := testhelper.Setup(t)
 	ms := testhelper.Module[*memberships.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.InitechID)
 	actor := events.Actor{Kind: events.ActorUser}
 
@@ -81,7 +80,7 @@ func membershipUpdateEntries(t *testing.T, env *testhelper.TestEnv) int {
 func TestChangeMembershipRoleAuditsInTheSameTransaction(t *testing.T) {
 	env := testhelper.Setup(t)
 	ms := testhelper.Module[*memberships.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.InitechID)
 	actor := events.Actor{Kind: events.ActorUser}
 	updates := func() int { return membershipUpdateEntries(t, env) }
@@ -100,7 +99,7 @@ func TestChangeMembershipRoleAuditsInTheSameTransaction(t *testing.T) {
 func TestRemoveMembershipInvariants(t *testing.T) {
 	env := testhelper.Setup(t)
 	ms := testhelper.Module[*memberships.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.InitechID)
 	actor := events.Actor{Kind: events.ActorUser}
 
@@ -138,7 +137,7 @@ func TestRemoveMembershipInvariants(t *testing.T) {
 func TestLeaveRemovesTheCallersOwnMembershipWhateverTheRole(t *testing.T) {
 	env := testhelper.Setup(t)
 	ms := testhelper.Module[*memberships.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.InitechID)
 
 	exists := func(id int64) bool {
@@ -160,7 +159,7 @@ func TestLeaveRemovesTheCallersOwnMembershipWhateverTheRole(t *testing.T) {
 func TestLeaveRefusesTheOnlyOwner(t *testing.T) {
 	env := testhelper.Setup(t)
 	ms := testhelper.Module[*memberships.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.InitechID)
 
 	require.NoError(t, ms.Leave(ctx, s, fixtures.InitechCoOwnerOwenID))

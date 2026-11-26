@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -17,7 +16,7 @@ import (
 
 func listedIntegrationIDs(t *testing.T, c *externalapi.Client) []externalapi.EntityId {
 	t.Helper()
-	list, err := c.IntegrationsList(context.Background(), externalapi.IntegrationsListParams{PageSize: externalapi.NewOptInt32(100)})
+	list, err := c.IntegrationsList(t.Context(), externalapi.IntegrationsListParams{PageSize: externalapi.NewOptInt32(100)})
 	require.NoError(t, err)
 	return lo.Map(list.Items, func(i externalapi.IntegrationResource, _ int) externalapi.EntityId { return i.ID })
 }
@@ -28,7 +27,7 @@ func listedIntegrationIDs(t *testing.T, c *externalapi.Client) []externalapi.Ent
 func TestExternalIntegrationsDelete(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeIntegrationsRead, apitokens.ScopeIntegrationsWrite)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	err := c.IntegrationsDelete(ctx, externalapi.IntegrationsDeleteParams{ID: entityIDString(fixtures.IntegrationAcmeDefaultID)})
 	busy := testhelper.ExternalRefusal(t, err, http.StatusConflict)
@@ -55,7 +54,7 @@ func TestExternalIntegrationsDelete(t *testing.T) {
 func TestExternalIntegrationsDeletedOneIsReadOnly(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeIntegrationsRead, apitokens.ScopeIntegrationsWrite)
-	ctx := context.Background()
+	ctx := t.Context()
 	id := entityIDString(fixtures.IntegrationAcmeArchivedID)
 
 	_, err := c.IntegrationsUpdate(ctx, &externalapi.UpdateIntegrationInput{Revision: externalapi.Revision(env.IntegrationRevision(ctx, t, int64(id))), Name: externalapi.NewOptName("Renamed")},
@@ -88,7 +87,7 @@ func automationUsers(users []externalapi.UsedBy, id int64) []externalapi.UsedBy 
 func TestExternalIntegrationDeleteIsRefusedWhileAnAutomationNamesIt(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeIntegrationsRead, apitokens.ScopeIntegrationsWrite)
-	ctx := context.Background()
+	ctx := t.Context()
 	del := func(id int64) error {
 		return c.IntegrationsDelete(ctx, externalapi.IntegrationsDeleteParams{ID: entityIDString(id)})
 	}
@@ -116,6 +115,6 @@ func TestExternalIntegrationsDeleteNeedsTheWriteScope(t *testing.T) {
 	env := testhelper.Setup(t)
 	reader := env.ExternalScoped(t, apitokens.ScopeIntegrationsRead)
 
-	err := reader.IntegrationsDelete(context.Background(), externalapi.IntegrationsDeleteParams{ID: entityIDString(fixtures.IntegrationAcmeSesID)})
+	err := reader.IntegrationsDelete(t.Context(), externalapi.IntegrationsDeleteParams{ID: entityIDString(fixtures.IntegrationAcmeSesID)})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 }

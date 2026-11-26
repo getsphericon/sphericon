@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"sort"
 	"testing"
@@ -19,7 +18,7 @@ func TestSiteEventsListMostRecentFirst(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	ok, err := c.SiteEventsList(context.Background(), siteapi.SiteEventsListParams{WorkspaceId: fixtures.AcmePublicID})
+	ok, err := c.SiteEventsList(t.Context(), siteapi.SiteEventsListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 
 	// The page is ordered most-recent-first: each item's createdAt is >= the next.
@@ -34,7 +33,7 @@ func TestSiteEventsListFilterByAction(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	ok, err := c.SiteEventsList(context.Background(), siteapi.SiteEventsListParams{
+	ok, err := c.SiteEventsList(t.Context(), siteapi.SiteEventsListParams{
 		WorkspaceId: fixtures.AcmePublicID,
 		Action:      siteapi.NewOptString("purchase"),
 	})
@@ -53,7 +52,7 @@ func TestSiteEventsListFilterByEmail(t *testing.T) {
 
 	// Upper-cased on purpose: the match must be case-insensitive because contact
 	// emails are stored as entered while collect events are lowercased.
-	ok, err := c.SiteEventsList(context.Background(), siteapi.SiteEventsListParams{
+	ok, err := c.SiteEventsList(t.Context(), siteapi.SiteEventsListParams{
 		WorkspaceId: fixtures.AcmePublicID,
 		Email:       siteapi.NewOptString("ALICE@example.com"),
 	})
@@ -73,7 +72,7 @@ func TestSiteEventsListUnknownWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	_, err := c.SiteEventsList(context.Background(), siteapi.SiteEventsListParams{WorkspaceId: "NoSuchWs"})
+	_, err := c.SiteEventsList(t.Context(), siteapi.SiteEventsListParams{WorkspaceId: "NoSuchWs"})
 	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 }
 
@@ -83,7 +82,7 @@ func TestSiteEventsListUnknownWorkspace(t *testing.T) {
 func TestSiteEventsActions(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// Many fixture events are page_views: de-duplication shows it once.
 	res, err := c.SiteEventsActions(ctx, siteapi.SiteEventsActionsParams{WorkspaceId: fixtures.AcmePublicID})
@@ -102,7 +101,7 @@ func TestSiteEventsActionsUnknownWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	_, err := c.SiteEventsActions(context.Background(), siteapi.SiteEventsActionsParams{WorkspaceId: "NoSuchWs"})
+	_, err := c.SiteEventsActions(t.Context(), siteapi.SiteEventsActionsParams{WorkspaceId: "NoSuchWs"})
 	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 }
 
@@ -113,11 +112,11 @@ func TestSiteEventsPropertyKeysOfAnAction(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	res, err := c.SiteEventsPropertyKeys(context.Background(), siteapi.SiteEventsPropertyKeysParams{
+	res, err := c.SiteEventsPropertyKeys(t.Context(), siteapi.SiteEventsPropertyKeysParams{
 		WorkspaceId: fixtures.AcmePublicID, Action: "lesson_completed",
 	})
 	require.NoError(t, err)
-	none, err := c.SiteEventsPropertyKeys(context.Background(), siteapi.SiteEventsPropertyKeysParams{
+	none, err := c.SiteEventsPropertyKeys(t.Context(), siteapi.SiteEventsPropertyKeysParams{
 		WorkspaceId: fixtures.AcmePublicID, Action: "never_recorded",
 	})
 	require.NoError(t, err)

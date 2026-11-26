@@ -1,7 +1,6 @@
 package messaging_test
 
 import (
-	"context"
 	"strings"
 	"testing"
 
@@ -29,13 +28,13 @@ func dkimLookup(t *testing.T, pubTXT string) func(string) ([]string, error) {
 		"sphericon._domainkey.mail.acme.com.": {TXT: []string{pubTXT}},
 	})
 	return func(name string) ([]string, error) {
-		return r.LookupTXT(context.Background(), name+".")
+		return r.LookupTXT(t.Context(), name+".")
 	}
 }
 
 func TestDKIMKeysVerifiedDomain(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	keys := messaging.NewDKIMKeys(env.DB.Scoped(fixtures.AcmeID), env.Cipher)
 
 	dk, err := keys.Key(ctx, "hello@mail.acme.com")
@@ -45,7 +44,7 @@ func TestDKIMKeysVerifiedDomain(t *testing.T) {
 
 func TestDKIMKeysUnverifiedDomain(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	keys := messaging.NewDKIMKeys(env.DB.Scoped(fixtures.AcmeID), env.Cipher)
 
 	dk, err := keys.Key(ctx, "hello@news.acme.com")
@@ -55,7 +54,7 @@ func TestDKIMKeysUnverifiedDomain(t *testing.T) {
 
 func TestDKIMKeysLostVerification(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	keys := messaging.NewDKIMKeys(env.DB.Scoped(fixtures.AcmeID), env.Cipher)
 
 	dk, err := keys.Key(ctx, "hello@"+fixtures.SendingDomainLostDomain)
@@ -68,7 +67,7 @@ func TestDKIMKeysLostVerification(t *testing.T) {
 
 func TestDKIMKeysUnknownDomain(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	keys := messaging.NewDKIMKeys(env.DB.Scoped(fixtures.AcmeID), env.Cipher)
 
 	dk, err := keys.Key(ctx, "hello@nope.example")
@@ -79,7 +78,7 @@ func TestDKIMKeysUnknownDomain(t *testing.T) {
 // A verified domain in another workspace must not sign this workspace's mail.
 func TestDKIMKeysWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	keys := messaging.NewDKIMKeys(env.DB.Scoped(fixtures.GlobexID), env.Cipher)
 
 	dk, err := keys.Key(ctx, "hello@mail.acme.com")
@@ -89,7 +88,7 @@ func TestDKIMKeysWorkspaceScoped(t *testing.T) {
 
 func TestBuildSignedMessageSignsVerified(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	keys := messaging.NewDKIMKeys(env.DB.Scoped(fixtures.AcmeID), env.Cipher)
 
 	wire, err := messaging.BuildSignedMessage(ctx, messaging.EmailMessage{
@@ -116,7 +115,7 @@ func TestBuildSignedMessageSignsVerified(t *testing.T) {
 // not silently sent unsigned.
 func TestBuildSignedMessageRejectsUnverified(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	keys := messaging.NewDKIMKeys(env.DB.Scoped(fixtures.AcmeID), env.Cipher)
 
 	_, err := messaging.BuildSignedMessage(ctx, messaging.EmailMessage{
@@ -130,7 +129,7 @@ func TestBuildSignedMessageRejectsUnverified(t *testing.T) {
 
 // System mail has no DKIM keys and goes out unsigned.
 func TestBuildSignedMessageWithoutKeysIsUnsigned(t *testing.T) {
-	wire, err := messaging.BuildSignedMessage(context.Background(), messaging.EmailMessage{
+	wire, err := messaging.BuildSignedMessage(t.Context(), messaging.EmailMessage{
 		From:    "hello@mail.acme.com",
 		To:      "rcpt@example.com",
 		Subject: "unsigned",
@@ -196,7 +195,7 @@ func verifyDKIM(t *testing.T, raw, pubTXT string) {
 // intermediate MTA refolds its headers.
 func TestDKIMSignsListUnsubscribeHeadersAndSurvivesRefolding(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	keys := messaging.NewDKIMKeys(env.DB.Scoped(fixtures.AcmeID), env.Cipher)
 
 	dom, err := env.DB.SendingDomain.Get(ctx, fixtures.SendingDomainVerifiedID)
@@ -232,7 +231,7 @@ func TestDKIMSignsListUnsubscribeHeadersAndSurvivesRefolding(t *testing.T) {
 // marketing sends, so transactional mail is untouched by ADR 0012.
 func TestDKIMTransactionalLeavesOneClickOut(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	keys := messaging.NewDKIMKeys(env.DB.Scoped(fixtures.AcmeID), env.Cipher)
 
 	dom, err := env.DB.SendingDomain.Get(ctx, fixtures.SendingDomainVerifiedID)
@@ -257,7 +256,7 @@ func TestDKIMTransactionalLeavesOneClickOut(t *testing.T) {
 // body. The fixture public key is injected via LookupTXT so the check needs no DNS.
 func TestDKIMSignatureCryptoVerifies(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	keys := messaging.NewDKIMKeys(env.DB.Scoped(fixtures.AcmeID), env.Cipher)
 
 	dom, err := env.DB.SendingDomain.Get(ctx, fixtures.SendingDomainVerifiedID)

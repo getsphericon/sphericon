@@ -1,7 +1,6 @@
 package emaildoc_test
 
 import (
-	"context"
 	"encoding/json"
 	"flag"
 	"os"
@@ -60,7 +59,7 @@ func TestRenderMatchesGolden(t *testing.T) {
 	for _, file := range files {
 		name := strings.TrimSuffix(filepath.Base(file), ".json")
 		t.Run(name, func(t *testing.T) {
-			got, err := shared().Render(context.Background(), readDoc(t, name+".json"))
+			got, err := shared().Render(t.Context(), readDoc(t, name+".json"))
 			require.NoError(t, err)
 
 			golden := filepath.Join("testdata", "golden", name+".html")
@@ -75,7 +74,7 @@ func TestRenderMatchesGolden(t *testing.T) {
 }
 
 func TestRenderKeepsLiquidTags(t *testing.T) {
-	got, err := shared().Render(context.Background(), readDoc(t, "newsletter.json"))
+	got, err := shared().Render(t.Context(), readDoc(t, "newsletter.json"))
 	require.NoError(t, err)
 	for _, tag := range []string{"{{ first_name }}", "{{ contact.id }}", "{{ token | url_encode }}", "{{ cta_url }}", "{{ unsubscribe_url }}"} {
 		require.Contains(t, got.HTML, tag)
@@ -87,11 +86,11 @@ func TestRuntimeStartsOnFirstRender(t *testing.T) {
 	require.False(t, r.Started(), "a new Renderer starts no runtime")
 
 	// Refused before a runtime is needed.
-	_, err := r.Render(context.Background(), doc(node{"type": "heading", "attrs": node{"level": 9}}))
+	_, err := r.Render(t.Context(), doc(node{"type": "heading", "attrs": node{"level": 9}}))
 	require.ErrorIs(t, err, emaildoc.ErrInvalid)
 	require.False(t, r.Started())
 
-	require.NoError(t, shared().Validate(context.Background(), readDoc(t, "newsletter.json")))
+	require.NoError(t, shared().Validate(t.Context(), readDoc(t, "newsletter.json")))
 	require.True(t, shared().Started())
 }
 
@@ -121,7 +120,7 @@ func TestARuntimeRegistersTheCodeLanguagesBeforeItsFirstCodeBlock(t *testing.T) 
 
 func TestLimitsRefuseBeforeTheRuntime(t *testing.T) {
 	r := emaildoc.New()
-	ctx := context.Background()
+	ctx := t.Context()
 
 	nested := func(depth int) []byte {
 		var inner any = paragraph("deep")
@@ -253,13 +252,13 @@ func TestValidationGivesReasons(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			err := shared().Validate(context.Background(), tc.doc)
+			err := shared().Validate(t.Context(), tc.doc)
 			require.ErrorIs(t, err, emaildoc.ErrInvalid)
 			for _, part := range tc.reason {
 				require.ErrorContains(t, err, part)
 			}
 
-			_, err = shared().Render(context.Background(), tc.doc)
+			_, err = shared().Render(t.Context(), tc.doc)
 			require.ErrorIs(t, err, emaildoc.ErrInvalid, "Render refuses what Validate refuses")
 		})
 	}
@@ -267,12 +266,12 @@ func TestValidationGivesReasons(t *testing.T) {
 
 func TestValidDocumentsPass(t *testing.T) {
 	for _, name := range []string{"newsletter.json", "layout.json"} {
-		require.NoError(t, shared().Validate(context.Background(), readDoc(t, name)), name)
+		require.NoError(t, shared().Validate(t.Context(), readDoc(t, name)), name)
 	}
 }
 
 func TestHostileTextIsEscapedNotExecuted(t *testing.T) {
-	got, err := shared().Render(context.Background(), doc(paragraph(`<script>alert(1)</script><img src=x onerror=alert(1)>`)))
+	got, err := shared().Render(t.Context(), doc(paragraph(`<script>alert(1)</script><img src=x onerror=alert(1)>`)))
 	require.NoError(t, err)
 	require.NotContains(t, got.HTML, "<script>")
 	require.NotContains(t, got.HTML, "<img src=x")

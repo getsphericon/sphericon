@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -16,7 +15,7 @@ import (
 func TestSiteWebhooksShowTheFailureState(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	failing, err := c.SiteWebhooksGet(ctx, siteapi.SiteWebhooksGetParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(fixtures.WebhookCodebasicsFailingID)})
 	require.NoError(t, err)
@@ -36,7 +35,7 @@ func TestSiteWebhooksShowTheFailureState(t *testing.T) {
 func TestSiteWebhooksShowWhyAnEndpointTurnedItselfOff(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	gone, err := c.SiteWebhooksGet(ctx, siteapi.SiteWebhooksGetParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(fixtures.WebhookCodebasicsGoneID)})
 	require.NoError(t, err)

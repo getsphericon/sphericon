@@ -1,7 +1,6 @@
 package testhelper_test
 
 import (
-	"context"
 	"fmt"
 	"runtime"
 	"strings"
@@ -104,20 +103,20 @@ func TestAWriterWaitingForAnotherTransactionFailsTheRace(t *testing.T) {
 	held, other := postgres.WorkspaceKey("held", fixtures.AcmeID), postgres.WorkspaceKey("other", fixtures.AcmeID)
 	elsewhere := testhelper.Writer{Name: "elsewhere", Run: func() error {
 		// A transaction opened after the hold takes the other key and stays open until cleanup.
-		owner, err := env.SQLDB.BeginTx(context.Background(), nil)
+		owner, err := env.SQLDB.BeginTx(t.Context(), nil)
 		if err != nil {
 			return err
 		}
 		t.Cleanup(func() { _ = owner.Rollback() })
-		if err := postgres.LockTx(context.Background(), owner, other); err != nil {
+		if err := postgres.LockTx(t.Context(), owner, other); err != nil {
 			return err
 		}
-		waiter, err := env.SQLDB.BeginTx(context.Background(), nil)
+		waiter, err := env.SQLDB.BeginTx(t.Context(), nil)
 		if err != nil {
 			return err
 		}
 		defer func() { _ = waiter.Rollback() }()
-		return postgres.LockTx(context.Background(), waiter, other)
+		return postgres.LockTx(t.Context(), waiter, other)
 	}}
 
 	report := failing(t, func(tb testing.TB) {
@@ -133,11 +132,11 @@ func TestAWriterWaitingForTheHoldIsQueueBehindIt(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.Committed())
 	held := postgres.WorkspaceKey("held", fixtures.AcmeID)
 	behind := testhelper.Writer{Name: "behind", Run: func() error {
-		tx, err := env.SQLDB.BeginTx(context.Background(), nil)
+		tx, err := env.SQLDB.BeginTx(t.Context(), nil)
 		if err != nil {
 			return err
 		}
-		if err := postgres.LockTx(context.Background(), tx, held); err != nil {
+		if err := postgres.LockTx(t.Context(), tx, held); err != nil {
 			return err
 		}
 		return tx.Commit()

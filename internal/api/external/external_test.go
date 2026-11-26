@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"net/http"
 	"sort"
 	"testing"
@@ -46,7 +45,7 @@ func queuedCollected(t *testing.T, env *testhelper.TestEnv) []collectedRow {
 func TestExternalContactsCRUD(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
 	c := env.ExternalScoped(t, apitokens.ScopeContactsRead, apitokens.ScopeContactsWrite, apitokens.ScopeContactsErase)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	listed, err := c.ContactsList(ctx, externalapi.ContactsListParams{})
 	require.NoError(t, err)
@@ -77,7 +76,7 @@ func TestExternalContactsCreatePublishesContactCreated(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
 	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 
-	created, err := c.ContactsCreate(context.Background(), &externalapi.CreateContactInput{
+	created, err := c.ContactsCreate(t.Context(), &externalapi.CreateContactInput{
 		Email: externalapi.NewOptNilEmailAddress("published@example.com"),
 	})
 	require.NoError(t, err)
@@ -88,7 +87,7 @@ func TestExternalContactsCreatePublishesContactCreated(t *testing.T) {
 
 func TestExternalAuthAndScopes(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// No token / bad token → 401 Unauthorized variant.
 	_, err := env.ExternalAnonymous(t).ContactsList(ctx, externalapi.ContactsListParams{})
@@ -112,7 +111,7 @@ func TestExternalAuthAndScopes(t *testing.T) {
 func TestExternalEventsCreate(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
 	c := env.ExternalScoped(t, apitokens.ScopeEventsWrite)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	occurred := eventsNow.Add(-time.Hour) // inside the live window
 	err := c.EventsCreate(ctx, &externalapi.RecordEventsInput{
@@ -158,7 +157,7 @@ func TestExternalEventsCreate(t *testing.T) {
 // TestExternalEventsScopes verifies events:write/read scopes are enforced.
 func TestExternalEventsScopes(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// events:read cannot write.
 	ro := env.ExternalScoped(t, apitokens.ScopeEventsRead)
@@ -180,7 +179,7 @@ func TestExternalEventActionsList(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeEventsRead)
 
-	res, err := c.EventActionsList(context.Background(), externalapi.EventActionsListParams{})
+	res, err := c.EventActionsList(t.Context(), externalapi.EventActionsListParams{})
 	require.NoError(t, err)
 
 	// Distinct actions for the token's workspace, sorted. Selected by membership so
@@ -198,7 +197,7 @@ func TestExternalEventActionsList(t *testing.T) {
 // scoped to the token's workspace and never leak across tenants.
 func TestExternalEventsWorkspaceIsolation(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// The Globex tenant has an event carrying an action unique to it (fixture).
 	// Scoped tokens always bind to Acme.
@@ -230,6 +229,6 @@ func TestExternalRequestValidation(t *testing.T) {
 	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 
 	// An invalid email is refused by ogen's validation with the documented 400.
-	_, err := c.ContactsCreate(context.Background(), &externalapi.CreateContactInput{Email: externalapi.NewOptNilEmailAddress("not-an-email")})
+	_, err := c.ContactsCreate(t.Context(), &externalapi.CreateContactInput{Email: externalapi.NewOptNilEmailAddress("not-an-email")})
 	testhelper.ExternalRefusal(t, err, http.StatusBadRequest)
 }

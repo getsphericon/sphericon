@@ -70,7 +70,10 @@ func TestPoolMetricsAppearInScrape(t *testing.T) {
 	mp := sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader))
 	prev := otel.GetMeterProvider()
 	otel.SetMeterProvider(mp)
-	t.Cleanup(func() { otel.SetMeterProvider(prev); cleanup.Report("shut mp down", mp.Shutdown(context.Background())) })
+	t.Cleanup(func() {
+		otel.SetMeterProvider(prev)
+		cleanup.Report("shut mp down", mp.Shutdown(context.WithoutCancel(t.Context())))
+	})
 
 	unregister, err := db.RegisterPoolMetrics(sqlDB, riverDB)
 	require.NoError(t, err)

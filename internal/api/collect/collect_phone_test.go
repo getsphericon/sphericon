@@ -1,7 +1,6 @@
 package collect_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -21,7 +20,7 @@ import (
 func TestCollectIdentifyWithALocalPhoneResolvesTheContactStoredInE164(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.CollectAcme(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	identify := func(in collectapi.CollectIdentifyInput) {
 		t.Helper()
 		_, err := c.CollectIdentifyCreate(ctx, &in)
@@ -48,7 +47,7 @@ func TestCollectIdentifyWithALocalPhoneResolvesTheContactStoredInE164(t *testing
 func TestCollectIdentifyReadsALocalPhoneWithTheCountryOfTheContactItFindsAndGivesItNone(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.CollectAcme(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	_, err := env.DB.Contact.UpdateOneID(fixtures.ContactAliceID).SetCountry("DE").Save(ctx)
 	require.NoError(t, err)
 
@@ -66,7 +65,7 @@ func TestCollectIdentifyReadsALocalPhoneWithTheCountryOfTheContactItFindsAndGive
 
 func TestCollectIdentifyRefusesALocalPhoneWithoutACountry(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := env.CollectAcme(t).CollectIdentifyCreate(ctx, &collectapi.CollectIdentifyInput{
 		VisitorId: "dev-local",

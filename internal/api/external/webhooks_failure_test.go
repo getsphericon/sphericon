@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -17,7 +16,7 @@ func TestExternalWebhooksShowTheFailureState(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeWebhooksRead)
 
-	got, err := c.WebhooksGet(context.Background(), externalapi.WebhooksGetParams{ID: entityIDString(fixtures.WebhookCodebasicsFailingID)})
+	got, err := c.WebhooksGet(t.Context(), externalapi.WebhooksGetParams{ID: entityIDString(fixtures.WebhookCodebasicsFailingID)})
 	require.NoError(t, err)
 	hook := got
 	f, has := hook.Failure.Get()
@@ -31,7 +30,7 @@ func TestExternalWebhooksShowWhyAnEndpointTurnedItselfOff(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeWebhooksRead)
 
-	got, err := c.WebhooksGet(context.Background(), externalapi.WebhooksGetParams{ID: entityIDString(fixtures.WebhookCodebasicsGoneID)})
+	got, err := c.WebhooksGet(t.Context(), externalapi.WebhooksGetParams{ID: entityIDString(fixtures.WebhookCodebasicsGoneID)})
 	require.NoError(t, err)
 	hook := got
 	assert.False(t, hook.Enabled)

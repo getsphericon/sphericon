@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -33,7 +32,7 @@ func findings(list []siteapi.LintFinding) map[siteapi.LintCode][]string {
 func TestSiteTemplateSaveReturnsWarningsAndStoresTheContent(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	created, err := c.SiteTemplatesCreate(ctx, &siteapi.CreateTemplateInput{
 		Name: "Warned", Subject: siteapi.NewOptString("Hi"), Body: siteapi.NewOptString(lintBody),
@@ -63,7 +62,7 @@ func TestSiteTemplateSaveWithoutABrandKitSkipsBrandWarnings(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.VandelayOwnerArtEmail)
 
-	created, err := c.SiteTemplatesCreate(context.Background(), &siteapi.CreateTemplateInput{
+	created, err := c.SiteTemplatesCreate(t.Context(), &siteapi.CreateTemplateInput{
 		Name: "Warned", Subject: siteapi.NewOptString("Hi"), Body: siteapi.NewOptString(lintBody),
 	}, siteapi.SiteTemplatesCreateParams{WorkspaceId: fixtures.VandelayPublicID})
 	require.NoError(t, err)
@@ -79,7 +78,7 @@ func TestSiteTemplateSaveWithoutABrandKitSkipsBrandWarnings(t *testing.T) {
 func TestSiteTemplateSaveRefusesOnlyWhatCannotRender(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	before := env.DB.EmailTemplate.Query().CountX(ctx)
 
 	_, err := c.SiteTemplatesCreate(ctx, &siteapi.CreateTemplateInput{
@@ -92,7 +91,7 @@ func TestSiteTemplateSaveRefusesOnlyWhatCannotRender(t *testing.T) {
 func TestSiteBroadcastSaveReturnsWarnings(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	created, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
 		Name:      "Warned",
@@ -117,7 +116,7 @@ func TestSiteTemplateSaveOfACleanMessageHasNoWarnings(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	created, err := c.SiteTemplatesCreate(context.Background(), &siteapi.CreateTemplateInput{
+	created, err := c.SiteTemplatesCreate(t.Context(), &siteapi.CreateTemplateInput{
 		Name: "Clean", Body: siteapi.NewOptString(
 			`<p style="color:#202124;font-family:Arial, sans-serif">Hi</p><img src="https://cdn.example.com/a.png" alt="A">`),
 	}, siteapi.SiteTemplatesCreateParams{WorkspaceId: fixtures.AcmePublicID})

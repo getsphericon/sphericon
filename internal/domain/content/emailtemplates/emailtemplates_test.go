@@ -24,7 +24,7 @@ import (
 func TestListIsAscendingByIDAndPaged(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*emailtemplates.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
 	p, err := m.List(ctx, s, pagination.Params{Page: 1, PageSize: 2})
@@ -41,7 +41,7 @@ func TestListIsAscendingByIDAndPaged(t *testing.T) {
 func TestGetIsWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*emailtemplates.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	got, err := m.Get(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateWelcomeID)
 	require.NoError(t, err)
@@ -54,7 +54,7 @@ func TestGetIsWorkspaceScoped(t *testing.T) {
 func TestCreateStoresTheTemplate(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*emailtemplates.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	tpl, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), emailtemplates.CreateInput{Name: "New", Subject: new("Hi")})
 	require.NoError(t, err)
@@ -67,7 +67,7 @@ func TestCreateStoresTheTemplate(t *testing.T) {
 func TestCreateRefusesABlankName(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*emailtemplates.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	before := env.DB.EmailTemplate.Query().CountX(ctx)
 	_, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), emailtemplates.CreateInput{Name: ""})
@@ -78,7 +78,7 @@ func TestCreateRefusesABlankName(t *testing.T) {
 func TestUpdateRefusesABlankNameAndLeavesTheRow(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*emailtemplates.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateWelcomeID, emailtemplates.UpdateInput{Name: patch.Set("")})
 	require.ErrorIs(t, err, validation.ErrNameBlank)
@@ -88,7 +88,7 @@ func TestUpdateRefusesABlankNameAndLeavesTheRow(t *testing.T) {
 func TestUpdateChangesGivenFieldsOnly(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*emailtemplates.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	got, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateWelcomeID, emailtemplates.UpdateInput{Revision: 1, Subject: patch.Set("Changed")})
 	require.NoError(t, err)
@@ -104,7 +104,7 @@ func TestUpdateChangesGivenFieldsOnly(t *testing.T) {
 func TestAnUpdateOnARevisionAlreadyMovedPastIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*emailtemplates.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	read := env.DB.EmailTemplate.GetX(ctx, fixtures.TemplateWelcomeID)
 
@@ -123,7 +123,7 @@ func TestAnUpdateOnARevisionAlreadyMovedPastIsRefused(t *testing.T) {
 // increment to every update of the type.
 func TestEveryWriteMovesTheRevision(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	before := env.DB.EmailTemplate.GetX(ctx, fixtures.TemplateWelcomeID)
 
 	// test writes: a write outside the module, which the hook moves the revision of, is the subject
@@ -138,7 +138,7 @@ func TestEveryWriteMovesTheRevision(t *testing.T) {
 // A sent message outlives its deleted Template: it stays, and no longer names the Template.
 func TestDeleteLeavesTheSentMessageWithoutATemplate(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	require.NoError(t, testhelper.Module[*emailtemplates.Module](env).Delete(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateWelcomeID))
 
 	msg := env.DB.OutboundMessage.GetX(ctx, fixtures.OutboundMessageWelcomeID)
@@ -149,7 +149,7 @@ func TestDeleteLeavesTheSentMessageWithoutATemplate(t *testing.T) {
 func TestDelete(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*emailtemplates.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	require.NoError(t, m.Delete(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateWelcomeID))
 	require.ErrorIs(t, m.Delete(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateWelcomeID), emailtemplates.ErrNotFound)
@@ -158,7 +158,7 @@ func TestDelete(t *testing.T) {
 
 func TestCreateRefusesAWhitespaceName(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := testhelper.Module[*emailtemplates.Module](env).Create(ctx, env.DB.Scoped(fixtures.AcmeID), emailtemplates.CreateInput{Name: "   "})
 	require.ErrorIs(t, err, validation.ErrNameBlank)
@@ -166,7 +166,7 @@ func TestCreateRefusesAWhitespaceName(t *testing.T) {
 
 func TestUpdateRefusesAWhitespaceName(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := testhelper.Module[*emailtemplates.Module](env).Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateWelcomeID, emailtemplates.UpdateInput{Name: patch.Set("  ")})
 	require.ErrorIs(t, err, validation.ErrNameBlank)
@@ -196,7 +196,7 @@ func (unreadBrands) Brand(context.Context, *ent.Scoped) (*emailrender.Brand, err
 // views', for a surface whose contract shows the warnings.
 func TestASaveOutsideTheViewsIsNotLinted(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	m := emailtemplates.New(testhelper.Renderer(), unreadBrands{})
 	s := env.DB.Scoped(fixtures.AcmeID)
 
@@ -213,7 +213,7 @@ func TestASaveOutsideTheViewsIsNotLinted(t *testing.T) {
 // (ADR 0040); the warnings never block it.
 func TestCreateReturnsTheWarningsOfTheBodyAsWritten(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	saved, err := testhelper.Module[*emailtemplates.Views](env).Create(ctx, env.DB.Scoped(fixtures.AcmeID),
 		emailtemplates.CreateInput{Name: "Warned", Subject: new("Hi"), Body: new(warnedBody)})
@@ -225,7 +225,7 @@ func TestCreateReturnsTheWarningsOfTheBodyAsWritten(t *testing.T) {
 // A Workspace with no Brand kit saved has nothing to compare a message to.
 func TestCreateWithoutABrandKitSkipsBrandWarnings(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	saved, err := testhelper.Module[*emailtemplates.Views](env).Create(ctx, env.DB.Scoped(fixtures.VandelayID),
 		emailtemplates.CreateInput{Name: "Warned", Body: new(warnedBody)})
@@ -236,7 +236,7 @@ func TestCreateWithoutABrandKitSkipsBrandWarnings(t *testing.T) {
 // A write that leaves the body lints the body stored.
 func TestUpdateOfTheSubjectAloneLintsTheStoredBody(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	v := testhelper.Module[*emailtemplates.Views](env)
 	s := env.DB.Scoped(fixtures.AcmeID)
 	created, err := v.Create(ctx, s, emailtemplates.CreateInput{Name: "Warned", Body: new(`<img src="https://cdn.example.com/a.png">`)})
@@ -251,7 +251,7 @@ func TestUpdateOfTheSubjectAloneLintsTheStoredBody(t *testing.T) {
 // Brand kit; a message that cannot render is the report's Error, not a failure of the call.
 func TestLintWithoutASave(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	m := testhelper.Module[*emailtemplates.Module](env)
 	s := env.DB.Scoped(fixtures.AcmeID)
 

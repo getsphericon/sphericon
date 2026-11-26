@@ -51,7 +51,7 @@ func TestCloseGivesARunningJobItsAttemptBack(t *testing.T) {
 	t.Setenv("SPHERICON_OUTBOUND_ALLOW", endpoint.Listener.Addr().String())
 
 	a, _ := lifecycleApp(t)
-	require.NoError(t, a.Start(context.Background()))
+	require.NoError(t, a.Start(context.WithoutCancel(t.Context())))
 	t.Cleanup(func() { cleanup.Report("close the app", a.Close(closeCtx(t))) })
 
 	client := externalClient(t, a)
@@ -74,7 +74,7 @@ func TestCloseGivesARunningJobItsAttemptBack(t *testing.T) {
 	require.NoError(t, err)
 	held := testhelper.Receive(t, reached, "the delivery never reached the endpoint")
 
-	ctx, cancel := context.WithTimeout(context.Background(), app.StopTimeout)
+	ctx, cancel := context.WithTimeout(t.Context(), app.StopTimeout)
 	defer cancel()
 	require.NoError(t, a.Close(ctx))
 

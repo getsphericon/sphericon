@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 	"time"
@@ -22,7 +21,7 @@ import (
 func TestSiteSendNowFromAnEditorLoadedBeforeASegmentChangeIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	params := siteapi.SiteBroadcastsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastDraftID)}
 	shown, err := c.SiteBroadcastsGet(ctx, params)
 	require.NoError(t, err)
@@ -48,7 +47,7 @@ func TestSiteSendNowFromAnEditorLoadedBeforeASegmentChangeIsRefused(t *testing.T
 func TestSiteBroadcastWritesOnAStaleRevisionAreRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	update := siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastDraftID)}
 	read := siteapi.Revision(env.BroadcastRevision(ctx, t, fixtures.BroadcastDraftID))
 
@@ -74,7 +73,7 @@ func TestSiteBroadcastWritesOnAStaleRevisionAreRefused(t *testing.T) {
 func TestSiteBroadcastPastDraftIsRefusedForItsStatusBeforeItsRevision(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	stale := siteapi.Revision(env.BroadcastRevision(ctx, t, fixtures.BroadcastSentID) + 5)
 
 	_, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Revision: stale, Name: siteapi.NewOptName("x")},

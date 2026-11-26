@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -91,13 +90,13 @@ func TestSiteLoginThroughTheGeneratedClient(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteAnonymous(t)
 
-	res, err := c.SiteAuthLogin(context.Background(), &siteapi.SiteLoginInput{Email: fixtures.OwnerJohnEmail, Password: fixtures.OwnerJohnPassword})
+	res, err := c.SiteAuthLogin(t.Context(), &siteapi.SiteLoginInput{Email: fixtures.OwnerJohnEmail, Password: fixtures.OwnerJohnPassword})
 	require.NoError(t, err)
 	ok := res
 	assert.Equal(t, siteapi.SiteLoginOutcomeSession, ok.Response.Outcome)
 	assert.True(t, ok.SetCookie.Set)
 
-	_, err = c.SiteAuthLogin(context.Background(), &siteapi.SiteLoginInput{Email: fixtures.OwnerJohnEmail, Password: "wrong"})
+	_, err = c.SiteAuthLogin(t.Context(), &siteapi.SiteLoginInput{Email: fixtures.OwnerJohnEmail, Password: "wrong"})
 	testhelper.SiteRefusal(t, err, http.StatusUnauthorized)
 }
 

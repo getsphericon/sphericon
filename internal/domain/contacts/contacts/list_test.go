@@ -1,7 +1,6 @@
 package contacts_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -18,14 +17,14 @@ func TestListPagesTheWorkspaceContactsAscendingByID(t *testing.T) {
 	m := testhelper.Module[*contacts.Module](env)
 	s := env.DB.Scoped(fixtures.AcmeID)
 
-	all, err := m.List(context.Background(), s, pagination.Params{Page: 1, PageSize: 100}, contacts.Filter{})
+	all, err := m.List(t.Context(), s, pagination.Params{Page: 1, PageSize: 100}, contacts.Filter{})
 	require.NoError(t, err)
 	require.GreaterOrEqual(t, len(all.Items), 2)
 	for i := 1; i < len(all.Items); i++ {
 		assert.Less(t, all.Items[i-1].ID, all.Items[i].ID)
 	}
 
-	second, err := m.List(context.Background(), s, pagination.Params{Page: 2, PageSize: 1}, contacts.Filter{})
+	second, err := m.List(t.Context(), s, pagination.Params{Page: 2, PageSize: 1}, contacts.Filter{})
 	require.NoError(t, err)
 	require.Len(t, second.Items, 1)
 	assert.Equal(t, all.Items[1].ID, second.Items[0].ID)

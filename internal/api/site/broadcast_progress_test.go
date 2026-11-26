@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -21,7 +20,7 @@ import (
 func TestSiteBroadcastProgressAndETA(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	id := int64(fixtures.BroadcastSendingID)
 	getOf := func(id int64) siteapi.SiteBroadcastResource {

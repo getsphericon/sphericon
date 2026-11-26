@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"testing"
@@ -18,7 +17,7 @@ import (
 
 func TestExternalAuditListNeedsTheAuditReadScope(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	for _, scopes := range [][]apitokens.Scope{{}, {apitokens.ScopeContactsRead, apitokens.ScopeEventsRead, apitokens.ScopeTokensRead}} {
 		c := env.ExternalScoped(t, scopes...)
@@ -41,7 +40,7 @@ func TestExternalAuditListNeedsTheAuditReadScope(t *testing.T) {
 func TestExternalAuditListIsTenantIsolated(t *testing.T) {
 	env := testhelper.Setup(t)
 	globex := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.GlobexID, apitokens.ScopeAuditRead))
-	page, err := globex.AuditEntriesList(context.Background(), externalapi.AuditEntriesListParams{})
+	page, err := globex.AuditEntriesList(t.Context(), externalapi.AuditEntriesListParams{})
 	require.NoError(t, err)
 	require.Len(t, page.Items, 5, "Globex's own fixture entries, none of Acme's")
 	assert.EqualValues(t, fixtures.GlobexAuditEntryID, page.Items[len(page.Items)-1].ID, "oldest last")
@@ -49,7 +48,7 @@ func TestExternalAuditListIsTenantIsolated(t *testing.T) {
 
 func TestExternalAuditListPaginatesByCursor(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.GlobexID, apitokens.ScopeAuditRead))
 
 	seen := make([]int64, 0, 6)
@@ -92,7 +91,7 @@ func TestExternalAuditFiltersNarrowTheRead(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			page, err := c.AuditEntriesList(context.Background(), tc.params)
+			page, err := c.AuditEntriesList(t.Context(), tc.params)
 			require.NoError(t, err)
 			got := make([]string, len(page.Items))
 			for i, e := range page.Items {
@@ -107,7 +106,7 @@ func TestExternalAuditFiltersNarrowTheRead(t *testing.T) {
 // Staff member (InitechAuditStaffSuspend).
 func TestExternalAuditStaffIdCannotBeProbed(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.InitechID, apitokens.ScopeAuditRead))
 
 	count := func(p externalapi.AuditEntriesListParams) int {
@@ -122,13 +121,13 @@ func TestExternalAuditStaffIdCannotBeProbed(t *testing.T) {
 
 func TestExternalAuditListWithoutLicenseIsPaymentRequired(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithoutLicense())
-	_, err := env.ExternalScoped(t, apitokens.ScopeAuditRead).AuditEntriesList(context.Background(), externalapi.AuditEntriesListParams{})
+	_, err := env.ExternalScoped(t, apitokens.ScopeAuditRead).AuditEntriesList(t.Context(), externalapi.AuditEntriesListParams{})
 	testhelper.ExternalRefusal(t, err, http.StatusPaymentRequired)
 }
 
 func TestExternalAuditListRejectsABadCursor(t *testing.T) {
 	env := testhelper.Setup(t)
-	_, err := env.ExternalScoped(t, apitokens.ScopeAuditRead).AuditEntriesList(context.Background(),
+	_, err := env.ExternalScoped(t, apitokens.ScopeAuditRead).AuditEntriesList(t.Context(),
 		externalapi.AuditEntriesListParams{Cursor: externalapi.NewOptString("nope")})
 	testhelper.ExternalRefusal(t, err, http.StatusBadRequest)
 }

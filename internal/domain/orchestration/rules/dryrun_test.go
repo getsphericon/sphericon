@@ -1,7 +1,6 @@
 package rules_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -16,7 +15,7 @@ import (
 
 func dryRun(t *testing.T, env *testhelper.TestEnv, ruleID, eventID int64) rules.DryRun {
 	t.Helper()
-	res, err := rules.New(env.Cipher, env.Bus, nil, time.Now).DryRun(context.Background(), env.DB.Scoped(fixtures.AcmeID), ruleID, eventID)
+	res, err := rules.New(env.Cipher, env.Bus, nil, time.Now).DryRun(t.Context(), env.DB.Scoped(fixtures.AcmeID), ruleID, eventID)
 	require.NoError(t, err)
 	return res
 }
@@ -34,7 +33,7 @@ func TestDryRunReportsTheActionsAStoredEventWouldRun(t *testing.T) {
 
 func TestDryRunWritesAndRunsNothing(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	firings := env.DB.RuleFiring.Query().CountX(ctx)
 	tags := env.DB.ContactTag.Query().CountX(ctx)
 	jobs := len(env.JobsOf(t, rules.ActionsKind))
@@ -108,8 +107,8 @@ func TestDryRunRefusesAnotherWorkspacesEventOrRule(t *testing.T) {
 	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 	s := env.DB.Scoped(fixtures.AcmeID)
 
-	_, err := m.DryRun(context.Background(), s, fixtures.RuleTagClickedID, fixtures.EventGlobexID)
+	_, err := m.DryRun(t.Context(), s, fixtures.RuleTagClickedID, fixtures.EventGlobexID)
 	require.ErrorIs(t, err, rules.ErrEventNotFound)
-	_, err = m.DryRun(context.Background(), s, fixtures.RuleGlobexID, fixtures.EventRuleClickLiamID)
+	_, err = m.DryRun(t.Context(), s, fixtures.RuleGlobexID, fixtures.EventRuleClickLiamID)
 	assert.ErrorIs(t, err, rules.ErrNotFound)
 }

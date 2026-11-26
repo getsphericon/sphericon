@@ -59,7 +59,7 @@ func TestCancelPendingKeepsARecipientWhoseSendEnded(t *testing.T) {
 
 func TestCancelPendingSettlesABroadcastLeftWithNothingPending(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	require.NoError(t, cancelFor(t, env, fixtures.ContactErasableID))
 

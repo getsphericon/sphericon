@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -16,7 +15,7 @@ import (
 // acmeWorkspace is Acme as John, its Owner, reads it from the Workspace list.
 func acmeWorkspace(t *testing.T, env *testhelper.TestEnv) siteapi.SiteWorkspaceResource {
 	t.Helper()
-	list, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteWorkspacesList(context.Background())
+	list, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteWorkspacesList(t.Context())
 	require.NoError(t, err)
 	require.Len(t, list, 1)
 	return list[0]
@@ -26,7 +25,7 @@ func acmeWorkspace(t *testing.T, env *testhelper.TestEnv) siteapi.SiteWorkspaceR
 // Workspace's sends over the last 24 hours, through every Integration.
 func TestSiteWorkspaceCarriesItsSendCapAndTheLast24HourSends(t *testing.T) {
 	env := testhelper.Setup(t)
-	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSendCap(5000).ExecX(context.Background())
+	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSendCap(5000).ExecX(t.Context())
 
 	got := acmeWorkspace(t, env)
 
@@ -51,7 +50,7 @@ func TestSiteWorkspaceWithoutASendCapReadsNull(t *testing.T) {
 // On an Instance without Send caps a stored value has no effect, so none is shown either.
 func TestSiteWorkspaceOnAnInstanceWithoutSendCapsReadsNull(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithMode(config.ModeSelfHosted))
-	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSendCap(5000).ExecX(context.Background())
+	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSendCap(5000).ExecX(t.Context())
 
 	got := acmeWorkspace(t, env)
 

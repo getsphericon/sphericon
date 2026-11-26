@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -17,7 +16,7 @@ func TestSiteAnalyticsNewPeopleRequireAuth(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteAnonymous(t)
 
-	_, err := c.SiteAnalyticsNewPeople(context.Background(), siteapi.SiteAnalyticsNewPeopleParams{WorkspaceId: fixtures.AcmePublicID})
+	_, err := c.SiteAnalyticsNewPeople(t.Context(), siteapi.SiteAnalyticsNewPeopleParams{WorkspaceId: fixtures.AcmePublicID})
 	require.Error(t, err)
 }
 
@@ -25,13 +24,13 @@ func TestSiteAnalyticsNewPeopleIsRefusedForAForeignWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	_, err := c.SiteAnalyticsNewPeople(context.Background(), siteapi.SiteAnalyticsNewPeopleParams{WorkspaceId: "NoSuchWs"})
+	_, err := c.SiteAnalyticsNewPeople(t.Context(), siteapi.SiteAnalyticsNewPeopleParams{WorkspaceId: "NoSuchWs"})
 	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 }
 
 func TestEveryRoleReadsTheNewPeopleReport(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	for _, email := range []string{fixtures.OwnerJohnEmail, fixtures.AdminAliceEmail, fixtures.MemberMaryEmail} {
 		c := env.SiteActor(t, email)

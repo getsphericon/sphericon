@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -22,7 +21,7 @@ func TestSiteTagsRequireAuth(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteAnonymous(t)
 
-	_, err := c.SiteTagsList(context.Background(), siteapi.SiteTagsListParams{WorkspaceId: fixtures.AcmePublicID})
+	_, err := c.SiteTagsList(t.Context(), siteapi.SiteTagsListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.Error(t, err)
 }
 
@@ -31,7 +30,7 @@ func TestSiteTagsRequireAuth(t *testing.T) {
 func TestSiteTagsListApplyRemove(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	listed, err := c.SiteTagsList(ctx, siteapi.SiteTagsListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
@@ -67,7 +66,7 @@ func TestSiteTagsListApplyRemove(t *testing.T) {
 func TestSiteTagsApplyRefusesAForeignContact(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := c.SiteTagsApply(ctx, &siteapi.ApplyTagInput{Name: "brand-new"}, siteapi.SiteTagsApplyParams{WorkspaceId: fixtures.AcmePublicID, ContactId: idStr(fixtures.ContactGlobexID)})
 	testhelper.SiteRefusal(t, err, http.StatusNotFound)

@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -20,16 +19,16 @@ import (
 func TestExternalUnsubscribesCreateRejectsForeignAutomation(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
-	before, err := env.DB.Unsubscribe.Query().Count(context.Background())
+	before, err := env.DB.Unsubscribe.Query().Count(t.Context())
 	require.NoError(t, err)
 
-	_, err = c.UnsubscribesCreate(context.Background(), &externalapi.CreateUnsubscribeInput{
+	_, err = c.UnsubscribesCreate(t.Context(), &externalapi.CreateUnsubscribeInput{
 		Destination:   fixtures.ContactAliceEmail,
 		SendingSource: externalapi.NewOptString(eligibility.AutomationSource(fixtures.AutomationGlobexID)),
 	})
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 
-	after, err := env.DB.Unsubscribe.Query().Count(context.Background())
+	after, err := env.DB.Unsubscribe.Query().Count(t.Context())
 	require.NoError(t, err)
 	assert.Equal(t, before, after)
 }

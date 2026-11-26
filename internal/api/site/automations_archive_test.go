@@ -19,7 +19,7 @@ import (
 
 func listAutomations(t *testing.T, c *siteapi.Client, archived bool) []int64 {
 	t.Helper()
-	res, err := c.SiteAutomationsList(context.Background(), siteapi.SiteAutomationsListParams{
+	res, err := c.SiteAutomationsList(t.Context(), siteapi.SiteAutomationsListParams{
 		WorkspaceId: fixtures.AcmePublicID,
 		PageSize:    siteapi.NewOptInt32(100),
 		Archived:    siteapi.NewOptBool(archived),
@@ -55,7 +55,7 @@ func TestSiteAutomationsArchiveRefusedWithActiveEnrollments(t *testing.T) {
 func TestSiteAutomationsArchiveAndUnarchive(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	id := int64(fixtures.AutomationNotifySlackID) // its only Enrollment has failed
 
 	out, err := archiveAutomation(c, id)
@@ -84,7 +84,7 @@ func TestSiteAutomationsArchiveAndUnarchive(t *testing.T) {
 func TestArchivedAutomationEnrollsNobody(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	id := int64(fixtures.AutomationHoldDemoID) // active, trigger hold_demo, no Enrollment
 
@@ -109,7 +109,7 @@ func TestArchivedAutomationEnrollsNobody(t *testing.T) {
 func TestSiteAutomationsArchiveKeepsEveryAutomation(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	for _, id := range []int64{fixtures.AutomationWinBackID, fixtures.AutomationOnOpenID} {
 		out, err := archiveAutomation(c, id)
@@ -130,7 +130,7 @@ func TestSiteAutomationsArchiveKeepsEveryAutomation(t *testing.T) {
 func TestSiteAnArchivedAutomationIsReadOnly(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	params := siteapi.SiteAutomationsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(fixtures.AutomationArchivedID)}
 	before, err := c.SiteAutomationsGet(ctx, params)
 	require.NoError(t, err)
@@ -157,7 +157,7 @@ func TestSiteAutomationsArchiveIsAudited(t *testing.T) {
 
 	_, err := archiveAutomation(c, fixtures.AutomationNotifySlackID)
 	require.NoError(t, err)
-	_, err = c.SiteAutomationsUnarchive(context.Background(), siteapi.SiteAutomationsUnarchiveParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.AutomationNotifySlackID})
+	_, err = c.SiteAutomationsUnarchive(t.Context(), siteapi.SiteAutomationsUnarchiveParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.AutomationNotifySlackID})
 	require.NoError(t, err)
 
 	entries := testhelper.Queued[*events.AuditEntry](t, env, events.NameAuditEntry)

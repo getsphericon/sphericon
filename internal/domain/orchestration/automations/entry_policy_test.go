@@ -1,7 +1,6 @@
 package automations_test
 
 import (
-	"context"
 	"errors"
 	"testing"
 
@@ -36,7 +35,7 @@ const (
 // Enrollment active until then.
 func againAutomation(t *testing.T, env *testhelper.TestEnv) int64 {
 	t.Helper()
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := testhelper.Module[*automations.Module](env)
 	created, err := m.Create(ctx, s, automations.CreateInput{
@@ -66,7 +65,7 @@ func byOrdinal(t *testing.T, env *testhelper.TestEnv, automationID, contactID in
 	runs, err := env.DB.AutomationRun.Query().
 		Where(automationrun.AutomationID(automationID), automationrun.ContactID(contactID)).
 		Order(ent.Asc(automationrun.FieldOrdinal)).
-		All(context.Background())
+		All(t.Context())
 	require.NoError(t, err)
 	return runs
 }
@@ -136,7 +135,7 @@ func TestAnEventOlderThanTheActiveEnrollmentRecordsActiveEnrollment(t *testing.T
 // Event no longer stored, so the Enrollment would begin now.
 func enrollOnFiringResult(t *testing.T, env *testhelper.TestEnv, automationID, contactID, firingID int64) automations.EnrollOnRuleResult {
 	t.Helper()
-	made, err := testhelper.Module[*automations.StepExecution](env).EnrollOnRule(context.Background(), env.DB.Scoped(fixtures.AcmeID),
+	made, err := testhelper.Module[*automations.StepExecution](env).EnrollOnRule(t.Context(), env.DB.Scoped(fixtures.AcmeID),
 		automations.EnrollOnRuleInput{AutomationID: automationID, ContactID: contactID, FiringID: firingID, SourceID: "evt-not-stored"})
 	require.NoError(t, err)
 	return made
@@ -194,7 +193,7 @@ func TestTheEndingsActOnTheActiveEnrollmentAmongSeveral(t *testing.T) {
 	handSourcedEvent(t, env, c.ID, repeatExit, "evt-second-refund", moment(150))
 	handSourcedEvent(t, env, c.ID, repeatTrigger, "evt-third", moment(100))
 
-	exited, err := env.ExitEnrollment(context.Background(), env.DB.Scoped(fixtures.AcmeID), automationID, c.ID)
+	exited, err := env.ExitEnrollment(t.Context(), env.DB.Scoped(fixtures.AcmeID), automationID, c.ID)
 
 	require.NoError(t, err)
 	assert.True(t, exited)
@@ -203,7 +202,7 @@ func TestTheEndingsActOnTheActiveEnrollmentAmongSeveral(t *testing.T) {
 	statuses := lo.Map(runs, func(r *ent.AutomationRun, _ int) automationrun.Status { return r.Status })
 	assert.Equal(t, []automationrun.Status{automationrun.StatusExited, automationrun.StatusExited, automationrun.StatusExited}, statuses)
 	assert.True(t, firstEnd.Equal(lo.FromPtr(runs[0].EndedAt)), "the first keeps the moment its exit Event occurred")
-	again, err := env.ExitEnrollment(context.Background(), env.DB.Scoped(fixtures.AcmeID), automationID, c.ID)
+	again, err := env.ExitEnrollment(t.Context(), env.DB.Scoped(fixtures.AcmeID), automationID, c.ID)
 	require.NoError(t, err)
 	assert.False(t, again, "no Enrollment is active any more")
 }
@@ -219,7 +218,7 @@ func TestTheReportCountsEveryEnrollmentOfAContactAndTheCooldown(t *testing.T) {
 	handSourcedEvent(t, env, c.ID, repeatTrigger, "evt-within-the-cooldown", moment(270))
 	handSourcedEvent(t, env, c.ID, repeatTrigger, "evt-second", moment(200))
 
-	report, err := testhelper.Module[*automations.Module](env).ReportOf(context.Background(), env.DB.Scoped(fixtures.AcmeID), automationID, automations.ReportPeriod7Days)
+	report, err := testhelper.Module[*automations.Module](env).ReportOf(t.Context(), env.DB.Scoped(fixtures.AcmeID), automationID, automations.ReportPeriod7Days)
 
 	require.NoError(t, err)
 	current := report.Results.Current
@@ -233,7 +232,7 @@ func TestTheReportCountsEveryEnrollmentOfAContactAndTheCooldown(t *testing.T) {
 // is refused on save, naming the field.
 func TestTheEntryPolicyDefaultsToOnceAndACooldownUnderAnHourIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := testhelper.Module[*automations.Module](env)
 
@@ -257,7 +256,7 @@ func TestTheEntryPolicyDefaultsToOnceAndACooldownUnderAnHourIsRefused(t *testing
 // A change of the Entry policy alone is a change of the definition: it writes the draft.
 func TestAnEditOfTheEntryPolicyAloneWritesTheDraft(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := testhelper.Module[*automations.Module](env)
 	automationID := againAutomation(t, env)

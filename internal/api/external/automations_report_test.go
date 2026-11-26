@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"testing"
@@ -22,7 +21,7 @@ import (
 
 func automationReport(t *testing.T, c *externalapi.Client, params externalapi.AutomationsReportParams) *externalapi.AutomationReport {
 	t.Helper()
-	report, err := c.AutomationsReport(context.Background(), params)
+	report, err := c.AutomationsReport(t.Context(), params)
 	require.NoError(t, err)
 	return report
 }
@@ -39,7 +38,7 @@ func TestExternalAutomationReportCountsAnEnrollmentThatEndsTodayInThePeriod(t *t
 	before := automationReport(t, c, params)
 
 	// The Enrollment walks its two tag steps and completes.
-	require.NoError(t, testhelper.Module[*automations.StepExecution](env).Step(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationRunTagOnEngagementAliceID, env.StepIDAt(t, fixtures.AutomationRunTagOnEngagementAliceID, 0)))
+	require.NoError(t, testhelper.Module[*automations.StepExecution](env).Step(t.Context(), env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationRunTagOnEngagementAliceID, env.StepIDAt(t, fixtures.AutomationRunTagOnEngagementAliceID, 0)))
 	env.RunQueuedSteps(t, testhelper.Module[*automations.StepExecution](env))
 	after := automationReport(t, c, params)
 
@@ -73,7 +72,7 @@ func TestExternalAutomationReportShowsTheSkippedEntriesByReason(t *testing.T) {
 
 func TestExternalAutomationReportNeedsTheReadScopeAndTheTokensWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, foreign := env.ExternalScoped(t, apitokens.ScopeAutomationsRead).AutomationsReport(ctx, externalapi.AutomationsReportParams{ID: entityIDString(fixtures.AutomationGlobexID)})
 	_, denied := env.ExternalScoped(t, apitokens.ScopeContactsRead).AutomationsReport(ctx, externalapi.AutomationsReportParams{ID: entityIDString(fixtures.AutomationWelcomeSeriesID)})

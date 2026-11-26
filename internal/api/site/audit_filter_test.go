@@ -33,7 +33,7 @@ func mustExport(ctx context.Context, t *testing.T, c *siteapi.Client, p siteapi.
 func TestAuditFiltersNarrowListAndExportAlike(t *testing.T) {
 	env := testhelper.Setup(t)
 	owner := env.SiteActor(t, fixtures.OwnerJaneEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	day := func(m time.Month) siteapi.OptTimestamp {
 		return siteapi.NewOptTimestamp(siteapi.Timestamp(time.Date(2026, m, 1, 0, 0, 0, 0, time.UTC)))
 	}
@@ -104,7 +104,7 @@ func TestAuditFiltersNarrowListAndExportAlike(t *testing.T) {
 func TestAuditFilteredCursorPaginates(t *testing.T) {
 	env := testhelper.Setup(t)
 	owner := env.SiteActor(t, fixtures.OwnerJaneEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	params := siteapi.SiteAuditListParams{
 		WorkspaceId: fixtures.GlobexPublicID, TargetType: siteapi.NewOptString("integration"), Limit: siteapi.NewOptInt32(1),
 	}

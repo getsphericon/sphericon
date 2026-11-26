@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"crypto/ed25519"
 	"net/http"
 	"testing"
@@ -83,7 +82,7 @@ func TestExportAuditNeedsTheExportReadScope(t *testing.T) {
 	env := testhelper.Setup(t)
 	for _, scopes := range [][]apitokens.Scope{{}, {apitokens.ScopeAuditRead}} {
 		c := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.GlobexID, scopes...))
-		_, err := c.ExportAudit(context.Background(), externalapi.ExportAuditParams{})
+		_, err := c.ExportAudit(t.Context(), externalapi.ExportAuditParams{})
 		testhelper.ExternalRefusal(t, err, http.StatusForbidden, "scopes %v are refused", scopes)
 	}
 }
@@ -92,7 +91,7 @@ func TestExportAuditAnswers404WithoutTheExportLicense(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithoutLicense())
 	c := exportClient(t, env, fixtures.GlobexID)
 
-	_, err := c.ExportAudit(context.Background(), externalapi.ExportAuditParams{})
+	_, err := c.ExportAudit(t.Context(), externalapi.ExportAuditParams{})
 
 	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 }
@@ -105,10 +104,10 @@ func TestExportAuditAnswers404WithoutTheAuditFeature(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithLicenseKey(pub, key))
 	c := exportClient(t, env, fixtures.GlobexID)
 
-	_, err = c.ExportEvents(context.Background(), externalapi.ExportEventsParams{})
+	_, err = c.ExportEvents(t.Context(), externalapi.ExportEventsParams{})
 	require.NoError(t, err)
 
-	_, err = c.ExportAudit(context.Background(), externalapi.ExportAuditParams{})
+	_, err = c.ExportAudit(t.Context(), externalapi.ExportAuditParams{})
 
 	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 }
@@ -117,7 +116,7 @@ func TestExportAuditRefusesAMalformedCursor(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := exportClient(t, env, fixtures.GlobexID)
 
-	_, err := c.ExportAudit(context.Background(), externalapi.ExportAuditParams{
+	_, err := c.ExportAudit(t.Context(), externalapi.ExportAuditParams{
 		Cursor: externalapi.NewOptString("not-a-cursor"),
 	})
 

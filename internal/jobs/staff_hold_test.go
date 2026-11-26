@@ -1,7 +1,6 @@
 package jobs_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -35,7 +34,7 @@ func setHold(t *testing.T, env *testhelper.TestEnv, expires time.Time) {
 // failed or consumed, and it resumes by itself once the hold lapses.
 func TestAnStaffHoldMidBroadcastPausesRecipientsAndResumesOnItsOwn(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	clock := testhelper.NewClock(time.Now())
 	fs := &fakeSender{}
 	mod := heldMod(env, clock, resolvingTo(fs))
@@ -62,7 +61,7 @@ func TestAnStaffHoldMidBroadcastPausesRecipientsAndResumesOnItsOwn(t *testing.T)
 
 func TestAnStaffHoldMakesAnAutomationStepWaitAndContinue(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	clock := testhelper.NewClock(time.Now())
 	fs := &fakeSender{}
 

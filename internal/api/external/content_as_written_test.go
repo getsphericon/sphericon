@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -16,7 +15,7 @@ import (
 func TestExternalStoresBodiesAsWritten(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeTemplatesWrite, apitokens.ScopeBroadcastsWrite)
-	ctx := context.Background()
+	ctx := t.Context()
 	body := `<p onclick="track()">Hi {{ first_name }}</p><form action="https://example.com/survey"></form>`
 
 	tpl, err := c.TemplatesCreate(ctx, &externalapi.CreateTemplateInput{

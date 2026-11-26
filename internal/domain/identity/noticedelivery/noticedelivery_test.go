@@ -1,7 +1,6 @@
 package noticedelivery_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -23,7 +22,7 @@ import (
 // publish publishes ev in a transaction of its own, as a request that changes no state does.
 func publish(t *testing.T, env *testhelper.TestEnv, ev events.DomainEvent) {
 	t.Helper()
-	require.NoError(t, env.Bus.Publish(context.Background(), ev))
+	require.NoError(t, env.Bus.Publish(t.Context(), ev))
 }
 
 // A link request that is delivered mails the address the page its link opens, with a token minted

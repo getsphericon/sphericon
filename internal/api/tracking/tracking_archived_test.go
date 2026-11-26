@@ -1,7 +1,6 @@
 package tracking_test
 
 import (
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -19,7 +18,7 @@ import (
 // not lost when the owner tidies up.
 func TestTrackingKeepsRecordingForAnArchivedBroadcast(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	tr := env.Tracker
 
 	b := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastSentUntrackedID)

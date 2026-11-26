@@ -66,7 +66,7 @@ func stored(t *testing.T, e *realEnv, ev events.DomainEvent) {
 // first step sends nothing (#751).
 func TestAGoalEventHandledWhileTheEnrollmentCommitsEndsIt(t *testing.T) {
 	e := newRealEnv(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	hold := newHoldingQueue()
 	t.Cleanup(hold.release) // a failed assertion must not leave the enrollment blocked
 	e.queueThrough(t, func(q events.JobQueue) events.JobQueue {

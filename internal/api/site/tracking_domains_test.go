@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"strings"
 	"testing"
@@ -17,14 +16,14 @@ import (
 
 func listTrackingDomains(t *testing.T, c *siteapi.Client, ws siteapi.WorkspaceId) []siteapi.TrackingDomainResource {
 	t.Helper()
-	list, err := c.SiteTrackingDomainsList(context.Background(), siteapi.SiteTrackingDomainsListParams{WorkspaceId: ws})
+	list, err := c.SiteTrackingDomainsList(t.Context(), siteapi.SiteTrackingDomainsListParams{WorkspaceId: ws})
 	require.NoError(t, err)
 	return list
 }
 
 func setTrackingDomain(t *testing.T, c *siteapi.Client, ws siteapi.WorkspaceId, host string) (*siteapi.TrackingDomainResource, error) {
 	t.Helper()
-	return c.SiteTrackingDomainsSet(context.Background(), &siteapi.SetTrackingDomainInput{Host: host},
+	return c.SiteTrackingDomainsSet(t.Context(), &siteapi.SetTrackingDomainInput{Host: host},
 		siteapi.SiteTrackingDomainsSetParams{WorkspaceId: ws})
 }
 
@@ -95,7 +94,7 @@ func TestSiteTrackingDomainsSetRefusesAnApexHost(t *testing.T) {
 func TestSiteTrackingDomainsRemovePromotesTheReplacementThenCancelsIt(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJaneEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	remove := func(id int64) error {
 		return c.SiteTrackingDomainsRemove(ctx, siteapi.SiteTrackingDomainsRemoveParams{WorkspaceId: fixtures.GlobexPublicID, ID: siteapi.EntityId(id)})
 	}
@@ -114,7 +113,7 @@ func TestSiteTrackingDomainsRemovePromotesTheReplacementThenCancelsIt(t *testing
 func TestSiteTrackingDomainsWritesAreForOwnersAndAdmins(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.MemberMaryEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	ws := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
 	_, err := setTrackingDomain(t, c, ws, "links.acme.com")
@@ -131,7 +130,7 @@ func TestSiteTrackingDomainsAreOffWithoutATarget(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithConfig(func(c *config.Config) { c.TrackingCNAMETarget = "" }))
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	workspaces, err := c.SiteWorkspacesList(context.Background())
+	workspaces, err := c.SiteWorkspacesList(t.Context())
 	require.NoError(t, err)
 	require.Len(t, workspaces, 1)
 	assert.False(t, workspaces[0].TrackingTarget.IsSet())
@@ -139,7 +138,7 @@ func TestSiteTrackingDomainsAreOffWithoutATarget(t *testing.T) {
 	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 
 	on := testhelper.Setup(t)
-	workspaces, err = on.SiteActor(t, fixtures.OwnerJohnEmail).SiteWorkspacesList(context.Background())
+	workspaces, err = on.SiteActor(t, fixtures.OwnerJohnEmail).SiteWorkspacesList(t.Context())
 	require.NoError(t, err)
 	assert.Equal(t, testhelper.TrackingCNAMETarget, workspaces[0].TrackingTarget.Value)
 }

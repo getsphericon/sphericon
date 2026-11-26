@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -18,7 +17,7 @@ import (
 
 func TestExternalCustomFieldsList(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := env.ExternalScoped(t, apitokens.ScopeContactsRead).CustomFieldsList(ctx)
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden, "custom_fields:read is required")
@@ -38,7 +37,7 @@ func TestExternalCustomFieldsList(t *testing.T) {
 
 func TestExternalReferenceDataIsWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// The Globex tenant has its own field and domain; the acme token must not see them.
 	c := env.ExternalScoped(t, apitokens.ScopeCustomFieldsRead, apitokens.ScopeSendingDomainsRead)
@@ -65,7 +64,7 @@ func TestExternalReferenceDataIsWorkspaceScoped(t *testing.T) {
 // An /api token with custom_fields:write renames a Custom field; without the scope it is refused.
 func TestExternalCustomFieldsUpdateNeedsTheWriteScope(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	list, err := env.ExternalScoped(t, apitokens.ScopeCustomFieldsRead).CustomFieldsList(ctx)
 	require.NoError(t, err)
 	plan, found := lo.Find(list.Items, func(f externalapi.CustomFieldResource) bool { return f.Key == "plan" })
@@ -84,7 +83,7 @@ func TestExternalCustomFieldsUpdateNeedsTheWriteScope(t *testing.T) {
 
 func TestExternalSendingDomainsList(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := env.ExternalScoped(t, apitokens.ScopeContactsRead).
 		SendingDomainsList(ctx, externalapi.SendingDomainsListParams{})
@@ -114,7 +113,7 @@ func ratesByDomain(t *testing.T, res *externalapi.SendingDomainRatesListOK) map[
 // delivered (ADR 0053), hard bounces over sent, by each Event's own timestamp.
 func TestExternalSendingDomainRates(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := env.ExternalScoped(t, apitokens.ScopeContactsRead).
 		SendingDomainRatesList(ctx, externalapi.SendingDomainRatesListParams{})

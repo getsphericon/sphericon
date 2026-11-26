@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"testing"
@@ -20,7 +19,7 @@ import (
 
 func TestExternalIntegrationsListReportsProviderLimitAndUsage(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := env.ExternalScoped(t, apitokens.ScopeContactsRead).IntegrationsList(ctx, externalapi.IntegrationsListParams{})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden, "integrations:read is required")
@@ -52,7 +51,7 @@ func TestExternalIntegrationsListReportsProviderLimitAndUsage(t *testing.T) {
 
 func TestExternalIntegrationsListIsPaginatedAndWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.ExternalScoped(t, apitokens.ScopeIntegrationsRead)
 
 	list, err := c.IntegrationsList(ctx, externalapi.IntegrationsListParams{PageSize: externalapi.NewOptInt32(1)})
@@ -77,7 +76,7 @@ func TestExternalIntegrationsListIsPaginatedAndWorkspaceScoped(t *testing.T) {
 // credential field and holds nothing of the stored secrets.
 func TestExternalIntegrationsListRedactsSecrets(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	list, err := env.ExternalScoped(t, apitokens.ScopeIntegrationsRead).IntegrationsList(ctx, externalapi.IntegrationsListParams{})
 	require.NoError(t, err)
@@ -105,7 +104,7 @@ func TestExternalIntegrationsListRedactsSecrets(t *testing.T) {
 // An SES-compatible service needs both Provider limit values on /api too (ADR 0067).
 func TestExternalIntegrationsSesCompatibleRequiresTheProviderLimit(t *testing.T) {
 	env := testhelper.Setup(t)
-	_, err := env.ExternalScoped(t, apitokens.ScopeIntegrationsWrite).IntegrationsCreate(context.Background(), &externalapi.CreateIntegrationInput{
+	_, err := env.ExternalScoped(t, apitokens.ScopeIntegrationsWrite).IntegrationsCreate(t.Context(), &externalapi.CreateIntegrationInput{
 		Name: "Postbox",
 		Params: externalapi.NewOptJsonObject(externalapi.JsonObject{
 			"topic_arn": []byte(`"arn:aws:sns:eu-west-1:123456789012:acme-ses-events"`),

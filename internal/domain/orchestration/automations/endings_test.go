@@ -1,7 +1,6 @@
 package automations_test
 
 import (
-	"context"
 	"encoding/json"
 	"testing"
 	"time"
@@ -33,7 +32,7 @@ const (
 // statusOf is the status an Enrollment is in now.
 func statusOf(t *testing.T, env *testhelper.TestEnv, runID int64) automationrun.Status {
 	t.Helper()
-	run, err := env.DB.AutomationRun.Get(context.Background(), runID)
+	run, err := env.DB.AutomationRun.Get(t.Context(), runID)
 	require.NoError(t, err)
 	return run.Status
 }
@@ -43,7 +42,7 @@ func statusOf(t *testing.T, env *testhelper.TestEnv, runID int64) automationrun.
 func handEvent(t *testing.T, env *testhelper.TestEnv, contactID int64, action string, at time.Time) {
 	t.Helper()
 	in := automations.OnEventInput{ContactID: contactID, Event: automations.Event{Action: action, OccurredAt: at}}
-	require.NoError(t, testhelper.Module[*automations.StepExecution](env).OnEvent(context.Background(), env.DB.Scoped(fixtures.AcmeID), in))
+	require.NoError(t, testhelper.Module[*automations.StepExecution](env).OnEvent(t.Context(), env.DB.Scoped(fixtures.AcmeID), in))
 }
 
 // runsOf is the Contact's Enrollments in the Automation.
@@ -51,7 +50,7 @@ func runsOf(t *testing.T, env *testhelper.TestEnv, automationID, contactID int64
 	t.Helper()
 	runs, err := env.DB.AutomationRun.Query().
 		Where(automationrun.AutomationID(automationID), automationrun.ContactID(contactID)).
-		All(context.Background())
+		All(t.Context())
 	require.NoError(t, err)
 	return runs
 }
@@ -70,14 +69,14 @@ func triggerRecovery(t *testing.T, env *testhelper.TestEnv, contactID int64, at 
 // its Contact.
 func recoveryRun(t *testing.T, env *testhelper.TestEnv) (runID, contactID int64) {
 	t.Helper()
-	run, err := env.DB.AutomationRun.Get(context.Background(), fixtures.AutomationRunRecoveryActiveID)
+	run, err := env.DB.AutomationRun.Get(t.Context(), fixtures.AutomationRunRecoveryActiveID)
 	require.NoError(t, err)
 	return run.ID, run.ContactID
 }
 
 func TestTheGoalEventEndsTheEnrollmentAsGoalReached(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	runID, contactID := recoveryRun(t, env)
 
@@ -147,7 +146,7 @@ func TestAnEventThatOccurredBeforeTheEnrollmentBeganEndsNothing(t *testing.T) {
 // was written.
 func TestAnEventAfterTheTriggerEndsAnEnrollmentMadeAfterIt(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	c := enrollable(t, s, 0)
 	triggered := time.Now().Add(-2 * time.Minute)
@@ -169,7 +168,7 @@ func TestAnEventAfterTheTriggerEndsAnEnrollmentMadeAfterIt(t *testing.T) {
 // beginning was read on, not when the Event was handled (#753).
 func TestAnEnrollmentEndsWhenItsEndingEventOccurred(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	c := enrollable(t, s, 0)
 	triggered := time.Now().Add(-2 * time.Hour)
@@ -188,7 +187,7 @@ func TestAnEnrollmentEndsWhenItsEndingEventOccurred(t *testing.T) {
 // occurred (fixture: account_closed 5 days ago for ContactPaidBeforeEnrolled).
 func TestAnEnrollmentMadeEndedEndsWhenThatEventOccurred(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	closed, err := env.DB.Event.Query().
 		Where(event.ContactID(fixtures.ContactPaidBeforeEnrolledID), event.Action(recoveryExit)).
 		Only(ctx)
@@ -205,7 +204,7 @@ func TestAnEnrollmentMadeEndedEndsWhenThatEventOccurred(t *testing.T) {
 // A step ends an Enrollment at the moment the Step execution's clock gives.
 func TestAStepEndsAnEnrollmentAtTheStepExecutionsClock(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	at := time.Date(2026, 3, 12, 9, 30, 0, 0, time.UTC)
 	steps := automations.NewStepExecution(env.Bus, env.OutboundModule(), testhelper.Module[*contacts.Module](env), noFence, env.Cipher, nil, func() time.Time { return at })
@@ -280,7 +279,7 @@ func TestAnUnlistedEventOrAnotherContactsEventEndsNothing(t *testing.T) {
 func TestAnEnrollmentEndsByTheEventsOfTheVersionItStandsOn(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*automations.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	runID, contactID := recoveryRun(t, env)
 
@@ -306,7 +305,7 @@ func TestAnEnrollmentEndsByTheEventsOfTheVersionItStandsOn(t *testing.T) {
 // now, so the Contact's older history does not end it.
 func TestARuleEnrollmentWithoutItsStoredEventBeginsNow(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	earliest := time.Now().Add(-time.Microsecond) // began_at is kept to the microsecond
 
@@ -329,7 +328,7 @@ func TestCreateKeepsExitAndGoalEventsInTheDraft(t *testing.T) {
 	m := testhelper.Module[*automations.Module](env)
 	paid := propertyEq(t, "status", "paid")
 
-	created, err := m.Create(context.Background(), env.DB.Scoped(fixtures.AcmeID), automations.CreateInput{
+	created, err := m.Create(t.Context(), env.DB.Scoped(fixtures.AcmeID), automations.CreateInput{
 		Name: "Upsell", Trigger: automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: "plan_limit_reached"}},
 		ExitEvents: []eventmatcher.Matcher{
 			{Action: "account_closed"}, {Action: " account_closed"}, {Action: "account_closed", Filter: paid}, {Action: systemevent.EmailUnsubscribed},
@@ -369,7 +368,7 @@ func TestCreateRefusesAnExitOrGoalEventThatCannotEndAnEnrollment(t *testing.T) {
 			m := testhelper.Module[*automations.Module](env)
 			tc.in.Name = "Refused"
 
-			_, err := m.Create(context.Background(), env.DB.Scoped(fixtures.AcmeID), tc.in)
+			_, err := m.Create(t.Context(), env.DB.Scoped(fixtures.AcmeID), tc.in)
 
 			require.ErrorIs(t, err, tc.want)
 		})
@@ -395,7 +394,7 @@ func TestASaveAcceptsExitAndGoalEventsSharingAnAction(t *testing.T) {
 			m := testhelper.Module[*automations.Module](env)
 			tc.in.Name = "Accepted"
 
-			_, err := m.Create(context.Background(), env.DB.Scoped(fixtures.AcmeID), tc.in)
+			_, err := m.Create(t.Context(), env.DB.Scoped(fixtures.AcmeID), tc.in)
 
 			require.NoError(t, err)
 		})
@@ -408,7 +407,7 @@ func TestUpdateAcceptsATriggerOnAStoredExitEventsAction(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*automations.Module](env)
 
-	_, err := m.Update(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationPaymentRecoveryID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(t.Context(), t, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationPaymentRecoveryID),
+	_, err := m.Update(t.Context(), env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationPaymentRecoveryID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(t.Context(), t, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationPaymentRecoveryID),
 		Trigger: automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: recoveryExit}},
 	})
 
@@ -420,7 +419,7 @@ func TestUpdateAcceptsATriggerOnAStoredExitEventsAction(t *testing.T) {
 func TestEditingExitAndGoalEventsWritesTheDraft(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*automations.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
 	updated, err := m.Update(ctx, s, fixtures.AutomationPaymentRecoveryID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, s, fixtures.AutomationPaymentRecoveryID),
@@ -446,7 +445,7 @@ func TestEditingExitAndGoalEventsWritesTheDraft(t *testing.T) {
 func TestSavingUnchangedExitAndGoalEventsStoresNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*automations.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	exits := []eventmatcher.Matcher{{Action: recoveryExit}, {Action: "order.closed", Filter: propertyEq(t, "status", "cancelled")}}
 	goal := patch.Set(eventmatcher.Matcher{Action: "order.closed", Filter: propertyEq(t, "status", "paid")})

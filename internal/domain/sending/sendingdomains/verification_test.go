@@ -41,7 +41,7 @@ func TestDue_neverCheckedFirstAndArchivedSkipped(t *testing.T) {
 
 	// Fixtures: the verified domain has last_checked_at set; the unverified one is never
 	// checked (NULL). NULLS FIRST must surface it ahead.
-	due, err := sendingdomains.New(env.DB, env.Bus, nil, nil, time.Now).Due(context.Background(), 100)
+	due, err := sendingdomains.New(env.DB, env.Bus, nil, nil, time.Now).Due(t.Context(), 100)
 	require.NoError(t, err)
 	ids := lo.Map(due, func(d *ent.SendingDomain, _ int) int64 { return d.ID })
 	require.Contains(t, ids, int64(fixtures.SendingDomainUnverifiedID))
@@ -59,7 +59,7 @@ func devLookup(env *testhelper.TestEnv) domainname.TXTLookup {
 func TestDevRecords_trustsSeededDomains(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	row, err := domains(env, devLookup(env)).Verify(context.Background(), acme(env), fixtures.SendingDomainUnverifiedID)
+	row, err := domains(env, devLookup(env)).Verify(t.Context(), acme(env), fixtures.SendingDomainUnverifiedID)
 
 	require.NoError(t, err)
 	assert.True(t, dkimstate.Is(row), "dev lookup makes a seeded domain verify")
@@ -80,7 +80,7 @@ func TestDevRecords_answersASendingDomainsDMARCRecord(t *testing.T) {
 
 func TestVerify_becomesVerified(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	dom, err := env.DB.SendingDomain.Get(ctx, fixtures.SendingDomainUnverifiedID)
 	require.NoError(t, err)
 	require.False(t, dkimstate.Is(dom))
@@ -101,7 +101,7 @@ func TestVerify_becomesVerified(t *testing.T) {
 
 func TestVerify_flipsToUnverifiedWhenRecordGoneAndEmailsOwner(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	gone := dnstest.Resolver(t, nil).LookupTXT
 
 	row, err := domains(env, gone).Verify(ctx, acme(env), fixtures.SendingDomainVerifiedID)
@@ -133,7 +133,7 @@ func TestVerify_flipsToUnverifiedWhenRecordGoneAndEmailsOwner(t *testing.T) {
 
 func TestVerify_verifiedAgainClearsTheLoss(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	dom, err := env.DB.SendingDomain.Get(ctx, fixtures.SendingDomainVerifiedID)
 	require.NoError(t, err)
 	err = domains(env, dnstest.Resolver(t, nil).LookupTXT).Recheck(ctx, acme(env), dom.ID)
@@ -153,7 +153,7 @@ func TestVerify_verifiedAgainClearsTheLoss(t *testing.T) {
 
 func TestVerify_aFailingNoticeNeverFailsTheCheck(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	env.SystemMail.SetErr(errors.New("smtp down"))
 
 	checked, err := domains(env, dnstest.Resolver(t, nil).LookupTXT).Verify(ctx, acme(env), fixtures.SendingDomainVerifiedID)
@@ -168,7 +168,7 @@ func TestVerify_aFailingNoticeNeverFailsTheCheck(t *testing.T) {
 
 func TestRecheck_withoutASystemSenderStillFlips(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithoutSystemSender())
-	ctx := context.Background()
+	ctx := t.Context()
 	m := sendingdomains.New(env.DB, env.Bus, nil, dnstest.Resolver(t, nil).LookupTXT, time.Now)
 
 	err := m.Recheck(ctx, acme(env), fixtures.SendingDomainVerifiedID)
@@ -183,14 +183,14 @@ func TestRecheck_withoutASystemSenderStillFlips(t *testing.T) {
 func TestRecheck_unknownDomainIsAnError(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	err := domains(env, dnstest.Resolver(t, nil).LookupTXT).Recheck(context.Background(), acme(env), 424242)
+	err := domains(env, dnstest.Resolver(t, nil).LookupTXT).Recheck(t.Context(), acme(env), 424242)
 
 	require.ErrorIs(t, err, sendingdomains.ErrNotFound)
 }
 
 func TestRecheck_resolverErrorDoesNotChangeState(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	lookup := dnstest.Resolver(t, map[string]mockdns.Zone{"sphericon._domainkey.mail.acme.com.": {Err: errors.New("servfail")}}).LookupTXT
 
 	err := domains(env, lookup).Recheck(ctx, acme(env), fixtures.SendingDomainVerifiedID)
@@ -206,7 +206,7 @@ func TestRecheck_resolverErrorDoesNotChangeState(t *testing.T) {
 // one. The late check neither rewrites the row nor tells the Owners a second time.
 func TestRecheck_staleCheckDoesNotReportASecondFlip(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	gone := dnstest.Resolver(t, nil).LookupTXT
 	concurrent := func(ctx context.Context, name string) ([]string, error) {
 		if dkimLookup(name) {
@@ -227,7 +227,7 @@ func TestRecheck_staleCheckDoesNotReportASecondFlip(t *testing.T) {
 // selector verifies nothing, and the domain stays unverified under the new one (#1245).
 func TestRecheck_aCheckUnderAMovedSelectorDoesNotVerify(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	dom, err := env.DB.SendingDomain.Get(ctx, fixtures.SendingDomainUnverifiedID)
 	require.NoError(t, err)
 	published := dnstest.Resolver(t, map[string]mockdns.Zone{
@@ -254,7 +254,7 @@ func TestRecheck_aCheckUnderAMovedSelectorDoesNotVerify(t *testing.T) {
 // is under the old selector. It is the Owner's own edit, so no Owner is told (#1245).
 func TestUpdate_movingTheSelectorOfAVerifiedDomainLosesItWithoutANotice(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	row, err := domains(env, dnstest.Resolver(t, nil).LookupTXT).Update(ctx, acme(env), fixtures.SendingDomainVerifiedID,
 		sendingdomains.UpdateInput{Selector: patch.Set("moved")})

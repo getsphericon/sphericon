@@ -1,7 +1,6 @@
 package analyticsreport_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -17,7 +16,7 @@ import (
 func newPeopleAt(t *testing.T, env *testhelper.TestEnv, ws int64, w analyticsreport.Window, now time.Time) *analyticsreport.NewPeople {
 	t.Helper()
 	m := analyticsreport.New(linkclick.New(), func() time.Time { return now }, 0)
-	report, err := m.NewPeople(context.Background(), env.DB.Scoped(ws), w)
+	report, err := m.NewPeople(t.Context(), env.DB.Scoped(ws), w)
 	require.NoError(t, err)
 	return report
 }
@@ -58,7 +57,7 @@ func TestAZoneChangeMovesNewPeopleToOtherDays(t *testing.T) {
 	now := time.Date(2026, 3, 10, 12, 0, 0, 0, time.UTC)
 	inNewYork := byDay(newPeopleAt(t, env, fixtures.GothamID, analyticsreport.Window7Days, now))
 
-	require.NoError(t, env.DB.Workspace.UpdateOneID(fixtures.GothamID).SetTimezone("UTC").Exec(context.Background()))
+	require.NoError(t, env.DB.Workspace.UpdateOneID(fixtures.GothamID).SetTimezone("UTC").Exec(t.Context()))
 	days := byDay(newPeopleAt(t, env, fixtures.GothamID, analyticsreport.Window7Days, now))
 
 	assert.Equal(t, analyticsreport.NewPeoplePoint{Date: "2026-03-07", Manual: 1}, inNewYork["2026-03-07"], "23:59 EST on the 7th")

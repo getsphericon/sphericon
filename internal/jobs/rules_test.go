@@ -1,7 +1,6 @@
 package jobs_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -21,7 +20,7 @@ import (
 // left it.
 func runFiring(t *testing.T, env *testhelper.TestEnv, firingID int64) *ent.RuleFiring {
 	t.Helper()
-	ctx := context.Background()
+	ctx := t.Context()
 	require.NoError(t, rules.New(env.Cipher, env.Bus, nil, time.Now).RunActions(ctx, env.DB.Scoped(fixtures.AcmeID), firingID, ruleRunners(env)))
 	return env.DB.RuleFiring.GetX(ctx, firingID)
 }
@@ -30,7 +29,7 @@ func runFiring(t *testing.T, env *testhelper.TestEnv, firingID int64) *ent.RuleF
 // as the evaluation job and the Actions job do, with no queue between them.
 func fireAndRun(t *testing.T, env *testhelper.TestEnv, contactID int64, action, sourceID string) *ent.RuleFiring {
 	t.Helper()
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 	fired, err := m.Evaluate(ctx, s, rules.Event{ContactID: contactID, Action: action, SourceID: sourceID, RecordedAt: time.Now()})
@@ -86,7 +85,7 @@ func TestOneFailedRuleActionDoesNotStopTheNext(t *testing.T) {
 
 func TestRunningAFinishedFiringAgainChangesNothing(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	f := runFiring(t, env, fixtures.RuleFiringPendingID)
 	env.DB.Tag.Delete().Where(tag.Name("rule-clicked")).ExecX(ctx)
@@ -101,9 +100,9 @@ func TestRunningAFinishedFiringAgainChangesNothing(t *testing.T) {
 func TestRunActionsOfAFiringThatIsGoneDoesNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
-	env.DB.RuleFiring.Delete().Where(rulefiring.ID(fixtures.RuleFiringPendingID)).ExecX(context.Background())
+	env.DB.RuleFiring.Delete().Where(rulefiring.ID(fixtures.RuleFiringPendingID)).ExecX(t.Context())
 
-	err := rules.New(env.Cipher, env.Bus, nil, time.Now).RunActions(context.Background(), s, fixtures.RuleFiringPendingID, ruleRunners(env))
+	err := rules.New(env.Cipher, env.Bus, nil, time.Now).RunActions(t.Context(), s, fixtures.RuleFiringPendingID, ruleRunners(env))
 
 	assert.NoError(t, err)
 }

@@ -1,7 +1,6 @@
 package jobs_test
 
 import (
-	"context"
 	"errors"
 	"testing"
 	"time"
@@ -31,7 +30,7 @@ func joinModule(env *testhelper.TestEnv, zone *dnstest.Zone) *joindomains.Module
 
 func TestVerifyJoinDomainWorkerKeepsADomainWhoseRecordIsStillPublished(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	zone := dnstest.NewZone(t)
 	zone.PublishTXT(t, acmeJoinRecord, acmeJoinToken)
 	members := env.DB.Scoped(fixtures.AcmeID).Membership().Query().CountX(ctx)
@@ -49,7 +48,7 @@ func TestVerifyJoinDomainWorkerKeepsADomainWhoseRecordIsStillPublished(t *testin
 
 func TestVerifyJoinDomainWorkerRevertsADomainWhoseRecordIsGoneAndMailsTheOwnersOnce(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	zone := dnstest.NewZone(t)
 	w := jobs.NewVerifyJoinDomainWorker(joinModule(env, zone))
 	members := env.DB.Scoped(fixtures.AcmeID).Membership().Query().CountX(ctx)
@@ -70,7 +69,7 @@ func TestVerifyJoinDomainWorkerRevertsADomainWhoseRecordIsGoneAndMailsTheOwnersO
 
 func TestVerifyJoinDomainWorkerRevertsADomainWhoseRecordCarriesAnotherValue(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	zone := dnstest.NewZone(t)
 	zone.PublishTXT(t, acmeJoinRecord, "sphericon-join=someone-else")
 
@@ -83,7 +82,7 @@ func TestVerifyJoinDomainWorkerRevertsADomainWhoseRecordCarriesAnotherValue(t *t
 
 func TestVerifyJoinDomainWorkerKeepsStateOnAResolverFailureAndRetries(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	failing := dnstest.Resolver(t, map[string]mockdns.Zone{acmeJoinRecord + ".": {Err: errors.New("servfail")}})
 	mod := joindomains.New(env.DB, env.Bus, failing.LookupTXT, time.Now)
 
@@ -97,7 +96,7 @@ func TestVerifyJoinDomainWorkerKeepsStateOnAResolverFailureAndRetries(t *testing
 
 func TestVerifyJoinDomainWorkerLeavesAPendingDomainAlone(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	err := jobs.NewVerifyJoinDomainWorker(joinModule(env, dnstest.NewZone(t))).
 		Work(ctx, job(jobs.VerifyJoinDomainArgs{JoinDomainID: fixtures.JoinDomainPendingID}))
@@ -109,7 +108,7 @@ func TestVerifyJoinDomainWorkerLeavesAPendingDomainAlone(t *testing.T) {
 
 func TestVerifyJoinDomainWorkerSurvivesAFailingMail(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	env.SystemMail.SetErr(errors.New("smtp down"))
 
 	err := jobs.NewVerifyJoinDomainWorker(joinModule(env, dnstest.NewZone(t))).
@@ -121,7 +120,7 @@ func TestVerifyJoinDomainWorkerSurvivesAFailingMail(t *testing.T) {
 
 func TestRecheckJoinDomainsWorkerQueuesOnlyVerifiedDomains(t *testing.T) {
 	e := newRiverEnv(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	verified := e.DB.JoinDomain.Query().Where(joindomain.VerifiedAtNotNil()).CountX(ctx)
 	require.Positive(t, verified)
 
@@ -140,11 +139,11 @@ func TestJoinDomainsDueAreTheVerifiedOnes(t *testing.T) {
 	env := testhelper.Setup(t)
 	mod := joinModule(env, dnstest.NewZone(t))
 
-	due, err := mod.Due(context.Background(), 100)
+	due, err := mod.Due(t.Context(), 100)
 
 	require.NoError(t, err)
 	ids := lo.Map(due, func(d *ent.JoinDomain, _ int) int64 { return d.ID })
-	verified := env.DB.JoinDomain.Query().Where(joindomain.VerifiedAtNotNil()).IDsX(context.Background())
+	verified := env.DB.JoinDomain.Query().Where(joindomain.VerifiedAtNotNil()).IDsX(t.Context())
 	assert.ElementsMatch(t, verified, ids, "the pending domains are not due")
 	assert.Subset(t, ids, []int64{fixtures.JoinDomainVerifiedID, fixtures.JoinDomainHooliID})
 }

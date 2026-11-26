@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"encoding/json"
 	"testing"
 
@@ -19,7 +18,7 @@ import (
 // Content and audience entities emit entries with a diff, a name snapshot and the User.
 func TestSiteContentChangesAreAudited(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
 	created, err := c.SiteTemplatesCreate(ctx,
@@ -55,7 +54,7 @@ func TestSiteContentChangesAreAudited(t *testing.T) {
 // A Contact entry holds the id and the names of changed fields, never a value.
 func TestSiteContactChangesCarryNamesOnly(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
 	const email, first, secret = "leak.check@example.org", "Leakyname", "custom-secret-value"

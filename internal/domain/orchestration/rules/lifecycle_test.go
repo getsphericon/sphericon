@@ -31,7 +31,7 @@ func acme(env *testhelper.TestEnv) *ent.Scoped { return env.DB.Scoped(fixtures.A
 // read by id, inactive and marked deleted, with its Firings (ADR 0049, ADR 0098).
 func TestDeleteOfARuleWithFiringsHidesItStopsItFiringAndKeepsTheFirings(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 	page := pagination.Params{Page: 1, PageSize: 100}
 	before, err := m.Firings(ctx, acme(env), fixtures.RuleTagClickedID, page)
@@ -57,7 +57,7 @@ func TestDeleteOfARuleWithFiringsHidesItStopsItFiringAndKeepsTheFirings(t *testi
 // changes nothing.
 func TestADeletedRuleTakesNoMove(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 	s := acme(env)
 	id := int64(fixtures.RuleTagClickedID)
@@ -110,7 +110,7 @@ func TestPublishingAndDeletingARuleAtOnceNeverLeaveItDeletedAndActive(t *testing
 // (ADR 0100). It is still read by id, and its versions with it.
 func TestDeleteKeepsARuleThatNeverFired(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 
 	require.NoError(t, m.Delete(ctx, acme(env), fixtures.RuleInactiveID))
@@ -125,7 +125,7 @@ func TestDeleteKeepsARuleThatNeverFired(t *testing.T) {
 func TestDeleteOfAnotherWorkspacesRuleIsNotFound(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	assert.ErrorIs(t, rules.New(env.Cipher, env.Bus, nil, time.Now).Delete(context.Background(), acme(env), fixtures.RuleGlobexID), rules.ErrNotFound)
+	assert.ErrorIs(t, rules.New(env.Cipher, env.Bus, nil, time.Now).Delete(t.Context(), acme(env), fixtures.RuleGlobexID), rules.ErrNotFound)
 }
 
 func tagAction(tag string) []ruleaction.Action {
@@ -136,7 +136,7 @@ func tagAction(tag string) []ruleaction.Action {
 // published names rule-inactive, and still does once it is.
 func TestARuleThatAppliesATagUsesItBeforeAndAfterPublish(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 
 	usingTag := func(l *ent.WorkspaceLocked) ([]*ent.Rule, error) {
@@ -174,7 +174,7 @@ func TestAnActiveRuleWhoseConditionNamesATagUsesIt(t *testing.T) {
 
 func TestADeletedRuleUsesNoTag(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 	require.NoError(t, m.Delete(ctx, acme(env), fixtures.RuleVipOnlyID))
 	require.NoError(t, m.Delete(ctx, acme(env), fixtures.RuleMultiTriggerID))
@@ -196,7 +196,7 @@ func manyActions(n int) []ruleaction.Action {
 func TestCreateRefusesMoreActionsThanTheCap(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	_, err := rules.New(env.Cipher, env.Bus, nil, time.Now).Create(context.Background(), acme(env),
+	_, err := rules.New(env.Cipher, env.Bus, nil, time.Now).Create(t.Context(), acme(env),
 		rules.CreateInput{Name: "big", TriggerEvents: []string{"x"}, Actions: manyActions(rules.MaxActions + 1)})
 
 	require.ErrorIs(t, err, rules.ErrInvalid)
@@ -205,7 +205,7 @@ func TestCreateRefusesMoreActionsThanTheCap(t *testing.T) {
 
 func TestCreateAcceptsTheCapExactlyAndUpdateEnforcesIt(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 
 	r, err := m.Create(ctx, acme(env), rules.CreateInput{Name: "full", TriggerEvents: []string{"x"}, Actions: manyActions(rules.MaxActions)})
@@ -224,7 +224,7 @@ func conditionOf(n int) string {
 
 func TestARuleRefusesAConditionLargerThanTheCap(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 	big := conditionOf(rules.MaxConditionNodes)
 
@@ -244,7 +244,7 @@ func TestARuleHasNoCapOnTheirNumber(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 	for i := range 30 {
-		_, err := m.Create(context.Background(), acme(env), rules.CreateInput{Name: "r" + strconv.Itoa(i), TriggerEvents: []string{"x"}, Actions: tagAction("a")})
+		_, err := m.Create(t.Context(), acme(env), rules.CreateInput{Name: "r" + strconv.Itoa(i), TriggerEvents: []string{"x"}, Actions: tagAction("a")})
 		require.NoError(t, err)
 	}
 }
@@ -253,7 +253,7 @@ func TestARuleHasNoCapOnTheirNumber(t *testing.T) {
 // never reach one (a later Action kind may hold a secret). Delete records a discard (ADR 0100).
 func TestRuleChangesAreAudited(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	actor := events.Actor{Kind: events.ActorUser, ID: testhelper.ID(fixtures.OwnerJohnID), Name: "John"}
 	s := env.Bus.Act(acme(env), actor)
 	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
@@ -287,7 +287,7 @@ func TestRuleChangesAreAudited(t *testing.T) {
 // whichever driver saves it, and nothing is stored.
 func TestCreateRefusesARuleWithNoTriggerEvent(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	m := testhelper.Module[*rules.Module](env)
 
 	for name, triggers := range map[string][]string{"none": nil, "blanks": {" ", ""}} {

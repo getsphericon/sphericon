@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -19,7 +18,7 @@ func TestSiteMembershipsErrorBranches(t *testing.T) {
 	env := testhelper.Setup(t)
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	member := env.SiteActor(t, fixtures.MemberMaryEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	acme, foreign := siteapi.WorkspaceId(fixtures.AcmePublicID), siteapi.WorkspaceId(fixtures.GlobexPublicID)
 	memberID := idStr(fixtures.AcmeMemberMembershipID)
 	ownerID := idStr(fixtures.AcmeOwnerMembershipID)
@@ -73,7 +72,7 @@ func TestSiteInvitationsErrorBranches(t *testing.T) {
 	env := testhelper.Setup(t)
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	member := env.SiteActor(t, fixtures.MemberMaryEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	acme, foreign := siteapi.WorkspaceId(fixtures.AcmePublicID), siteapi.WorkspaceId(fixtures.GlobexPublicID)
 	in := func(email string) *siteapi.SiteCreateInvitationInput {
 		return &siteapi.SiteCreateInvitationInput{Email: siteapi.EmailAddress(email), Role: siteapi.SiteInvitableRoleMember}
@@ -121,7 +120,7 @@ func TestSiteInvitationsErrorBranches(t *testing.T) {
 func TestSitePublicInvitationsRejectBadInput(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteAnonymous(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := c.SitePublicInvitationsLookup(ctx, siteapi.SitePublicInvitationsLookupParams{Token: "no-such-token"})
 	testhelper.SiteRefusal(t, err, http.StatusNotFound)

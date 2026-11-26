@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -56,7 +55,7 @@ func TestExportMessagesDeliversAStatusChangeAgain(t *testing.T) {
 	require.NoError(t, env.DB.Scoped(fixtures.GlobexID).OutboundMessage().
 		UpdateOneID(fixtures.OutboundMessageGlobexID).
 		SetStatus(outboundmessage.StatusSent).
-		Exec(context.Background()))
+		Exec(t.Context()))
 
 	after := readExportMessages(t, c, before.cursor)
 	changed := after.row(fixtures.OutboundMessageGlobexID)
@@ -87,7 +86,7 @@ func TestExportMessagesNeedsTheExportReadScope(t *testing.T) {
 	env := testhelper.Setup(t)
 	for _, scopes := range [][]apitokens.Scope{{}, {apitokens.ScopeContactsRead}, {apitokens.ScopeContactsRead, apitokens.ScopeEventsRead, apitokens.ScopeAuditRead}} {
 		c := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.InitechID, scopes...))
-		_, err := c.ExportMessages(context.Background(), externalapi.ExportMessagesParams{})
+		_, err := c.ExportMessages(t.Context(), externalapi.ExportMessagesParams{})
 		testhelper.ExternalRefusal(t, err, http.StatusForbidden, "scopes %v are refused", scopes)
 	}
 }
@@ -96,7 +95,7 @@ func TestExportMessagesAnswers404WithoutTheLicense(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithoutLicense())
 	c := exportClient(t, env, fixtures.InitechID)
 
-	_, err := c.ExportMessages(context.Background(), externalapi.ExportMessagesParams{})
+	_, err := c.ExportMessages(t.Context(), externalapi.ExportMessagesParams{})
 
 	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 }
@@ -115,7 +114,7 @@ func TestExportMessagesRefuseAMalformedCursor(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := exportClient(t, env, fixtures.InitechID)
 
-	_, err := c.ExportMessages(context.Background(), externalapi.ExportMessagesParams{
+	_, err := c.ExportMessages(t.Context(), externalapi.ExportMessagesParams{
 		Cursor: externalapi.NewOptString("not-a-cursor"),
 	})
 

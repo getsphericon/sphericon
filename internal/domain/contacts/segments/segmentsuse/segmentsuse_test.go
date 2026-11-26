@@ -1,7 +1,6 @@
 package segmentsuse_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -19,7 +18,7 @@ import (
 // not leave it naming a missing Tag.
 func TestUsingTagIncludesArchivedSegments(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	require.NoError(t, acme.Segment().Archive(ctx, fixtures.SegmentNewsletterReadersID, time.Now()))
 

@@ -24,7 +24,7 @@ func TestDomainsReadsWhetherADomainAcceptsMail(t *testing.T) {
 		"broken.test.":    {Err: errors.New("server failure")},
 	})
 
-	got := addresscheck.Domains(context.Background(), r, []string{
+	got := addresscheck.Domains(t.Context(), r, []string{
 		"mx.test", "implicit.test", "implicit6.test", "nullmx.test", "empty.test", "missing.test", "broken.test",
 	})
 
@@ -40,11 +40,11 @@ func TestDomainsReadsWhetherADomainAcceptsMail(t *testing.T) {
 }
 
 func TestDomainsWithoutAResolverKnowsNothing(t *testing.T) {
-	assert.Empty(t, addresscheck.Domains(context.Background(), nil, []string{"example.com"}))
+	assert.Empty(t, addresscheck.Domains(t.Context(), nil, []string{"example.com"}))
 }
 
 func TestDomainsOnASpentContextKnowsNothing(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 
 	got := addresscheck.Domains(ctx, unreachable{}, []string{"a.test", "b.test"})

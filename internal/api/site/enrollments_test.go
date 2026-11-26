@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -17,7 +16,7 @@ import (
 func TestSiteEnrollmentsShowWhyAnEnrollmentFailed(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	listed, err := c.SiteEnrollmentsList(ctx, siteapi.SiteEnrollmentsListParams{
 		WorkspaceId:  fixtures.AcmePublicID,
@@ -52,7 +51,7 @@ func TestSiteEnrollmentsShowWhyAnEnrollmentFailed(t *testing.T) {
 func TestSiteSkippedEntriesOfAContact(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.MemberMaryEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	listed, err := c.SiteSkippedEntriesList(ctx, siteapi.SiteSkippedEntriesListParams{
 		WorkspaceId:  fixtures.AcmePublicID,

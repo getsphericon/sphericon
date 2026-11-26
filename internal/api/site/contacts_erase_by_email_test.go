@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"testing"
@@ -18,7 +17,7 @@ import (
 
 func eraseByEmail(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceId, email string) error {
 	t.Helper()
-	return c.SiteContactsErase(context.Background(), siteapi.SiteContactsEraseParams{WorkspaceId: workspaceID, Email: email})
+	return c.SiteContactsErase(t.Context(), siteapi.SiteContactsEraseParams{WorkspaceId: workspaceID, Email: email})
 }
 
 // Erase by address removes the Contact; a padded, mixed-case address finds it; a second
@@ -30,7 +29,7 @@ func TestSiteContactsEraseByEmailErasesTheContact(t *testing.T) {
 	err := eraseByEmail(t, c, fixtures.AcmePublicID, " Export.Subject@Example.com ")
 	require.NoError(t, err)
 
-	still, err := env.DB.Contact.Query().Where(contact.Email(fixtures.ContactExportSubjectEmail)).Exist(context.Background())
+	still, err := env.DB.Contact.Query().Where(contact.Email(fixtures.ContactExportSubjectEmail)).Exist(t.Context())
 	require.NoError(t, err)
 	assert.False(t, still)
 
@@ -67,7 +66,7 @@ func TestSiteContactsEraseByEmailIsRefusedForMembers(t *testing.T) {
 	refused := eraseByEmail(t, c, fixtures.AcmePublicID, fixtures.ContactExportSubjectEmail)
 	testhelper.SiteRefusal(t, refused, http.StatusForbidden)
 
-	still, err := env.DB.Contact.Query().Where(contact.Email(fixtures.ContactExportSubjectEmail)).Exist(context.Background())
+	still, err := env.DB.Contact.Query().Where(contact.Email(fixtures.ContactExportSubjectEmail)).Exist(t.Context())
 	require.NoError(t, err)
 	assert.True(t, still)
 }

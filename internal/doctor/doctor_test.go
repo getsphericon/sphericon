@@ -46,7 +46,7 @@ func healthy(t *testing.T) doctor.Input {
 	env := testhelper.Setup(t)
 	sqlDB := env.SQLDB
 	entClient := env.DB
-	domains, err := entClient.SendingDomain.Query().All(context.Background())
+	domains, err := entClient.SendingDomain.Query().All(t.Context())
 	require.NoError(t, err)
 	keys := map[string][]string{} // two Workspaces may claim one name, each with its own key
 	for _, d := range domains {
@@ -102,7 +102,7 @@ func find(t *testing.T, r doctor.Report, name string) doctor.Check {
 
 func TestHealthyInstancePassesEveryCheckThatCanFail(t *testing.T) {
 	in := healthy(t)
-	r := doctor.Run(context.Background(), in)
+	r := doctor.Run(t.Context(), in)
 
 	// The fixture domains are not all published, so the DKIM checks have a test of their own.
 	notDKIM := lo.OmitBy(statuses(r), func(name string, _ doctor.Status) bool { return strings.HasPrefix(name, "dkim ") })
@@ -115,7 +115,7 @@ func TestHealthyInstancePassesEveryCheckThatCanFail(t *testing.T) {
 }
 
 func TestConfigurationThatDoesNotLoadFailsWithItsReason(t *testing.T) {
-	r := doctor.Run(context.Background(), doctor.Input{ConfigErr: errors.New("SPHERICON_JWT_SECRET is required")})
+	r := doctor.Run(t.Context(), doctor.Input{ConfigErr: errors.New("SPHERICON_JWT_SECRET is required")})
 
 	require.True(t, r.Failed())
 	c := find(t, r, "configuration")
@@ -126,7 +126,7 @@ func TestConfigurationThatDoesNotLoadFailsWithItsReason(t *testing.T) {
 func TestUnreachableDatabaseFailsEveryCheckThatNeedsIt(t *testing.T) {
 	in := healthy(t)
 	in.DB, in.Ent, in.DBErr = nil, nil, errors.New("connection refused")
-	r := doctor.Run(context.Background(), in)
+	r := doctor.Run(t.Context(), in)
 
 	require.True(t, r.Failed())
 	assert.Contains(t, find(t, r, "database").Detail, "connection refused")
@@ -137,7 +137,7 @@ func TestUnreachableDatabaseFailsEveryCheckThatNeedsIt(t *testing.T) {
 func TestSchemaNewerThanTheBinaryFailsWithTheRemedy(t *testing.T) {
 	in := healthy(t)
 	in.Build = buildinfo.Info{Version: "v0.0.1"} // older than the floor of the database's Major
-	r := doctor.Run(context.Background(), in)
+	r := doctor.Run(t.Context(), in)
 
 	c := find(t, r, "database")
 	assert.Equal(t, doctor.Fail, c.Status)
@@ -147,7 +147,7 @@ func TestSchemaNewerThanTheBinaryFailsWithTheRemedy(t *testing.T) {
 func TestSMTPFailureFailsWithAFix(t *testing.T) {
 	in := healthy(t)
 	in.DialSMTP = func(context.Context, *config.Config) error { return errors.New("535 authentication failed") }
-	c := find(t, doctor.Run(context.Background(), in), "system mail")
+	c := find(t, doctor.Run(t.Context(), in), "system mail")
 
 	assert.Equal(t, doctor.Fail, c.Status)
 	assert.Contains(t, c.Detail, "535 authentication failed")
@@ -157,10 +157,10 @@ func TestSMTPFailureFailsWithAFix(t *testing.T) {
 func TestMissingSMTPHostFailsOnlyWhileVerificationNeedsMail(t *testing.T) {
 	in := healthy(t)
 	in.Config.SMTPHost = ""
-	assert.Equal(t, doctor.Fail, find(t, doctor.Run(context.Background(), in), "system mail").Status)
+	assert.Equal(t, doctor.Fail, find(t, doctor.Run(t.Context(), in), "system mail").Status)
 
 	in.Config.RequireEmailVerification = false
-	assert.Equal(t, doctor.Skip, find(t, doctor.Run(context.Background(), in), "system mail").Status)
+	assert.Equal(t, doctor.Skip, find(t, doctor.Run(t.Context(), in), "system mail").Status)
 }
 
 func TestAppURLChecks(t *testing.T) {
@@ -184,7 +184,7 @@ func TestAppURLChecks(t *testing.T) {
 			in.HTTP = &http.Client{Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
 				return nil, errors.New("no route to host")
 			})}
-			r := doctor.Run(context.Background(), in)
+			r := doctor.Run(t.Context(), in)
 
 			assert.Equal(t, tc.wellFormed, find(t, r, "app url").Status)
 			assert.Equal(t, tc.https, find(t, r, "app url https").Status)
@@ -199,7 +199,7 @@ func TestAppURLThatAnswersNon200FailsReachability(t *testing.T) {
 	t.Cleanup(down.Close)
 	in.Config.AppURL, in.HTTP = down.URL, down.Client()
 
-	c := find(t, doctor.Run(context.Background(), in), "app url reachable")
+	c := find(t, doctor.Run(t.Context(), in), "app url reachable")
 	assert.Equal(t, doctor.Fail, c.Status)
 	assert.Contains(t, c.Detail, "502")
 }
@@ -208,13 +208,13 @@ func TestKeysAreCheckedForPresenceAndValidity(t *testing.T) {
 	in := healthy(t)
 	in.Config.EncryptionKey = ""
 	in.Config.JWTSecret = "short"
-	r := doctor.Run(context.Background(), in)
+	r := doctor.Run(t.Context(), in)
 	assert.Equal(t, doctor.Fail, find(t, r, "encryption key").Status)
 	assert.Contains(t, find(t, r, "encryption key").Fix, "sphericon genkey")
 	assert.Equal(t, doctor.Fail, find(t, r, "jwt secret").Status)
 
 	in.Config.EncryptionKey = "not-a-keyset"
-	assert.Contains(t, find(t, doctor.Run(context.Background(), in), "encryption key").Detail, "not a valid keyset")
+	assert.Contains(t, find(t, doctor.Run(t.Context(), in), "encryption key").Detail, "not a valid keyset")
 }
 
 func TestJWTSecretMustBeLongAndGenerated(t *testing.T) {
@@ -227,7 +227,7 @@ func TestJWTSecretMustBeLongAndGenerated(t *testing.T) {
 	for secret, want := range cases {
 		in := healthy(t)
 		in.Config.JWTSecret = secret
-		got := find(t, doctor.Run(context.Background(), in), "jwt secret").Status
+		got := find(t, doctor.Run(t.Context(), in), "jwt secret").Status
 		assert.Equal(t, want, got, "SPHERICON_JWT_SECRET=%q", secret)
 	}
 }
@@ -255,7 +255,7 @@ func TestLicenseKeyStates(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			in := healthy(t)
 			in.Config.LicenseKey, in.LicensePublicKey = tc.key, pub
-			c := find(t, doctor.Run(context.Background(), in), "license key")
+			c := find(t, doctor.Run(t.Context(), in), "license key")
 
 			assert.Equal(t, tc.status, c.Status)
 			assert.Contains(t, c.Detail, tc.detail)
@@ -265,7 +265,7 @@ func TestLicenseKeyStates(t *testing.T) {
 
 func TestDKIMIsCheckedForEveryKeptSendingDomain(t *testing.T) {
 	in := healthy(t)
-	r := doctor.Run(context.Background(), in)
+	r := doctor.Run(t.Context(), in)
 
 	// The stub publishes every fixture domain's record, so all pass.
 	dkim := lo.Filter(r.Checks, func(c doctor.Check, _ int) bool { return strings.HasPrefix(c.Name, "dkim ") })
@@ -277,24 +277,24 @@ func TestDKIMIsCheckedForEveryKeptSendingDomain(t *testing.T) {
 	in.LookupTXT = func(_ context.Context, name string) ([]string, error) {
 		return nil, &net.DNSError{Err: "no such host", Name: name, IsNotFound: true}
 	}
-	missing := find(t, doctor.Run(context.Background(), in), "dkim mail.acme.com")
+	missing := find(t, doctor.Run(t.Context(), in), "dkim mail.acme.com")
 	assert.Equal(t, doctor.Fail, missing.Status)
 	assert.Contains(t, missing.Fix, "Publish the TXT record")
 
 	in.LookupTXT = func(context.Context, string) ([]string, error) { return nil, errors.New("server misbehaving") }
-	assert.Contains(t, find(t, doctor.Run(context.Background(), in), "dkim mail.acme.com").Detail, "server misbehaving")
+	assert.Contains(t, find(t, doctor.Run(t.Context(), in), "dkim mail.acme.com").Detail, "server misbehaving")
 }
 
 func TestMailSentFromAnotherOriginWarns(t *testing.T) {
 	in := healthy(t)
-	moved := find(t, doctor.Run(context.Background(), in), "app url in sent mail")
+	moved := find(t, doctor.Run(t.Context(), in), "app url in sent mail")
 	assert.Equal(t, doctor.Warn, moved.Status)
 	assert.Contains(t, moved.Detail, "https://old.initech.test")
 	assert.Contains(t, moved.Fix, "redirect")
 
 	// Pointing the Instance back at that origin clears the warning.
 	in.Config.AppURL = "https://OLD.initech.test/"
-	assert.Equal(t, doctor.Pass, find(t, doctor.Run(context.Background(), in), "app url in sent mail").Status)
+	assert.Equal(t, doctor.Pass, find(t, doctor.Run(t.Context(), in), "app url in sent mail").Status)
 }
 
 type roundTripFunc func(*http.Request) (*http.Response, error)
@@ -322,7 +322,7 @@ func TestRedactorHidesEverySecretInBothFormats(t *testing.T) {
 func TestADeletedSendingDomainIsLeftOutOfTheDKIMCheck(t *testing.T) {
 	in := healthy(t)
 
-	r := doctor.Run(context.Background(), in)
+	r := doctor.Run(t.Context(), in)
 
 	names := lo.Map(r.Checks, func(c doctor.Check, _ int) string { return c.Name })
 	assert.Contains(t, names, "dkim mail.acme.com")
@@ -335,9 +335,9 @@ func TestADeletedWorkspaceIsLeftOutOfTheWorkspaceChecks(t *testing.T) {
 	// through an unguarded client on the same database.
 	raw := ent.NewClient(ent.Driver(entsql.OpenDB(dialect.Postgres, in.DB)))
 	raw.Workspace.Update().Where(workspace.IDIn(fixtures.AcmeID, fixtures.InitechID)).
-		SetDiscardedAt(time.Now()).ExecX(context.Background())
+		SetDiscardedAt(time.Now()).ExecX(t.Context())
 
-	r := doctor.Run(context.Background(), in)
+	r := doctor.Run(t.Context(), in)
 
 	for _, c := range r.Checks {
 		assert.NotEqual(t, "dkim mail.acme.com", c.Name)

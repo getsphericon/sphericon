@@ -1,7 +1,6 @@
 package outboundmessages_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -18,7 +17,7 @@ import (
 // feed can name the email an Event is about after the template has changed or gone.
 func TestASentEmailKeepsItsRenderedSubject(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
 	res, err := newModule(env, time.Now).Send(ctx, s, outboundmessages.Transactional(outboundmessages.TransactionalMessage{
@@ -38,7 +37,7 @@ func TestASentEmailKeepsItsRenderedSubject(t *testing.T) {
 // it, not the template of the Broadcast or the step.
 func TestBroadcastAndAutomationSendsKeepTheirRenderedSubject(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
 	rec := env.DB.BroadcastRecipient.GetX(ctx, fixtures.BroadcastRecipientParkedAliceID)

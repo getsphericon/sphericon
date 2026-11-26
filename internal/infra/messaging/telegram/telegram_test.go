@@ -1,7 +1,6 @@
 package telegram_test
 
 import (
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -27,14 +26,14 @@ func unreachableBot(t *testing.T) *telegram.Bot {
 func TestConnectionFailureNeverExposesTheToken(t *testing.T) {
 	b := unreachableBot(t)
 
-	_, err := b.GetMe(context.Background())
+	_, err := b.GetMe(t.Context())
 	require.Error(t, err)
 	require.NotContains(t, err.Error(), token)
 	require.NotContains(t, err.Error(), "123456789:")
 
-	_, err = b.SendMessage(context.Background(), messaging.TelegramMessage{ChatID: "42", Text: "hi"})
+	_, err = b.SendMessage(t.Context(), messaging.TelegramMessage{ChatID: "42", Text: "hi"})
 	require.Error(t, err)
 	require.NotContains(t, err.Error(), token, err.Error())
 
-	require.NotContains(t, b.DeleteWebhook(context.Background()).Error(), token)
+	require.NotContains(t, b.DeleteWebhook(t.Context()).Error(), token)
 }

@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -14,7 +13,7 @@ import (
 // fuzzing the contract, mise run check:contract).
 func TestExternalBlankNamesAreRefusedWith422(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.ExternalScoped(t, apitokens.ScopeSegmentsWrite, apitokens.ScopeBroadcastsWrite)
 	const def = `{"kind":"group","combinator":"and","entries":[]}`
 

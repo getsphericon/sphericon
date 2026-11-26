@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -18,7 +17,7 @@ import (
 func TestSiteTemplateUpdateOnAStaleRevisionIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	params := siteapi.SiteTemplatesUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.TemplateWelcomeID)}
 	read, err := c.SiteTemplatesGet(ctx, siteapi.SiteTemplatesGetParams{WorkspaceId: fixtures.AcmePublicID, ID: params.ID})
 	require.NoError(t, err)
@@ -39,7 +38,7 @@ func TestSiteTemplateUpdateOnAStaleRevisionIsRefused(t *testing.T) {
 func TestSiteTemplateUpdateWithoutARevisionIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActorVia(t, fixtures.OwnerJohnEmail, testhelper.DropField("revision"))
-	ctx := context.Background()
+	ctx := t.Context()
 	before := env.DB.EmailTemplate.GetX(ctx, fixtures.TemplateWelcomeID)
 
 	_, err := c.SiteTemplatesUpdate(ctx, &siteapi.UpdateTemplateInput{Revision: siteapi.Revision(before.Revision), Subject: siteapi.NewOptString("Blind")},

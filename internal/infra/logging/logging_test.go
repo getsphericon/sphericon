@@ -2,7 +2,6 @@ package logging_test
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"log/slog"
 	"testing"
@@ -39,7 +38,7 @@ func lines(t *testing.T, buf *bytes.Buffer) []map[string]any {
 // the context holds, also under a logger that added its own attributes and a group.
 func TestALineLoggedWithAContextCarriesItsRequestAndCorrelationIDs(t *testing.T) {
 	buf := installed(t)
-	ctx := logging.WithCorrelationID(logging.WithRequestID(context.Background(), "01JREQUEST"), "01JCHAIN")
+	ctx := logging.WithCorrelationID(logging.WithRequestID(t.Context(), "01JREQUEST"), "01JCHAIN")
 
 	slog.InfoContext(ctx, "handled")
 	slog.Default().With("worker", "mailer").WithGroup("job").InfoContext(ctx, "sent", "attempt", 2)
@@ -58,8 +57,8 @@ func TestALineLoggedWithAContextCarriesItsRequestAndCorrelationIDs(t *testing.T)
 func TestALineLoggedWithoutIDsCarriesNone(t *testing.T) {
 	buf := installed(t)
 
-	slog.InfoContext(context.Background(), "alone")
-	slog.InfoContext(logging.WithRequestID(context.Background(), ""), "empty")
+	slog.InfoContext(t.Context(), "alone")
+	slog.InfoContext(logging.WithRequestID(t.Context(), ""), "empty")
 
 	got := lines(t, buf)
 	require.Len(t, got, 2)

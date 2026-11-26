@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"errors"
 	"io"
 	"net/http"
@@ -24,7 +23,7 @@ import (
 func TestSiteSegmentsPreviewCountsMatchingActiveContacts(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.DunderOwnerDwightEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// Dunder holds one contact (DunderPreviewTarget) with the distinctive custom field.
 
@@ -48,7 +47,7 @@ func previewOne(t *testing.T, c *siteapi.Client, leaf string) *siteapi.SitePrevi
 func tryPreviewOne(t *testing.T, c *siteapi.Client, leaf string) (*siteapi.SitePreviewSegmentResult, error) {
 	t.Helper()
 	def := `{"kind":"group","combinator":"and","entries":[` + leaf + `]}`
-	return c.SiteSegmentsPreview(context.Background(), &siteapi.SitePreviewSegmentInput{
+	return c.SiteSegmentsPreview(t.Context(), &siteapi.SitePreviewSegmentInput{
 		Condition: siteapi.NewOptSegmentConditionInput(testhelper.ConditionInput[siteapi.SegmentConditionInput](t, def)),
 	}, siteapi.SiteSegmentsPreviewParams{WorkspaceId: fixtures.DunderPublicID})
 }
@@ -84,7 +83,7 @@ func TestSiteSegmentsPreviewRefusesAnEventCountOutOfRange(t *testing.T) {
 func TestSiteSegmentsStoreAnEventCount(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	const def = `{"kind":"group","combinator":"and","entries":[{"kind":"event","action":"pricing_viewed","operator":"atLeast","times":2,"withinDays":7}]}`
 	sent := testhelper.ConditionInput[siteapi.SegmentConditionInput](t, def)
 
@@ -148,7 +147,7 @@ func refusedWith(err error, status int) bool {
 func TestSiteCustomFieldsListTheTestsAConditionTakes(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.DunderOwnerDwightEmail)
-	listed, err := c.SiteCustomFieldsList(context.Background(), siteapi.SiteCustomFieldsListParams{WorkspaceId: fixtures.DunderPublicID})
+	listed, err := c.SiteCustomFieldsList(t.Context(), siteapi.SiteCustomFieldsListParams{WorkspaceId: fixtures.DunderPublicID})
 	require.NoError(t, err)
 	seats, found := lo.Find(listed.Items, func(f siteapi.SiteCustomFieldResource) bool { return f.Key == "seats" })
 	require.True(t, found)
@@ -200,7 +199,7 @@ func everyTest() []typedTest {
 func TestSiteSegmentsStoreNumberAndMomentTests(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.DunderOwnerDwightEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	const def = `{"kind":"group","combinator":"and","entries":[` +
 		`{"kind":"customField","key":"seats","test":{"kind":"number","operator":"lte","value":2.5}},` +
 		`{"kind":"customField","key":"renews_at","test":{"kind":"moment","operator":"after","at":"2026-01-02T03:04:05Z"}},` +
@@ -220,7 +219,7 @@ func TestSiteSegmentsStoreNumberAndMomentTests(t *testing.T) {
 func TestSiteSegmentsPreviewRejectsInvalidDefinition(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := c.SiteSegmentsPreview(ctx, &siteapi.SitePreviewSegmentInput{
 		Condition: siteapi.NewOptSegmentConditionInput(testhelper.ConditionInput[siteapi.SegmentConditionInput](t, `{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":"nope","test":{"kind":"text","operator":"eq","value":"x"}}]}`)),
@@ -231,7 +230,7 @@ func TestSiteSegmentsPreviewRejectsInvalidDefinition(t *testing.T) {
 func TestSiteSegmentsCreateRejectsInvalidRuleDefinition(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := c.SiteSegmentsCreate(ctx, &siteapi.CreateSegmentInput{
 		Name:      "Bad rule",
@@ -243,7 +242,7 @@ func TestSiteSegmentsCreateRejectsInvalidRuleDefinition(t *testing.T) {
 func TestSiteSegmentsCreateAndUpdateShareValidation(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	bad := testhelper.ConditionInput[siteapi.SegmentConditionInput](t, `{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":"nope","test":{"kind":"text","operator":"eq","value":"x"}}]}`)
 
 	// Create rejects a bad definition.
@@ -276,7 +275,7 @@ func (r rawBody) Do(req *http.Request) (*http.Response, error) {
 // key keeps the stored Condition.
 func TestSiteSegmentsUpdateContractRejectsNullCondition(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	params := siteapi.SiteSegmentsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.SegmentActiveID)}
 	reader := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	stored, err := reader.SiteSegmentsGet(ctx, siteapi.SiteSegmentsGetParams(params))
@@ -303,7 +302,7 @@ func TestSiteSegmentsPreviewCountsTheRecipientsOfATelegramBroadcast(t *testing.T
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.DuffOwnerDanEmail)
 
-	res, err := c.SiteSegmentsPreview(context.Background(), &siteapi.SitePreviewSegmentInput{
+	res, err := c.SiteSegmentsPreview(t.Context(), &siteapi.SitePreviewSegmentInput{
 		Channel:       siteapi.NewOptBroadcastChannel(siteapi.BroadcastChannelTelegram),
 		IntegrationId: siteapi.NewOptNilEntityId(idStr(fixtures.IntegrationDuffTelegramID)),
 	}, siteapi.SiteSegmentsPreviewParams{WorkspaceId: fixtures.DuffPublicID})

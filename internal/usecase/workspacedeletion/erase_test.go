@@ -42,7 +42,7 @@ func runErase(t *testing.T, env *testhelper.TestEnv) {
 	t.Helper()
 	clock := func() time.Time { return now }
 	m := workspacedeletion.New(env.DB, env.Bus, workspaces.New(env.DB, env.Bus, clock), testhelper.Module[*memberships.Module](env), clock)
-	_, err := m.EraseDue(context.Background())
+	_, err := m.EraseDue(t.Context())
 	require.NoError(t, err)
 }
 

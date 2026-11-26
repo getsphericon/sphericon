@@ -1,7 +1,6 @@
 package rules_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -19,7 +18,7 @@ func TestAnEnrollActionNeedsAnAutomationOfTheWorkspace(t *testing.T) {
 	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 	s := env.DB.Scoped(fixtures.AcmeID)
 	create := func(a ruleaction.Action) error {
-		_, err := m.Create(context.Background(), s, rules.CreateInput{Name: "Enroller", TriggerEvents: []string{"x"}, Actions: []ruleaction.Action{a}})
+		_, err := m.Create(t.Context(), s, rules.CreateInput{Name: "Enroller", TriggerEvents: []string{"x"}, Actions: []ruleaction.Action{a}})
 		return err
 	}
 

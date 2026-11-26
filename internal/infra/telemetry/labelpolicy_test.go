@@ -43,7 +43,8 @@ var forbiddenLabel = regexp.MustCompile(`(?i)workspace|contact|email|recipient`)
 // domain event's job among them (its envelope carrying a Workspace id and a Contact email).
 // Any tenant-bearing label or label value would show up here.
 func TestMetricsExpositionCarriesNoTenantLabels(t *testing.T) {
-	ctx := context.Background()
+	// The runtimes this test starts are stopped by its cleanups, after t.Context() is done.
+	ctx := context.WithoutCancel(t.Context())
 
 	// Global providers must be installed before the instrumented components are built.
 	testhelper.InstallOtel(t, func(ctx context.Context) (func(context.Context) error, error) {
@@ -51,9 +52,9 @@ func TestMetricsExpositionCarriesNoTenantLabels(t *testing.T) {
 	})
 
 	srv := telemetry.NewMetricsServer("127.0.0.1:0")
-	require.NoError(t, srv.Listen(t.Context()))
+	require.NoError(t, srv.Listen(ctx))
 	go func() { cleanup.Served("srv", srv.Serve()) }()
-	t.Cleanup(func() { cleanup.Report("shut srv down", srv.Shutdown(context.Background())) })
+	t.Cleanup(func() { cleanup.Report("shut srv down", srv.Shutdown(context.WithoutCancel(t.Context()))) })
 
 	env := testhelper.Setup(t)
 	// Loaded after Setup: it points SPHERICON_DATABASE_URL at this process's database, where river's
@@ -90,7 +91,8 @@ func TestMetricsExpositionCarriesNoTenantLabels(t *testing.T) {
 // runJob runs a real river runtime and waits for a job to be worked.
 func runJob(t *testing.T, env *testhelper.TestEnv, cfg *config.Config, srvAddr, contactEmail string) {
 	t.Helper()
-	ctx := context.Background()
+	// The job client is stopped, and its queues purged, by cleanups that run after t.Context() is done.
+	ctx := context.WithoutCancel(t.Context())
 	pool, err := db.OpenRiverDB(cfg.DatabaseURL, cfg.DBPool)
 	require.NoError(t, err)
 	t.Cleanup(func() { cleanup.Close(pool, "pool") })
@@ -106,13 +108,13 @@ func runJob(t *testing.T, env *testhelper.TestEnv, cfg *config.Config, srvAddr, 
 	require.NoError(t, err)
 	admin := testhelper.RiverClientOn(t, pool)
 	purge := func() {
-		_, err := admin.JobDeleteMany(context.Background(), river.NewJobDeleteManyParams().Queues(river.QueueDefault, broadcasts.Queue, jobs.QueueWebhooks, events.QueueEvents))
+		_, err := admin.JobDeleteMany(ctx, river.NewJobDeleteManyParams().Queues(river.QueueDefault, broadcasts.Queue, jobs.QueueWebhooks, events.QueueEvents))
 		require.NoError(t, err)
 	}
 	purge()
 	t.Cleanup(purge)
 	require.NoError(t, client.Start(ctx))
-	t.Cleanup(func() { cleanup.Report("stop the job client", client.Stop(context.Background())) })
+	t.Cleanup(func() { cleanup.Report("stop the job client", client.Stop(context.WithoutCancel(t.Context()))) })
 
 	inserter, err := jobs.NewInserter(pool)
 	require.NoError(t, err)

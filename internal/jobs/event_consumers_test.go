@@ -103,7 +103,7 @@ func (chainArgs) Kind() string { return "event_chain_test" }
 // correlation id: Publish queues a consumer's job while handling the event it publishes, so the
 // job's metadata carries that chain to the job's work.
 func TestAnEventPublishedByAnEventJobIsCausedByTheHandledEvent(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	env := testhelper.Setup(t, testhelper.Committed())
 	sqlDB, bus := env.SQLDB, env.Bus
 	bus.UseConsumers(events.Consumer{
@@ -185,7 +185,7 @@ func (fixedCurrency) AdoptReportingCurrency(context.Context, *ent.Scoped, string
 // other does, whichever runs first: the refund either finds the Order or is held until the Order
 // Completed applies it. One transaction at a time reads a Workspace's order Events.
 func TestOrderJobsWorkedConcurrentlyLeaveTheOrderAsWorkedInTurn(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	env := testhelper.Setup(t, testhelper.Committed())
 	sqlDB, client, bus := env.SQLDB, env.DB, env.Bus
 	// test writes: the Workspace's Reporting currency, so no Order Completed adopts one.

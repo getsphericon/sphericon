@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -32,7 +31,7 @@ const pricingLink = `,{"kind":"property","key":"url","test":{"kind":"text","oper
 func createDunderSegment(t *testing.T, c *siteapi.Client, name, leaf string) (*siteapi.SiteSegmentResource, error) {
 	t.Helper()
 	def := `{"kind":"group","combinator":"and","entries":[` + leaf + `]}`
-	return c.SiteSegmentsCreate(context.Background(), &siteapi.CreateSegmentInput{
+	return c.SiteSegmentsCreate(t.Context(), &siteapi.CreateSegmentInput{
 		Name:      siteapi.Name(name),
 		Condition: testhelper.ConditionInput[siteapi.SegmentConditionInput](t, def),
 	}, siteapi.SiteSegmentsCreateParams{WorkspaceId: fixtures.DunderPublicID})
@@ -41,7 +40,7 @@ func createDunderSegment(t *testing.T, c *siteapi.Client, name, leaf string) (*s
 // dunderMembers is the emails of the Contacts a stored Dunder Segment matches.
 func dunderMembers(t *testing.T, c *siteapi.Client, seg *siteapi.SiteSegmentResource) []string {
 	t.Helper()
-	page, err := c.SiteSegmentContactsList(context.Background(), siteapi.SiteSegmentContactsListParams{
+	page, err := c.SiteSegmentContactsList(t.Context(), siteapi.SiteSegmentContactsListParams{
 		WorkspaceId: fixtures.DunderPublicID, SegmentId: seg.ID,
 	})
 	require.NoError(t, err)
@@ -82,7 +81,7 @@ func TestSiteSegmentCountsOnlyTheEventsWhosePropertiesPass(t *testing.T) {
 func TestSiteSegmentNamesAnArchivedBroadcast(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.DunderOwnerDwightEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	named, err := createDunderSegment(t, c, "Clicked the promo", clickedIn(fixtures.BroadcastDunderPromoID, pricingLink))
 	require.NoError(t, err)
@@ -124,7 +123,7 @@ func TestSiteTagDeleteRefusedWhileAnEventFilterNamesIt(t *testing.T) {
 		`{"kind":"group","combinator":"or","entries":[{"kind":"event","action":"contact.tagged","operator":"atLeast","times":1,"filter":{"kind":"group","combinator":"and","entries":[{"kind":"property","key":"tag","test":{"kind":"text","operator":"eq","value":"trial"}}]}}]}`)
 	require.NoError(t, err)
 
-	deleteErr := c.SiteTagsDelete(context.Background(), siteapi.SiteTagsDeleteParams{WorkspaceId: fixtures.DunderPublicID, ID: idStr(fixtures.TagDunderTrialID)})
+	deleteErr := c.SiteTagsDelete(t.Context(), siteapi.SiteTagsDeleteParams{WorkspaceId: fixtures.DunderPublicID, ID: idStr(fixtures.TagDunderTrialID)})
 
 	refused := testhelper.SiteRefusal(t, deleteErr, http.StatusConflict)
 	assert.Equal(t, map[siteapi.UsedByKind][]string{siteapi.UsedByKindSegment: {"Became a trial"}}, usedBy(refused))
@@ -167,7 +166,7 @@ func TestSiteSegmentPreviewReportsTheRetentionHorizon(t *testing.T) {
 func TestSiteRulesAndAutomationsNameWhatSentAMessage(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.DunderOwnerDwightEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	rule := func(leaf string) error {
 		_, err := c.SiteRulesCreate(ctx, &siteapi.CreateRuleInput{
 			Name: "Clickers", TriggerEvents: []string{"signed_up"},

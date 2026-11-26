@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -18,7 +17,7 @@ import (
 // operation on one, reads included, needs an Owner or an Admin.
 func TestSiteWebhooksNeedAnOwnerOrAdmin(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
 	id := siteapi.EntityId(fixtures.WebhookCodebasicsID)

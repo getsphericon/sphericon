@@ -1,7 +1,6 @@
 package condition_test
 
 import (
-	"context"
 	"encoding/json"
 	"math"
 	"testing"
@@ -111,7 +110,7 @@ func TestDateLeafReadsAValueWithoutAnOffsetInTheWorkspaceTimeZone(t *testing.T) 
 	eve := time.Date(2025, time.December, 31, 23, 0, 0, 0, time.UTC)
 	beforeEve := segmentOf(customField(seenAt, moment("before", eve)))
 	utc := emailsIn(t, env, fixtures.WonkaID, beforeEve)
-	err := env.DB.Workspace.UpdateOneID(fixtures.WonkaID).SetTimezone("Asia/Tokyo").Exec(context.Background())
+	err := env.DB.Workspace.UpdateOneID(fixtures.WonkaID).SetTimezone("Asia/Tokyo").Exec(t.Context())
 	require.NoError(t, err)
 
 	tokyo := emailsIn(t, env, fixtures.WonkaID, beforeEve)
@@ -162,7 +161,7 @@ func TestCompileRefusesANumberTestThatDoesNotFit(t *testing.T) {
 		"a datetime field": {seenAt, `of type datetime takes no number test "gt"`},
 		"an unknown field": {"nobody", "unknown custom field"},
 	} {
-		_, err := condition.New(time.Now).Compile(context.Background(), env.DB.Scoped(fixtures.WonkaID), segmentOf(customField(tc.key, number("gt", 1))))
+		_, err := condition.New(time.Now).Compile(t.Context(), env.DB.Scoped(fixtures.WonkaID), segmentOf(customField(tc.key, number("gt", 1))))
 		require.Error(t, err, name)
 		assert.Contains(t, err.Error(), tc.msg, name)
 		assert.Contains(t, err.Error(), "entry 0", "%s: the error names the offending entry", name)
@@ -200,7 +199,7 @@ func TestCompileRefusesAMomentTestThatDoesNotFit(t *testing.T) {
 		"a window of no days":       {customField(seenAt, withinLast(0)), "days must be at least 1"},
 		"a window of negative days": {customField(seenAt, withinLast(-1)), "days must be at least 1"},
 	} {
-		_, err := condition.New(time.Now).Compile(context.Background(), env.DB.Scoped(fixtures.WonkaID), segmentOf(tc.leaf))
+		_, err := condition.New(time.Now).Compile(t.Context(), env.DB.Scoped(fixtures.WonkaID), segmentOf(tc.leaf))
 		require.Error(t, err, name)
 		assert.Contains(t, err.Error(), tc.msg, name)
 		assert.Contains(t, err.Error(), "entry 0", "%s: the error names the offending entry", name)
@@ -222,7 +221,7 @@ func TestCompileRefusesATestOperatorThatDoesNotFitTheCustomFieldType(t *testing.
 		"beginsWith on a string": {customField(fixtures.CustomFieldWonkaPlanKey, text("beginsWith", "p")), `takes no text test "beginsWith"`},
 		"not set on a number":    {customField(score, presence("notSet")), `takes no presence test "notSet"`},
 	} {
-		_, err := condition.New(time.Now).Compile(context.Background(), env.DB.Scoped(fixtures.WonkaID), segmentOf(tc.leaf))
+		_, err := condition.New(time.Now).Compile(t.Context(), env.DB.Scoped(fixtures.WonkaID), segmentOf(tc.leaf))
 		require.Error(t, err, name)
 		assert.Contains(t, err.Error(), tc.msg, name)
 	}
@@ -240,7 +239,7 @@ func TestEveryListedTestCompiles(t *testing.T) {
 
 	for typ, key := range keys {
 		for _, test := range listedTests(condition.CustomFieldTests(typ)) {
-			_, err := condition.New(time.Now).Compile(context.Background(), env.DB.Scoped(fixtures.WonkaID), segmentOf(customField(key, test)))
+			_, err := condition.New(time.Now).Compile(t.Context(), env.DB.Scoped(fixtures.WonkaID), segmentOf(customField(key, test)))
 			require.NoError(t, err, "%v on %s", test, typ)
 		}
 	}

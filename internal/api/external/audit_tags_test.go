@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -19,7 +18,7 @@ func TestExternalTagCreateIsAuditedUnderTheToken(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalAnchor(t)
 
-	_, err := c.TagsApply(context.Background(), &externalapi.ApplyTagInput{Name: "api-tag"},
+	_, err := c.TagsApply(t.Context(), &externalapi.ApplyTagInput{Name: "api-tag"},
 		externalapi.TagsApplyParams{ContactId: entityIDString(fixtures.ContactBobID)})
 	require.NoError(t, err)
 
@@ -32,7 +31,7 @@ func TestExternalTagCreateIsAuditedUnderTheToken(t *testing.T) {
 
 	// The owner reads it on /site, attributed to the token.
 	env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)
-	list, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteAuditList(context.Background(), siteapi.SiteAuditListParams{WorkspaceId: fixtures.AcmePublicID})
+	list, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteAuditList(t.Context(), siteapi.SiteAuditListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	page := list
 	require.NotEmpty(t, page.Items)

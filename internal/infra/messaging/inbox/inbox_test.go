@@ -32,7 +32,7 @@ func TestSendKeepsTheMessageWithItsHeadersAndLinksAndConfirmsDelivery(t *testing
 	capturer := &recordingCapturer{}
 	sender := build(t, capturer)
 
-	receipt, err := sender.Send(context.Background(), messaging.EmailMessage{
+	receipt, err := sender.Send(t.Context(), messaging.EmailMessage{
 		From: "news@example.com", FromName: "News", To: "ada@example.com", Subject: "Hello",
 		HTML:               `<p><a href="https://example.com/a">a</a> <a href="https://example.com/b">b</a> <a href="https://example.com/a">again</a></p>`,
 		Text:               "Hello",
@@ -60,7 +60,7 @@ func TestSendKeepsANonASCIISubjectReadable(t *testing.T) {
 	// Long enough to go out as several encoded-words on folded lines.
 	subject := "Привет, Ада! Ваш заказ №42 собран и уже едет к вам — следите за посылкой"
 
-	_, err := sender.Send(context.Background(), messaging.EmailMessage{
+	_, err := sender.Send(t.Context(), messaging.EmailMessage{
 		From: "news@example.com", To: "ada@example.com", Subject: subject, Text: "x",
 	})
 	require.NoError(t, err)
@@ -77,7 +77,7 @@ func TestTheInboxDeliversNowhereOutsideAndReportsItsOwnCeiling(t *testing.T) {
 	assert.False(t, messaging.DeliversOutside(sender))
 	reader, ok := messaging.AsQuotaReader(sender)
 	require.True(t, ok)
-	quota, err := reader.SendQuota(context.Background())
+	quota, err := reader.SendQuota(t.Context())
 	require.NoError(t, err)
 	require.NotNil(t, quota.PerDay)
 	assert.Equal(t, inbox.PerDay, *quota.PerDay)
@@ -87,7 +87,7 @@ func TestTheInboxDeliversNowhereOutsideAndReportsItsOwnCeiling(t *testing.T) {
 func TestSendWithoutAPlaceToKeepTheMessageFails(t *testing.T) {
 	sender := build(t, nil)
 
-	_, err := sender.Send(context.Background(), messaging.EmailMessage{From: "a@example.com", To: "b@example.com", Subject: "x", Text: "x"})
+	_, err := sender.Send(t.Context(), messaging.EmailMessage{From: "a@example.com", To: "b@example.com", Subject: "x", Text: "x"})
 
 	require.ErrorIs(t, err, inbox.ErrNoCapturer)
 }

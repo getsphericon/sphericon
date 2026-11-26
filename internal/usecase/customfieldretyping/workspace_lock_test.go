@@ -1,7 +1,6 @@
 package customfieldretyping_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -36,7 +35,7 @@ type retypeRace struct {
 
 func newRetypeRace(t *testing.T) *retypeRace {
 	t.Helper()
-	ctx := context.Background()
+	ctx := t.Context()
 	env := testhelper.Setup(t, testhelper.Committed())
 	s := env.DB.Scoped(fixtures.DuffID)
 	save, ruleset := testhelper.Module[*segmentsaving.UseCase](env), testhelper.Module[*rules.Module](env)
@@ -74,7 +73,7 @@ func (r *retypeRace) fieldType(t *testing.T) customfield.Type {
 
 func (r *retypeRace) field(t *testing.T) *ent.CustomField {
 	t.Helper()
-	field, err := testhelper.Module[*contacts.Module](r.env).CustomField(context.Background(), r.scope, fixtures.CustomFieldDuffHasItID)
+	field, err := testhelper.Module[*contacts.Module](r.env).CustomField(t.Context(), r.scope, fixtures.CustomFieldDuffHasItID)
 	require.NoError(t, err)
 	return field
 }

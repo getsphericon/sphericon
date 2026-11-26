@@ -1,7 +1,6 @@
 package visitoridentification_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -15,7 +14,7 @@ import (
 
 func TestAContactCreatedByIdentifyCarriesTheTrackerSource(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	err := testhelper.Module[*visitoridentification.UseCase](env).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), visitoridentification.Input{VisitorID: "dev-source", Email: new("source-tracker@example.com")})
 	require.NoError(t, err)
@@ -27,7 +26,7 @@ func TestAContactCreatedByIdentifyCarriesTheTrackerSource(t *testing.T) {
 
 func TestIdentifyOfAnExistingContactLeavesItsSource(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	err := testhelper.Module[*visitoridentification.UseCase](env).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), visitoridentification.Input{VisitorID: "dev-alice", Email: new(fixtures.ContactAliceEmail)})
 	require.NoError(t, err)

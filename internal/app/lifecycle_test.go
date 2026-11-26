@@ -26,7 +26,7 @@ func answers(t *testing.T, url string) bool {
 
 func TestStartServesAndCloseStopsEverything(t *testing.T) {
 	a, base := lifecycleApp(t)
-	require.NoError(t, a.Start(context.Background()))
+	require.NoError(t, a.Start(context.WithoutCancel(t.Context())))
 
 	require.Eventually(t, func() bool {
 		code, _, err := testhelper.TryHTTPGet(t.Context(), base+"/healthz")
@@ -44,7 +44,7 @@ func TestStartServesEveryAPISurfaceOnACallerProvidedListener(t *testing.T) {
 	a, base := lifecycleApp(t)
 	assert.Equal(t, base, a.Config.AppURL, "the public URL is derived from the listener")
 
-	require.NoError(t, a.Start(context.Background()))
+	require.NoError(t, a.Start(context.WithoutCancel(t.Context())))
 	t.Cleanup(func() { cleanup.Report("close the app", a.Close(closeCtx(t))) })
 
 	for _, path := range []string{"/healthz", "/api/auth/me", "/site/workspaces", "/collect/events"} {
@@ -61,7 +61,7 @@ func TestStartServesMetricsAndCloseStopsThem(t *testing.T) {
 	a, err := app.New("test", app.WithListener(listen(t)))
 	require.NoError(t, err)
 	require.NotNil(t, a.Metrics)
-	require.NoError(t, a.Start(context.Background()))
+	require.NoError(t, a.Start(context.WithoutCancel(t.Context())))
 	url := "http://" + a.Metrics.Addr() + "/metrics"
 
 	require.Eventually(t, func() bool { return answers(t, url) }, 5*time.Second, 20*time.Millisecond,
@@ -73,23 +73,23 @@ func TestStartServesMetricsAndCloseStopsThem(t *testing.T) {
 
 func TestCloseIsIdempotent(t *testing.T) {
 	a, _ := lifecycleApp(t)
-	require.NoError(t, a.Start(context.Background()))
+	require.NoError(t, a.Start(context.WithoutCancel(t.Context())))
 	require.NoError(t, a.Close(closeCtx(t)))
 	assert.NoError(t, a.Close(closeCtx(t)))
 }
 
 func TestStartTwiceIsRefused(t *testing.T) {
 	a, _ := lifecycleApp(t)
-	require.NoError(t, a.Start(context.Background()))
+	require.NoError(t, a.Start(context.WithoutCancel(t.Context())))
 
-	require.ErrorIs(t, a.Start(context.Background()), app.ErrAlreadyStarted)
+	require.ErrorIs(t, a.Start(t.Context()), app.ErrAlreadyStarted)
 
 	require.NoError(t, a.Close(closeCtx(t)))
 }
 
 func TestCloseStopsAnAppWhoseStartContextWasCancelled(t *testing.T) {
 	a, _ := lifecycleApp(t)
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	require.NoError(t, a.Start(ctx))
 	cancel()
 	require.NoError(t, a.Close(closeCtx(t)))
@@ -104,9 +104,9 @@ func TestStartUnwindsWhenTheMetricsAddressIsTaken(t *testing.T) {
 	a, err := app.New("test", app.WithListener(ln))
 	require.NoError(t, err)
 
-	require.Error(t, a.Start(context.Background()))
+	require.Error(t, a.Start(t.Context()))
 
 	assert.False(t, answers(t, "http://"+ln.Addr().String()+"/healthz"), "nothing serves after a failed Start")
-	assert.NotNil(t, a.Shutdown(context.Background()), "the container is already shut down")
+	assert.NotNil(t, a.Shutdown(t.Context()), "the container is already shut down")
 	assert.NoError(t, a.Close(closeCtx(t)), "Close after a failed Start is harmless")
 }

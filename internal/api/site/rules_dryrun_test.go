@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -16,7 +15,7 @@ import (
 func TestSiteRulesDryRunShowsTheActionsAndWritesNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	firings := env.DB.RuleFiring.Query().CountX(ctx)
 	tags := env.DB.ContactTag.Query().CountX(ctx)
 	params := siteapi.SiteRulesDryRunParams{WorkspaceId: siteapi.WorkspaceId(fixtures.AcmePublicID), ID: fixtures.RuleTagClickedID}
@@ -36,7 +35,7 @@ func TestSiteRulesDryRunShowsTheActionsAndWritesNothing(t *testing.T) {
 func TestSiteRulesDryRunSaysWhyItWouldNotFire(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	params := siteapi.SiteRulesDryRunParams{WorkspaceId: siteapi.WorkspaceId(fixtures.AcmePublicID), ID: fixtures.RuleVipOnlyID}
 
 	out, err := c.SiteRulesDryRun(ctx, &siteapi.DryRunRuleInput{EventId: fixtures.EventRuleVipLiamID}, params)
@@ -52,7 +51,7 @@ func TestSiteRulesDryRunRefusesAnotherWorkspacesEvent(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	params := siteapi.SiteRulesDryRunParams{WorkspaceId: siteapi.WorkspaceId(fixtures.AcmePublicID), ID: fixtures.RuleTagClickedID}
 
-	_, err := c.SiteRulesDryRun(context.Background(), &siteapi.DryRunRuleInput{EventId: fixtures.EventGlobexID}, params)
+	_, err := c.SiteRulesDryRun(t.Context(), &siteapi.DryRunRuleInput{EventId: fixtures.EventGlobexID}, params)
 
 	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 }

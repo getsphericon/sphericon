@@ -1,7 +1,6 @@
 package analyticsreport_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -17,7 +16,7 @@ import (
 func subscribedAt(t *testing.T, env *testhelper.TestEnv, ws int64, w analyticsreport.Window, now time.Time) *analyticsreport.SubscribedPeople {
 	t.Helper()
 	m := analyticsreport.New(linkclick.New(), func() time.Time { return now }, 0)
-	report, err := m.SubscribedPeople(context.Background(), env.DB.Scoped(ws), w)
+	report, err := m.SubscribedPeople(t.Context(), env.DB.Scoped(ws), w)
 	require.NoError(t, err)
 	return report
 }
@@ -63,7 +62,7 @@ func TestAZoneChangeMovesSubscriptionsToOtherDays(t *testing.T) {
 	now := time.Date(2026, 3, 10, 12, 0, 0, 0, time.UTC)
 	inNewYork := subscribedByDay(subscribedAt(t, env, fixtures.GothamID, analyticsreport.Window7Days, now))
 
-	require.NoError(t, env.DB.Workspace.UpdateOneID(fixtures.GothamID).SetTimezone("UTC").Exec(context.Background()))
+	require.NoError(t, env.DB.Workspace.UpdateOneID(fixtures.GothamID).SetTimezone("UTC").Exec(t.Context()))
 	byDay := subscribedByDay(subscribedAt(t, env, fixtures.GothamID, analyticsreport.Window7Days, now))
 
 	assert.Equal(t, 1, inNewYork["2026-03-07"].Subscribed, "23:59 EST on the 7th")
@@ -86,7 +85,7 @@ func TestAWorkspaceWithoutSubscriptionChangesHasAZeroFilledSeries(t *testing.T) 
 // the dashboard's Active figure whatever the series says.
 func TestTheCurrentNumberIsTheContactsThatAreNotGloballyOptedOut(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.TyrellID)
 
 	overview, err := analyticsreport.New(linkclick.New(), time.Now, 0).Overview(ctx, s, analyticsreport.Window7Days)

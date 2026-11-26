@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 	"time"
@@ -34,7 +33,7 @@ func usedBy(refused siteapi.ProblemDetails) map[siteapi.UsedByKind][]string {
 func TestSiteTagDeleteRefusedWhileARuleOrAStepNamesIt(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	ws := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
 	err := c.SiteTagsDelete(ctx, siteapi.SiteTagsDeleteParams{WorkspaceId: ws, ID: idStr(fixtures.TagNewsletterID)})
@@ -57,7 +56,7 @@ func TestSiteTagDeleteRefusedWhileARuleOrAStepNamesIt(t *testing.T) {
 func TestSiteTagDeleteUnusedTag(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	err := c.SiteTagsDelete(ctx, siteapi.SiteTagsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.TagUnusedID)})
 	require.NoError(t, err)
@@ -72,7 +71,7 @@ func TestSiteTagDeleteUnusedTag(t *testing.T) {
 func TestSiteDefaultIntegrationArchiveRefusedWhileLiveWorkUsesIt(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.MeridianOwnerMonaEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	meridian := env.DB.Scoped(fixtures.MeridianID)
 	del := func() error {
 		return deleteIntegrationOf(t, c, fixtures.MeridianPublicID, fixtures.IntegrationMeridianDefaultID)
@@ -105,7 +104,7 @@ func sendMeridianBroadcasts(t *testing.T, s *ent.Scoped) {
 func TestSiteIntegrationArchiveNamedByALiveBroadcast(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.MeridianOwnerMonaEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	meridian := env.DB.Scoped(fixtures.MeridianID)
 
 	refused := testhelper.SiteRefusal(t, deleteIntegrationOf(t, c, fixtures.MeridianPublicID, fixtures.IntegrationMeridianNamedID), http.StatusConflict)
@@ -134,7 +133,7 @@ func TestSiteSendingDomainDeleteRefusedThroughAFromAddress(t *testing.T) {
 func TestSiteSendingDomainDeleteRefusedThroughTheConfiguredFrom(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.MeridianOwnerMonaEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	meridian := env.DB.Scoped(fixtures.MeridianID)
 	del := func() error {
 		return deleteSendingDomainOf(t, c, fixtures.MeridianPublicID, fixtures.SendingDomainMeridianID)

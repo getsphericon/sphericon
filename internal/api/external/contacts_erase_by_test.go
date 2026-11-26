@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -18,7 +17,7 @@ import (
 // An address names the Contact that holds it; what its Erasure leaves is the use case's.
 func TestExternalContactsEraseByEmailErasesTheContact(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	err := initechClient(t, env, "contacts:erase").ContactsEraseBy(ctx, externalapi.ContactsEraseByParams{
 		Email: externalapi.NewOptEmailAddress(fixtures.ContactErasableEmail),
@@ -32,7 +31,7 @@ func TestExternalContactsEraseByEmailErasesTheContact(t *testing.T) {
 
 func TestExternalContactsEraseByNeedsExactlyOneKnownIdentifier(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := initechClient(t, env, "contacts:erase")
 
 	err := c.ContactsEraseBy(ctx, externalapi.ContactsEraseByParams{})
@@ -63,7 +62,7 @@ func TestExternalContactsEraseByNeedsExactlyOneKnownIdentifier(t *testing.T) {
 // A visitor bound to a Contact erases that Contact, by the same rules as by id.
 func TestExternalContactsEraseByVisitorOfAContactErasesTheContact(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	err := initechClient(t, env, "contacts:erase").ContactsEraseBy(ctx, externalapi.ContactsEraseByParams{
 		VisitorId: externalapi.NewOptString("vis-erasable-laptop"),

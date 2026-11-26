@@ -1,7 +1,6 @@
 package jobs_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -18,12 +17,12 @@ import (
 func pruneCaptured(t *testing.T, env *testhelper.TestEnv, retention time.Duration) {
 	t.Helper()
 	w := jobs.NewPruneCapturedMessagesWorker(testhelper.Module[*capturedmessages.Module](env), retention)
-	require.NoError(t, w.Work(context.Background(), job(jobs.PruneCapturedMessagesArgs{})))
+	require.NoError(t, w.Work(t.Context(), job(jobs.PruneCapturedMessagesArgs{})))
 }
 
 func capturedExists(t *testing.T, env *testhelper.TestEnv, id int64) bool {
 	t.Helper()
-	return env.DB.CapturedMessage.Query().Where(capturedmessage.ID(id)).ExistX(context.Background())
+	return env.DB.CapturedMessage.Query().Where(capturedmessage.ID(id)).ExistX(t.Context())
 }
 
 func TestPruneCapturedMessagesDeletesTheExpiredAndKeepsTheRest(t *testing.T) {

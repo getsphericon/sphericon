@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -14,7 +13,7 @@ import (
 
 func TestExternalBrandKitGetReadsTheWorkspacesBrandKit(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := env.ExternalScoped(t, apitokens.ScopeContactsRead).BrandKitGet(ctx)
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden, "templates:read is required")

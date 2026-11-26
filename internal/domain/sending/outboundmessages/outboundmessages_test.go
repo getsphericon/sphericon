@@ -76,7 +76,7 @@ func transactional(key, to string) outboundmessages.Request {
 
 func marketing(t *testing.T, env *testhelper.TestEnv, key string, contactID int64) outboundmessages.Request {
 	t.Helper()
-	c := env.DB.Contact.GetX(context.Background(), contactID)
+	c := env.DB.Contact.GetX(t.Context(), contactID)
 	return outboundmessages.Request{
 		Key:         key,
 		Destination: *c.Email,
@@ -130,7 +130,7 @@ func byKey(t *testing.T, env *testhelper.TestEnv, key string) *ent.OutboundMessa
 	t.Helper()
 	return env.DB.OutboundMessage.Query().
 		Where(outboundmessage.WorkspaceID(fixtures.AcmeID), outboundmessage.IdempotencyKey(key)).
-		OnlyX(context.Background())
+		OnlyX(t.Context())
 }
 
 func sentEvents(t *testing.T, env *testhelper.TestEnv, messageID int64) int {
@@ -140,7 +140,7 @@ func sentEvents(t *testing.T, env *testhelper.TestEnv, messageID int64) int {
 
 func TestTransactionalSendRecordsMessageAndEvent(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	res, err := newModule(env, time.Now).Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:1", "Someone@Example.com"))
 	require.NoError(t, err)
@@ -167,7 +167,7 @@ func TestTransactionalSendRecordsMessageAndEvent(t *testing.T) {
 
 func TestSameKeyReplaysAndSendsOnce(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	m := newModule(env, time.Now)
 
 	first, err := m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:replay", "a@example.com"))
@@ -184,7 +184,7 @@ func TestSameKeyReplaysAndSendsOnce(t *testing.T) {
 
 func TestSuppressedDestinationIsSkippedEvenForTransactional(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	res, err := newModule(env, time.Now).Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:sup", suppressd))
 	require.NoError(t, err)
@@ -200,7 +200,7 @@ func TestSuppressedDestinationIsSkippedEvenForTransactional(t *testing.T) {
 // send time wins, whatever the audience looked like when it was planned.
 func TestUnsubscribedContactIsSkippedForMarketingButNotTransactional(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	m := newModule(env, time.Now)
 
 	res, err := m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), marketing(t, env, "bc:bob", fixtures.ContactBobID))
@@ -216,7 +216,7 @@ func TestUnsubscribedContactIsSkippedForMarketingButNotTransactional(t *testing.
 
 func TestMarketingCarriesFooterAndOneClickHeader(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	res, err := newModule(env, time.Now).Send(ctx, env.DB.Scoped(fixtures.AcmeID), marketing(t, env, "bc:alice", fixtures.ContactAliceID))
 	require.NoError(t, err)
@@ -238,14 +238,14 @@ func TestMarketingWithoutTrackerFailsClosed(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), senders{sender: env.CustomerMail}, nil, env.OutboundModules(env.Bus, time.Now), outboundmessages.Deps{}, outboundmessages.Config{}, time.Now)
 
-	_, err := m.Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), marketing(t, env, "bc:notracker", fixtures.ContactAliceID))
+	_, err := m.Send(t.Context(), env.DB.Scoped(fixtures.AcmeID), marketing(t, env, "bc:notracker", fixtures.ContactAliceID))
 	require.ErrorIs(t, err, outboundmessages.ErrNoTracker)
 	assert.Empty(t, env.CustomerMail.Messages(), "never sent without an unsubscribe link")
 }
 
 func TestRenderErrorIsAPermanentFailureOfThatMessage(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	req := transactional("tx:badliquid", "a@example.com")
 	req = withSubject(req, "{% if %}broken")
@@ -258,7 +258,7 @@ func TestRenderErrorIsAPermanentFailureOfThatMessage(t *testing.T) {
 
 func TestSuspendedWorkspaceIsHeldNotConsumed(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	m := newModule(env, time.Now)
 
 	env.SuspendWorkspace(ctx, fixtures.AcmeID, time.Now())
@@ -280,7 +280,7 @@ func TestSuspendedWorkspaceIsHeldNotConsumed(t *testing.T) {
 // suspension: nothing is consumed, and restoring lets the same Request go out.
 func TestPendingDeletionWorkspaceIsHeldNotConsumed(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	m := newModule(env, time.Now)
 
 	env.DeleteWorkspace(t, fixtures.AcmeID, time.Now())
@@ -316,7 +316,7 @@ func TestUnverifiedFromDomainIsHeld(t *testing.T) {
 
 	req := transactional("tx:unverified", "a@example.com")
 	req = sentFrom(req, "noreply@news.acme.com") // fixture domain id 2: unverified
-	res, err := newModule(env, time.Now).Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), req)
+	res, err := newModule(env, time.Now).Send(t.Context(), env.DB.Scoped(fixtures.AcmeID), req)
 	require.NoError(t, err)
 	assert.Equal(t, outboundmessages.Held, res.Outcome)
 	assert.Equal(t, holdreason.UnverifiedDomain, res.Hold)
@@ -325,7 +325,7 @@ func TestUnverifiedFromDomainIsHeld(t *testing.T) {
 
 func TestDomainLosingVerificationAtSignTimeIsHeldAndFreesTheClaim(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	m := newModule(env, time.Now)
 
 	env.CustomerMail.SetErr(messaging.ErrUnverifiedSendingDomain)
@@ -343,7 +343,7 @@ func TestNoIntegrationIsHeld(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), senders{err: messaging.ErrNoProvider}, messagetoken.New("s", "http://local", time.Now), env.OutboundModules(env.Bus, time.Now), outboundmessages.Deps{}, outboundmessages.Config{}, time.Now)
 
-	res, err := m.Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), transactional("tx:noint", "a@example.com"))
+	res, err := m.Send(t.Context(), env.DB.Scoped(fixtures.AcmeID), transactional("tx:noint", "a@example.com"))
 	require.NoError(t, err)
 	assert.Equal(t, outboundmessages.Held, res.Outcome)
 	assert.Equal(t, holdreason.NoIntegration, res.Hold)
@@ -351,7 +351,7 @@ func TestNoIntegrationIsHeld(t *testing.T) {
 
 func TestStoppedProviderAccountIsHeldUntilItSendsAgain(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	m := newModule(env, time.Now)
 	env.DB.IntegrationProviderState.Update().Where(integrationproviderstate.IntegrationID(fixtures.IntegrationAcmeDefaultID)).
 		SetProviderEnforcement(providers.EnforcementShutdown).ExecX(ctx)
@@ -372,7 +372,7 @@ func TestStoppedProviderAccountIsHeldUntilItSendsAgain(t *testing.T) {
 // Meridian's verified domain.
 func TestProviderOnProbationStillSends(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	req := withEmail(transactional("tx:probation", "a@example.com"), func(c *outboundmessages.EmailContent) {
 		c.FromEmail = "hello@" + fixtures.SendingDomainMeridianDomain
 	})
@@ -384,7 +384,7 @@ func TestProviderOnProbationStillSends(t *testing.T) {
 
 func TestProviderErrorIsRetryableAndReleasesTheClaim(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	m := newModule(env, time.Now)
 
 	env.CustomerMail.SetErr(errors.New("smtp unavailable"))
@@ -403,7 +403,7 @@ func TestProviderErrorIsRetryableAndReleasesTheClaim(t *testing.T) {
 
 func TestLiveClaimBlocksAndStaleClaimIsTakenOver(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	// The fixture stale claim: a pending claim abandoned a day ago (a crashed attempt).
 	const key = "transactional:fixture-stale-claim"
 	req := transactional(key, "lease.demo@codebasics.dev")
@@ -424,7 +424,7 @@ func TestLiveClaimBlocksAndStaleClaimIsTakenOver(t *testing.T) {
 
 func TestConfirmedOptInIsReadInsideTheRule(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetRequireConfirmedOptIn(true).ExecX(ctx)
 
 	res, err := newModule(env, time.Now).Send(ctx, env.DB.Scoped(fixtures.AcmeID), marketing(t, env, "bc:unconfirmed", fixtures.ContactAliceID))
@@ -435,7 +435,7 @@ func TestConfirmedOptInIsReadInsideTheRule(t *testing.T) {
 
 func TestPreflightReportsHoldsWithoutRecording(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	m := newModule(env, time.Now)
 
 	before := env.DB.OutboundMessage.Query().CountX(ctx)
@@ -450,7 +450,7 @@ func TestPreflightReportsHoldsWithoutRecording(t *testing.T) {
 
 func TestMarkFailedOnlyTouchesPendingClaims(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	m := newModule(env, time.Now)
 
 	env.CustomerMail.SetErr(errors.New("down"))
@@ -465,7 +465,7 @@ func TestMarkFailedOnlyTouchesPendingClaims(t *testing.T) {
 
 func TestSendTestSkipsEligibilityAndRecordsNothingButHonorsTheFreeze(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	m := newModule(env, time.Now)
 	before := env.DB.OutboundMessage.Query().CountX(ctx)
 
@@ -518,7 +518,7 @@ func (s *reentrantSender) Send(ctx context.Context, msg messaging.EmailMessage) 
 // happened (a provider call cannot be un-made; the record can be kept consistent).
 func TestSlowAttemptCannotRecordOverATakeover(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	var second outboundmessages.Result
 	var secondErr error
 
@@ -549,7 +549,7 @@ func TestSendRefusesAForeignContactReference(t *testing.T) {
 	req := transactional("tx:foreign-contact", "a@example.com")
 	req.ContactID = fixtures.ContactGlobexID
 
-	_, err := newModule(env, time.Now).Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), req)
+	_, err := newModule(env, time.Now).Send(t.Context(), env.DB.Scoped(fixtures.AcmeID), req)
 	require.ErrorIs(t, err, ent.ErrNotInWorkspace)
-	assert.Zero(t, env.DB.OutboundMessage.Query().Where(outboundmessage.IdempotencyKey("tx:foreign-contact")).CountX(context.Background()))
+	assert.Zero(t, env.DB.OutboundMessage.Query().Where(outboundmessage.IdempotencyKey("tx:foreign-contact")).CountX(t.Context()))
 }

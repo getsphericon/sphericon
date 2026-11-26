@@ -1,7 +1,6 @@
 package removalcheck_test
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"testing"
@@ -38,7 +37,7 @@ func branchOn(t *testing.T, leaf map[string]any) automationstep.Path {
 // only in its draft otherwise, and returns it.
 func branchingOn(t *testing.T, env *testhelper.TestEnv, workspaceID int64, name string, steps automationstep.Path, published bool) *ent.Automation {
 	t.Helper()
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(workspaceID)
 	m := testhelper.Module[*automations.Module](env)
 	a, err := m.Create(ctx, s, automations.CreateInput{Name: name, Trigger: automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: "signup"}}, Steps: &steps})

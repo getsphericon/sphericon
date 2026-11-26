@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -32,7 +31,7 @@ func TestExternalContactsCreateStoresThePhoneInE164(t *testing.T) {
 			env := testhelper.Setup(t)
 			c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 
-			got, err := c.ContactsCreate(context.Background(), &externalapi.CreateContactInput{
+			got, err := c.ContactsCreate(t.Context(), &externalapi.CreateContactInput{
 				Phone:   externalapi.NewOptNilString(tc.phone),
 				Country: tc.country,
 			})
@@ -44,7 +43,7 @@ func TestExternalContactsCreateStoresThePhoneInE164(t *testing.T) {
 
 func TestExternalContactsUpdateReadsALocalPhoneWithTheStoredCountry(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 	id := entityIDString(fixtures.ContactLiamID) // stored with the country US
 
@@ -58,7 +57,7 @@ func TestExternalContactsUpdateReadsALocalPhoneWithTheCountryItSets(t *testing.T
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 
-	got, err := c.ContactsUpdate(context.Background(), &externalapi.UpdateContactInput{Revision: externalapi.Revision(env.ContactRevision(context.Background(), t, int64(entityIDString(fixtures.ContactAliceID)))),
+	got, err := c.ContactsUpdate(t.Context(), &externalapi.UpdateContactInput{Revision: externalapi.Revision(env.ContactRevision(t.Context(), t, int64(entityIDString(fixtures.ContactAliceID)))),
 		Phone:   externalapi.NewOptNilString("8 999 123-45-67"),
 		Country: externalapi.NewOptNilCountryCode("RU"),
 	}, externalapi.ContactsUpdateParams{ID: entityIDString(fixtures.ContactAliceID)})
@@ -77,14 +76,14 @@ func TestExternalContactsRefuseAPhoneThatIsNoNumber(t *testing.T) {
 			env := testhelper.Setup(t)
 			c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 
-			_, err := c.ContactsCreate(context.Background(), &externalapi.CreateContactInput{
+			_, err := c.ContactsCreate(t.Context(), &externalapi.CreateContactInput{
 				Email: externalapi.NewOptNilEmailAddress("bad.phone@example.com"),
 				Phone: externalapi.NewOptNilString(tc.phone),
 			})
 			refused := testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 			assert.Contains(t, refused.Errors.Value, "phone")
 
-			_, err = c.ContactsUpdate(context.Background(), &externalapi.UpdateContactInput{Revision: externalapi.Revision(env.ContactRevision(context.Background(), t, int64(entityIDString(fixtures.ContactAliceID)))),
+			_, err = c.ContactsUpdate(t.Context(), &externalapi.UpdateContactInput{Revision: externalapi.Revision(env.ContactRevision(t.Context(), t, int64(entityIDString(fixtures.ContactAliceID)))),
 				Phone: externalapi.NewOptNilString(tc.phone),
 			}, externalapi.ContactsUpdateParams{ID: entityIDString(fixtures.ContactAliceID)})
 			testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
@@ -95,7 +94,7 @@ func TestExternalContactsRefuseAPhoneThatIsNoNumber(t *testing.T) {
 // An import reports the row whose phone is no number and still writes the others.
 func TestExternalContactsBatchUpsertReportsARowWithABadPhone(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 
 	got, err := c.ContactsBatchUpsert(ctx, &externalapi.UpsertContactsInput{Contacts: []externalapi.UpsertContactInput{
@@ -123,7 +122,7 @@ func TestExternalContactsBatchUpsertReportsARowWithABadPhone(t *testing.T) {
 // One number in two formats is one Contact: the upsert resolves the stored E.164 phone.
 func TestExternalContactsBatchUpsertResolvesAPhoneInAnotherFormat(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 
 	// ContactTexter's phone, +14155550810, written as a US local number.

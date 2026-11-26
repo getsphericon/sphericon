@@ -67,7 +67,7 @@ func TestBuilderReceivesItsDependencies(t *testing.T) {
 	_, err := catalog.BuildEmail(providers.SMTP, nil, messaging.Deps{Capturer: capturer})
 	require.NoError(t, err)
 
-	require.NoError(t, got.Capturer.Capture(context.Background(), messaging.Captured{Message: messaging.EmailMessage{Subject: "kept"}}))
+	require.NoError(t, got.Capturer.Capture(t.Context(), messaging.Captured{Message: messaging.EmailMessage{Subject: "kept"}}))
 	require.Len(t, capturer.got, 1)
 	assert.Equal(t, "kept", capturer.got[0].Subject)
 }

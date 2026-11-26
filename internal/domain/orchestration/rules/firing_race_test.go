@@ -1,7 +1,6 @@
 package rules_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -19,7 +18,7 @@ import (
 // row and checks it again under the lock, so it waits for the Delete and then finds the Rule gone
 // (ADR 0098: a deleted Rule never fires again).
 func TestARuleDeletedAfterEvaluateReadItRecordsNoFiring(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	env := testhelper.Setup(t, testhelper.Committed())
 	client := env.DB
 	s := client.Scoped(fixtures.AcmeID)

@@ -29,7 +29,7 @@ import (
 func TestAClickThatLosesTheRaceToTheOptOutRecordsNothingMore(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.Committed())
 	scope := env.DB.Scoped(fixtures.AcmeID)
-	ctx := context.Background()
+	ctx := t.Context()
 	dest := fixtures.ContactAliceEmail
 
 	release := env.HoldOpen(t, events.Ingest(scope), firstOptOut(ctx, dest))

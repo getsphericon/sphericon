@@ -1,7 +1,6 @@
 package segments_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -31,7 +30,7 @@ const (
 func TestCreateRejectsInvalidDefinition(t *testing.T) {
 	env := testhelper.Setup(t)
 	save := testhelper.Module[*segmentsaving.UseCase](env)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := save.Create(ctx, env.DB.Scoped(fixtures.AcmeID), segments.CreateInput{Name: "Bad", Condition: new(testhelper.SegmentCondition(t, badCondition))})
 	require.ErrorIs(t, err, segments.ErrInvalidCondition)
@@ -45,7 +44,7 @@ func TestCreateRejectsInvalidDefinition(t *testing.T) {
 func TestCreateRefusesAWindowOfNoDays(t *testing.T) {
 	env := testhelper.Setup(t)
 	save := testhelper.Module[*segmentsaving.UseCase](env)
-	ctx := context.Background()
+	ctx := t.Context()
 	def := `{"kind":"group","combinator":"and","entries":[` +
 		`{"kind":"event","action":"signup","operator":"atLeast","times":1,"withinDays":0}]}`
 
@@ -58,7 +57,7 @@ func TestCreateRefusesAWindowOfNoDays(t *testing.T) {
 func TestCreateAcceptsValidAndEmptyDefinition(t *testing.T) {
 	env := testhelper.Setup(t)
 	save := testhelper.Module[*segmentsaving.UseCase](env)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	def := `{"kind":"group","combinator":"and","entries":[{"kind":"attribute","attribute":"email","test":{"kind":"text","operator":"contains","value":"x"}}]}`
 	s, err := save.Create(ctx, env.DB.Scoped(fixtures.AcmeID), segments.CreateInput{Name: "Good", Condition: new(testhelper.SegmentCondition(t, def))})
@@ -75,7 +74,7 @@ func TestCreateAcceptsValidAndEmptyDefinition(t *testing.T) {
 func TestUpdateValidatesLikeCreate(t *testing.T) {
 	env := testhelper.Setup(t)
 	save := testhelper.Module[*segmentsaving.UseCase](env)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := save.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.SegmentProPlanID, segments.UpdateInput{Revision: env.SegmentRevision(ctx, t, fixtures.SegmentProPlanID), Condition: patch.Set(testhelper.SegmentCondition(t, badCondition))})
 	require.ErrorIs(t, err, segments.ErrInvalidCondition)
@@ -96,14 +95,14 @@ func TestUpdateIsWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
 	save := testhelper.Module[*segmentsaving.UseCase](env)
 
-	_, err := save.Update(context.Background(), env.DB.Scoped(fixtures.GlobexID), fixtures.SegmentProPlanID, segments.UpdateInput{Revision: 1, Name: patch.Set("x")})
+	_, err := save.Update(t.Context(), env.DB.Scoped(fixtures.GlobexID), fixtures.SegmentProPlanID, segments.UpdateInput{Revision: 1, Name: patch.Set("x")})
 	require.ErrorIs(t, err, segments.ErrNotFound)
 }
 
 func TestPreviewAndCountAgree(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*segments.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	stored, err := env.DB.Segment.Get(ctx, fixtures.SegmentProPlanID)
 	require.NoError(t, err)
@@ -129,7 +128,7 @@ func TestPreviewAndCountAgree(t *testing.T) {
 func TestPreviewAndCountReportTheContactsLeftOutForUnknownEngagement(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*segments.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.MassiveID)
 	stored, err := s.Segment().Get(ctx, fixtures.SegmentMassiveUnengagedID)
 	require.NoError(t, err)
@@ -153,7 +152,7 @@ func TestPreviewAndCountReportTheContactsLeftOutForUnknownEngagement(t *testing.
 func TestPreviewAndCountErrors(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*segments.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := m.Preview(ctx, env.DB.Scoped(fixtures.AcmeID), segments.PreviewInput{Condition: new(testhelper.SegmentCondition(t, badCondition))})
 	require.ErrorIs(t, err, segments.ErrInvalidCondition)
@@ -171,7 +170,7 @@ func TestPreviewAndCountErrors(t *testing.T) {
 func TestPreviewCountsTheRecipientsOfABroadcastOnTheChannel(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*segments.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 	ws := env.DB.Scoped(fixtures.DuffID)
 
 	preview, err := m.Preview(ctx, ws, segments.PreviewInput{
@@ -192,7 +191,7 @@ func TestPreviewCountsTheRecipientsOfABroadcastOnTheChannel(t *testing.T) {
 func TestASegmentOfContactsThatCanBeTextedCountsAndListsThem(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*segments.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 	ws := env.DB.Scoped(fixtures.TyrellID)
 	listed := func(id int64) (int, []int64) {
 		t.Helper()

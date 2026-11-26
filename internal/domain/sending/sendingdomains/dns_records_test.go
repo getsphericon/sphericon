@@ -49,7 +49,7 @@ func TestPublicKeyFromPrivatePEMRejectsBadKeys(t *testing.T) {
 
 func TestVerifyDKIMRejectsEmptyExpectedKey(t *testing.T) {
 	lookup := func(context.Context, string) ([]string, error) { return []string{"v=DKIM1; k=rsa; p=abc"}, nil }
-	ok, err := sendingdomains.NewDNS(lookup).VerifyDKIM(context.Background(), &ent.SendingDomain{DkimSelector: "sphericon", Domain: "acme.com", DkimPublicKey: "v=DKIM1; k=rsa; p="})
+	ok, err := sendingdomains.NewDNS(lookup).VerifyDKIM(t.Context(), &ent.SendingDomain{DkimSelector: "sphericon", Domain: "acme.com", DkimPublicKey: "v=DKIM1; k=rsa; p="})
 	require.False(t, ok, "an empty expected key never verifies")
 	require.Error(t, err)
 }

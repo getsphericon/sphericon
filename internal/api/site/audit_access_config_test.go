@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"encoding/json"
 	"strings"
 	"testing"
@@ -22,7 +21,7 @@ import (
 func TestAccessAndConfigEntitiesAreAuditedWithoutSecrets(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
 	_, err := c.SiteSendingDomainsCreate(ctx, &siteapi.CreateSendingDomainInput{Domain: "audited.example.com"},
@@ -79,8 +78,8 @@ func TestWorkspaceSettingsChangeIsAudited(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	_, err := c.SiteWorkspacesUpdate(context.Background(),
-		&siteapi.SiteUpdateWorkspaceInput{Revision: siteapi.Revision(env.WorkspaceRevision(context.Background(), t, string(fixtures.AcmePublicID))), Name: "Acme Renamed", PostalAddress: siteapi.NewOptString("1 Main St")},
+	_, err := c.SiteWorkspacesUpdate(t.Context(),
+		&siteapi.SiteUpdateWorkspaceInput{Revision: siteapi.Revision(env.WorkspaceRevision(t.Context(), t, string(fixtures.AcmePublicID))), Name: "Acme Renamed", PostalAddress: siteapi.NewOptString("1 Main St")},
 		siteapi.SiteWorkspacesUpdateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 
@@ -99,7 +98,7 @@ func TestWorkspaceSettingsChangeIsAudited(t *testing.T) {
 func TestApiTokenRevocationIsAudited(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	err := c.SiteTokensDelete(ctx, siteapi.SiteTokensDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.ProductionTokenID})
 	require.NoError(t, err)

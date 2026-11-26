@@ -1,7 +1,6 @@
 package automations_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -22,7 +21,7 @@ func versionsOf(t *testing.T, env *testhelper.TestEnv, automationID int64) []int
 	t.Helper()
 	rows, err := env.DB.AutomationVersion.Query().
 		Where(automationversion.AutomationID(automationID)).
-		Order(automationversion.ByVersion()).All(context.Background())
+		Order(automationversion.ByVersion()).All(t.Context())
 	require.NoError(t, err)
 	out := make([]int, len(rows))
 	for i, r := range rows {
@@ -80,7 +79,7 @@ func draftSteps(t *testing.T, a *ent.Automation) []automationstep.Payload {
 // versionOfRun is the number of the version an Enrollment stands on.
 func versionOfRun(t *testing.T, env *testhelper.TestEnv, runID int64) int {
 	t.Helper()
-	ctx := context.Background()
+	ctx := t.Context()
 	run, err := env.DB.AutomationRun.Get(ctx, runID)
 	require.NoError(t, err)
 	v, err := env.DB.AutomationVersion.Get(ctx, run.VersionID)
@@ -98,7 +97,7 @@ func versionOfRun(t *testing.T, env *testhelper.TestEnv, runID int64) int {
 func TestEditingALiveAutomationWritesADraftAndEnrollsOnTheLiveVersion(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*automations.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	before, err := m.Get(ctx, acme, fixtures.AutomationHoldDemoID)
 	require.NoError(t, err)
@@ -129,7 +128,7 @@ func TestEditingALiveAutomationWritesADraftAndEnrollsOnTheLiveVersion(t *testing
 func TestSavingUnchangedStepsStoresNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*automations.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	before, err := m.Get(ctx, acme, fixtures.AutomationHoldDemoID)
 	require.NoError(t, err)
@@ -148,7 +147,7 @@ func TestSavingUnchangedStepsStoresNothing(t *testing.T) {
 func TestPublishMakesTheDraftLiveAndInFlightEnrollmentsKeepTheirVersion(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*automations.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	_, err := enrollNow(t, env, acme, fixtures.AutomationHoldDemoID, fixtures.ContactAliceID)
 	require.NoError(t, err)
@@ -183,7 +182,7 @@ func TestANeverPublishedAutomationEnrollsNobody(t *testing.T) {
 func TestPublishRefusesADraftWhoseIntegrationIsArchived(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*automations.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	mailgun := int64(fixtures.IntegrationAcmeMailgunID)
 	_, err := m.Update(ctx, acme, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, fixtures.AutomationHoldDemoID), Steps: steps(emailVia(&mailgun))})
@@ -202,7 +201,7 @@ func TestPublishRefusesADraftWhoseIntegrationIsArchived(t *testing.T) {
 // The fixture Automation whose steps were edited with Enrollments on the first version.
 func TestFixtureAutomationHasEnrollmentsOnTwoVersions(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	assert.Equal(t, []int{1, 2}, versionsOf(t, env, fixtures.AutomationOnboardingDripID))
 	assert.EqualValues(t, fixtures.AutomationOnboardingDripVersion1ID, env.DB.AutomationRun.GetX(ctx, fixtures.AutomationRunOnboardingOnVersion1ID).VersionID)
 	assert.EqualValues(t, fixtures.AutomationOnboardingDripVersion2ID, env.DB.AutomationRun.GetX(ctx, fixtures.AutomationRunOnboardingOnVersion2ID).VersionID)

@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -18,7 +17,7 @@ func TestSiteTagCreateIsAuditedUnderTheUser(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	_, err := c.SiteTagsApply(context.Background(), &siteapi.ApplyTagInput{Name: "audited-tag"},
+	_, err := c.SiteTagsApply(t.Context(), &siteapi.ApplyTagInput{Name: "audited-tag"},
 		siteapi.SiteTagsApplyParams{WorkspaceId: fixtures.AcmePublicID, ContactId: idStr(fixtures.ContactBobID)})
 	require.NoError(t, err)
 
@@ -31,7 +30,7 @@ func TestSiteTagCreateIsAuditedUnderTheUser(t *testing.T) {
 	assert.Equal(t, map[string]any{"name": map[string]any{"to": "audited-tag"}}, e.Diff)
 
 	// Applying it again is idempotent and records nothing more.
-	_, err = c.SiteTagsApply(context.Background(), &siteapi.ApplyTagInput{Name: "audited-tag"},
+	_, err = c.SiteTagsApply(t.Context(), &siteapi.ApplyTagInput{Name: "audited-tag"},
 		siteapi.SiteTagsApplyParams{WorkspaceId: fixtures.AcmePublicID, ContactId: idStr(fixtures.ContactBobID)})
 	require.NoError(t, err)
 	assert.Len(t, env.QueuedEvents(t, events.NameAuditEntry), 1)

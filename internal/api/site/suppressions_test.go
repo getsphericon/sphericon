@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -20,7 +19,7 @@ import (
 func TestSiteSuppressionsCRUD(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
 	// Create normalizes the destination and defaults the reason to manual.
@@ -72,7 +71,7 @@ func TestSiteSuppressionsCRUD(t *testing.T) {
 func TestSiteSuppressionsListHidesLiftedRows(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
 	activeList, err := c.SiteSuppressionsList(ctx, siteapi.SiteSuppressionsListParams{WorkspaceId: workspaceID, PageSize: siteapi.NewOptInt32(100)})
@@ -97,7 +96,7 @@ func TestSiteSuppressionsRequireOwnedWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	_, err := c.SiteSuppressionsList(context.Background(), siteapi.SiteSuppressionsListParams{WorkspaceId: "NoSuchWs"})
+	_, err := c.SiteSuppressionsList(t.Context(), siteapi.SiteSuppressionsListParams{WorkspaceId: "NoSuchWs"})
 	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 }
 

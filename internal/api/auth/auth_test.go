@@ -33,11 +33,11 @@ func TestHasScopeAndWorkspaceIDOfTheTokenContext(t *testing.T) {
 	assert.False(t, auth.HasScope(nil, "contacts:read"), "no token has no scopes")
 
 	assert.EqualValues(t, 3, a.WorkspaceID)
-	assert.Nil(t, auth.TokenScoped(context.Background()), "unauthenticated has no scope, never a real tenant")
+	assert.Nil(t, auth.TokenScoped(t.Context()), "unauthenticated has no scope, never a real tenant")
 }
 
 func TestAuthContextsRoundTrip(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	assert.Nil(t, auth.GetTokenAuth(ctx))
 	assert.Nil(t, auth.GetCollectAuth(ctx))
 	assert.Nil(t, auth.GetSiteAuth(ctx))
@@ -63,7 +63,7 @@ func TestBearerAuthResolvesAValidTokenToItsWorkspaceAndScopes(t *testing.T) {
 	env := testhelper.Setup(t)
 	h := auth.NewExternalSecurityHandler(auth.ExternalSecurityDeps{Clock: time.Now, Ent: env.DB, Bus: env.Bus, Admission: testhelper.Module[*admission.Module](env)})
 
-	ctx, err := h.Authenticate(context.Background(), externalapi.BearerAuth{
+	ctx, err := h.Authenticate(t.Context(), externalapi.BearerAuth{
 		Token: credentials.TokenValue(fixtures.AnchorTokenPrefix, fixtures.AnchorTokenSecret),
 	})
 	require.NoError(t, err)
@@ -75,7 +75,7 @@ func TestBearerAuthResolvesAValidTokenToItsWorkspaceAndScopes(t *testing.T) {
 	assert.Contains(t, got.Scopes, "contacts:read")
 
 	scoped := env.ScopedBearerFor(t, fixtures.GlobexID, apitokens.ScopeEventsRead)
-	ctx, err = h.Authenticate(context.Background(), externalapi.BearerAuth{Token: scoped})
+	ctx, err = h.Authenticate(t.Context(), externalapi.BearerAuth{Token: scoped})
 	require.NoError(t, err)
 	assert.EqualValues(t, fixtures.GlobexID, auth.GetTokenAuth(ctx).WorkspaceID, "the token's own workspace, whichever it is")
 	assert.Equal(t, []string{"events:read"}, auth.GetTokenAuth(ctx).Scopes)
@@ -84,7 +84,7 @@ func TestBearerAuthResolvesAValidTokenToItsWorkspaceAndScopes(t *testing.T) {
 func TestBearerAuthRejectsEveryUnusableToken(t *testing.T) {
 	env := testhelper.Setup(t)
 	h := auth.NewExternalSecurityHandler(auth.ExternalSecurityDeps{Clock: time.Now, Ent: env.DB, Bus: env.Bus, Admission: testhelper.Module[*admission.Module](env)})
-	ctx := context.Background()
+	ctx := t.Context()
 	valid := credentials.TokenValue(fixtures.AnchorTokenPrefix, fixtures.AnchorTokenSecret)
 
 	revoked := env.ScopedBearer(t, apitokens.ScopeContactsRead)
@@ -143,7 +143,7 @@ func TestBearerAuthLetsATokenCallOnlyWhatItsScopesCover(t *testing.T) {
 
 func TestBearerAuthStorageFailureIsNotAnUnauthorizedAnswer(t *testing.T) {
 	h := auth.NewExternalSecurityHandler(auth.ExternalSecurityDeps{Clock: time.Now, Ent: testhelper.ClosedClient(t)})
-	_, err := h.Authenticate(context.Background(), externalapi.BearerAuth{
+	_, err := h.Authenticate(t.Context(), externalapi.BearerAuth{
 		Token: credentials.TokenValue(fixtures.AnchorTokenPrefix, fixtures.AnchorTokenSecret),
 	})
 	require.Error(t, err)
@@ -155,18 +155,18 @@ func TestCollectKeyResolvesTheOwningWorkspace(t *testing.T) {
 	h := auth.NewCollectSecurityHandler(env.DB)
 
 	for key, ws := range map[string]int64{fixtures.AcmeCollectKey: fixtures.AcmeID, fixtures.GlobexCollectKey: fixtures.GlobexID} {
-		ctx, err := h.HandleApiKeyAuth(context.Background(), "", collectapi.ApiKeyAuth{APIKey: key})
+		ctx, err := h.HandleApiKeyAuth(t.Context(), "", collectapi.ApiKeyAuth{APIKey: key})
 		require.NoError(t, err)
 		assert.Equal(t, ws, collectWorkspaceID(ctx))
 	}
 
 	for name, key := range map[string]string{"empty": "", "unknown": "omck_nope", "ingest key is not a collect key": fixtures.IntegrationAcmeGenericAIngestKey} {
-		ctx, err := h.HandleApiKeyAuth(context.Background(), "", collectapi.ApiKeyAuth{APIKey: key})
+		ctx, err := h.HandleApiKeyAuth(t.Context(), "", collectapi.ApiKeyAuth{APIKey: key})
 		require.ErrorIs(t, err, auth.ErrUnauthorized, name)
 		assert.Zero(t, collectWorkspaceID(ctx), name)
 	}
 
-	_, err := auth.NewCollectSecurityHandler(testhelper.ClosedClient(t)).HandleApiKeyAuth(context.Background(), "", collectapi.ApiKeyAuth{APIKey: fixtures.AcmeCollectKey})
+	_, err := auth.NewCollectSecurityHandler(testhelper.ClosedClient(t)).HandleApiKeyAuth(t.Context(), "", collectapi.ApiKeyAuth{APIKey: fixtures.AcmeCollectKey})
 	require.Error(t, err)
 	require.NotErrorIs(t, err, auth.ErrUnauthorized)
 }
@@ -177,7 +177,7 @@ func TestSiteAuthResolvesTheDashboardUserByTheIDInTheToken(t *testing.T) {
 	require.NoError(t, err)
 	h := auth.NewSiteSecurityHandler(cfg.JWTSecret, env.DB, time.Now)
 
-	ctx, err := h.HandleApiKeyAuth(context.Background(), "", siteapi.ApiKeyAuth{
+	ctx, err := h.HandleApiKeyAuth(t.Context(), "", siteapi.ApiKeyAuth{
 		APIKey: env.SiteToken(t, fixtures.OwnerJohnEmail, nil),
 	})
 	require.NoError(t, err)
@@ -213,12 +213,12 @@ func TestSiteAuthRejectsEveryUnusableCredential(t *testing.T) {
 		"another issuer":   {h, edited(func(c *auth.SessionClaims) { c.Issuer = "sphericon-staff" })},
 		"another audience": {h, edited(func(c *auth.SessionClaims) { c.Audience = jwt.ClaimStrings{"sphericon-staff"} })},
 	} {
-		ctx, err := tc.handler.HandleApiKeyAuth(context.Background(), "", siteapi.ApiKeyAuth{APIKey: tc.token})
+		ctx, err := tc.handler.HandleApiKeyAuth(t.Context(), "", siteapi.ApiKeyAuth{APIKey: tc.token})
 		require.ErrorIs(t, err, auth.ErrUnauthorized, name)
 		assert.Nil(t, auth.GetSiteAuth(ctx), name)
 	}
 
-	_, err = auth.NewSiteSecurityHandler(cfg.JWTSecret, testhelper.ClosedClient(t), time.Now).HandleApiKeyAuth(context.Background(), "", siteapi.ApiKeyAuth{APIKey: good})
+	_, err = auth.NewSiteSecurityHandler(cfg.JWTSecret, testhelper.ClosedClient(t), time.Now).HandleApiKeyAuth(t.Context(), "", siteapi.ApiKeyAuth{APIKey: good})
 	require.Error(t, err)
 	require.NotErrorIs(t, err, auth.ErrUnauthorized)
 }
@@ -241,17 +241,17 @@ func TestSiteAuthAcceptsASessionSignedWithTheSecondarySecretOnlyWhileItIsConfigu
 	const rotated = "the-new-secret-the-new-secret-0123"
 
 	during := auth.NewSiteSecurityHandler(rotated, env.DB, time.Now, cfg.JWTSecret)
-	_, err = during.Verify(context.Background(), old)
+	_, err = during.Verify(t.Context(), old)
 	require.NoError(t, err)
 
 	after := auth.NewSiteSecurityHandler(rotated, env.DB, time.Now)
-	_, err = after.Verify(context.Background(), old)
+	_, err = after.Verify(t.Context(), old)
 	require.ErrorIs(t, err, auth.ErrUnauthorized)
 
 	// New sessions are signed with the primary secret and verify without the secondary one.
 	cookie, err := auth.NewSessions(rotated, time.Hour, false, time.Now, cfg.JWTSecret).Issue(&ent.User{ID: fixtures.OwnerJohnID}, auth.Session{Method: auth.MethodPassword})
 	require.NoError(t, err)
-	_, err = after.Verify(context.Background(), cookie.Value)
+	_, err = after.Verify(t.Context(), cookie.Value)
 	require.NoError(t, err)
 }
 

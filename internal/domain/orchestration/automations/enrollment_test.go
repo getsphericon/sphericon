@@ -1,7 +1,6 @@
 package automations_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -21,12 +20,12 @@ import (
 // enrollable is the nth Contact of the Workspace, by id, that no Automation has enrolled yet.
 func enrollable(t *testing.T, s *ent.Scoped, nth int) *ent.Contact {
 	t.Helper()
-	enrolledIDs, err := s.AutomationRun().Query().Select(automationrun.FieldContactID).Ints(context.Background())
+	enrolledIDs, err := s.AutomationRun().Query().Select(automationrun.FieldContactID).Ints(t.Context())
 	require.NoError(t, err)
 	enrolled := lo.Map(enrolledIDs, func(id int, _ int) int64 { return int64(id) })
 	free, err := s.Contact().Query().
 		Where(contact.EmailNotNil(), contact.IDNotIn(enrolled...)).
-		Order(ent.Asc(contact.FieldID)).Limit(nth + 1).All(context.Background())
+		Order(ent.Asc(contact.FieldID)).Limit(nth + 1).All(t.Context())
 	require.NoError(t, err)
 	require.Greater(t, len(free), nth, "the fixtures hold enough Contacts no Automation has enrolled")
 	return free[nth]
@@ -36,7 +35,7 @@ func enrollable(t *testing.T, s *ent.Scoped, nth int) *ent.Contact {
 // the Enrollment begins now and no Event began it. It reports whether one was made.
 func enrollNow(t *testing.T, env *testhelper.TestEnv, s *ent.Scoped, automationID, contactID int64) (bool, error) {
 	t.Helper()
-	made, err := testhelper.Module[*automations.StepExecution](env).EnrollOnRule(context.Background(), s, automations.EnrollOnRuleInput{AutomationID: automationID, ContactID: contactID})
+	made, err := testhelper.Module[*automations.StepExecution](env).EnrollOnRule(t.Context(), s, automations.EnrollOnRuleInput{AutomationID: automationID, ContactID: contactID})
 	return made.Enrolled, err
 }
 
@@ -50,7 +49,7 @@ func runOf(t *testing.T, env *testhelper.TestEnv, automationID, contactID int64)
 
 func TestEnrollIsOnceEverPerContactAndAutomation(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	c := enrollable(t, s, 0)
 
@@ -72,7 +71,7 @@ func TestEnrollIsOnceEverPerContactAndAutomation(t *testing.T) {
 
 func TestExitEndsOnlyAnActiveEnrollmentAndEnrollmentStaysOnceEver(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	c := enrollable(t, s, 0)
 
@@ -99,7 +98,7 @@ func TestExitEndsOnlyAnActiveEnrollmentAndEnrollmentStaysOnceEver(t *testing.T) 
 
 func TestExitEndsOneEnrollmentOfTheAutomation(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	waiting, err := s.AutomationRun().Get(ctx, fixtures.AutomationRunWelcomeWaitingID)
 	require.NoError(t, err)
@@ -120,7 +119,7 @@ func TestExitEndsOneEnrollmentOfTheAutomation(t *testing.T) {
 // nothing: the lifecycle table decides that it can no longer move.
 func TestAStepOfAnExitedEnrollmentLeavesItExited(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	runID := int64(fixtures.AutomationRunWelcomeWaitingLaterID)
 	waiting, err := s.AutomationRun().Get(ctx, runID)
@@ -156,7 +155,7 @@ func TestEnrollRefusesAContactOrAutomationOfAnotherWorkspace(t *testing.T) {
 // competing writer moved it) leaves it where it is and queues nothing.
 func TestAStepJobForAnotherStepLeavesTheEnrollmentWhereItStands(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	runID := int64(fixtures.AutomationRunWelcomeWaitingID)
 	before, err := s.AutomationRun().Get(ctx, runID)
@@ -178,7 +177,7 @@ func TestAStepJobForAnotherStepLeavesTheEnrollmentWhereItStands(t *testing.T) {
 func TestAnEventEnrollsOnlyWhileTheAutomationIsActiveOnThatTrigger(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*automations.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	_, err := m.Update(ctx, s, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, s, fixtures.AutomationHoldDemoID), Trigger: automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: "hold_demo_moved"}}})
 	require.NoError(t, err)

@@ -1,7 +1,6 @@
 package eligibility_test
 
 import (
-	"context"
 	"strings"
 	"testing"
 
@@ -27,7 +26,7 @@ func inAudience(t *testing.T, env *testhelper.TestEnv, ws, contactID int64, mode
 	t.Helper()
 	ok, err := env.DB.Scoped(ws).Contact().Query().
 		Where(contact.ID(contactID), eligibility.Audience(eligibility.EmailDestination(), mode)).
-		Exist(context.Background())
+		Exist(t.Context())
 	require.NoError(t, err)
 	return ok
 }
@@ -35,7 +34,7 @@ func inAudience(t *testing.T, env *testhelper.TestEnv, ws, contactID int64, mode
 // decide runs the point check for a destination in a Workspace.
 func decide(t *testing.T, env *testhelper.TestEnv, ws int64, destination string, mode eligibility.Mode) eligibility.Decision {
 	t.Helper()
-	d, err := eligibility.New().Check(context.Background(), env.DB.Scoped(ws), eligibility.CheckInput{Channel: channels.Email, Destination: destination, Mode: mode})
+	d, err := eligibility.New().Check(t.Context(), env.DB.Scoped(ws), eligibility.CheckInput{Channel: channels.Email, Destination: destination, Mode: mode})
 	require.NoError(t, err)
 	return d
 }
@@ -164,7 +163,7 @@ func TestCheckWorksWithoutAContact(t *testing.T) {
 // admits and that the batch Predicate keeps, for one source.
 func matrixEligibility(t *testing.T, env *testhelper.TestEnv, ws int64, mode eligibility.Mode) (byCheck, byPredicate []string) {
 	t.Helper()
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(ws)
 	contacts, err := s.Contact().Query().All(ctx)
 	require.NoError(t, err)
@@ -222,7 +221,7 @@ func TestPredicateAndCheckAgree(t *testing.T) {
 // no Confirmation of it, as it does of an email address (ADR 0077).
 func TestCheckOnTelegramAsksNoConfirmation(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	d, err := eligibility.New().Check(ctx, env.DB.Scoped(fixtures.LumonID), eligibility.CheckInput{Channel: channels.Telegram, Destination: "70001", Mode: eligibility.Marketing(eligibility.SourceBroadcasts)})
 
@@ -235,7 +234,7 @@ func TestCheckOnTelegramAsksNoConfirmation(t *testing.T) {
 // phones of the Contacts the batch Predicate keeps, for one source.
 func smsMatrix(t *testing.T, env *testhelper.TestEnv, ws int64, phones []string, source string) (byCheck, byPredicate []string) {
 	t.Helper()
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(ws)
 	for _, p := range phones {
 		d, err := eligibility.New().Check(ctx, s, eligibility.CheckInput{Channel: channels.SMS, Destination: p, Mode: eligibility.Marketing(source)})
@@ -277,7 +276,7 @@ func TestSMSRequiresAConfirmationWhateverTheEmailSetting(t *testing.T) {
 // The reasons a number is not eligible on sms: no Confirmation, or an opt-out of everything.
 func TestSMSReasons(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.TyrellID)
 
 	unconfirmed, err := eligibility.New().Check(ctx, s, eligibility.CheckInput{Channel: channels.SMS, Destination: fixtures.TyrellMatrixCleanPhone, Mode: eligibility.Marketing(eligibility.SourceBroadcasts)})
@@ -295,7 +294,7 @@ func bindingAudience(t *testing.T, env *testhelper.TestEnv, integrationID int64,
 	t.Helper()
 	ids, err := env.DB.Scoped(fixtures.LacunaID).Contact().Query().
 		Where(eligibility.Audience(eligibility.BindingDestination(channels.Telegram, integrationID), mode)).
-		IDs(context.Background())
+		IDs(t.Context())
 	require.NoError(t, err)
 	return ids
 }
@@ -332,7 +331,7 @@ func TestBindingAudienceReachesTheContactsBoundOnTheIntegration(t *testing.T) {
 // refuses the number when it comes back, in the point Check and in the audience alike.
 func TestSMSOptOutKeptUnderTheNumbersHashStillBlocks(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.TyrellID)
 	hashed, err := s.Unsubscribe().Update().
 		Where(unsubscribe.ChannelEQ(channels.SMS), unsubscribe.DestinationEQ(fixtures.TyrellMatrixUnsubEverythingPhone)).

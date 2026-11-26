@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -33,7 +32,7 @@ func smtpInput(host string) externalapi.IntegrationConfigInput {
 
 func createSMTP(t *testing.T, c *externalapi.Client, name string, isDefault bool) *externalapi.IntegrationResource {
 	t.Helper()
-	created, err := c.IntegrationsCreate(context.Background(), &externalapi.CreateIntegrationInput{
+	created, err := c.IntegrationsCreate(t.Context(), &externalapi.CreateIntegrationInput{
 		Name: externalapi.Name(name), IsDefault: externalapi.NewOptBool(isDefault), Config: smtpInput("smtp.example.com"),
 	})
 	require.NoError(t, err)
@@ -42,7 +41,7 @@ func createSMTP(t *testing.T, c *externalapi.Client, name string, isDefault bool
 
 func TestExternalIntegrationsWritesNeedTheWriteScope(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	reader := env.ExternalScoped(t, apitokens.ScopeIntegrationsRead)
 	id := entityIDString(fixtures.IntegrationAcmeSesID)
 
@@ -66,7 +65,7 @@ func TestExternalIntegrationsWritesNeedTheWriteScope(t *testing.T) {
 
 func TestExternalIntegrationsCreateNeverReturnsSecrets(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.ExternalScoped(t, apitokens.ScopeIntegrationsRead, apitokens.ScopeIntegrationsWrite)
 
 	created := createSMTP(t, c, "Acme transactional", false)
@@ -99,7 +98,7 @@ func TestExternalIntegrationsCreateNeverReturnsSecrets(t *testing.T) {
 func TestExternalIntegrationsCreateValidates(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeIntegrationsWrite)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := c.IntegrationsCreate(ctx, &externalapi.CreateIntegrationInput{Name: "  ", Config: smtpInput("smtp.example.com")})
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
@@ -110,7 +109,7 @@ func TestExternalIntegrationsCreateValidates(t *testing.T) {
 
 func TestExternalIntegrationsNewDefaultReplacesTheOldOne(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.ExternalScoped(t, apitokens.ScopeIntegrationsRead, apitokens.ScopeIntegrationsWrite)
 
 	created := createSMTP(t, c, "New default", true)
@@ -123,7 +122,7 @@ func TestExternalIntegrationsNewDefaultReplacesTheOldOne(t *testing.T) {
 
 func TestExternalIntegrationsUpdateKeepsCredentialsAndRedacts(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.ExternalScoped(t, apitokens.ScopeIntegrationsRead, apitokens.ScopeIntegrationsWrite)
 	// The relay logs in to smtp.example.com:587 as mailer with smtpSecret.
 	id := entityIDString(fixtures.IntegrationAcmeSmtpLoginID)
@@ -183,7 +182,7 @@ func TestExternalIntegrationsUpdateKeepsCredentialsAndRedacts(t *testing.T) {
 // Another Workspace's Integration is invisible and untouchable through this token.
 func TestExternalIntegrationsAreWorkspaceIsolated(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.ExternalScoped(t, apitokens.ScopeIntegrationsRead, apitokens.ScopeIntegrationsWrite)
 	globex := entityIDString(fixtures.IntegrationGlobexID)
 
@@ -206,7 +205,7 @@ func TestExternalIntegrationsAreWorkspaceIsolated(t *testing.T) {
 // is not a topic ARN.
 func TestExternalIntegrationsSESNamesItsSNSTopicInTheParams(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.ExternalScoped(t, apitokens.ScopeIntegrationsRead, apitokens.ScopeIntegrationsWrite)
 	ses := func(topic string) *externalapi.CreateIntegrationInput {
 		return &externalapi.CreateIntegrationInput{
@@ -238,7 +237,7 @@ func TestExternalIntegrationsSESNamesItsSNSTopicInTheParams(t *testing.T) {
 // with a warning on the answer and on later reads.
 func TestExternalIntegrationsSESConfigurationSet(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.ExternalScoped(t, apitokens.ScopeIntegrationsRead, apitokens.ScopeIntegrationsWrite)
 	env.SES.SetConfigurationSetMissing(true)
 

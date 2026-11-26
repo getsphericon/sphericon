@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"errors"
 	"net/http"
 	"testing"
@@ -22,7 +21,7 @@ func TestExternalBroadcastsRefuseABlankName(t *testing.T) {
 	for _, name := range []string{"", "   "} {
 		t.Run("create "+name, func(t *testing.T) {
 			env := testhelper.Setup(t)
-			ctx := context.Background()
+			ctx := t.Context()
 			c := env.ExternalScoped(t, authorScopes...)
 			before, err := env.DB.Broadcast.Query().Where(broadcast.WorkspaceID(fixtures.AcmeID)).Count(ctx)
 			require.NoError(t, err)
@@ -37,7 +36,7 @@ func TestExternalBroadcastsRefuseABlankName(t *testing.T) {
 		})
 		t.Run("update "+name, func(t *testing.T) {
 			env := testhelper.Setup(t)
-			ctx := context.Background()
+			ctx := t.Context()
 			c := env.ExternalScoped(t, authorScopes...)
 
 			_, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Revision: externalapi.Revision(env.BroadcastRevision(ctx, t, int64(draftBroadcast))), Name: externalapi.NewOptName(externalapi.Name(name))},
@@ -53,7 +52,7 @@ func TestExternalBroadcastsRefuseABlankName(t *testing.T) {
 // that says nothing of the cause, and the broadcast stays a draft.
 func TestExternalBroadcastTestSendReportsAFailedSend(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.ExternalScoped(t, authorScopes...)
 	env.CustomerMail.SetErr(errors.New("smtp unavailable"))
 
@@ -68,7 +67,7 @@ func TestExternalBroadcastTestSendReportsAFailedSend(t *testing.T) {
 // The report carries the reason a broadcast is held.
 func TestExternalBroadcastReportCarriesTheHoldReason(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.ExternalScoped(t, authorScopes...)
 	env.DB.Broadcast.UpdateOneID(fixtures.BroadcastDraftID).SetHoldReason(holdreason.WorkspaceSuspended).ExecX(ctx)
 

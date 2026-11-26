@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/samber/lo"
@@ -17,7 +16,7 @@ import (
 // its figures count them cancelled with none pending, and the list finds it by its new status.
 func TestSiteBroadcastCancelEndsASendingBroadcast(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	env.PlaceRecipient(ctx, fixtures.BroadcastSendingID, fixtures.ContactAliceID)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 

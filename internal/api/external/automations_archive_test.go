@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -18,7 +17,7 @@ import (
 
 func listedAutomationIDs(t *testing.T, c *externalapi.Client, archived bool) []externalapi.EntityId {
 	t.Helper()
-	list, err := c.AutomationsList(context.Background(), externalapi.AutomationsListParams{
+	list, err := c.AutomationsList(t.Context(), externalapi.AutomationsListParams{
 		PageSize: externalapi.NewOptInt32(100),
 		Archived: externalapi.NewOptBool(archived),
 	})
@@ -31,7 +30,7 @@ func listedAutomationIDs(t *testing.T, c *externalapi.Client, archived bool) []e
 func TestExternalAutomationsArchiveAndUnarchive(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeAutomationsWrite, apitokens.ScopeAutomationsRead)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := c.AutomationsArchive(ctx, externalapi.AutomationsArchiveParams{ID: entityIDString(fixtures.AutomationWelcomeSeriesID)})
 	refused := testhelper.ExternalRefusal(t, err, http.StatusConflict)
@@ -60,7 +59,7 @@ func TestExternalAutomationsArchiveAndUnarchive(t *testing.T) {
 func TestExternalAutomationsArchiveKeepsOneThatSentMail(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeAutomationsWrite, apitokens.ScopeAutomationsRead)
-	ctx := context.Background()
+	ctx := t.Context()
 	id := entityIDString(fixtures.AutomationOnOpenID)
 
 	_, err := c.AutomationsArchive(ctx, externalapi.AutomationsArchiveParams{ID: id})
@@ -75,7 +74,7 @@ func TestExternalAutomationsArchiveKeepsOneThatSentMail(t *testing.T) {
 // Contact erasure reaches the Enrollments of an archived Automation.
 func TestExternalContactsEraseRemovesEnrollmentsOfAnArchivedAutomation(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	eraseErasable(t, env)
 

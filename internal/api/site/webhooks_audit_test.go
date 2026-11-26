@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -15,7 +14,7 @@ import (
 // audit.entry is selectable on a Webhook endpoint only with an Enterprise license
 // (ADR 0022); without one the selection is rejected on create and update.
 func TestWebhookEndpointSelectsAuditEntryOnlyUnderLicense(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	create := func(env *testhelper.TestEnv) error {
 		_, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteWebhooksCreate(ctx,
 			&siteapi.CreateWebhookInput{URL: "https://x.test/audit", EventTypes: []string{"audit.entry"}},

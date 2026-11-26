@@ -1,7 +1,6 @@
 package contacts_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/samber/lo"
@@ -19,7 +18,7 @@ func TestAnUpsertClearsAnAttributeItIsGivenNullFor(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*contacts.Module](env)
 
-	res, err := m.Upsert(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceAPI, contacts.UpsertInput{
+	res, err := m.Upsert(t.Context(), env.DB.Scoped(fixtures.AcmeID), contact.SourceAPI, contacts.UpsertInput{
 		Email:    lo.ToPtr(fixtures.ContactAliceEmail),
 		LastName: patch.Clear[string](),
 	})
@@ -32,7 +31,7 @@ func TestAnUpsertClearsAnAttributeItIsGivenNullFor(t *testing.T) {
 func TestAnUpsertNeverOverwritesAnAliasKey(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*contacts.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 	stark := env.DB.Scoped(fixtures.StarkID)
 
 	res, err := m.Upsert(ctx, stark, contact.SourceAPI, contacts.UpsertInput{Email: new(fixtures.ContactStarkAliasedEmail), Phone: new("+14155550114")})
@@ -45,7 +44,7 @@ func TestAnUpsertNeverOverwritesAnAliasKey(t *testing.T) {
 func TestTheBrowsersGuessesFillOnlyAnEmptyAttributeAndLoseToATrait(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*contacts.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 
 	created, err := m.Upsert(ctx, acme, contact.SourceTracker, contacts.UpsertInput{
@@ -74,7 +73,7 @@ func TestAnInvalidGuessIsIgnored(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*contacts.Module](env)
 
-	res, err := m.Upsert(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceTracker, contacts.UpsertInput{
+	res, err := m.Upsert(t.Context(), env.DB.Scoped(fixtures.AcmeID), contact.SourceTracker, contacts.UpsertInput{
 		Email: new("bad.guess@example.com"), GuessedTimeZone: new("Mars/Olympus"), GuessedLocale: new("not a tag"),
 	})
 	require.NoError(t, err)
@@ -86,7 +85,7 @@ func TestNoCustomFieldTakesTheKeyOfACoreAttribute(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*contacts.Module](env)
 
-	_, err := m.Create(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.CreateInput{
+	_, err := m.Create(t.Context(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.CreateInput{
 		Email: new("reserved@example.com"), CustomFields: map[string]any{"country": "DE"}})
 	assert.ErrorIs(t, err, contacts.ErrReservedKey)
 }

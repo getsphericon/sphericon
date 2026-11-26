@@ -1,7 +1,6 @@
 package condition_test
 
 import (
-	"context"
 	"math"
 	"testing"
 	"time"
@@ -23,14 +22,14 @@ import (
 // validate compiles a condition for the Acme Workspace.
 func validate(t *testing.T, env *testhelper.TestEnv, def string) error {
 	t.Helper()
-	_, err := condition.New(time.Now).Compile(context.Background(), env.DB.Scoped(fixtures.AcmeID), testhelper.SegmentCondition(t, def))
+	_, err := condition.New(time.Now).Compile(t.Context(), env.DB.Scoped(fixtures.AcmeID), testhelper.SegmentCondition(t, def))
 	return err
 }
 
 // emailsIn returns, in email order, the emails of the Workspace's Contacts matching g.
 func emailsIn(t *testing.T, env *testhelper.TestEnv, ws int64, g conditiontree.Segment) []string {
 	t.Helper()
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(ws)
 	p, err := condition.New(time.Now).Compile(ctx, s, g)
 	require.NoError(t, err)
@@ -112,7 +111,7 @@ func TestEventConditionsCompose(t *testing.T) {
 // nobody. Membership is live: applying or removing a Tag moves a Contact at once.
 func TestTagConditions(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// The anchor contacts 1-3 are the only ones the fixtures tag.
 	count := func(g conditiontree.Segment) int {
@@ -159,7 +158,7 @@ func TestValidate(t *testing.T) {
 // never a Visitor's (ADR 0171), and "doesNotHave" is the complement, live.
 func TestTelegramConditions(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	const liam, emma, alice = fixtures.ContactLiamID, 101, fixtures.ContactAliceID
 
 	matching := func(op string) []int64 {
@@ -191,7 +190,7 @@ func TestTelegramConditions(t *testing.T) {
 // with a Confirmation; the others have no phone. Lumon's email gate changes nothing on sms.
 func TestSMSConditions(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	matching := func(ws int64, op string) []int64 {
 		t.Helper()

@@ -1,7 +1,6 @@
 package broadcasts_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -20,7 +19,7 @@ import (
 // its own and no scheduled job ahead, so the ETA falls back to the Integration's rate.
 func sendingWithPending(t *testing.T, env *testhelper.TestEnv, n int) *broadcastsFixture {
 	t.Helper()
-	ctx := context.Background()
+	ctx := t.Context()
 	id := int64(fixtures.BroadcastSendingID)
 	contacts := []int64{fixtures.ContactAliceID, fixtures.ContactBobID, fixtures.ContactCarolID}
 	for _, c := range contacts[:n] {
@@ -55,7 +54,7 @@ func TestProgressETAFallsBackToTheEffectiveRate(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			now := time.Now()
 			env := setupAt(t, now)
-			ctx := context.Background()
+			ctx := t.Context()
 			f := sendingWithPending(t, env, 3)
 			env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetNillableMaxPerSecond(c.manual).ExecX(ctx)
 			env.DB.IntegrationProviderState.Update().Where(integrationproviderstate.IntegrationID(fixtures.IntegrationAcmeDefaultID)).
@@ -74,7 +73,7 @@ func TestProgressETAFallsBackToTheEffectiveRate(t *testing.T) {
 // Without any ceiling there is nothing to pace by, so no ETA.
 func TestProgressHasNoETAWithoutALimit(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	f := sendingWithPending(t, env, 3)
 	detail, err := testhelper.Module[*broadcasts.Module](env).Detail(ctx, env.DB.Scoped(fixtures.AcmeID), env.DB.Broadcast.GetX(ctx, f.id))
 	require.NoError(t, err)
@@ -102,7 +101,7 @@ func TestProgressNamesTheSendCapAndEstimatesTheRecipientsBeyondItsTokens(t *test
 		t.Run(c.name, func(t *testing.T) {
 			now := time.Now()
 			env := setupAt(t, now)
-			ctx := context.Background()
+			ctx := t.Context()
 			f := sendingWithPending(t, env, 3)
 			env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSendCap(c.sendCap).ExecX(ctx)
 
@@ -137,7 +136,7 @@ func TestProgressReportsTheLaterOfTheProviderLimitAndTheSendCap(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			now := time.Now()
 			env := setupAt(t, now)
-			ctx := context.Background()
+			ctx := t.Context()
 			f := sendingWithPending(t, env, 3)
 			env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSendCap(c.sendCap).ExecX(ctx)
 			env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetNillableMaxPerSecond(c.perSecond).ExecX(ctx)
@@ -158,7 +157,7 @@ func TestProgressReportsTheLaterOfTheProviderLimitAndTheSendCap(t *testing.T) {
 func TestProgressCountsTheSendCapAlreadySpent(t *testing.T) {
 	now := time.Now()
 	env := setupAt(t, now)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	f := sendingWithPending(t, env, 3)
 	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSendCap(2).ExecX(ctx)
@@ -176,7 +175,7 @@ func TestProgressCountsTheSendCapAlreadySpent(t *testing.T) {
 // slows the estimate nor is named as a limit.
 func TestProgressIgnoresAStoredSendCapOnSelfhosted(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithMode(config.ModeSelfHosted))
-	ctx := context.Background()
+	ctx := t.Context()
 	f := sendingWithPending(t, env, 3)
 	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSendCap(1).ExecX(ctx)
 
@@ -191,7 +190,7 @@ func TestProgressIgnoresAStoredSendCapOnSelfhosted(t *testing.T) {
 // both from the same count.
 func TestDetailHasProgressOnlyWhileSending(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
 	sent, err := testhelper.Module[*broadcasts.Module](env).Detail(ctx, s, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastSentID))

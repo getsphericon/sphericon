@@ -1,7 +1,6 @@
 package analyticsreport_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -18,7 +17,7 @@ import (
 
 func eventActions(t *testing.T, env *testhelper.TestEnv, ws int64, w analyticsreport.Window) []analyticsreport.EventAction {
 	t.Helper()
-	rows, err := analyticsreport.New(linkclick.New(), time.Now, 0).Events(context.Background(), env.DB.Scoped(ws), w)
+	rows, err := analyticsreport.New(linkclick.New(), time.Now, 0).Events(t.Context(), env.DB.Scoped(ws), w)
 	require.NoError(t, err)
 	return rows
 }
@@ -49,7 +48,7 @@ func TestEventsReportLastOccurrenceIsTheNewestOccurredAt(t *testing.T) {
 	env := testhelper.Setup(t)
 	rows := eventActions(t, env, fixtures.AcmeID, analyticsreport.Window7Days)
 
-	newest := env.DB.Event.GetX(context.Background(), 5602)
+	newest := env.DB.Event.GetX(t.Context(), 5602)
 	view := actionRow(t, rows, "report_view")
 	assert.True(t, newest.OccurredAt.Equal(view.LastAt), "last %s, newest %s", view.LastAt, newest.OccurredAt)
 }

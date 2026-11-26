@@ -52,7 +52,7 @@ func TestSuppressRejectsUndecodableEnvelopes(t *testing.T) {
 // opt-out, so an unsubscribe event must not create a suppression row.
 func TestSuppressIgnoresUnsubscribe(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	envlp := events.Envelope{
 		ID:          "01J0SUPPRESS00000000000000",
@@ -81,7 +81,7 @@ func TestSuppressIgnoresUnsubscribe(t *testing.T) {
 // Opens/clicks (and any non-suppressing action) do not create a suppression.
 func TestSuppressIgnoresNonSuppressingActions(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	envlp := events.Envelope{
 		ID:          "01J0SUPPRESS00000000000001",
@@ -108,7 +108,7 @@ func TestSuppressIgnoresNonSuppressingActions(t *testing.T) {
 // A hard bounce suppresses the address with reason "bounce".
 func TestSuppressOnHardBounce(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	envlp := events.Envelope{
 		ID:          "01J0SUPPRESS00000000000010",
@@ -138,7 +138,7 @@ func TestSuppressOnHardBounce(t *testing.T) {
 // A soft bounce does NOT suppress — it is temporary.
 func TestSuppressIgnoresSoftBounce(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	envlp := events.Envelope{
 		ID:          "01J0SUPPRESS00000000000011",
@@ -166,7 +166,7 @@ func TestSuppressIgnoresSoftBounce(t *testing.T) {
 // A spam complaint suppresses the address with reason "complaint".
 func TestSuppressOnComplaint(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	envlp := events.Envelope{
 		ID:          "01J0SUPPRESS00000000000012",
@@ -195,7 +195,7 @@ func TestSuppressOnComplaint(t *testing.T) {
 // Redelivery or a repeat suppressing event keeps a single entry (idempotent upsert).
 func TestSuppressIsIdempotent(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	envlp := events.Envelope{
 		ID:          "01J0SUPPRESS00000000000002",

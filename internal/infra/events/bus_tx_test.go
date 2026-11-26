@@ -31,7 +31,7 @@ func publishedTo(t *testing.T, env *testhelper.TestEnv, email string) int {
 // An error from the transaction body rolls back the state write AND the event.
 func TestWithinTxRollsBackOnError(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	boom := errors.New("producer failed")
 
 	err := env.Bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
@@ -52,7 +52,7 @@ func TestWithinTxRollsBackOnError(t *testing.T) {
 // when the body succeeds and rolls back with it when the body fails.
 func TestWithinTxOwnsTheCommitOfAnUpdate(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	rename := func(name, email string, result error) error {
 		return env.Bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
 			tx.Contact.UpdateOneID(fixtures.ContactAliceID).SetFirstName(name).ExecX(ctx)
@@ -73,7 +73,7 @@ func TestWithinTxOwnsTheCommitOfAnUpdate(t *testing.T) {
 // A panic in the body rolls the transaction back and propagates to the caller.
 func TestWithinTxRollsBackAndRepanics(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	assert.PanicsWithValue(t, "kaboom", func() {
 		err := env.Bus.WithinTx(ctx, func(_ *ent.Client, pub events.Publisher) error {
@@ -100,7 +100,7 @@ func (w *preCommit) Run(context.Context) error {
 // writes registered it.
 func TestWithinTxRunsWorkRegisteredUnderAKeyOnceBeforeCommit(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	work := &preCommit{}
 
 	err := env.Bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
@@ -119,7 +119,7 @@ func TestWithinTxRunsWorkRegisteredUnderAKeyOnceBeforeCommit(t *testing.T) {
 // Work that fails before the commit rolls the transaction back.
 func TestWithinTxRollsBackWhenWorkBeforeCommitFails(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	boom := errors.New("work failed")
 
 	err := env.Bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {

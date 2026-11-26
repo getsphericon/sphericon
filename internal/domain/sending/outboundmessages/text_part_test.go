@@ -1,7 +1,6 @@
 package outboundmessages_test
 
 import (
-	"context"
 	"strings"
 	"testing"
 	"time"
@@ -31,7 +30,7 @@ func sendUmbrella(t *testing.T, env *testhelper.TestEnv, req outboundmessages.Re
 	req.Destination = "reader@example.com"
 	req.Content = outboundmessages.EmailContent{Subject: "News", Body: textPartBody, FromEmail: "news@" + fixtures.SendingDomainUmbrellaDomain}
 	req.Variables = map[string]any{"name": "Grace"}
-	res, err := newModule(env, time.Now).Send(context.Background(), env.DB.Scoped(fixtures.UmbrellaID), req)
+	res, err := newModule(env, time.Now).Send(t.Context(), env.DB.Scoped(fixtures.UmbrellaID), req)
 	require.NoError(t, err)
 	require.Equal(t, outboundmessages.Sent, res.Outcome)
 	msgs := env.CustomerMail.Messages()

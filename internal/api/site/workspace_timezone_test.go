@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"testing"
@@ -25,8 +24,8 @@ func setTimezone(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceI
 // trySetTimezone is setTimezone for a test that expects the refusal.
 func trySetTimezone(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceId, name string) (*siteapi.SiteWorkspaceResource, error) {
 	t.Helper()
-	return c.SiteWorkspacesSetTimezone(context.Background(),
-		&siteapi.SiteWorkspaceTimezoneInput{Revision: testhelper.SiteWorkspaceRevision(context.Background(), c, workspaceID), Timezone: siteapi.TimeZoneName(name)},
+	return c.SiteWorkspacesSetTimezone(t.Context(),
+		&siteapi.SiteWorkspaceTimezoneInput{Revision: testhelper.SiteWorkspaceRevision(t.Context(), c, workspaceID), Timezone: siteapi.TimeZoneName(name)},
 		siteapi.SiteWorkspacesSetTimezoneParams{WorkspaceId: workspaceID})
 }
 
@@ -34,7 +33,7 @@ func TestAWorkspaceReportsInUTCUntilAnOwnerSetsAZone(t *testing.T) {
 	env := testhelper.Setup(t)
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	list, err := owner.SiteWorkspacesList(context.Background())
+	list, err := owner.SiteWorkspacesList(t.Context())
 	require.NoError(t, err)
 	require.Len(t, list, 1)
 	assert.Equal(t, siteapi.TimeZoneName("UTC"), list[0].Timezone)
@@ -47,7 +46,7 @@ func TestAnOwnerSetsTheTimezoneAndItIsRecordedInTheAuditLog(t *testing.T) {
 	updated := setTimezone(t, owner, fixtures.AcmePublicID, "Europe/Berlin")
 	assert.Equal(t, siteapi.TimeZoneName("Europe/Berlin"), updated.Timezone)
 
-	list, err := owner.SiteWorkspacesList(context.Background())
+	list, err := owner.SiteWorkspacesList(t.Context())
 	require.NoError(t, err)
 	assert.Equal(t, siteapi.TimeZoneName("Europe/Berlin"), list[0].Timezone)
 
@@ -100,7 +99,7 @@ func TestAnUnknownTimezoneIsRefusedAndTheZoneStays(t *testing.T) {
 	refused := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Contains(t, refused.Errors.Value["timezone"][0], "unknown time zone")
 
-	list, err := owner.SiteWorkspacesList(context.Background())
+	list, err := owner.SiteWorkspacesList(t.Context())
 	require.NoError(t, err)
 	assert.Equal(t, siteapi.TimeZoneName("UTC"), list[0].Timezone)
 	assert.Empty(t, env.QueuedEvents(t, events.NameAuditEntry))

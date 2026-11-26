@@ -1,7 +1,6 @@
 package jobs_test
 
 import (
-	"context"
 	"sync"
 	"testing"
 	"time"
@@ -25,7 +24,7 @@ import (
 // its name.
 func queuedOnTheContact(t *testing.T, e *realEnv, contactID int64, writers ...testhelper.Writer) map[string]error {
 	t.Helper()
-	ctx := context.Background()
+	ctx := t.Context()
 	tx, err := e.client.Tx(ctx)
 	require.NoError(t, err)
 	release := sync.OnceFunc(func() { _ = tx.Rollback() })
@@ -39,7 +38,7 @@ func queuedOnTheContact(t *testing.T, e *realEnv, contactID int64, writers ...te
 // the Enrollment and the writer of that exit Event.
 func enrolledForTheExit(t *testing.T, e *realEnv) (int64, testhelper.Writer) {
 	t.Helper()
-	ctx := context.Background()
+	ctx := t.Context()
 	runID := e.enrolledNow(t, fixtures.AutomationJobsTagWithExitID, fixtures.ContactAliceID)
 	return runID, testhelper.Writer{Name: "exit", Run: func() error {
 		left := automations.Event{Action: "job_tag_exit_left", OccurredAt: time.Now()}
@@ -71,7 +70,7 @@ func TestATagStepAndAnExitOfOneContactNeverDeadlock(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			e := newRealEnv(t)
-			ctx := context.Background()
+			ctx := t.Context()
 			runID, exit := enrolledForTheExit(t, e)
 			stepper := e.stepper(t, &fakeSender{})
 			first := e.env.StepIDAt(t, runID, 0)
@@ -109,7 +108,7 @@ func TestAnErasureAndAnExitOfOneContactNeverDeadlock(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			e := newRealEnv(t)
-			ctx := context.Background()
+			ctx := t.Context()
 			runID, exit := enrolledForTheExit(t, e)
 			erasing := testhelper.Module[*contacterasure.UseCase](e.env)
 			erase := testhelper.Writer{Name: "erase", Run: func() error {

@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"encoding/csv"
 	"encoding/json"
 	"io"
@@ -20,7 +19,7 @@ import (
 
 func auditExport(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceId) *siteapi.SiteAuditExportOKHeaders {
 	t.Helper()
-	res, err := c.SiteAuditExport(context.Background(), siteapi.SiteAuditExportParams{WorkspaceId: workspaceID})
+	res, err := c.SiteAuditExport(t.Context(), siteapi.SiteAuditExportParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	return res
 }
@@ -76,7 +75,7 @@ func TestAuditExportSpansPagesAndNeverLeaksAnotherTenant(t *testing.T) {
 
 func TestAuditExportNeutralisesSpreadsheetFormulas(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	rows := auditCSV(t, mustExport(ctx, t, env.SiteActor(t, fixtures.OwnerJaneEmail), siteapi.SiteAuditExportParams{
 		WorkspaceId: fixtures.GlobexPublicID, Action: siteapi.NewOptAuditAction(siteapi.AuditActionTagCreate)}))
@@ -115,7 +114,7 @@ func TestAuditExportWithoutLicenseIsPaymentRequired(t *testing.T) {
 func TestAuditExportIsItselfAudited(t *testing.T) {
 	env := testhelper.Setup(t)
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	auditCSV(t, mustExport(ctx, t, owner, siteapi.SiteAuditExportParams{WorkspaceId: fixtures.AcmePublicID, Action: siteapi.NewOptAuditAction(siteapi.AuditActionMembershipUpdate)}))
 
