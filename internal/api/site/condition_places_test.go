@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"encoding/json"
 	"maps"
 	"net/http"
 	"slices"
@@ -125,7 +124,7 @@ func TestSiteConditionRefusesWhatItsPlaceDoesNotAdmitByItsPath(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			env := testhelper.Setup(t)
 			edited := env.SiteActorVia(t, fixtures.OwnerJohnEmail, testhelper.EditBody(func(body map[string]any) {
-				body["condition"] = nestedIn(t, tc.leaf)
+				body["condition"] = testhelper.NestedCondition(t, tc.leaf)
 			}))
 
 			_, err := edited.SiteSegmentsCreate(t.Context(), &siteapi.CreateSegmentInput{
@@ -151,15 +150,4 @@ func TestSiteConditionTestsEveryContactAttribute(t *testing.T) {
 
 		require.NoError(t, err, attribute)
 	}
-}
-
-// nestedIn is a Condition holding leaf at entries.1.entries.1, behind a valid leaf at each depth.
-func nestedIn(t *testing.T, leaf string) map[string]any {
-	t.Helper()
-	var condition map[string]any
-	require.NoError(t, json.Unmarshal([]byte(`{"kind":"group","combinator":"and","entries":[
-		{"kind":"tag","name":"vip","operator":"has"},
-		{"kind":"group","combinator":"or","entries":[{"kind":"tag","name":"vip","operator":"has"},`+leaf+`]}
-	]}`), &condition))
-	return condition
 }

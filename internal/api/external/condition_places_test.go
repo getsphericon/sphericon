@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"encoding/json"
 	"maps"
 	"net/http"
 	"slices"
@@ -124,7 +123,7 @@ func TestExternalConditionRefusesWhatItsPlaceDoesNotAdmitByItsPath(t *testing.T)
 		t.Run(tc.name, func(t *testing.T) {
 			env := testhelper.Setup(t)
 			edited := env.ExternalVia(t, env.ScopedBearer(t, apitokens.ScopeSegmentsWrite), testhelper.EditBody(func(body map[string]any) {
-				body["condition"] = nestedIn(t, tc.leaf)
+				body["condition"] = testhelper.NestedCondition(t, tc.leaf)
 			}))
 
 			_, err := edited.SegmentsCreate(t.Context(), &externalapi.CreateSegmentInput{
@@ -135,15 +134,4 @@ func TestExternalConditionRefusesWhatItsPlaceDoesNotAdmitByItsPath(t *testing.T)
 			assert.Equal(t, []string{tc.path}, slices.Collect(maps.Keys(refused.Errors.Or(nil))))
 		})
 	}
-}
-
-// nestedIn is a Condition holding leaf at entries.1.entries.1, behind a valid leaf at each depth.
-func nestedIn(t *testing.T, leaf string) map[string]any {
-	t.Helper()
-	var condition map[string]any
-	require.NoError(t, json.Unmarshal([]byte(`{"kind":"group","combinator":"and","entries":[
-		{"kind":"tag","name":"vip","operator":"has"},
-		{"kind":"group","combinator":"or","entries":[{"kind":"tag","name":"vip","operator":"has"},`+leaf+`]}
-	]}`), &condition))
-	return condition
 }

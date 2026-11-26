@@ -19,17 +19,10 @@ import (
 // The acceptance gate on a User's Connections (ADR 0062): once the fixture terms are in effect,
 // Vehement's member Mel, who has accepted none of them, is gated, and her Connection acts as her.
 
-// listContacts is the error /api answers a contacts list on the bearer with: nil when it serves it.
-func listContacts(t *testing.T, env *testhelper.TestEnv, bearer string) error {
-	t.Helper()
-	_, err := env.ExternalWithToken(t, bearer).ContactsList(t.Context(), externalapi.ContactsListParams{})
-	return err
-}
-
 // mcpRefusal is the status and problem code /mcp refuses the bearer with.
 func mcpRefusal(t *testing.T, env *testhelper.TestEnv, bearer string) (status int, code string) {
 	t.Helper()
-	rec := serve(env, mcpRequest(t, bearer))
+	rec := env.Serve(mcpRequest(t, bearer))
 	var problem struct {
 		Code string `json:"code"`
 	}
@@ -48,7 +41,7 @@ func TestAConnectionOfAGatedUserIsRefusedWithAcceptancePending(t *testing.T) {
 	env := testhelper.Setup(t)
 	env.PutSignupItemsInEffect(t.Context(), fixtures.ServiceTermsID)
 
-	api := listContacts(t, env, melsConnection)
+	api := env.ListContactsWith(t, melsConnection)
 	status, code := mcpRefusal(t, env, melsConnection)
 
 	assert.Truef(t, isAcceptancePending(api), "got %#v", api)
@@ -59,7 +52,7 @@ func TestAConnectionOfAGatedUserIsRefusedWithAcceptancePending(t *testing.T) {
 func TestAConnectionWorksAgainOnceItsUserAccepts(t *testing.T) {
 	env := testhelper.Setup(t)
 	env.PutSignupItemsInEffect(t.Context(), fixtures.ServiceTermsID)
-	refused := listContacts(t, env, melsConnection)
+	refused := env.ListContactsWith(t, melsConnection)
 	require.Truef(t, isAcceptancePending(refused), "refused while the terms are pending, got %#v", refused)
 
 	_, err := env.SiteActor(t, fixtures.VehementMemberMelEmail).SiteUserAcceptPending(t.Context(), &siteapi.SiteAcceptPendingInput{
@@ -67,7 +60,7 @@ func TestAConnectionWorksAgainOnceItsUserAccepts(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	api := listContacts(t, env, melsConnection)
+	api := env.ListContactsWith(t, melsConnection)
 	status := mcpStatus(t, env, melsConnection)
 
 	require.NoError(t, api)
@@ -78,11 +71,11 @@ func TestAConnectionWorksAgainOnceItsUserAccepts(t *testing.T) {
 func TestAnAPITokenOfTheWorkspaceIsNeverGated(t *testing.T) {
 	env := testhelper.Setup(t)
 	env.PutSignupItemsInEffect(t.Context(), fixtures.ServiceTermsID)
-	refused := listContacts(t, env, melsConnection)
+	refused := env.ListContactsWith(t, melsConnection)
 	require.Truef(t, isAcceptancePending(refused), "the member is gated, got %#v", refused)
 	bearer := env.ScopedBearerFor(t, fixtures.VehementID, apitokens.ScopeContactsRead)
 
-	api := listContacts(t, env, bearer)
+	api := env.ListContactsWith(t, bearer)
 	status := mcpStatus(t, env, bearer)
 
 	require.NoError(t, api)

@@ -24,14 +24,6 @@ func startLink(t *testing.T, env *testhelper.TestEnv, visitorID string) *collect
 	return link
 }
 
-func identify(t *testing.T, env *testhelper.TestEnv, visitorID, email string) {
-	t.Helper()
-	_, err := env.CollectAcme(t).CollectIdentifyCreate(t.Context(), &collectapi.CollectIdentifyInput{
-		VisitorId: visitorID, Email: collectapi.NewOptNilEmailAddress(collectapi.EmailAddress(email)),
-	})
-	require.NoError(t, err)
-}
-
 // contactChats is the Telegram chats the Contact with the email is reached through, as its card
 // lists them.
 func contactChats(t *testing.T, env *testhelper.TestEnv, email string) []siteapi.SiteBindingResource {
@@ -54,7 +46,7 @@ func TestAVisitorStartLinkBindsTheChatToTheVisitorAndAClaimedIdentifyLeavesItThe
 
 	link := startLink(t, env, "dev-tg")
 	env.StartTelegram(t, bot, 1, 6001, link.URL)
-	identify(t, env, "dev-tg", "tracker.person@example.com")
+	env.IdentifyVisitor(t, "dev-tg", "tracker.person@example.com")
 
 	assert.Contains(t, link.URL, "https://t.me/"+testhelper.AcmeTelegramUsername+"?start=")
 	vis := env.DB.Visitor.Query().Where(visitor.WorkspaceID(fixtures.AcmeID), visitor.VisitorID("dev-tg")).OnlyX(t.Context())
@@ -72,7 +64,7 @@ func TestAChatStartedAfterAClaimedIdentifyIsTheVisitors(t *testing.T) {
 	bot := env.AcmeTelegram(t)
 	env.MakeDefaultTelegram(t, bot)
 
-	identify(t, env, "dev-after", "after.person@example.com")
+	env.IdentifyVisitor(t, "dev-after", "after.person@example.com")
 	env.StartTelegram(t, bot, 2, 6002, startLink(t, env, "dev-after").URL)
 
 	owned := env.DB.Binding.Query().Where(binding.Destination("6002")).OnlyX(t.Context())
@@ -101,7 +93,7 @@ func TestAMessageFromAVisitorsChatIsNobodysEvenAfterAClaimedIdentify(t *testing.
 	env.StartTelegram(t, bot, 3, 6003, startLink(t, env, "dev-received").URL)
 
 	env.PostTelegramUpdate(t, bot, testhelper.TelegramMessage(4, 6003, "before"))
-	identify(t, env, "dev-received", "received.person@example.com")
+	env.IdentifyVisitor(t, "dev-received", "received.person@example.com")
 	env.PostTelegramUpdate(t, bot, testhelper.TelegramMessage(5, 6003, "after"))
 
 	assert.Zero(t, env.QueuedCount(t, systemevent.TelegramReceived, nil))
@@ -114,7 +106,7 @@ func TestAVisitorsChatStartedAgainByAContactsLinkBecomesTheContacts(t *testing.T
 	bot := env.AcmeTelegram(t)
 	env.MakeDefaultTelegram(t, bot)
 	env.StartTelegram(t, bot, 8, 6005, startLink(t, env, "dev-same").URL)
-	identify(t, env, "dev-same", "same.person@example.com")
+	env.IdentifyVisitor(t, "dev-same", "same.person@example.com")
 	contact := env.DB.Contact.Query().Where(entcontact.WorkspaceID(fixtures.AcmeID), entcontact.Email("same.person@example.com")).OnlyX(t.Context())
 
 	env.BindTelegram(t, bot, contact.ID, 6005, 9)

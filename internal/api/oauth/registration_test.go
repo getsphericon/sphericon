@@ -29,7 +29,7 @@ func postJSON(t *testing.T, env *testhelper.TestEnv, path, body string) *httptes
 	t.Helper()
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, path, strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
-	return serve(env, req)
+	return env.Serve(req)
 }
 
 func TestDynamicClientRegistration(t *testing.T) {
@@ -88,7 +88,7 @@ func authorizeQuery(extra url.Values) url.Values {
 
 func authorize(t *testing.T, env *testhelper.TestEnv, q url.Values) *httptest.ResponseRecorder {
 	t.Helper()
-	return serve(env, httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/oauth/authorize?"+q.Encode(), nil))
+	return env.Serve(httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/oauth/authorize?"+q.Encode(), nil))
 }
 
 func TestAuthorizeHandsOffToTheConsentScreen(t *testing.T) {

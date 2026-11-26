@@ -2,7 +2,6 @@ package site_test
 
 import (
 	"net/http"
-	"strconv"
 	"testing"
 
 	"github.com/go-faster/jx"
@@ -15,14 +14,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func paragraphDoc(text string) map[string]jx.Raw {
-	return map[string]jx.Raw{
-		"type": jx.Raw(`"doc"`),
-		"content": jx.Raw(`[{"type":"paragraph","content":[{"type":"text","text":` +
-			strconv.Quote(text) + `}]}]`),
-	}
-}
-
 func TestSiteTemplatesSaveADocumentWithItsBody(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
@@ -32,7 +23,7 @@ func TestSiteTemplatesSaveADocumentWithItsBody(t *testing.T) {
 	res, err := c.SiteTemplatesCreate(ctx, &siteapi.CreateTemplateInput{
 		Name:    "Authored",
 		Subject: siteapi.NewOptString("Hi {{ first_name }}"),
-		Doc:     siteapi.NewOptEditorDocument(paragraphDoc("Hello {{ first_name }}")),
+		Doc:     siteapi.NewOptEditorDocument(testhelper.ParagraphDoc("Hello {{ first_name }}")),
 	}, siteapi.SiteTemplatesCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	assert.Contains(t, res.Body, "Hello {{ first_name }}")
@@ -48,7 +39,7 @@ func TestSiteTemplatesSaveADocumentWithItsBody(t *testing.T) {
 	// Saving another document rebuilds the body.
 	upd, err := c.SiteTemplatesUpdate(ctx, &siteapi.UpdateTemplateInput{
 		Revision: res.Revision,
-		Doc:      siteapi.NewOptEditorDocument(paragraphDoc("Second")),
+		Doc:      siteapi.NewOptEditorDocument(testhelper.ParagraphDoc("Second")),
 	}, siteapi.SiteTemplatesUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	assert.Contains(t, upd.Body, "Second")
@@ -122,7 +113,7 @@ func TestSiteTemplatesRefuseABodyAndADocumentTogether(t *testing.T) {
 
 	_, err := c.SiteTemplatesCreate(t.Context(), &siteapi.CreateTemplateInput{
 		Name: "Both", Body: siteapi.NewOptString("<p>x</p>"),
-		Doc: siteapi.NewOptEditorDocument(paragraphDoc("x")),
+		Doc: siteapi.NewOptEditorDocument(testhelper.ParagraphDoc("x")),
 	}, siteapi.SiteTemplatesCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 }

@@ -60,7 +60,7 @@ func exchange(t *testing.T, env *testhelper.TestEnv, form url.Values) *httptest.
 	t.Helper()
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/oauth/token", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	return serve(env, req)
+	return env.Serve(req)
 }
 
 func tokenForm(code string) url.Values {
