@@ -185,10 +185,10 @@ func TestAStoredWaitUntilOnADateRoundTripsWithItsField(t *testing.T) {
 	written, err := json.Marshal(st)
 
 	require.NoError(t, err)
-	assert.Equal(t, automationstep.WaitUntil{Until: automationstep.OnDate{Date: datetrigger.Date{
+	assert.Equal(t, automationstep.WaitUntil{Until: automationstep.OnDate{
 		Field:      datetrigger.Field{Kind: datetrigger.CustomField, Key: "trial_ends_at"},
 		Recurrence: localcalendar.Once, OffsetDays: -3, LocalTime: "10:00",
-	}}}, st.Payload)
+	}}, st.Payload)
 	assert.JSONEq(t, stored, string(written))
 }
 

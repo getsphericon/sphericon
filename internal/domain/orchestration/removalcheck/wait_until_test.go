@@ -21,10 +21,10 @@ import (
 // would never come.
 func TestACustomFieldAWaitUntilNamesIsRefusedARetypeNamingTheAutomation(t *testing.T) {
 	env := testhelper.Setup(t)
-	waits := automationstep.Root(automationstep.New(automationstep.WaitUntil{Until: automationstep.OnDate{Date: datetrigger.Date{
+	waits := automationstep.Root(automationstep.New(automationstep.WaitUntil{Until: automationstep.OnDate{
 		Field:      datetrigger.Field{Kind: datetrigger.CustomField, Key: fixtures.CustomFieldAcmeTrialEndsAtKey},
 		Recurrence: localcalendar.Once, OffsetDays: -3, LocalTime: "10:00",
-	}}}))
+	}}))
 	live := branchingOn(t, env, fixtures.AcmeID, "Trial ending", waits, true)
 	draft := branchingOn(t, env, fixtures.AcmeID, "Draft trial ending", waits, false)
 

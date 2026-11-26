@@ -246,49 +246,6 @@ func dateProblem(d datetrigger.Date) string {
 	return fmt.Sprintf("%q is not a date field", d.Field.Kind)
 }
 
-// dateFieldProblem says why the Workspace's catalogue cannot hold the date d names: a Custom
-// field it lacks, or holds with another type than datetime, whose date would never come. Empty
-// when it can, and for the birthday, which every Contact has.
-func (m *Module) dateFieldProblem(ctx context.Context, s *ent.Scoped, d datetrigger.Date) (string, error) {
-	if d.Field.Kind != datetrigger.CustomField {
-		return "", nil
-	}
-	field, err := m.people.CustomFieldByKey(ctx, s, d.Field.Key)
-	if err != nil {
-		return "", err
-	}
-	if field == nil {
-		return fmt.Sprintf("the Workspace has no Custom field %q", d.Field.Key), nil
-	}
-	if field.Type != customfield.TypeDatetime {
-		return fmt.Sprintf("the Custom field %q is a %s, not a datetime", d.Field.Key, field.Type), nil
-	}
-	return "", nil
-}
-
-// checkDateFields refuses a Wait until on a date whose Custom field the Workspace's catalogue cannot
-// hold (dateFieldProblem), naming the Step.
-func (m *Module) checkDateFields(ctx context.Context, s *ent.Scoped, steps automationstep.Path) error {
-	for _, st := range automationstep.All(steps) {
-		w, ok := st.Payload.(automationstep.WaitUntil)
-		if !ok {
-			continue
-		}
-		d, ok := w.Until.(automationstep.OnDate)
-		if !ok {
-			continue
-		}
-		problem, err := m.dateFieldProblem(ctx, s, d.Date)
-		if err != nil {
-			return err
-		}
-		if problem != "" {
-			return refuse(st, problem)
-		}
-	}
-	return nil
-}
-
 // validateBranch checks the shape of a Branch (ADR 0124): the contract's count of listed paths
 // besides otherwise (bounds.BranchPaths), and a Condition that tests something on each path.
 // Whether each Condition names what the Workspace holds is checkBranches'.
@@ -436,6 +393,49 @@ func New(cipher *secrets.Cipher, bus *events.Bus, renderer *emaildoc.Renderer, o
 		RevisionChanged:  ErrRevisionChanged,
 	}, now)
 	return m
+}
+
+// dateFieldProblem says why the Workspace's catalogue cannot hold the date d names: a Custom
+// field it lacks, or holds with another type than datetime, whose date would never come. Empty
+// when it can, and for the birthday, which every Contact has.
+func (m *Module) dateFieldProblem(ctx context.Context, s *ent.Scoped, d datetrigger.Date) (string, error) {
+	if d.Field.Kind != datetrigger.CustomField {
+		return "", nil
+	}
+	field, err := m.people.CustomFieldByKey(ctx, s, d.Field.Key)
+	if err != nil {
+		return "", err
+	}
+	if field == nil {
+		return fmt.Sprintf("the Workspace has no Custom field %q", d.Field.Key), nil
+	}
+	if field.Type != customfield.TypeDatetime {
+		return fmt.Sprintf("the Custom field %q is a %s, not a datetime", d.Field.Key, field.Type), nil
+	}
+	return "", nil
+}
+
+// checkDateFields refuses a Wait until on a date whose Custom field the Workspace's catalogue cannot
+// hold (dateFieldProblem), naming the Step.
+func (m *Module) checkDateFields(ctx context.Context, s *ent.Scoped, steps automationstep.Path) error {
+	for _, st := range automationstep.All(steps) {
+		w, ok := st.Payload.(automationstep.WaitUntil)
+		if !ok {
+			continue
+		}
+		d, ok := w.Until.(automationstep.OnDate)
+		if !ok {
+			continue
+		}
+		problem, err := m.dateFieldProblem(ctx, s, d.Date)
+		if err != nil {
+			return err
+		}
+		if problem != "" {
+			return refuse(st, problem)
+		}
+	}
+	return nil
 }
 
 // build renders every email step that holds a document to its body, in the same save (ADR 0040,

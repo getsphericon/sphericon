@@ -17,12 +17,12 @@ import (
 var reachZones = []string{"UTC", "Europe/Berlin", "America/New_York", "Asia/Kolkata", "Pacific/Auckland", "Australia/Lord_Howe"}
 
 func drawBirthdayWait(t *rapid.T) automationstep.OnDate {
-	return automationstep.OnDate{Date: datetrigger.Date{
+	return automationstep.OnDate{
 		Field:      datetrigger.Field{Kind: datetrigger.Birthday},
 		Recurrence: localcalendar.Yearly,
 		OffsetDays: rapid.IntRange(-365, 365).Draw(t, "offset"),
 		LocalTime:  fmt.Sprintf("%02d:%02d", rapid.IntRange(0, 23).Draw(t, "hour"), rapid.IntRange(0, 59).Draw(t, "minute")),
-	}}
+	}
 }
 
 // A yearly date the Contact holds from before the arrival's year always has its next occurrence

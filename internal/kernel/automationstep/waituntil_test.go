@@ -25,16 +25,16 @@ func berlin(t *testing.T) *time.Location {
 
 // trialEnds is "3 days before trial_ends_at, at 10:00", once or every year.
 func trialEnds(recurrence localcalendar.Recurrence) automationstep.OnDate {
-	return automationstep.OnDate{Date: datetrigger.Date{
+	return automationstep.OnDate{
 		Field:      datetrigger.Field{Kind: datetrigger.CustomField, Key: "trial_ends_at"},
 		Recurrence: recurrence, OffsetDays: -3, LocalTime: "10:00",
-	}}
+	}
 }
 
 // nextBirthday is "until the next birthday, at 10:00".
-var nextBirthday = automationstep.OnDate{Date: datetrigger.Date{
+var nextBirthday = automationstep.OnDate{
 	Field: datetrigger.Field{Kind: datetrigger.Birthday}, Recurrence: localcalendar.Yearly, LocalTime: "10:00",
-}}
+}
 
 func holding(trialEndsAt any) datetrigger.Holder {
 	return datetrigger.Holder{CustomFields: map[string]any{"trial_ends_at": trialEndsAt}}
