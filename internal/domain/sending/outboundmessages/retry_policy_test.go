@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"pgregory.net/rapid"
 
@@ -79,21 +80,22 @@ func TestASendCapDeferralAlwaysRetriesWithinTheBound(t *testing.T) {
 
 // A per-recipient Deferral (a Frequency cap, a Sending window) wakes at its release moment plus at
 // most a minute of jitter, however far off the moment is and whatever the backlog: neither the
-// backlog nor a per-source ceiling moves it.
+// backlog nor a per-source ceiling moves it. A moment already past is due now.
 func TestAPerRecipientDeferralRetriesAtItsReleaseMoment(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
 		now := time.Date(2030, time.March, 4, 10, 0, 0, 0, time.UTC)
-		ahead := time.Duration(rapid.Int64Range(1, int64(7*24*time.Hour)).Draw(t, "ahead"))
+		ahead := time.Duration(rapid.Int64Range(-int64(time.Hour), int64(7*24*time.Hour)).Draw(t, "ahead"))
 		backlog := rapid.IntRange(0, 100_000).Draw(t, "backlog")
 		cause := rapid.SampledFrom([]deferralcause.Cause{deferralcause.FrequencyCap, deferralcause.SendingWindow}).Draw(t, "cause")
 		until := now.Add(ahead)
 
 		retry := outboundmessages.Result{Outcome: outboundmessages.Deferral, Cause: cause, Until: until}.Retry(backlog, now)
 
+		due := lo.Latest(until, now)
 		assert.True(t, retry.Wanted)
 		wake := now.Add(retry.After)
-		assert.False(t, wake.Before(until), "never before the release moment")
-		assert.Less(t, wake.Sub(until), time.Minute, "within a minute of it")
+		assert.False(t, wake.Before(due), "never before the release moment, nor before now")
+		assert.Less(t, wake.Sub(due), time.Minute, "within a minute of it")
 	})
 }
 

@@ -14,7 +14,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -24,16 +23,16 @@ import (
 // most (ADR 0137, ADR 0178). Every Workspace caps SMS at three a day (fixtures/frequency_caps.yml).
 // One clock runs the Instance, so the count, the Enrollment's wait and the step's job agree.
 
-// cappedTexter is a test of the cap on ContactTexter's confirmed number: the Instance on the clock,
-// its Twilio account, and an Automation that texts the number, then tags the Contact.
+// cappedTexter is a test of the cap on ContactTexter's confirmed number: the Instance on the clock
+// and its Twilio account. ContactTexter's Enrollment (AutomationRunJobsSMSHiThenTagTexter) stands
+// on a text, then a tag.
 type cappedTexter struct {
-	env        *testhelper.TestEnv
-	clock      *testhelper.Clock
-	account    testhelper.TwilioAccount
-	stepper    *automations.StepExecution
-	automation int64
-	start      time.Time
-	texted     int
+	env     *testhelper.TestEnv
+	clock   *testhelper.Clock
+	account testhelper.TwilioAccount
+	stepper *automations.StepExecution
+	start   time.Time
+	texted  int
 }
 
 func newCappedTexter(t *testing.T) *cappedTexter {
@@ -42,19 +41,18 @@ func newCappedTexter(t *testing.T) *cappedTexter {
 	env := testhelper.Setup(t, testhelper.WithClock(c.Now))
 	account := env.AcmeTwilio(t)
 	confirmSMS(t, env, fixtures.ContactTexterPhone)
-	automationID := smsAutomation(t, env, smsStep(account, "Your cart waits"),
-		automationstep.New(automationstep.ApplyTag{Tag: "reminded"}))
 	return &cappedTexter{
-		env: env, clock: c, account: account, stepper: stepperAt(env, env.OutboundModule(), c.Now),
-		automation: automationID, start: c.Now(),
+		env: env, clock: c, account: account, stepper: stepperAt(env, env.OutboundModule(), c.Now), start: c.Now(),
 	}
 }
 
-// enroll enrolls ContactTexter in the Automation now, which queues its first step, and returns the
+// queueText queues the step ContactTexter's Enrollment stands on, the text, and returns the
 // Enrollment.
-func (ct *cappedTexter) enroll(t *testing.T) int64 {
+func (ct *cappedTexter) queueText(t *testing.T) int64 {
 	t.Helper()
-	return enrollVia(t, ct.env, ct.automation, fixtures.ContactTexterID)
+	runID := int64(fixtures.AutomationRunJobsSMSHiThenTagTexterID)
+	queueStep(t, ct.env, runID)
+	return runID
 }
 
 // broadcastTexts sends n Broadcast texts to the number now, each under a key of its own, and
@@ -92,7 +90,7 @@ func TestAnAutomationTextOverTheCapWaitsAtItsStepUntilAPlaceFrees(t *testing.T) 
 		ct.broadcastTexts(t, 1)
 		ct.clock.Advance(time.Hour)
 	}
-	runID := ct.enroll(t)
+	runID := ct.queueText(t)
 	waitedFrom := ct.clock.Now()
 
 	require.True(t, ct.env.RunNextStep(t, ct.stepper))
@@ -116,7 +114,7 @@ func TestAnAutomationTextOverTheCapWaitsAtItsStepUntilAPlaceFrees(t *testing.T) 
 
 	texts := ct.env.Twilio.Messages()
 	require.Len(t, texts, 4)
-	assert.Contains(t, texts[3].Body, "Your cart waits")
+	assert.Contains(t, texts[3].Body, "Hi")
 	done := ct.env.DB.AutomationRun.GetX(ctx, runID)
 	assert.Equal(t, automationrun.StatusCompleted, done.Status)
 	msg := ct.env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationRunID(runID)).OnlyX(ctx)
@@ -132,7 +130,7 @@ func TestAnAutomationTextWhosePlaceNeverFreesIsSkippedAtTheBoundAndMovesOn(t *te
 	ctx := t.Context()
 	ct.broadcastTexts(t, 3)
 	ct.clock.Advance(time.Hour)
-	runID := ct.enroll(t)
+	runID := ct.queueText(t)
 	waitedFrom := ct.clock.Now()
 	require.True(t, ct.env.RunNextStep(t, ct.stepper))
 	ct.clock.Set(ct.nextStepAt(t))
