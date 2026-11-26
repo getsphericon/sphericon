@@ -711,8 +711,9 @@ _Avoid_: Send log, delivery row
 **Outbound send**:
 The one act of sending a single message on any surface (Broadcast, Automation step,
 Transactional) and any Channel. It is asked with the Channel's Message content and runs one
-pipeline: the Workspace freeze check, the Send route of that Channel, the claim of the Outbound
-message, Send-eligibility on the Channel, rendering, the Provider limit and Send cap, the provider
+pipeline: the Workspace freeze check, the Send route of that Channel, the targets and
+Send-eligibility of each on the Channel (a send none of them passes is Skipped, recorded with no
+claim), the claim of the Outbound message, rendering, the Provider limit and Send cap, the provider
 call, and the record of the result with the Channel's `<channel>.sent` Event. Only a per-Channel
 **renderer** and **provider adapter** differ: email's hold the Sending-domain gate, the unsubscribe
 footer and List-Unsubscribe, the open pixel and DKIM signing, and the System sender is email's

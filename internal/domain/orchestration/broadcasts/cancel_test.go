@@ -110,6 +110,24 @@ func TestAFailureRacingCancelLoses(t *testing.T) {
 	assert.Equal(t, broadcasts.Stats{Recipients: 1, Cancelled: 1}, d.stats())
 }
 
+// A Skipped that races Cancel loses too: a Recipient Send-eligibility forbids (Alice opted out of
+// Broadcasts) is Skipped before any claim, and a Cancel that lands right after its row is written
+// withdraws it.
+func TestASkippedRacingCancelLoses(t *testing.T) {
+	d := newDelivery(t, time.Now)
+	d.env.UnsubscribeFromBroadcasts(d.t.Context(), fixtures.ContactAliceEmail)
+	alice := d.recipient(fixtures.ContactAliceID)
+	cancelled := make(chan broadcasts.Cancelled, 1)
+	d.env.DB.OutboundMessage.Use(cancelAfterTheClaim(d, cancelled))
+
+	require.NoError(t, d.del.SendRecipient(d.t.Context(), d.s, alice))
+
+	answer := testhelper.Receive(t, cancelled, "Cancel landed after the Skipped row")
+	assert.Equal(t, broadcast.StatusCancelled, answer.Broadcast.Status)
+	assert.Zero(t, d.messages(alice))
+	assert.Equal(t, broadcasts.Stats{Recipients: 1, Cancelled: 1}, d.stats())
+}
+
 // A plan that Cancel overtakes while it writes the Recipients schedules none of them: they read as
 // cancelled.
 func TestAPlanRacingCancelSchedulesNothing(t *testing.T) {

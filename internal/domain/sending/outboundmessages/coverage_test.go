@@ -528,10 +528,11 @@ func TestClaimErrors(t *testing.T) {
 	})
 }
 
-func TestEligibilityFailureReleasesTheClaimAndFailsClosed(t *testing.T) {
+// Send-eligibility is checked before the claim (ADR 0178): a check that cannot be made fails
+// closed, with nothing sent and no row under the key.
+func TestEligibilityFailureFailsClosedBeforeAnyClaim(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	logs := testhelper.CaptureLogs(t)
 
 	// The eligibility rule runs through the Workspace's Suppression query.
 	env.DB.Suppression.Intercept(ent.InterceptFunc(func(_ ent.Querier) ent.Querier {
@@ -539,19 +540,12 @@ func TestEligibilityFailureReleasesTheClaimAndFailsClosed(t *testing.T) {
 			return nil, errors.New("rule store unavailable")
 		})
 	}))
-	// And the release of the claim itself fails, which is only logged.
-	onOutboundMutation(env, func(ctx context.Context, m *ent.OutboundMessageMutation, next ent.Mutator) (ent.Value, error) {
-		if m.Op().Is(ent.OpUpdate) {
-			return nil, errors.New("release refused")
-		}
-		return next.Mutate(ctx, m)
-	})
 
 	_, err := newModule(env, time.Now).Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:elig", "a@example.com"))
 	require.ErrorContains(t, err, "rule store unavailable")
 	assert.Empty(t, env.CustomerMail.Messages(), "fail closed: nothing is sent when eligibility cannot be checked")
-	assert.Contains(t, logs.String(), "outbound: release claim failed")
-	assert.Contains(t, logs.String(), "release refused")
+	rows := env.DB.OutboundMessage.Query().Where(outboundmessage.WorkspaceID(fixtures.AcmeID), outboundmessage.IdempotencyKey("tx:elig")).CountX(ctx)
+	assert.Zero(t, rows, "nothing was claimed")
 }
 
 func TestFinishErrors(t *testing.T) {
@@ -569,16 +563,19 @@ func TestFinishErrors(t *testing.T) {
 		assert.ErrorContains(t, err, "write refused")
 	})
 
-	t.Run("the claim was taken over while we decided", func(t *testing.T) {
+	t.Run("an adopted claim was taken over while we decided", func(t *testing.T) {
 		env := testhelper.Setup(t)
+		// The fixture stale claim is adopted, then Skipped: another attempt takes it over just
+		// before the Skipped is written.
+		const key = "transactional:fixture-stale-claim"
 		onOutboundMutation(env, func(ctx context.Context, m *ent.OutboundMessageMutation, next ent.Mutator) (ent.Value, error) {
 			if st, ok := m.Status(); ok && st == outboundmessage.StatusSkipped {
-				env.DB.OutboundMessage.Update().Where(outboundmessage.IdempotencyKey("tx:finish")).
+				env.DB.OutboundMessage.Update().Where(outboundmessage.IdempotencyKey(key)).
 					SetClaimedAt(time.Now().Add(-time.Hour)).ExecX(ctx)
 			}
 			return next.Mutate(ctx, m)
 		})
-		_, err := newModule(env, time.Now).Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:finish", suppressd))
+		_, err := newModule(env, time.Now).Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional(key, suppressd))
 		assert.ErrorIs(t, err, outboundmessages.ErrInProgress)
 	})
 }

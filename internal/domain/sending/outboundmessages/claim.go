@@ -7,6 +7,8 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/samber/lo"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
@@ -18,7 +20,7 @@ import (
 // break them.
 var _ = db.Declare(
 	db.Fault("outbound_messages_workspace_id_idempotency_key",
-		"a claim and a failed attempt are written with ON CONFLICT DO NOTHING, and judge the row that holds the key"),
+		"a claim, a Skipped decided before the claim and a failed attempt are written with ON CONFLICT DO NOTHING, and judge the row that holds the key"),
 	db.Fault("tracked_links_token_key",
 		"a short token is drawn at random and written with ON CONFLICT DO NOTHING: a draw that meets one draws again"),
 )
@@ -42,15 +44,70 @@ func (m *Module) find(ctx context.Context, s *ent.Scoped, key string) (*ent.Outb
 // check, or one that appears in a race) it is replayed when final, taken over when
 // its lease has expired, and otherwise reported as ErrInProgress.
 func (m *Module) claim(ctx context.Context, s *ent.Scoped, req Request, dest string, g gateResult, existing *ent.OutboundMessage) (*ent.OutboundMessage, *Result, error) {
-	if existing != nil {
-		return m.adopt(ctx, s, req, existing)
+	if existing == nil {
+		id, holder, err := m.insert(ctx, s, req, m.newMessage(s, req, dest, g))
+		if err != nil {
+			return nil, nil, err
+		}
+		if holder == nil {
+			msg, err := s.OutboundMessage().Get(ctx, id)
+			if err != nil {
+				return nil, nil, err
+			}
+			withdrawn, err := withdrawIfStopped(ctx, s, req.Stopped, msg.ID, ownsClaim(msg)...)
+			if err != nil || withdrawn {
+				return nil, withdrawnResult(withdrawn), err
+			}
+			return msg, nil, nil
+		}
+		existing = holder
 	}
+	if existing.Status != outboundmessage.StatusPending {
+		r := replayResult(existing)
+		return nil, &r, nil
+	}
+	return m.adopt(ctx, s, req, existing)
+}
 
-	onChannel := req.Channel()
+// skipUnclaimed records a send Skipped before any claim (no Destination, Send-eligibility) as a
+// decided Outbound message under req.Key, with the rules of a claim: a pending row already under the
+// key (existing, or one an insert loses to) is adopted first, or reported in progress, and then
+// Skipped; an insert that loses the key to a decided row replays that row; and the source's stop is
+// asked once the row is written (Request.Stopped), so a stopped source gains no Skipped row.
+func (m *Module) skipUnclaimed(ctx context.Context, s *ent.Scoped, req Request, dest string, g gateResult, existing *ent.OutboundMessage, reason skipreason.Reason) (Result, error) {
+	if existing == nil {
+		create := m.newMessage(s, req, dest, g).SetStatus(outboundmessage.StatusSkipped).SetSkippedReason(reason)
+		id, holder, err := m.insert(ctx, s, req, create)
+		if err != nil {
+			return Result{}, err
+		}
+		if holder == nil {
+			withdrawn, err := withdrawIfStopped(ctx, s, req.Stopped, id, outboundmessage.StatusEQ(outboundmessage.StatusSkipped))
+			if err != nil || withdrawn {
+				return lo.FromPtr(withdrawnResult(withdrawn)), err
+			}
+			return Result{Outcome: Skipped, SkippedReason: reason, MessageID: id}, nil
+		}
+		existing = holder
+	}
+	if existing.Status != outboundmessage.StatusPending {
+		return replayResult(existing), nil
+	}
+	msg, replay, err := m.adopt(ctx, s, req, existing)
+	if err != nil || replay != nil {
+		return lo.FromPtr(replay), err
+	}
+	return m.skip(ctx, s, msg, reason)
+}
+
+// newMessage is the new Outbound message of req under its key, as a claim and a Skipped decided
+// before the claim both write it: dest is the Request's own Destination ("" for none), g what the
+// holds resolved.
+func (m *Module) newMessage(s *ent.Scoped, req Request, dest string, g gateResult) *ent.OutboundMessageScopedCreate {
 	create := s.OutboundMessage().Create().
 		SetKind(req.Kind()).
 		SetIdempotencyKey(req.Key).
-		SetChannel(onChannel).
+		SetChannel(req.Channel()).
 		SetClaimedAt(m.claimTime())
 	if dest != "" {
 		create.SetDestination(dest)
@@ -72,40 +129,32 @@ func (m *Module) claim(ctx context.Context, s *ent.Scoped, req Request, dest str
 	if req.digest != "" {
 		create.SetRequestDigest(req.digest)
 	}
+	return create
+}
 
-	id, err := create.OnConflictColumns(outboundmessage.FieldWorkspaceID, outboundmessage.FieldIdempotencyKey).DoNothing().ID(ctx)
+// insert writes create under req.Key unless a row already holds the key: id is the row written, and
+// holder nil; or holder is the row that holds the key (another attempt wrote it between Send's replay
+// check and now), which the caller judges exactly like one found up front.
+func (m *Module) insert(ctx context.Context, s *ent.Scoped, req Request, create *ent.OutboundMessageScopedCreate) (id int64, holder *ent.OutboundMessage, err error) {
+	id, err = create.OnConflictColumns(outboundmessage.FieldWorkspaceID, outboundmessage.FieldIdempotencyKey).DoNothing().ID(ctx)
 	inserted, err := db.Inserted(err)
 	switch {
 	case err != nil:
-		return nil, nil, err
+		return 0, nil, err
 	case inserted:
-		msg, err := s.OutboundMessage().Get(ctx, id)
-		if err != nil {
-			return nil, nil, err
-		}
-		withdrawn, err := withdrawIfStopped(ctx, s, req.Stopped, msg.ID, ownsClaim(msg)...)
-		if err != nil || withdrawn {
-			return nil, withdrawnResult(withdrawn), err
-		}
-		return msg, nil, nil
+		return id, nil, nil
 	}
-	// Lost the insert race: another attempt claimed this key between our replay
-	// check and now. Treat its row exactly like one we found up front.
-	other, err := m.find(ctx, s, req.Key)
+	holder, err = m.find(ctx, s, req.Key)
 	if err != nil {
-		return nil, nil, err
+		return 0, nil, err
 	}
-	if other == nil {
-		return nil, nil, fmt.Errorf("%w: %q", errKeyVanished, req.Key)
+	if holder == nil {
+		return 0, nil, fmt.Errorf("%w: %q", errKeyVanished, req.Key)
 	}
-	if err := sameRequest(other, req); err != nil {
-		return nil, nil, err
+	if err := sameRequest(holder, req); err != nil {
+		return 0, nil, err
 	}
-	if other.Status != outboundmessage.StatusPending {
-		r := replayResult(other)
-		return nil, &r, nil
-	}
-	return m.adopt(ctx, s, req, other)
+	return 0, holder, nil
 }
 
 // adopt takes over a pending claim another attempt left (takeOver), unless it was left behind

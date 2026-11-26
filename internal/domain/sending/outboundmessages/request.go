@@ -53,7 +53,7 @@ func BroadcastContent(b *ent.Broadcast) (Content, error) {
 
 // BroadcastRecipient is the Request for one Broadcast recipient's message on the Broadcast's
 // Channel. Its Destination is the Contact's on that Channel: on email the address, which a Contact
-// with none is Skipped for; a Channel of Bindings reads them after the claim.
+// with none is Skipped for; a Channel of Bindings reads them when the message is sent.
 func BroadcastRecipient(b *ent.Broadcast, rec *ent.BroadcastRecipient, c *ent.Contact) (Request, error) {
 	content, err := BroadcastContent(b)
 	if err != nil {
