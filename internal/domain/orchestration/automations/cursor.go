@@ -29,7 +29,9 @@ func cursorPosition(start, through time.Time) cursorAt {
 }
 
 // positionOf is where the cursor stands.
-func positionOf(c *ent.AutomationOccurrenceCursor) cursorAt { return cursorPosition(c.SpanStart, c.DecidedThrough) }
+func positionOf(c *ent.AutomationOccurrenceCursor) cursorAt {
+	return cursorPosition(c.SpanStart, c.DecidedThrough)
+}
 
 // The moves of a cursor.
 const (
