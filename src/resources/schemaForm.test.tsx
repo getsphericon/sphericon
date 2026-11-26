@@ -1,7 +1,8 @@
-import { Checkbox, Select, TextInput } from '@mantine/core'
+import { Button, Checkbox, Select, TextInput } from '@mantine/core'
 import { useState } from 'react'
+import type { SubmitEvent } from 'react'
 import { expect, test } from 'vitest'
-import { userEvent } from 'vitest/browser'
+import { cdp, userEvent } from 'vitest/browser'
 import * as z from 'zod'
 
 import { renderWithProviders } from '../test/renderWithProviders.tsx'
@@ -25,7 +26,7 @@ function Form() {
       <TextInput label="Email" {...form.getInputProps('email')} />
       <Select label="Plan" data={plans} {...form.getInputProps('plan')} />
       <Checkbox label="Agree" {...form.getInputProps('agree', { type: 'checkbox' })} />
-      <button type="submit">{submitLabel}</button>
+      <Button type="submit">{submitLabel}</Button>
     </form>
   )
 }
@@ -208,4 +209,241 @@ test('a refusal of a field only another form renders is handed back, not placed 
     .element(screen.getByRole('status'))
     .toHaveTextContent(JSON.stringify({ password: ['Use at least 8 characters.'] }))
   await expect.element(screen.getByLabelText('Password')).not.toHaveFocus()
+})
+
+// press is a mouse press on a point of the page: the button goes down, the page may move under the
+// pointer (a blur shows an error and the layout shifts), `whileDown` runs with the button held (it
+// gets the press's pointerId), and the button comes up where it went down, or at `releaseAt`. A click that lands on an element in one
+// piece (locator.click) cannot show that.
+async function press(
+  x: number,
+  y: number,
+  {
+    releaseAt = { x, y },
+    whileDown,
+  }: {
+    releaseAt?: { x: number; y: number }
+    whileDown?: (pointerId: number) => Promise<void>
+  } = {},
+) {
+  const frame = window.frameElement?.getBoundingClientRect()
+  const scale = frame ? frame.width / window.innerWidth : 1
+  const at = (point: { x: number; y: number }) => ({
+    x: (frame?.x ?? 0) + point.x * scale,
+    y: (frame?.y ?? 0) + point.y * scale,
+    button: 'left' as const,
+    clickCount: 1,
+  })
+  let pointerId = 0
+  const record = (event: PointerEvent) => {
+    pointerId = event.pointerId
+  }
+  document.addEventListener('pointerdown', record, { capture: true, once: true })
+  const session = cdp()
+  await session.send('Input.dispatchMouseEvent', { ...at({ x, y }), type: 'mouseMoved' })
+  try {
+    await session.send('Input.dispatchMouseEvent', { ...at({ x, y }), type: 'mousePressed' })
+    await whileDown?.(pointerId)
+  } finally {
+    // A failed check must not leave the mouse button down or the listener on the page for the next
+    // test.
+    document.removeEventListener('pointerdown', record, { capture: true })
+    await session.send('Input.dispatchMouseEvent', { ...at(releaseAt), type: 'mouseMoved' })
+    await session.send('Input.dispatchMouseEvent', { ...at(releaseAt), type: 'mouseReleased' })
+  }
+}
+
+function topEdgeOf(button: Element) {
+  const { left, top, width } = button.getBoundingClientRect()
+  return { x: left + width / 2, y: top + 2 }
+}
+
+const emailError = 'Enter a valid email address.'
+
+// afterDeferred waits until a task the hook deferred with setTimeout(0) before it has run: timers
+// with the same delay run in the order they were set.
+async function afterDeferred() {
+  await new Promise<void>((resolve) => {
+    setTimeout(resolve, 0)
+  })
+}
+const otherLabel = 'Save other'
+const pixel = 'data:image/gif;base64,R0lGODlhAQABAAAAACw='
+
+// An image input submits its form as a submit button does.
+function ImageSubmitForm() {
+  const form = useSchemaForm(schema, { name: '', email: '', plan: '', agree: false })
+  return (
+    <form onSubmit={form.onSubmit(() => undefined)}>
+      <TextInput label="Name" {...form.getInputProps('name')} />
+      <TextInput label="Email" {...form.getInputProps('email')} />
+      <input type="image" alt={submitLabel} src={pixel} width={80} height={36} />
+    </form>
+  )
+}
+
+// The blur's error moves the submit button down, so the top edge the press started on is gone by
+// the time the mouse comes up: the press there is the one a click loses.
+test.each([
+  ['a submit button', Form],
+  ['an image input', ImageSubmitForm],
+])(
+  'a press on the top edge of %s submits when the blur it causes moves the button',
+  async (_, Component) => {
+    const screen = await renderWithProviders(<Component />)
+    await screen.getByLabelText('Email').click()
+    const { x, y } = topEdgeOf(screen.getByRole('button', { name: submitLabel }).element())
+
+    await press(x, y)
+
+    await expect.element(screen.getByText(emailError)).toBeInTheDocument()
+    await expect.element(screen.getByText('Name is required.')).toBeInTheDocument()
+  },
+)
+
+test('a press that is dragged off the submit button still checks the field it left', async () => {
+  const { screen, email, nameError } = await open()
+  await email.click()
+  const { x, y } = topEdgeOf(screen.getByRole('button', { name: submitLabel }).element())
+
+  await press(x, y, { releaseAt: { x, y: y - 60 } })
+
+  await expect.element(screen.getByText(emailError)).toBeInTheDocument()
+  await expect.element(nameError).not.toBeInTheDocument()
+})
+
+test('a press the browser cancels checks the field it left without waiting for the button to come up', async () => {
+  const { screen, email } = await open()
+  await email.click()
+  const button = screen.getByRole('button', { name: submitLabel }).element()
+  const { x, y } = topEdgeOf(button)
+
+  await press(x, y, {
+    releaseAt: { x, y: y - 60 },
+    whileDown: async (pointerId) => {
+      await afterDeferred()
+      expect(screen.getByText(emailError).query()).toBeNull()
+
+      button.dispatchEvent(new PointerEvent('pointercancel', { bubbles: true, pointerId }))
+
+      await expect.element(screen.getByText(emailError)).toBeInTheDocument()
+    },
+  })
+})
+
+// A finger or a pen lifted while the mouse holds the submit button does not end the mouse's press.
+test('another pointer coming up does not end the press on the submit button', async () => {
+  const { screen, email } = await open()
+  await email.click()
+  const button = screen.getByRole('button', { name: submitLabel }).element()
+  const { x, y } = topEdgeOf(button)
+
+  await press(x, y, {
+    whileDown: async (pointerId) => {
+      button.dispatchEvent(
+        new PointerEvent('pointerdown', {
+          bubbles: true,
+          pointerId: pointerId + 1,
+          pointerType: 'touch',
+        }),
+      )
+      button.dispatchEvent(
+        new PointerEvent('pointerup', {
+          bubbles: true,
+          pointerId: pointerId + 1,
+          pointerType: 'touch',
+        }),
+      )
+      await afterDeferred()
+      expect(screen.getByText(emailError).query()).toBeNull()
+    },
+  })
+
+  await expect.element(screen.getByText(emailError)).toBeInTheDocument()
+  await expect.element(screen.getByText('Name is required.')).toBeInTheDocument()
+})
+
+// Only a press on the field's own form waits: another form's submit button does not submit it.
+function TwoSubmitForms() {
+  const other = useSchemaForm(schema, { name: '', email: '', plan: '', agree: false })
+  const form = useSchemaForm(schema, { name: '', email: '', plan: '', agree: false })
+  return (
+    <>
+      <form onSubmit={other.onSubmit(() => undefined)}>
+        <Button type="submit">{otherLabel}</Button>
+      </form>
+      <form onSubmit={form.onSubmit(() => undefined)}>
+        <TextInput label="Email" {...form.getInputProps('email')} />
+        <Button type="submit">{submitLabel}</Button>
+      </form>
+    </>
+  )
+}
+
+test('a field left for another form’s submit button is checked when it loses focus', async () => {
+  const screen = await renderWithProviders(<TwoSubmitForms />)
+  await screen.getByLabelText('Email').click()
+  const { x, y } = topEdgeOf(screen.getByRole('button', { name: otherLabel }).element())
+
+  await press(x, y, {
+    whileDown: async () => {
+      await expect.element(screen.getByText(emailError)).toBeInTheDocument()
+    },
+  })
+})
+
+// A form that checks a field by a rule of its own sets that error in its own submit handler and
+// stops there, before form.onSubmit (ProviderLimitForm): the check of the field the press left must
+// not run after the submit and clear it.
+function OwnRuleForm() {
+  const form = useSchemaForm(z.object({ maxPerDay: z.string() }), { maxPerDay: '' })
+  const submit = (event: SubmitEvent<HTMLFormElement>) => {
+    if (!form.values.maxPerDay) {
+      event.preventDefault()
+      form.setErrors({ maxPerDay: 'Max per day is required.' })
+      return
+    }
+    form.onSubmit(() => undefined)(event)
+  }
+  return (
+    <form onSubmit={submit}>
+      <TextInput label="Max per day" {...form.getInputProps('maxPerDay')} />
+      <Button type="submit">{submitLabel}</Button>
+    </form>
+  )
+}
+
+test('an error the form sets in its own submit handler stays after a press that left a field', async () => {
+  const screen = await renderWithProviders(<OwnRuleForm />)
+  await screen.getByLabelText('Max per day').click()
+  const { x, y } = topEdgeOf(screen.getByRole('button', { name: submitLabel }).element())
+
+  await press(x, y)
+  await afterDeferred()
+
+  await expect.element(screen.getByText('Max per day is required.')).toBeInTheDocument()
+})
+
+// The browser's own validation stops a submit on the first required field, before form.onSubmit
+// runs, so the field the press left must show its error without the submit.
+function NativeForm() {
+  const form = useSchemaForm(schema, { name: '', email: '', plan: '', agree: false })
+  return (
+    <form onSubmit={form.onSubmit(() => undefined)}>
+      <TextInput label="Name" required {...form.getInputProps('name')} />
+      <TextInput label="Email" type="email" required {...form.getInputProps('email')} />
+      <Button type="submit">{submitLabel}</Button>
+    </form>
+  )
+}
+
+test('a field left for the submit button shows its error when the browser stops the submit', async () => {
+  const screen = await renderWithProviders(<NativeForm />)
+  await screen.getByLabelText(/^Email/).click()
+  const { x, y } = topEdgeOf(screen.getByRole('button', { name: submitLabel }).element())
+
+  await press(x, y)
+
+  await expect.element(screen.getByText(emailError)).toBeInTheDocument()
+  await expect.element(screen.getByText('Name is required.')).not.toBeInTheDocument()
 })

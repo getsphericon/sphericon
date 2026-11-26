@@ -40,7 +40,10 @@ a Webhook endpoint) takes the typed one.
 
 - A field is not validated when the page opens. It is validated when it loses focus after a value
   was entered, or left empty if required; once an error shows, it is re-checked on each keystroke.
-  Everything is validated again on submit.
+  Everything is validated again on submit. A field that loses focus to a mouse press on its own
+  form's submit button is validated when the press ends, not when it loses focus: an error shown
+  then would move the button from under the pointer and the press would not submit. When the press
+  submits the form, the submit's validation stands in for it.
 - An error about one field, from the browser or from the server (a name already taken), shows under
   that field. An error with no field (a Permission) is an `ApiErrorAlert` above the submit button.
   No "fix all errors" banner.
