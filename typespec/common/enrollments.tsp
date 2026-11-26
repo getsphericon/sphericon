@@ -114,8 +114,8 @@ model EnrollmentResource {
  * active enrollments, or 10 begun in a day). An occurrence of a date Trigger (ADR 0126) is skipped as
  * `active_enrollment` (an enrollment of the contact was active at its moment), `missed` (it was
  * reached 24 hours late or more while its date was already set at its moment) or `send_locked` (its
- * date was set through a Connection without mcp:send; a later write of another date may still
- * enroll it within 24 hours).
+ * date was set through a Connection without mcp:send; a later write of another value without the mark may
+ * still enroll it within 24 hours).
  */
 enum SkippedEntryReason {
   no_enrollment_key: "no_enrollment_key",

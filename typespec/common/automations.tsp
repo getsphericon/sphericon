@@ -924,7 +924,7 @@ model AutomationSkippedCounts {
   missed: int32;
 
   /** Occurrences of a date Trigger whose date was set through a Connection without mcp:send, which
-   * enroll no one while it stays so; a later write of another date may still enroll the same
+   * enroll no one while it stays so; a later write of another value without the mark may still enroll the same
    * occurrence within 24 hours, which then counts as entered too */
   sendLocked: int32;
 }
