@@ -150,6 +150,46 @@ func Untracked(v int) predicate.BroadcastFigure {
 	return predicate.BroadcastFigure(sql.FieldEQ(FieldUntracked, v))
 }
 
+// SkippedSuppressed applies equality check predicate on the "skipped_suppressed" field. It's identical to SkippedSuppressedEQ.
+func SkippedSuppressed(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldEQ(FieldSkippedSuppressed, v))
+}
+
+// SkippedUnsubscribedEverything applies equality check predicate on the "skipped_unsubscribed_everything" field. It's identical to SkippedUnsubscribedEverythingEQ.
+func SkippedUnsubscribedEverything(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldEQ(FieldSkippedUnsubscribedEverything, v))
+}
+
+// SkippedUnsubscribedSource applies equality check predicate on the "skipped_unsubscribed_source" field. It's identical to SkippedUnsubscribedSourceEQ.
+func SkippedUnsubscribedSource(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldEQ(FieldSkippedUnsubscribedSource, v))
+}
+
+// SkippedUnconfirmed applies equality check predicate on the "skipped_unconfirmed" field. It's identical to SkippedUnconfirmedEQ.
+func SkippedUnconfirmed(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldEQ(FieldSkippedUnconfirmed, v))
+}
+
+// SkippedNoDestination applies equality check predicate on the "skipped_no_destination" field. It's identical to SkippedNoDestinationEQ.
+func SkippedNoDestination(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldEQ(FieldSkippedNoDestination, v))
+}
+
+// SkippedContactErased applies equality check predicate on the "skipped_contact_erased" field. It's identical to SkippedContactErasedEQ.
+func SkippedContactErased(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldEQ(FieldSkippedContactErased, v))
+}
+
+// SkippedNoLocalTime applies equality check predicate on the "skipped_no_local_time" field. It's identical to SkippedNoLocalTimeEQ.
+func SkippedNoLocalTime(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldEQ(FieldSkippedNoLocalTime, v))
+}
+
+// SkippedFrequencyCap applies equality check predicate on the "skipped_frequency_cap" field. It's identical to SkippedFrequencyCapEQ.
+func SkippedFrequencyCap(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldEQ(FieldSkippedFrequencyCap, v))
+}
+
 // PrunedAt applies equality check predicate on the "pruned_at" field. It's identical to PrunedAtEQ.
 func PrunedAt(v time.Time) predicate.BroadcastFigure {
 	return predicate.BroadcastFigure(sql.FieldEQ(FieldPrunedAt, v))
@@ -873,6 +913,326 @@ func UntrackedLT(v int) predicate.BroadcastFigure {
 // UntrackedLTE applies the LTE predicate on the "untracked" field.
 func UntrackedLTE(v int) predicate.BroadcastFigure {
 	return predicate.BroadcastFigure(sql.FieldLTE(FieldUntracked, v))
+}
+
+// SkippedSuppressedEQ applies the EQ predicate on the "skipped_suppressed" field.
+func SkippedSuppressedEQ(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldEQ(FieldSkippedSuppressed, v))
+}
+
+// SkippedSuppressedNEQ applies the NEQ predicate on the "skipped_suppressed" field.
+func SkippedSuppressedNEQ(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldNEQ(FieldSkippedSuppressed, v))
+}
+
+// SkippedSuppressedIn applies the In predicate on the "skipped_suppressed" field.
+func SkippedSuppressedIn(vs ...int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldIn(FieldSkippedSuppressed, vs...))
+}
+
+// SkippedSuppressedNotIn applies the NotIn predicate on the "skipped_suppressed" field.
+func SkippedSuppressedNotIn(vs ...int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldNotIn(FieldSkippedSuppressed, vs...))
+}
+
+// SkippedSuppressedGT applies the GT predicate on the "skipped_suppressed" field.
+func SkippedSuppressedGT(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldGT(FieldSkippedSuppressed, v))
+}
+
+// SkippedSuppressedGTE applies the GTE predicate on the "skipped_suppressed" field.
+func SkippedSuppressedGTE(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldGTE(FieldSkippedSuppressed, v))
+}
+
+// SkippedSuppressedLT applies the LT predicate on the "skipped_suppressed" field.
+func SkippedSuppressedLT(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldLT(FieldSkippedSuppressed, v))
+}
+
+// SkippedSuppressedLTE applies the LTE predicate on the "skipped_suppressed" field.
+func SkippedSuppressedLTE(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldLTE(FieldSkippedSuppressed, v))
+}
+
+// SkippedUnsubscribedEverythingEQ applies the EQ predicate on the "skipped_unsubscribed_everything" field.
+func SkippedUnsubscribedEverythingEQ(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldEQ(FieldSkippedUnsubscribedEverything, v))
+}
+
+// SkippedUnsubscribedEverythingNEQ applies the NEQ predicate on the "skipped_unsubscribed_everything" field.
+func SkippedUnsubscribedEverythingNEQ(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldNEQ(FieldSkippedUnsubscribedEverything, v))
+}
+
+// SkippedUnsubscribedEverythingIn applies the In predicate on the "skipped_unsubscribed_everything" field.
+func SkippedUnsubscribedEverythingIn(vs ...int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldIn(FieldSkippedUnsubscribedEverything, vs...))
+}
+
+// SkippedUnsubscribedEverythingNotIn applies the NotIn predicate on the "skipped_unsubscribed_everything" field.
+func SkippedUnsubscribedEverythingNotIn(vs ...int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldNotIn(FieldSkippedUnsubscribedEverything, vs...))
+}
+
+// SkippedUnsubscribedEverythingGT applies the GT predicate on the "skipped_unsubscribed_everything" field.
+func SkippedUnsubscribedEverythingGT(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldGT(FieldSkippedUnsubscribedEverything, v))
+}
+
+// SkippedUnsubscribedEverythingGTE applies the GTE predicate on the "skipped_unsubscribed_everything" field.
+func SkippedUnsubscribedEverythingGTE(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldGTE(FieldSkippedUnsubscribedEverything, v))
+}
+
+// SkippedUnsubscribedEverythingLT applies the LT predicate on the "skipped_unsubscribed_everything" field.
+func SkippedUnsubscribedEverythingLT(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldLT(FieldSkippedUnsubscribedEverything, v))
+}
+
+// SkippedUnsubscribedEverythingLTE applies the LTE predicate on the "skipped_unsubscribed_everything" field.
+func SkippedUnsubscribedEverythingLTE(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldLTE(FieldSkippedUnsubscribedEverything, v))
+}
+
+// SkippedUnsubscribedSourceEQ applies the EQ predicate on the "skipped_unsubscribed_source" field.
+func SkippedUnsubscribedSourceEQ(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldEQ(FieldSkippedUnsubscribedSource, v))
+}
+
+// SkippedUnsubscribedSourceNEQ applies the NEQ predicate on the "skipped_unsubscribed_source" field.
+func SkippedUnsubscribedSourceNEQ(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldNEQ(FieldSkippedUnsubscribedSource, v))
+}
+
+// SkippedUnsubscribedSourceIn applies the In predicate on the "skipped_unsubscribed_source" field.
+func SkippedUnsubscribedSourceIn(vs ...int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldIn(FieldSkippedUnsubscribedSource, vs...))
+}
+
+// SkippedUnsubscribedSourceNotIn applies the NotIn predicate on the "skipped_unsubscribed_source" field.
+func SkippedUnsubscribedSourceNotIn(vs ...int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldNotIn(FieldSkippedUnsubscribedSource, vs...))
+}
+
+// SkippedUnsubscribedSourceGT applies the GT predicate on the "skipped_unsubscribed_source" field.
+func SkippedUnsubscribedSourceGT(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldGT(FieldSkippedUnsubscribedSource, v))
+}
+
+// SkippedUnsubscribedSourceGTE applies the GTE predicate on the "skipped_unsubscribed_source" field.
+func SkippedUnsubscribedSourceGTE(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldGTE(FieldSkippedUnsubscribedSource, v))
+}
+
+// SkippedUnsubscribedSourceLT applies the LT predicate on the "skipped_unsubscribed_source" field.
+func SkippedUnsubscribedSourceLT(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldLT(FieldSkippedUnsubscribedSource, v))
+}
+
+// SkippedUnsubscribedSourceLTE applies the LTE predicate on the "skipped_unsubscribed_source" field.
+func SkippedUnsubscribedSourceLTE(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldLTE(FieldSkippedUnsubscribedSource, v))
+}
+
+// SkippedUnconfirmedEQ applies the EQ predicate on the "skipped_unconfirmed" field.
+func SkippedUnconfirmedEQ(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldEQ(FieldSkippedUnconfirmed, v))
+}
+
+// SkippedUnconfirmedNEQ applies the NEQ predicate on the "skipped_unconfirmed" field.
+func SkippedUnconfirmedNEQ(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldNEQ(FieldSkippedUnconfirmed, v))
+}
+
+// SkippedUnconfirmedIn applies the In predicate on the "skipped_unconfirmed" field.
+func SkippedUnconfirmedIn(vs ...int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldIn(FieldSkippedUnconfirmed, vs...))
+}
+
+// SkippedUnconfirmedNotIn applies the NotIn predicate on the "skipped_unconfirmed" field.
+func SkippedUnconfirmedNotIn(vs ...int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldNotIn(FieldSkippedUnconfirmed, vs...))
+}
+
+// SkippedUnconfirmedGT applies the GT predicate on the "skipped_unconfirmed" field.
+func SkippedUnconfirmedGT(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldGT(FieldSkippedUnconfirmed, v))
+}
+
+// SkippedUnconfirmedGTE applies the GTE predicate on the "skipped_unconfirmed" field.
+func SkippedUnconfirmedGTE(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldGTE(FieldSkippedUnconfirmed, v))
+}
+
+// SkippedUnconfirmedLT applies the LT predicate on the "skipped_unconfirmed" field.
+func SkippedUnconfirmedLT(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldLT(FieldSkippedUnconfirmed, v))
+}
+
+// SkippedUnconfirmedLTE applies the LTE predicate on the "skipped_unconfirmed" field.
+func SkippedUnconfirmedLTE(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldLTE(FieldSkippedUnconfirmed, v))
+}
+
+// SkippedNoDestinationEQ applies the EQ predicate on the "skipped_no_destination" field.
+func SkippedNoDestinationEQ(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldEQ(FieldSkippedNoDestination, v))
+}
+
+// SkippedNoDestinationNEQ applies the NEQ predicate on the "skipped_no_destination" field.
+func SkippedNoDestinationNEQ(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldNEQ(FieldSkippedNoDestination, v))
+}
+
+// SkippedNoDestinationIn applies the In predicate on the "skipped_no_destination" field.
+func SkippedNoDestinationIn(vs ...int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldIn(FieldSkippedNoDestination, vs...))
+}
+
+// SkippedNoDestinationNotIn applies the NotIn predicate on the "skipped_no_destination" field.
+func SkippedNoDestinationNotIn(vs ...int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldNotIn(FieldSkippedNoDestination, vs...))
+}
+
+// SkippedNoDestinationGT applies the GT predicate on the "skipped_no_destination" field.
+func SkippedNoDestinationGT(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldGT(FieldSkippedNoDestination, v))
+}
+
+// SkippedNoDestinationGTE applies the GTE predicate on the "skipped_no_destination" field.
+func SkippedNoDestinationGTE(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldGTE(FieldSkippedNoDestination, v))
+}
+
+// SkippedNoDestinationLT applies the LT predicate on the "skipped_no_destination" field.
+func SkippedNoDestinationLT(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldLT(FieldSkippedNoDestination, v))
+}
+
+// SkippedNoDestinationLTE applies the LTE predicate on the "skipped_no_destination" field.
+func SkippedNoDestinationLTE(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldLTE(FieldSkippedNoDestination, v))
+}
+
+// SkippedContactErasedEQ applies the EQ predicate on the "skipped_contact_erased" field.
+func SkippedContactErasedEQ(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldEQ(FieldSkippedContactErased, v))
+}
+
+// SkippedContactErasedNEQ applies the NEQ predicate on the "skipped_contact_erased" field.
+func SkippedContactErasedNEQ(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldNEQ(FieldSkippedContactErased, v))
+}
+
+// SkippedContactErasedIn applies the In predicate on the "skipped_contact_erased" field.
+func SkippedContactErasedIn(vs ...int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldIn(FieldSkippedContactErased, vs...))
+}
+
+// SkippedContactErasedNotIn applies the NotIn predicate on the "skipped_contact_erased" field.
+func SkippedContactErasedNotIn(vs ...int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldNotIn(FieldSkippedContactErased, vs...))
+}
+
+// SkippedContactErasedGT applies the GT predicate on the "skipped_contact_erased" field.
+func SkippedContactErasedGT(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldGT(FieldSkippedContactErased, v))
+}
+
+// SkippedContactErasedGTE applies the GTE predicate on the "skipped_contact_erased" field.
+func SkippedContactErasedGTE(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldGTE(FieldSkippedContactErased, v))
+}
+
+// SkippedContactErasedLT applies the LT predicate on the "skipped_contact_erased" field.
+func SkippedContactErasedLT(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldLT(FieldSkippedContactErased, v))
+}
+
+// SkippedContactErasedLTE applies the LTE predicate on the "skipped_contact_erased" field.
+func SkippedContactErasedLTE(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldLTE(FieldSkippedContactErased, v))
+}
+
+// SkippedNoLocalTimeEQ applies the EQ predicate on the "skipped_no_local_time" field.
+func SkippedNoLocalTimeEQ(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldEQ(FieldSkippedNoLocalTime, v))
+}
+
+// SkippedNoLocalTimeNEQ applies the NEQ predicate on the "skipped_no_local_time" field.
+func SkippedNoLocalTimeNEQ(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldNEQ(FieldSkippedNoLocalTime, v))
+}
+
+// SkippedNoLocalTimeIn applies the In predicate on the "skipped_no_local_time" field.
+func SkippedNoLocalTimeIn(vs ...int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldIn(FieldSkippedNoLocalTime, vs...))
+}
+
+// SkippedNoLocalTimeNotIn applies the NotIn predicate on the "skipped_no_local_time" field.
+func SkippedNoLocalTimeNotIn(vs ...int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldNotIn(FieldSkippedNoLocalTime, vs...))
+}
+
+// SkippedNoLocalTimeGT applies the GT predicate on the "skipped_no_local_time" field.
+func SkippedNoLocalTimeGT(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldGT(FieldSkippedNoLocalTime, v))
+}
+
+// SkippedNoLocalTimeGTE applies the GTE predicate on the "skipped_no_local_time" field.
+func SkippedNoLocalTimeGTE(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldGTE(FieldSkippedNoLocalTime, v))
+}
+
+// SkippedNoLocalTimeLT applies the LT predicate on the "skipped_no_local_time" field.
+func SkippedNoLocalTimeLT(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldLT(FieldSkippedNoLocalTime, v))
+}
+
+// SkippedNoLocalTimeLTE applies the LTE predicate on the "skipped_no_local_time" field.
+func SkippedNoLocalTimeLTE(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldLTE(FieldSkippedNoLocalTime, v))
+}
+
+// SkippedFrequencyCapEQ applies the EQ predicate on the "skipped_frequency_cap" field.
+func SkippedFrequencyCapEQ(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldEQ(FieldSkippedFrequencyCap, v))
+}
+
+// SkippedFrequencyCapNEQ applies the NEQ predicate on the "skipped_frequency_cap" field.
+func SkippedFrequencyCapNEQ(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldNEQ(FieldSkippedFrequencyCap, v))
+}
+
+// SkippedFrequencyCapIn applies the In predicate on the "skipped_frequency_cap" field.
+func SkippedFrequencyCapIn(vs ...int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldIn(FieldSkippedFrequencyCap, vs...))
+}
+
+// SkippedFrequencyCapNotIn applies the NotIn predicate on the "skipped_frequency_cap" field.
+func SkippedFrequencyCapNotIn(vs ...int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldNotIn(FieldSkippedFrequencyCap, vs...))
+}
+
+// SkippedFrequencyCapGT applies the GT predicate on the "skipped_frequency_cap" field.
+func SkippedFrequencyCapGT(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldGT(FieldSkippedFrequencyCap, v))
+}
+
+// SkippedFrequencyCapGTE applies the GTE predicate on the "skipped_frequency_cap" field.
+func SkippedFrequencyCapGTE(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldGTE(FieldSkippedFrequencyCap, v))
+}
+
+// SkippedFrequencyCapLT applies the LT predicate on the "skipped_frequency_cap" field.
+func SkippedFrequencyCapLT(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldLT(FieldSkippedFrequencyCap, v))
+}
+
+// SkippedFrequencyCapLTE applies the LTE predicate on the "skipped_frequency_cap" field.
+func SkippedFrequencyCapLTE(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldLTE(FieldSkippedFrequencyCap, v))
 }
 
 // PrunedAtEQ applies the EQ predicate on the "pruned_at" field.

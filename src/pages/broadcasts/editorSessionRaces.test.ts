@@ -53,6 +53,8 @@ const RESOURCE: SiteBroadcastResource = {
     recipientsTotal: 0,
     sentCount: 0,
     skippedCount: 0,
+    skippedByReason: [],
+    waitingByCause: [],
     failedCount: 0,
     pendingCount: 0,
     cancelledCount: 0,

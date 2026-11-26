@@ -37,6 +37,22 @@ type AutomationFigure struct {
 	Sent int `json:"sent,omitempty"`
 	// Skipped holds the value of the "skipped" field.
 	Skipped int `json:"skipped,omitempty"`
+	// SkippedSuppressed holds the value of the "skipped_suppressed" field.
+	SkippedSuppressed int `json:"skipped_suppressed,omitempty"`
+	// SkippedUnsubscribedEverything holds the value of the "skipped_unsubscribed_everything" field.
+	SkippedUnsubscribedEverything int `json:"skipped_unsubscribed_everything,omitempty"`
+	// SkippedUnsubscribedSource holds the value of the "skipped_unsubscribed_source" field.
+	SkippedUnsubscribedSource int `json:"skipped_unsubscribed_source,omitempty"`
+	// SkippedUnconfirmed holds the value of the "skipped_unconfirmed" field.
+	SkippedUnconfirmed int `json:"skipped_unconfirmed,omitempty"`
+	// SkippedNoDestination holds the value of the "skipped_no_destination" field.
+	SkippedNoDestination int `json:"skipped_no_destination,omitempty"`
+	// SkippedContactErased holds the value of the "skipped_contact_erased" field.
+	SkippedContactErased int `json:"skipped_contact_erased,omitempty"`
+	// SkippedNoLocalTime holds the value of the "skipped_no_local_time" field.
+	SkippedNoLocalTime int `json:"skipped_no_local_time,omitempty"`
+	// SkippedFrequencyCap holds the value of the "skipped_frequency_cap" field.
+	SkippedFrequencyCap int `json:"skipped_frequency_cap,omitempty"`
 	// Delivered holds the value of the "delivered" field.
 	Delivered int `json:"delivered,omitempty"`
 	// Bounced holds the value of the "bounced" field.
@@ -102,7 +118,7 @@ func (*AutomationFigure) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case automationfigure.FieldID, automationfigure.FieldWorkspaceID, automationfigure.FieldAutomationID, automationfigure.FieldVersionID, automationfigure.FieldSent, automationfigure.FieldSkipped, automationfigure.FieldDelivered, automationfigure.FieldBounced, automationfigure.FieldComplained, automationfigure.FieldCaptured:
+		case automationfigure.FieldID, automationfigure.FieldWorkspaceID, automationfigure.FieldAutomationID, automationfigure.FieldVersionID, automationfigure.FieldSent, automationfigure.FieldSkipped, automationfigure.FieldSkippedSuppressed, automationfigure.FieldSkippedUnsubscribedEverything, automationfigure.FieldSkippedUnsubscribedSource, automationfigure.FieldSkippedUnconfirmed, automationfigure.FieldSkippedNoDestination, automationfigure.FieldSkippedContactErased, automationfigure.FieldSkippedNoLocalTime, automationfigure.FieldSkippedFrequencyCap, automationfigure.FieldDelivered, automationfigure.FieldBounced, automationfigure.FieldComplained, automationfigure.FieldCaptured:
 			values[i] = new(sql.NullInt64)
 		case automationfigure.FieldStepID:
 			values[i] = new(sql.NullString)
@@ -176,6 +192,54 @@ func (_m *AutomationFigure) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field skipped", values[i])
 			} else if value.Valid {
 				_m.Skipped = int(value.Int64)
+			}
+		case automationfigure.FieldSkippedSuppressed:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field skipped_suppressed", values[i])
+			} else if value.Valid {
+				_m.SkippedSuppressed = int(value.Int64)
+			}
+		case automationfigure.FieldSkippedUnsubscribedEverything:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field skipped_unsubscribed_everything", values[i])
+			} else if value.Valid {
+				_m.SkippedUnsubscribedEverything = int(value.Int64)
+			}
+		case automationfigure.FieldSkippedUnsubscribedSource:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field skipped_unsubscribed_source", values[i])
+			} else if value.Valid {
+				_m.SkippedUnsubscribedSource = int(value.Int64)
+			}
+		case automationfigure.FieldSkippedUnconfirmed:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field skipped_unconfirmed", values[i])
+			} else if value.Valid {
+				_m.SkippedUnconfirmed = int(value.Int64)
+			}
+		case automationfigure.FieldSkippedNoDestination:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field skipped_no_destination", values[i])
+			} else if value.Valid {
+				_m.SkippedNoDestination = int(value.Int64)
+			}
+		case automationfigure.FieldSkippedContactErased:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field skipped_contact_erased", values[i])
+			} else if value.Valid {
+				_m.SkippedContactErased = int(value.Int64)
+			}
+		case automationfigure.FieldSkippedNoLocalTime:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field skipped_no_local_time", values[i])
+			} else if value.Valid {
+				_m.SkippedNoLocalTime = int(value.Int64)
+			}
+		case automationfigure.FieldSkippedFrequencyCap:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field skipped_frequency_cap", values[i])
+			} else if value.Valid {
+				_m.SkippedFrequencyCap = int(value.Int64)
 			}
 		case automationfigure.FieldDelivered:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -275,6 +339,30 @@ func (_m *AutomationFigure) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("skipped=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Skipped))
+	builder.WriteString(", ")
+	builder.WriteString("skipped_suppressed=")
+	builder.WriteString(fmt.Sprintf("%v", _m.SkippedSuppressed))
+	builder.WriteString(", ")
+	builder.WriteString("skipped_unsubscribed_everything=")
+	builder.WriteString(fmt.Sprintf("%v", _m.SkippedUnsubscribedEverything))
+	builder.WriteString(", ")
+	builder.WriteString("skipped_unsubscribed_source=")
+	builder.WriteString(fmt.Sprintf("%v", _m.SkippedUnsubscribedSource))
+	builder.WriteString(", ")
+	builder.WriteString("skipped_unconfirmed=")
+	builder.WriteString(fmt.Sprintf("%v", _m.SkippedUnconfirmed))
+	builder.WriteString(", ")
+	builder.WriteString("skipped_no_destination=")
+	builder.WriteString(fmt.Sprintf("%v", _m.SkippedNoDestination))
+	builder.WriteString(", ")
+	builder.WriteString("skipped_contact_erased=")
+	builder.WriteString(fmt.Sprintf("%v", _m.SkippedContactErased))
+	builder.WriteString(", ")
+	builder.WriteString("skipped_no_local_time=")
+	builder.WriteString(fmt.Sprintf("%v", _m.SkippedNoLocalTime))
+	builder.WriteString(", ")
+	builder.WriteString("skipped_frequency_cap=")
+	builder.WriteString(fmt.Sprintf("%v", _m.SkippedFrequencyCap))
 	builder.WriteString(", ")
 	builder.WriteString("delivered=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Delivered))

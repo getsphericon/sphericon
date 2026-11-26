@@ -24,6 +24,8 @@ const STATS = {
   recipientsTotal: 200,
   sentCount: 190,
   skippedCount: 4,
+  skippedByReason: [],
+  waitingByCause: [],
   pendingCount: 0,
   cancelledCount: 0,
   openedCount: 80,

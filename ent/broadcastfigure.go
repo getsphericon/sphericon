@@ -57,6 +57,22 @@ type BroadcastFigure struct {
 	Captured int `json:"captured,omitempty"`
 	// Untracked holds the value of the "untracked" field.
 	Untracked int `json:"untracked,omitempty"`
+	// SkippedSuppressed holds the value of the "skipped_suppressed" field.
+	SkippedSuppressed int `json:"skipped_suppressed,omitempty"`
+	// SkippedUnsubscribedEverything holds the value of the "skipped_unsubscribed_everything" field.
+	SkippedUnsubscribedEverything int `json:"skipped_unsubscribed_everything,omitempty"`
+	// SkippedUnsubscribedSource holds the value of the "skipped_unsubscribed_source" field.
+	SkippedUnsubscribedSource int `json:"skipped_unsubscribed_source,omitempty"`
+	// SkippedUnconfirmed holds the value of the "skipped_unconfirmed" field.
+	SkippedUnconfirmed int `json:"skipped_unconfirmed,omitempty"`
+	// SkippedNoDestination holds the value of the "skipped_no_destination" field.
+	SkippedNoDestination int `json:"skipped_no_destination,omitempty"`
+	// SkippedContactErased holds the value of the "skipped_contact_erased" field.
+	SkippedContactErased int `json:"skipped_contact_erased,omitempty"`
+	// SkippedNoLocalTime holds the value of the "skipped_no_local_time" field.
+	SkippedNoLocalTime int `json:"skipped_no_local_time,omitempty"`
+	// SkippedFrequencyCap holds the value of the "skipped_frequency_cap" field.
+	SkippedFrequencyCap int `json:"skipped_frequency_cap,omitempty"`
 	// PrunedAt holds the value of the "pruned_at" field.
 	PrunedAt *time.Time `json:"pruned_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -103,7 +119,7 @@ func (*BroadcastFigure) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case broadcastfigure.FieldID, broadcastfigure.FieldWorkspaceID, broadcastfigure.FieldBroadcastID, broadcastfigure.FieldRecipients, broadcastfigure.FieldUnsubscribed, broadcastfigure.FieldSent, broadcastfigure.FieldSkipped, broadcastfigure.FieldFailed, broadcastfigure.FieldPending, broadcastfigure.FieldCancelled, broadcastfigure.FieldDelivered, broadcastfigure.FieldUndelivered, broadcastfigure.FieldBounced, broadcastfigure.FieldComplained, broadcastfigure.FieldOpened, broadcastfigure.FieldClicked, broadcastfigure.FieldCaptured, broadcastfigure.FieldUntracked:
+		case broadcastfigure.FieldID, broadcastfigure.FieldWorkspaceID, broadcastfigure.FieldBroadcastID, broadcastfigure.FieldRecipients, broadcastfigure.FieldUnsubscribed, broadcastfigure.FieldSent, broadcastfigure.FieldSkipped, broadcastfigure.FieldFailed, broadcastfigure.FieldPending, broadcastfigure.FieldCancelled, broadcastfigure.FieldDelivered, broadcastfigure.FieldUndelivered, broadcastfigure.FieldBounced, broadcastfigure.FieldComplained, broadcastfigure.FieldOpened, broadcastfigure.FieldClicked, broadcastfigure.FieldCaptured, broadcastfigure.FieldUntracked, broadcastfigure.FieldSkippedSuppressed, broadcastfigure.FieldSkippedUnsubscribedEverything, broadcastfigure.FieldSkippedUnsubscribedSource, broadcastfigure.FieldSkippedUnconfirmed, broadcastfigure.FieldSkippedNoDestination, broadcastfigure.FieldSkippedContactErased, broadcastfigure.FieldSkippedNoLocalTime, broadcastfigure.FieldSkippedFrequencyCap:
 			values[i] = new(sql.NullInt64)
 		case broadcastfigure.FieldCreatedAt, broadcastfigure.FieldUpdatedAt, broadcastfigure.FieldPrunedAt:
 			values[i] = new(sql.NullTime)
@@ -242,6 +258,54 @@ func (_m *BroadcastFigure) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Untracked = int(value.Int64)
 			}
+		case broadcastfigure.FieldSkippedSuppressed:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field skipped_suppressed", values[i])
+			} else if value.Valid {
+				_m.SkippedSuppressed = int(value.Int64)
+			}
+		case broadcastfigure.FieldSkippedUnsubscribedEverything:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field skipped_unsubscribed_everything", values[i])
+			} else if value.Valid {
+				_m.SkippedUnsubscribedEverything = int(value.Int64)
+			}
+		case broadcastfigure.FieldSkippedUnsubscribedSource:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field skipped_unsubscribed_source", values[i])
+			} else if value.Valid {
+				_m.SkippedUnsubscribedSource = int(value.Int64)
+			}
+		case broadcastfigure.FieldSkippedUnconfirmed:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field skipped_unconfirmed", values[i])
+			} else if value.Valid {
+				_m.SkippedUnconfirmed = int(value.Int64)
+			}
+		case broadcastfigure.FieldSkippedNoDestination:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field skipped_no_destination", values[i])
+			} else if value.Valid {
+				_m.SkippedNoDestination = int(value.Int64)
+			}
+		case broadcastfigure.FieldSkippedContactErased:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field skipped_contact_erased", values[i])
+			} else if value.Valid {
+				_m.SkippedContactErased = int(value.Int64)
+			}
+		case broadcastfigure.FieldSkippedNoLocalTime:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field skipped_no_local_time", values[i])
+			} else if value.Valid {
+				_m.SkippedNoLocalTime = int(value.Int64)
+			}
+		case broadcastfigure.FieldSkippedFrequencyCap:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field skipped_frequency_cap", values[i])
+			} else if value.Valid {
+				_m.SkippedFrequencyCap = int(value.Int64)
+			}
 		case broadcastfigure.FieldPrunedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field pruned_at", values[i])
@@ -351,6 +415,30 @@ func (_m *BroadcastFigure) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("untracked=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Untracked))
+	builder.WriteString(", ")
+	builder.WriteString("skipped_suppressed=")
+	builder.WriteString(fmt.Sprintf("%v", _m.SkippedSuppressed))
+	builder.WriteString(", ")
+	builder.WriteString("skipped_unsubscribed_everything=")
+	builder.WriteString(fmt.Sprintf("%v", _m.SkippedUnsubscribedEverything))
+	builder.WriteString(", ")
+	builder.WriteString("skipped_unsubscribed_source=")
+	builder.WriteString(fmt.Sprintf("%v", _m.SkippedUnsubscribedSource))
+	builder.WriteString(", ")
+	builder.WriteString("skipped_unconfirmed=")
+	builder.WriteString(fmt.Sprintf("%v", _m.SkippedUnconfirmed))
+	builder.WriteString(", ")
+	builder.WriteString("skipped_no_destination=")
+	builder.WriteString(fmt.Sprintf("%v", _m.SkippedNoDestination))
+	builder.WriteString(", ")
+	builder.WriteString("skipped_contact_erased=")
+	builder.WriteString(fmt.Sprintf("%v", _m.SkippedContactErased))
+	builder.WriteString(", ")
+	builder.WriteString("skipped_no_local_time=")
+	builder.WriteString(fmt.Sprintf("%v", _m.SkippedNoLocalTime))
+	builder.WriteString(", ")
+	builder.WriteString("skipped_frequency_cap=")
+	builder.WriteString(fmt.Sprintf("%v", _m.SkippedFrequencyCap))
 	builder.WriteString(", ")
 	if v := _m.PrunedAt; v != nil {
 		builder.WriteString("pruned_at=")

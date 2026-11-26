@@ -12019,7 +12019,7 @@
             "items": {
               "$ref": "#/components/schemas/AutomationStepFigures"
             },
-            "description": "The send Steps' messages by Step id, each summed over every version that had the Step and\nsorted by the newest of those versions, then by its place there: one entry per Step any of the\nautomation's messages was sent from"
+            "description": "The send Steps' messages by Step id, each summed over every version that had the Step and\nsorted by the newest of those versions, then by its place there: one entry per Step any of the\nautomation's messages was sent from or an active enrollment's send waits at now"
           },
           "versionSteps": {
             "type": "array",
@@ -12274,7 +12274,7 @@
       },
       "AutomationStepFigures": {
         "type": "object",
-        "required": ["stepId", "sent", "skipped"],
+        "required": ["stepId", "sent", "skipped", "skippedByReason", "waitingByCause"],
         "properties": {
           "stepId": {
             "allOf": [
@@ -12293,6 +12293,20 @@
             "type": "integer",
             "format": "int32",
             "description": "Messages skipped: the contact had no address on the step's Channel, had opted out of it, or\nwas suppressed. The enrollment moved on to the next step."
+          },
+          "skippedByReason": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SkippedReasonCount"
+            },
+            "description": "The skipped messages by Skipped reason (ADR 0178): every reason of the closed list in its\norder, one none was skipped for at zero; they add up to `skipped`"
+          },
+          "waitingByCause": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DeferralCauseCount"
+            },
+            "description": "The active enrollments standing on the Step whose send waits now, by the cause of its latest\nDeferral (ADR 0178): every cause of the closed list in its order, one none waits for at zero"
           }
         },
         "description": "The messages of one send Step, over every version that had it"
@@ -12437,7 +12451,7 @@
       },
       "AutomationVersionStepFigures": {
         "type": "object",
-        "required": ["version", "stepId", "sent", "skipped"],
+        "required": ["version", "stepId", "sent", "skipped", "skippedByReason", "waitingByCause"],
         "properties": {
           "version": {
             "type": "integer",
@@ -12461,6 +12475,20 @@
             "type": "integer",
             "format": "int32",
             "description": "Messages skipped, as in AutomationStepFigures"
+          },
+          "skippedByReason": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SkippedReasonCount"
+            },
+            "description": "The skipped messages by Skipped reason, as in AutomationStepFigures"
+          },
+          "waitingByCause": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DeferralCauseCount"
+            },
+            "description": "The active enrollments of the version standing on the Step whose send waits now, by cause, as\nin AutomationStepFigures"
           }
         },
         "description": "The messages one version's send Step sent"
@@ -14789,6 +14817,26 @@
         "type": "string",
         "enum": ["provider_limit", "send_cap", "provider", "sending_window", "frequency_cap"],
         "description": "What a Deferral waits for: the send is not consumed and goes through every check again when it is retried"
+      },
+      "DeferralCauseCount": {
+        "type": "object",
+        "required": ["cause", "count"],
+        "properties": {
+          "cause": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DeferralCause"
+              }
+            ],
+            "description": "The cause, one of the closed list"
+          },
+          "count": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Sends whose latest Deferral was for it and that still wait"
+          }
+        },
+        "description": "How many sends wait now for one cause"
       },
       "DnsRecord": {
         "type": "object",
@@ -19875,6 +19923,8 @@
           "recipientsTotal",
           "sentCount",
           "skippedCount",
+          "skippedByReason",
+          "waitingByCause",
           "failedCount",
           "pendingCount",
           "cancelledCount",
@@ -19910,6 +19960,20 @@
             "type": "integer",
             "format": "int32",
             "description": "Recipients skipped at send time: no destination any more, or an opt-out that landed after planning"
+          },
+          "skippedByReason": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SkippedReasonCount"
+            },
+            "description": "The skipped recipients by Skipped reason (ADR 0178): every reason of the closed list in its order, one none was skipped for at zero; they add up to `skippedCount`"
+          },
+          "waitingByCause": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DeferralCauseCount"
+            },
+            "description": "The pending recipients whose send waits now, by the cause of its latest Deferral (ADR 0178): every cause of the closed list in its order, one none waits for at zero; all zero once the broadcast is no longer sending"
           },
           "failedCount": {
             "type": "integer",
@@ -24613,6 +24677,26 @@
           "frequency_cap"
         ],
         "description": "Why an Outbound message was Skipped: final for its Destination, never retried. The first four\nare Send-eligibility's; a client switches over the list."
+      },
+      "SkippedReasonCount": {
+        "type": "object",
+        "required": ["reason", "count"],
+        "properties": {
+          "reason": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SkippedReason"
+              }
+            ],
+            "description": "The reason, one of the closed list"
+          },
+          "count": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Sends Skipped for it"
+          }
+        },
+        "description": "How many sends were Skipped for one reason"
       },
       "SmsBroadcastContent": {
         "type": "object",

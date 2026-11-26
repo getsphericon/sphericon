@@ -22,6 +22,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -183,7 +184,7 @@ func TestSuppressedRecipientIsSkippedNotFailed(t *testing.T) {
 	require.NoError(t, d.del.SendRecipient(d.t.Context(), d.s, id))
 
 	assert.Equal(t, outboundmessage.StatusSkipped, d.messageOf(id).Status)
-	assert.Equal(t, broadcasts.Stats{Recipients: 1, Skipped: 1}, d.stats())
+	assert.Equal(t, broadcasts.Stats{Recipients: 1, Skipped: 1, SkippedBy: map[skipreason.Reason]int{skipreason.Suppressed: 1}}, d.stats())
 	assert.Empty(t, d.box.sent)
 }
 
