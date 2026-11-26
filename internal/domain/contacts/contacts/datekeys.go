@@ -14,12 +14,19 @@ import (
 // it by (datetrigger.Holder.Keys). Every writer of a Contact keeps them from the row it wrote, in
 // its transaction, beside the send lock of its date fields.
 
+// DatesOf is what the Contact holds of the dates (datetrigger.Holder): its birthday and its Custom
+// field values, nothing for a Contact not made yet. Every reader of a Contact's dates takes them
+// from here.
+func DatesOf(c *ent.Contact) datetrigger.Holder {
+	if c == nil {
+		return datetrigger.Holder{}
+	}
+	return datetrigger.Holder{Birthday: c.Birthday, CustomFields: c.CustomFields}
+}
+
 // keysOf are the keys of the dates the Contact holds, none for a Contact not made yet.
 func keysOf(c *ent.Contact) []datetrigger.Keyed {
-	if c == nil {
-		return nil
-	}
-	return datetrigger.Holder{Birthday: c.Birthday, CustomFields: c.CustomFields}.Keys()
+	return DatesOf(c).Keys()
 }
 
 // keepDates rewrites the keys of the Contact's dates once a write took it from before (nil for a

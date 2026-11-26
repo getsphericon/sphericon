@@ -454,15 +454,7 @@ func (m *Module) dateFieldProblem(ctx context.Context, s *ent.Scoped, d datetrig
 // checkDateFields refuses a Wait until on a date whose Custom field the Workspace's catalogue cannot
 // hold (dateFieldProblem), naming the Step.
 func (m *Module) checkDateFields(ctx context.Context, s *ent.Scoped, steps automationstep.Path) error {
-	for _, st := range automationstep.All(steps) {
-		w, ok := st.Payload.(automationstep.WaitUntil)
-		if !ok {
-			continue
-		}
-		d, ok := w.Until.(automationstep.OnDate)
-		if !ok {
-			continue
-		}
+	for st, d := range automationstep.OnDates(steps) {
 		problem, err := m.dateFieldProblem(ctx, s, d.Date)
 		if err != nil {
 			return err

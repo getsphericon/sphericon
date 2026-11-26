@@ -22,7 +22,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
-	"github.com/getsphericon/sphericon/internal/kernel/localcalendar"
 	"github.com/getsphericon/sphericon/internal/kernel/optional"
 )
 
@@ -217,7 +216,11 @@ func (m *StepExecution) decideWindow(ctx context.Context, s *ent.Scoped, c occur
 		}
 		for _, candidate := range page {
 			after = candidate.ID
-			for _, year := range yearsIn(c.date, c.window, candidate, c.workspaceZone) {
+			years, err := yearsIn(c.date, c.window, candidate, c.workspaceZone)
+			if err != nil {
+				return fmt.Errorf("occurrences of contact %d: %w", candidate.ID, err)
+			}
+			for _, year := range years {
 				one := c
 				one.contactID, one.year = candidate.ID, year
 				if err := m.decideOccurrence(ctx, s, one); err != nil {
@@ -255,38 +258,39 @@ func candidates(ctx context.Context, s *ent.Scoped, f datetrigger.Field, band da
 }
 
 // momentOf is the moment of the date's occurrence in the anniversary year for the Contact, read in
-// its zone (the Workspace's when it has none), false when it holds no date in the field or the
-// year has no occurrence.
-func momentOf(d datetrigger.Date, c *ent.Contact, workspaceZone *string, year int) (time.Time, bool) {
+// its zone (the Workspace's when it has none, contactCalendar), false when it holds no date in the
+// field or the year has no occurrence. An error is a date or a Workspace zone out of bounds.
+func momentOf(d datetrigger.Date, c *ent.Contact, workspaceZone *string, year int) (time.Time, bool, error) {
 	sched, err := d.Schedule()
 	if err != nil {
-		return time.Time{}, false
+		return time.Time{}, false, err
 	}
-	wsLoc, err := localcalendar.Zone(nil, workspaceZone)
+	cal, err := contactCalendar(c, workspaceZone)
 	if err != nil {
-		return time.Time{}, false
+		return time.Time{}, false, err
 	}
-	date, ok := d.Field.Of(datetrigger.Holder{Birthday: c.Birthday, CustomFields: c.CustomFields}, wsLoc)
+	date, ok := d.Field.Of(cal.Dates, cal.Workspace)
 	if !ok {
-		return time.Time{}, false
+		return time.Time{}, false, nil
 	}
-	loc, err := localcalendar.Zone(c.TimeZone, workspaceZone)
-	if err != nil {
-		return time.Time{}, false
-	}
-	return sched.Moment(date, year, loc)
+	at, ok := sched.Moment(date, year, cal.Zone)
+	return at, ok, nil
 }
 
 // yearsIn are the anniversary years whose occurrence for the Contact falls in the window: an offset
 // moves a year's moment into the calendar year before or after it at most.
-func yearsIn(d datetrigger.Date, w window, c *ent.Contact, workspaceZone *string) []int {
+func yearsIn(d datetrigger.Date, w window, c *ent.Contact, workspaceZone *string) ([]int, error) {
 	var years []int
 	for year := w.from.Year() - 1; year <= w.to.Year()+1; year++ {
-		if at, ok := momentOf(d, c, workspaceZone, year); ok && w.holds(at) {
+		at, ok, err := momentOf(d, c, workspaceZone, year)
+		if err != nil {
+			return nil, err
+		}
+		if ok && w.holds(at) {
 			years = append(years, year)
 		}
 	}
-	return years
+	return years, nil
 }
 
 // decideOccurrence decides one occurrence, once, in a transaction of its own under the Contact's
@@ -307,9 +311,9 @@ func (m *StepExecution) decideOccurrence(ctx context.Context, s *ent.Scoped, c o
 			if !active(a) || live.ID != c.versionID {
 				return false, nil
 			}
-			at, ok := momentOf(c.date, held, c.workspaceZone, c.year)
-			if !ok || !c.window.holds(at) {
-				return false, nil
+			at, ok, err := momentOf(c.date, held, c.workspaceZone, c.year)
+			if err != nil || !ok || !c.window.holds(at) {
+				return false, err
 			}
 			o.OccurredAt = at
 			decided, err := occurrenceDecided(ctx, ts, a.ID, held.ID, occurrence)

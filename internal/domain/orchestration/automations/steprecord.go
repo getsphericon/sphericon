@@ -9,10 +9,10 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationsteprecord"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
-	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/localcalendar"
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
@@ -64,27 +64,31 @@ func arrive(st *automationstep.Step, now time.Time, contact func() (automationst
 	}
 }
 
-// calendarOf is what a Wait until reads of the Contact c: the zone its local times are read in
-// (localcalendar.Zone), its own time zone when the zone database loads it, else the Workspace time
-// zone, UTC while unset; the Workspace's zone, which a datetime value's date is read in; and its
-// birthday and Custom field values.
+// calendarOf is what a Wait until reads of the Contact c in its Workspace (contactCalendar).
 func calendarOf(ctx context.Context, s *ent.Scoped, c *ent.Contact) (automationstep.Contact, error) {
 	ws, err := s.Workspace(ctx)
 	if err != nil {
 		return automationstep.Contact{}, err
 	}
-	zone, err := localcalendar.Zone(c.TimeZone, ws.Timezone)
+	return contactCalendar(c, ws.Timezone)
+}
+
+// contactCalendar is what a date or a time of day reads of the Contact c in a Workspace whose time
+// zone is workspaceZone (ADR 0126): the zone its local times are read in (localcalendar.Zone), its
+// own time zone when the zone database loads it, else the Workspace's, UTC while unset; the
+// Workspace's zone, which a datetime value's date is read in; and the dates it holds. An error is a
+// Workspace zone the zone database does not load. The date scheduler and a Wait until both read a
+// Contact through it.
+func contactCalendar(c *ent.Contact, workspaceZone *string) (automationstep.Contact, error) {
+	zone, err := localcalendar.Zone(c.TimeZone, workspaceZone)
 	if err != nil {
 		return automationstep.Contact{}, err
 	}
-	workspace, err := localcalendar.Zone(nil, ws.Timezone)
+	workspace, err := localcalendar.Zone(nil, workspaceZone)
 	if err != nil {
 		return automationstep.Contact{}, err
 	}
-	return automationstep.Contact{
-		Zone: zone, Workspace: workspace,
-		Dates: datetrigger.Holder{Birthday: c.Birthday, CustomFields: c.CustomFields},
-	}, nil
+	return automationstep.Contact{Zone: zone, Workspace: workspace, Dates: contacts.DatesOf(c)}, nil
 }
 
 // runCalendar is calendarOf the Contact of the Enrollment runID.

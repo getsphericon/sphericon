@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"iter"
 	"time"
 
 	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
@@ -238,4 +239,20 @@ func Reach(u Until, c Contact, now time.Time) (Due, error) {
 		return Due{}, errors.New("automationstep: a wait until without a moment")
 	}
 	return Due{}, fmt.Errorf("automationstep: the moment %T has no due moment", u)
+}
+
+// OnDates yields each Wait until of the tree that waits on a date, with its Step, in the walker's
+// order (All): the one walk every reader of a version's date fields takes.
+func OnDates(p Path) iter.Seq2[*Step, OnDate] {
+	return func(yield func(*Step, OnDate) bool) {
+		for _, st := range All(p) {
+			w, ok := st.Payload.(WaitUntil)
+			if !ok {
+				continue
+			}
+			if d, ok := w.Until.(OnDate); ok && !yield(st, d) {
+				return
+			}
+		}
+	}
 }

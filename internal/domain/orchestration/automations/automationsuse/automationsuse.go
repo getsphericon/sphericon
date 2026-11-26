@@ -70,12 +70,8 @@ func datesField(v *ent.AutomationVersion, key string) bool {
 	if d := automations.DateTriggerOf(v); d != nil && d.Field == field {
 		return true
 	}
-	for _, st := range automationstep.All(v.Steps) {
-		w, ok := st.Payload.(automationstep.WaitUntil)
-		if !ok {
-			continue
-		}
-		if d, ok := w.Until.(automationstep.OnDate); ok && d.Field == field {
+	for _, d := range automationstep.OnDates(v.Steps) {
+		if d.Field == field {
 			return true
 		}
 	}
