@@ -2,8 +2,8 @@ import { Alert } from '@mantine/core'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
-import { siteWorkspacesListOptions } from '../generated/site/@tanstack/react-query.gen.ts'
 import { Route as generalRoute } from '../routes/workspaces/$workspaceId/settings/index.tsx'
+import { workspaceOptions } from '../utils/workspace.ts'
 import { QueryBoundary } from './QueryBoundary.tsx'
 import { AnchorLink } from './RouterLink.tsx'
 
@@ -26,8 +26,7 @@ export function PostalAddressNotice(props: PostalAddressNoticeProps) {
 // Notice renders nothing while the Workspace has an address.
 function Notice({ workspaceId }: PostalAddressNoticeProps) {
   const { t } = useTranslation()
-  const { data: workspaces } = useSuspenseQuery(siteWorkspacesListOptions())
-  const workspace = workspaces.find((w) => w.id === workspaceId)
+  const { data: workspace } = useSuspenseQuery(workspaceOptions(workspaceId))
   if (workspace?.postalAddress.trim() !== '') {
     return null
   }

@@ -28,7 +28,6 @@ import {
   siteSuppressionsCreateMutation,
   siteSuppressionsDeleteMutation,
   siteSuppressionsListOptions,
-  siteWorkspacesListOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type {
   SiteCreateSuppressionInput,
@@ -41,6 +40,7 @@ import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as suppressionsRoute } from '../../routes/workspaces/$workspaceId/suppressions/index.tsx'
 import { can } from '../../utils/permissions.ts'
 import { isErasedNumber } from '../../utils/phone.ts'
+import { workspaceOptions } from '../../utils/workspace.ts'
 
 const REASON_COLORS: Record<SuppressionReason, string> = {
   bounce: 'orange',
@@ -213,11 +213,8 @@ export function SuppressionsListPage() {
   const shownPage = useDeferredValue(page)
   const shownLifted = useDeferredValue(lifted)
   const [createOpened, { open: openCreate, close: closeCreate }] = useDisclosure(false)
-  const workspaces = useQuery(siteWorkspacesListOptions())
-  const canManage = can(
-    workspaces.data?.find((w) => w.id === workspaceId),
-    'suppressions:manage',
-  )
+  const { data: workspace } = useQuery(workspaceOptions(workspaceId))
+  const canManage = can(workspace, 'suppressions:manage')
 
   const form = useForm<Required<Pick<SiteCreateSuppressionInput, 'channel' | 'destination'>>>({
     initialValues: { channel: 'email', destination: '' },

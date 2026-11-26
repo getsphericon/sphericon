@@ -3,11 +3,9 @@ import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
 import { QueryBoundary } from '../../components/QueryBoundary.tsx'
-import {
-  siteSegmentsPreviewOptions,
-  siteWorkspacesListOptions,
-} from '../../generated/site/@tanstack/react-query.gen.ts'
+import { siteSegmentsPreviewOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { BroadcastChannel, SiteSegmentResource } from '../../generated/site/types.gen.ts'
+import { workspaceOptions } from '../../utils/workspace.ts'
 import { sendCapDays } from './sendCapDays.ts'
 
 interface SendCapWarningProps {
@@ -37,8 +35,8 @@ export function SendCapWarning(props: SendCapWarningProps) {
 // audience is chosen, the Workspace has no Send cap or the audience goes out within 24 hours.
 function Warning({ workspaceId, segmentId, segments, reach }: SendCapWarningProps) {
   const { t } = useTranslation()
-  const { data: workspaces } = useSuspenseQuery(siteWorkspacesListOptions())
-  const sendCap = workspaces.find((w) => w.id === workspaceId)?.sendCap
+  const { data: workspace } = useSuspenseQuery(workspaceOptions(workspaceId))
+  const sendCap = workspace?.sendCap
   // All contacts are counted at once; a chosen Segment by its condition, once it is known.
   const segment = segmentId ? segments?.find((s) => s.id === segmentId) : undefined
   const resolved = segmentId === null || segment !== undefined
