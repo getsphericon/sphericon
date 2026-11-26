@@ -27,6 +27,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 )
 
@@ -49,16 +50,33 @@ func (m *Module) UsingTag(ctx context.Context, l *ent.WorkspaceLocked, name stri
 }
 
 // UsingCustomField returns the Workspace's kept Automations whose live version or draft holds the
-// Custom field key against a retype to type t, in id order: its Trigger, exit or goal filter names
-// it (ADR 0133), a contact.field_changed matcher that tests its `key`, which any retype breaks; or
-// a Branch's Condition tests it with a leaf a field of type t does not take (ADR 0124) or names it
-// in an event test's filter (ADR 0153), the check a Rule's Condition holds a field by
+// Custom field key against a retype to type t, in id order: a Wait until waits on its date (ADR
+// 0126), which only a datetime field holds; its Trigger, exit or goal filter names it (ADR 0133), a
+// contact.field_changed matcher that tests its `key`, which any retype breaks; or a Branch's
+// Condition tests it with a leaf a field of type t does not take (ADR 0124) or names it in an event
+// test's filter (ADR 0153), the check a Rule's Condition holds a field by
 // (condition.HoldsCustomField).
 func (m *Module) UsingCustomField(ctx context.Context, l *ent.WorkspaceLocked, key string, t customfield.Type) ([]*ent.Automation, error) {
 	return using(ctx, l, func(v *ent.AutomationVersion) bool {
-		return slices.Contains(matcherNames(v).CustomFields, key) ||
+		return waitsOnField(v, key) || slices.Contains(matcherNames(v).CustomFields, key) ||
 			slices.ContainsFunc(branchConditions(v), func(g conditiontree.Branch) bool { return condition.HoldsCustomField(g.Group, key, t) })
 	})
+}
+
+// waitsOnField reports whether a Wait until of the version, at any depth, waits on the date the
+// Custom field key holds.
+func waitsOnField(v *ent.AutomationVersion, key string) bool {
+	field := datetrigger.Field{Kind: datetrigger.CustomField, Key: key}
+	for _, st := range automationstep.All(v.Steps) {
+		w, ok := st.Payload.(automationstep.WaitUntil)
+		if !ok {
+			continue
+		}
+		if d, ok := w.Until.(automationstep.OnDate); ok && d.Field == field {
+			return true
+		}
+	}
+	return false
 }
 
 // branchConditions are the Conditions of the paths of every Branch of the version, at any depth.

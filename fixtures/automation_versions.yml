@@ -308,6 +308,26 @@
   created_at: '{{daysAgo 12}}'
   updated_at: '{{daysAgo 12}}'
 
+# A Wait until 3 days before trial_ends_at at 10:00, then an email.
+- id: 5592 # fixture: AutomationJobsWaitUntilDateVersion
+  automation_id: 5592
+  trigger_action: job_wait_until_date
+  version: 1
+  steps: '{"id":"9a3c1e52-5592-4b6e-8a1d-6f2c3b4a5d01","steps":[{"id":"9a3c1e52-5592-4b6e-8a1d-6f2c3b4a5d02","type":"wait_until","until":{"form":"date","field":{"kind":"customField","key":"trial_ends_at"},"recurrence":"once","offsetDays":-3,"localTime":"10:00"}},{"id":"9a3c1e52-5592-4b6e-8a1d-6f2c3b4a5d03","type":"email","subject":"Your trial ends soon","body":"<p>Your trial ends soon</p>"}]}'
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+
+# A Wait until the next birthday at 10:00, then an email.
+- id: 5593 # fixture: AutomationJobsWaitUntilBirthdayVersion
+  automation_id: 5593
+  trigger_action: job_wait_until_birthday
+  version: 1
+  steps: '{"id":"9a3c1e52-5593-4b6e-8a1d-6f2c3b4a5d01","steps":[{"id":"9a3c1e52-5593-4b6e-8a1d-6f2c3b4a5d02","type":"wait_until","until":{"form":"date","field":{"kind":"birthday"},"recurrence":"yearly","offsetDays":0,"localTime":"10:00"}},{"id":"9a3c1e52-5593-4b6e-8a1d-6f2c3b4a5d03","type":"email","subject":"Happy birthday","body":"<p>Happy birthday</p>"}]}'
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+
 # --- Brightpath (workspace 20): demo workspace behind the screenshots on getsphericon.com ---
 - id: 20001
   automation_id: 20001

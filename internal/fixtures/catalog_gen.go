@@ -363,6 +363,18 @@ const (
 	AutomationJobsWaitFirstName = "Jobs wait first"
 	// AutomationJobsWaitFirstVersionID is from fixtures/automation_versions.
 	AutomationJobsWaitFirstVersionID = 5562
+	// AutomationJobsWaitUntilBirthdayID is from fixtures/automations.
+	AutomationJobsWaitUntilBirthdayID = 5593
+	// AutomationJobsWaitUntilBirthdayName is from fixtures/automations.
+	AutomationJobsWaitUntilBirthdayName = "Jobs wait until the birthday"
+	// AutomationJobsWaitUntilBirthdayVersionID is from fixtures/automation_versions.
+	AutomationJobsWaitUntilBirthdayVersionID = 5593
+	// AutomationJobsWaitUntilDateID is from fixtures/automations.
+	AutomationJobsWaitUntilDateID = 5592
+	// AutomationJobsWaitUntilDateName is from fixtures/automations.
+	AutomationJobsWaitUntilDateName = "Jobs wait until a date"
+	// AutomationJobsWaitUntilDateVersionID is from fixtures/automation_versions.
+	AutomationJobsWaitUntilDateVersionID = 5592
 	// AutomationJobsWaitUntilID is from fixtures/automations.
 	AutomationJobsWaitUntilID = 5591
 	// AutomationJobsWaitUntilName is from fixtures/automations.
@@ -1649,6 +1661,12 @@ const (
 	CustomFieldAcmePlanKey = "plan"
 	// CustomFieldAcmePlanName is from fixtures/custom_fields.
 	CustomFieldAcmePlanName = "Plan"
+	// CustomFieldAcmeTrialEndsAtID is from fixtures/custom_fields.
+	CustomFieldAcmeTrialEndsAtID = 6
+	// CustomFieldAcmeTrialEndsAtKey is from fixtures/custom_fields.
+	CustomFieldAcmeTrialEndsAtKey = "trial_ends_at"
+	// CustomFieldAcmeTrialEndsAtName is from fixtures/custom_fields.
+	CustomFieldAcmeTrialEndsAtName = "Trial ends at"
 	// CustomFieldDuffEndsOnID is from fixtures/custom_fields.
 	CustomFieldDuffEndsOnID = 7702
 	// CustomFieldDuffEndsOnKey is from fixtures/custom_fields.

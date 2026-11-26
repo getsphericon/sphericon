@@ -9025,6 +9025,24 @@ func (x *AutomationStepRecordScopedCreate) SetNillableDueAt(v *time.Time) *Autom
 
 const RoleOf_AutomationStepRecordScopedCreate_SetNillableDueAt = RoleStep
 
+// SetWentOn sets the "went_on" field.
+func (x *AutomationStepRecordScopedCreate) SetWentOn(v automationstep.WentOn) *AutomationStepRecordScopedCreate {
+	x.set = append(x.set, func(b *AutomationStepRecordCreate) { b.SetWentOn(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedCreate_SetWentOn = RoleStep
+
+// SetNillableWentOn sets the "went_on" field if the given value is not nil.
+func (x *AutomationStepRecordScopedCreate) SetNillableWentOn(v *automationstep.WentOn) *AutomationStepRecordScopedCreate {
+	if v != nil {
+		x.SetWentOn(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedCreate_SetNillableWentOn = RoleStep
+
 // SetRun sets the "run" edge to the AutomationRun entity.
 func (x *AutomationStepRecordScopedCreate) SetRun(v *AutomationRun) *AutomationStepRecordScopedCreate {
 	x.set = append(x.set, func(b *AutomationStepRecordCreate) { b.SetRun(v) })

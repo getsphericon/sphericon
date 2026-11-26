@@ -235,6 +235,7 @@ func waitUntilMoment(c Converter, u automationstep.Until) (externalapi.WaitUntil
 	}
 	return externalapi.WaitUntilMoment{}, fmt.Errorf("the moment %T has no arm", u)
 }
+
 // dateField maps a date Trigger's field into the typed DTO by its kind. A stored field is checked
 // when it is written, so a kind it does not know is the birthday's never.
 func dateField(f datetrigger.Field) externalapi.DateField {
