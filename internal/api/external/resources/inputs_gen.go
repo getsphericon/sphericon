@@ -25,6 +25,7 @@ import (
 	sendingdomains "github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
 	automationstep "github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	channels "github.com/getsphericon/sphericon/internal/kernel/channels"
+	datetrigger "github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 	httpheader "github.com/getsphericon/sphericon/internal/kernel/httpheader"
 	localcalendar "github.com/getsphericon/sphericon/internal/kernel/localcalendar"
 	ruleaction "github.com/getsphericon/sphericon/internal/kernel/ruleaction"
@@ -332,6 +333,14 @@ func (c *InputsImpl) DateRecurrence(source external.DateRecurrence) localcalenda
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return localcalendarRecurrence
+}
+func (c *InputsImpl) DateTriggerIn(source external.DateTriggerInput) datetrigger.Date {
+	var datetriggerDate datetrigger.Date
+	datetriggerDate.Field = dateFieldIn(source.Field)
+	datetriggerDate.Recurrence = c.DateRecurrence(source.Recurrence)
+	datetriggerDate.OffsetDays = dateOffsetDaysIn(source.OffsetDays)
+	datetriggerDate.LocalTime = string(source.LocalTime)
+	return datetriggerDate
 }
 func (c *InputsImpl) EmailBroadcastContentIn(source external.EmailBroadcastContentInput) broadcasts.EmailContentInput {
 	var broadcastsEmailContentInput broadcasts.EmailContentInput
@@ -843,6 +852,14 @@ func (c *InputsImpl) WaitStepIn(source external.WaitStepInput) automationstep.Wa
 	var automationstepWait automationstep.Wait
 	automationstepWait.Seconds = int32ToInt(source.Seconds)
 	return automationstepWait
+}
+func (c *InputsImpl) WaitUntilDateIn(source external.WaitUntilDateInput) datetrigger.Date {
+	var datetriggerDate datetrigger.Date
+	datetriggerDate.Field = dateFieldIn(source.Field)
+	datetriggerDate.Recurrence = c.DateRecurrence(source.Recurrence)
+	datetriggerDate.OffsetDays = dateOffsetDaysIn(source.OffsetDays)
+	datetriggerDate.LocalTime = string(source.LocalTime)
+	return datetriggerDate
 }
 func (c *InputsImpl) WaitUntilStepIn(source external.WaitUntilStepInput) (automationstep.WaitUntil, error) {
 	var automationstepWaitUntil automationstep.WaitUntil

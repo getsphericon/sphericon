@@ -54,6 +54,8 @@ import (
 // goverter:extend stringPatch
 // goverter:extend revisionIn
 // goverter:extend namePatch
+// goverter:extend dateFieldIn
+// goverter:extend dateOffsetDaysIn
 // goverter:extend nameIn
 // goverter:extend namePtrIn
 // goverter:extend nilStringPatch
@@ -260,6 +262,9 @@ type Inputs interface {
 	EntryPolicy(source externalapi.EventTriggerInputEntryPolicy) automationversion.EntryPolicy
 	// goverter:enum:transform value
 	DateRecurrence(source externalapi.DateRecurrence) localcalendar.Recurrence
+	// A date Trigger and a Wait until on a date take the same occurrence of a date (ADR 0126).
+	DateTriggerIn(source externalapi.DateTriggerInput) datetrigger.Date
+	WaitUntilDateIn(source externalapi.WaitUntilDateInput) datetrigger.Date
 	// goverter:enum:transform value
 	SuppressionChannel(source externalapi.SuppressionChannel) channels.Channel
 	// goverter:enum:transform value
@@ -522,8 +527,7 @@ func waitUntilMomentIn(c Inputs, in externalapi.WaitUntilMomentInput) (automatio
 	case externalapi.WaitUntilTimeOfDayInputWaitUntilMomentInputSum:
 		return c.WaitUntilTimeOfDayIn(in.OneOf.WaitUntilTimeOfDayInput), nil
 	case externalapi.WaitUntilDateInputWaitUntilMomentInputSum:
-		d := in.OneOf.WaitUntilDateInput
-		return automationstep.OnDate{Date: dateIn(c, d.Field, d.Recurrence, d.OffsetDays, d.LocalTime)}, nil
+		return automationstep.OnDate{Date: c.WaitUntilDateIn(in.OneOf.WaitUntilDateInput)}, nil
 	default:
 		return nil, fmt.Errorf("the moment of form %q has no form of a wait until", in.OneOf.Type)
 	}
@@ -601,8 +605,7 @@ func automationTriggerIn(c Inputs, t externalapi.AutomationTriggerInput) (automa
 		}
 		return automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: ev.Action, Filter: filter}}, nil
 	case externalapi.DateTriggerInputAutomationTriggerInputSum:
-		d := t.OneOf.DateTriggerInput
-		return automations.DateTrigger{Date: dateIn(c, d.Field, d.Recurrence, d.OffsetDays, d.LocalTime)}, nil
+		return automations.DateTrigger{Date: c.DateTriggerIn(t.OneOf.DateTriggerInput)}, nil
 	}
 	// A Trigger of no kind is an Event Trigger with no action, which the save refuses.
 	return automations.EventTrigger{}, nil
@@ -620,14 +623,8 @@ func dateFieldIn(f externalapi.DateFieldInput) datetrigger.Field {
 	return datetrigger.Field{}
 }
 
-// dateIn is the date a date Trigger or a Wait until names (ADR 0126): the two write the same
-// model, so they are read by the same function.
-func dateIn(c Inputs, field externalapi.DateFieldInput, recurrence externalapi.DateRecurrence, offsetDays externalapi.DateOffsetDays, localTime externalapi.LocalTime) datetrigger.Date {
-	return datetrigger.Date{
-		Field: dateFieldIn(field), Recurrence: c.DateRecurrence(recurrence),
-		OffsetDays: int(offsetDays), LocalTime: string(localTime),
-	}
-}
+// dateOffsetDaysIn is a date's offset in days, which the save holds to its bound.
+func dateOffsetDaysIn(days externalapi.DateOffsetDays) int { return int(days) }
 
 // automationEntryIn is the Entry policy and the Enrollment key a write gives with its Trigger, an
 // Event Trigger's: an omitted field is left to the module's default, which for the key is none.

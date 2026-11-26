@@ -48,6 +48,7 @@ import (
 	automationstep "github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	channels "github.com/getsphericon/sphericon/internal/kernel/channels"
 	conditiontree "github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	datetrigger "github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 	emaildoc "github.com/getsphericon/sphericon/internal/kernel/emaildoc"
 	emailrender "github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	holdreason "github.com/getsphericon/sphericon/internal/kernel/holdreason"
@@ -827,6 +828,15 @@ func (c *ConverterImpl) DateRecurrenceToResource(source localcalendar.Recurrence
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return externalapiDateRecurrence
+}
+func (c *ConverterImpl) DateTriggerToResource(source datetrigger.Date) external.DateTrigger {
+	var externalapiDateTrigger external.DateTrigger
+	externalapiDateTrigger.Kind = dateTriggerKind(source)
+	externalapiDateTrigger.Field = dateField(source.Field)
+	externalapiDateTrigger.Recurrence = c.DateRecurrenceToResource(source.Recurrence)
+	externalapiDateTrigger.OffsetDays = dateOffsetDays(source.OffsetDays)
+	externalapiDateTrigger.LocalTime = external.LocalTime(source.LocalTime)
+	return externalapiDateTrigger
 }
 func (c *ConverterImpl) DnsRecordToResource(source sendingdomains.Record) external.DnsRecord {
 	var externalapiDnsRecord external.DnsRecord
@@ -2275,6 +2285,15 @@ func (c *ConverterImpl) WaitStepToResource(source automations.WaitView) external
 	externalapiWaitStep.Type = waitStepType(source.Type)
 	externalapiWaitStep.Seconds = count(source.Seconds)
 	return externalapiWaitStep
+}
+func (c *ConverterImpl) WaitUntilDateToResource(source datetrigger.Date) external.WaitUntilDate {
+	var externalapiWaitUntilDate external.WaitUntilDate
+	externalapiWaitUntilDate.Form = waitUntilDateForm(source)
+	externalapiWaitUntilDate.Field = dateField(source.Field)
+	externalapiWaitUntilDate.Recurrence = c.DateRecurrenceToResource(source.Recurrence)
+	externalapiWaitUntilDate.OffsetDays = dateOffsetDays(source.OffsetDays)
+	externalapiWaitUntilDate.LocalTime = external.LocalTime(source.LocalTime)
+	return externalapiWaitUntilDate
 }
 func (c *ConverterImpl) WaitUntilStepToResource(source automations.WaitUntilView) (external.WaitUntilStep, error) {
 	var externalapiWaitUntilStep external.WaitUntilStep

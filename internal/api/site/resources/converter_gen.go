@@ -57,6 +57,7 @@ import (
 	automationstep "github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	channels "github.com/getsphericon/sphericon/internal/kernel/channels"
 	conditiontree "github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	datetrigger "github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 	deferralcause "github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 	emailrender "github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	holdreason "github.com/getsphericon/sphericon/internal/kernel/holdreason"
@@ -1168,6 +1169,15 @@ func (c *ConverterImpl) DateRecurrenceToResource(source localcalendar.Recurrence
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return siteapiDateRecurrence
+}
+func (c *ConverterImpl) DateTriggerToResource(source datetrigger.Date) site.DateTrigger {
+	var siteapiDateTrigger site.DateTrigger
+	siteapiDateTrigger.Kind = dateTriggerKind(source)
+	siteapiDateTrigger.Field = dateField(source.Field)
+	siteapiDateTrigger.Recurrence = c.DateRecurrenceToResource(source.Recurrence)
+	siteapiDateTrigger.OffsetDays = dateOffsetDays(source.OffsetDays)
+	siteapiDateTrigger.LocalTime = site.LocalTime(source.LocalTime)
+	return siteapiDateTrigger
 }
 func (c *ConverterImpl) DeletedWorkspaceToResource(source *ent.Workspace) site.SiteDeletedWorkspaceResource {
 	var siteapiSiteDeletedWorkspaceResource site.SiteDeletedWorkspaceResource
@@ -3219,6 +3229,15 @@ func (c *ConverterImpl) WaitStepToResource(source automations.WaitView) site.Wai
 	siteapiWaitStep.Type = waitStepType(source.Type)
 	siteapiWaitStep.Seconds = count(source.Seconds)
 	return siteapiWaitStep
+}
+func (c *ConverterImpl) WaitUntilDateToResource(source datetrigger.Date) site.WaitUntilDate {
+	var siteapiWaitUntilDate site.WaitUntilDate
+	siteapiWaitUntilDate.Form = waitUntilDateForm(source)
+	siteapiWaitUntilDate.Field = dateField(source.Field)
+	siteapiWaitUntilDate.Recurrence = c.DateRecurrenceToResource(source.Recurrence)
+	siteapiWaitUntilDate.OffsetDays = dateOffsetDays(source.OffsetDays)
+	siteapiWaitUntilDate.LocalTime = site.LocalTime(source.LocalTime)
+	return siteapiWaitUntilDate
 }
 func (c *ConverterImpl) WaitUntilStepToResource(source automations.WaitUntilView) (site.WaitUntilStep, error) {
 	var siteapiWaitUntilStep site.WaitUntilStep

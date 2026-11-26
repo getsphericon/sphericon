@@ -140,6 +140,10 @@ import (
 // goverter:extend waitStepType
 // goverter:extend waitUntilStepType
 // goverter:extend waitUntilMoment
+// goverter:extend dateField
+// goverter:extend dateOffsetDays
+// goverter:extend dateTriggerKind
+// goverter:extend waitUntilDateForm
 // goverter:extend waitUntilTimeOfDayForm
 // goverter:extend applyTagStepType
 // goverter:extend removeTagStepType
@@ -488,6 +492,11 @@ type Converter interface {
 	EntryPolicyToResource(source automationversion.EntryPolicy) siteapi.EntryPolicy
 	// goverter:enum:transform value
 	DateRecurrenceToResource(source localcalendar.Recurrence) siteapi.DateRecurrence
+	// A date Trigger and a Wait until on a date show the same occurrence of a date (ADR 0126).
+	// goverter:map . Kind | dateTriggerKind
+	DateTriggerToResource(source datetrigger.Date) siteapi.DateTrigger
+	// goverter:map . Form | waitUntilDateForm
+	WaitUntilDateToResource(source datetrigger.Date) siteapi.WaitUntilDate
 	// goverter:enum:transform value
 	SmsFromKindToResource(source messaging.SMSFromKind) siteapi.SmsFromKind
 	// goverter:map . Kind | twilioConfigKind
@@ -1303,10 +1312,7 @@ func waitUntilMoment(c Converter, u automationstep.Until) (siteapi.WaitUntilMome
 	case automationstep.TimeOfDay:
 		return siteapi.WaitUntilMoment{OneOf: siteapi.NewWaitUntilTimeOfDayWaitUntilMomentSum(c.WaitUntilTimeOfDayToResource(u))}, nil
 	case automationstep.OnDate:
-		return siteapi.WaitUntilMoment{OneOf: siteapi.NewWaitUntilDateWaitUntilMomentSum(siteapi.WaitUntilDate{
-			Form: siteapi.WaitUntilDateFormDate, Field: dateField(u.Field), Recurrence: c.DateRecurrenceToResource(u.Recurrence),
-			OffsetDays: siteapi.DateOffsetDays(narrow.Int32(u.OffsetDays)), LocalTime: siteapi.LocalTime(u.LocalTime),
-		})}, nil
+		return siteapi.WaitUntilMoment{OneOf: siteapi.NewWaitUntilDateWaitUntilMomentSum(c.WaitUntilDateToResource(u.Date))}, nil
 	case nil:
 		return siteapi.WaitUntilMoment{}, errors.New("a wait until without a moment")
 	}
@@ -1343,10 +1349,7 @@ func segmentCondition(g conditiontree.Segment) (siteapi.SegmentCondition, error)
 func automationTrigger(c Converter, v *ent.AutomationVersion) (siteapi.AutomationTrigger, error) {
 	switch t := automations.TriggerOf(v).(type) {
 	case automations.DateTrigger:
-		return siteapi.AutomationTrigger{OneOf: siteapi.NewDateTriggerAutomationTriggerSum(siteapi.DateTrigger{
-			Kind: siteapi.DateTriggerKindDate, Field: dateField(t.Date.Field), Recurrence: c.DateRecurrenceToResource(t.Date.Recurrence),
-			OffsetDays: siteapi.DateOffsetDays(narrow.Int32(t.Date.OffsetDays)), LocalTime: siteapi.LocalTime(t.Date.LocalTime),
-		})}, nil
+		return siteapi.AutomationTrigger{OneOf: siteapi.NewDateTriggerAutomationTriggerSum(c.DateTriggerToResource(t.Date))}, nil
 	case automations.EventTrigger:
 		ev := siteapi.EventTrigger{
 			Kind: siteapi.EventTriggerKindEvent, Action: t.Matcher.Action,
@@ -1364,6 +1367,14 @@ func automationTrigger(c Converter, v *ent.AutomationVersion) (siteapi.Automatio
 	}
 	return siteapi.AutomationTrigger{}, fmt.Errorf("version %d has a trigger of no kind", v.ID)
 }
+
+func dateTriggerKind(datetrigger.Date) siteapi.DateTriggerKind { return siteapi.DateTriggerKindDate }
+func waitUntilDateForm(datetrigger.Date) siteapi.WaitUntilDateForm {
+	return siteapi.WaitUntilDateFormDate
+}
+
+// dateOffsetDays is a date's offset in days, within the contract's bound when it was stored.
+func dateOffsetDays(days int) siteapi.DateOffsetDays { return siteapi.DateOffsetDays(narrow.Int32(days)) }
 
 // dateField maps a date Trigger's field into the typed DTO by its kind. A stored field is checked
 // when it is written, so a kind it does not know is the birthday's never.

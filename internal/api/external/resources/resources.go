@@ -226,10 +226,7 @@ func waitUntilMoment(c Converter, u automationstep.Until) (externalapi.WaitUntil
 	case automationstep.TimeOfDay:
 		return externalapi.WaitUntilMoment{OneOf: externalapi.NewWaitUntilTimeOfDayWaitUntilMomentSum(c.WaitUntilTimeOfDayToResource(u))}, nil
 	case automationstep.OnDate:
-		return externalapi.WaitUntilMoment{OneOf: externalapi.NewWaitUntilDateWaitUntilMomentSum(externalapi.WaitUntilDate{
-			Form: externalapi.WaitUntilDateFormDate, Field: dateField(u.Field), Recurrence: c.DateRecurrenceToResource(u.Recurrence),
-			OffsetDays: externalapi.DateOffsetDays(narrow.Int32(u.OffsetDays)), LocalTime: externalapi.LocalTime(u.LocalTime),
-		})}, nil
+		return externalapi.WaitUntilMoment{OneOf: externalapi.NewWaitUntilDateWaitUntilMomentSum(c.WaitUntilDateToResource(u.Date))}, nil
 	case nil:
 		return externalapi.WaitUntilMoment{}, errors.New("a wait until without a moment")
 	}
@@ -322,6 +319,10 @@ func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {
 // goverter:extend waitStepType
 // goverter:extend waitUntilStepType
 // goverter:extend waitUntilMoment
+// goverter:extend dateField
+// goverter:extend dateOffsetDays
+// goverter:extend dateTriggerKind
+// goverter:extend waitUntilDateForm
 // goverter:extend waitUntilTimeOfDayForm
 // goverter:extend applyTagStepType
 // goverter:extend removeTagStepType
@@ -527,6 +528,11 @@ type Converter interface {
 	EntryPolicyToResource(source automationversion.EntryPolicy) externalapi.EntryPolicy
 	// goverter:enum:transform value
 	DateRecurrenceToResource(source localcalendar.Recurrence) externalapi.DateRecurrence
+	// A date Trigger and a Wait until on a date show the same occurrence of a date (ADR 0126).
+	// goverter:map . Kind | dateTriggerKind
+	DateTriggerToResource(source datetrigger.Date) externalapi.DateTrigger
+	// goverter:map . Form | waitUntilDateForm
+	WaitUntilDateToResource(source datetrigger.Date) externalapi.WaitUntilDate
 	// goverter:enum:transform value
 	SmsFromKindToResource(source messaging.SMSFromKind) externalapi.SmsFromKind
 	// goverter:map . Kind | twilioConfigKind
@@ -996,10 +1002,7 @@ func segmentCondition(g conditiontree.Segment) (externalapi.SegmentCondition, er
 func automationTrigger(c Converter, v *ent.AutomationVersion) (externalapi.AutomationTrigger, error) {
 	switch t := automations.TriggerOf(v).(type) {
 	case automations.DateTrigger:
-		return externalapi.AutomationTrigger{OneOf: externalapi.NewDateTriggerAutomationTriggerSum(externalapi.DateTrigger{
-			Kind: externalapi.DateTriggerKindDate, Field: dateField(t.Date.Field), Recurrence: c.DateRecurrenceToResource(t.Date.Recurrence),
-			OffsetDays: externalapi.DateOffsetDays(narrow.Int32(t.Date.OffsetDays)), LocalTime: externalapi.LocalTime(t.Date.LocalTime),
-		})}, nil
+		return externalapi.AutomationTrigger{OneOf: externalapi.NewDateTriggerAutomationTriggerSum(c.DateTriggerToResource(t.Date))}, nil
 	case automations.EventTrigger:
 		ev := externalapi.EventTrigger{
 			Kind: externalapi.EventTriggerKindEvent, Action: t.Matcher.Action,
@@ -1017,6 +1020,14 @@ func automationTrigger(c Converter, v *ent.AutomationVersion) (externalapi.Autom
 	}
 	return externalapi.AutomationTrigger{}, fmt.Errorf("version %d has a trigger of no kind", v.ID)
 }
+
+func dateTriggerKind(datetrigger.Date) externalapi.DateTriggerKind { return externalapi.DateTriggerKindDate }
+func waitUntilDateForm(datetrigger.Date) externalapi.WaitUntilDateForm {
+	return externalapi.WaitUntilDateFormDate
+}
+
+// dateOffsetDays is a date's offset in days, within the contract's bound when it was stored.
+func dateOffsetDays(days int) externalapi.DateOffsetDays { return externalapi.DateOffsetDays(narrow.Int32(days)) }
 
 // dateField maps a date Trigger's field into the typed DTO by its kind. A stored field is checked
 // when it is written, so a kind it does not know is the birthday's never.

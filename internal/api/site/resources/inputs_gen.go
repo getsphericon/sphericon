@@ -40,6 +40,7 @@ import (
 	automationstep "github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	channels "github.com/getsphericon/sphericon/internal/kernel/channels"
 	conditiontree "github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	datetrigger "github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 	httpheader "github.com/getsphericon/sphericon/internal/kernel/httpheader"
 	localcalendar "github.com/getsphericon/sphericon/internal/kernel/localcalendar"
 	pagination "github.com/getsphericon/sphericon/internal/kernel/pagination"
@@ -433,6 +434,14 @@ func (c *InputsImpl) DateRecurrence(source site.DateRecurrence) localcalendar.Re
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return localcalendarRecurrence
+}
+func (c *InputsImpl) DateTriggerIn(source site.DateTriggerInput) datetrigger.Date {
+	var datetriggerDate datetrigger.Date
+	datetriggerDate.Field = dateFieldIn(source.Field)
+	datetriggerDate.Recurrence = c.DateRecurrence(source.Recurrence)
+	datetriggerDate.OffsetDays = dateOffsetDaysIn(source.OffsetDays)
+	datetriggerDate.LocalTime = string(source.LocalTime)
+	return datetriggerDate
 }
 func (c *InputsImpl) EmailBroadcastContentIn(source site.EmailBroadcastContentInput) broadcasts.EmailContentInput {
 	var broadcastsEmailContentInput broadcasts.EmailContentInput
@@ -1271,6 +1280,14 @@ func (c *InputsImpl) WaitStepIn(source site.WaitStepInput) automationstep.Wait {
 	var automationstepWait automationstep.Wait
 	automationstepWait.Seconds = int32ToInt(source.Seconds)
 	return automationstepWait
+}
+func (c *InputsImpl) WaitUntilDateIn(source site.WaitUntilDateInput) datetrigger.Date {
+	var datetriggerDate datetrigger.Date
+	datetriggerDate.Field = dateFieldIn(source.Field)
+	datetriggerDate.Recurrence = c.DateRecurrence(source.Recurrence)
+	datetriggerDate.OffsetDays = dateOffsetDaysIn(source.OffsetDays)
+	datetriggerDate.LocalTime = string(source.LocalTime)
+	return datetriggerDate
 }
 func (c *InputsImpl) WaitUntilStepIn(source site.WaitUntilStepInput) (automationstep.WaitUntil, error) {
 	var automationstepWaitUntil automationstep.WaitUntil
