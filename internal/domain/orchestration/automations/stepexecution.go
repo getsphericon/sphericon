@@ -437,8 +437,8 @@ func (m *StepExecution) send(ctx context.Context, s *ent.Scoped, a *ent.Automati
 	}
 	// A Hold or a Deferral waits and asks again later (an Automation step cannot snooze, so it
 	// queues itself). A Deferral records its wait on the Enrollment (ADR 0178).
-	if retry := res.Retry(0); retry.Wanted {
-		now := m.now()
+	now := m.now()
+	if retry := res.Retry(0, now); retry.Wanted {
 		if res.Outcome == outboundmessages.Deferral {
 			return m.wait(ctx, s, run, at.step, deferral{since: lo.FromPtr(run.DeferredSince), cause: res.Cause, until: now.Add(retry.After)}, now)
 		}

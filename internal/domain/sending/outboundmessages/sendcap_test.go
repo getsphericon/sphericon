@@ -78,7 +78,7 @@ func TestASendCapDeferralRetriesWithinTheBound(t *testing.T) {
 	require.Equal(t, 24*time.Hour, res.Wait)
 
 	for _, backlog := range []int{0, 1, 10_000} {
-		retry := res.Retry(backlog)
+		retry := res.Retry(backlog, time.Now())
 		assert.True(t, retry.Wanted)
 		assert.LessOrEqual(t, retry.After, sendCapBound, "backlog %d", backlog)
 	}
@@ -89,7 +89,7 @@ func TestASendCapDeferralRetriesWithinTheBound(t *testing.T) {
 	byProvider := send(t, m, env, "bc:3")
 	require.Equal(t, outboundmessages.Deferral, byProvider.Outcome)
 	assert.Equal(t, deferralcause.ProviderLimit, byProvider.Cause)
-	assert.Greater(t, byProvider.Retry(0).After, sendCapBound, "the Provider limit keeps its hour")
+	assert.Greater(t, byProvider.Retry(0, time.Now()).After, sendCapBound, "the Provider limit keeps its hour")
 }
 
 // A Staff member raising a spent Send cap speeds the Workspace up at once: the bucket refills at
