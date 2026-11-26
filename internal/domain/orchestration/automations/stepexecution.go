@@ -20,6 +20,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 )
@@ -312,7 +313,7 @@ func (m *StepExecution) Step(ctx context.Context, s *ent.Scoped, runID int64, st
 		// The draw holds no random state (ADR 0124): the same Enrollment always lands on the same
 		// path, and the move down it commits behind the compare-and-set on the cursor, so a job
 		// delivered again finds the Enrollment moved on.
-		draw := automationstep.Draw(run.ContactID, at.step, run.Ordinal)
+		draw := automationstep.Draw(run.ContactID, at.step, splitRound(run))
 		return m.advance(ctx, s, run.ID, at, stepMove{path: &pathTaken{id: p.At(draw)}})
 
 	case automationstep.HTTP:
@@ -328,6 +329,19 @@ func (m *StepExecution) Step(ctx context.Context, s *ent.Scoped, runID int64, st
 		}
 		return m.fail(ctx, s, run.ID, fmt.Errorf("unknown step type %q", st.Kind()))
 	}
+}
+
+// splitRound is the round the Enrollment's Contact draws in at a Split: the anniversary year of an
+// Enrollment a yearly date Trigger made, so a holdout one year draws again the next (ADR 0126), and
+// the Enrollment's ordinal otherwise (ADR 0127), a once date's included.
+func splitRound(run *ent.AutomationRun) int {
+	if run.Occurrence == nil {
+		return run.Ordinal
+	}
+	if year, yearly := datetrigger.YearOf(*run.Occurrence); yearly {
+		return year
+	}
+	return run.Ordinal
 }
 
 // branch decides a Branch for the Enrollment (ADR 0124): every path's Condition is read for its
