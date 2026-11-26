@@ -1,6 +1,7 @@
 package site_test
 
 import (
+	"net/http"
 	"testing"
 	"time"
 
@@ -61,4 +62,19 @@ func TestSiteOutsideWindowHoldsNoneOfAnEmailBroadcast(t *testing.T) {
 
 	assert.Zero(t, got.Held)
 	assert.False(t, got.ReachedAt.Set)
+}
+
+// The audience is the segment preview's: a condition that does not fit its field (a text test on
+// Dunder's number field seats) cannot be counted, and is refused as the preview refuses it.
+func TestSiteOutsideWindowRefusesAConditionThatDoesNotCompile(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	_, err := env.SiteActor(t, fixtures.DunderOwnerDwightEmail).SiteBroadcastsOutsideWindow(t.Context(), &siteapi.SiteBroadcastOutsideWindowInput{
+		Condition: siteapi.NewOptSegmentConditionInput(testhelper.ConditionInput[siteapi.SegmentConditionInput](t,
+			`{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":"seats","test":{"kind":"text","operator":"contains","value":"1"}}]}`)),
+		Channel:     siteapi.BroadcastChannelSMS,
+		ScheduledAt: siteapi.Timestamp(time.Date(2027, time.January, 15, 21, 0, 0, 0, time.UTC)),
+	}, siteapi.SiteBroadcastsOutsideWindowParams{WorkspaceId: fixtures.DunderPublicID})
+
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 }
