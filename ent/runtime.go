@@ -2226,8 +2226,16 @@ func init() {
 	workspaceDescDomainJoinEnabled := workspaceFields[16].Descriptor()
 	// workspace.DefaultDomainJoinEnabled holds the default value on creation for the domain_join_enabled field.
 	workspace.DefaultDomainJoinEnabled = workspaceDescDomainJoinEnabled.Default.(bool)
+	// workspaceDescLinkIdentityEnabled is the schema descriptor for link_identity_enabled field.
+	workspaceDescLinkIdentityEnabled := workspaceFields[17].Descriptor()
+	// workspace.DefaultLinkIdentityEnabled holds the default value on creation for the link_identity_enabled field.
+	workspace.DefaultLinkIdentityEnabled = workspaceDescLinkIdentityEnabled.Default.(bool)
+	// workspaceDescLinkIdentityHosts is the schema descriptor for link_identity_hosts field.
+	workspaceDescLinkIdentityHosts := workspaceFields[18].Descriptor()
+	// workspace.DefaultLinkIdentityHosts holds the default value on creation for the link_identity_hosts field.
+	workspace.DefaultLinkIdentityHosts = workspaceDescLinkIdentityHosts.Default.([]string)
 	// workspaceDescAbuseExempt is the schema descriptor for abuse_exempt field.
-	workspaceDescAbuseExempt := workspaceFields[24].Descriptor()
+	workspaceDescAbuseExempt := workspaceFields[26].Descriptor()
 	// workspace.DefaultAbuseExempt holds the default value on creation for the abuse_exempt field.
 	workspace.DefaultAbuseExempt = workspaceDescAbuseExempt.Default.(bool)
 	workspacestandingMixin := schema.WorkspaceStanding{}.Mixin()

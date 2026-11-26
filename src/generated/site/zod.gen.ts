@@ -779,6 +779,11 @@ export const zLinkClicks = z.object({
 });
 
 /**
+ * A hostname a Link identity token may be added to a link of
+ */
+export const zLinkIdentityHost = z.string().min(1).max(253);
+
+/**
  * What a lint finding is about (ADR 0040)
  */
 export const zLintCode = z.enum([
@@ -2479,6 +2484,15 @@ export const zSiteSetDomainJoinInput = z.strictObject({
 export const zSiteSetEngagementTrackingDefaultInput = z.strictObject({
   revision: zRevision,
   engagementTrackingDefault: zEngagementTrackingDecision
+});
+
+/**
+ * Set the Link identity token settings (ADR 0160)
+ */
+export const zSiteSetLinkIdentityInput = z.strictObject({
+  revision: zRevision,
+  linkIdentityEnabled: z.boolean(),
+  linkIdentityHosts: z.array(zLinkIdentityHost).max(25)
 });
 
 /**
@@ -5040,6 +5054,8 @@ export const zSiteWorkspaceResource = z.object({
   timezone: zTimeZoneName,
   requireConfirmedOptIn: z.boolean(),
   engagementTrackingDefault: zEngagementTrackingDecision,
+  linkIdentityEnabled: z.boolean(),
+  linkIdentityHosts: z.array(z.string()),
   role: zSiteMembershipRole,
   permissions: z.array(zPermission),
   suspendedAt: z.exactOptional(zTimestamp.nullable()),
@@ -7853,6 +7869,17 @@ export const zSiteWorkspacesLeavePath = z.object({
  * There is no content to send for this request, but the headers may be useful.
  */
 export const zSiteWorkspacesLeaveResponse = z.void();
+
+export const zSiteWorkspacesSetLinkIdentityBody = zSiteSetLinkIdentityInput;
+
+export const zSiteWorkspacesSetLinkIdentityPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteWorkspacesSetLinkIdentityResponse = zSiteWorkspaceResource;
 
 export const zSiteMembershipsListPath = z.object({
   workspaceId: zWorkspaceId

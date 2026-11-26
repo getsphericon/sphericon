@@ -3,11 +3,15 @@
 package schema
 
 import (
+	"strings"
+
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+
+	"github.com/getsphericon/sphericon/internal/kernel/domainname"
 )
 
 type Workspace struct {
@@ -140,6 +144,17 @@ func (Workspace) Fields() []ent.Field {
 		field.Bool("domain_join_enabled").
 			Annotations(Attribute(reasonSetting)).
 			Default(false),
+		// Link identity tokens (ADR 0160): whether the click of a tracked link adds the recipient's
+		// token to a destination on one of link_identity_hosts. Off until an Owner or Admin turns it
+		// on, which needs a host listed (workspaces_link_identity_check).
+		field.Bool("link_identity_enabled").
+			Annotations(Attribute(reasonSetting)).
+			Default(false),
+		// The hostnames of the Workspace's own sites, where its tracker runs: each normalized as a
+		// Sending domain is (domainname), matched exactly, so a subdomain is listed on its own.
+		field.Strings("link_identity_hosts").
+			Default([]string{}).
+			Annotations(entsql.Default("[]")),
 		// Two-factor requirement (ADR 0020): when an Owner or Admin switched it on;
 		// NULL while off. Each member's grace ends accounts.GracePeriod after the
 		// later of this and their Membership's creation.
@@ -262,6 +277,10 @@ func workspaceTable() entsql.Annotation {
 		" AND COALESCE(suspended_by_kind = 'staff', false) = (suspended_by_id IS NOT NULL)"
 	a.Checks["workspaces_public_id_max_length_check"] = "char_length(public_id) <= 8"
 	a.Checks["workspaces_public_id_min_length_check"] = "char_length(public_id) >= 8"
+	// Each listed host is in the form domainname writes, and the switch is on only with a host listed.
+	a.Checks["workspaces_link_identity_hosts_check"] = "jsonb_typeof(link_identity_hosts) = 'array' AND NOT (link_identity_hosts @? " +
+		"'$[*] ? (@.type() != \"string\" || !(@ like_regex \"" + strings.ReplaceAll(domainname.Pattern, `\`, `\\`) + "\"))')"
+	a.Checks["workspaces_link_identity_check"] = "NOT link_identity_enabled OR jsonb_array_length(link_identity_hosts) > 0"
 	currency, currencyExpr := CurrencyCheck("workspaces", "reporting_currency")
 	a.Checks[currency] = currencyExpr
 	return a

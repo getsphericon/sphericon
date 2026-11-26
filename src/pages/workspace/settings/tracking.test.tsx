@@ -9,7 +9,9 @@ import {
   handleSiteTrackingDomainsList,
   handleSiteTrackingDomainsRemove,
   handleSiteTrackingDomainsSet,
+  handleSiteWorkspacesGet,
   handleSiteWorkspacesList,
+  handleSiteWorkspacesSetLinkIdentity,
 } from '../../../generated/site/msw.gen.ts'
 import type {
   Permission,
@@ -36,9 +38,10 @@ const workspace: SiteWorkspaceResource = {
 // The page lists the workspaces and polls the events feed for the install status. Without a
 // CNAME target the Instance offers no Tracking domains, so the page never asks for them: an
 // unexpected request would fail the test.
-function serveWorkspace(totalItems = 0) {
+function serveWorkspace(totalItems = 0, served: SiteWorkspaceResource = workspace) {
   worker.use(
-    handleSiteWorkspacesList({ body: [workspace] }),
+    handleSiteWorkspacesList({ body: [served] }),
+    handleSiteWorkspacesGet({ body: served }),
     handleSiteEventsList({ body: { items: [], page: 1, pageSize: 1, totalItems, totalPages: 0 } }),
   )
 }
@@ -383,4 +386,49 @@ test('shows no identity secret to a member without tokens:manage', async () => {
   await expect
     .element(screen.getByRole('heading', { name: 'Identity verification' }))
     .not.toBeInTheDocument()
+})
+
+test('an owner turns link identity tokens on for their sites', async () => {
+  const owner = { ...workspace, permissions: ['workspace:update'] satisfies Permission[] }
+  serveWorkspace(0, owner)
+  const bodies: unknown[] = []
+  worker.use(
+    handleSiteWorkspacesSetLinkIdentity(async ({ request }) => {
+      bodies.push(await request.json())
+      return HttpResponse.json({
+        ...owner,
+        linkIdentityEnabled: true,
+        linkIdentityHosts: ['shop.acme.test'],
+      })
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<TrackingPage />, TRACKING_ROUTE)
+  await expect
+    .element(screen.getByText('Off: tracked links carry no link identity token.'))
+    .toBeInTheDocument()
+  await screen.getByRole('button', { name: 'Change' }).click()
+  await screen.getByRole('switch', { name: 'Add link identity tokens to tracked links' }).click()
+  await screen.getByRole('combobox', { name: 'Your sites' }).fill('shop.acme.test')
+  await userEvent.keyboard('{Enter}')
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect
+    .poll(() => bodies)
+    .toEqual([
+      {
+        revision: owner.revision,
+        linkIdentityEnabled: true,
+        linkIdentityHosts: ['shop.acme.test'],
+      },
+    ])
+})
+
+test('a member sees the link identity tokens and cannot change them', async () => {
+  serveWorkspace(0, { ...workspace, linkIdentityEnabled: true, linkIdentityHosts: ['acme.test'] })
+
+  const { screen } = await renderWithRouter(<TrackingPage />, TRACKING_ROUTE)
+
+  await expect.element(screen.getByText('On for acme.test.')).toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Change' })).not.toBeInTheDocument()
 })

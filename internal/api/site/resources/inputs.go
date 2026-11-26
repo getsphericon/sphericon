@@ -176,6 +176,7 @@ type Inputs interface {
 	// goverter:enum:map EngagementTrackingDecisionTrack EngagementTrackingDefaultTrack
 	// goverter:enum:map EngagementTrackingDecisionDontTrack EngagementTrackingDefaultDontTrack
 	EngagementTrackingDefaultIn(source siteapi.EngagementTrackingDecision) workspace.EngagementTrackingDefault
+	LinkIdentitySet(source *siteapi.SiteSetLinkIdentityInput) workspaceview.SetLinkIdentityInput
 	RevenueSettingsSet(source *siteapi.SiteUpdateRevenueSettingsInput) workspaces.SetRevenueSettingsInput
 	ConfirmationEmailSet(source *siteapi.SiteUpdateConfirmationEmailInput) workspaces.SetConfirmationEmailInput
 	// goverter:map Enabled On

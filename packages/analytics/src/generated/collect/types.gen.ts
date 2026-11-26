@@ -82,6 +82,21 @@ export type CollectIdentifyInput = {
   context?: CollectIdentifyContext | null;
 };
 
+/**
+ * A Link identity token the tracker found on the page's address (ADR 0160), presented with the
+ * visitor on the person's first interaction with the page
+ */
+export type CollectLinkIdentityInput = {
+  /**
+   * The tracker's id of the visitor, created when it has not been seen
+   */
+  visitorId: string;
+  /**
+   * The token of the `sph_lit` query parameter a tracked link's click added to the address
+   */
+  token: string;
+};
+
 export type CollectOkResponse = {
   ok: true;
 };
@@ -481,6 +496,36 @@ export type CollectIdentifyCreateResponses = {
 };
 
 export type CollectIdentifyCreateResponse = CollectIdentifyCreateResponses[keyof CollectIdentifyCreateResponses];
+
+export type CollectLinkIdentitiesCreateData = {
+  body: CollectLinkIdentityInput;
+  path?: never;
+  query?: never;
+  url: '/link-identities';
+};
+
+export type CollectLinkIdentitiesCreateErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type CollectLinkIdentitiesCreateError = CollectLinkIdentitiesCreateErrors[keyof CollectLinkIdentitiesCreateErrors];
+
+export type CollectLinkIdentitiesCreateResponses = {
+  /**
+   * There is no content to send for this request, but the headers may be useful.
+   */
+  204: void;
+};
+
+export type CollectLinkIdentitiesCreateResponse = CollectLinkIdentitiesCreateResponses[keyof CollectLinkIdentitiesCreateResponses];
 
 export type CollectTelegramStartLinksCreateData = {
   body: CollectTelegramStartLinkInput;

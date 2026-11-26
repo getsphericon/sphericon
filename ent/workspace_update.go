@@ -10,6 +10,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/apitoken"
 	"github.com/getsphericon/sphericon/ent/auditentry"
@@ -414,6 +415,32 @@ func (_u *WorkspaceUpdate) SetNillableDomainJoinEnabled(v *bool) *WorkspaceUpdat
 	if v != nil {
 		_u.SetDomainJoinEnabled(*v)
 	}
+	return _u
+}
+
+// SetLinkIdentityEnabled sets the "link_identity_enabled" field.
+func (_u *WorkspaceUpdate) SetLinkIdentityEnabled(v bool) *WorkspaceUpdate {
+	_u.mutation.SetLinkIdentityEnabled(v)
+	return _u
+}
+
+// SetNillableLinkIdentityEnabled sets the "link_identity_enabled" field if the given value is not nil.
+func (_u *WorkspaceUpdate) SetNillableLinkIdentityEnabled(v *bool) *WorkspaceUpdate {
+	if v != nil {
+		_u.SetLinkIdentityEnabled(*v)
+	}
+	return _u
+}
+
+// SetLinkIdentityHosts sets the "link_identity_hosts" field.
+func (_u *WorkspaceUpdate) SetLinkIdentityHosts(v []string) *WorkspaceUpdate {
+	_u.mutation.SetLinkIdentityHosts(v)
+	return _u
+}
+
+// AppendLinkIdentityHosts appends value to the "link_identity_hosts" field.
+func (_u *WorkspaceUpdate) AppendLinkIdentityHosts(v []string) *WorkspaceUpdate {
+	_u.mutation.AppendLinkIdentityHosts(v)
 	return _u
 }
 
@@ -2800,6 +2827,17 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.DomainJoinEnabled(); ok {
 		_spec.SetField(workspace.FieldDomainJoinEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.LinkIdentityEnabled(); ok {
+		_spec.SetField(workspace.FieldLinkIdentityEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.LinkIdentityHosts(); ok {
+		_spec.SetField(workspace.FieldLinkIdentityHosts, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedLinkIdentityHosts(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, workspace.FieldLinkIdentityHosts, value)
+		})
 	}
 	if value, ok := _u.mutation.SecondFactorRequiredAt(); ok {
 		_spec.SetField(workspace.FieldSecondFactorRequiredAt, field.TypeTime, value)
@@ -5704,6 +5742,32 @@ func (_u *WorkspaceUpdateOne) SetNillableDomainJoinEnabled(v *bool) *WorkspaceUp
 	return _u
 }
 
+// SetLinkIdentityEnabled sets the "link_identity_enabled" field.
+func (_u *WorkspaceUpdateOne) SetLinkIdentityEnabled(v bool) *WorkspaceUpdateOne {
+	_u.mutation.SetLinkIdentityEnabled(v)
+	return _u
+}
+
+// SetNillableLinkIdentityEnabled sets the "link_identity_enabled" field if the given value is not nil.
+func (_u *WorkspaceUpdateOne) SetNillableLinkIdentityEnabled(v *bool) *WorkspaceUpdateOne {
+	if v != nil {
+		_u.SetLinkIdentityEnabled(*v)
+	}
+	return _u
+}
+
+// SetLinkIdentityHosts sets the "link_identity_hosts" field.
+func (_u *WorkspaceUpdateOne) SetLinkIdentityHosts(v []string) *WorkspaceUpdateOne {
+	_u.mutation.SetLinkIdentityHosts(v)
+	return _u
+}
+
+// AppendLinkIdentityHosts appends value to the "link_identity_hosts" field.
+func (_u *WorkspaceUpdateOne) AppendLinkIdentityHosts(v []string) *WorkspaceUpdateOne {
+	_u.mutation.AppendLinkIdentityHosts(v)
+	return _u
+}
+
 // SetSecondFactorRequiredAt sets the "second_factor_required_at" field.
 func (_u *WorkspaceUpdateOne) SetSecondFactorRequiredAt(v time.Time) *WorkspaceUpdateOne {
 	_u.mutation.SetSecondFactorRequiredAt(v)
@@ -8117,6 +8181,17 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 	}
 	if value, ok := _u.mutation.DomainJoinEnabled(); ok {
 		_spec.SetField(workspace.FieldDomainJoinEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.LinkIdentityEnabled(); ok {
+		_spec.SetField(workspace.FieldLinkIdentityEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.LinkIdentityHosts(); ok {
+		_spec.SetField(workspace.FieldLinkIdentityHosts, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedLinkIdentityHosts(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, workspace.FieldLinkIdentityHosts, value)
+		})
 	}
 	if value, ok := _u.mutation.SecondFactorRequiredAt(); ok {
 		_spec.SetField(workspace.FieldSecondFactorRequiredAt, field.TypeTime, value)

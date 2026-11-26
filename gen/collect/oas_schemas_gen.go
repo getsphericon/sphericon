@@ -253,6 +253,39 @@ func (s *CollectIdentifyInput) SetContext(val OptNilCollectIdentifyContext) {
 	s.Context = val
 }
 
+// CollectLinkIdentitiesCreateNoContent is response for CollectLinkIdentitiesCreate operation.
+type CollectLinkIdentitiesCreateNoContent struct{}
+
+// A Link identity token the tracker found on the page's address (ADR 0160), presented with the visitor
+// on the person's first interaction with the page.
+// Ref: #/components/schemas/CollectLinkIdentityInput
+type CollectLinkIdentityInput struct {
+	// The tracker's id of the visitor, created when it has not been seen.
+	VisitorId string `json:"visitorId"`
+	// The token of the `sph_lit` query parameter a tracked link's click added to the address.
+	Token string `json:"token"`
+}
+
+// GetVisitorId returns the value of VisitorId.
+func (s *CollectLinkIdentityInput) GetVisitorId() string {
+	return s.VisitorId
+}
+
+// GetToken returns the value of Token.
+func (s *CollectLinkIdentityInput) GetToken() string {
+	return s.Token
+}
+
+// SetVisitorId sets the value of VisitorId.
+func (s *CollectLinkIdentityInput) SetVisitorId(val string) {
+	s.VisitorId = val
+}
+
+// SetToken sets the value of Token.
+func (s *CollectLinkIdentityInput) SetToken(val string) {
+	s.Token = val
+}
+
 // Ref: #/components/schemas/CollectOkResponse
 type CollectOkResponse struct {
 	Ok CollectOkResponseOk `json:"ok"`

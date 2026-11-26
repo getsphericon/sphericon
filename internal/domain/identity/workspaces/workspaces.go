@@ -14,6 +14,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -25,6 +26,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/workspacestanding"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/bounds"
+	"github.com/getsphericon/sphericon/internal/kernel/domainname"
 	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
@@ -118,6 +120,57 @@ func (m *Module) SetEngagementTrackingDefault(ctx context.Context, s *ent.Scoped
 	}
 	return edit(s, revision).SetEngagementTrackingDefault(d).Save(ctx)
 }
+
+// SetLinkIdentityInput is the Workspace's Link identity token settings (ADR 0160): the switch and
+// the hostnames of its own sites, which replace the ones stored.
+type SetLinkIdentityInput struct {
+	Enabled bool
+	Hosts   []string
+}
+
+// SetLinkIdentity sets the Workspace's Link identity token settings (ADR 0160). Each host is
+// normalized as a Sending domain is (domainname.Normalize) and kept once, in the order given; a host
+// that is not a domain name is refused with ErrLinkIdentityHost, and the switch on with no host with
+// ErrLinkIdentityHostRequired. It is an edit made on revision, as every edit of its settings is (ADR
+// 0119).
+func (m *Module) SetLinkIdentity(ctx context.Context, s *ent.Scoped, revision int64, in SetLinkIdentityInput) (*ent.Workspace, error) {
+	hosts, err := linkIdentityHosts(in.Hosts)
+	if err != nil {
+		return nil, err
+	}
+	if in.Enabled && len(hosts) == 0 {
+		return nil, ErrLinkIdentityHostRequired
+	}
+	return edit(s, revision).SetLinkIdentityEnabled(in.Enabled).SetLinkIdentityHosts(hosts).Save(ctx)
+}
+
+// linkIdentityHosts is raw normalized, each host once, or the refusal of the list or of a host.
+func linkIdentityHosts(raw []string) ([]string, error) {
+	if err := validation.Items(fieldname.LinkIdentityHosts, len(raw), 0, bounds.LinkIdentityHostsMaxItems); err != nil {
+		return nil, err
+	}
+	hosts := make([]string, 0, len(raw))
+	for _, r := range raw {
+		if err := validation.Length(fieldname.LinkIdentityHosts, r, bounds.LinkIdentityHostMinLength, bounds.LinkIdentityHostMaxLength); err != nil {
+			return nil, err
+		}
+		host, ok := domainname.Normalize(r)
+		if !ok {
+			return nil, ErrLinkIdentityHost.Args(map[string]any{"Host": r})
+		}
+		if !slices.Contains(hosts, host) {
+			hosts = append(hosts, host)
+		}
+	}
+	return hosts, nil
+}
+
+var (
+	// ErrLinkIdentityHost refuses a Link identity host that is not a domain name.
+	ErrLinkIdentityHost = validation.RefuseField(fieldname.LinkIdentityHosts, "workspaces: a link identity host is not a domain name", i18n.ErrorsLinkIdentityHostInvalid)
+	// ErrLinkIdentityHostRequired refuses Link identity tokens turned on with no site listed.
+	ErrLinkIdentityHostRequired = validation.RefuseField(fieldname.LinkIdentityHosts, "workspaces: link identity tokens need a host", i18n.ErrorsLinkIdentityHostRequired)
+)
 
 // ErrEngagementTrackingDefault refuses an Engagement tracking default other than track and dont_track.
 var ErrEngagementTrackingDefault = validation.RefuseField(fieldname.EngagementTrackingDefault,

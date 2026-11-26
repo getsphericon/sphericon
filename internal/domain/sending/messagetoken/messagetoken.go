@@ -13,6 +13,8 @@ import (
 	"fmt"
 	stdhtml "html"
 	"io"
+	"net/url"
+	"slices"
 	"strings"
 	"time"
 
@@ -24,6 +26,7 @@ import (
 	"golang.org/x/net/html/atom"
 
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/domainname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/linktarget"
 	"github.com/getsphericon/sphericon/internal/kernel/paths"
@@ -272,6 +275,92 @@ func (t *Tracker) DecodeConfirmLink(token string) (target linktarget.Confirmatio
 	return target, err == nil, err
 }
 
+// LinkIdentityParam is the query parameter a Link identity token travels in on the destination of a
+// tracked link (ADR 0160); the tracker (packages/analytics) reads the same name.
+const LinkIdentityParam = "sph_lit"
+
+// LinkIdentityTTL is how long after its message's send a Link identity token binds (ADR 0160).
+const LinkIdentityTTL = 7 * 24 * time.Hour
+
+// linkIdentityAudience is the audience of a Link identity token and of no other link token: an
+// unsubscribe or a confirmation token names a Contact too, and is never read as one.
+const linkIdentityAudience = "link-identity"
+
+// LinkIdentity is what a Link identity token names (ADR 0160): the recipient's Contact in its
+// Workspace, and no message.
+type LinkIdentity struct {
+	WorkspaceID, ContactID int64
+}
+
+type linkIdentityClaims struct {
+	jwt.RegisteredClaims
+
+	WorkspaceID publicid.ID `json:"ws"`
+	ContactID   publicid.ID `json:"cid"`
+}
+
+// LinkIdentityToken mints the Link identity token of id for a message sent at sentAt: it expires
+// LinkIdentityTTL after the send.
+func (t *Tracker) LinkIdentityToken(id LinkIdentity, sentAt time.Time) (string, error) {
+	return t.sign(&linkIdentityClaims{
+		Audience:    jwt.ClaimStrings{linkIdentityAudience},
+		ExpiresAt:   jwt.NewNumericDate(sentAt.Add(LinkIdentityTTL)),
+		WorkspaceID: publicid.ID(id.WorkspaceID),
+		ContactID:   publicid.ID(id.ContactID),
+	})
+}
+
+// DecodeLinkIdentity validates a Link identity token and returns what it names. A token of another
+// kind (no audience of its own), one past its exp or without one, or one that names no Workspace or
+// no Contact is ErrLinkInvalid.
+func (t *Tracker) DecodeLinkIdentity(token string) (LinkIdentity, error) {
+	var c linkIdentityClaims
+	if err := t.parse(token, &c, jwt.WithAudience(linkIdentityAudience), jwt.WithExpirationRequired()); err != nil {
+		return LinkIdentity{}, fmt.Errorf("%w: %w", ErrLinkInvalid, err)
+	}
+	if c.WorkspaceID == 0 || c.ContactID == 0 {
+		return LinkIdentity{}, ErrLinkInvalid.With("missing ws or cid claim")
+	}
+	return LinkIdentity{WorkspaceID: int64(c.WorkspaceID), ContactID: int64(c.ContactID)}, nil
+}
+
+// WithLinkIdentity is dest with the Link identity token of id added as LinkIdentityParam (ADR 0160)
+// when dest is an https link to one of hosts (normalized as domainname does, matched exactly) and
+// the message, sent at sentAt, went out less than LinkIdentityTTL ago; otherwise dest as it is. The
+// token joins dest's query and leaves the rest of dest as written, its fragment included.
+func (t *Tracker) WithLinkIdentity(dest string, id LinkIdentity, sentAt time.Time, hosts []string) (string, error) {
+	host, ok := httpsHost(dest)
+	if !ok || !slices.Contains(hosts, host) || !t.now().Before(sentAt.Add(LinkIdentityTTL)) {
+		return dest, nil
+	}
+	token, err := t.LinkIdentityToken(id, sentAt)
+	if err != nil {
+		return dest, err
+	}
+	link, fragment, hasFragment := strings.Cut(dest, "#")
+	switch {
+	case !strings.Contains(link, "?"):
+		link += "?"
+	case !strings.HasSuffix(link, "?") && !strings.HasSuffix(link, "&"):
+		link += "&"
+	}
+	link += LinkIdentityParam + "=" + token
+	if hasFragment {
+		link += "#" + fragment
+	}
+	return link, nil
+}
+
+// httpsHost is the host of an https link, normalized as domainname does; ok is false for a link
+// that does not parse, is not https or names no domain.
+func httpsHost(link string) (host string, ok bool) {
+	u, err := url.Parse(link)
+	if err != nil || u.Scheme != "https" {
+		return "", false
+	}
+	return domainname.Normalize(u.Hostname())
+}
+
 // OpenURL is the 1x1 pixel URL that records an open.
 func (t *Tracker) OpenURL(token string) string {
 	return t.baseURL + paths.LinkOpen + token
@@ -322,7 +411,7 @@ func (t *Tracker) ConfirmURL(target linktarget.Confirmation) (string, error) {
 // armed (ADR 0156), but a Test send needs none, and email armed before a
 // Workspace had to have one still goes out.
 func (t *Tracker) UnsubscribeFooter(target linktarget.Unsubscribe, postalAddress string) (string, error) {
-	url, err := t.UnsubscribeURL(target)
+	link, err := t.UnsubscribeURL(target)
 	if err != nil {
 		return "", err
 	}
@@ -334,7 +423,7 @@ func (t *Tracker) UnsubscribeFooter(target linktarget.Unsubscribe, postalAddress
 		`<p style="font-size:12px;color:#888888;margin-top:24px">`+
 			`If you no longer wish to receive these emails, `+
 			`<a href="%s">unsubscribe</a>.%s</p>`,
-		url, address,
+		link, address,
 	), nil
 }
 

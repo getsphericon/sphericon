@@ -75,10 +75,19 @@ beforeEach(() => {
   delete window._omq
 })
 
+// The address the test page was opened at, which a test that lands on a tracked link puts back.
+const PAGE_URL = window.location.href
+
 afterEach(() => {
   vi.useRealTimers()
   vi.unstubAllGlobals()
+  history.replaceState(history.state, '', PAGE_URL)
 })
+
+// landFromTrackedLink puts the page at the address a tracked link's click redirects to.
+function landFromTrackedLink(search: string, hash = '') {
+  history.replaceState(history.state, '', `${window.location.pathname}${search}${hash}`)
+}
 
 test('batches tracked events into one authenticated POST after the flush delay', async () => {
   const { initTracking, track } = await loadTracker()
@@ -709,4 +718,73 @@ test('reset through the queue before the tracker starts applies once it does', a
 
   const body = await sentBody('/collect/identify')
   expect(body.visitorId).not.toBe('earlier-visitor')
+})
+
+test('a Link identity token is taken off the address on load, the rest of it kept as it was', async () => {
+  landFromTrackedLink('?utm_source=mail&sph_lit=tok.en.sig&q=a%20b', '#top')
+  const { initTracking } = await loadTracker()
+
+  initTracking(CONFIG)
+  const address = `${window.location.search}${window.location.hash}`
+  window.dispatchEvent(new Event('keydown'))
+  await vi.advanceTimersByTimeAsync(0)
+
+  expect(address).toBe('?utm_source=mail&q=a%20b#top')
+  expect(await sentBodies('/collect/link-identities')).toMatchObject([{ token: 'tok.en.sig' }])
+})
+
+test.each(['pointerdown', 'keydown', 'touchstart'])(
+  'the token is sent with the visitor on the first %s, and only once',
+  async (interaction) => {
+    document.cookie = 'om_vid=clicking-visitor; Path=/'
+    landFromTrackedLink('?sph_lit=tok.en.sig')
+    const { initTracking } = await loadTracker()
+    initTracking(CONFIG)
+    await vi.advanceTimersByTimeAsync(1000)
+    const beforeInteraction = await sentBodies('/collect/link-identities')
+
+    window.dispatchEvent(new Event(interaction))
+    window.dispatchEvent(new Event('pointerdown'))
+    await vi.advanceTimersByTimeAsync(0)
+
+    expect(beforeInteraction).toEqual([])
+    expect(await sentBodies('/collect/link-identities')).toEqual([
+      { visitorId: 'clicking-visitor', token: 'tok.en.sig' },
+    ])
+  },
+)
+
+test('a page without a token sends none on an interaction', async () => {
+  const { initTracking } = await loadTracker()
+  initTracking(CONFIG)
+
+  window.dispatchEvent(new Event('keydown'))
+  await vi.advanceTimersByTimeAsync(0)
+
+  expect(await sentBodies('/collect/link-identities')).toEqual([])
+})
+
+test('reset forgets the token before it is sent', async () => {
+  landFromTrackedLink('?sph_lit=tok.en.sig')
+  const { initTracking, reset } = await loadTracker()
+  initTracking(CONFIG)
+
+  reset()
+  window.dispatchEvent(new Event('keydown'))
+  await vi.advanceTimersByTimeAsync(0)
+
+  expect(await sentBodies('/collect/link-identities')).toEqual([])
+})
+
+test('a broken token is taken off the address and starts nothing', async () => {
+  landFromTrackedLink('?sph_lit=%E0&utm_source=mail')
+  const { initTracking } = await loadTracker()
+
+  initTracking(CONFIG)
+  const address = window.location.search
+  window.dispatchEvent(new Event('keydown'))
+  await vi.advanceTimersByTimeAsync(0)
+
+  expect(address).toBe('?utm_source=mail')
+  expect(await sentBodies('/collect/link-identities')).toEqual([])
 })

@@ -5458,7 +5458,7 @@
     "/workspace": {
       "get": {
         "operationId": "Workspace_get",
-        "description": "Read the Workspace the token acts in: its name, postal address, confirmed opt-in, Engagement tracking default, time zone and Send cap. Read\nthe postal address before arming marketing email: an empty one refuses it, and only a person\ncan set it. Read the Send cap to explain a slow send or to plan one: a send larger than what\nremains of it in the last 24 hours goes out over more than a day. Read confirmed opt-in to know\nwhether a Contact needs a Confirmation before email reaches it. Read the Engagement tracking\ndefault to know whether a Destination with no consent recorded is tracked. Read-only: no\noperation changes the Send cap, the postal address, confirmed opt-in or the Engagement tracking\ndefault.",
+        "description": "Read the Workspace the token acts in: its name, postal address, confirmed opt-in, Engagement tracking default, Link identity token settings, time zone and Send cap. Read\nthe postal address before arming marketing email: an empty one refuses it, and only a person\ncan set it. Read the Send cap to explain a slow send or to plan one: a send larger than what\nremains of it in the last 24 hours goes out over more than a day. Read confirmed opt-in to know\nwhether a Contact needs a Confirmation before email reaches it. Read the Engagement tracking\ndefault to know whether a Destination with no consent recorded is tracked. Read-only: no\noperation changes the Send cap, the postal address, confirmed opt-in or the Engagement tracking\ndefault.",
         "parameters": [],
         "responses": {
           "200": {
@@ -18013,6 +18013,8 @@
           "postalAddress",
           "requireConfirmedOptIn",
           "engagementTrackingDefault",
+          "linkIdentityEnabled",
+          "linkIdentityHosts",
           "timezone",
           "revision"
         ],
@@ -18046,6 +18048,17 @@
               }
             ],
             "description": "The Engagement tracking default (ADR 0120): whether a Destination with no Engagement tracking\nconsent recorded has its opens and clicks tracked. Read-only: only a person changes it, in the\nconsole's Workspace settings."
+          },
+          "linkIdentityEnabled": {
+            "type": "boolean",
+            "description": "Whether the click of a tracked link adds a Link identity token to a destination on one of\n`linkIdentityHosts` (ADR 0160), so the tracker there binds the anonymous visitor to the\nrecipient's contact. Read-only: only a person changes it, in the console's tracking settings."
+          },
+          "linkIdentityHosts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The hostnames of the Workspace's own sites a Link identity token may be added to a link of"
           },
           "timezone": {
             "allOf": [

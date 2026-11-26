@@ -192,6 +192,9 @@ var (
 	rn123AllowedHeaders = map[string]string{
 		"POST": "Content-Type",
 	}
+	rn260AllowedHeaders = map[string]string{
+		"PUT": "Content-Type",
+	}
 	rn131AllowedHeaders = map[string]string{
 		"PUT": "Content-Type",
 	}
@@ -240,7 +243,7 @@ var (
 	rn219AllowedHeaders = map[string]string{
 		"PUT": "Content-Type",
 	}
-	rn259AllowedHeaders = map[string]string{
+	rn261AllowedHeaders = map[string]string{
 		"PUT": "Content-Type",
 	}
 	rn220AllowedHeaders = map[string]string{
@@ -4774,31 +4777,72 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 							}
 
-						case 'l': // Prefix: "leave"
+						case 'l': // Prefix: "l"
 
-							if l := len("leave"); len(elem) >= l && elem[0:l] == "leave" {
+							if l := len("l"); len(elem) >= l && elem[0:l] == "l" {
 								elem = elem[l:]
 							} else {
 								break
 							}
 
 							if len(elem) == 0 {
-								// Leaf node.
-								switch r.Method {
-								case "POST":
-									s.handleSiteWorkspacesLeaveRequest([1]string{
-										args[0],
-									}, elemIsEscaped, w, r)
-								default:
-									s.notAllowed(w, r, notAllowedParams{
-										allowedMethods: "POST",
-										allowedHeaders: nil,
-										acceptPost:     "",
-										acceptPatch:    "",
-									})
+								break
+							}
+							switch elem[0] {
+							case 'e': // Prefix: "eave"
+
+								if l := len("eave"); len(elem) >= l && elem[0:l] == "eave" {
+									elem = elem[l:]
+								} else {
+									break
 								}
 
-								return
+								if len(elem) == 0 {
+									// Leaf node.
+									switch r.Method {
+									case "POST":
+										s.handleSiteWorkspacesLeaveRequest([1]string{
+											args[0],
+										}, elemIsEscaped, w, r)
+									default:
+										s.notAllowed(w, r, notAllowedParams{
+											allowedMethods: "POST",
+											allowedHeaders: nil,
+											acceptPost:     "",
+											acceptPatch:    "",
+										})
+									}
+
+									return
+								}
+
+							case 'i': // Prefix: "ink-identity"
+
+								if l := len("ink-identity"); len(elem) >= l && elem[0:l] == "ink-identity" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch r.Method {
+									case "PUT":
+										s.handleSiteWorkspacesSetLinkIdentityRequest([1]string{
+											args[0],
+										}, elemIsEscaped, w, r)
+									default:
+										s.notAllowed(w, r, notAllowedParams{
+											allowedMethods: "PUT",
+											allowedHeaders: rn260AllowedHeaders,
+											acceptPost:     "",
+											acceptPatch:    "",
+										})
+									}
+
+									return
+								}
+
 							}
 
 						case 'm': // Prefix: "memberships"
@@ -5941,7 +5985,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									default:
 										s.notAllowed(w, r, notAllowedParams{
 											allowedMethods: "PUT",
-											allowedHeaders: rn259AllowedHeaders,
+											allowedHeaders: rn261AllowedHeaders,
 											acceptPost:     "",
 											acceptPatch:    "",
 										})
@@ -10796,29 +10840,68 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 
 							}
 
-						case 'l': // Prefix: "leave"
+						case 'l': // Prefix: "l"
 
-							if l := len("leave"); len(elem) >= l && elem[0:l] == "leave" {
+							if l := len("l"); len(elem) >= l && elem[0:l] == "l" {
 								elem = elem[l:]
 							} else {
 								break
 							}
 
 							if len(elem) == 0 {
-								// Leaf node.
-								switch method {
-								case "POST":
-									r.name = SiteWorkspacesLeaveOperation
-									r.summary = ""
-									r.operationID = "SiteWorkspaces_leave"
-									r.operationGroup = ""
-									r.pathPattern = "/workspaces/{workspaceId}/leave"
-									r.args = args
-									r.count = 1
-									return r, true
-								default:
-									return
+								break
+							}
+							switch elem[0] {
+							case 'e': // Prefix: "eave"
+
+								if l := len("eave"); len(elem) >= l && elem[0:l] == "eave" {
+									elem = elem[l:]
+								} else {
+									break
 								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch method {
+									case "POST":
+										r.name = SiteWorkspacesLeaveOperation
+										r.summary = ""
+										r.operationID = "SiteWorkspaces_leave"
+										r.operationGroup = ""
+										r.pathPattern = "/workspaces/{workspaceId}/leave"
+										r.args = args
+										r.count = 1
+										return r, true
+									default:
+										return
+									}
+								}
+
+							case 'i': // Prefix: "ink-identity"
+
+								if l := len("ink-identity"); len(elem) >= l && elem[0:l] == "ink-identity" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch method {
+									case "PUT":
+										r.name = SiteWorkspacesSetLinkIdentityOperation
+										r.summary = ""
+										r.operationID = "SiteWorkspaces_setLinkIdentity"
+										r.operationGroup = ""
+										r.pathPattern = "/workspaces/{workspaceId}/link-identity"
+										r.args = args
+										r.count = 1
+										return r, true
+									default:
+										return
+									}
+								}
+
 							}
 
 						case 'm': // Prefix: "memberships"

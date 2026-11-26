@@ -916,6 +916,8 @@ func (e *Workspace) auditFields() map[string]any {
 		"attribution_window_days":     e.AttributionWindowDays,
 		"send_cap":                    derefAudit(e.SendCap),
 		"domain_join_enabled":         e.DomainJoinEnabled,
+		"link_identity_enabled":       e.LinkIdentityEnabled,
+		"link_identity_hosts":         e.LinkIdentityHosts,
 		"second_factor_required_at":   derefAudit(e.SecondFactorRequiredAt),
 		"erased_at":                   derefAudit(e.ErasedAt),
 		"suspended_at":                derefAudit(e.SuspendedAt),

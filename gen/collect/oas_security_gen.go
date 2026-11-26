@@ -36,6 +36,7 @@ func findAuthorization(h http.Header, prefix string) (string, bool) {
 var operationRolesApiKeyAuth = map[string][]string{
 	CollectEventsCreateOperation:             []string{},
 	CollectIdentifyCreateOperation:           []string{},
+	CollectLinkIdentitiesCreateOperation:     []string{},
 	CollectTelegramStartLinksCreateOperation: []string{},
 }
 

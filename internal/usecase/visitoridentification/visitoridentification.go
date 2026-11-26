@@ -1,5 +1,6 @@
 // Package visitoridentification is the use case of a Visitor identification, the Identify of the
-// glossary (ADR 0072, ADR 0102): the /collect call that binds a Visitor to a Contact, and the
+// glossary (ADR 0072, ADR 0102): the /collect call that binds a Visitor to a Contact, the Link
+// identity token a tracked link's click carries to the Workspace's site (ADR 0160), and the
 // tracker's Telegram start link, which an Identity token gives to the Contact it proves (ADR 0171).
 // It spans the proof (identitytokens), the Contact (contacts), the Visitor (visitors), its Bindings
 // on every Channel (bindings) and its anonymous Events (the bus), so it composes their functions in
@@ -8,9 +9,11 @@ package visitoridentification
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"time"
 
+	agents "github.com/monperrus/crawler-user-agents"
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -19,6 +22,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/identitytokens"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/visitors"
 	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
+	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
@@ -41,6 +45,14 @@ type Input struct {
 	TimeZone, Locale *string
 }
 
+// LinkIdentityInput is a Link identity token the tracker presents with its Visitor (ADR 0160).
+type LinkIdentityInput struct {
+	VisitorID string
+	Token     string
+	// UserAgent is the request's: a known crawler's binds nothing.
+	UserAgent string
+}
+
 // StartLinkInput is the tracker's request of a Telegram start link for its Visitor.
 type StartLinkInput struct {
 	VisitorID string
@@ -57,15 +69,16 @@ type UseCase struct {
 	tokens   *identitytokens.Module
 	bindings *bindings.Module
 	owners   *bindings.Owners
+	links    *messagetoken.Tracker
 	now      func() time.Time
 }
 
 // New builds the Identify use case; people resolves and upserts the Contact, visits sees and binds
 // the Visitor, tokens checks an Identity token, bindings issues start links, owners hands a
-// Visitor's Bindings on every Channel over to the Contact, and now is the Instance clock a
-// hand-over is dated by.
-func New(bus *events.Bus, people *contacts.Module, visits *visitors.Module, tokens *identitytokens.Module, b *bindings.Module, owners *bindings.Owners, now func() time.Time) *UseCase {
-	return &UseCase{bus: bus, contacts: people, visitors: visits, tokens: tokens, bindings: b, owners: owners, now: now}
+// Visitor's Bindings on every Channel over to the Contact, links verifies a Link identity token, and
+// now is the Instance clock a hand-over is dated by.
+func New(bus *events.Bus, people *contacts.Module, visits *visitors.Module, tokens *identitytokens.Module, b *bindings.Module, owners *bindings.Owners, links *messagetoken.Tracker, now func() time.Time) *UseCase {
+	return &UseCase{bus: bus, contacts: people, visitors: visits, tokens: tokens, bindings: b, owners: owners, links: links, now: now}
 }
 
 var (
@@ -132,24 +145,76 @@ func (u *UseCase) Identify(ctx context.Context, s *ent.Scoped, input Input) erro
 		}
 		c := res.Contact
 
+		if !proven {
+			return u.bindClaimed(ctx, ts, visitorID, c.ID)
+		}
 		vis, err := u.visitors.SeeIn(ctx, ts, visitorID)
 		if err != nil {
 			return err
 		}
-		if !proven && vis.ContactID != nil && *vis.ContactID != c.ID {
-			return nil
-		}
 		if err := u.visitors.BindIn(ctx, ts, vis.ID, c.ID); err != nil {
 			return err
 		}
-		if proven {
-			if err := u.owners.HandOver(ctx, ts, vis, c); err != nil {
-				return err
-			}
+		if err := u.owners.HandOver(ctx, ts, vis, c); err != nil {
+			return err
 		}
 		// Stitch: attach the device's earlier anonymous events onto the Contact.
 		return events.StitchVisitor(ctx, ts, visitorID, c.ID)
 	})
+}
+
+// bindClaimed binds the Visitor as a claim does (ADR 0171): only while it is anonymous or already
+// contactID's, stitching its earlier anonymous Events onto the Contact; a Visitor of another Contact
+// stays where it is. It hands the Contact none of the Visitor's Bindings.
+func (u *UseCase) bindClaimed(ctx context.Context, ts *ent.Scoped, visitorID string, contactID int64) error {
+	vis, err := u.visitors.SeeIn(ctx, ts, visitorID)
+	if err != nil {
+		return err
+	}
+	if vis.ContactID != nil && *vis.ContactID != contactID {
+		return nil
+	}
+	if err := u.visitors.BindIn(ctx, ts, vis.ID, contactID); err != nil {
+		return err
+	}
+	return events.StitchVisitor(ctx, ts, visitorID, contactID)
+}
+
+// BindLinkIdentity binds the Visitor to the Contact a Link identity token names (ADR 0160), as a
+// claim binds (ADR 0171): only while the Visitor is anonymous or already that Contact's, stitching
+// its anonymous Events onto the Contact. It finds the Contact by the token alone, writes it nothing
+// and hands it none of the Visitor's Bindings. A token that does not stand (another kind, past its
+// exp, of another Workspace, signed with another key), a Contact that is gone, and a request whose
+// User-Agent names a known crawler bind nothing and are no error: the caller answers alike whatever
+// the token binds, so a token cannot be probed.
+func (u *UseCase) BindLinkIdentity(ctx context.Context, s *ent.Scoped, in LinkIdentityInput) error {
+	visitorID := strings.TrimSpace(in.VisitorID)
+	if visitorID == "" {
+		return ErrVisitorIDRequired
+	}
+	if agents.IsCrawler(in.UserAgent) {
+		return nil
+	}
+	id, ok := u.linkIdentityOf(in.Token)
+	if !ok || id.WorkspaceID != s.WorkspaceID() {
+		return nil
+	}
+	return u.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+		c, err := u.contacts.Get(ctx, ts, id.ContactID)
+		if errors.Is(err, contacts.ErrNotFound) {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		return u.bindClaimed(ctx, ts, visitorID, c.ID)
+	})
+}
+
+// linkIdentityOf is what a Link identity token names; ok is false for one that does not stand.
+func (u *UseCase) linkIdentityOf(token string) (id messagetoken.LinkIdentity, ok bool) {
+	id, err := u.links.DecodeLinkIdentity(token)
+	return id, err == nil
 }
 
 // checkBounds refuses the keys and the browser's guesses of an Identify that are longer than the

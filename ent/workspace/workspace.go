@@ -55,6 +55,10 @@ const (
 	FieldSendCap = "send_cap"
 	// FieldDomainJoinEnabled holds the string denoting the domain_join_enabled field in the database.
 	FieldDomainJoinEnabled = "domain_join_enabled"
+	// FieldLinkIdentityEnabled holds the string denoting the link_identity_enabled field in the database.
+	FieldLinkIdentityEnabled = "link_identity_enabled"
+	// FieldLinkIdentityHosts holds the string denoting the link_identity_hosts field in the database.
+	FieldLinkIdentityHosts = "link_identity_hosts"
 	// FieldSecondFactorRequiredAt holds the string denoting the second_factor_required_at field in the database.
 	FieldSecondFactorRequiredAt = "second_factor_required_at"
 	// FieldErasedAt holds the string denoting the erased_at field in the database.
@@ -611,6 +615,8 @@ var Columns = []string{
 	FieldAttributionWindowDays,
 	FieldSendCap,
 	FieldDomainJoinEnabled,
+	FieldLinkIdentityEnabled,
+	FieldLinkIdentityHosts,
 	FieldSecondFactorRequiredAt,
 	FieldErasedAt,
 	FieldSuspendedAt,
@@ -672,6 +678,10 @@ var (
 	SendCapValidator func(int) error
 	// DefaultDomainJoinEnabled holds the default value on creation for the "domain_join_enabled" field.
 	DefaultDomainJoinEnabled bool
+	// DefaultLinkIdentityEnabled holds the default value on creation for the "link_identity_enabled" field.
+	DefaultLinkIdentityEnabled bool
+	// DefaultLinkIdentityHosts holds the default value on creation for the "link_identity_hosts" field.
+	DefaultLinkIdentityHosts []string
 	// DefaultAbuseExempt holds the default value on creation for the "abuse_exempt" field.
 	DefaultAbuseExempt bool
 )
@@ -832,6 +842,11 @@ func BySendCap(opts ...sql.OrderTermOption) OrderOption {
 // ByDomainJoinEnabled orders the results by the domain_join_enabled field.
 func ByDomainJoinEnabled(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDomainJoinEnabled, opts...).ToFunc()
+}
+
+// ByLinkIdentityEnabled orders the results by the link_identity_enabled field.
+func ByLinkIdentityEnabled(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLinkIdentityEnabled, opts...).ToFunc()
 }
 
 // BySecondFactorRequiredAt orders the results by the second_factor_required_at field.

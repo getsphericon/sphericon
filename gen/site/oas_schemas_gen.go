@@ -13828,6 +13828,8 @@ func (s *LinkClicks) SetClicks(val int32) {
 	s.Clicks = val
 }
 
+type LinkIdentityHost string
+
 // What a lint finding is about (ADR 0040).
 // Ref: #/components/schemas/LintCode
 type LintCode string
@@ -35753,6 +35755,50 @@ func (s *SiteSetEngagementTrackingDefaultInput) SetEngagementTrackingDefault(val
 	s.EngagementTrackingDefault = val
 }
 
+// Set the Link identity token settings (ADR 0160).
+// Ref: #/components/schemas/SiteSetLinkIdentityInput
+type SiteSetLinkIdentityInput struct {
+	// The Workspace's `revision` the change was made on (ADR 0119): the one it was read with.
+	Revision Revision `json:"revision"`
+	// On: the click of a tracked link adds the recipient's Link identity token to an `https` destination
+	// on one of `linkIdentityHosts`. It cannot be on with no host listed (422).
+	LinkIdentityEnabled bool `json:"linkIdentityEnabled"`
+	// The hostnames of the Workspace's own sites, such as `shop.example.com`: each is normalized as a
+	// Sending domain is (lower case, IDN as punycode, no trailing dot), and one that is not a domain name
+	// is refused with 422. The list replaces the one stored.
+	LinkIdentityHosts []LinkIdentityHost `json:"linkIdentityHosts"`
+}
+
+// GetRevision returns the value of Revision.
+func (s *SiteSetLinkIdentityInput) GetRevision() Revision {
+	return s.Revision
+}
+
+// GetLinkIdentityEnabled returns the value of LinkIdentityEnabled.
+func (s *SiteSetLinkIdentityInput) GetLinkIdentityEnabled() bool {
+	return s.LinkIdentityEnabled
+}
+
+// GetLinkIdentityHosts returns the value of LinkIdentityHosts.
+func (s *SiteSetLinkIdentityInput) GetLinkIdentityHosts() []LinkIdentityHost {
+	return s.LinkIdentityHosts
+}
+
+// SetRevision sets the value of Revision.
+func (s *SiteSetLinkIdentityInput) SetRevision(val Revision) {
+	s.Revision = val
+}
+
+// SetLinkIdentityEnabled sets the value of LinkIdentityEnabled.
+func (s *SiteSetLinkIdentityInput) SetLinkIdentityEnabled(val bool) {
+	s.LinkIdentityEnabled = val
+}
+
+// SetLinkIdentityHosts sets the value of LinkIdentityHosts.
+func (s *SiteSetLinkIdentityInput) SetLinkIdentityHosts(val []LinkIdentityHost) {
+	s.LinkIdentityHosts = val
+}
+
 // The Workspace's Setup checklist: its steps are read now, never ticked by hand, and the read that
 // first finds every step done stamps the Workspace, which keeps it complete for good.
 // Ref: #/components/schemas/SiteSetupProgress
@@ -38050,6 +38096,13 @@ type SiteWorkspaceResource struct {
 	// The Engagement tracking default (ADR 0120): whether a Destination with no Engagement tracking
 	// consent recorded has its opens and clicks tracked. `track` until an Owner or Admin changes it.
 	EngagementTrackingDefault EngagementTrackingDecision `json:"engagementTrackingDefault"`
+	// Whether the click of a tracked link adds a Link identity token to a destination on one of
+	// `linkIdentityHosts` (ADR 0160), so the tracker there binds the anonymous visitor to the recipient's
+	// contact. Off until an Owner or Admin turns it on.
+	LinkIdentityEnabled bool `json:"linkIdentityEnabled"`
+	// The hostnames of the Workspace's own sites, where its tracker runs: only an `https` link to one of
+	// them gets a Link identity token. Each is matched exactly, so a subdomain is listed on its own.
+	LinkIdentityHosts []string `json:"linkIdentityHosts"`
 	// The authenticated User's role in this Workspace (from their Membership). It rides the Workspace list
 	// so role-gated UI is known even while the Workspace's own endpoints are withheld under a Two-factor
 	// requirement.
@@ -38143,6 +38196,16 @@ func (s *SiteWorkspaceResource) GetRequireConfirmedOptIn() bool {
 // GetEngagementTrackingDefault returns the value of EngagementTrackingDefault.
 func (s *SiteWorkspaceResource) GetEngagementTrackingDefault() EngagementTrackingDecision {
 	return s.EngagementTrackingDefault
+}
+
+// GetLinkIdentityEnabled returns the value of LinkIdentityEnabled.
+func (s *SiteWorkspaceResource) GetLinkIdentityEnabled() bool {
+	return s.LinkIdentityEnabled
+}
+
+// GetLinkIdentityHosts returns the value of LinkIdentityHosts.
+func (s *SiteWorkspaceResource) GetLinkIdentityHosts() []string {
+	return s.LinkIdentityHosts
 }
 
 // GetRole returns the value of Role.
@@ -38268,6 +38331,16 @@ func (s *SiteWorkspaceResource) SetRequireConfirmedOptIn(val bool) {
 // SetEngagementTrackingDefault sets the value of EngagementTrackingDefault.
 func (s *SiteWorkspaceResource) SetEngagementTrackingDefault(val EngagementTrackingDecision) {
 	s.EngagementTrackingDefault = val
+}
+
+// SetLinkIdentityEnabled sets the value of LinkIdentityEnabled.
+func (s *SiteWorkspaceResource) SetLinkIdentityEnabled(val bool) {
+	s.LinkIdentityEnabled = val
+}
+
+// SetLinkIdentityHosts sets the value of LinkIdentityHosts.
+func (s *SiteWorkspaceResource) SetLinkIdentityHosts(val []string) {
+	s.LinkIdentityHosts = val
 }
 
 // SetRole sets the value of Role.

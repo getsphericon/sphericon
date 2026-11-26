@@ -6,6 +6,7 @@ import {
 } from '../../../generated/site/@tanstack/react-query.gen.ts'
 import {
   siteAuditSetRetention,
+  siteWorkspacesSetLinkIdentity,
   siteWorkspacesSetTimezone,
   siteWorkspacesUpdate,
   siteWorkspacesUpdateConfirmationEmail,
@@ -16,6 +17,7 @@ import { withRevision } from '../../../resources/resourceEditor.ts'
 import {
   ConfirmationEmailFields,
   GeneralFields,
+  LinkIdentityFields,
   RetentionFields,
   RevenueFields,
   TimezoneFields,
@@ -23,6 +25,7 @@ import {
 import {
   confirmationEmailSchema,
   generalSchema,
+  linkIdentitySchema,
   retentionSchema,
   revenueSchema,
   timezoneSchema,
@@ -91,6 +94,24 @@ export const RevenueEditForm = defineEditForm({
     updated: t(($) => $.settings.saved),
     loadErrorTitle: t(($) => $.settings.revenue.loadError),
     saveErrorTitle: t(($) => $.settings.revenue.errorTitle),
+  }),
+})
+
+// Link identity tokens on tracked links (ADR 0160), in a modal over the tracking settings.
+export const linkIdentityEditor = defineModalEditor({
+  editorId: 'workspaceLinkIdentityEditor',
+  schema: linkIdentitySchema,
+  Form: LinkIdentityFields,
+  getOptions: ofWorkspace(siteWorkspacesGetOptions),
+  update: withRevision(async ({ path, body, throwOnError }) =>
+    siteWorkspacesSetLinkIdentity({ path: { workspaceId: path.workspaceId }, body, throwOnError }),
+  ),
+  operations: {},
+  texts: (t) => ({
+    editTitle: t(($) => $.settings.linkIdentity.title),
+    updated: t(($) => $.settings.saved),
+    loadErrorTitle: t(($) => $.settings.linkIdentity.loadError),
+    saveErrorTitle: t(($) => $.settings.linkIdentity.errorTitle),
   }),
 })
 

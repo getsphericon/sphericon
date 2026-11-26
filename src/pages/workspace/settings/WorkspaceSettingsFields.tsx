@@ -1,18 +1,30 @@
-import { Button, Group, NumberInput, Select, Stack, Textarea, TextInput } from '@mantine/core'
+import {
+  Button,
+  Group,
+  NumberInput,
+  Select,
+  Stack,
+  Switch,
+  TagsInput,
+  Textarea,
+  TextInput,
+} from '@mantine/core'
 import { use } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import type { SiteConfirmationEmailResource } from '../../../generated/site/types.gen.ts'
 import { zAttributionWindowDays, zRetentionDays } from '../../../generated/site/zod.gen.ts'
 import type { ResourceFormProps } from '../../../resources/defineResource.tsx'
-import { boundsOf } from '../../../utils/bounds.ts'
+import { boundsOf, maxItemsOf } from '../../../utils/bounds.ts'
 import { TIME_ZONES } from '../../../utils/datetime.ts'
-import { CanEdit } from './workspaceSettingsForm.ts'
+import { CanEdit, linkIdentityBody } from './workspaceSettingsForm.ts'
 import type {
   ConfirmationEmailPayload,
   ConfirmationEmailValues,
   GeneralPayload,
   GeneralValues,
+  LinkIdentityPayload,
+  LinkIdentityValues,
   RetentionPayload,
   RetentionValues,
   RevenuePayload,
@@ -26,6 +38,7 @@ const WINDOW_DAYS = boundsOf(zAttributionWindowDays)
 const RETENTION_DAYS = boundsOf(zRetentionDays)
 
 const CURRENCIES = Intl.supportedValuesOf('currency')
+const LINK_IDENTITY_HOSTS = maxItemsOf(linkIdentityBody.shape.linkIdentityHosts)
 
 // The Save of a settings section, offered only to who may change it: anyone else sees the values
 // read-only (the API refuses them).
@@ -120,6 +133,44 @@ export function RevenueFields({
           {...form.getInputProps('attributionWindowDays')}
         />
         <SaveButton isPending={isPending} />
+      </Stack>
+    </form>
+  )
+}
+
+// Link identity tokens (ADR 0160): the switch and the hostnames of the Workspace's own sites, where
+// its tracker runs.
+export function LinkIdentityFields({
+  form,
+  isPending,
+  onSubmit,
+  onCancel,
+}: ResourceFormProps<LinkIdentityPayload, LinkIdentityValues>) {
+  const { t } = useTranslation()
+  return (
+    <form onSubmit={form.onSubmit(onSubmit)}>
+      <Stack>
+        <Switch
+          data-autofocus
+          label={t(($) => $.settings.linkIdentity.enabledLabel)}
+          {...form.getInputProps('linkIdentityEnabled', { type: 'checkbox' })}
+        />
+        <TagsInput
+          label={t(($) => $.settings.linkIdentity.hostsLabel)}
+          description={t(($) => $.settings.linkIdentity.hostsDescription)}
+          maxTags={LINK_IDENTITY_HOSTS}
+          splitChars={[',', ' ']}
+          acceptValueOnBlur
+          {...form.getInputProps('linkIdentityHosts')}
+        />
+        <Group justify="flex-end">
+          <Button variant="default" onClick={onCancel}>
+            {t(($) => $.actions.cancel)}
+          </Button>
+          <Button type="submit" loading={isPending}>
+            {t(($) => $.actions.save)}
+          </Button>
+        </Group>
       </Stack>
     </form>
   )

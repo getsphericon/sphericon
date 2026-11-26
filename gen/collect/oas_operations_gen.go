@@ -8,5 +8,6 @@ type OperationName = string
 const (
 	CollectEventsCreateOperation             OperationName = "CollectEventsCreate"
 	CollectIdentifyCreateOperation           OperationName = "CollectIdentifyCreate"
+	CollectLinkIdentitiesCreateOperation     OperationName = "CollectLinkIdentitiesCreate"
 	CollectTelegramStartLinksCreateOperation OperationName = "CollectTelegramStartLinksCreate"
 )

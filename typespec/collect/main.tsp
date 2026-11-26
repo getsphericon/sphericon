@@ -8,6 +8,7 @@ import "../common/system-events.tsp";
 import "./resources/identify.tsp";
 import "./resources/events.tsp";
 import "./resources/telegram.tsp";
+import "./resources/link-identities.tsp";
 
 using TypeSpec.OpenAPI;
 using TypeSpec.Http;

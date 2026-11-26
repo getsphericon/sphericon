@@ -3374,6 +3374,13 @@ func (c *ConverterImpl) WorkspaceToResource(source *ent.Workspace) site.SiteWork
 		siteapiSiteWorkspaceResource.Timezone = workspaceTimezone((*source).Timezone)
 		siteapiSiteWorkspaceResource.RequireConfirmedOptIn = (*source).RequireConfirmedOptIn
 		siteapiSiteWorkspaceResource.EngagementTrackingDefault = c.EngagementTrackingDecisionToResource((*source).EngagementTrackingDefault)
+		siteapiSiteWorkspaceResource.LinkIdentityEnabled = (*source).LinkIdentityEnabled
+		if (*source).LinkIdentityHosts != nil {
+			siteapiSiteWorkspaceResource.LinkIdentityHosts = make([]string, len((*source).LinkIdentityHosts))
+			for i := 0; i < len((*source).LinkIdentityHosts); i++ {
+				siteapiSiteWorkspaceResource.LinkIdentityHosts[i] = (*source).LinkIdentityHosts[i]
+			}
+		}
 		// siteapiSiteWorkspaceResource.Role: ignore
 		// siteapiSiteWorkspaceResource.Permissions: ignore
 		siteapiSiteWorkspaceResource.SuspendedAt = optNilTimestamp((*source).SuspendedAt)

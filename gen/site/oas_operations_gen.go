@@ -225,6 +225,7 @@ const (
 	SiteWorkspacesRestoreOperation                      OperationName = "SiteWorkspacesRestore"
 	SiteWorkspacesSetConfirmedOptInOperation            OperationName = "SiteWorkspacesSetConfirmedOptIn"
 	SiteWorkspacesSetEngagementTrackingDefaultOperation OperationName = "SiteWorkspacesSetEngagementTrackingDefault"
+	SiteWorkspacesSetLinkIdentityOperation              OperationName = "SiteWorkspacesSetLinkIdentity"
 	SiteWorkspacesSetTimezoneOperation                  OperationName = "SiteWorkspacesSetTimezone"
 	SiteWorkspacesUpdateOperation                       OperationName = "SiteWorkspacesUpdate"
 	SiteWorkspacesUpdateConfirmationEmailOperation      OperationName = "SiteWorkspacesUpdateConfirmationEmail"

@@ -9,6 +9,7 @@ import type { Client } from './generated/collect/client/index.ts'
 import {
   collectEventsCreate,
   collectIdentifyCreate,
+  collectLinkIdentitiesCreate,
   collectTelegramStartLinksCreate,
 } from './generated/collect/sdk.gen.ts'
 import type { CollectEventInput, CollectIdentifyInput } from './generated/collect/types.gen.ts'
@@ -324,6 +325,68 @@ export function initTracking(config?: TrackerConfig): void {
 
   window.addEventListener('pagehide', flushEventsOnPageHide)
   flushSoon()
+  presentLinkIdentityOnInteraction()
+}
+
+// The query parameter a tracked link's click adds a Link identity token in (ADR 0160): the server's
+// messagetoken.LinkIdentityParam.
+const LINK_IDENTITY_PARAM = 'sph_lit'
+// The interactions only a person makes: a scanner that loads the page and runs this script makes
+// none, so it binds no one.
+const INTERACTIONS = ['pointerdown', 'keydown', 'touchstart'] as const
+
+// The Link identity token of this page, kept in memory only and for this page only, until it is
+// presented or reset forgets it.
+let linkIdentityToken: string | null = null
+
+// takeLinkIdentityToken removes the token from the address, so a copied URL does not carry it on,
+// and returns it. The rest of the address stays as it was written.
+function takeLinkIdentityToken(): string | null {
+  const prefix = `${LINK_IDENTITY_PARAM}=`
+  const params = window.location.search.replace(/^\?/, '').split('&')
+  const found = params.find((param) => param.startsWith(prefix))
+  if (found === undefined) {
+    return null
+  }
+  const rest = params.filter((param) => param !== found).join('&')
+  const { pathname, hash } = window.location
+  history.replaceState(history.state, '', `${pathname}${rest ? `?${rest}` : ''}${hash}`)
+
+  try {
+    return decodeURIComponent(found.slice(prefix.length)) || null
+  } catch {
+    // A token no link of ours could carry (a broken escape): there is nothing to present.
+    return null
+  }
+}
+
+// presentLinkIdentityOnInteraction takes the page's token and sends it with the visitor on the
+// person's first pointer press, key press or touch, once: the request outlives a click that leaves
+// the page (keepalive).
+function presentLinkIdentityOnInteraction(): void {
+  linkIdentityToken = takeLinkIdentityToken()
+  if (!linkIdentityToken) {
+    return
+  }
+  const present = () => {
+    for (const interaction of INTERACTIONS) {
+      window.removeEventListener(interaction, present, true)
+    }
+    const runtime = delivery.getSnapshot().context.runtime
+    const token = linkIdentityToken
+    linkIdentityToken = null
+    if (!runtime || !token) {
+      return
+    }
+    void collectLinkIdentitiesCreate({
+      client: runtime.client,
+      retry: 0,
+      body: { visitorId: runtime.visitorId, token },
+    }).catch(() => undefined)
+  }
+  for (const interaction of INTERACTIONS) {
+    window.addEventListener(interaction, present, { capture: true, passive: true })
+  }
 }
 
 // The Identity token of the page's latest identify (ADR 0171), kept in memory only: the start link
@@ -360,11 +423,13 @@ export async function identify(payload: IdentifyInput): Promise<void> {
 }
 
 // reset is what a site calls when the person signs out: the browser forgets the Identity token of
-// the page's latest identify, so a chat started next is not theirs (ADR 0171), and starts a visitor
+// the page's latest identify, so a chat started next is not theirs (ADR 0171), and the Link identity
+// token of the page not yet presented (ADR 0160), and starts a visitor
 // of its own, so what the next person does here is not stitched onto them. Events queued before it
 // keep the visitor they were made for.
 export function reset(): void {
   identityToken = null
+  linkIdentityToken = null
   if (!isBrowser) {
     return
   }
