@@ -184,9 +184,12 @@ func pendingMigrations(ctx context.Context, sqlDB *sql.DB) (int, error) {
 }
 
 func isUndefinedTable(err error) bool {
-	pgErr, ok := errors.AsType[interface {
-		error
-		SQLState() string
-	}](err)
+	pgErr, ok := errors.AsType[sqlStateError](err)
 	return ok && pgErr.SQLState() == pgerrcode.UndefinedTable
+}
+
+// sqlStateError is an error that carries a Postgres SQLSTATE, whichever driver raised it.
+type sqlStateError interface {
+	error
+	SQLState() string
 }

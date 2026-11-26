@@ -60,8 +60,9 @@ func TestExternalTwilioIntegrationLifecycle(t *testing.T) {
 	assert.Equal(t, key.SID, cfg.ApiKeySid.Value)
 	assert.Equal(t, externalapi.SmsFromKindNumber, cfg.FromKind)
 	assert.JSONEq(t, `"********"`, string(read.Params["auth_token"]))
-	assert.NotContains(t, testhelper.JSONOf(t, read), key.Secret)
-	assert.NotContains(t, testhelper.JSONOf(t, read), account.AuthToken)
+	written := testhelper.JSONOf(t, read)
+	assert.NotContains(t, written, key.Secret)
+	assert.NotContains(t, written, account.AuthToken)
 
 	rotated, err := c.IntegrationsUpdate(t.Context(), &externalapi.UpdateIntegrationInput{Revision: externalapi.Revision(env.IntegrationRevision(t.Context(), t, int64(row.ID))), Params: authToken("rotatedauthtoken")},
 		externalapi.IntegrationsUpdateParams{ID: row.ID})

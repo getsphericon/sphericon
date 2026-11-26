@@ -14,6 +14,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/fs"
+	"maps"
 	"os"
 	"path/filepath"
 	"slices"
@@ -120,12 +121,7 @@ func (c *Contract) collectShapes(doc any) {
 	root, _ := doc.(map[string]any)
 	components, _ := root["components"].(map[string]any)
 	schemas, _ := components["schemas"].(map[string]any)
-	names := make([]string, 0, len(schemas))
-	for name := range schemas {
-		names = append(names, name)
-	}
-	slices.Sort(names)
-	for _, name := range names {
+	for _, name := range slices.Sorted(maps.Keys(schemas)) {
 		schema, _ := schemas[name].(map[string]any)
 		props, _ := schema["properties"].(map[string]any)
 		if len(props) < 2 {

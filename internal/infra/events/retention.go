@@ -71,8 +71,8 @@ func oldest[P ~func(*sql.Selector)](table string, batchSize int, where ...P) fun
 	}
 }
 
-// pruneBatches runs deleteBatch, which deletes at most batchSize rows, through drain.Batches and
-// returns how many it removed. what names the rows in its errors.
+// pruneBatches runs deleteBatch, which deletes at most batchSize rows, until a batch comes back short,
+// and returns how many it removed. what names the rows in its errors.
 func pruneBatches(ctx context.Context, what string, batchSize int, deleteBatch func(context.Context) (int, error)) (int64, error) {
 	removed, err := drain.Batches(batchSize, func() (int, error) { return deleteBatch(ctx) })
 	if err != nil {

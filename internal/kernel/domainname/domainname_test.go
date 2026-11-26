@@ -54,10 +54,15 @@ func TestNotFoundIsOnlyADefiniteAnswer(t *testing.T) {
 	failed := &net.DNSError{Err: "server misbehaving", Name: "example.com", IsTemporary: true}
 	other := errors.New("refused")
 
-	assert.True(t, domainname.NotFound(missing))
-	assert.True(t, domainname.NotFound(wrapped))
-	assert.False(t, domainname.NotFound(timedOut))
-	assert.False(t, domainname.NotFound(failed))
-	assert.False(t, domainname.NotFound(other))
-	assert.False(t, domainname.NotFound(nil))
+	answers := map[string]bool{
+		"missing":   domainname.NotFound(missing),
+		"wrapped":   domainname.NotFound(wrapped),
+		"timed out": domainname.NotFound(timedOut),
+		"failed":    domainname.NotFound(failed),
+		"other":     domainname.NotFound(other),
+		"no error":  domainname.NotFound(nil),
+	}
+
+	want := map[string]bool{"missing": true, "wrapped": true, "timed out": false, "failed": false, "other": false, "no error": false}
+	assert.Equal(t, want, answers)
 }

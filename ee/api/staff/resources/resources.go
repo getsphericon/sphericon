@@ -322,10 +322,7 @@ func nilFloat64(v *float64) staffeeapi.NilFloat64 {
 
 // nilMaxPerDay renders a Send cap: null when the Workspace has none.
 func nilMaxPerDay(v *int) staffeeapi.NilMaxPerDay {
-	if v == nil {
-		return staffeeapi.NilMaxPerDay{Null: true}
-	}
-	return staffeeapi.NewNilMaxPerDay(staffeeapi.MaxPerDay(narrow.Int32(*v)))
+	return convert.NilVia[staffeeapi.NilMaxPerDay](v, func(n int) staffeeapi.MaxPerDay { return staffeeapi.MaxPerDay(narrow.Int32(n)) })
 }
 
 // count narrows a count to the contract's int32.

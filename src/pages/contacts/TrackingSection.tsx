@@ -108,8 +108,8 @@ function TrackingRow({
     onsite_form: t(($) => $.contacts.trackingProvenanceOnsiteForm),
   }
 
-  // A refused observation (a grant over a refusal recorded meanwhile) reads the consent again, so
-  // the row shows what stands; the toast still says why.
+  // A refused observation, the grant's or the refusal's (a grant over a refusal recorded meanwhile),
+  // reads the consent again, so the row shows what stands; the toast still says why.
   const grant = useResourceMutation({
     mutation: siteEngagementTrackingCreateMutation(),
     successMessage: t(($) => $.contacts.trackingGrantedRecorded),
