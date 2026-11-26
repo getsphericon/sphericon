@@ -1327,6 +1327,10 @@ const (
 	ConfirmationLacunaAdaDestination = "+16175557740"
 	// ConfirmationLacunaAdaID is from fixtures/confirmations.
 	ConfirmationLacunaAdaID = 7740
+	// ConfirmationLacunaDotDestination is from fixtures/confirmations.
+	ConfirmationLacunaDotDestination = "+16175557743"
+	// ConfirmationLacunaDotID is from fixtures/confirmations.
+	ConfirmationLacunaDotID = 7743
 	// ConfirmationLiamDestination is from fixtures/confirmations.
 	ConfirmationLiamDestination = "liam.python@codebasics.dev"
 	// ConfirmationLiamID is from fixtures/confirmations.
