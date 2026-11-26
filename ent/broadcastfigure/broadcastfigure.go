@@ -68,6 +68,8 @@ const (
 	FieldSkippedNoLocalTime = "skipped_no_local_time"
 	// FieldSkippedFrequencyCap holds the string denoting the skipped_frequency_cap field in the database.
 	FieldSkippedFrequencyCap = "skipped_frequency_cap"
+	// FieldSingleZone holds the string denoting the single_zone field in the database.
+	FieldSingleZone = "single_zone"
 	// FieldPrunedAt holds the string denoting the pruned_at field in the database.
 	FieldPrunedAt = "pruned_at"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
@@ -122,6 +124,7 @@ var Columns = []string{
 	FieldSkippedContactErased,
 	FieldSkippedNoLocalTime,
 	FieldSkippedFrequencyCap,
+	FieldSingleZone,
 	FieldPrunedAt,
 }
 
@@ -206,6 +209,10 @@ var (
 	DefaultSkippedFrequencyCap int
 	// SkippedFrequencyCapValidator is a validator for the "skipped_frequency_cap" field. It is called by the builders before save.
 	SkippedFrequencyCapValidator func(int) error
+	// DefaultSingleZone holds the default value on creation for the "single_zone" field.
+	DefaultSingleZone int
+	// SingleZoneValidator is a validator for the "single_zone" field. It is called by the builders before save.
+	SingleZoneValidator func(int) error
 )
 
 // OrderOption defines the ordering options for the BroadcastFigure queries.
@@ -349,6 +356,11 @@ func BySkippedNoLocalTime(opts ...sql.OrderTermOption) OrderOption {
 // BySkippedFrequencyCap orders the results by the skipped_frequency_cap field.
 func BySkippedFrequencyCap(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSkippedFrequencyCap, opts...).ToFunc()
+}
+
+// BySingleZone orders the results by the single_zone field.
+func BySingleZone(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSingleZone, opts...).ToFunc()
 }
 
 // ByPrunedAt orders the results by the pruned_at field.

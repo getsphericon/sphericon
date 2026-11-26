@@ -322,6 +322,7 @@ func (m *Module) newMessage(s *ent.Scoped, req Request, dest string, g gateResul
 	}
 	req.Ref.stamp(create)
 	req.Waited.stamp(create)
+	create.SetWindowSingleZone(req.window.SingleZone())
 	if req.digest != "" {
 		create.SetRequestDigest(req.digest)
 	}
@@ -434,6 +435,7 @@ func (m *Module) takeOver(ctx context.Context, s *ent.Scoped, req Request, exist
 		Where(ownsClaim(existing)...).
 		SetClaimedAt(m.claimTime())
 	req.Waited.restamp(u)
+	u.SetWindowSingleZone(req.window.SingleZone())
 	n, err := u.Save(ctx)
 	if err != nil {
 		return nil, err

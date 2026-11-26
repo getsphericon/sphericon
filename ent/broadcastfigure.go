@@ -73,6 +73,8 @@ type BroadcastFigure struct {
 	SkippedNoLocalTime int `json:"skipped_no_local_time,omitempty"`
 	// SkippedFrequencyCap holds the value of the "skipped_frequency_cap" field.
 	SkippedFrequencyCap int `json:"skipped_frequency_cap,omitempty"`
+	// SingleZone holds the value of the "single_zone" field.
+	SingleZone int `json:"single_zone,omitempty"`
 	// PrunedAt holds the value of the "pruned_at" field.
 	PrunedAt *time.Time `json:"pruned_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -119,7 +121,7 @@ func (*BroadcastFigure) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case broadcastfigure.FieldID, broadcastfigure.FieldWorkspaceID, broadcastfigure.FieldBroadcastID, broadcastfigure.FieldRecipients, broadcastfigure.FieldUnsubscribed, broadcastfigure.FieldSent, broadcastfigure.FieldSkipped, broadcastfigure.FieldFailed, broadcastfigure.FieldPending, broadcastfigure.FieldCancelled, broadcastfigure.FieldDelivered, broadcastfigure.FieldUndelivered, broadcastfigure.FieldBounced, broadcastfigure.FieldComplained, broadcastfigure.FieldOpened, broadcastfigure.FieldClicked, broadcastfigure.FieldCaptured, broadcastfigure.FieldUntracked, broadcastfigure.FieldSkippedSuppressed, broadcastfigure.FieldSkippedUnsubscribedEverything, broadcastfigure.FieldSkippedUnsubscribedSource, broadcastfigure.FieldSkippedUnconfirmed, broadcastfigure.FieldSkippedNoDestination, broadcastfigure.FieldSkippedContactErased, broadcastfigure.FieldSkippedNoLocalTime, broadcastfigure.FieldSkippedFrequencyCap:
+		case broadcastfigure.FieldID, broadcastfigure.FieldWorkspaceID, broadcastfigure.FieldBroadcastID, broadcastfigure.FieldRecipients, broadcastfigure.FieldUnsubscribed, broadcastfigure.FieldSent, broadcastfigure.FieldSkipped, broadcastfigure.FieldFailed, broadcastfigure.FieldPending, broadcastfigure.FieldCancelled, broadcastfigure.FieldDelivered, broadcastfigure.FieldUndelivered, broadcastfigure.FieldBounced, broadcastfigure.FieldComplained, broadcastfigure.FieldOpened, broadcastfigure.FieldClicked, broadcastfigure.FieldCaptured, broadcastfigure.FieldUntracked, broadcastfigure.FieldSkippedSuppressed, broadcastfigure.FieldSkippedUnsubscribedEverything, broadcastfigure.FieldSkippedUnsubscribedSource, broadcastfigure.FieldSkippedUnconfirmed, broadcastfigure.FieldSkippedNoDestination, broadcastfigure.FieldSkippedContactErased, broadcastfigure.FieldSkippedNoLocalTime, broadcastfigure.FieldSkippedFrequencyCap, broadcastfigure.FieldSingleZone:
 			values[i] = new(sql.NullInt64)
 		case broadcastfigure.FieldCreatedAt, broadcastfigure.FieldUpdatedAt, broadcastfigure.FieldPrunedAt:
 			values[i] = new(sql.NullTime)
@@ -306,6 +308,12 @@ func (_m *BroadcastFigure) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.SkippedFrequencyCap = int(value.Int64)
 			}
+		case broadcastfigure.FieldSingleZone:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field single_zone", values[i])
+			} else if value.Valid {
+				_m.SingleZone = int(value.Int64)
+			}
 		case broadcastfigure.FieldPrunedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field pruned_at", values[i])
@@ -439,6 +447,9 @@ func (_m *BroadcastFigure) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("skipped_frequency_cap=")
 	builder.WriteString(fmt.Sprintf("%v", _m.SkippedFrequencyCap))
+	builder.WriteString(", ")
+	builder.WriteString("single_zone=")
+	builder.WriteString(fmt.Sprintf("%v", _m.SingleZone))
 	builder.WriteString(", ")
 	if v := _m.PrunedAt; v != nil {
 		builder.WriteString("pruned_at=")

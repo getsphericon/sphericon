@@ -311,7 +311,7 @@ func sendingRulesOf(ctx context.Context, s *ent.Scoped) (SendingRules, error) {
 			FrequencyCap{Channel: r.Channel, Country: r.Country, MaxMessages: r.MaxMessages, PeriodMinutes: r.PeriodMinutes})
 	}
 	for _, r := range windowRows {
-		rules.SendingWindows = append(rules.SendingWindows, SendingWindow{Channel: r.Channel, Country: r.Country, Hours: hoursOf(r)})
+		rules.SendingWindows = append(rules.SendingWindows, SendingWindow{Channel: r.Channel, Country: r.Country, Hours: WindowHours(r)})
 	}
 	return rules, nil
 }
@@ -473,8 +473,9 @@ func samePtr[T comparable](a, b *T) bool {
 	return a == nil && b == nil || a != nil && b != nil && *a == *b
 }
 
-// hoursOf is the hours of the days a window row is open on, Monday first.
-func hoursOf(r *ent.SendingWindow) []OpenHours {
+// WindowHours is the hours of the days a Sending window row is open on, Monday first: the one
+// reading of its columns.
+func WindowHours(r *ent.SendingWindow) []OpenHours {
 	days := []struct {
 		day           localcalendar.Weekday
 		opens, closes *int

@@ -57,6 +57,9 @@ func (AutomationFigure) Fields() []ent.Field {
 		field.Int("skipped_contact_erased").NonNegative().Default(0),
 		field.Int("skipped_no_local_time").NonNegative().Default(0),
 		field.Int("skipped_frequency_cap").NonNegative().Default(0),
+		// The sent messages a Sending window judged by a single zone (ADR 0134). 0 in what was
+		// added before they were kept.
+		field.Int("single_zone").NonNegative().Default(0),
 		field.Int("delivered").NonNegative().Default(0),
 		field.Int("bounced").NonNegative().Default(0),
 		field.Int("complained").NonNegative().Default(0),

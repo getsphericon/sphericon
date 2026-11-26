@@ -4727,6 +4727,8 @@ type AutomationFigureMutation struct {
 	addskipped_no_local_time           *int
 	skipped_frequency_cap              *int
 	addskipped_frequency_cap           *int
+	single_zone                        *int
+	addsingle_zone                     *int
 	delivered                          *int
 	adddelivered                       *int
 	bounced                            *int
@@ -5627,6 +5629,62 @@ func (m *AutomationFigureMutation) ResetSkippedFrequencyCap() {
 	m.addskipped_frequency_cap = nil
 }
 
+// SetSingleZone sets the "single_zone" field.
+func (m *AutomationFigureMutation) SetSingleZone(i int) {
+	m.single_zone = &i
+	m.addsingle_zone = nil
+}
+
+// SingleZone returns the value of the "single_zone" field in the mutation.
+func (m *AutomationFigureMutation) SingleZone() (r int, exists bool) {
+	v := m.single_zone
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSingleZone returns the old "single_zone" field's value of the AutomationFigure entity.
+// If the AutomationFigure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationFigureMutation) OldSingleZone(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSingleZone is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSingleZone requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSingleZone: %w", err)
+	}
+	return oldValue.SingleZone, nil
+}
+
+// AddSingleZone adds i to the "single_zone" field.
+func (m *AutomationFigureMutation) AddSingleZone(i int) {
+	if m.addsingle_zone != nil {
+		*m.addsingle_zone += i
+	} else {
+		m.addsingle_zone = &i
+	}
+}
+
+// AddedSingleZone returns the value that was added to the "single_zone" field in this mutation.
+func (m *AutomationFigureMutation) AddedSingleZone() (r int, exists bool) {
+	v := m.addsingle_zone
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSingleZone resets all changes to the "single_zone" field.
+func (m *AutomationFigureMutation) ResetSingleZone() {
+	m.single_zone = nil
+	m.addsingle_zone = nil
+}
+
 // SetDelivered sets the "delivered" field.
 func (m *AutomationFigureMutation) SetDelivered(i int) {
 	m.delivered = &i
@@ -5966,7 +6024,7 @@ func (m *AutomationFigureMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *AutomationFigureMutation) Fields() []string {
-	fields := make([]string, 0, 20)
+	fields := make([]string, 0, 21)
 	if m.created_at != nil {
 		fields = append(fields, automationfigure.FieldCreatedAt)
 	}
@@ -6014,6 +6072,9 @@ func (m *AutomationFigureMutation) Fields() []string {
 	}
 	if m.skipped_frequency_cap != nil {
 		fields = append(fields, automationfigure.FieldSkippedFrequencyCap)
+	}
+	if m.single_zone != nil {
+		fields = append(fields, automationfigure.FieldSingleZone)
 	}
 	if m.delivered != nil {
 		fields = append(fields, automationfigure.FieldDelivered)
@@ -6067,6 +6128,8 @@ func (m *AutomationFigureMutation) Field(name string) (ent.Value, bool) {
 		return m.SkippedNoLocalTime()
 	case automationfigure.FieldSkippedFrequencyCap:
 		return m.SkippedFrequencyCap()
+	case automationfigure.FieldSingleZone:
+		return m.SingleZone()
 	case automationfigure.FieldDelivered:
 		return m.Delivered()
 	case automationfigure.FieldBounced:
@@ -6116,6 +6179,8 @@ func (m *AutomationFigureMutation) OldField(ctx context.Context, name string) (e
 		return m.OldSkippedNoLocalTime(ctx)
 	case automationfigure.FieldSkippedFrequencyCap:
 		return m.OldSkippedFrequencyCap(ctx)
+	case automationfigure.FieldSingleZone:
+		return m.OldSingleZone(ctx)
 	case automationfigure.FieldDelivered:
 		return m.OldDelivered(ctx)
 	case automationfigure.FieldBounced:
@@ -6245,6 +6310,13 @@ func (m *AutomationFigureMutation) SetField(name string, value ent.Value) error 
 		}
 		m.SetSkippedFrequencyCap(v)
 		return nil
+	case automationfigure.FieldSingleZone:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSingleZone(v)
+		return nil
 	case automationfigure.FieldDelivered:
 		v, ok := value.(int)
 		if !ok {
@@ -6311,6 +6383,9 @@ func (m *AutomationFigureMutation) AddedFields() []string {
 	if m.addskipped_frequency_cap != nil {
 		fields = append(fields, automationfigure.FieldSkippedFrequencyCap)
 	}
+	if m.addsingle_zone != nil {
+		fields = append(fields, automationfigure.FieldSingleZone)
+	}
 	if m.adddelivered != nil {
 		fields = append(fields, automationfigure.FieldDelivered)
 	}
@@ -6351,6 +6426,8 @@ func (m *AutomationFigureMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedSkippedNoLocalTime()
 	case automationfigure.FieldSkippedFrequencyCap:
 		return m.AddedSkippedFrequencyCap()
+	case automationfigure.FieldSingleZone:
+		return m.AddedSingleZone()
 	case automationfigure.FieldDelivered:
 		return m.AddedDelivered()
 	case automationfigure.FieldBounced:
@@ -6437,6 +6514,13 @@ func (m *AutomationFigureMutation) AddField(name string, value ent.Value) error 
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddSkippedFrequencyCap(v)
+		return nil
+	case automationfigure.FieldSingleZone:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSingleZone(v)
 		return nil
 	case automationfigure.FieldDelivered:
 		v, ok := value.(int)
@@ -6540,6 +6624,9 @@ func (m *AutomationFigureMutation) ResetField(name string) error {
 		return nil
 	case automationfigure.FieldSkippedFrequencyCap:
 		m.ResetSkippedFrequencyCap()
+		return nil
+	case automationfigure.FieldSingleZone:
+		m.ResetSingleZone()
 		return nil
 	case automationfigure.FieldDelivered:
 		m.ResetDelivered()
@@ -18272,6 +18359,8 @@ type BroadcastFigureMutation struct {
 	addskipped_no_local_time           *int
 	skipped_frequency_cap              *int
 	addskipped_frequency_cap           *int
+	single_zone                        *int
+	addsingle_zone                     *int
 	pruned_at                          *time.Time
 	clearedFields                      map[string]struct{}
 	workspace                          *int64
@@ -19819,6 +19908,62 @@ func (m *BroadcastFigureMutation) ResetSkippedFrequencyCap() {
 	m.addskipped_frequency_cap = nil
 }
 
+// SetSingleZone sets the "single_zone" field.
+func (m *BroadcastFigureMutation) SetSingleZone(i int) {
+	m.single_zone = &i
+	m.addsingle_zone = nil
+}
+
+// SingleZone returns the value of the "single_zone" field in the mutation.
+func (m *BroadcastFigureMutation) SingleZone() (r int, exists bool) {
+	v := m.single_zone
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSingleZone returns the old "single_zone" field's value of the BroadcastFigure entity.
+// If the BroadcastFigure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BroadcastFigureMutation) OldSingleZone(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSingleZone is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSingleZone requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSingleZone: %w", err)
+	}
+	return oldValue.SingleZone, nil
+}
+
+// AddSingleZone adds i to the "single_zone" field.
+func (m *BroadcastFigureMutation) AddSingleZone(i int) {
+	if m.addsingle_zone != nil {
+		*m.addsingle_zone += i
+	} else {
+		m.addsingle_zone = &i
+	}
+}
+
+// AddedSingleZone returns the value that was added to the "single_zone" field in this mutation.
+func (m *BroadcastFigureMutation) AddedSingleZone() (r int, exists bool) {
+	v := m.addsingle_zone
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSingleZone resets all changes to the "single_zone" field.
+func (m *BroadcastFigureMutation) ResetSingleZone() {
+	m.single_zone = nil
+	m.addsingle_zone = nil
+}
+
 // SetPrunedAt sets the "pruned_at" field.
 func (m *BroadcastFigureMutation) SetPrunedAt(t time.Time) {
 	m.pruned_at = &t
@@ -19956,7 +20101,7 @@ func (m *BroadcastFigureMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BroadcastFigureMutation) Fields() []string {
-	fields := make([]string, 0, 28)
+	fields := make([]string, 0, 29)
 	if m.created_at != nil {
 		fields = append(fields, broadcastfigure.FieldCreatedAt)
 	}
@@ -20038,6 +20183,9 @@ func (m *BroadcastFigureMutation) Fields() []string {
 	if m.skipped_frequency_cap != nil {
 		fields = append(fields, broadcastfigure.FieldSkippedFrequencyCap)
 	}
+	if m.single_zone != nil {
+		fields = append(fields, broadcastfigure.FieldSingleZone)
+	}
 	if m.pruned_at != nil {
 		fields = append(fields, broadcastfigure.FieldPrunedAt)
 	}
@@ -20103,6 +20251,8 @@ func (m *BroadcastFigureMutation) Field(name string) (ent.Value, bool) {
 		return m.SkippedNoLocalTime()
 	case broadcastfigure.FieldSkippedFrequencyCap:
 		return m.SkippedFrequencyCap()
+	case broadcastfigure.FieldSingleZone:
+		return m.SingleZone()
 	case broadcastfigure.FieldPrunedAt:
 		return m.PrunedAt()
 	}
@@ -20168,6 +20318,8 @@ func (m *BroadcastFigureMutation) OldField(ctx context.Context, name string) (en
 		return m.OldSkippedNoLocalTime(ctx)
 	case broadcastfigure.FieldSkippedFrequencyCap:
 		return m.OldSkippedFrequencyCap(ctx)
+	case broadcastfigure.FieldSingleZone:
+		return m.OldSingleZone(ctx)
 	case broadcastfigure.FieldPrunedAt:
 		return m.OldPrunedAt(ctx)
 	}
@@ -20368,6 +20520,13 @@ func (m *BroadcastFigureMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetSkippedFrequencyCap(v)
 		return nil
+	case broadcastfigure.FieldSingleZone:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSingleZone(v)
+		return nil
 	case broadcastfigure.FieldPrunedAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -20452,6 +20611,9 @@ func (m *BroadcastFigureMutation) AddedFields() []string {
 	if m.addskipped_frequency_cap != nil {
 		fields = append(fields, broadcastfigure.FieldSkippedFrequencyCap)
 	}
+	if m.addsingle_zone != nil {
+		fields = append(fields, broadcastfigure.FieldSingleZone)
+	}
 	return fields
 }
 
@@ -20506,6 +20668,8 @@ func (m *BroadcastFigureMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedSkippedNoLocalTime()
 	case broadcastfigure.FieldSkippedFrequencyCap:
 		return m.AddedSkippedFrequencyCap()
+	case broadcastfigure.FieldSingleZone:
+		return m.AddedSingleZone()
 	}
 	return nil, false
 }
@@ -20676,6 +20840,13 @@ func (m *BroadcastFigureMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddSkippedFrequencyCap(v)
 		return nil
+	case broadcastfigure.FieldSingleZone:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSingleZone(v)
+		return nil
 	}
 	return fmt.Errorf("unknown BroadcastFigure numeric field %s", name)
 }
@@ -20792,6 +20963,9 @@ func (m *BroadcastFigureMutation) ResetField(name string) error {
 		return nil
 	case broadcastfigure.FieldSkippedFrequencyCap:
 		m.ResetSkippedFrequencyCap()
+		return nil
+	case broadcastfigure.FieldSingleZone:
+		m.ResetSingleZone()
 		return nil
 	case broadcastfigure.FieldPrunedAt:
 		m.ResetPrunedAt()
@@ -53769,6 +53943,7 @@ type OutboundMessageMutation struct {
 	failure                    *string
 	deferred_since             *time.Time
 	deferral_cause             *deferralcause.Cause
+	window_single_zone         *bool
 	claimed_at                 *time.Time
 	sent_at                    *time.Time
 	delivered_at               *time.Time
@@ -54676,6 +54851,42 @@ func (m *OutboundMessageMutation) DeferralCauseCleared() bool {
 func (m *OutboundMessageMutation) ResetDeferralCause() {
 	m.deferral_cause = nil
 	delete(m.clearedFields, outboundmessage.FieldDeferralCause)
+}
+
+// SetWindowSingleZone sets the "window_single_zone" field.
+func (m *OutboundMessageMutation) SetWindowSingleZone(b bool) {
+	m.window_single_zone = &b
+}
+
+// WindowSingleZone returns the value of the "window_single_zone" field in the mutation.
+func (m *OutboundMessageMutation) WindowSingleZone() (r bool, exists bool) {
+	v := m.window_single_zone
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWindowSingleZone returns the old "window_single_zone" field's value of the OutboundMessage entity.
+// If the OutboundMessage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OutboundMessageMutation) OldWindowSingleZone(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWindowSingleZone is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWindowSingleZone requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWindowSingleZone: %w", err)
+	}
+	return oldValue.WindowSingleZone, nil
+}
+
+// ResetWindowSingleZone resets all changes to the "window_single_zone" field.
+func (m *OutboundMessageMutation) ResetWindowSingleZone() {
+	m.window_single_zone = nil
 }
 
 // SetClaimedAt sets the "claimed_at" field.
@@ -56200,7 +56411,7 @@ func (m *OutboundMessageMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *OutboundMessageMutation) Fields() []string {
-	fields := make([]string, 0, 41)
+	fields := make([]string, 0, 42)
 	if m.created_at != nil {
 		fields = append(fields, outboundmessage.FieldCreatedAt)
 	}
@@ -56251,6 +56462,9 @@ func (m *OutboundMessageMutation) Fields() []string {
 	}
 	if m.deferral_cause != nil {
 		fields = append(fields, outboundmessage.FieldDeferralCause)
+	}
+	if m.window_single_zone != nil {
+		fields = append(fields, outboundmessage.FieldWindowSingleZone)
 	}
 	if m.claimed_at != nil {
 		fields = append(fields, outboundmessage.FieldClaimedAt)
@@ -56366,6 +56580,8 @@ func (m *OutboundMessageMutation) Field(name string) (ent.Value, bool) {
 		return m.DeferredSince()
 	case outboundmessage.FieldDeferralCause:
 		return m.DeferralCause()
+	case outboundmessage.FieldWindowSingleZone:
+		return m.WindowSingleZone()
 	case outboundmessage.FieldClaimedAt:
 		return m.ClaimedAt()
 	case outboundmessage.FieldSentAt:
@@ -56457,6 +56673,8 @@ func (m *OutboundMessageMutation) OldField(ctx context.Context, name string) (en
 		return m.OldDeferredSince(ctx)
 	case outboundmessage.FieldDeferralCause:
 		return m.OldDeferralCause(ctx)
+	case outboundmessage.FieldWindowSingleZone:
+		return m.OldWindowSingleZone(ctx)
 	case outboundmessage.FieldClaimedAt:
 		return m.OldClaimedAt(ctx)
 	case outboundmessage.FieldSentAt:
@@ -56632,6 +56850,13 @@ func (m *OutboundMessageMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetDeferralCause(v)
+		return nil
+	case outboundmessage.FieldWindowSingleZone:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWindowSingleZone(v)
 		return nil
 	case outboundmessage.FieldClaimedAt:
 		v, ok := value.(time.Time)
@@ -57092,6 +57317,9 @@ func (m *OutboundMessageMutation) ResetField(name string) error {
 		return nil
 	case outboundmessage.FieldDeferralCause:
 		m.ResetDeferralCause()
+		return nil
+	case outboundmessage.FieldWindowSingleZone:
+		m.ResetWindowSingleZone()
 		return nil
 	case outboundmessage.FieldClaimedAt:
 		m.ResetClaimedAt()

@@ -218,6 +218,20 @@ func (_c *AutomationFigureCreate) SetNillableSkippedFrequencyCap(v *int) *Automa
 	return _c
 }
 
+// SetSingleZone sets the "single_zone" field.
+func (_c *AutomationFigureCreate) SetSingleZone(v int) *AutomationFigureCreate {
+	_c.mutation.SetSingleZone(v)
+	return _c
+}
+
+// SetNillableSingleZone sets the "single_zone" field if the given value is not nil.
+func (_c *AutomationFigureCreate) SetNillableSingleZone(v *int) *AutomationFigureCreate {
+	if v != nil {
+		_c.SetSingleZone(*v)
+	}
+	return _c
+}
+
 // SetDelivered sets the "delivered" field.
 func (_c *AutomationFigureCreate) SetDelivered(v int) *AutomationFigureCreate {
 	_c.mutation.SetDelivered(v)
@@ -378,6 +392,10 @@ func (_c *AutomationFigureCreate) defaults() {
 		v := automationfigure.DefaultSkippedFrequencyCap
 		_c.mutation.SetSkippedFrequencyCap(v)
 	}
+	if _, ok := _c.mutation.SingleZone(); !ok {
+		v := automationfigure.DefaultSingleZone
+		_c.mutation.SetSingleZone(v)
+	}
 	if _, ok := _c.mutation.Delivered(); !ok {
 		v := automationfigure.DefaultDelivered
 		_c.mutation.SetDelivered(v)
@@ -494,6 +512,14 @@ func (_c *AutomationFigureCreate) check() error {
 	if v, ok := _c.mutation.SkippedFrequencyCap(); ok {
 		if err := automationfigure.SkippedFrequencyCapValidator(v); err != nil {
 			return &ValidationError{Name: "skipped_frequency_cap", err: fmt.Errorf(`ent: validator failed for field "AutomationFigure.skipped_frequency_cap": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.SingleZone(); !ok {
+		return &ValidationError{Name: "single_zone", err: errors.New(`ent: missing required field "AutomationFigure.single_zone"`)}
+	}
+	if v, ok := _c.mutation.SingleZone(); ok {
+		if err := automationfigure.SingleZoneValidator(v); err != nil {
+			return &ValidationError{Name: "single_zone", err: fmt.Errorf(`ent: validator failed for field "AutomationFigure.single_zone": %w`, err)}
 		}
 	}
 	if _, ok := _c.mutation.Delivered(); !ok {
@@ -621,6 +647,10 @@ func (_c *AutomationFigureCreate) createSpec() (*AutomationFigure, *sqlgraph.Cre
 	if value, ok := _c.mutation.SkippedFrequencyCap(); ok {
 		_spec.SetField(automationfigure.FieldSkippedFrequencyCap, field.TypeInt, value)
 		_node.SkippedFrequencyCap = value
+	}
+	if value, ok := _c.mutation.SingleZone(); ok {
+		_spec.SetField(automationfigure.FieldSingleZone, field.TypeInt, value)
+		_node.SingleZone = value
 	}
 	if value, ok := _c.mutation.Delivered(); ok {
 		_spec.SetField(automationfigure.FieldDelivered, field.TypeInt, value)
@@ -942,6 +972,24 @@ func (u *AutomationFigureUpsert) UpdateSkippedFrequencyCap() *AutomationFigureUp
 // AddSkippedFrequencyCap adds v to the "skipped_frequency_cap" field.
 func (u *AutomationFigureUpsert) AddSkippedFrequencyCap(v int) *AutomationFigureUpsert {
 	u.Add(automationfigure.FieldSkippedFrequencyCap, v)
+	return u
+}
+
+// SetSingleZone sets the "single_zone" field.
+func (u *AutomationFigureUpsert) SetSingleZone(v int) *AutomationFigureUpsert {
+	u.Set(automationfigure.FieldSingleZone, v)
+	return u
+}
+
+// UpdateSingleZone sets the "single_zone" field to the value that was provided on create.
+func (u *AutomationFigureUpsert) UpdateSingleZone() *AutomationFigureUpsert {
+	u.SetExcluded(automationfigure.FieldSingleZone)
+	return u
+}
+
+// AddSingleZone adds v to the "single_zone" field.
+func (u *AutomationFigureUpsert) AddSingleZone(v int) *AutomationFigureUpsert {
+	u.Add(automationfigure.FieldSingleZone, v)
 	return u
 }
 
@@ -1312,6 +1360,27 @@ func (u *AutomationFigureUpsertOne) AddSkippedFrequencyCap(v int) *AutomationFig
 func (u *AutomationFigureUpsertOne) UpdateSkippedFrequencyCap() *AutomationFigureUpsertOne {
 	return u.Update(func(s *AutomationFigureUpsert) {
 		s.UpdateSkippedFrequencyCap()
+	})
+}
+
+// SetSingleZone sets the "single_zone" field.
+func (u *AutomationFigureUpsertOne) SetSingleZone(v int) *AutomationFigureUpsertOne {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.SetSingleZone(v)
+	})
+}
+
+// AddSingleZone adds v to the "single_zone" field.
+func (u *AutomationFigureUpsertOne) AddSingleZone(v int) *AutomationFigureUpsertOne {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.AddSingleZone(v)
+	})
+}
+
+// UpdateSingleZone sets the "single_zone" field to the value that was provided on create.
+func (u *AutomationFigureUpsertOne) UpdateSingleZone() *AutomationFigureUpsertOne {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.UpdateSingleZone()
 	})
 }
 
@@ -1860,6 +1929,27 @@ func (u *AutomationFigureUpsertBulk) AddSkippedFrequencyCap(v int) *AutomationFi
 func (u *AutomationFigureUpsertBulk) UpdateSkippedFrequencyCap() *AutomationFigureUpsertBulk {
 	return u.Update(func(s *AutomationFigureUpsert) {
 		s.UpdateSkippedFrequencyCap()
+	})
+}
+
+// SetSingleZone sets the "single_zone" field.
+func (u *AutomationFigureUpsertBulk) SetSingleZone(v int) *AutomationFigureUpsertBulk {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.SetSingleZone(v)
+	})
+}
+
+// AddSingleZone adds v to the "single_zone" field.
+func (u *AutomationFigureUpsertBulk) AddSingleZone(v int) *AutomationFigureUpsertBulk {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.AddSingleZone(v)
+	})
+}
+
+// UpdateSingleZone sets the "single_zone" field to the value that was provided on create.
+func (u *AutomationFigureUpsertBulk) UpdateSingleZone() *AutomationFigureUpsertBulk {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.UpdateSingleZone()
 	})
 }
 

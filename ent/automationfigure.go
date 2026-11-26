@@ -53,6 +53,8 @@ type AutomationFigure struct {
 	SkippedNoLocalTime int `json:"skipped_no_local_time,omitempty"`
 	// SkippedFrequencyCap holds the value of the "skipped_frequency_cap" field.
 	SkippedFrequencyCap int `json:"skipped_frequency_cap,omitempty"`
+	// SingleZone holds the value of the "single_zone" field.
+	SingleZone int `json:"single_zone,omitempty"`
 	// Delivered holds the value of the "delivered" field.
 	Delivered int `json:"delivered,omitempty"`
 	// Bounced holds the value of the "bounced" field.
@@ -118,7 +120,7 @@ func (*AutomationFigure) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case automationfigure.FieldID, automationfigure.FieldWorkspaceID, automationfigure.FieldAutomationID, automationfigure.FieldVersionID, automationfigure.FieldSent, automationfigure.FieldSkipped, automationfigure.FieldSkippedSuppressed, automationfigure.FieldSkippedUnsubscribedEverything, automationfigure.FieldSkippedUnsubscribedSource, automationfigure.FieldSkippedUnconfirmed, automationfigure.FieldSkippedNoDestination, automationfigure.FieldSkippedContactErased, automationfigure.FieldSkippedNoLocalTime, automationfigure.FieldSkippedFrequencyCap, automationfigure.FieldDelivered, automationfigure.FieldBounced, automationfigure.FieldComplained, automationfigure.FieldCaptured:
+		case automationfigure.FieldID, automationfigure.FieldWorkspaceID, automationfigure.FieldAutomationID, automationfigure.FieldVersionID, automationfigure.FieldSent, automationfigure.FieldSkipped, automationfigure.FieldSkippedSuppressed, automationfigure.FieldSkippedUnsubscribedEverything, automationfigure.FieldSkippedUnsubscribedSource, automationfigure.FieldSkippedUnconfirmed, automationfigure.FieldSkippedNoDestination, automationfigure.FieldSkippedContactErased, automationfigure.FieldSkippedNoLocalTime, automationfigure.FieldSkippedFrequencyCap, automationfigure.FieldSingleZone, automationfigure.FieldDelivered, automationfigure.FieldBounced, automationfigure.FieldComplained, automationfigure.FieldCaptured:
 			values[i] = new(sql.NullInt64)
 		case automationfigure.FieldStepID:
 			values[i] = new(sql.NullString)
@@ -240,6 +242,12 @@ func (_m *AutomationFigure) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field skipped_frequency_cap", values[i])
 			} else if value.Valid {
 				_m.SkippedFrequencyCap = int(value.Int64)
+			}
+		case automationfigure.FieldSingleZone:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field single_zone", values[i])
+			} else if value.Valid {
+				_m.SingleZone = int(value.Int64)
 			}
 		case automationfigure.FieldDelivered:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -363,6 +371,9 @@ func (_m *AutomationFigure) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("skipped_frequency_cap=")
 	builder.WriteString(fmt.Sprintf("%v", _m.SkippedFrequencyCap))
+	builder.WriteString(", ")
+	builder.WriteString("single_zone=")
+	builder.WriteString(fmt.Sprintf("%v", _m.SingleZone))
 	builder.WriteString(", ")
 	builder.WriteString("delivered=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Delivered))

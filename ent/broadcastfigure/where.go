@@ -190,6 +190,11 @@ func SkippedFrequencyCap(v int) predicate.BroadcastFigure {
 	return predicate.BroadcastFigure(sql.FieldEQ(FieldSkippedFrequencyCap, v))
 }
 
+// SingleZone applies equality check predicate on the "single_zone" field. It's identical to SingleZoneEQ.
+func SingleZone(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldEQ(FieldSingleZone, v))
+}
+
 // PrunedAt applies equality check predicate on the "pruned_at" field. It's identical to PrunedAtEQ.
 func PrunedAt(v time.Time) predicate.BroadcastFigure {
 	return predicate.BroadcastFigure(sql.FieldEQ(FieldPrunedAt, v))
@@ -1233,6 +1238,46 @@ func SkippedFrequencyCapLT(v int) predicate.BroadcastFigure {
 // SkippedFrequencyCapLTE applies the LTE predicate on the "skipped_frequency_cap" field.
 func SkippedFrequencyCapLTE(v int) predicate.BroadcastFigure {
 	return predicate.BroadcastFigure(sql.FieldLTE(FieldSkippedFrequencyCap, v))
+}
+
+// SingleZoneEQ applies the EQ predicate on the "single_zone" field.
+func SingleZoneEQ(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldEQ(FieldSingleZone, v))
+}
+
+// SingleZoneNEQ applies the NEQ predicate on the "single_zone" field.
+func SingleZoneNEQ(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldNEQ(FieldSingleZone, v))
+}
+
+// SingleZoneIn applies the In predicate on the "single_zone" field.
+func SingleZoneIn(vs ...int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldIn(FieldSingleZone, vs...))
+}
+
+// SingleZoneNotIn applies the NotIn predicate on the "single_zone" field.
+func SingleZoneNotIn(vs ...int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldNotIn(FieldSingleZone, vs...))
+}
+
+// SingleZoneGT applies the GT predicate on the "single_zone" field.
+func SingleZoneGT(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldGT(FieldSingleZone, v))
+}
+
+// SingleZoneGTE applies the GTE predicate on the "single_zone" field.
+func SingleZoneGTE(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldGTE(FieldSingleZone, v))
+}
+
+// SingleZoneLT applies the LT predicate on the "single_zone" field.
+func SingleZoneLT(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldLT(FieldSingleZone, v))
+}
+
+// SingleZoneLTE applies the LTE predicate on the "single_zone" field.
+func SingleZoneLTE(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldLTE(FieldSingleZone, v))
 }
 
 // PrunedAtEQ applies the EQ predicate on the "pruned_at" field.

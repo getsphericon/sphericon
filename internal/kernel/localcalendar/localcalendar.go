@@ -57,6 +57,16 @@ func (d Date) Midnight() time.Time { return time.Date(d.year, d.month, d.day, 0,
 // AddDays is the date days calendar days after d (before it when negative).
 func (d Date) AddDays(days int) Date { return DateOf(d.Midnight().AddDate(0, 0, days)) }
 
+// Weekday is the day of the week the date falls on, by the contract's name.
+func (d Date) Weekday() Weekday { return Weekday(strings.ToLower(d.weekday().String())) }
+
+// At is the moment the minute of the day (0 for 00:00 to 1439 for 23:59) reads on the date in loc,
+// by the calendar rules of the package: a minute a daylight-saving change skips is the first moment
+// after the gap, one that occurs twice the first of the two.
+func (d Date) At(minute int, loc *time.Location) time.Time {
+	return hhmm{hour: minute / 60, minute: minute % 60}.on(d, loc)
+}
+
 // weekday is the day of the week the date falls on.
 func (d Date) weekday() time.Weekday { return d.Midnight().Weekday() }
 

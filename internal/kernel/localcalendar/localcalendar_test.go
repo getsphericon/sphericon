@@ -398,3 +398,18 @@ func TestTheConstructorsRefuseEveryPartOutOfBoundsAtOnce(t *testing.T) {
 	require.ErrorIs(t, timeOfDayErr, localcalendar.ErrRepeatedWeekday)
 	require.ErrorIs(t, timeOfDayErr, localcalendar.ErrWeekday)
 }
+
+// A minute of a day is the wall-clock time on that date in the zone, by the same rules as a local
+// time: one the spring-forward change skips is the first moment after the gap. 2027-03-14 is a
+// Sunday.
+func TestAMinuteOfADayIsItsWallClockTimeInTheZone(t *testing.T) {
+	ny := zone(t, "America/New_York")
+	sunday := localcalendar.NewDate(2027, time.March, 14)
+
+	eight := sunday.At(8*60, ny)
+	skipped := sunday.At(2*60+30, ny)
+
+	assert.Equal(t, localcalendar.Sunday, sunday.Weekday())
+	assert.WithinDuration(t, utc(2027, time.March, 14, 12, 0), eight, 0)
+	assert.WithinDuration(t, utc(2027, time.March, 14, 7, 0), skipped, 0)
+}

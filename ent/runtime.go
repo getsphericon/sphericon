@@ -285,26 +285,32 @@ func init() {
 	automationfigure.DefaultSkippedFrequencyCap = automationfigureDescSkippedFrequencyCap.Default.(int)
 	// automationfigure.SkippedFrequencyCapValidator is a validator for the "skipped_frequency_cap" field. It is called by the builders before save.
 	automationfigure.SkippedFrequencyCapValidator = automationfigureDescSkippedFrequencyCap.Validators[0].(func(int) error)
+	// automationfigureDescSingleZone is the schema descriptor for single_zone field.
+	automationfigureDescSingleZone := automationfigureFields[14].Descriptor()
+	// automationfigure.DefaultSingleZone holds the default value on creation for the single_zone field.
+	automationfigure.DefaultSingleZone = automationfigureDescSingleZone.Default.(int)
+	// automationfigure.SingleZoneValidator is a validator for the "single_zone" field. It is called by the builders before save.
+	automationfigure.SingleZoneValidator = automationfigureDescSingleZone.Validators[0].(func(int) error)
 	// automationfigureDescDelivered is the schema descriptor for delivered field.
-	automationfigureDescDelivered := automationfigureFields[14].Descriptor()
+	automationfigureDescDelivered := automationfigureFields[15].Descriptor()
 	// automationfigure.DefaultDelivered holds the default value on creation for the delivered field.
 	automationfigure.DefaultDelivered = automationfigureDescDelivered.Default.(int)
 	// automationfigure.DeliveredValidator is a validator for the "delivered" field. It is called by the builders before save.
 	automationfigure.DeliveredValidator = automationfigureDescDelivered.Validators[0].(func(int) error)
 	// automationfigureDescBounced is the schema descriptor for bounced field.
-	automationfigureDescBounced := automationfigureFields[15].Descriptor()
+	automationfigureDescBounced := automationfigureFields[16].Descriptor()
 	// automationfigure.DefaultBounced holds the default value on creation for the bounced field.
 	automationfigure.DefaultBounced = automationfigureDescBounced.Default.(int)
 	// automationfigure.BouncedValidator is a validator for the "bounced" field. It is called by the builders before save.
 	automationfigure.BouncedValidator = automationfigureDescBounced.Validators[0].(func(int) error)
 	// automationfigureDescComplained is the schema descriptor for complained field.
-	automationfigureDescComplained := automationfigureFields[16].Descriptor()
+	automationfigureDescComplained := automationfigureFields[17].Descriptor()
 	// automationfigure.DefaultComplained holds the default value on creation for the complained field.
 	automationfigure.DefaultComplained = automationfigureDescComplained.Default.(int)
 	// automationfigure.ComplainedValidator is a validator for the "complained" field. It is called by the builders before save.
 	automationfigure.ComplainedValidator = automationfigureDescComplained.Validators[0].(func(int) error)
 	// automationfigureDescCaptured is the schema descriptor for captured field.
-	automationfigureDescCaptured := automationfigureFields[17].Descriptor()
+	automationfigureDescCaptured := automationfigureFields[18].Descriptor()
 	// automationfigure.DefaultCaptured holds the default value on creation for the captured field.
 	automationfigure.DefaultCaptured = automationfigureDescCaptured.Default.(int)
 	// automationfigure.CapturedValidator is a validator for the "captured" field. It is called by the builders before save.
@@ -620,6 +626,12 @@ func init() {
 	broadcastfigure.DefaultSkippedFrequencyCap = broadcastfigureDescSkippedFrequencyCap.Default.(int)
 	// broadcastfigure.SkippedFrequencyCapValidator is a validator for the "skipped_frequency_cap" field. It is called by the builders before save.
 	broadcastfigure.SkippedFrequencyCapValidator = broadcastfigureDescSkippedFrequencyCap.Validators[0].(func(int) error)
+	// broadcastfigureDescSingleZone is the schema descriptor for single_zone field.
+	broadcastfigureDescSingleZone := broadcastfigureFields[25].Descriptor()
+	// broadcastfigure.DefaultSingleZone holds the default value on creation for the single_zone field.
+	broadcastfigure.DefaultSingleZone = broadcastfigureDescSingleZone.Default.(int)
+	// broadcastfigure.SingleZoneValidator is a validator for the "single_zone" field. It is called by the builders before save.
+	broadcastfigure.SingleZoneValidator = broadcastfigureDescSingleZone.Validators[0].(func(int) error)
 	broadcastrecipientMixin := schema.BroadcastRecipient{}.Mixin()
 	broadcastrecipientMixinFields0 := broadcastrecipientMixin[0].Fields()
 	_ = broadcastrecipientMixinFields0
@@ -1435,16 +1447,20 @@ func init() {
 	outboundmessageDescIdempotencyKey := outboundmessageFields[2].Descriptor()
 	// outboundmessage.IdempotencyKeyValidator is a validator for the "idempotency_key" field. It is called by the builders before save.
 	outboundmessage.IdempotencyKeyValidator = outboundmessageDescIdempotencyKey.Validators[0].(func(string) error)
+	// outboundmessageDescWindowSingleZone is the schema descriptor for window_single_zone field.
+	outboundmessageDescWindowSingleZone := outboundmessageFields[15].Descriptor()
+	// outboundmessage.DefaultWindowSingleZone holds the default value on creation for the window_single_zone field.
+	outboundmessage.DefaultWindowSingleZone = outboundmessageDescWindowSingleZone.Default.(bool)
 	// outboundmessageDescClaimedAt is the schema descriptor for claimed_at field.
-	outboundmessageDescClaimedAt := outboundmessageFields[15].Descriptor()
+	outboundmessageDescClaimedAt := outboundmessageFields[16].Descriptor()
 	// outboundmessage.DefaultClaimedAt holds the default value on creation for the claimed_at field.
 	outboundmessage.DefaultClaimedAt = outboundmessageDescClaimedAt.Default.(func() time.Time)
 	// outboundmessageDescCaptured is the schema descriptor for captured field.
-	outboundmessageDescCaptured := outboundmessageFields[24].Descriptor()
+	outboundmessageDescCaptured := outboundmessageFields[25].Descriptor()
 	// outboundmessage.DefaultCaptured holds the default value on creation for the captured field.
 	outboundmessage.DefaultCaptured = outboundmessageDescCaptured.Default.(bool)
 	// outboundmessageDescTracked is the schema descriptor for tracked field.
-	outboundmessageDescTracked := outboundmessageFields[25].Descriptor()
+	outboundmessageDescTracked := outboundmessageFields[26].Descriptor()
 	// outboundmessage.DefaultTracked holds the default value on creation for the tracked field.
 	outboundmessage.DefaultTracked = outboundmessageDescTracked.Default.(bool)
 	passkeyMixin := schema.Passkey{}.Mixin()

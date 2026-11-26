@@ -274,6 +274,20 @@ func (_c *BroadcastFigureCreate) SetNillableSkippedFrequencyCap(v *int) *Broadca
 	return _c
 }
 
+// SetSingleZone sets the "single_zone" field.
+func (_c *BroadcastFigureCreate) SetSingleZone(v int) *BroadcastFigureCreate {
+	_c.mutation.SetSingleZone(v)
+	return _c
+}
+
+// SetNillableSingleZone sets the "single_zone" field if the given value is not nil.
+func (_c *BroadcastFigureCreate) SetNillableSingleZone(v *int) *BroadcastFigureCreate {
+	if v != nil {
+		_c.SetSingleZone(*v)
+	}
+	return _c
+}
+
 // SetPrunedAt sets the "pruned_at" field.
 func (_c *BroadcastFigureCreate) SetPrunedAt(v time.Time) *BroadcastFigureCreate {
 	_c.mutation.SetPrunedAt(v)
@@ -382,6 +396,10 @@ func (_c *BroadcastFigureCreate) defaults() {
 	if _, ok := _c.mutation.SkippedFrequencyCap(); !ok {
 		v := broadcastfigure.DefaultSkippedFrequencyCap
 		_c.mutation.SetSkippedFrequencyCap(v)
+	}
+	if _, ok := _c.mutation.SingleZone(); !ok {
+		v := broadcastfigure.DefaultSingleZone
+		_c.mutation.SetSingleZone(v)
 	}
 }
 
@@ -583,6 +601,14 @@ func (_c *BroadcastFigureCreate) check() error {
 			return &ValidationError{Name: "skipped_frequency_cap", err: fmt.Errorf(`ent: validator failed for field "BroadcastFigure.skipped_frequency_cap": %w`, err)}
 		}
 	}
+	if _, ok := _c.mutation.SingleZone(); !ok {
+		return &ValidationError{Name: "single_zone", err: errors.New(`ent: missing required field "BroadcastFigure.single_zone"`)}
+	}
+	if v, ok := _c.mutation.SingleZone(); ok {
+		if err := broadcastfigure.SingleZoneValidator(v); err != nil {
+			return &ValidationError{Name: "single_zone", err: fmt.Errorf(`ent: validator failed for field "BroadcastFigure.single_zone": %w`, err)}
+		}
+	}
 	if len(_c.mutation.WorkspaceIDs()) == 0 {
 		return &ValidationError{Name: "workspace", err: errors.New(`ent: missing required edge "BroadcastFigure.workspace"`)}
 	}
@@ -721,6 +747,10 @@ func (_c *BroadcastFigureCreate) createSpec() (*BroadcastFigure, *sqlgraph.Creat
 	if value, ok := _c.mutation.SkippedFrequencyCap(); ok {
 		_spec.SetField(broadcastfigure.FieldSkippedFrequencyCap, field.TypeInt, value)
 		_node.SkippedFrequencyCap = value
+	}
+	if value, ok := _c.mutation.SingleZone(); ok {
+		_spec.SetField(broadcastfigure.FieldSingleZone, field.TypeInt, value)
+		_node.SingleZone = value
 	}
 	if value, ok := _c.mutation.PrunedAt(); ok {
 		_spec.SetField(broadcastfigure.FieldPrunedAt, field.TypeTime, value)
@@ -945,6 +975,9 @@ func (u *BroadcastFigureUpsertOne) UpdateNewValues() *BroadcastFigureUpsertOne {
 		}
 		if _, exists := u.create.mutation.SkippedFrequencyCap(); exists {
 			s.SetIgnore(broadcastfigure.FieldSkippedFrequencyCap)
+		}
+		if _, exists := u.create.mutation.SingleZone(); exists {
+			s.SetIgnore(broadcastfigure.FieldSingleZone)
 		}
 	}))
 	return u
@@ -1282,6 +1315,9 @@ func (u *BroadcastFigureUpsertBulk) UpdateNewValues() *BroadcastFigureUpsertBulk
 			}
 			if _, exists := b.mutation.SkippedFrequencyCap(); exists {
 				s.SetIgnore(broadcastfigure.FieldSkippedFrequencyCap)
+			}
+			if _, exists := b.mutation.SingleZone(); exists {
+				s.SetIgnore(broadcastfigure.FieldSingleZone)
 			}
 		}
 	}))

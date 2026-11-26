@@ -213,7 +213,7 @@
   updated_at: '2026-02-01 00:00:00'
 
 # Lacuna (workspace 96): the SMS Confirmations of its confirmed phones, Sal's suppressed one too.
-- id: 7740
+- id: 7740 # fixture: ConfirmationLacunaAda
   channel: sms
   destination: '+16175557740'
   provenance: imported
