@@ -96,6 +96,9 @@ type EventJournalEntry func(*sql.Selector)
 // EventReceipt is the predicate function for eventreceipt builders.
 type EventReceipt func(*sql.Selector)
 
+// FrequencyCap is the predicate function for frequencycap builders.
+type FrequencyCap func(*sql.Selector)
+
 // HeldOrderEvent is the predicate function for heldorderevent builders.
 type HeldOrderEvent func(*sql.Selector)
 
@@ -194,6 +197,9 @@ type SendCapLimiter func(*sql.Selector)
 
 // SendingDomain is the predicate function for sendingdomain builders.
 type SendingDomain func(*sql.Selector)
+
+// SendingWindow is the predicate function for sendingwindow builders.
+type SendingWindow func(*sql.Selector)
 
 // ServiceCredential is the predicate function for servicecredential builders.
 type ServiceCredential func(*sql.Selector)

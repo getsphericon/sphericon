@@ -74,6 +74,8 @@ type Tx struct {
 	EventJournalEntry *EventJournalEntryClient
 	// EventReceipt is the client for interacting with the EventReceipt builders.
 	EventReceipt *EventReceiptClient
+	// FrequencyCap is the client for interacting with the FrequencyCap builders.
+	FrequencyCap *FrequencyCapClient
 	// HeldOrderEvent is the client for interacting with the HeldOrderEvent builders.
 	HeldOrderEvent *HeldOrderEventClient
 	// Hold is the client for interacting with the Hold builders.
@@ -140,6 +142,8 @@ type Tx struct {
 	SendCapLimiter *SendCapLimiterClient
 	// SendingDomain is the client for interacting with the SendingDomain builders.
 	SendingDomain *SendingDomainClient
+	// SendingWindow is the client for interacting with the SendingWindow builders.
+	SendingWindow *SendingWindowClient
 	// ServiceCredential is the client for interacting with the ServiceCredential builders.
 	ServiceCredential *ServiceCredentialClient
 	// SignupItem is the client for interacting with the SignupItem builders.
@@ -341,6 +345,7 @@ func (tx *Tx) init() {
 	tx.Event = NewEventClient(tx.config)
 	tx.EventJournalEntry = NewEventJournalEntryClient(tx.config)
 	tx.EventReceipt = NewEventReceiptClient(tx.config)
+	tx.FrequencyCap = NewFrequencyCapClient(tx.config)
 	tx.HeldOrderEvent = NewHeldOrderEventClient(tx.config)
 	tx.Hold = NewHoldClient(tx.config)
 	tx.IdentitySecret = NewIdentitySecretClient(tx.config)
@@ -374,6 +379,7 @@ func (tx *Tx) init() {
 	tx.Segment = NewSegmentClient(tx.config)
 	tx.SendCapLimiter = NewSendCapLimiterClient(tx.config)
 	tx.SendingDomain = NewSendingDomainClient(tx.config)
+	tx.SendingWindow = NewSendingWindowClient(tx.config)
 	tx.ServiceCredential = NewServiceCredentialClient(tx.config)
 	tx.SignupItem = NewSignupItemClient(tx.config)
 	tx.SignupSurveyResponse = NewSignupSurveyResponseClient(tx.config)

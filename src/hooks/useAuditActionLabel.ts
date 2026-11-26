@@ -41,6 +41,7 @@ export function useAuditActionLabel() {
       'workspace.abuse_exempt': t(($) => $.auditActions.workspaceAbuseExempt),
       'workspace.abuse_unexempt': t(($) => $.auditActions.workspaceAbuseUnexempt),
       'workspace.send_cap_change': t(($) => $.auditActions.workspaceSendCapChange),
+      'workspace.sending_rules_change': t(($) => $.auditActions.workspaceSendingRulesChange),
       'contact.import': t(($) => $.auditActions.contactImport),
       'audit_log.export': t(($) => $.auditActions.auditLogExport),
       'webhook_endpoint.test': t(($) => $.auditActions.webhookEndpointTest),

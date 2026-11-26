@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"log/slog"
 	"time"
 
@@ -263,6 +264,10 @@ func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {
 // goverter:useZeroValueOnPointerInconsistency
 // goverter:extend timestamp
 // goverter:extend revision
+// goverter:extend nilCountryCode
+// goverter:extend nilFrequencyCapMaxMessages
+// goverter:extend nilFrequencyCapPeriodMinutes
+// goverter:extend minuteOfDay
 // goverter:extend optNilString
 // goverter:extend optNilStrings
 // goverter:extend optNilStepID
@@ -551,7 +556,24 @@ type Converter interface {
 	// The Send cap shown is the one the send path enforces (outboundmessages.Module.SendCapStatus), which
 	// the mapper cannot see: the handler attaches it through SendCapStatusToResource.
 	// goverter:ignore SendCap
+	// The sending rules live beside the Workspace (workspaces.Module.SendingRules): the handler
+	// attaches them through SendingRulesToResource.
+	// goverter:ignore SendingRules
 	WorkspaceToResource(source *ent.Workspace) externalapi.WorkspaceResource
+	// The Workspace's sending rules (ADR 0134, ADR 0137), read only on this surface.
+	// goverter:useEmptyOnNil:slice
+	SendingRulesToResource(source workspaces.SendingRules) externalapi.SendingRules
+	FrequencyCapToResource(source workspaces.FrequencyCap) externalapi.FrequencyCap
+	// goverter:useEmptyOnNil:slice
+	SendingWindowToResource(source workspaces.SendingWindow) externalapi.SendingWindow
+	SendingWindowHoursToResource(source workspaces.OpenHours) externalapi.SendingWindowHours
+	// goverter:enum:transform value
+	FrequencyCapChannelToResource(source channels.Channel) externalapi.FrequencyCapChannel
+	// Only SMS has a Sending window (workspaces.HasSendingWindow), as the rows' CHECK holds.
+	// goverter:enum:transform value
+	// goverter:enum:map Email @panic
+	// goverter:enum:map Telegram @panic
+	SendingWindowChannelToResource(source channels.Channel) externalapi.SendingWindowChannel
 
 	// The live version and the draft are the edges the rules module loads (ADR 0065).
 	// goverter:map Edges.LiveVersion Live | ruleVersionOrNull
@@ -1335,3 +1357,24 @@ func revision(v int64) externalapi.Revision {
 func ownershipRecordType(trackingdomains.OwnershipRecord) externalapi.DnsRecordType {
 	return externalapi.DnsRecordTypeTXT
 }
+
+// nilCountryCode is a country of a sending rule, null for the Channel's own.
+func nilCountryCode(v *string) externalapi.NilCountryCode {
+	return convert.Nil[externalapi.NilCountryCode]((*externalapi.CountryCode)(v))
+}
+
+// nilFrequencyCapMaxMessages is a Frequency cap's maximum, null where the row removes the cap.
+func nilFrequencyCapMaxMessages(v *int) externalapi.NilFrequencyCapMaxMessages {
+	return convert.NilVia[externalapi.NilFrequencyCapMaxMessages](v, func(n int) externalapi.FrequencyCapMaxMessages {
+		return externalapi.FrequencyCapMaxMessages(narrow.Int32(n))
+	})
+}
+
+// nilFrequencyCapPeriodMinutes is a Frequency cap's period, null where the row removes the cap.
+func nilFrequencyCapPeriodMinutes(v *int) externalapi.NilFrequencyCapPeriodMinutes {
+	return convert.NilVia[externalapi.NilFrequencyCapPeriodMinutes](v, func(n int) externalapi.FrequencyCapPeriodMinutes {
+		return externalapi.FrequencyCapPeriodMinutes(narrow.Int32(n))
+	})
+}
+
+func minuteOfDay(v int) externalapi.MinuteOfDay { return externalapi.MinuteOfDay(narrow.Int32(v)) }

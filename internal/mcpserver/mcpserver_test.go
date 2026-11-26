@@ -397,6 +397,34 @@ func TestMCPWorkspaceGetReadsTheSendCap(t *testing.T) {
 	assert.Equal(t, 3, ws.SendCap.SentLast24h)
 }
 
+// An agent reads its Workspace's sending rules (ADR 0134, ADR 0137) through the tool projected from
+// GET /workspace; no tool changes them.
+func TestMCPWorkspaceGetReadsTheSendingRules(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	res := call(t, env.MCPClient(t, env.ScopedBearer(t, apitokens.ScopeContactsRead)), "workspace_get", nil)
+	require.False(t, res.IsError, text(t, res))
+	var ws struct {
+		SendingRules struct {
+			FrequencyCaps []struct {
+				Channel       string `json:"channel"`
+				MaxMessages   int    `json:"maxMessages"`
+				PeriodMinutes int    `json:"periodMinutes"`
+			} `json:"frequencyCaps"`
+			SendingWindows []struct {
+				Channel string `json:"channel"`
+			} `json:"sendingWindows"`
+		} `json:"sendingRules"`
+	}
+	require.NoError(t, json.Unmarshal([]byte(text(t, res)), &ws))
+	require.Len(t, ws.SendingRules.FrequencyCaps, 1)
+	assert.Equal(t, "sms", ws.SendingRules.FrequencyCaps[0].Channel)
+	assert.Equal(t, 3, ws.SendingRules.FrequencyCaps[0].MaxMessages)
+	assert.Equal(t, 1440, ws.SendingRules.FrequencyCaps[0].PeriodMinutes)
+	require.Len(t, ws.SendingRules.SendingWindows, 1)
+	assert.Equal(t, "sms", ws.SendingRules.SendingWindows[0].Channel)
+}
+
 // Erasure is irreversible: a token that can write Contacts cannot erase them through
 // MCP either, since every tool call is the /api call under the caller's own scopes.
 func TestMCPContactDeleteNeedsTheEraseScope(t *testing.T) {

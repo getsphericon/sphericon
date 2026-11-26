@@ -36,6 +36,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/eventjournalentry"
+	"github.com/getsphericon/sphericon/ent/frequencycap"
 	"github.com/getsphericon/sphericon/ent/heldorderevent"
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/identitysecret"
@@ -56,6 +57,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendcaplimiter"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
+	"github.com/getsphericon/sphericon/ent/sendingwindow"
 	"github.com/getsphericon/sphericon/ent/starttoken"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
@@ -780,6 +782,36 @@ func (_c *WorkspaceCreate) AddHolds(v ...*Hold) *WorkspaceCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddHoldIDs(ids...)
+}
+
+// AddFrequencyCapIDs adds the "frequency_caps" edge to the FrequencyCap entity by IDs.
+func (_c *WorkspaceCreate) AddFrequencyCapIDs(ids ...int64) *WorkspaceCreate {
+	_c.mutation.AddFrequencyCapIDs(ids...)
+	return _c
+}
+
+// AddFrequencyCaps adds the "frequency_caps" edges to the FrequencyCap entity.
+func (_c *WorkspaceCreate) AddFrequencyCaps(v ...*FrequencyCap) *WorkspaceCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddFrequencyCapIDs(ids...)
+}
+
+// AddSendingWindowIDs adds the "sending_windows" edge to the SendingWindow entity by IDs.
+func (_c *WorkspaceCreate) AddSendingWindowIDs(ids ...int64) *WorkspaceCreate {
+	_c.mutation.AddSendingWindowIDs(ids...)
+	return _c
+}
+
+// AddSendingWindows adds the "sending_windows" edges to the SendingWindow entity.
+func (_c *WorkspaceCreate) AddSendingWindows(v ...*SendingWindow) *WorkspaceCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddSendingWindowIDs(ids...)
 }
 
 // AddBroadcastIDs adds the "broadcasts" edge to the Broadcast entity by IDs.
@@ -1964,6 +1996,38 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(hold.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.FrequencyCapsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.FrequencyCapsTable,
+			Columns: []string{workspace.FrequencyCapsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(frequencycap.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.SendingWindowsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.SendingWindowsTable,
+			Columns: []string{workspace.SendingWindowsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sendingwindow.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

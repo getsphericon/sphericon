@@ -12,6 +12,7 @@ import { can } from '../../../utils/permissions.ts'
 import { DangerZoneSection } from './DangerZoneSection.tsx'
 import { EngagementTrackingDefaultSection } from './EngagementTrackingDefaultSection.tsx'
 import { RevenueSettingsSection } from './RevenueSettingsSection.tsx'
+import { SendingRulesSection } from './SendingRulesSection.tsx'
 import { SettingsFrame } from './SettingsFrame.tsx'
 import { GeneralEditForm, TimezoneEditForm } from './workspaceSettingsEditors.ts'
 import { CanEdit } from './workspaceSettingsForm.ts'
@@ -77,6 +78,7 @@ export function GeneralPage() {
           </QueryBoundary>
           <RevenueSettingsSection workspace={workspace} />
           <EngagementTrackingDefaultSection workspace={workspace} />
+          <SendingRulesSection workspace={workspace} />
           <DangerZoneSection workspace={workspace} />
         </Stack>
       )}

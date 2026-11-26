@@ -836,13 +836,16 @@ type Handler interface {
 	// WorkspaceGet implements Workspace_get operation.
 	//
 	// Read the Workspace the token acts in: its name, postal address, confirmed opt-in, Engagement
-	// tracking default, time zone and Send cap. Read the postal address before arming marketing email: an
-	// empty one refuses it, and only a person can set it. Read the Send cap to explain a slow send or to
-	// plan one: a send larger than what remains of it in the last 24 hours goes out over more than a day.
-	// Read confirmed opt-in to know whether a Contact needs a Confirmation before email reaches it. Read
-	// the Engagement tracking default to know whether a Destination with no consent recorded is tracked.
-	// Read-only: no operation changes the Send cap, the postal address, confirmed opt-in or the Engagement
-	// tracking default.
+	// tracking default, time zone, Send cap and sending rules. Read the postal address before arming
+	// marketing email: an empty one refuses it, and only a person can set it. Read the Send cap to explain
+	// a slow send or to plan one: a send larger than what remains of it in the last 24 hours goes out over
+	// more than a day. Read confirmed opt-in to know whether a Contact needs a Confirmation before email
+	// reaches it. Read the Engagement tracking default to know whether a Destination with no consent
+	// recorded is tracked. Read the sending rules to explain a marketing message that waits or is skipped:
+	// a Frequency cap limits the marketing messages one Destination receives per period, and a Sending
+	// window the hours a marketing text goes out in the recipient's local time. Read-only: no operation
+	// changes the Send cap, the postal address, confirmed opt-in, the Engagement tracking default or the
+	// sending rules.
 	//
 	// GET /workspace
 	WorkspaceGet(ctx context.Context) (*WorkspaceResource, error)

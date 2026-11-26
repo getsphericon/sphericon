@@ -85,6 +85,9 @@ enum AuditAction {
   /** Changed the Send cap */
   workspaceSendCapChange: "workspace.send_cap_change",
 
+  /** Changed the sending rules: the Frequency caps and the Sending windows */
+  workspaceSendingRulesChange: "workspace.sending_rules_change",
+
   /** Imported contacts */
   contactImport: "contact.import",
 

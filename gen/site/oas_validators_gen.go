@@ -486,6 +486,8 @@ func (s AuditAction) Validate() error {
 		return nil
 	case "workspace.send_cap_change":
 		return nil
+	case "workspace.sending_rules_change":
+		return nil
 	case "contact.import":
 		return nil
 	case "audit_log.export":
@@ -5861,6 +5863,209 @@ func (s FilterPropertyLeafKind) Validate() error {
 	}
 }
 
+func (s *FrequencyCap) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Channel.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "channel",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.Country.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "country",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.MaxMessages.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "maxMessages",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.PeriodMinutes.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "periodMinutes",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s FrequencyCapChannel) Validate() error {
+	switch s {
+	case "email":
+		return nil
+	case "sms":
+		return nil
+	case "telegram":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *FrequencyCapInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Channel.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "channel",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.Country.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "country",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.MaxMessages.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "maxMessages",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.PeriodMinutes.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "periodMinutes",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s FrequencyCapMaxMessages) Validate() error {
+	alias := (int32)(s)
+	if err := (validate.Int{
+		MinSet:        true,
+		Min:           1,
+		MaxSet:        true,
+		Max:           1000,
+		MinExclusive:  false,
+		MaxExclusive:  false,
+		MultipleOfSet: false,
+		MultipleOf:    0,
+		Pattern:       nil,
+	}).Validate(int64(alias)); err != nil {
+		return errors.Wrap(err, "int")
+	}
+	return nil
+}
+
+func (s FrequencyCapPeriodMinutes) Validate() error {
+	alias := (int32)(s)
+	if err := (validate.Int{
+		MinSet:        true,
+		Min:           1,
+		MaxSet:        true,
+		Max:           10080,
+		MinExclusive:  false,
+		MaxExclusive:  false,
+		MultipleOfSet: false,
+		MultipleOf:    0,
+		Pattern:       nil,
+	}).Validate(int64(alias)); err != nil {
+		return errors.Wrap(err, "int")
+	}
+	return nil
+}
+
 func (s GrantableScope) Validate() error {
 	switch s {
 	case "contacts:read":
@@ -6477,6 +6682,24 @@ func (s MessageSender) Validate() error {
 	default:
 		return errors.Errorf("invalid value: %v", s)
 	}
+}
+
+func (s MinuteOfDay) Validate() error {
+	alias := (int32)(s)
+	if err := (validate.Int{
+		MinSet:        true,
+		Min:           0,
+		MaxSet:        true,
+		Max:           1440,
+		MinExclusive:  false,
+		MaxExclusive:  false,
+		MultipleOfSet: false,
+		MultipleOf:    0,
+		Pattern:       nil,
+	}).Validate(int64(alias)); err != nil {
+		return errors.Wrap(err, "int")
+	}
+	return nil
 }
 
 func (s MomentOperator) Validate() error {
@@ -8931,6 +9154,251 @@ func (s *SendingDomainResource) Validate() error {
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
 			Name:  "dmarcRecord",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *SendingWindow) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Channel.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "channel",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.Country.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "country",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if s.Hours == nil {
+			return errors.New("nil is invalid value")
+		}
+		var failures []validate.FieldError
+		for i, elem := range s.Hours {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "hours",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s SendingWindowChannel) Validate() error {
+	switch s {
+	case "sms":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *SendingWindowHours) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Day.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "day",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.OpensAt.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "opensAt",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.ClosesAt.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "closesAt",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *SendingWindowHoursInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Day.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "day",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.OpensAt.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "opensAt",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.ClosesAt.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "closesAt",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *SendingWindowInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Channel.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "channel",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.Country.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "country",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if s.Hours == nil {
+			return errors.New("nil is invalid value")
+		}
+		if err := (validate.Array{
+			MinLength:    0,
+			MinLengthSet: false,
+			MaxLength:    7,
+			MaxLengthSet: true,
+		}).ValidateLength(len(s.Hours)); err != nil {
+			return errors.Wrap(err, "array")
+		}
+		var failures []validate.FieldError
+		for i, elem := range s.Hours {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "hours",
 			Error: err,
 		})
 	}
@@ -13555,6 +14023,101 @@ func (s *SiteRecoveryCodesHeaders) Validate() error {
 	return nil
 }
 
+func (s *SiteReplaceSendingRulesInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Revision.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "revision",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if s.FrequencyCaps == nil {
+			return errors.New("nil is invalid value")
+		}
+		if err := (validate.Array{
+			MinLength:    0,
+			MinLengthSet: false,
+			MaxLength:    300,
+			MaxLengthSet: true,
+		}).ValidateLength(len(s.FrequencyCaps)); err != nil {
+			return errors.Wrap(err, "array")
+		}
+		var failures []validate.FieldError
+		for i, elem := range s.FrequencyCaps {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "frequencyCaps",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if s.SendingWindows == nil {
+			return errors.New("nil is invalid value")
+		}
+		if err := (validate.Array{
+			MinLength:    0,
+			MinLengthSet: false,
+			MaxLength:    300,
+			MaxLengthSet: true,
+		}).ValidateLength(len(s.SendingWindows)); err != nil {
+			return errors.Wrap(err, "array")
+		}
+		var failures []validate.FieldError
+		for i, elem := range s.SendingWindows {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "sendingWindows",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
 func (s *SiteResendVerificationInput) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -14049,6 +14612,85 @@ func (s *SiteSendingDomainsListOK) Validate() error {
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
 			Name:  "items",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *SiteSendingRulesResource) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if s.FrequencyCaps == nil {
+			return errors.New("nil is invalid value")
+		}
+		var failures []validate.FieldError
+		for i, elem := range s.FrequencyCaps {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "frequencyCaps",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if s.SendingWindows == nil {
+			return errors.New("nil is invalid value")
+		}
+		var failures []validate.FieldError
+		for i, elem := range s.SendingWindows {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "sendingWindows",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Revision.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "revision",
 			Error: err,
 		})
 	}

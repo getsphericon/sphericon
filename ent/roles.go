@@ -2052,6 +2052,68 @@ const (
 	RoleOf_EventReceiptCreateBulk_OnConflictColumns = RoleStart
 )
 
+// The types ent generates for FrequencyCap.
+const (
+	TypeOf_FrequencyCap             = TypeEntity
+	TypeOf_FrequencyCaps            = TypeOther
+	TypeOf_FrequencyCapEdges        = TypeOther
+	EntityOf_FrequencyCapEdges      = "FrequencyCap"
+	TypeOf_FrequencyCapMutation     = TypeOther
+	TypeOf_FrequencyCapClient       = TypeClient
+	TypeOf_FrequencyCapQuery        = TypeQuery
+	TypeOf_FrequencyCapSelect       = TypeQuery
+	TypeOf_FrequencyCapGroupBy      = TypeQuery
+	TypeOf_FrequencyCapCreate       = TypeCreate
+	TypeOf_FrequencyCapCreateBulk   = TypeCreate
+	TypeOf_FrequencyCapUpdate       = TypeUpdate
+	TypeOf_FrequencyCapUpdateOne    = TypeUpdate
+	TypeOf_FrequencyCapDelete       = TypeDelete
+	TypeOf_FrequencyCapDeleteOne    = TypeDelete
+	TypeOf_FrequencyCapUpsert       = TypeUpsert
+	TypeOf_FrequencyCapUpsertOne    = TypeUpsert
+	TypeOf_FrequencyCapUpsertBulk   = TypeUpsert
+	EntityOf_FrequencyCaps          = "FrequencyCap"
+	EntityOf_FrequencyCap           = "FrequencyCap"
+	EntityOf_FrequencyCapMutation   = "FrequencyCap"
+	EntityOf_FrequencyCapClient     = "FrequencyCap"
+	EntityOf_FrequencyCapQuery      = "FrequencyCap"
+	EntityOf_FrequencyCapSelect     = "FrequencyCap"
+	EntityOf_FrequencyCapGroupBy    = "FrequencyCap"
+	EntityOf_FrequencyCapCreate     = "FrequencyCap"
+	EntityOf_FrequencyCapCreateBulk = "FrequencyCap"
+	EntityOf_FrequencyCapUpdate     = "FrequencyCap"
+	EntityOf_FrequencyCapUpdateOne  = "FrequencyCap"
+	EntityOf_FrequencyCapDelete     = "FrequencyCap"
+	EntityOf_FrequencyCapDeleteOne  = "FrequencyCap"
+	EntityOf_FrequencyCapUpsert     = "FrequencyCap"
+	EntityOf_FrequencyCapUpsertOne  = "FrequencyCap"
+	EntityOf_FrequencyCapUpsertBulk = "FrequencyCap"
+)
+
+// The reads and the writes ent's methods for FrequencyCap start.
+const (
+	RoleOf_FrequencyCapClient_Create                = RoleStart
+	RoleOf_FrequencyCapClient_CreateBulk            = RoleStart
+	RoleOf_FrequencyCapClient_MapCreateBulk         = RoleStart
+	RoleOf_FrequencyCapClient_Update                = RoleStart
+	RoleOf_FrequencyCapClient_UpdateOne             = RoleStart
+	RoleOf_FrequencyCapClient_Delete                = RoleStart
+	RoleOf_FrequencyCapClient_Query                 = RoleRead
+	RoleOf_FrequencyCapClient_UpdateOneID           = RoleStart
+	RoleOf_FrequencyCapClient_DeleteOne             = RoleStart
+	RoleOf_FrequencyCapClient_DeleteOneID           = RoleStart
+	RoleOf_FrequencyCapClient_Get                   = RoleRead
+	RoleOf_FrequencyCapClient_GetX                  = RoleRead
+	RoleOf_FrequencyCapClient_QueryWorkspace        = RoleRead
+	RoleOf_FrequencyCap_QueryWorkspace              = RoleRead
+	RoleOf_FrequencyCapQuery_QueryWorkspace         = RoleRead
+	RoleOf_FrequencyCap_Update                      = RoleStart
+	RoleOf_FrequencyCapCreate_OnConflict            = RoleStart
+	RoleOf_FrequencyCapCreate_OnConflictColumns     = RoleStart
+	RoleOf_FrequencyCapCreateBulk_OnConflict        = RoleStart
+	RoleOf_FrequencyCapCreateBulk_OnConflictColumns = RoleStart
+)
+
 // The types ent generates for HeldOrderEvent.
 const (
 	TypeOf_HeldOrderEvent             = TypeEntity
@@ -4210,6 +4272,68 @@ const (
 	RoleOf_SendingDomainCreateBulk_OnConflictColumns = RoleStart
 )
 
+// The types ent generates for SendingWindow.
+const (
+	TypeOf_SendingWindow             = TypeEntity
+	TypeOf_SendingWindows            = TypeOther
+	TypeOf_SendingWindowEdges        = TypeOther
+	EntityOf_SendingWindowEdges      = "SendingWindow"
+	TypeOf_SendingWindowMutation     = TypeOther
+	TypeOf_SendingWindowClient       = TypeClient
+	TypeOf_SendingWindowQuery        = TypeQuery
+	TypeOf_SendingWindowSelect       = TypeQuery
+	TypeOf_SendingWindowGroupBy      = TypeQuery
+	TypeOf_SendingWindowCreate       = TypeCreate
+	TypeOf_SendingWindowCreateBulk   = TypeCreate
+	TypeOf_SendingWindowUpdate       = TypeUpdate
+	TypeOf_SendingWindowUpdateOne    = TypeUpdate
+	TypeOf_SendingWindowDelete       = TypeDelete
+	TypeOf_SendingWindowDeleteOne    = TypeDelete
+	TypeOf_SendingWindowUpsert       = TypeUpsert
+	TypeOf_SendingWindowUpsertOne    = TypeUpsert
+	TypeOf_SendingWindowUpsertBulk   = TypeUpsert
+	EntityOf_SendingWindows          = "SendingWindow"
+	EntityOf_SendingWindow           = "SendingWindow"
+	EntityOf_SendingWindowMutation   = "SendingWindow"
+	EntityOf_SendingWindowClient     = "SendingWindow"
+	EntityOf_SendingWindowQuery      = "SendingWindow"
+	EntityOf_SendingWindowSelect     = "SendingWindow"
+	EntityOf_SendingWindowGroupBy    = "SendingWindow"
+	EntityOf_SendingWindowCreate     = "SendingWindow"
+	EntityOf_SendingWindowCreateBulk = "SendingWindow"
+	EntityOf_SendingWindowUpdate     = "SendingWindow"
+	EntityOf_SendingWindowUpdateOne  = "SendingWindow"
+	EntityOf_SendingWindowDelete     = "SendingWindow"
+	EntityOf_SendingWindowDeleteOne  = "SendingWindow"
+	EntityOf_SendingWindowUpsert     = "SendingWindow"
+	EntityOf_SendingWindowUpsertOne  = "SendingWindow"
+	EntityOf_SendingWindowUpsertBulk = "SendingWindow"
+)
+
+// The reads and the writes ent's methods for SendingWindow start.
+const (
+	RoleOf_SendingWindowClient_Create                = RoleStart
+	RoleOf_SendingWindowClient_CreateBulk            = RoleStart
+	RoleOf_SendingWindowClient_MapCreateBulk         = RoleStart
+	RoleOf_SendingWindowClient_Update                = RoleStart
+	RoleOf_SendingWindowClient_UpdateOne             = RoleStart
+	RoleOf_SendingWindowClient_Delete                = RoleStart
+	RoleOf_SendingWindowClient_Query                 = RoleRead
+	RoleOf_SendingWindowClient_UpdateOneID           = RoleStart
+	RoleOf_SendingWindowClient_DeleteOne             = RoleStart
+	RoleOf_SendingWindowClient_DeleteOneID           = RoleStart
+	RoleOf_SendingWindowClient_Get                   = RoleRead
+	RoleOf_SendingWindowClient_GetX                  = RoleRead
+	RoleOf_SendingWindowClient_QueryWorkspace        = RoleRead
+	RoleOf_SendingWindow_QueryWorkspace              = RoleRead
+	RoleOf_SendingWindowQuery_QueryWorkspace         = RoleRead
+	RoleOf_SendingWindow_Update                      = RoleStart
+	RoleOf_SendingWindowCreate_OnConflict            = RoleStart
+	RoleOf_SendingWindowCreate_OnConflictColumns     = RoleStart
+	RoleOf_SendingWindowCreateBulk_OnConflict        = RoleStart
+	RoleOf_SendingWindowCreateBulk_OnConflictColumns = RoleStart
+)
+
 // The types ent generates for ServiceCredential.
 const (
 	TypeOf_ServiceCredential             = TypeEntity
@@ -5490,6 +5614,12 @@ const (
 	RoleOf_WorkspaceClient_QueryHolds                       = RoleRead
 	RoleOf_Workspace_QueryHolds                             = RoleRead
 	RoleOf_WorkspaceQuery_QueryHolds                        = RoleRead
+	RoleOf_WorkspaceClient_QueryFrequencyCaps               = RoleRead
+	RoleOf_Workspace_QueryFrequencyCaps                     = RoleRead
+	RoleOf_WorkspaceQuery_QueryFrequencyCaps                = RoleRead
+	RoleOf_WorkspaceClient_QuerySendingWindows              = RoleRead
+	RoleOf_Workspace_QuerySendingWindows                    = RoleRead
+	RoleOf_WorkspaceQuery_QuerySendingWindows               = RoleRead
 	RoleOf_WorkspaceClient_QueryBroadcasts                  = RoleRead
 	RoleOf_Workspace_QueryBroadcasts                        = RoleRead
 	RoleOf_WorkspaceQuery_QueryBroadcasts                   = RoleRead

@@ -1493,6 +1493,28 @@ func (c *ConverterImpl) EventsToResources(source []*ent.Event) []site.SiteEventR
 	}
 	return siteapiSiteEventResourceList
 }
+func (c *ConverterImpl) FrequencyCapChannelToResource(source channels.Channel) site.FrequencyCapChannel {
+	var siteapiFrequencyCapChannel site.FrequencyCapChannel
+	switch source {
+	case channels.Email:
+		siteapiFrequencyCapChannel = site.FrequencyCapChannelEmail
+	case channels.SMS:
+		siteapiFrequencyCapChannel = site.FrequencyCapChannelSMS
+	case channels.Telegram:
+		siteapiFrequencyCapChannel = site.FrequencyCapChannelTelegram
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiFrequencyCapChannel
+}
+func (c *ConverterImpl) FrequencyCapToResource(source workspaces.FrequencyCap) site.FrequencyCap {
+	var siteapiFrequencyCap site.FrequencyCap
+	siteapiFrequencyCap.Channel = c.FrequencyCapChannelToResource(source.Channel)
+	siteapiFrequencyCap.Country = nilCountryCode(source.Country)
+	siteapiFrequencyCap.MaxMessages = nilFrequencyCapMaxMessages(source.MaxMessages)
+	siteapiFrequencyCap.PeriodMinutes = nilFrequencyCapPeriodMinutes(source.PeriodMinutes)
+	return siteapiFrequencyCap
+}
 func (c *ConverterImpl) HoldReasonToResource(source holdreason.Reason) site.HoldReason {
 	var siteapiHoldReason site.HoldReason
 	switch source {
@@ -2583,6 +2605,50 @@ func (c *ConverterImpl) SendingDomainsListPage(source pagination.Page[site.Sendi
 	siteapiSiteSendingDomainsListOK.TotalItems = count(source.TotalItems)
 	siteapiSiteSendingDomainsListOK.TotalPages = count(source.TotalPages)
 	return &siteapiSiteSendingDomainsListOK
+}
+func (c *ConverterImpl) SendingRulesToResource(source workspaces.SendingRules) site.SiteSendingRulesResource {
+	var siteapiSiteSendingRulesResource site.SiteSendingRulesResource
+	siteapiSiteSendingRulesResource.FrequencyCaps = make([]site.FrequencyCap, len(source.FrequencyCaps))
+	for i := 0; i < len(source.FrequencyCaps); i++ {
+		siteapiSiteSendingRulesResource.FrequencyCaps[i] = c.FrequencyCapToResource(source.FrequencyCaps[i])
+	}
+	siteapiSiteSendingRulesResource.SendingWindows = make([]site.SendingWindow, len(source.SendingWindows))
+	for j := 0; j < len(source.SendingWindows); j++ {
+		siteapiSiteSendingRulesResource.SendingWindows[j] = c.SendingWindowToResource(source.SendingWindows[j])
+	}
+	siteapiSiteSendingRulesResource.Revision = revision(source.Revision)
+	return siteapiSiteSendingRulesResource
+}
+func (c *ConverterImpl) SendingWindowChannelToResource(source channels.Channel) site.SendingWindowChannel {
+	var siteapiSendingWindowChannel site.SendingWindowChannel
+	switch source {
+	case channels.Email:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	case channels.SMS:
+		siteapiSendingWindowChannel = site.SendingWindowChannelSMS
+	case channels.Telegram:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiSendingWindowChannel
+}
+func (c *ConverterImpl) SendingWindowHoursToResource(source workspaces.OpenHours) site.SendingWindowHours {
+	var siteapiSendingWindowHours site.SendingWindowHours
+	siteapiSendingWindowHours.Day = c.WeekdayToResource(source.Day)
+	siteapiSendingWindowHours.OpensAt = minuteOfDay(source.OpensAt)
+	siteapiSendingWindowHours.ClosesAt = minuteOfDay(source.ClosesAt)
+	return siteapiSendingWindowHours
+}
+func (c *ConverterImpl) SendingWindowToResource(source workspaces.SendingWindow) site.SendingWindow {
+	var siteapiSendingWindow site.SendingWindow
+	siteapiSendingWindow.Channel = c.SendingWindowChannelToResource(source.Channel)
+	siteapiSendingWindow.Country = nilCountryCode(source.Country)
+	siteapiSendingWindow.Hours = make([]site.SendingWindowHours, len(source.Hours))
+	for i := 0; i < len(source.Hours); i++ {
+		siteapiSendingWindow.Hours[i] = c.SendingWindowHoursToResource(source.Hours[i])
+	}
+	return siteapiSendingWindow
 }
 func (c *ConverterImpl) SesConfigToResource(source integrations.RedactedSES) site.SesConfig {
 	var siteapiSesConfig site.SesConfig

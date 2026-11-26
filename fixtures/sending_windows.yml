@@ -1,0 +1,897 @@
+# The SMS Sending window every Workspace starts with (ADR 0134), 8:00 to 20:00 every day: one row
+# per Workspace of workspaces.yml, under 1000 + its id, as Creation.CreateIn and the sending_rules
+# migration write it.
+
+# --- Globex (workspace 2) foreign row, first by id: a narrower window for Germany, 9:00 to 17:00 on
+# workdays — DO NOT change ---
+- id: 900
+  workspace_id: 2
+  channel: sms
+  country: DE
+  monday_opens: 540
+  monday_closes: 1020
+  tuesday_opens: 540
+  tuesday_closes: 1020
+  wednesday_opens: 540
+  wednesday_closes: 1020
+  thursday_opens: 540
+  thursday_closes: 1020
+  friday_opens: 540
+  friday_closes: 1020
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+
+- id: 1001 # fixture: SendingWindowAcmeSMS
+  workspace_id: 1
+  channel: sms
+  monday_opens: 480
+  monday_closes: 1200
+  tuesday_opens: 480
+  tuesday_closes: 1200
+  wednesday_opens: 480
+  wednesday_closes: 1200
+  thursday_opens: 480
+  thursday_closes: 1200
+  friday_opens: 480
+  friday_closes: 1200
+  saturday_opens: 480
+  saturday_closes: 1200
+  sunday_opens: 480
+  sunday_closes: 1200
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1002
+  workspace_id: 2
+  channel: sms
+  monday_opens: 480
+  monday_closes: 1200
+  tuesday_opens: 480
+  tuesday_closes: 1200
+  wednesday_opens: 480
+  wednesday_closes: 1200
+  thursday_opens: 480
+  thursday_closes: 1200
+  friday_opens: 480
+  friday_closes: 1200
+  saturday_opens: 480
+  saturday_closes: 1200
+  sunday_opens: 480
+  sunday_closes: 1200
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1003
+  workspace_id: 3
+  channel: sms
+  monday_opens: 480
+  monday_closes: 1200
+  tuesday_opens: 480
+  tuesday_closes: 1200
+  wednesday_opens: 480
+  wednesday_closes: 1200
+  thursday_opens: 480
+  thursday_closes: 1200
+  friday_opens: 480
+  friday_closes: 1200
+  saturday_opens: 480
+  saturday_closes: 1200
+  sunday_opens: 480
+  sunday_closes: 1200
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1004
+  workspace_id: 4
+  channel: sms
+  monday_opens: 480
+  monday_closes: 1200
+  tuesday_opens: 480
+  tuesday_closes: 1200
+  wednesday_opens: 480
+  wednesday_closes: 1200
+  thursday_opens: 480
+  thursday_closes: 1200
+  friday_opens: 480
+  friday_closes: 1200
+  saturday_opens: 480
+  saturday_closes: 1200
+  sunday_opens: 480
+  sunday_closes: 1200
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1005
+  workspace_id: 5
+  channel: sms
+  monday_opens: 480
+  monday_closes: 1200
+  tuesday_opens: 480
+  tuesday_closes: 1200
+  wednesday_opens: 480
+  wednesday_closes: 1200
+  thursday_opens: 480
+  thursday_closes: 1200
+  friday_opens: 480
+  friday_closes: 1200
+  saturday_opens: 480
+  saturday_closes: 1200
+  sunday_opens: 480
+  sunday_closes: 1200
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1006
+  workspace_id: 6
+  channel: sms
+  monday_opens: 480
+  monday_closes: 1200
+  tuesday_opens: 480
+  tuesday_closes: 1200
+  wednesday_opens: 480
+  wednesday_closes: 1200
+  thursday_opens: 480
+  thursday_closes: 1200
+  friday_opens: 480
+  friday_closes: 1200
+  saturday_opens: 480
+  saturday_closes: 1200
+  sunday_opens: 480
+  sunday_closes: 1200
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1007
+  workspace_id: 7
+  channel: sms
+  monday_opens: 480
+  monday_closes: 1200
+  tuesday_opens: 480
+  tuesday_closes: 1200
+  wednesday_opens: 480
+  wednesday_closes: 1200
+  thursday_opens: 480
+  thursday_closes: 1200
+  friday_opens: 480
+  friday_closes: 1200
+  saturday_opens: 480
+  saturday_closes: 1200
+  sunday_opens: 480
+  sunday_closes: 1200
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1008
+  workspace_id: 8
+  channel: sms
+  monday_opens: 480
+  monday_closes: 1200
+  tuesday_opens: 480
+  tuesday_closes: 1200
+  wednesday_opens: 480
+  wednesday_closes: 1200
+  thursday_opens: 480
+  thursday_closes: 1200
+  friday_opens: 480
+  friday_closes: 1200
+  saturday_opens: 480
+  saturday_closes: 1200
+  sunday_opens: 480
+  sunday_closes: 1200
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1009
+  workspace_id: 9
+  channel: sms
+  monday_opens: 480
+  monday_closes: 1200
+  tuesday_opens: 480
+  tuesday_closes: 1200
+  wednesday_opens: 480
+  wednesday_closes: 1200
+  thursday_opens: 480
+  thursday_closes: 1200
+  friday_opens: 480
+  friday_closes: 1200
+  saturday_opens: 480
+  saturday_closes: 1200
+  sunday_opens: 480
+  sunday_closes: 1200
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1010
+  workspace_id: 10
+  channel: sms
+  monday_opens: 480
+  monday_closes: 1200
+  tuesday_opens: 480
+  tuesday_closes: 1200
+  wednesday_opens: 480
+  wednesday_closes: 1200
+  thursday_opens: 480
+  thursday_closes: 1200
+  friday_opens: 480
+  friday_closes: 1200
+  saturday_opens: 480
+  saturday_closes: 1200
+  sunday_opens: 480
+  sunday_closes: 1200
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1011
+  workspace_id: 11
+  channel: sms
+  monday_opens: 480
+  monday_closes: 1200
+  tuesday_opens: 480
+  tuesday_closes: 1200
+  wednesday_opens: 480
+  wednesday_closes: 1200
+  thursday_opens: 480
+  thursday_closes: 1200
+  friday_opens: 480
+  friday_closes: 1200
+  saturday_opens: 480
+  saturday_closes: 1200
+  sunday_opens: 480
+  sunday_closes: 1200
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1012
+  workspace_id: 12
+  channel: sms
+  monday_opens: 480
+  monday_closes: 1200
+  tuesday_opens: 480
+  tuesday_closes: 1200
+  wednesday_opens: 480
+  wednesday_closes: 1200
+  thursday_opens: 480
+  thursday_closes: 1200
+  friday_opens: 480
+  friday_closes: 1200
+  saturday_opens: 480
+  saturday_closes: 1200
+  sunday_opens: 480
+  sunday_closes: 1200
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1013
+  workspace_id: 13
+  channel: sms
+  monday_opens: 480
+  monday_closes: 1200
+  tuesday_opens: 480
+  tuesday_closes: 1200
+  wednesday_opens: 480
+  wednesday_closes: 1200
+  thursday_opens: 480
+  thursday_closes: 1200
+  friday_opens: 480
+  friday_closes: 1200
+  saturday_opens: 480
+  saturday_closes: 1200
+  sunday_opens: 480
+  sunday_closes: 1200
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1020
+  workspace_id: 20
+  channel: sms
+  monday_opens: 480
+  monday_closes: 1200
+  tuesday_opens: 480
+  tuesday_closes: 1200
+  wednesday_opens: 480
+  wednesday_closes: 1200
+  thursday_opens: 480
+  thursday_closes: 1200
+  friday_opens: 480
+  friday_closes: 1200
+  saturday_opens: 480
+  saturday_closes: 1200
+  sunday_opens: 480
+  sunday_closes: 1200
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1055
+  workspace_id: 55
+  channel: sms
+  monday_opens: 480
+  monday_closes: 1200
+  tuesday_opens: 480
+  tuesday_closes: 1200
+  wednesday_opens: 480
+  wednesday_closes: 1200
+  thursday_opens: 480
+  thursday_closes: 1200
+  friday_opens: 480
+  friday_closes: 1200
+  saturday_opens: 480
+  saturday_closes: 1200
+  sunday_opens: 480
+  sunday_closes: 1200
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1056
+  workspace_id: 56
+  channel: sms
+  monday_opens: 480
+  monday_closes: 1200
+  tuesday_opens: 480
+  tuesday_closes: 1200
+  wednesday_opens: 480
+  wednesday_closes: 1200
+  thursday_opens: 480
+  thursday_closes: 1200
+  friday_opens: 480
+  friday_closes: 1200
+  saturday_opens: 480
+  saturday_closes: 1200
+  sunday_opens: 480
+  sunday_closes: 1200
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1057
+  workspace_id: 57
+  channel: sms
+  monday_opens: 480
+  monday_closes: 1200
+  tuesday_opens: 480
+  tuesday_closes: 1200
+  wednesday_opens: 480
+  wednesday_closes: 1200
+  thursday_opens: 480
+  thursday_closes: 1200
+  friday_opens: 480
+  friday_closes: 1200
+  saturday_opens: 480
+  saturday_closes: 1200
+  sunday_opens: 480
+  sunday_closes: 1200
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1058
+  workspace_id: 58
+  channel: sms
+  monday_opens: 480
+  monday_closes: 1200
+  tuesday_opens: 480
+  tuesday_closes: 1200
+  wednesday_opens: 480
+  wednesday_closes: 1200
+  thursday_opens: 480
+  thursday_closes: 1200
+  friday_opens: 480
+  friday_closes: 1200
+  saturday_opens: 480
+  saturday_closes: 1200
+  sunday_opens: 480
+  sunday_closes: 1200
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1059
+  workspace_id: 59
+  channel: sms
+  monday_opens: 480
+  monday_closes: 1200
+  tuesday_opens: 480
+  tuesday_closes: 1200
+  wednesday_opens: 480
+  wednesday_closes: 1200
+  thursday_opens: 480
+  thursday_closes: 1200
+  friday_opens: 480
+  friday_closes: 1200
+  saturday_opens: 480
+  saturday_closes: 1200
+  sunday_opens: 480
+  sunday_closes: 1200
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1060
+  workspace_id: 60
+  channel: sms
+  monday_opens: 480
+  monday_closes: 1200
+  tuesday_opens: 480
+  tuesday_closes: 1200
+  wednesday_opens: 480
+  wednesday_closes: 1200
+  thursday_opens: 480
+  thursday_closes: 1200
+  friday_opens: 480
+  friday_closes: 1200
+  saturday_opens: 480
+  saturday_closes: 1200
+  sunday_opens: 480
+  sunday_closes: 1200
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 6800
+  workspace_id: 5800
+  channel: sms
+  monday_opens: 480
+  monday_closes: 1200
+  tuesday_opens: 480
+  tuesday_closes: 1200
+  wednesday_opens: 480
+  wednesday_closes: 1200
+  thursday_opens: 480
+  thursday_closes: 1200
+  friday_opens: 480
+  friday_closes: 1200
+  saturday_opens: 480
+  saturday_closes: 1200
+  sunday_opens: 480
+  sunday_closes: 1200
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1061
+  workspace_id: 61
+  channel: sms
+  monday_opens: 480
+  monday_closes: 1200
+  tuesday_opens: 480
+  tuesday_closes: 1200
+  wednesday_opens: 480
+  wednesday_closes: 1200
+  thursday_opens: 480
+  thursday_closes: 1200
+  friday_opens: 480
+  friday_closes: 1200
+  saturday_opens: 480
+  saturday_closes: 1200
+  sunday_opens: 480
+  sunday_closes: 1200
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1062
+  workspace_id: 62
+  channel: sms
+  monday_opens: 480
+  monday_closes: 1200
+  tuesday_opens: 480
+  tuesday_closes: 1200
+  wednesday_opens: 480
+  wednesday_closes: 1200
+  thursday_opens: 480
+  thursday_closes: 1200
+  friday_opens: 480
+  friday_closes: 1200
+  saturday_opens: 480
+  saturday_closes: 1200
+  sunday_opens: 480
+  sunday_closes: 1200
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1063
+  workspace_id: 63
+  channel: sms
+  monday_opens: 480
+  monday_closes: 1200
+  tuesday_opens: 480
+  tuesday_closes: 1200
+  wednesday_opens: 480
+  wednesday_closes: 1200
+  thursday_opens: 480
+  thursday_closes: 1200
+  friday_opens: 480
+  friday_closes: 1200
+  saturday_opens: 480
+  saturday_closes: 1200
+  sunday_opens: 480
+  sunday_closes: 1200
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1087
+  workspace_id: 87
+  channel: sms
+  monday_opens: 480
+  monday_closes: 1200
+  tuesday_opens: 480
+  tuesday_closes: 1200
+  wednesday_opens: 480
+  wednesday_closes: 1200
+  thursday_opens: 480
+  thursday_closes: 1200
+  friday_opens: 480
+  friday_closes: 1200
+  saturday_opens: 480
+  saturday_closes: 1200
+  sunday_opens: 480
+  sunday_closes: 1200
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1079
+  workspace_id: 79
+  channel: sms
+  monday_opens: 480
+  monday_closes: 1200
+  tuesday_opens: 480
+  tuesday_closes: 1200
+  wednesday_opens: 480
+  wednesday_closes: 1200
+  thursday_opens: 480
+  thursday_closes: 1200
+  friday_opens: 480
+  friday_closes: 1200
+  saturday_opens: 480
+  saturday_closes: 1200
+  sunday_opens: 480
+  sunday_closes: 1200
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1083
+  workspace_id: 83
+  channel: sms
+  monday_opens: 480
+  monday_closes: 1200
+  tuesday_opens: 480
+  tuesday_closes: 1200
+  wednesday_opens: 480
+  wednesday_closes: 1200
+  thursday_opens: 480
+  thursday_closes: 1200
+  friday_opens: 480
+  friday_closes: 1200
+  saturday_opens: 480
+  saturday_closes: 1200
+  sunday_opens: 480
+  sunday_closes: 1200
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1084
+  workspace_id: 84
+  channel: sms
+  monday_opens: 480
+  monday_closes: 1200
+  tuesday_opens: 480
+  tuesday_closes: 1200
+  wednesday_opens: 480
+  wednesday_closes: 1200
+  thursday_opens: 480
+  thursday_closes: 1200
+  friday_opens: 480
+  friday_closes: 1200
+  saturday_opens: 480
+  saturday_closes: 1200
+  sunday_opens: 480
+  sunday_closes: 1200
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1085
+  workspace_id: 85
+  channel: sms
+  monday_opens: 480
+  monday_closes: 1200
+  tuesday_opens: 480
+  tuesday_closes: 1200
+  wednesday_opens: 480
+  wednesday_closes: 1200
+  thursday_opens: 480
+  thursday_closes: 1200
+  friday_opens: 480
+  friday_closes: 1200
+  saturday_opens: 480
+  saturday_closes: 1200
+  sunday_opens: 480
+  sunday_closes: 1200
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1075
+  workspace_id: 75
+  channel: sms
+  monday_opens: 480
+  monday_closes: 1200
+  tuesday_opens: 480
+  tuesday_closes: 1200
+  wednesday_opens: 480
+  wednesday_closes: 1200
+  thursday_opens: 480
+  thursday_closes: 1200
+  friday_opens: 480
+  friday_closes: 1200
+  saturday_opens: 480
+  saturday_closes: 1200
+  sunday_opens: 480
+  sunday_closes: 1200
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1076
+  workspace_id: 76
+  channel: sms
+  monday_opens: 480
+  monday_closes: 1200
+  tuesday_opens: 480
+  tuesday_closes: 1200
+  wednesday_opens: 480
+  wednesday_closes: 1200
+  thursday_opens: 480
+  thursday_closes: 1200
+  friday_opens: 480
+  friday_closes: 1200
+  saturday_opens: 480
+  saturday_closes: 1200
+  sunday_opens: 480
+  sunday_closes: 1200
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1077
+  workspace_id: 77
+  channel: sms
+  monday_opens: 480
+  monday_closes: 1200
+  tuesday_opens: 480
+  tuesday_closes: 1200
+  wednesday_opens: 480
+  wednesday_closes: 1200
+  thursday_opens: 480
+  thursday_closes: 1200
+  friday_opens: 480
+  friday_closes: 1200
+  saturday_opens: 480
+  saturday_closes: 1200
+  sunday_opens: 480
+  sunday_closes: 1200
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1078
+  workspace_id: 78
+  channel: sms
+  monday_opens: 480
+  monday_closes: 1200
+  tuesday_opens: 480
+  tuesday_closes: 1200
+  wednesday_opens: 480
+  wednesday_closes: 1200
+  thursday_opens: 480
+  thursday_closes: 1200
+  friday_opens: 480
+  friday_closes: 1200
+  saturday_opens: 480
+  saturday_closes: 1200
+  sunday_opens: 480
+  sunday_closes: 1200
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1071
+  workspace_id: 71
+  channel: sms
+  monday_opens: 480
+  monday_closes: 1200
+  tuesday_opens: 480
+  tuesday_closes: 1200
+  wednesday_opens: 480
+  wednesday_closes: 1200
+  thursday_opens: 480
+  thursday_closes: 1200
+  friday_opens: 480
+  friday_closes: 1200
+  saturday_opens: 480
+  saturday_closes: 1200
+  sunday_opens: 480
+  sunday_closes: 1200
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1072
+  workspace_id: 72
+  channel: sms
+  monday_opens: 480
+  monday_closes: 1200
+  tuesday_opens: 480
+  tuesday_closes: 1200
+  wednesday_opens: 480
+  wednesday_closes: 1200
+  thursday_opens: 480
+  thursday_closes: 1200
+  friday_opens: 480
+  friday_closes: 1200
+  saturday_opens: 480
+  saturday_closes: 1200
+  sunday_opens: 480
+  sunday_closes: 1200
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1073
+  workspace_id: 73
+  channel: sms
+  monday_opens: 480
+  monday_closes: 1200
+  tuesday_opens: 480
+  tuesday_closes: 1200
+  wednesday_opens: 480
+  wednesday_closes: 1200
+  thursday_opens: 480
+  thursday_closes: 1200
+  friday_opens: 480
+  friday_closes: 1200
+  saturday_opens: 480
+  saturday_closes: 1200
+  sunday_opens: 480
+  sunday_closes: 1200
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1074
+  workspace_id: 74
+  channel: sms
+  monday_opens: 480
+  monday_closes: 1200
+  tuesday_opens: 480
+  tuesday_closes: 1200
+  wednesday_opens: 480
+  wednesday_closes: 1200
+  thursday_opens: 480
+  thursday_closes: 1200
+  friday_opens: 480
+  friday_closes: 1200
+  saturday_opens: 480
+  saturday_closes: 1200
+  sunday_opens: 480
+  sunday_closes: 1200
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1094
+  workspace_id: 94
+  channel: sms
+  monday_opens: 480
+  monday_closes: 1200
+  tuesday_opens: 480
+  tuesday_closes: 1200
+  wednesday_opens: 480
+  wednesday_closes: 1200
+  thursday_opens: 480
+  thursday_closes: 1200
+  friday_opens: 480
+  friday_closes: 1200
+  saturday_opens: 480
+  saturday_closes: 1200
+  sunday_opens: 480
+  sunday_closes: 1200
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1095
+  workspace_id: 95
+  channel: sms
+  monday_opens: 480
+  monday_closes: 1200
+  tuesday_opens: 480
+  tuesday_closes: 1200
+  wednesday_opens: 480
+  wednesday_closes: 1200
+  thursday_opens: 480
+  thursday_closes: 1200
+  friday_opens: 480
+  friday_closes: 1200
+  saturday_opens: 480
+  saturday_closes: 1200
+  sunday_opens: 480
+  sunday_closes: 1200
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1091
+  workspace_id: 91
+  channel: sms
+  monday_opens: 480
+  monday_closes: 1200
+  tuesday_opens: 480
+  tuesday_closes: 1200
+  wednesday_opens: 480
+  wednesday_closes: 1200
+  thursday_opens: 480
+  thursday_closes: 1200
+  friday_opens: 480
+  friday_closes: 1200
+  saturday_opens: 480
+  saturday_closes: 1200
+  sunday_opens: 480
+  sunday_closes: 1200
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1092
+  workspace_id: 92
+  channel: sms
+  monday_opens: 480
+  monday_closes: 1200
+  tuesday_opens: 480
+  tuesday_closes: 1200
+  wednesday_opens: 480
+  wednesday_closes: 1200
+  thursday_opens: 480
+  thursday_closes: 1200
+  friday_opens: 480
+  friday_closes: 1200
+  saturday_opens: 480
+  saturday_closes: 1200
+  sunday_opens: 480
+  sunday_closes: 1200
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1096 # fixture: SendingWindowLacunaSMS
+  workspace_id: 96
+  channel: sms
+  monday_opens: 480
+  monday_closes: 1200
+  tuesday_opens: 480
+  tuesday_closes: 1200
+  wednesday_opens: 480
+  wednesday_closes: 1200
+  thursday_opens: 480
+  thursday_closes: 1200
+  friday_opens: 480
+  friday_closes: 1200
+  saturday_opens: 480
+  saturday_closes: 1200
+  sunday_opens: 480
+  sunday_closes: 1200
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1097
+  workspace_id: 97
+  channel: sms
+  monday_opens: 480
+  monday_closes: 1200
+  tuesday_opens: 480
+  tuesday_closes: 1200
+  wednesday_opens: 480
+  wednesday_closes: 1200
+  thursday_opens: 480
+  thursday_closes: 1200
+  friday_opens: 480
+  friday_closes: 1200
+  saturday_opens: 480
+  saturday_closes: 1200
+  sunday_opens: 480
+  sunday_closes: 1200
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1098
+  workspace_id: 98
+  channel: sms
+  monday_opens: 480
+  monday_closes: 1200
+  tuesday_opens: 480
+  tuesday_closes: 1200
+  wednesday_opens: 480
+  wednesday_closes: 1200
+  thursday_opens: 480
+  thursday_closes: 1200
+  friday_opens: 480
+  friday_closes: 1200
+  saturday_opens: 480
+  saturday_closes: 1200
+  sunday_opens: 480
+  sunday_closes: 1200
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1099
+  workspace_id: 99
+  channel: sms
+  monday_opens: 480
+  monday_closes: 1200
+  tuesday_opens: 480
+  tuesday_closes: 1200
+  wednesday_opens: 480
+  wednesday_closes: 1200
+  thursday_opens: 480
+  thursday_closes: 1200
+  friday_opens: 480
+  friday_closes: 1200
+  saturday_opens: 480
+  saturday_closes: 1200
+  sunday_opens: 480
+  sunday_closes: 1200
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 2553
+  workspace_id: 1553
+  channel: sms
+  monday_opens: 480
+  monday_closes: 1200
+  tuesday_opens: 480
+  tuesday_closes: 1200
+  wednesday_opens: 480
+  wednesday_closes: 1200
+  thursday_opens: 480
+  thursday_closes: 1200
+  friday_opens: 480
+  friday_closes: 1200
+  saturday_opens: 480
+  saturday_closes: 1200
+  sunday_opens: 480
+  sunday_closes: 1200
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

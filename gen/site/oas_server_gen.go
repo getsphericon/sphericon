@@ -1547,6 +1547,13 @@ type Handler interface {
 	//
 	// GET /workspaces/{workspaceId}/revenue-settings
 	SiteWorkspacesGetRevenueSettings(ctx context.Context, params SiteWorkspacesGetRevenueSettingsParams) (*SiteRevenueSettingsResource, error)
+	// SiteWorkspacesGetSendingRules implements SiteWorkspaces_getSendingRules operation.
+	//
+	// Read the Workspace's sending rules (ADR 0134, ADR 0137): its Frequency caps and its Sending windows.
+	// Open to every member.
+	//
+	// GET /workspaces/{workspaceId}/sending-rules
+	SiteWorkspacesGetSendingRules(ctx context.Context, params SiteWorkspacesGetSendingRulesParams) (*SiteSendingRulesResource, error)
 	// SiteWorkspacesLeave implements SiteWorkspaces_leave operation.
 	//
 	// Leave a Workspace (any Role): the caller's own Membership is removed at once, with no Owner involved
@@ -1577,6 +1584,17 @@ type Handler interface {
 	//
 	// GET /workspaces/deleted
 	SiteWorkspacesListDeleted(ctx context.Context) ([]SiteDeletedWorkspaceResource, error)
+	// SiteWorkspacesReplaceSendingRules implements SiteWorkspaces_replaceSendingRules operation.
+	//
+	// Replace the Workspace's sending rules as a whole (Owner and Admin only): its Frequency caps and its
+	// Sending windows. Only a person changes them, here: neither `/api` nor MCP does. 422 for a window
+	// that never opens in a week, a window on a Channel that has none, a country on a Channel other than a
+	// phone's, a cap with a maximum and no period or the reverse, or two caps or windows for one Channel
+	// and country. A change is recorded as an Audit entry; a replacement that changes nothing records
+	// none.
+	//
+	// PUT /workspaces/{workspaceId}/sending-rules
+	SiteWorkspacesReplaceSendingRules(ctx context.Context, req *SiteReplaceSendingRulesInput, params SiteWorkspacesReplaceSendingRulesParams) (*SiteSendingRulesResource, error)
 	// SiteWorkspacesRequireSecondFactor implements SiteWorkspaces_requireSecondFactor operation.
 	//
 	// Switch the Two-factor requirement on (owner and admin only): every User with a Membership must then

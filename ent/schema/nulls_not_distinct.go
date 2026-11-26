@@ -6,6 +6,8 @@ package schema
 // (internal/infra/devdb) adds it to these indexes of the ent schema.
 var nullsNotDistinct = map[string]bool{
 	ActiveEnrollmentIndex: true,
+	FrequencyCapIndex:     true,
+	SendingWindowIndex:    true,
 }
 
 // NullsNotDistinct is whether the unique index of the name counts its NULLs as one value.

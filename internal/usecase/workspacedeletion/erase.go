@@ -29,6 +29,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
 	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/ent/frequencycap"
 	"github.com/getsphericon/sphericon/ent/heldorderevent"
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/identitysecret"
@@ -48,6 +49,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendcaplimiter"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
+	"github.com/getsphericon/sphericon/ent/sendingwindow"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/ent/trackedlink"
@@ -258,6 +260,8 @@ func eraseSteps() []eraseStep {
 		stepOf((*ent.Scoped).Hold, hold.IDIn),
 		stepOf((*ent.Scoped).ProviderLimiter, providerlimiter.IDIn),
 		stepOf((*ent.Scoped).SendCapLimiter, sendcaplimiter.IDIn),
+		stepOf((*ent.Scoped).FrequencyCap, frequencycap.IDIn),
+		stepOf((*ent.Scoped).SendingWindow, sendingwindow.IDIn),
 		stepOf((*ent.Scoped).WebhookEndpoint, webhookendpoint.IDIn),
 		stepOf((*ent.Scoped).IdentitySecret, identitysecret.IDIn),
 		stepOf((*ent.Scoped).Invitation, invitation.IDIn),

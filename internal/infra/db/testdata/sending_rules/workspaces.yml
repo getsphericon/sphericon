@@ -1,0 +1,20 @@
+# Two Workspaces from before the sending rules: a live one, and one in its deletion window, which
+# may still be restored. An erased tombstone keeps nothing to send with.
+- id: 1
+  revision: 1
+  name: Acme
+  public_id: acme0001
+  collect_key: acme0001
+- id: 2
+  revision: 1
+  name: Globex
+  public_id: glob0001
+  collect_key: glob0001
+  discarded_at: '2026-01-01 00:00:00'
+- id: 3
+  revision: 1
+  name: ''
+  public_id: eras0001
+  collect_key: eras0001
+  discarded_at: '2026-01-01 00:00:00'
+  erased_at: '2026-01-31 00:00:00'
