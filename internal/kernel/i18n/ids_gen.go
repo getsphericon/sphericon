@@ -177,8 +177,10 @@ var (
 	ErrorsContactImportNoHeader                           = ID{key: "errors.contact_import_no_header"}
 	ErrorsContactImportNoReport                           = ID{key: "errors.contact_import_no_report"}
 	ErrorsContactImportNotFound                           = ID{key: "errors.contact_import_not_found"}
+	ErrorsContactImportNotRunning                         = ID{key: "errors.contact_import_not_running"}
 	ErrorsContactImportNotUtf8                            = ID{key: "errors.contact_import_not_utf8"}
 	ErrorsContactImportReportPending                      = ID{key: "errors.contact_import_report_pending"}
+	ErrorsContactImportRunning                            = ID{key: "errors.contact_import_running"}
 	ErrorsContactImportTargetRepeated                     = ID{key: "errors.contact_import_target_repeated"}
 	ErrorsContactImportTooManyColumns                     = ID{key: "errors.contact_import_too_many_columns"}
 	ErrorsContactImportUnknownCustomField                 = ID{key: "errors.contact_import_unknown_custom_field"}

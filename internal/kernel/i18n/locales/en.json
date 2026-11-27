@@ -149,6 +149,8 @@
   "errors.contact_import_decimal_separator": "the decimal separator is a point or a comma",
   "errors.contact_import_default_country": "the default country must be a two-letter country code",
   "errors.contact_import_report_pending": "the import has not ended; its report is ready when it does",
+  "errors.contact_import_running": "another import of this workspace is running; run this one when it ends",
+  "errors.contact_import_not_running": "the import is not running, or it is already stopping",
   "errors.contact_import_no_report": "the import has no report to download: nothing was refused or dropped, or it was downloaded or expired",
   "contact_import.reason.no_key": "the row names no subject ID, email or phone",
   "contact_import.reason.cell_count": "the row has another number of cells than the header",

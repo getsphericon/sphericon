@@ -29682,6 +29682,24 @@ func (x *ContactImportScopedCreate) SetNillableCheckpointOffset(v *int64) *Conta
 
 const RoleOf_ContactImportScopedCreate_SetNillableCheckpointOffset = RoleStep
 
+// SetCheckpointContactFloor sets the "checkpoint_contact_floor" field.
+func (x *ContactImportScopedCreate) SetCheckpointContactFloor(v int64) *ContactImportScopedCreate {
+	x.set = append(x.set, func(b *ContactImportCreate) { b.SetCheckpointContactFloor(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetCheckpointContactFloor = RoleStep
+
+// SetNillableCheckpointContactFloor sets the "checkpoint_contact_floor" field if the given value is not nil.
+func (x *ContactImportScopedCreate) SetNillableCheckpointContactFloor(v *int64) *ContactImportScopedCreate {
+	if v != nil {
+		x.SetCheckpointContactFloor(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetNillableCheckpointContactFloor = RoleStep
+
 // SetProcessed sets the "processed" field.
 func (x *ContactImportScopedCreate) SetProcessed(v int) *ContactImportScopedCreate {
 	x.set = append(x.set, func(b *ContactImportCreate) { b.SetProcessed(v) })
@@ -30212,6 +30230,30 @@ func (u *ContactImportScopedUpsert) UpdateCheckpointOffset() *ContactImportScope
 }
 
 const RoleOf_ContactImportScopedUpsert_UpdateCheckpointOffset = RoleStep
+
+// SetCheckpointContactFloor sets the "checkpoint_contact_floor" field.
+func (u *ContactImportScopedUpsert) SetCheckpointContactFloor(v int64) *ContactImportScopedUpsert {
+	u.u.Set(contactimport.FieldCheckpointContactFloor, v)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_SetCheckpointContactFloor = RoleStep
+
+// AddCheckpointContactFloor adds v to the "checkpoint_contact_floor" field.
+func (u *ContactImportScopedUpsert) AddCheckpointContactFloor(v int64) *ContactImportScopedUpsert {
+	u.u.Add(contactimport.FieldCheckpointContactFloor, v)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_AddCheckpointContactFloor = RoleStep
+
+// UpdateCheckpointContactFloor sets the "checkpoint_contact_floor" field to the value that was provided on create.
+func (u *ContactImportScopedUpsert) UpdateCheckpointContactFloor() *ContactImportScopedUpsert {
+	u.u.SetExcluded(contactimport.FieldCheckpointContactFloor)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_UpdateCheckpointContactFloor = RoleStep
 
 // SetProcessed sets the "processed" field.
 func (u *ContactImportScopedUpsert) SetProcessed(v int) *ContactImportScopedUpsert {
@@ -30877,6 +30919,32 @@ func (x *ContactImportScopedUpdateOne) AddCheckpointOffset(v int64) *ContactImpo
 }
 
 const RoleOf_ContactImportScopedUpdateOne_AddCheckpointOffset = RoleStep
+
+// SetCheckpointContactFloor sets the "checkpoint_contact_floor" field.
+func (x *ContactImportScopedUpdateOne) SetCheckpointContactFloor(v int64) *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.SetCheckpointContactFloor(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_SetCheckpointContactFloor = RoleStep
+
+// SetNillableCheckpointContactFloor sets the "checkpoint_contact_floor" field if the given value is not nil.
+func (x *ContactImportScopedUpdateOne) SetNillableCheckpointContactFloor(v *int64) *ContactImportScopedUpdateOne {
+	if v != nil {
+		x.SetCheckpointContactFloor(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_SetNillableCheckpointContactFloor = RoleStep
+
+// AddCheckpointContactFloor adds value to the "checkpoint_contact_floor" field.
+func (x *ContactImportScopedUpdateOne) AddCheckpointContactFloor(v int64) *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.AddCheckpointContactFloor(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_AddCheckpointContactFloor = RoleStep
 
 // SetProcessed sets the "processed" field.
 func (x *ContactImportScopedUpdateOne) SetProcessed(v int) *ContactImportScopedUpdateOne {
@@ -31544,6 +31612,32 @@ func (x *ContactImportScopedUpdate) AddCheckpointOffset(v int64) *ContactImportS
 }
 
 const RoleOf_ContactImportScopedUpdate_AddCheckpointOffset = RoleStep
+
+// SetCheckpointContactFloor sets the "checkpoint_contact_floor" field.
+func (x *ContactImportScopedUpdate) SetCheckpointContactFloor(v int64) *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.SetCheckpointContactFloor(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_SetCheckpointContactFloor = RoleStep
+
+// SetNillableCheckpointContactFloor sets the "checkpoint_contact_floor" field if the given value is not nil.
+func (x *ContactImportScopedUpdate) SetNillableCheckpointContactFloor(v *int64) *ContactImportScopedUpdate {
+	if v != nil {
+		x.SetCheckpointContactFloor(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_SetNillableCheckpointContactFloor = RoleStep
+
+// AddCheckpointContactFloor adds value to the "checkpoint_contact_floor" field.
+func (x *ContactImportScopedUpdate) AddCheckpointContactFloor(v int64) *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.AddCheckpointContactFloor(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_AddCheckpointContactFloor = RoleStep
 
 // SetProcessed sets the "processed" field.
 func (x *ContactImportScopedUpdate) SetProcessed(v int) *ContactImportScopedUpdate {

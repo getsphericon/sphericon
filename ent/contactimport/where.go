@@ -115,6 +115,11 @@ func CheckpointOffset(v int64) predicate.ContactImport {
 	return predicate.ContactImport(sql.FieldEQ(FieldCheckpointOffset, v))
 }
 
+// CheckpointContactFloor applies equality check predicate on the "checkpoint_contact_floor" field. It's identical to CheckpointContactFloorEQ.
+func CheckpointContactFloor(v int64) predicate.ContactImport {
+	return predicate.ContactImport(sql.FieldEQ(FieldCheckpointContactFloor, v))
+}
+
 // Processed applies equality check predicate on the "processed" field. It's identical to ProcessedEQ.
 func Processed(v int) predicate.ContactImport {
 	return predicate.ContactImport(sql.FieldEQ(FieldProcessed, v))
@@ -608,6 +613,46 @@ func CheckpointOffsetLT(v int64) predicate.ContactImport {
 // CheckpointOffsetLTE applies the LTE predicate on the "checkpoint_offset" field.
 func CheckpointOffsetLTE(v int64) predicate.ContactImport {
 	return predicate.ContactImport(sql.FieldLTE(FieldCheckpointOffset, v))
+}
+
+// CheckpointContactFloorEQ applies the EQ predicate on the "checkpoint_contact_floor" field.
+func CheckpointContactFloorEQ(v int64) predicate.ContactImport {
+	return predicate.ContactImport(sql.FieldEQ(FieldCheckpointContactFloor, v))
+}
+
+// CheckpointContactFloorNEQ applies the NEQ predicate on the "checkpoint_contact_floor" field.
+func CheckpointContactFloorNEQ(v int64) predicate.ContactImport {
+	return predicate.ContactImport(sql.FieldNEQ(FieldCheckpointContactFloor, v))
+}
+
+// CheckpointContactFloorIn applies the In predicate on the "checkpoint_contact_floor" field.
+func CheckpointContactFloorIn(vs ...int64) predicate.ContactImport {
+	return predicate.ContactImport(sql.FieldIn(FieldCheckpointContactFloor, vs...))
+}
+
+// CheckpointContactFloorNotIn applies the NotIn predicate on the "checkpoint_contact_floor" field.
+func CheckpointContactFloorNotIn(vs ...int64) predicate.ContactImport {
+	return predicate.ContactImport(sql.FieldNotIn(FieldCheckpointContactFloor, vs...))
+}
+
+// CheckpointContactFloorGT applies the GT predicate on the "checkpoint_contact_floor" field.
+func CheckpointContactFloorGT(v int64) predicate.ContactImport {
+	return predicate.ContactImport(sql.FieldGT(FieldCheckpointContactFloor, v))
+}
+
+// CheckpointContactFloorGTE applies the GTE predicate on the "checkpoint_contact_floor" field.
+func CheckpointContactFloorGTE(v int64) predicate.ContactImport {
+	return predicate.ContactImport(sql.FieldGTE(FieldCheckpointContactFloor, v))
+}
+
+// CheckpointContactFloorLT applies the LT predicate on the "checkpoint_contact_floor" field.
+func CheckpointContactFloorLT(v int64) predicate.ContactImport {
+	return predicate.ContactImport(sql.FieldLT(FieldCheckpointContactFloor, v))
+}
+
+// CheckpointContactFloorLTE applies the LTE predicate on the "checkpoint_contact_floor" field.
+func CheckpointContactFloorLTE(v int64) predicate.ContactImport {
+	return predicate.ContactImport(sql.FieldLTE(FieldCheckpointContactFloor, v))
 }
 
 // ProcessedEQ applies the EQ predicate on the "processed" field.

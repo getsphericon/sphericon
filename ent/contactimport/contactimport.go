@@ -47,6 +47,8 @@ const (
 	FieldCheckpointChunk = "checkpoint_chunk"
 	// FieldCheckpointOffset holds the string denoting the checkpoint_offset field in the database.
 	FieldCheckpointOffset = "checkpoint_offset"
+	// FieldCheckpointContactFloor holds the string denoting the checkpoint_contact_floor field in the database.
+	FieldCheckpointContactFloor = "checkpoint_contact_floor"
 	// FieldProcessed holds the string denoting the processed field in the database.
 	FieldProcessed = "processed"
 	// FieldCreated holds the string denoting the created field in the database.
@@ -128,6 +130,7 @@ var Columns = []string{
 	FieldCheckpointRow,
 	FieldCheckpointChunk,
 	FieldCheckpointOffset,
+	FieldCheckpointContactFloor,
 	FieldProcessed,
 	FieldCreated,
 	FieldUpdated,
@@ -168,6 +171,8 @@ var (
 	DefaultCheckpointChunk int
 	// DefaultCheckpointOffset holds the default value on creation for the "checkpoint_offset" field.
 	DefaultCheckpointOffset int64
+	// DefaultCheckpointContactFloor holds the default value on creation for the "checkpoint_contact_floor" field.
+	DefaultCheckpointContactFloor int64
 	// DefaultProcessed holds the default value on creation for the "processed" field.
 	DefaultProcessed int
 	// DefaultCreated holds the default value on creation for the "created" field.
@@ -314,6 +319,11 @@ func ByCheckpointChunk(opts ...sql.OrderTermOption) OrderOption {
 // ByCheckpointOffset orders the results by the checkpoint_offset field.
 func ByCheckpointOffset(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCheckpointOffset, opts...).ToFunc()
+}
+
+// ByCheckpointContactFloor orders the results by the checkpoint_contact_floor field.
+func ByCheckpointContactFloor(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCheckpointContactFloor, opts...).ToFunc()
 }
 
 // ByProcessed orders the results by the processed field.

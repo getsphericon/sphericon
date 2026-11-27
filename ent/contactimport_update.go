@@ -199,6 +199,27 @@ func (_u *ContactImportUpdate) AddCheckpointOffset(v int64) *ContactImportUpdate
 	return _u
 }
 
+// SetCheckpointContactFloor sets the "checkpoint_contact_floor" field.
+func (_u *ContactImportUpdate) SetCheckpointContactFloor(v int64) *ContactImportUpdate {
+	_u.mutation.ResetCheckpointContactFloor()
+	_u.mutation.SetCheckpointContactFloor(v)
+	return _u
+}
+
+// SetNillableCheckpointContactFloor sets the "checkpoint_contact_floor" field if the given value is not nil.
+func (_u *ContactImportUpdate) SetNillableCheckpointContactFloor(v *int64) *ContactImportUpdate {
+	if v != nil {
+		_u.SetCheckpointContactFloor(*v)
+	}
+	return _u
+}
+
+// AddCheckpointContactFloor adds value to the "checkpoint_contact_floor" field.
+func (_u *ContactImportUpdate) AddCheckpointContactFloor(v int64) *ContactImportUpdate {
+	_u.mutation.AddCheckpointContactFloor(v)
+	return _u
+}
+
 // SetProcessed sets the "processed" field.
 func (_u *ContactImportUpdate) SetProcessed(v int) *ContactImportUpdate {
 	_u.mutation.ResetProcessed()
@@ -628,6 +649,12 @@ func (_u *ContactImportUpdate) sqlSave(ctx context.Context) (_node int, err erro
 	if value, ok := _u.mutation.AddedCheckpointOffset(); ok {
 		_spec.AddField(contactimport.FieldCheckpointOffset, field.TypeInt64, value)
 	}
+	if value, ok := _u.mutation.CheckpointContactFloor(); ok {
+		_spec.SetField(contactimport.FieldCheckpointContactFloor, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedCheckpointContactFloor(); ok {
+		_spec.AddField(contactimport.FieldCheckpointContactFloor, field.TypeInt64, value)
+	}
 	if value, ok := _u.mutation.Processed(); ok {
 		_spec.SetField(contactimport.FieldProcessed, field.TypeInt, value)
 	}
@@ -1026,6 +1053,27 @@ func (_u *ContactImportUpdateOne) SetNillableCheckpointOffset(v *int64) *Contact
 // AddCheckpointOffset adds value to the "checkpoint_offset" field.
 func (_u *ContactImportUpdateOne) AddCheckpointOffset(v int64) *ContactImportUpdateOne {
 	_u.mutation.AddCheckpointOffset(v)
+	return _u
+}
+
+// SetCheckpointContactFloor sets the "checkpoint_contact_floor" field.
+func (_u *ContactImportUpdateOne) SetCheckpointContactFloor(v int64) *ContactImportUpdateOne {
+	_u.mutation.ResetCheckpointContactFloor()
+	_u.mutation.SetCheckpointContactFloor(v)
+	return _u
+}
+
+// SetNillableCheckpointContactFloor sets the "checkpoint_contact_floor" field if the given value is not nil.
+func (_u *ContactImportUpdateOne) SetNillableCheckpointContactFloor(v *int64) *ContactImportUpdateOne {
+	if v != nil {
+		_u.SetCheckpointContactFloor(*v)
+	}
+	return _u
+}
+
+// AddCheckpointContactFloor adds value to the "checkpoint_contact_floor" field.
+func (_u *ContactImportUpdateOne) AddCheckpointContactFloor(v int64) *ContactImportUpdateOne {
+	_u.mutation.AddCheckpointContactFloor(v)
 	return _u
 }
 
@@ -1487,6 +1535,12 @@ func (_u *ContactImportUpdateOne) sqlSave(ctx context.Context) (_node *ContactIm
 	}
 	if value, ok := _u.mutation.AddedCheckpointOffset(); ok {
 		_spec.AddField(contactimport.FieldCheckpointOffset, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.CheckpointContactFloor(); ok {
+		_spec.SetField(contactimport.FieldCheckpointContactFloor, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedCheckpointContactFloor(); ok {
+		_spec.AddField(contactimport.FieldCheckpointContactFloor, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.Processed(); ok {
 		_spec.SetField(contactimport.FieldProcessed, field.TypeInt, value)

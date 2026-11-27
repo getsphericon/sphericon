@@ -1262,6 +1262,7 @@ var (
 		{Name: "checkpoint_row", Type: field.TypeInt, Default: 0},
 		{Name: "checkpoint_chunk", Type: field.TypeInt, Default: 0},
 		{Name: "checkpoint_offset", Type: field.TypeInt64, Default: 0},
+		{Name: "checkpoint_contact_floor", Type: field.TypeInt64, Default: 0},
 		{Name: "processed", Type: field.TypeInt, Default: 0},
 		{Name: "created", Type: field.TypeInt, Default: 0},
 		{Name: "updated", Type: field.TypeInt, Default: 0},
@@ -1284,13 +1285,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "contact_imports_memberships_contact_imports",
-				Columns:    []*schema.Column{ContactImportsColumns[26]},
+				Columns:    []*schema.Column{ContactImportsColumns[27]},
 				RefColumns: []*schema.Column{MembershipsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "contact_imports_workspaces_contact_imports",
-				Columns:    []*schema.Column{ContactImportsColumns[27]},
+				Columns:    []*schema.Column{ContactImportsColumns[28]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1299,12 +1300,20 @@ var (
 			{
 				Name:    "contactimport_workspace_id_membership_id",
 				Unique:  false,
-				Columns: []*schema.Column{ContactImportsColumns[27], ContactImportsColumns[26]},
+				Columns: []*schema.Column{ContactImportsColumns[28], ContactImportsColumns[27]},
 			},
 			{
 				Name:    "contactimport_workspace_id_state",
 				Unique:  false,
-				Columns: []*schema.Column{ContactImportsColumns[27], ContactImportsColumns[3]},
+				Columns: []*schema.Column{ContactImportsColumns[28], ContactImportsColumns[3]},
+			},
+			{
+				Name:    "contact_imports_one_running",
+				Unique:  true,
+				Columns: []*schema.Column{ContactImportsColumns[28]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "state = 'running'",
+				},
 			},
 		},
 	}
