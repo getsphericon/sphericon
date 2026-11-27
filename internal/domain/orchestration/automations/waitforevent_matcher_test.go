@@ -273,3 +273,37 @@ func TestTheTimeoutReadsAnyNumberOfDeclinedEvents(t *testing.T) {
 
 	assert.Equal(t, w.arrived, w.standsOn(t, runID))
 }
+
+// An Event handled while the Condition was unknown is declined as one handled while it was false
+// (ADR 0124): once the Contact grants tracking and the Condition holds, the timeout does not take
+// `arrived` on it.
+func TestTheTimeoutTakesNoEventWhoseConditionWasUnknownWhenItWasHandled(t *testing.T) {
+	openedOrNot := `{"kind":"group","combinator":"or","entries":[` +
+		`{"kind":"event","action":"email.opened","operator":"atLeast","times":1},` +
+		`{"kind":"event","action":"email.opened","operator":"atMost","times":0}]}`
+	w := awaiting(t, "trial.started", automationstep.AwaitedEvent{
+		Matchers: []eventmatcher.Matcher{{Action: "order.completed"}}, Condition: waitCondition(t, openedOrNot),
+	}, nil)
+	ctx, s := t.Context(), w.env.DB.Scoped(fixtures.AcmeID)
+	contact, runID := w.enroll(t, "trial.started")
+	deadline := w.clock.Now().Add(waitTimeout)
+	tracking := testhelper.Module[*engagementtracking.Module](w.env)
+	record := func(state engagementtracking.State, from engagementtracking.Provenance) {
+		_, err := tracking.Record(ctx, s, engagementtracking.RecordInput{
+			Channel: channels.Email, Destination: lo.FromPtr(contact.Email), State: state, Provenance: from,
+		})
+		require.NoError(t, err)
+	}
+	record(engagementtracking.Denied, engagementtracking.Manual)
+
+	w.clock.Advance(time.Minute)
+	w.order(t, contact, 10)
+	handled := w.standsOn(t, runID)
+	// The person lifts the refusal on their own page.
+	record(engagementtracking.Granted, engagementtracking.Page)
+	w.clock.Set(deadline.Add(5 * time.Minute))
+	w.timeout(t, runID)
+
+	assert.Equal(t, w.wait, handled, "an unknown Condition leaves the Contact waiting")
+	assert.Equal(t, w.timedOut, w.standsOn(t, runID), "nor does the timeout read it again")
+}
