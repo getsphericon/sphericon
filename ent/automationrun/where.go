@@ -1298,6 +1298,29 @@ func HasFiringWith(preds ...predicate.RuleFiring) predicate.AutomationRun {
 	})
 }
 
+// HasStepRecords applies the HasEdge predicate on the "step_records" edge.
+func HasStepRecords() predicate.AutomationRun {
+	return predicate.AutomationRun(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, StepRecordsTable, StepRecordsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasStepRecordsWith applies the HasEdge predicate on the "step_records" edge with a given conditions (other predicates).
+func HasStepRecordsWith(preds ...predicate.AutomationStepRecord) predicate.AutomationRun {
+	return predicate.AutomationRun(func(s *sql.Selector) {
+		step := newStepRecordsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.AutomationRun) predicate.AutomationRun {
 	return predicate.AutomationRun(sql.AndPredicates(predicates...))

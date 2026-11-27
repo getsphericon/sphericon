@@ -1443,6 +1443,7 @@ func (c *ConverterImpl) EnrollmentToResource(source *ent.AutomationRun) site.Enr
 		siteapiEnrollmentResource.DeferredSince = optTimestamp((*source).DeferredSince)
 		siteapiEnrollmentResource.DeferralCause = optDeferralCause(c, (*source).DeferralCause)
 		siteapiEnrollmentResource.Failure = enrollmentFailure(c, (*source))
+		siteapiEnrollmentResource.Awaited = enrollmentAwaited(c, (*source))
 		siteapiEnrollmentResource.CreatedAt = timestamp((*source).CreatedAt)
 		siteapiEnrollmentResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
@@ -1751,6 +1752,21 @@ func (c *ConverterImpl) JoinDomainsToResources(source []*ent.JoinDomain) []site.
 		siteapiSiteJoinDomainResourceList[i] = c.JoinDomainToResource(source[i])
 	}
 	return siteapiSiteJoinDomainResourceList
+}
+func (c *ConverterImpl) KeptEventToResource(source automations.KeptEvent) site.KeptEvent {
+	var siteapiKeptEvent site.KeptEvent
+	siteapiKeptEvent.Name = source.Name
+	siteapiKeptEvent.Action = source.Action
+	siteapiKeptEvent.Properties = awaitedProperties(source.Properties)
+	return siteapiKeptEvent
+}
+func (c *ConverterImpl) KeptEventsToResources(source []automations.KeptEvent) []site.KeptEvent {
+	var siteapiKeptEventList []site.KeptEvent
+	siteapiKeptEventList = make([]site.KeptEvent, len(source))
+	for i := 0; i < len(source); i++ {
+		siteapiKeptEventList[i] = c.KeptEventToResource(source[i])
+	}
+	return siteapiKeptEventList
 }
 func (c *ConverterImpl) LegalDocumentToSite(source signupitems.Document) site.SiteLegalDocument {
 	var siteapiSiteLegalDocument site.SiteLegalDocument

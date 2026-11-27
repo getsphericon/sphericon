@@ -34,7 +34,7 @@ func TestRequestConstructorsDeduplicateTheSameLogicalSend(t *testing.T) {
 			return req
 		},
 		"automation step": func() outboundmessages.Request {
-			return outboundmessages.AutomationStep(automation, run, welcomeFirstEmailStepID, nil, contact, outboundmessages.EmailContent{Subject: "Hi", Body: "<p>Hi</p>"}, outboundmessages.Waited{})
+			return outboundmessages.AutomationStep(automation, run, nil, welcomeFirstEmailStepID, nil, contact, outboundmessages.EmailContent{Subject: "Hi", Body: "<p>Hi</p>"}, outboundmessages.Waited{})
 		},
 		"transactional with a client key": func() outboundmessages.Request {
 			return outboundmessages.Transactional(outboundmessages.TransactionalMessage{
@@ -93,7 +93,7 @@ func TestConstructorsKeepTheStoredKeyFormats(t *testing.T) {
 	require.NoError(t, err)
 	for want, req := range map[string]outboundmessages.Request{
 		fmt.Sprintf("broadcast:%d", rec.ID):                    recipient,
-		"automation:1000:9c2251c9-031a-5e1e-b3a5-d4d37085ffe8": outboundmessages.AutomationStep(automation, run, "9c2251c9-031a-5e1e-b3a5-d4d37085ffe8", nil, contact, outboundmessages.EmailContent{Subject: "Hi", Body: "<p>Hi</p>"}, outboundmessages.Waited{}),
+		"automation:1000:9c2251c9-031a-5e1e-b3a5-d4d37085ffe8": outboundmessages.AutomationStep(automation, run, nil, "9c2251c9-031a-5e1e-b3a5-d4d37085ffe8", nil, contact, outboundmessages.EmailContent{Subject: "Hi", Body: "<p>Hi</p>"}, outboundmessages.Waited{}),
 		"transactional:k1":                                     outboundmessages.Transactional(outboundmessages.TransactionalMessage{ClientKey: "k1", Destination: "a@example.com"}),
 	} {
 		res, err := newModule(env, time.Now).Send(ctx, s, req)

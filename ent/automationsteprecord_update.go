@@ -145,6 +145,65 @@ func (_u *AutomationStepRecordUpdate) ClearPathOutcomes() *AutomationStepRecordU
 	return _u
 }
 
+// SetAwaitedEventID sets the "awaited_event_id" field.
+func (_u *AutomationStepRecordUpdate) SetAwaitedEventID(v int64) *AutomationStepRecordUpdate {
+	_u.mutation.ResetAwaitedEventID()
+	_u.mutation.SetAwaitedEventID(v)
+	return _u
+}
+
+// SetNillableAwaitedEventID sets the "awaited_event_id" field if the given value is not nil.
+func (_u *AutomationStepRecordUpdate) SetNillableAwaitedEventID(v *int64) *AutomationStepRecordUpdate {
+	if v != nil {
+		_u.SetAwaitedEventID(*v)
+	}
+	return _u
+}
+
+// AddAwaitedEventID adds value to the "awaited_event_id" field.
+func (_u *AutomationStepRecordUpdate) AddAwaitedEventID(v int64) *AutomationStepRecordUpdate {
+	_u.mutation.AddAwaitedEventID(v)
+	return _u
+}
+
+// ClearAwaitedEventID clears the value of the "awaited_event_id" field.
+func (_u *AutomationStepRecordUpdate) ClearAwaitedEventID() *AutomationStepRecordUpdate {
+	_u.mutation.ClearAwaitedEventID()
+	return _u
+}
+
+// SetAwaitedAction sets the "awaited_action" field.
+func (_u *AutomationStepRecordUpdate) SetAwaitedAction(v string) *AutomationStepRecordUpdate {
+	_u.mutation.SetAwaitedAction(v)
+	return _u
+}
+
+// SetNillableAwaitedAction sets the "awaited_action" field if the given value is not nil.
+func (_u *AutomationStepRecordUpdate) SetNillableAwaitedAction(v *string) *AutomationStepRecordUpdate {
+	if v != nil {
+		_u.SetAwaitedAction(*v)
+	}
+	return _u
+}
+
+// ClearAwaitedAction clears the value of the "awaited_action" field.
+func (_u *AutomationStepRecordUpdate) ClearAwaitedAction() *AutomationStepRecordUpdate {
+	_u.mutation.ClearAwaitedAction()
+	return _u
+}
+
+// SetAwaitedProperties sets the "awaited_properties" field.
+func (_u *AutomationStepRecordUpdate) SetAwaitedProperties(v map[string]interface{}) *AutomationStepRecordUpdate {
+	_u.mutation.SetAwaitedProperties(v)
+	return _u
+}
+
+// ClearAwaitedProperties clears the value of the "awaited_properties" field.
+func (_u *AutomationStepRecordUpdate) ClearAwaitedProperties() *AutomationStepRecordUpdate {
+	_u.mutation.ClearAwaitedProperties()
+	return _u
+}
+
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_u *AutomationStepRecordUpdate) SetWorkspace(v *Workspace) *AutomationStepRecordUpdate {
 	return _u.SetWorkspaceID(v.ID)
@@ -274,6 +333,27 @@ func (_u *AutomationStepRecordUpdate) sqlSave(ctx context.Context) (_node int, e
 	}
 	if _u.mutation.WentOnCleared() {
 		_spec.ClearField(automationsteprecord.FieldWentOn, field.TypeEnum)
+	}
+	if value, ok := _u.mutation.AwaitedEventID(); ok {
+		_spec.SetField(automationsteprecord.FieldAwaitedEventID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedAwaitedEventID(); ok {
+		_spec.AddField(automationsteprecord.FieldAwaitedEventID, field.TypeInt64, value)
+	}
+	if _u.mutation.AwaitedEventIDCleared() {
+		_spec.ClearField(automationsteprecord.FieldAwaitedEventID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.AwaitedAction(); ok {
+		_spec.SetField(automationsteprecord.FieldAwaitedAction, field.TypeString, value)
+	}
+	if _u.mutation.AwaitedActionCleared() {
+		_spec.ClearField(automationsteprecord.FieldAwaitedAction, field.TypeString)
+	}
+	if value, ok := _u.mutation.AwaitedProperties(); ok {
+		_spec.SetField(automationsteprecord.FieldAwaitedProperties, field.TypeJSON, value)
+	}
+	if _u.mutation.AwaitedPropertiesCleared() {
+		_spec.ClearField(automationsteprecord.FieldAwaitedProperties, field.TypeJSON)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -438,6 +518,65 @@ func (_u *AutomationStepRecordUpdateOne) ClearPathOutcomes() *AutomationStepReco
 	return _u
 }
 
+// SetAwaitedEventID sets the "awaited_event_id" field.
+func (_u *AutomationStepRecordUpdateOne) SetAwaitedEventID(v int64) *AutomationStepRecordUpdateOne {
+	_u.mutation.ResetAwaitedEventID()
+	_u.mutation.SetAwaitedEventID(v)
+	return _u
+}
+
+// SetNillableAwaitedEventID sets the "awaited_event_id" field if the given value is not nil.
+func (_u *AutomationStepRecordUpdateOne) SetNillableAwaitedEventID(v *int64) *AutomationStepRecordUpdateOne {
+	if v != nil {
+		_u.SetAwaitedEventID(*v)
+	}
+	return _u
+}
+
+// AddAwaitedEventID adds value to the "awaited_event_id" field.
+func (_u *AutomationStepRecordUpdateOne) AddAwaitedEventID(v int64) *AutomationStepRecordUpdateOne {
+	_u.mutation.AddAwaitedEventID(v)
+	return _u
+}
+
+// ClearAwaitedEventID clears the value of the "awaited_event_id" field.
+func (_u *AutomationStepRecordUpdateOne) ClearAwaitedEventID() *AutomationStepRecordUpdateOne {
+	_u.mutation.ClearAwaitedEventID()
+	return _u
+}
+
+// SetAwaitedAction sets the "awaited_action" field.
+func (_u *AutomationStepRecordUpdateOne) SetAwaitedAction(v string) *AutomationStepRecordUpdateOne {
+	_u.mutation.SetAwaitedAction(v)
+	return _u
+}
+
+// SetNillableAwaitedAction sets the "awaited_action" field if the given value is not nil.
+func (_u *AutomationStepRecordUpdateOne) SetNillableAwaitedAction(v *string) *AutomationStepRecordUpdateOne {
+	if v != nil {
+		_u.SetAwaitedAction(*v)
+	}
+	return _u
+}
+
+// ClearAwaitedAction clears the value of the "awaited_action" field.
+func (_u *AutomationStepRecordUpdateOne) ClearAwaitedAction() *AutomationStepRecordUpdateOne {
+	_u.mutation.ClearAwaitedAction()
+	return _u
+}
+
+// SetAwaitedProperties sets the "awaited_properties" field.
+func (_u *AutomationStepRecordUpdateOne) SetAwaitedProperties(v map[string]interface{}) *AutomationStepRecordUpdateOne {
+	_u.mutation.SetAwaitedProperties(v)
+	return _u
+}
+
+// ClearAwaitedProperties clears the value of the "awaited_properties" field.
+func (_u *AutomationStepRecordUpdateOne) ClearAwaitedProperties() *AutomationStepRecordUpdateOne {
+	_u.mutation.ClearAwaitedProperties()
+	return _u
+}
+
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_u *AutomationStepRecordUpdateOne) SetWorkspace(v *Workspace) *AutomationStepRecordUpdateOne {
 	return _u.SetWorkspaceID(v.ID)
@@ -597,6 +736,27 @@ func (_u *AutomationStepRecordUpdateOne) sqlSave(ctx context.Context) (_node *Au
 	}
 	if _u.mutation.WentOnCleared() {
 		_spec.ClearField(automationsteprecord.FieldWentOn, field.TypeEnum)
+	}
+	if value, ok := _u.mutation.AwaitedEventID(); ok {
+		_spec.SetField(automationsteprecord.FieldAwaitedEventID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedAwaitedEventID(); ok {
+		_spec.AddField(automationsteprecord.FieldAwaitedEventID, field.TypeInt64, value)
+	}
+	if _u.mutation.AwaitedEventIDCleared() {
+		_spec.ClearField(automationsteprecord.FieldAwaitedEventID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.AwaitedAction(); ok {
+		_spec.SetField(automationsteprecord.FieldAwaitedAction, field.TypeString, value)
+	}
+	if _u.mutation.AwaitedActionCleared() {
+		_spec.ClearField(automationsteprecord.FieldAwaitedAction, field.TypeString)
+	}
+	if value, ok := _u.mutation.AwaitedProperties(); ok {
+		_spec.SetField(automationsteprecord.FieldAwaitedProperties, field.TypeJSON, value)
+	}
+	if _u.mutation.AwaitedPropertiesCleared() {
+		_spec.ClearField(automationsteprecord.FieldAwaitedProperties, field.TypeJSON)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{

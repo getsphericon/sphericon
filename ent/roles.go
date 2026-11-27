@@ -532,6 +532,9 @@ const (
 	RoleOf_AutomationRunClient_QueryFiring           = RoleRead
 	RoleOf_AutomationRun_QueryFiring                 = RoleRead
 	RoleOf_AutomationRunQuery_QueryFiring            = RoleRead
+	RoleOf_AutomationRunClient_QueryStepRecords      = RoleRead
+	RoleOf_AutomationRun_QueryStepRecords            = RoleRead
+	RoleOf_AutomationRunQuery_QueryStepRecords       = RoleRead
 	RoleOf_AutomationRun_Update                      = RoleStart
 	RoleOf_AutomationRunCreate_OnConflict            = RoleStart
 	RoleOf_AutomationRunCreate_OnConflictColumns     = RoleStart

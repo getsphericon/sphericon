@@ -41,12 +41,13 @@ type DryRunResult struct {
 }
 
 // renderBody renders an HTTP step's Liquid body for a Contact (nil: no Contact bindings) and an
-// Enrollment run (nil: an empty `event`), and checks the result is valid JSON within the size
-// limit. It binds the Contact's fields and `event`, the copy of the Event the Enrollment began on
-// (#752), as a Rule's http Action binds the Event it fired on. Every value the body writes is
-// JSON-escaped as it is written, so a value holding quotes cannot change the structure.
-func renderBody(body string, c *ent.Contact, run *ent.AutomationRun) (string, error) {
-	return httpcall.RenderBody(body, outboundmessages.Bindings(c, outboundmessages.EnrollmentVariables(run)))
+// Enrollment run (nil: an empty `event`) that keeps the Events awaited (ADR 0136), and checks the
+// result is valid JSON within the size limit. It binds the Contact's fields, `event`, the copy of
+// the Event the Enrollment began on (#752), as a Rule's http Action binds the Event it fired on, and
+// `awaited`, as a send step does. Every value the body writes is JSON-escaped as it is written, so a
+// value holding quotes cannot change the structure.
+func renderBody(body string, c *ent.Contact, run *ent.AutomationRun, awaited map[string]outboundmessages.AwaitedEvent) (string, error) {
+	return httpcall.RenderBody(body, outboundmessages.Bindings(c, outboundmessages.EnrollmentVariables(run, awaited)))
 }
 
 func bodyDetail(err error) string {
@@ -54,7 +55,7 @@ func bodyDetail(err error) string {
 }
 
 // DryRun renders a body for a Contact of the Workspace and validates it without
-// calling anything. No Enrollment stands behind it, so its `event` is empty.
+// calling anything. No Enrollment stands behind it, so its `event` and `awaited` are empty.
 func (m *Module) DryRun(ctx context.Context, s *ent.Scoped, contactID int64, body string) (DryRunResult, error) {
 	c, err := s.Contact().Get(ctx, contactID)
 	if ent.IsNotFound(err) {
@@ -63,7 +64,7 @@ func (m *Module) DryRun(ctx context.Context, s *ent.Scoped, contactID int64, bod
 	if err != nil {
 		return DryRunResult{}, err
 	}
-	out, err := renderBody(body, c, nil)
+	out, err := renderBody(body, c, nil, nil)
 	if err != nil {
 		return DryRunResult{ErrorKind: ErrorKindInvalidBody, Detail: bodyDetail(err)}, nil
 	}

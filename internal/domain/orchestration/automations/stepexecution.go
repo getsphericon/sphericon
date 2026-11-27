@@ -470,12 +470,16 @@ func (m *StepExecution) send(ctx context.Context, s *ent.Scoped, a *ent.Automati
 	if err != nil {
 		return err
 	}
+	awaited, err := keptOn(ctx, s, run.ID, at.index)
+	if err != nil {
+		return err
+	}
 	// The send is fenced against an exit (Fencer): it starts only on an Enrollment that is
 	// still active and an exit waits for it, so nothing is sent after an exit.
 	var res outboundmessages.Result
 	err = m.fence(ctx, s, run.ID, func(ctx context.Context) error {
 		var sendErr error
-		res, sendErr = m.out.Send(ctx, s, outboundmessages.AutomationStep(a, run, at.step, st.Step.Integration(), c, content, waitedOf(run)))
+		res, sendErr = m.out.Send(ctx, s, outboundmessages.AutomationStep(a, run, awaited, at.step, st.Step.Integration(), c, content, waitedOf(run)))
 		return sendErr
 	})
 	if stale(err) {
@@ -620,10 +624,16 @@ func (m *StepExecution) end(ctx context.Context, s *ent.Scoped, runID int64, at 
 }
 
 // completeOn completes the Enrollment on the Step of the id, which it leaves at now as how says, in
-// the transaction s is bound to.
+// the transaction s is bound to. A Wait for event it leaves keeps no copy of the Event it arrived
+// on: the end clears every copy (clearKept), and no Step comes after to read it.
 func completeOn(ctx context.Context, s *ent.Scoped, pub events.Publisher, runID int64, step automationstep.ID, now time.Time, how leaving) error {
 	if err := completeRun(ctx, s, pub, runID, step, now); err != nil {
 		return err
+	}
+	if how.path != nil && how.path.kept != nil {
+		path := *how.path
+		path.kept = nil
+		how.path = &path
 	}
 	return leave(ctx, s, runID, step, now, how)
 }

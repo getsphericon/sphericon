@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/automationsteprecord"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/rulefiring"
@@ -341,6 +342,21 @@ func (_c *AutomationRunCreate) SetFiring(v *RuleFiring) *AutomationRunCreate {
 	return _c.SetFiringID(v.ID)
 }
 
+// AddStepRecordIDs adds the "step_records" edge to the AutomationStepRecord entity by IDs.
+func (_c *AutomationRunCreate) AddStepRecordIDs(ids ...int64) *AutomationRunCreate {
+	_c.mutation.AddStepRecordIDs(ids...)
+	return _c
+}
+
+// AddStepRecords adds the "step_records" edges to the AutomationStepRecord entity.
+func (_c *AutomationRunCreate) AddStepRecords(v ...*AutomationStepRecord) *AutomationRunCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddStepRecordIDs(ids...)
+}
+
 // Mutation returns the AutomationRunMutation object of the builder.
 func (_c *AutomationRunCreate) Mutation() *AutomationRunMutation {
 	return _c.mutation
@@ -649,6 +665,22 @@ func (_c *AutomationRunCreate) createSpec() (*AutomationRun, *sqlgraph.CreateSpe
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.FiringID = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.StepRecordsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   automationrun.StepRecordsTable,
+			Columns: []string{automationrun.StepRecordsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationsteprecord.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

@@ -2151,6 +2151,22 @@ func (c *AutomationRunClient) QueryFiring(_m *AutomationRun) *RuleFiringQuery {
 	return query
 }
 
+// QueryStepRecords queries the step_records edge of a AutomationRun.
+func (c *AutomationRunClient) QueryStepRecords(_m *AutomationRun) *AutomationStepRecordQuery {
+	query := (&AutomationStepRecordClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(automationrun.Table, automationrun.FieldID, id),
+			sqlgraph.To(automationsteprecord.Table, automationsteprecord.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, automationrun.StepRecordsTable, automationrun.StepRecordsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *AutomationRunClient) Hooks() []Hook {
 	return c.hooks.AutomationRun

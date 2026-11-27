@@ -203,6 +203,8 @@ func (AutomationRun) Edges() []ent.Edge {
 			Annotations(entsql.OnDelete(entsql.Cascade)),
 		edge.To("firing", RuleFiring.Type).Field("firing_id").Unique().Immutable().
 			Annotations(entsql.OnDelete(entsql.SetNull)),
+		// What the Enrollment kept of each Step it reached (ADR 0124); their key is theirs.
+		edge.From("step_records", AutomationStepRecord.Type).Ref("run"),
 	}
 }
 

@@ -828,6 +828,15 @@ export const zIssueTelegramStartLinkInput = z.strictObject({
 export const zJsonObject = z.record(z.string(), z.unknown());
 
 /**
+ * The copy an Enrollment keeps of the Event one of its Wait for event Steps arrived on (ADR 0136), which later Steps read as `awaited.<name>`.
+ */
+export const zKeptEvent = z.object({
+  name: z.string(),
+  action: z.string(),
+  properties: zJsonObject
+});
+
+/**
  * The label a Staff member gives a published Legal document version, unique per item
  */
 export const zLegalDocumentLabel = z.string().min(1).max(64);
@@ -5360,6 +5369,7 @@ export const zEnrollmentResource = z.object({
   deferredSince: zTimestamp.exactOptional(),
   deferralCause: zDeferralCause.exactOptional(),
   failure: zEnrollmentFailure.exactOptional(),
+  awaited: z.array(zKeptEvent),
   createdAt: zTimestamp,
   updatedAt: zTimestamp
 });

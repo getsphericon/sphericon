@@ -11288,6 +11288,7 @@
           "contactId",
           "status",
           "ordinal",
+          "awaited",
           "createdAt",
           "updatedAt"
         ],
@@ -11381,6 +11382,13 @@
               }
             ],
             "description": "Present on a failed Enrollment whose failure an HTTP step recorded"
+          },
+          "awaited": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/KeptEvent"
+            },
+            "description": "The Events its Wait for event Steps arrived on, by name (ADR 0136): kept while the Enrollment runs, and cleared when it ends, so empty once it ended"
           },
           "createdAt": {
             "allOf": [
@@ -13135,6 +13143,31 @@
         "type": "object",
         "additionalProperties": {},
         "description": "A JSON object whose members the contract leaves open: custom field values, event properties,\nintegration params, an audit diff. One named model, so every surface's Go code has one type for\nit rather than one per field."
+      },
+      "KeptEvent": {
+        "type": "object",
+        "required": ["name", "action", "properties"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The name of the Wait for event that arrived on it"
+          },
+          "action": {
+            "type": "string",
+            "description": "The Event's action",
+            "x-untrusted": true
+          },
+          "properties": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/JsonObject"
+              }
+            ],
+            "description": "The Event's properties, bounded at 32 KiB as the triggering Event's copy is: empty when they weighed more",
+            "x-untrusted": true
+          }
+        },
+        "description": "The copy an Enrollment keeps of the Event one of its Wait for event Steps arrived on (ADR 0136), which later Steps read as `awaited.<name>`."
       },
       "LinkClicks": {
         "type": "object",

@@ -214,7 +214,8 @@ func begunOnSource(ctx context.Context, s *ent.Scoped, m *StepExecution, run *en
 // timeout runs the job of a Wait for event at its deadline (ADR 0124): before it, a job run early
 // (a restart) queues itself for the deadline and moves nothing; at it, the Enrollment takes
 // `arrived` when a satisfying Event is already recorded, one that occurred within the window but
-// was recorded late included, and `timed_out` otherwise. The move is the compare-and-set on the
+// was recorded late included, keeping a copy of the first by occurrence (ADR 0136), and
+// `timed_out` otherwise. The move is the compare-and-set on the
 // cursor, so a wake that committed first leaves this job nothing to move.
 func (m *StepExecution) timeout(ctx context.Context, s *ent.Scoped, run *ent.AutomationRun, at place, w automationstep.WaitForEvent) error {
 	if run.ResumeAt != nil && run.ResumeAt.After(m.now()) {
@@ -224,20 +225,32 @@ func (m *StepExecution) timeout(ctx context.Context, s *ent.Scoped, run *ent.Aut
 	if err != nil || !open {
 		return err
 	}
-	arrived, err := s.Event().Query().Where(satisfying(win)...).Exist(ctx)
+	arrival, err := firstSatisfying(ctx, s, satisfying(win))
 	if err != nil {
 		return err
 	}
-	path := w.TimedOut.ID
-	if arrived {
-		path = w.Arrived.ID
+	taken := pathTaken{id: w.TimedOut.ID}
+	if arrival != nil {
+		taken = pathTaken{id: w.Arrived.ID, kept: keptOf(arrival)}
 	}
-	return m.advance(ctx, s, run.ID, at, stepMove{path: &pathTaken{id: path}})
+	return m.advance(ctx, s, run.ID, at, stepMove{path: &taken})
+}
+
+// firstSatisfying is the Event a Wait for event arrives on among those where selects (satisfying):
+// the first by occurrence, which is also the one it keeps a copy of (ADR 0136); nil for none.
+func firstSatisfying(ctx context.Context, s *ent.Scoped, where []predicate.Event) (*ent.Event, error) {
+	first, err := s.Event().Query().Where(where...).
+		Order(ent.Asc(event.FieldOccurredAt), ent.Asc(event.FieldID)).
+		First(ctx)
+	if ent.IsNotFound(err) {
+		return nil, nil
+	}
+	return first, err
 }
 
 // wake moves down `arrived` each of the Contact's active Enrollments that stands on a Wait for
 // event the Event satisfies (satisfying, on the Event stored with ev.SourceID), each in a move of
-// its own. An Enrollment that left the Step, or that the timeout moved first, is left as it is.
+// its own that keeps a copy of the Event (ADR 0136). An Enrollment that left the Step, or that the timeout moved first, is left as it is.
 func (m *StepExecution) wake(ctx context.Context, s *ent.Scoped, contactID int64, ev Event) error {
 	if ev.SourceID == "" {
 		return nil // an Event with no stored row satisfies no wait
@@ -266,15 +279,15 @@ func (m *StepExecution) wake(ctx context.Context, s *ent.Scoped, contactID int64
 		if !open {
 			continue
 		}
-		satisfied, err := s.Event().Query().Where(append(satisfying(win), event.SourceID(ev.SourceID))...).Exist(ctx)
+		arrival, err := firstSatisfying(ctx, s, append(satisfying(win), event.SourceID(ev.SourceID)))
 		if err != nil {
 			return fmt.Errorf("wake enrollment %d: %w", run.ID, err)
 		}
-		if !satisfied {
+		if arrival == nil {
 			continue
 		}
 		at := place{index: index, step: st.ID}
-		if err := m.advance(ctx, s, run.ID, at, stepMove{path: &pathTaken{id: w.Arrived.ID}}); err != nil {
+		if err := m.advance(ctx, s, run.ID, at, stepMove{path: &pathTaken{id: w.Arrived.ID, kept: keptOf(arrival)}}); err != nil {
 			return err
 		}
 	}

@@ -69,7 +69,11 @@ func (m *StepExecution) ExecuteHTTP(ctx context.Context, s *ent.Scoped, in Execu
 	if err != nil {
 		return httpcall.Execution{}, err
 	}
-	body, err := renderBody(call.Body, c, run)
+	awaited, err := keptOn(ctx, s, run.ID, index)
+	if err != nil {
+		return httpcall.Execution{}, err
+	}
+	body, err := renderBody(call.Body, c, run, awaited)
 	if err != nil {
 		return m.failHTTP(ctx, s, run.ID, failure{Kind: automationrun.FailureKindInvalidBody}, httpcall.Execution{Cancel: err})
 	}

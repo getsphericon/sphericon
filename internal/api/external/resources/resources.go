@@ -631,7 +631,12 @@ type Converter interface {
 
 	// goverter:map . Failure | enrollmentFailure
 	// goverter:map Occurrence | enrollmentOccurrence
+	// goverter:map . Awaited | enrollmentAwaited
 	EnrollmentToResource(source *ent.AutomationRun) externalapi.EnrollmentResource
+	// goverter:map Properties | awaitedProperties
+	KeptEventToResource(source automations.KeptEvent) externalapi.KeptEvent
+	// goverter:useEmptyOnNil:slice
+	KeptEventsToResources(source []automations.KeptEvent) []externalapi.KeptEvent
 	// The store names the triggering Event's source id; the contract says whose it is.
 	// goverter:map SourceID EventSourceId
 	SkippedEntryToResource(source *ent.AutomationSkippedEntry) externalapi.SkippedEntryResource
@@ -1191,6 +1196,17 @@ func enrollmentOccurrence(stored *datetrigger.StoredOccurrence) externalapi.OptE
 		})
 	}
 	return externalapi.NewOptEnrollmentOccurrence(externalapi.EnrollmentOccurrence{OneOf: sum})
+}
+
+// enrollmentAwaited is what the enrollment keeps of the Events its Wait for event Steps arrived on
+// (ADR 0136), by name; empty once it ended.
+func enrollmentAwaited(c Converter, r ent.AutomationRun) []externalapi.KeptEvent {
+	return c.KeptEventsToResources(automations.KeptEvents(&r))
+}
+
+// awaitedProperties is a kept Event's properties, an empty object when it kept none.
+func awaitedProperties(m map[string]any) externalapi.JsonObject {
+	return convert.RawObject[externalapi.JsonObject](m)
 }
 
 // enrollmentFailure is the enrollment's failure detail; absent unless it failed.

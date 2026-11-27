@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationsteprecord"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/infra/db"
+	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
@@ -132,12 +133,26 @@ type leaving struct {
 	path    *pathTaken
 }
 
-// pathTaken is the path a fork sent the Enrollment down, by its id, and, at a Branch, what each
-// path's Condition was for the Contact, by path id: true, false or unknown, never the values
-// tested.
+// pathTaken is the path a fork sent the Enrollment down, by its id; at a Branch, what each path's
+// Condition was for the Contact, by path id: true, false or unknown, never the values tested; and,
+// at a Wait for event that arrived on an Event, the copy of that Event it keeps (ADR 0136).
 type pathTaken struct {
 	id       automationstep.ID
 	outcomes map[automationstep.ID]conditiontree.Truth
+	kept     *keptEvent
+}
+
+// keptEvent is the copy a Wait for event keeps of the Event it arrived on (ADR 0136): the Event's
+// id, its action and its properties, bounded as the Enrollment's `event` is.
+type keptEvent struct {
+	eventID    int64
+	action     string
+	properties map[string]any
+}
+
+// keptOf is the copy of the stored Event e.
+func keptOf(e *ent.Event) *keptEvent {
+	return &keptEvent{eventID: e.ID, action: e.Action, properties: events.BoundedProperties(e.Properties)}
 }
 
 // leave records that the Enrollment runID left the Step of the id at now, as how says: skipped for
@@ -163,6 +178,12 @@ func leave(ctx context.Context, s *ent.Scoped, runID int64, stepID automationste
 			if how.path.outcomes != nil {
 				u.SetPathOutcomes(how.path.outcomes)
 			}
+			if k := how.path.kept; k != nil {
+				u.SetAwaitedEventID(k.eventID).SetAwaitedAction(k.action)
+				if k.properties != nil {
+					u.SetAwaitedProperties(k.properties)
+				}
+			}
 		}
 		n, err := u.Save(ctx)
 		return n > 0, err
@@ -171,6 +192,18 @@ func leave(ctx context.Context, s *ent.Scoped, runID int64, stepID automationste
 		return fmt.Errorf("leave step %s of run %d: the Enrollment has no open record of it", stepID, runID)
 	}
 	return err
+}
+
+// clearKept clears the copies of the Events the Enrollment runID's Wait for event Steps arrived on
+// (ADR 0136), in the move that ends it: nothing reads them after, and an Enrollment's records are
+// kept for its reports. The rest of each record stays.
+func clearKept(ctx context.Context, s *ent.Scoped, runID int64) error {
+	return s.AutomationStepRecord().Update().
+		Where(automationsteprecord.RunID(runID), automationsteprecord.AwaitedEventIDNotNil()).
+		ClearAwaitedEventID().
+		ClearAwaitedAction().
+		ClearAwaitedProperties().
+		Exec(ctx)
 }
 
 // leaveOnEnd records that the Enrollment runID, ended at endedAt through an exit, its goal or a

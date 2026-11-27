@@ -92,9 +92,11 @@ type AutomationRunEdges struct {
 	Contact *Contact `json:"contact,omitempty"`
 	// Firing holds the value of the firing edge.
 	Firing *RuleFiring `json:"firing,omitempty"`
+	// StepRecords holds the value of the step_records edge.
+	StepRecords []*AutomationStepRecord `json:"step_records,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [5]bool
+	loadedTypes [6]bool
 }
 
 // WorkspaceOrErr returns the Workspace value or an error if the edge
@@ -150,6 +152,15 @@ func (e AutomationRunEdges) FiringOrErr() (*RuleFiring, error) {
 		return nil, &NotFoundError{label: rulefiring.Label}
 	}
 	return nil, &NotLoadedError{edge: "firing"}
+}
+
+// StepRecordsOrErr returns the StepRecords value or an error if the edge
+// was not loaded in eager-loading.
+func (e AutomationRunEdges) StepRecordsOrErr() ([]*AutomationStepRecord, error) {
+	if e.loadedTypes[5] {
+		return e.StepRecords, nil
+	}
+	return nil, &NotLoadedError{edge: "step_records"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -383,6 +394,11 @@ func (_m *AutomationRun) QueryContact() *ContactQuery {
 // QueryFiring queries the "firing" edge of the AutomationRun entity.
 func (_m *AutomationRun) QueryFiring() *RuleFiringQuery {
 	return NewAutomationRunClient(_m.config).QueryFiring(_m)
+}
+
+// QueryStepRecords queries the "step_records" edge of the AutomationRun entity.
+func (_m *AutomationRun) QueryStepRecords() *AutomationStepRecordQuery {
+	return NewAutomationRunClient(_m.config).QueryStepRecords(_m)
 }
 
 // Update returns a builder for updating this AutomationRun.
