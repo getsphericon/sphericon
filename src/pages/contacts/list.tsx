@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next'
 import { CountryFlag } from '../../components/CountryFlag.tsx'
 import { PagedTable } from '../../components/PagedTable.tsx'
 import { RelativeTime } from '../../components/RelativeTime.tsx'
-import { MenuItemLink } from '../../components/RouterLink.tsx'
+import { ButtonLink, MenuItemLink } from '../../components/RouterLink.tsx'
 import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
 import {
   siteContactsListOptions,
@@ -18,11 +18,14 @@ import {
 import { zSiteTagsListQuery } from '../../generated/site/zod.gen.ts'
 import { Route as contactsEditRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/edit.tsx'
 import { Route as contactsDetailRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/index.tsx'
+import { Route as importRoute } from '../../routes/workspaces/$workspaceId/contacts/import.tsx'
 import { Route as contactsRoute } from '../../routes/workspaces/$workspaceId/contacts/index.tsx'
 import { withPage } from '../../searchSchemas.ts'
 import { maxPageSize } from '../../utils/bounds.ts'
 import { contactFullName, contactIdentifier, contactName } from '../../utils/contactName.ts'
 import { countryOptions } from '../../utils/countries.ts'
+import { can } from '../../utils/permissions.ts'
+import { workspaceOptions } from '../../utils/workspace.ts'
 import { ContactCreateModal } from './resource.tsx'
 
 // The Workspace's Tags to filter by (the first hundred). The Tag in the URL is always an option, so a link to a Tag
@@ -96,6 +99,8 @@ export function ContactsListPage() {
   const { email, tag, country, page } = contactsRoute.useSearch()
   const navigate = useNavigate({ from: contactsRoute.fullPath })
   const [createOpened, { open: openCreate, close: closeCreate }] = useDisclosure(false)
+  // Importing a file is offered only with contacts:import (the API refuses everyone else).
+  const { data: workspace } = useQuery(workspaceOptions(workspaceId))
   const [search, setSearch] = useState(email ?? '')
   // Back/forward or a link changes the URL search: the field follows it, unless it already
   // shows that search (typing trims before it navigates).
@@ -126,7 +131,14 @@ export function ContactsListPage() {
       <ContactCreateModal opened={createOpened} onClose={closeCreate} />
       <Group justify="space-between" align="center">
         <Title order={2}>{t(($) => $.nav.contacts)}</Title>
-        <Button onClick={openCreate}>{t(($) => $.contacts.addContact)}</Button>
+        <Group gap="sm">
+          {can(workspace, 'contacts:import') ? (
+            <ButtonLink variant="default" to={importRoute.to} params={{ workspaceId }}>
+              {t(($) => $.contacts.importContacts)}
+            </ButtonLink>
+          ) : null}
+          <Button onClick={openCreate}>{t(($) => $.contacts.addContact)}</Button>
+        </Group>
       </Group>
 
       <TextInput

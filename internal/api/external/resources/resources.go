@@ -462,7 +462,10 @@ type Converter interface {
 	EmailTemplatesToResources(source []*ent.EmailTemplate) []externalapi.TemplateResource
 
 	// The traits of a batch item worth a look (ADR 0117, ADR 0138); goverter checks each member.
+	// Only a CSV import's rows name two Contacts with a warning: the batch upsert refuses such an
+	// item, so its answer never carries one.
 	// goverter:enum:transform value
+	// goverter:enum:map WarningKeysNameTwoContacts @panic
 	ContactBatchWarning(source contacts.Warning) externalapi.ContactBatchWarning
 	ContactBatchWarnings(source []contacts.Warning) []externalapi.ContactBatchWarning
 

@@ -237,6 +237,10 @@ var Bounds = []Bound{
 		Spec: external, Schema: "UpsertContactsInput", Property: "contacts", Owners: []string{contactOwner},
 	},
 	{
+		Name: "ContactImportColumns", Doc: "are the columns a CSV import of Contacts maps: a file of more is refused at upload.",
+		Spec: site, Schema: "ContactImportMappingInput", Property: "columns", Owners: []string{"ContactImport"},
+	},
+	{
 		Name: "IdentifyPhone", Doc: "is the phone an Identify of the tracker names its Contact by.",
 		Spec: collect, Schema: "CollectIdentifyInput", Property: "phone",
 		Owners: []string{"internal/usecase/visitoridentification"},

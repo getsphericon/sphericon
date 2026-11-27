@@ -57,7 +57,18 @@ const (
 	// WarningConsentTimeInFuture: a consent of the row stated a time after now, which was dropped
 	// and the consent recorded as given now (ADR 0138).
 	WarningConsentTimeInFuture Warning = "consent_time_in_future"
+	// WarningKeysNameTwoContacts: the row's alias keys named two Contacts, and it was written to the
+	// one their rank picks without the keys of the other (ADR 0138). Only a CSV import's rows carry
+	// it (Import); the API's batch upsert refuses such an item as a key taken.
+	WarningKeysNameTwoContacts Warning = "keys_name_two_contacts"
 )
+
+// intakeMode is how a Contact intake writes its rows: onlyNew leaves a Contact the Workspace has as
+// it is but for its refusals, rankKeys writes a row whose keys name two Contacts to the one their
+// rank picks (the CSV import's, ADR 0138).
+type intakeMode struct {
+	onlyNew, rankKeys bool
+}
 
 // UpsertBatch is the Contact intake of the API's batch upsert: it upserts each item in its own
 // transaction, in order, so a failing item neither rolls back nor blocks the others; each new
@@ -74,7 +85,7 @@ const (
 // that happened. A batch of fewer or more items than the contract's ContactBatch is refused whole,
 // before any row.
 func (m *Module) UpsertBatch(ctx context.Context, s *ent.Scoped, src contact.Source, items []IntakeInput) (batch.Result[Result], error) {
-	out, err := m.rows(ctx, s, src, items, false)
+	out, err := m.rows(ctx, s, src, items, intakeMode{})
 	if err != nil {
 		return batch.Result[Result]{}, err
 	}
@@ -110,20 +121,21 @@ type ImportInput struct {
 // Import is the Contact intake's entry for a CSV import's job (ADR 0138): the rows of
 // UpsertBatch, written through the scope s, which acts as the Member who ran the import, under the
 // job's cause, with no Audit entry of its own: the job records one contact.import for the whole
-// import. A Contact it creates has the source `import`.
+// import. A Contact it creates has the source `import`. A row whose keys name two Contacts is
+// written to the one their rank picks, with WarningKeysNameTwoContacts.
 func (m *Module) Import(ctx context.Context, s *ent.Scoped, in ImportInput) (batch.Result[Result], error) {
-	return m.rows(events.WithCause(ctx, in.Cause), s, contact.SourceImport, in.Rows, in.OnlyAddNew)
+	return m.rows(events.WithCause(ctx, in.Cause), s, contact.SourceImport, in.Rows, intakeMode{onlyNew: in.OnlyAddNew, rankKeys: true})
 }
 
 // rows writes each item through an unaudited scope, in order, each in a transaction of its own
 // (intake), after reading the mail verdicts of their domains once.
-func (m *Module) rows(ctx context.Context, s *ent.Scoped, src contact.Source, items []IntakeInput, onlyNew bool) (batch.Result[Result], error) {
+func (m *Module) rows(ctx context.Context, s *ent.Scoped, src contact.Source, items []IntakeInput, mode intakeMode) (batch.Result[Result], error) {
 	if err := validation.Items(fieldname.Contacts, len(items), bounds.ContactBatchMinItems, bounds.ContactBatchMaxItems); err != nil {
 		return batch.Result[Result]{}, err
 	}
 	rows := events.Unaudited(s)
 	mail := m.mailVerdicts(ctx, items)
-	return batch.Each(items, func(in IntakeInput) (Result, error) { return m.intake(ctx, rows, src, in, mail, onlyNew) }), nil
+	return batch.Each(items, func(in IntakeInput) (Result, error) { return m.intake(ctx, rows, src, in, mail, mode) }), nil
 }
 
 // mailVerdicts reads whether the domain of each address the batch asserts accepts mail, one
@@ -142,9 +154,9 @@ func (m *Module) mailVerdicts(ctx context.Context, items []IntakeInput) map[stri
 // whether the domains of the batch's addresses accept mail (ADR 0117): a row that brings an
 // address new to the Workspace at a domain that cannot receive mail is refused
 // (ErrEmailDomainNoMail), and a stored row's Result carries the Warnings of its address. A consent
-// time after now is dropped and the row warned (WarningConsentTimeInFuture). With onlyNew, a row
-// that resolves to a Contact the Workspace has records only the refusals it carries.
-func (m *Module) intake(ctx context.Context, s *ent.Scoped, src contact.Source, in IntakeInput, mail map[string]addresscheck.Verdict, onlyNew bool) (Result, error) {
+// time after now is dropped and the row warned (WarningConsentTimeInFuture). With mode.onlyNew, a
+// row that resolves to a Contact the Workspace has records only the refusals it carries.
+func (m *Module) intake(ctx context.Context, s *ent.Scoped, src contact.Source, in IntakeInput, mail map[string]addresscheck.Verdict, mode intakeMode) (Result, error) {
 	in, warnings := m.dated(in)
 	var res Result
 	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
@@ -155,7 +167,7 @@ func (m *Module) intake(ctx context.Context, s *ent.Scoped, src contact.Source, 
 			return err
 		}
 		var err error
-		res, err = m.importIn(ctx, ts, src, in.UpsertInput, onlyNew)
+		res, err = m.importIn(ctx, ts, src, in.UpsertInput, mode)
 		if err != nil {
 			return err
 		}
@@ -177,7 +189,7 @@ func (m *Module) intake(ctx context.Context, s *ent.Scoped, src contact.Source, 
 		return Result{}, err
 	}
 	if in.Email != nil {
-		res.Warnings = addressWarnings(emailcase.Of(*in.Email))
+		res.Warnings = append(addressWarnings(emailcase.Of(*in.Email)), res.Warnings...)
 	}
 	res.Warnings = append(res.Warnings, warnings...)
 	return res, nil
@@ -272,4 +284,59 @@ func (m *Module) recordTracking(ctx context.Context, s *ent.Scoped, res Result, 
 		Phone:        lo.CoalesceOrEmpty(lo.FromPtr(res.Phone), lo.FromPtr(res.Contact.Phone)),
 		Observations: in.EngagementTracking,
 	})
+}
+
+// Verdict is what the Contact intake would make of a row, written or not: why it would refuse it
+// (nil when it would write it) and the Warnings of its address.
+type Verdict struct {
+	Refusal  error
+	Warnings []Warning
+}
+
+// Verdicts judge rows as the intake would, writing nothing (a CSV import's preview, ADR 0138): a
+// row with no alias key, an address that is none or whose domain cannot receive mail while no
+// Contact holds it (ADR 0117, the domains read once), a phone that cannot be read, or a Custom field
+// value its field's type does not read is refused with the intake's own refusal; a row it would
+// write carries the Warnings of its address. A refusal of a key another Contact holds is not
+// judged: it needs the rows written before it.
+func (m *Module) Verdicts(ctx context.Context, s *ent.Scoped, rows []IntakeInput) ([]Verdict, error) {
+	mail := m.mailVerdicts(ctx, rows)
+	out := make([]Verdict, len(rows))
+	for i, row := range rows {
+		v, err := verdict(ctx, s, row, mail)
+		if err != nil {
+			return nil, err
+		}
+		out[i] = v
+	}
+	return out, nil
+}
+
+// verdict is the Verdict of row, or the error of a read.
+func verdict(ctx context.Context, s *ent.Scoped, row IntakeInput, mail map[string]addresscheck.Verdict) (Verdict, error) {
+	in := row.UpsertInput.normalized()
+	if lo.FromPtr(in.SubjectID) == "" && in.Email == nil && in.Phone == nil {
+		return Verdict{Refusal: ErrIdentityRequired}, nil
+	}
+	email, err := checked(in.Email, in.City.Ptr(), in.Country.Ptr(), in.Locale.Ptr(), in.Avatar.Ptr())
+	if err != nil {
+		return Verdict{Refusal: err}, nil
+	}
+	for _, check := range []func() error{
+		func() error { return admitAddress(ctx, s, email, mail) },
+		func() error { _, err := upsertedPhone(ctx, s, in); return err },
+		func() error { return checkFieldTypes(ctx, s, in.CustomFields) },
+	} {
+		err := check()
+		if _, refused := validation.Shown(err); refused {
+			return Verdict{Refusal: err}, nil
+		}
+		if err != nil {
+			return Verdict{}, err
+		}
+	}
+	if email == nil {
+		return Verdict{}, nil
+	}
+	return Verdict{Warnings: addressWarnings(*email)}, nil
 }

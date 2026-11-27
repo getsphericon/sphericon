@@ -16,6 +16,9 @@
       "name": "Site engagement tracking"
     },
     {
+      "name": "Site Contact Imports"
+    },
+    {
       "name": "Site Custom Fields"
     },
     {
@@ -5401,6 +5404,373 @@
         },
         "tags": ["Site Connections"],
         "x-required-permissions": []
+      }
+    },
+    "/workspaces/{workspaceId}/contact-imports": {
+      "post": {
+        "operationId": "SiteContactImports_upload",
+        "description": "Upload a CSV file of Contacts to import (ADR 0138): UTF-8 (a byte order mark allowed), its\ncells separated by commas, semicolons or tabs, a header row first. It is refused whole when it\nis not UTF-8, is larger than the Instance's import limit (413), has no header, has more than 200\ncolumns or cannot be read as CSV. The answer proposes a mapping from the header.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteContactImport"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the\nstatus is the response's and the body's `status`, and `code` tells apart the answers a client\nbranches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the\nrate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's\n`retryAfter` is the wait for a client that reads only the body. Every operation declares it,\nas the `default` response (ADR 0103).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Contact Imports"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "text/csv": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "x-required-permissions": ["contacts:import"]
+      }
+    },
+    "/workspaces/{workspaceId}/contact-imports/{importId}": {
+      "get": {
+        "operationId": "SiteContactImports_get",
+        "description": "Read an import: its state, its mapping and how far its run is",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          },
+          {
+            "name": "importId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteContactImport"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the\nstatus is the response's and the body's `status`, and `code` tells apart the answers a client\nbranches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the\nrate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's\n`retryAfter` is the wait for a client that reads only the body. Every operation declares it,\nas the `default` response (ADR 0103).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Contact Imports"],
+        "x-required-permissions": ["contacts:import"]
+      }
+    },
+    "/workspaces/{workspaceId}/contact-imports/{importId}/mapping": {
+      "put": {
+        "operationId": "SiteContactImports_saveMapping",
+        "description": "Save how the import reads its file, one entry per column; it is then `ready`. Refused before it\nruns only: a running or ended import keeps its mapping (409).",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          },
+          {
+            "name": "importId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteContactImport"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the\nstatus is the response's and the body's `status`, and `code` tells apart the answers a client\nbranches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the\nrate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's\n`retryAfter` is the wait for a client that reads only the body. Every operation declares it,\nas the `default` response (ADR 0103).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Contact Imports"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContactImportMappingInput"
+              }
+            }
+          }
+        },
+        "x-required-permissions": ["contacts:import"]
+      }
+    },
+    "/workspaces/{workspaceId}/contact-imports/{importId}/preview": {
+      "get": {
+        "operationId": "SiteContactImports_preview",
+        "description": "Preview the saved mapping over the file, writing nothing",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          },
+          {
+            "name": "importId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteContactImportPreview"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the\nstatus is the response's and the body's `status`, and `code` tells apart the answers a client\nbranches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the\nrate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's\n`retryAfter` is the wait for a client that reads only the body. Every operation declares it,\nas the `default` response (ADR 0103).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Contact Imports"],
+        "x-required-permissions": ["contacts:import"]
+      }
+    },
+    "/workspaces/{workspaceId}/contact-imports/{importId}/report": {
+      "get": {
+        "operationId": "SiteContactImports_report",
+        "description": "Download the refused rows' report the link names: the file's header and each reported row's\noriginal cells, with a column saying why. It is deleted once downloaded whole; the link works\nonce, in the session that asked for it, within a minute (400 otherwise).",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          },
+          {
+            "name": "importId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          },
+          {
+            "name": "token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "explode": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "headers": {
+              "Content-Disposition": {
+                "required": true,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the\nstatus is the response's and the body's `status`, and `code` tells apart the answers a client\nbranches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the\nrate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's\n`retryAfter` is the wait for a client that reads only the body. Every operation declares it,\nas the `default` response (ADR 0103).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Contact Imports"],
+        "x-required-permissions": ["contacts:import"]
+      }
+    },
+    "/workspaces/{workspaceId}/contact-imports/{importId}/report-link": {
+      "post": {
+        "operationId": "SiteContactImports_reportLink",
+        "description": "A link to the refused rows' report, good once, for this session, for a minute",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          },
+          {
+            "name": "importId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DownloadLink"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the\nstatus is the response's and the body's `status`, and `code` tells apart the answers a client\nbranches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the\nrate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's\n`retryAfter` is the wait for a client that reads only the body. Every operation declares it,\nas the `default` response (ADR 0103).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Contact Imports"],
+        "x-required-permissions": ["contacts:import"]
+      }
+    },
+    "/workspaces/{workspaceId}/contact-imports/{importId}/run": {
+      "post": {
+        "operationId": "SiteContactImports_run",
+        "description": "Run a `ready` import: its job writes the rows through the Contact intake, acting as the Member,\nand starts nothing (its Events are history). A date column without a format is refused (422).",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          },
+          {
+            "name": "importId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteContactImport"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the\nstatus is the response's and the body's `status`, and `code` tells apart the answers a client\nbranches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the\nrate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's\n`retryAfter` is the wait for a client that reads only the body. Every operation declares it,\nas the `default` response (ADR 0103).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Contact Imports"],
+        "x-required-permissions": ["contacts:import"]
       }
     },
     "/workspaces/{workspaceId}/contacts": {
@@ -14333,6 +14703,521 @@
         },
         "description": "An anonymous device (visitor) bound to the contact"
       },
+      "ContactImportAttribute": {
+        "type": "string",
+        "enum": [
+          "firstName",
+          "lastName",
+          "timeZone",
+          "country",
+          "locale",
+          "city",
+          "avatar",
+          "birthday"
+        ],
+        "description": "A core attribute a column of an import writes, by the contract's name (ADR 0072)"
+      },
+      "ContactImportAttributeColumn": {
+        "type": "object",
+        "required": ["kind", "attribute", "dateFormat"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["attribute"]
+          },
+          "attribute": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContactImportAttribute"
+              }
+            ],
+            "description": "The attribute the cells write"
+          },
+          "dateFormat": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContactImportDateFormat"
+              }
+            ],
+            "nullable": true,
+            "description": "How the cells write a date: required for `birthday`, null for any other attribute"
+          }
+        },
+        "description": "A column whose cells write a core attribute"
+      },
+      "ContactImportAttributeColumnInput": {
+        "type": "object",
+        "required": ["kind", "attribute", "dateFormat"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["attribute"]
+          },
+          "attribute": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContactImportAttribute"
+              }
+            ],
+            "description": "The attribute the cells write"
+          },
+          "dateFormat": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContactImportDateFormat"
+              }
+            ],
+            "nullable": true,
+            "description": "How the cells write a date: required for `birthday`, null for any other attribute"
+          }
+        },
+        "description": "A column whose cells write a core attribute",
+        "additionalProperties": false
+      },
+      "ContactImportColumn": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/ContactImportKeyColumn"
+          },
+          {
+            "$ref": "#/components/schemas/ContactImportAttributeColumn"
+          },
+          {
+            "$ref": "#/components/schemas/ContactImportCustomFieldColumn"
+          },
+          {
+            "$ref": "#/components/schemas/ContactImportTagsColumn"
+          },
+          {
+            "$ref": "#/components/schemas/ContactImportIgnoreColumn"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "key": "#/components/schemas/ContactImportKeyColumn",
+            "attribute": "#/components/schemas/ContactImportAttributeColumn",
+            "customField": "#/components/schemas/ContactImportCustomFieldColumn",
+            "tags": "#/components/schemas/ContactImportTagsColumn",
+            "ignore": "#/components/schemas/ContactImportIgnoreColumn"
+          }
+        },
+        "description": "What a column of the file is, by `kind`"
+      },
+      "ContactImportColumnInput": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/ContactImportKeyColumnInput"
+          },
+          {
+            "$ref": "#/components/schemas/ContactImportAttributeColumnInput"
+          },
+          {
+            "$ref": "#/components/schemas/ContactImportCustomFieldColumnInput"
+          },
+          {
+            "$ref": "#/components/schemas/ContactImportTagsColumnInput"
+          },
+          {
+            "$ref": "#/components/schemas/ContactImportIgnoreColumnInput"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "key": "#/components/schemas/ContactImportKeyColumnInput",
+            "attribute": "#/components/schemas/ContactImportAttributeColumnInput",
+            "customField": "#/components/schemas/ContactImportCustomFieldColumnInput",
+            "tags": "#/components/schemas/ContactImportTagsColumnInput",
+            "ignore": "#/components/schemas/ContactImportIgnoreColumnInput"
+          }
+        },
+        "description": "What a column of the file is, by `kind`, as a request writes it"
+      },
+      "ContactImportCounts": {
+        "type": "object",
+        "required": ["processed", "created", "updated", "refused", "dropped"],
+        "properties": {
+          "processed": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Rows read so far"
+          },
+          "created": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Contacts created"
+          },
+          "updated": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Contacts the rows updated, or left as they were with only new ones added"
+          },
+          "refused": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Rows refused: no alias key, a cell count other than the header's, or a row the Contact intake refused"
+          },
+          "dropped": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Values dropped from rows that were written, because their column could not read them"
+          }
+        },
+        "description": "What an import's run has written so far"
+      },
+      "ContactImportCustomFieldColumn": {
+        "type": "object",
+        "required": ["kind", "key", "dateFormat"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["customField"]
+          },
+          "key": {
+            "type": "string",
+            "description": "The Custom field's key"
+          },
+          "dateFormat": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContactImportDateFormat"
+              }
+            ],
+            "nullable": true,
+            "description": "How the cells write a date: required for a `datetime` field, null for any other type"
+          }
+        },
+        "description": "A column whose cells write a Custom field the Workspace has, by its key"
+      },
+      "ContactImportCustomFieldColumnInput": {
+        "type": "object",
+        "required": ["kind", "key", "dateFormat"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["customField"]
+          },
+          "key": {
+            "type": "string",
+            "description": "The Custom field's key"
+          },
+          "dateFormat": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContactImportDateFormat"
+              }
+            ],
+            "nullable": true,
+            "description": "How the cells write a date: required for a `datetime` field, null for any other type"
+          }
+        },
+        "description": "A column whose cells write a Custom field the Workspace has, by its key",
+        "additionalProperties": false
+      },
+      "ContactImportDateFormat": {
+        "type": "string",
+        "enum": [
+          "yyyy-mm-dd",
+          "dd/mm/yyyy",
+          "dd.mm.yyyy",
+          "dd-mm-yyyy",
+          "mm/dd/yyyy",
+          "mm.dd.yyyy",
+          "mm-dd-yyyy",
+          "rfc3339"
+        ],
+        "description": "How a column writes its dates, which the Member chooses (ADR 0138): a date by the order of its\nday, month and year and their separator, or `rfc3339` for a date and time with its offset. A date\nwithout an offset is read in the Workspace time zone."
+      },
+      "ContactImportDecimalSeparator": {
+        "type": "string",
+        "enum": [".", ","],
+        "description": "The character a file's numbers write their decimals after"
+      },
+      "ContactImportDelimiter": {
+        "type": "string",
+        "enum": ["comma", "semicolon", "tab"],
+        "description": "The character a file's cells are separated by, detected at upload"
+      },
+      "ContactImportIgnoreColumn": {
+        "type": "object",
+        "required": ["kind"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["ignore"]
+          }
+        },
+        "description": "A column the import does not read"
+      },
+      "ContactImportIgnoreColumnInput": {
+        "type": "object",
+        "required": ["kind"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["ignore"]
+          }
+        },
+        "description": "A column the import does not read",
+        "additionalProperties": false
+      },
+      "ContactImportIssue": {
+        "type": "object",
+        "required": ["column", "reason", "message"],
+        "properties": {
+          "column": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true,
+            "description": "The column, counted from 0; null for an issue of the whole row"
+          },
+          "reason": {
+            "$ref": "#/components/schemas/ContactImportIssueReason"
+          },
+          "message": {
+            "type": "string",
+            "description": "Why, in words"
+          }
+        },
+        "description": "A value or a row of an import that is not written, or a row written with a warning, and why"
+      },
+      "ContactImportIssueReason": {
+        "type": "string",
+        "enum": [
+          "noKey",
+          "cellCount",
+          "refused",
+          "tooLong",
+          "notNumber",
+          "notBoolean",
+          "notDate",
+          "notPhone",
+          "notEmail",
+          "notTimeZone",
+          "notCountry",
+          "notLocale",
+          "notImageUrl",
+          "notTag",
+          "keysNameTwoContacts"
+        ],
+        "description": "Why a value or a row of an import is not written"
+      },
+      "ContactImportKey": {
+        "type": "string",
+        "enum": ["subjectId", "email", "phone"],
+        "description": "An alias key a column of an import fills, by the contract's name (ADR 0002)"
+      },
+      "ContactImportKeyColumn": {
+        "type": "object",
+        "required": ["kind", "key"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["key"]
+          },
+          "key": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContactImportKey"
+              }
+            ],
+            "description": "The alias key the cells fill"
+          }
+        },
+        "description": "A column whose cells fill an alias key"
+      },
+      "ContactImportKeyColumnInput": {
+        "type": "object",
+        "required": ["kind", "key"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["key"]
+          },
+          "key": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContactImportKey"
+              }
+            ],
+            "description": "The alias key the cells fill"
+          }
+        },
+        "description": "A column whose cells fill an alias key",
+        "additionalProperties": false
+      },
+      "ContactImportMapping": {
+        "type": "object",
+        "required": ["columns", "decimalSeparator", "defaultCountry", "tag", "onlyAddNew"],
+        "properties": {
+          "columns": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContactImportColumn"
+            },
+            "description": "One per column of the file, in the file's order"
+          },
+          "decimalSeparator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContactImportDecimalSeparator"
+              }
+            ],
+            "description": "The character the file's numbers write their decimals after"
+          },
+          "defaultCountry": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CountryCode"
+              }
+            ],
+            "nullable": true,
+            "description": "The country a phone written without its country code is read in, when its row names no country; null for none"
+          },
+          "tag": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Name"
+              }
+            ],
+            "nullable": true,
+            "description": "A Tag given to every row, created on first use; null for none"
+          },
+          "onlyAddNew": {
+            "type": "boolean",
+            "description": "Leave a Contact the Workspace has as it is, writing only new ones"
+          }
+        },
+        "description": "How an import reads its file: what each column is, and the choices that hold for every row"
+      },
+      "ContactImportMappingInput": {
+        "type": "object",
+        "required": ["columns", "decimalSeparator", "defaultCountry", "tag", "onlyAddNew"],
+        "properties": {
+          "columns": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContactImportColumnInput"
+            },
+            "maxItems": 200,
+            "description": "One per column of the file, in the file's order: as many as the file has"
+          },
+          "decimalSeparator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContactImportDecimalSeparator"
+              }
+            ],
+            "description": "The character the file's numbers write their decimals after"
+          },
+          "defaultCountry": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CountryCode"
+              }
+            ],
+            "nullable": true,
+            "description": "The country a phone written without its country code is read in, when its row names no country; null for none"
+          },
+          "tag": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Name"
+              }
+            ],
+            "nullable": true,
+            "description": "A Tag given to every row, created on first use; null for none"
+          },
+          "onlyAddNew": {
+            "type": "boolean",
+            "description": "Leave a Contact the Workspace has as it is, writing only new ones"
+          }
+        },
+        "description": "How an import reads its file, as a request writes it",
+        "additionalProperties": false
+      },
+      "ContactImportPreviewRow": {
+        "type": "object",
+        "required": ["row", "cells", "refusal", "dropped", "warnings"],
+        "properties": {
+          "row": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The row's number below the header, from 1"
+          },
+          "cells": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The row's cells as the file writes them"
+          },
+          "refusal": {
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContactImportIssue"
+              }
+            ],
+            "nullable": true,
+            "description": "Why the row would be refused; null when it would be written"
+          },
+          "dropped": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContactImportIssue"
+            },
+            "description": "The values the row would drop"
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContactImportWarning"
+            }
+          }
+        },
+        "description": "A row of the file as the import would write it"
+      },
+      "ContactImportState": {
+        "type": "string",
+        "enum": ["uploaded", "ready", "running", "cancelled", "failed", "done"],
+        "description": "Where an import stands: `uploaded` until a mapping is saved, `ready` to run, `running` while its\njob writes the rows, then `done`; `cancelled` and `failed` end it early, keeping what it wrote."
+      },
+      "ContactImportTagsColumn": {
+        "type": "object",
+        "required": ["kind"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["tags"]
+          }
+        },
+        "description": "A column whose cells name the Tags a row adds, separated by commas; a Tag holding a comma is quoted"
+      },
+      "ContactImportTagsColumnInput": {
+        "type": "object",
+        "required": ["kind"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["tags"]
+          }
+        },
+        "description": "A column whose cells name the Tags a row adds, separated by commas; a Tag holding a comma is quoted",
+        "additionalProperties": false
+      },
+      "ContactImportWarning": {
+        "type": "string",
+        "enum": ["disposable_email", "role_email"],
+        "description": "A trait of a previewed row worth a look; the row is written all the same. `disposable_email` and\n`role_email` are ADR 0117's verdicts on its address."
+      },
       "CountryCode": {
         "type": "string",
         "pattern": "^[A-Z]{2}$",
@@ -15149,6 +16034,25 @@
           }
         },
         "description": "A TXT record the caller publishes: a Sending domain's DKIM key, or a Tracking domain's ownership"
+      },
+      "DownloadLink": {
+        "type": "object",
+        "required": ["url", "expiresAt"],
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "Where the browser goes to download: a path of this Instance"
+          },
+          "expiresAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the link stops working"
+          }
+        },
+        "description": "A link a browser follows once, in the session that asked for it, within a minute"
       },
       "DryRunHttpStepInput": {
         "type": "object",
@@ -17143,6 +18047,7 @@
           "sending_domains:manage",
           "contacts:erase",
           "contacts:export",
+          "contacts:import",
           "custom_fields:manage",
           "suppressions:manage",
           "second_factor:manage",
@@ -20991,6 +21896,141 @@
           }
         },
         "description": "What a Workspace holds for one email address, as counts only (a Privacy request lookup). Nothing held is all zeros and `contactHeld: false`."
+      },
+      "SiteContactImport": {
+        "type": "object",
+        "required": [
+          "id",
+          "state",
+          "delimiter",
+          "header",
+          "rows",
+          "malformedRows",
+          "mapping",
+          "counts",
+          "reportRows",
+          "createdAt",
+          "startedAt",
+          "endedAt"
+        ],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Unique identifier"
+          },
+          "state": {
+            "$ref": "#/components/schemas/ContactImportState"
+          },
+          "delimiter": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContactImportDelimiter"
+              }
+            ],
+            "description": "The character the file's cells are separated by"
+          },
+          "header": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The file's header, a name per column; a blank name stays blank"
+          },
+          "rows": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The file's rows below its header"
+          },
+          "malformedRows": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Rows whose number of cells differs from the header's, which the import refuses"
+          },
+          "mapping": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContactImportMapping"
+              }
+            ],
+            "description": "The saved mapping, or before one is saved the proposal read from the header and the first rows: a header that names a key, a core attribute or a Custom field is mapped to it, a date column gets the format its sample reads in when only one fits"
+          },
+          "counts": {
+            "$ref": "#/components/schemas/ContactImportCounts"
+          },
+          "reportRows": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Rows of the refused rows' report, refused rows and rows with dropped values: 0 when there is nothing to download"
+          },
+          "createdAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "Upload timestamp"
+          },
+          "startedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the run began; null before it"
+          },
+          "endedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the run ended; null before it"
+          }
+        },
+        "description": "A CSV import of Contacts (ADR 0138): its file's facts, its mapping and how far its run is"
+      },
+      "SiteContactImportPreview": {
+        "type": "object",
+        "required": ["rows", "totalRows", "rowsWithoutKey", "malformedRows", "distinctTags"],
+        "properties": {
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContactImportPreviewRow"
+            },
+            "maxItems": 20,
+            "description": "The first rows of the file"
+          },
+          "totalRows": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Rows of the file below its header"
+          },
+          "rowsWithoutKey": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Rows that name no alias key, which the import refuses"
+          },
+          "malformedRows": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Rows whose number of cells differs from the header's, which the import refuses"
+          },
+          "distinctTags": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Distinct Tags the rows would add, the Tag for every row included"
+          }
+        },
+        "description": "What an import would do with its saved mapping (ADR 0138): its first rows, and counts over the whole file"
       },
       "SiteContactResource": {
         "type": "object",

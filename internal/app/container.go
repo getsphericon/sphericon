@@ -42,6 +42,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/channelstop"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contactimports"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eventrecording"
@@ -58,6 +59,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/admission"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
+	"github.com/getsphericon/sphericon/internal/domain/identity/downloadlinks"
 	"github.com/getsphericon/sphericon/internal/domain/identity/invitations"
 	"github.com/getsphericon/sphericon/internal/domain/identity/joindomains"
 	"github.com/getsphericon/sphericon/internal/domain/identity/login"
@@ -610,6 +612,7 @@ var jobsPackage = do.Package(
 			Orders:               do.MustInvoke[*orders.Module](i),
 			Suppressions:         do.MustInvoke[*suppressions.Module](i),
 			Contacts:             do.MustInvoke[*contacts.Module](i),
+			ContactImports:       do.MustInvoke[*contactimports.Module](i),
 			CapturedMessages:     do.MustInvoke[*capturedmessages.Module](i),
 			Deletion:             do.MustInvoke[*workspacedeletion.UseCase](i),
 			Workspaces:           do.MustInvoke[*workspaces.Module](i),
@@ -898,6 +901,13 @@ var audiencePackage = do.Package(
 	do.Lazy(func(i do.Injector) (*contacts.Module, error) {
 		return contacts.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*tags.Module](i),
 			do.MustInvoke[*confirmations.Module](i), do.MustInvoke[*engagementtracking.Module](i), do.MustInvoke[addresscheck.Resolver](i), do.MustInvoke[Clock](i)), nil
+	}),
+	do.Lazy(func(i do.Injector) (*downloadlinks.Module, error) {
+		return downloadlinks.New(do.MustInvoke[Clock](i)), nil
+	}),
+	do.Lazy(func(i do.Injector) (*contactimports.Module, error) {
+		return contactimports.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*contacts.Module](i),
+			do.MustInvoke[*memberships.Module](i), do.MustInvoke[*downloadlinks.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*visitors.Module, error) {
 		return visitors.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil
@@ -1340,6 +1350,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		Tracking:              do.MustInvoke[*engagementtracking.Module](i),
 		ChannelStops:          do.MustInvoke[*channelstop.Module](i),
 		Exports:               dataexport.New(siteresources.ExportMapper{Converter: &siteresources.ConverterImpl{}}),
+		ContactImports:        do.MustInvoke[*contactimports.Module](i),
 		Bindings:              do.MustInvoke[*bindings.Module](i),
 		Templates:             do.MustInvoke[*emailtemplates.Module](i),
 		TemplateViews:         do.MustInvoke[*emailtemplates.Views](i),

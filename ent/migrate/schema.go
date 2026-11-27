@@ -1245,6 +1245,144 @@ var (
 			},
 		},
 	}
+	// ContactImportsColumns holds the columns for the "contact_imports" table.
+	ContactImportsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "state", Type: field.TypeEnum, Enums: []string{"uploaded", "ready", "running", "cancelled", "failed", "done"}, Default: "uploaded"},
+		{Name: "delimiter", Type: field.TypeEnum, Enums: []string{"comma", "semicolon", "tab"}},
+		{Name: "header", Type: field.TypeJSON},
+		{Name: "size", Type: field.TypeInt64},
+		{Name: "row_count", Type: field.TypeInt},
+		{Name: "malformed_rows", Type: field.TypeInt},
+		{Name: "mapping", Type: field.TypeJSON, Nullable: true},
+		{Name: "only_add_new", Type: field.TypeBool, Default: false},
+		{Name: "as_new_sign_ups", Type: field.TypeBool, Default: false},
+		{Name: "checkpoint_row", Type: field.TypeInt, Default: 0},
+		{Name: "checkpoint_chunk", Type: field.TypeInt, Default: 0},
+		{Name: "checkpoint_offset", Type: field.TypeInt64, Default: 0},
+		{Name: "processed", Type: field.TypeInt, Default: 0},
+		{Name: "created", Type: field.TypeInt, Default: 0},
+		{Name: "updated", Type: field.TypeInt, Default: 0},
+		{Name: "refused", Type: field.TypeInt, Default: 0},
+		{Name: "dropped", Type: field.TypeInt, Default: 0},
+		{Name: "opted_out", Type: field.TypeInt, Default: 0},
+		{Name: "suppressed", Type: field.TypeInt, Default: 0},
+		{Name: "started_at", Type: field.TypeTime, Nullable: true},
+		{Name: "ended_at", Type: field.TypeTime, Nullable: true},
+		{Name: "cancel_requested_at", Type: field.TypeTime, Nullable: true},
+		{Name: "report_expires_at", Type: field.TypeTime, Nullable: true},
+		{Name: "membership_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "workspace_id", Type: field.TypeInt64},
+	}
+	// ContactImportsTable holds the schema information for the "contact_imports" table.
+	ContactImportsTable = &schema.Table{
+		Name:       "contact_imports",
+		Columns:    ContactImportsColumns,
+		PrimaryKey: []*schema.Column{ContactImportsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "contact_imports_memberships_contact_imports",
+				Columns:    []*schema.Column{ContactImportsColumns[26]},
+				RefColumns: []*schema.Column{MembershipsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "contact_imports_workspaces_contact_imports",
+				Columns:    []*schema.Column{ContactImportsColumns[27]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "contactimport_workspace_id_membership_id",
+				Unique:  false,
+				Columns: []*schema.Column{ContactImportsColumns[27], ContactImportsColumns[26]},
+			},
+			{
+				Name:    "contactimport_workspace_id_state",
+				Unique:  false,
+				Columns: []*schema.Column{ContactImportsColumns[27], ContactImportsColumns[3]},
+			},
+		},
+	}
+	// ContactImportChunksColumns holds the columns for the "contact_import_chunks" table.
+	ContactImportChunksColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "seq", Type: field.TypeInt},
+		{Name: "data", Type: field.TypeBytes},
+		{Name: "contact_import_id", Type: field.TypeInt64},
+		{Name: "workspace_id", Type: field.TypeInt64},
+	}
+	// ContactImportChunksTable holds the schema information for the "contact_import_chunks" table.
+	ContactImportChunksTable = &schema.Table{
+		Name:       "contact_import_chunks",
+		Columns:    ContactImportChunksColumns,
+		PrimaryKey: []*schema.Column{ContactImportChunksColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "contact_import_chunks_contact_imports_chunks",
+				Columns:    []*schema.Column{ContactImportChunksColumns[5]},
+				RefColumns: []*schema.Column{ContactImportsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "contact_import_chunks_workspaces_contact_import_chunks",
+				Columns:    []*schema.Column{ContactImportChunksColumns[6]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "contactimportchunk_workspace_id_contact_import_id_seq",
+				Unique:  true,
+				Columns: []*schema.Column{ContactImportChunksColumns[6], ContactImportChunksColumns[5], ContactImportChunksColumns[3]},
+			},
+		},
+	}
+	// ContactImportReportRowsColumns holds the columns for the "contact_import_report_rows" table.
+	ContactImportReportRowsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "row", Type: field.TypeInt},
+		{Name: "cells", Type: field.TypeJSON},
+		{Name: "issues", Type: field.TypeJSON},
+		{Name: "contact_import_id", Type: field.TypeInt64},
+		{Name: "workspace_id", Type: field.TypeInt64},
+	}
+	// ContactImportReportRowsTable holds the schema information for the "contact_import_report_rows" table.
+	ContactImportReportRowsTable = &schema.Table{
+		Name:       "contact_import_report_rows",
+		Columns:    ContactImportReportRowsColumns,
+		PrimaryKey: []*schema.Column{ContactImportReportRowsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "contact_import_report_rows_contact_imports_report_rows",
+				Columns:    []*schema.Column{ContactImportReportRowsColumns[6]},
+				RefColumns: []*schema.Column{ContactImportsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "contact_import_report_rows_workspaces_contact_import_report_rows",
+				Columns:    []*schema.Column{ContactImportReportRowsColumns[7]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "contactimportreportrow_workspace_id_contact_import_id_row",
+				Unique:  true,
+				Columns: []*schema.Column{ContactImportReportRowsColumns[7], ContactImportReportRowsColumns[6], ContactImportReportRowsColumns[3]},
+			},
+		},
+	}
 	// ContactTagsColumns holds the columns for the "contact_tags" table.
 	ContactTagsColumns = []*schema.Column{
 		{Name: "contact_id", Type: field.TypeInt64},
@@ -1333,6 +1471,44 @@ var (
 		Name:       "default_send_cap",
 		Columns:    DefaultSendCapColumns,
 		PrimaryKey: []*schema.Column{DefaultSendCapColumns[0]},
+	}
+	// DownloadLinksColumns holds the columns for the "download_links" table.
+	DownloadLinksColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "purpose", Type: field.TypeEnum, Enums: []string{"contacts_export", "import_report"}},
+		{Name: "token_hash", Type: field.TypeString},
+		{Name: "session_hash", Type: field.TypeString},
+		{Name: "payload", Type: field.TypeJSON},
+		{Name: "expires_at", Type: field.TypeTime},
+		{Name: "workspace_id", Type: field.TypeInt64},
+	}
+	// DownloadLinksTable holds the schema information for the "download_links" table.
+	DownloadLinksTable = &schema.Table{
+		Name:       "download_links",
+		Columns:    DownloadLinksColumns,
+		PrimaryKey: []*schema.Column{DownloadLinksColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "download_links_workspaces_download_links",
+				Columns:    []*schema.Column{DownloadLinksColumns[8]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "download_links_token_hash",
+				Unique:  true,
+				Columns: []*schema.Column{DownloadLinksColumns[8], DownloadLinksColumns[4]},
+			},
+			{
+				Name:    "download_links_workspace_id_expires_at",
+				Unique:  false,
+				Columns: []*schema.Column{DownloadLinksColumns[8], DownloadLinksColumns[7]},
+			},
+		},
 	}
 	// EmailTemplatesColumns holds the columns for the "email_templates" table.
 	EmailTemplatesColumns = []*schema.Column{
@@ -3888,9 +4064,13 @@ var (
 		ConsentStampsTable,
 		ContactsTable,
 		ContactDatesTable,
+		ContactImportsTable,
+		ContactImportChunksTable,
+		ContactImportReportRowsTable,
 		ContactTagsTable,
 		CustomFieldsTable,
 		DefaultSendCapTable,
+		DownloadLinksTable,
 		EmailTemplatesTable,
 		EngagementTrackingConsentsTable,
 		ErasuresTable,
@@ -4171,6 +4351,35 @@ func init() {
 		"contact_dates_kind_check":      "kind IN ('birthday', 'customField')",
 		"contact_dates_month_day_check": "month_day = EXTRACT(MONTH FROM date) * 100 + EXTRACT(DAY FROM date)",
 	}
+	ContactImportsTable.ForeignKeys[0].RefTable = MembershipsTable
+	ContactImportsTable.ForeignKeys[1].RefTable = WorkspacesTable
+	ContactImportsTable.Annotation = &entsql.Annotation{
+		Table: "contact_imports",
+	}
+	ContactImportsTable.Annotation.Checks = map[string]string{
+		"contact_imports_counts_check":    "row_count >= 0 AND malformed_rows >= 0 AND processed >= 0 AND created >= 0 AND updated >= 0 AND refused >= 0 AND dropped >= 0 AND opted_out >= 0 AND suppressed >= 0",
+		"contact_imports_delimiter_check": "delimiter IN ('comma', 'semicolon', 'tab')",
+		"contact_imports_header_check":    "jsonb_typeof(header) = 'array'",
+		"contact_imports_state_check":     "state IN ('uploaded', 'ready', 'running', 'cancelled', 'failed', 'done')",
+	}
+	ContactImportChunksTable.ForeignKeys[0].RefTable = ContactImportsTable
+	ContactImportChunksTable.ForeignKeys[1].RefTable = WorkspacesTable
+	ContactImportChunksTable.Annotation = &entsql.Annotation{
+		Table: "contact_import_chunks",
+	}
+	ContactImportChunksTable.Annotation.Checks = map[string]string{
+		"contact_import_chunks_seq_check": "seq >= 0",
+	}
+	ContactImportReportRowsTable.ForeignKeys[0].RefTable = ContactImportsTable
+	ContactImportReportRowsTable.ForeignKeys[1].RefTable = WorkspacesTable
+	ContactImportReportRowsTable.Annotation = &entsql.Annotation{
+		Table: "contact_import_report_rows",
+	}
+	ContactImportReportRowsTable.Annotation.Checks = map[string]string{
+		"contact_import_report_rows_cells_check":  "jsonb_typeof(cells) = 'array'",
+		"contact_import_report_rows_issues_check": "jsonb_typeof(issues) = 'array'",
+		"contact_import_report_rows_row_check":    "row >= 1",
+	}
 	ContactTagsTable.ForeignKeys[0].RefTable = ContactsTable
 	ContactTagsTable.ForeignKeys[1].RefTable = TagsTable
 	ContactTagsTable.ForeignKeys[2].RefTable = WorkspacesTable
@@ -4186,6 +4395,14 @@ func init() {
 	}
 	DefaultSendCapTable.Annotation = &entsql.Annotation{
 		Table: "default_send_cap",
+	}
+	DownloadLinksTable.ForeignKeys[0].RefTable = WorkspacesTable
+	DownloadLinksTable.Annotation = &entsql.Annotation{
+		Table: "download_links",
+	}
+	DownloadLinksTable.Annotation.Checks = map[string]string{
+		"download_links_payload_check": "jsonb_typeof(payload) = 'object'",
+		"download_links_purpose_check": "purpose IN ('contacts_export', 'import_report')",
 	}
 	EmailTemplatesTable.ForeignKeys[0].RefTable = WorkspacesTable
 	EmailTemplatesTable.Annotation = &entsql.Annotation{

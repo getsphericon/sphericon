@@ -686,6 +686,8 @@ func (c *ConverterImpl) ContactBatchWarning(source contacts.Warning) external.Co
 		externalapiContactBatchWarning = external.ContactBatchWarningConsentTimeInFuture
 	case contacts.WarningDisposableEmail:
 		externalapiContactBatchWarning = external.ContactBatchWarningDisposableEmail
+	case contacts.WarningKeysNameTwoContacts:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	case contacts.WarningRoleEmail:
 		externalapiContactBatchWarning = external.ContactBatchWarningRoleEmail
 	default:

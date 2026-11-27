@@ -92,3 +92,70 @@ func TestAnImportMarksWhatItsRowsPublishAndAuditsNothingItself(t *testing.T) {
 	assert.Equal(t, contact.SourceImport, out.Items[0].Value.Contact.Source)
 	assert.Empty(t, audited)
 }
+
+// A row whose keys name two Contacts is written to the one the keys' rank picks, without the keys
+// of the other, and warned (ADR 0138): the email names Alice and the phone the Texter, so Alice is
+// written and keeps no phone, and the Texter is left as it was.
+func TestAnImportRowWhoseKeysNameTwoContactsIsWrittenByTheKeysRank(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	acme := env.DB.Scoped(fixtures.AcmeID)
+	intake := testhelper.Module[*contacts.Module](env)
+
+	out, err := intake.Import(ctx, acme, contacts.ImportInput{
+		Cause: events.Import(42),
+		Rows: []contacts.IntakeInput{{UpsertInput: contacts.UpsertInput{
+			Email: new(fixtures.ContactAliceEmail), Phone: new(fixtures.ContactTexterPhone), City: patch.Set("Lisbon"),
+		}}},
+	})
+	require.NoError(t, err)
+	alice, err := intake.Get(ctx, acme, fixtures.ContactAliceID)
+	require.NoError(t, err)
+	texter, err := intake.Get(ctx, acme, fixtures.ContactTexterID)
+	require.NoError(t, err)
+
+	require.NoError(t, out.Items[0].Err)
+	assert.EqualValues(t, fixtures.ContactAliceID, out.Items[0].Value.Contact.ID)
+	assert.Contains(t, out.Items[0].Value.Warnings, contacts.WarningKeysNameTwoContacts)
+	assert.Equal(t, "Lisbon", lo.FromPtr(alice.City))
+	assert.Nil(t, alice.Phone)
+	assert.Equal(t, fixtures.ContactTexterPhone, lo.FromPtr(texter.Phone))
+	assert.Nil(t, texter.City)
+}
+
+// The API's batch upsert refuses the same row as a key taken: only a CSV import ranks the keys.
+func TestABatchUpsertRefusesARowWhoseKeysNameTwoContacts(t *testing.T) {
+	env := testhelper.Setup(t)
+	intake := testhelper.Module[*contacts.Module](env)
+
+	out, err := intake.UpsertBatch(t.Context(), env.DB.Scoped(fixtures.AcmeID), contact.SourceAPI, []contacts.IntakeInput{{UpsertInput: contacts.UpsertInput{
+		Email: new(fixtures.ContactAliceEmail), Phone: new(fixtures.ContactTexterPhone),
+	}}})
+	require.NoError(t, err)
+
+	require.ErrorIs(t, out.Items[0].Err, contacts.ErrPhoneTaken)
+}
+
+// The intake's verdicts on rows it is not given judge them as it would, writing nothing: a row
+// without a key and an address that is none are refused, a role's address is warned.
+func TestTheIntakeJudgesRowsWithoutWritingThem(t *testing.T) {
+	env := testhelper.Setup(t)
+	acme := env.DB.Scoped(fixtures.AcmeID)
+	intake := testhelper.Module[*contacts.Module](env)
+
+	verdicts, err := intake.Verdicts(t.Context(), acme, []contacts.IntakeInput{
+		{UpsertInput: contacts.UpsertInput{FirstName: patch.Set("Nobody")}},
+		{UpsertInput: contacts.UpsertInput{Email: new("not an address")}},
+		{UpsertInput: contacts.UpsertInput{Email: new("info@example.com")}},
+	})
+	require.NoError(t, err)
+	unwritten, err := intake.Resolve(t.Context(), acme, contacts.AliasKeys{Email: new("info@example.com")})
+	require.NoError(t, err)
+
+	require.Len(t, verdicts, 3)
+	require.ErrorIs(t, verdicts[0].Refusal, contacts.ErrIdentityRequired)
+	assert.Error(t, verdicts[1].Refusal)
+	require.NoError(t, verdicts[2].Refusal)
+	assert.Equal(t, []contacts.Warning{contacts.WarningRoleEmail}, verdicts[2].Warnings)
+	assert.Nil(t, unwritten)
+}

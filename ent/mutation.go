@@ -33,9 +33,13 @@ import (
 	"github.com/getsphericon/sphericon/ent/consentstamp"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/contactdate"
+	"github.com/getsphericon/sphericon/ent/contactimport"
+	"github.com/getsphericon/sphericon/ent/contactimportchunk"
+	"github.com/getsphericon/sphericon/ent/contactimportreportrow"
 	"github.com/getsphericon/sphericon/ent/contacttag"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/defaultsendcap"
+	"github.com/getsphericon/sphericon/ent/downloadlink"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
 	"github.com/getsphericon/sphericon/ent/erasure"
@@ -104,6 +108,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	"github.com/getsphericon/sphericon/internal/kernel/csvimport"
 	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
@@ -144,9 +149,13 @@ const (
 	TypeConsentStamp               = "ConsentStamp"
 	TypeContact                    = "Contact"
 	TypeContactDate                = "ContactDate"
+	TypeContactImport              = "ContactImport"
+	TypeContactImportChunk         = "ContactImportChunk"
+	TypeContactImportReportRow     = "ContactImportReportRow"
 	TypeContactTag                 = "ContactTag"
 	TypeCustomField                = "CustomField"
 	TypeDefaultSendCap             = "DefaultSendCap"
+	TypeDownloadLink               = "DownloadLink"
 	TypeEmailTemplate              = "EmailTemplate"
 	TypeEngagementTrackingConsent  = "EngagementTrackingConsent"
 	TypeErasure                    = "Erasure"
@@ -29964,6 +29973,4137 @@ func (m *ContactDateMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown ContactDate edge %s", name)
 }
 
+// ContactImportMutation represents an operation that mutates the ContactImport nodes in the graph.
+type ContactImportMutation struct {
+	config
+	op                   Op
+	typ                  string
+	id                   *int64
+	created_at           *time.Time
+	updated_at           *time.Time
+	state                *contactimport.State
+	delimiter            *contactimport.Delimiter
+	header               *[]string
+	appendheader         []string
+	size                 *int64
+	addsize              *int64
+	row_count            *int
+	addrow_count         *int
+	malformed_rows       *int
+	addmalformed_rows    *int
+	mapping              *csvimport.Mapping
+	only_add_new         *bool
+	as_new_sign_ups      *bool
+	checkpoint_row       *int
+	addcheckpoint_row    *int
+	checkpoint_chunk     *int
+	addcheckpoint_chunk  *int
+	checkpoint_offset    *int64
+	addcheckpoint_offset *int64
+	processed            *int
+	addprocessed         *int
+	created              *int
+	addcreated           *int
+	updated              *int
+	addupdated           *int
+	refused              *int
+	addrefused           *int
+	dropped              *int
+	adddropped           *int
+	opted_out            *int
+	addopted_out         *int
+	suppressed           *int
+	addsuppressed        *int
+	started_at           *time.Time
+	ended_at             *time.Time
+	cancel_requested_at  *time.Time
+	report_expires_at    *time.Time
+	clearedFields        map[string]struct{}
+	workspace            *int64
+	clearedworkspace     bool
+	membership           *int64
+	clearedmembership    bool
+	chunks               map[int64]struct{}
+	removedchunks        map[int64]struct{}
+	clearedchunks        bool
+	report_rows          map[int64]struct{}
+	removedreport_rows   map[int64]struct{}
+	clearedreport_rows   bool
+	done                 bool
+	oldValue             func(context.Context) (*ContactImport, error)
+	predicates           []predicate.ContactImport
+}
+
+var _ ent.Mutation = (*ContactImportMutation)(nil)
+
+// contactimportOption allows management of the mutation configuration using functional options.
+type contactimportOption func(*ContactImportMutation)
+
+// newContactImportMutation creates new mutation for the ContactImport entity.
+func newContactImportMutation(c config, op Op, opts ...contactimportOption) *ContactImportMutation {
+	m := &ContactImportMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeContactImport,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withContactImportID sets the ID field of the mutation.
+func withContactImportID(id int64) contactimportOption {
+	return func(m *ContactImportMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *ContactImport
+		)
+		m.oldValue = func(ctx context.Context) (*ContactImport, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().ContactImport.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withContactImport sets the old ContactImport of the mutation.
+func withContactImport(node *ContactImport) contactimportOption {
+	return func(m *ContactImportMutation) {
+		m.oldValue = func(context.Context) (*ContactImport, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ContactImportMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ContactImportMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of ContactImport entities.
+func (m *ContactImportMutation) SetID(id int64) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *ContactImportMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *ContactImportMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().ContactImport.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *ContactImportMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *ContactImportMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the ContactImport entity.
+// If the ContactImport object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactImportMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *ContactImportMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *ContactImportMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *ContactImportMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the ContactImport entity.
+// If the ContactImport object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactImportMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *ContactImportMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetWorkspaceID sets the "workspace_id" field.
+func (m *ContactImportMutation) SetWorkspaceID(i int64) {
+	m.workspace = &i
+}
+
+// WorkspaceID returns the value of the "workspace_id" field in the mutation.
+func (m *ContactImportMutation) WorkspaceID() (r int64, exists bool) {
+	v := m.workspace
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWorkspaceID returns the old "workspace_id" field's value of the ContactImport entity.
+// If the ContactImport object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactImportMutation) OldWorkspaceID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWorkspaceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWorkspaceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWorkspaceID: %w", err)
+	}
+	return oldValue.WorkspaceID, nil
+}
+
+// ResetWorkspaceID resets all changes to the "workspace_id" field.
+func (m *ContactImportMutation) ResetWorkspaceID() {
+	m.workspace = nil
+}
+
+// SetMembershipID sets the "membership_id" field.
+func (m *ContactImportMutation) SetMembershipID(i int64) {
+	m.membership = &i
+}
+
+// MembershipID returns the value of the "membership_id" field in the mutation.
+func (m *ContactImportMutation) MembershipID() (r int64, exists bool) {
+	v := m.membership
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMembershipID returns the old "membership_id" field's value of the ContactImport entity.
+// If the ContactImport object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactImportMutation) OldMembershipID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMembershipID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMembershipID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMembershipID: %w", err)
+	}
+	return oldValue.MembershipID, nil
+}
+
+// ClearMembershipID clears the value of the "membership_id" field.
+func (m *ContactImportMutation) ClearMembershipID() {
+	m.membership = nil
+	m.clearedFields[contactimport.FieldMembershipID] = struct{}{}
+}
+
+// MembershipIDCleared returns if the "membership_id" field was cleared in this mutation.
+func (m *ContactImportMutation) MembershipIDCleared() bool {
+	_, ok := m.clearedFields[contactimport.FieldMembershipID]
+	return ok
+}
+
+// ResetMembershipID resets all changes to the "membership_id" field.
+func (m *ContactImportMutation) ResetMembershipID() {
+	m.membership = nil
+	delete(m.clearedFields, contactimport.FieldMembershipID)
+}
+
+// SetState sets the "state" field.
+func (m *ContactImportMutation) SetState(c contactimport.State) {
+	m.state = &c
+}
+
+// State returns the value of the "state" field in the mutation.
+func (m *ContactImportMutation) State() (r contactimport.State, exists bool) {
+	v := m.state
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldState returns the old "state" field's value of the ContactImport entity.
+// If the ContactImport object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactImportMutation) OldState(ctx context.Context) (v contactimport.State, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldState is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldState requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldState: %w", err)
+	}
+	return oldValue.State, nil
+}
+
+// ResetState resets all changes to the "state" field.
+func (m *ContactImportMutation) ResetState() {
+	m.state = nil
+}
+
+// SetDelimiter sets the "delimiter" field.
+func (m *ContactImportMutation) SetDelimiter(c contactimport.Delimiter) {
+	m.delimiter = &c
+}
+
+// Delimiter returns the value of the "delimiter" field in the mutation.
+func (m *ContactImportMutation) Delimiter() (r contactimport.Delimiter, exists bool) {
+	v := m.delimiter
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDelimiter returns the old "delimiter" field's value of the ContactImport entity.
+// If the ContactImport object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactImportMutation) OldDelimiter(ctx context.Context) (v contactimport.Delimiter, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDelimiter is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDelimiter requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDelimiter: %w", err)
+	}
+	return oldValue.Delimiter, nil
+}
+
+// ResetDelimiter resets all changes to the "delimiter" field.
+func (m *ContactImportMutation) ResetDelimiter() {
+	m.delimiter = nil
+}
+
+// SetHeader sets the "header" field.
+func (m *ContactImportMutation) SetHeader(s []string) {
+	m.header = &s
+	m.appendheader = nil
+}
+
+// Header returns the value of the "header" field in the mutation.
+func (m *ContactImportMutation) Header() (r []string, exists bool) {
+	v := m.header
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldHeader returns the old "header" field's value of the ContactImport entity.
+// If the ContactImport object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactImportMutation) OldHeader(ctx context.Context) (v []string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldHeader is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldHeader requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldHeader: %w", err)
+	}
+	return oldValue.Header, nil
+}
+
+// AppendHeader adds s to the "header" field.
+func (m *ContactImportMutation) AppendHeader(s []string) {
+	m.appendheader = append(m.appendheader, s...)
+}
+
+// AppendedHeader returns the list of values that were appended to the "header" field in this mutation.
+func (m *ContactImportMutation) AppendedHeader() ([]string, bool) {
+	if len(m.appendheader) == 0 {
+		return nil, false
+	}
+	return m.appendheader, true
+}
+
+// ResetHeader resets all changes to the "header" field.
+func (m *ContactImportMutation) ResetHeader() {
+	m.header = nil
+	m.appendheader = nil
+}
+
+// SetSize sets the "size" field.
+func (m *ContactImportMutation) SetSize(i int64) {
+	m.size = &i
+	m.addsize = nil
+}
+
+// Size returns the value of the "size" field in the mutation.
+func (m *ContactImportMutation) Size() (r int64, exists bool) {
+	v := m.size
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSize returns the old "size" field's value of the ContactImport entity.
+// If the ContactImport object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactImportMutation) OldSize(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSize is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSize requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSize: %w", err)
+	}
+	return oldValue.Size, nil
+}
+
+// AddSize adds i to the "size" field.
+func (m *ContactImportMutation) AddSize(i int64) {
+	if m.addsize != nil {
+		*m.addsize += i
+	} else {
+		m.addsize = &i
+	}
+}
+
+// AddedSize returns the value that was added to the "size" field in this mutation.
+func (m *ContactImportMutation) AddedSize() (r int64, exists bool) {
+	v := m.addsize
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSize resets all changes to the "size" field.
+func (m *ContactImportMutation) ResetSize() {
+	m.size = nil
+	m.addsize = nil
+}
+
+// SetRowCount sets the "row_count" field.
+func (m *ContactImportMutation) SetRowCount(i int) {
+	m.row_count = &i
+	m.addrow_count = nil
+}
+
+// RowCount returns the value of the "row_count" field in the mutation.
+func (m *ContactImportMutation) RowCount() (r int, exists bool) {
+	v := m.row_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRowCount returns the old "row_count" field's value of the ContactImport entity.
+// If the ContactImport object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactImportMutation) OldRowCount(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRowCount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRowCount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRowCount: %w", err)
+	}
+	return oldValue.RowCount, nil
+}
+
+// AddRowCount adds i to the "row_count" field.
+func (m *ContactImportMutation) AddRowCount(i int) {
+	if m.addrow_count != nil {
+		*m.addrow_count += i
+	} else {
+		m.addrow_count = &i
+	}
+}
+
+// AddedRowCount returns the value that was added to the "row_count" field in this mutation.
+func (m *ContactImportMutation) AddedRowCount() (r int, exists bool) {
+	v := m.addrow_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetRowCount resets all changes to the "row_count" field.
+func (m *ContactImportMutation) ResetRowCount() {
+	m.row_count = nil
+	m.addrow_count = nil
+}
+
+// SetMalformedRows sets the "malformed_rows" field.
+func (m *ContactImportMutation) SetMalformedRows(i int) {
+	m.malformed_rows = &i
+	m.addmalformed_rows = nil
+}
+
+// MalformedRows returns the value of the "malformed_rows" field in the mutation.
+func (m *ContactImportMutation) MalformedRows() (r int, exists bool) {
+	v := m.malformed_rows
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMalformedRows returns the old "malformed_rows" field's value of the ContactImport entity.
+// If the ContactImport object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactImportMutation) OldMalformedRows(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMalformedRows is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMalformedRows requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMalformedRows: %w", err)
+	}
+	return oldValue.MalformedRows, nil
+}
+
+// AddMalformedRows adds i to the "malformed_rows" field.
+func (m *ContactImportMutation) AddMalformedRows(i int) {
+	if m.addmalformed_rows != nil {
+		*m.addmalformed_rows += i
+	} else {
+		m.addmalformed_rows = &i
+	}
+}
+
+// AddedMalformedRows returns the value that was added to the "malformed_rows" field in this mutation.
+func (m *ContactImportMutation) AddedMalformedRows() (r int, exists bool) {
+	v := m.addmalformed_rows
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetMalformedRows resets all changes to the "malformed_rows" field.
+func (m *ContactImportMutation) ResetMalformedRows() {
+	m.malformed_rows = nil
+	m.addmalformed_rows = nil
+}
+
+// SetMapping sets the "mapping" field.
+func (m *ContactImportMutation) SetMapping(c csvimport.Mapping) {
+	m.mapping = &c
+}
+
+// Mapping returns the value of the "mapping" field in the mutation.
+func (m *ContactImportMutation) Mapping() (r csvimport.Mapping, exists bool) {
+	v := m.mapping
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMapping returns the old "mapping" field's value of the ContactImport entity.
+// If the ContactImport object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactImportMutation) OldMapping(ctx context.Context) (v csvimport.Mapping, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMapping is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMapping requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMapping: %w", err)
+	}
+	return oldValue.Mapping, nil
+}
+
+// ClearMapping clears the value of the "mapping" field.
+func (m *ContactImportMutation) ClearMapping() {
+	m.mapping = nil
+	m.clearedFields[contactimport.FieldMapping] = struct{}{}
+}
+
+// MappingCleared returns if the "mapping" field was cleared in this mutation.
+func (m *ContactImportMutation) MappingCleared() bool {
+	_, ok := m.clearedFields[contactimport.FieldMapping]
+	return ok
+}
+
+// ResetMapping resets all changes to the "mapping" field.
+func (m *ContactImportMutation) ResetMapping() {
+	m.mapping = nil
+	delete(m.clearedFields, contactimport.FieldMapping)
+}
+
+// SetOnlyAddNew sets the "only_add_new" field.
+func (m *ContactImportMutation) SetOnlyAddNew(b bool) {
+	m.only_add_new = &b
+}
+
+// OnlyAddNew returns the value of the "only_add_new" field in the mutation.
+func (m *ContactImportMutation) OnlyAddNew() (r bool, exists bool) {
+	v := m.only_add_new
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOnlyAddNew returns the old "only_add_new" field's value of the ContactImport entity.
+// If the ContactImport object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactImportMutation) OldOnlyAddNew(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOnlyAddNew is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOnlyAddNew requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOnlyAddNew: %w", err)
+	}
+	return oldValue.OnlyAddNew, nil
+}
+
+// ResetOnlyAddNew resets all changes to the "only_add_new" field.
+func (m *ContactImportMutation) ResetOnlyAddNew() {
+	m.only_add_new = nil
+}
+
+// SetAsNewSignUps sets the "as_new_sign_ups" field.
+func (m *ContactImportMutation) SetAsNewSignUps(b bool) {
+	m.as_new_sign_ups = &b
+}
+
+// AsNewSignUps returns the value of the "as_new_sign_ups" field in the mutation.
+func (m *ContactImportMutation) AsNewSignUps() (r bool, exists bool) {
+	v := m.as_new_sign_ups
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAsNewSignUps returns the old "as_new_sign_ups" field's value of the ContactImport entity.
+// If the ContactImport object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactImportMutation) OldAsNewSignUps(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAsNewSignUps is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAsNewSignUps requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAsNewSignUps: %w", err)
+	}
+	return oldValue.AsNewSignUps, nil
+}
+
+// ResetAsNewSignUps resets all changes to the "as_new_sign_ups" field.
+func (m *ContactImportMutation) ResetAsNewSignUps() {
+	m.as_new_sign_ups = nil
+}
+
+// SetCheckpointRow sets the "checkpoint_row" field.
+func (m *ContactImportMutation) SetCheckpointRow(i int) {
+	m.checkpoint_row = &i
+	m.addcheckpoint_row = nil
+}
+
+// CheckpointRow returns the value of the "checkpoint_row" field in the mutation.
+func (m *ContactImportMutation) CheckpointRow() (r int, exists bool) {
+	v := m.checkpoint_row
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCheckpointRow returns the old "checkpoint_row" field's value of the ContactImport entity.
+// If the ContactImport object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactImportMutation) OldCheckpointRow(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCheckpointRow is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCheckpointRow requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCheckpointRow: %w", err)
+	}
+	return oldValue.CheckpointRow, nil
+}
+
+// AddCheckpointRow adds i to the "checkpoint_row" field.
+func (m *ContactImportMutation) AddCheckpointRow(i int) {
+	if m.addcheckpoint_row != nil {
+		*m.addcheckpoint_row += i
+	} else {
+		m.addcheckpoint_row = &i
+	}
+}
+
+// AddedCheckpointRow returns the value that was added to the "checkpoint_row" field in this mutation.
+func (m *ContactImportMutation) AddedCheckpointRow() (r int, exists bool) {
+	v := m.addcheckpoint_row
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetCheckpointRow resets all changes to the "checkpoint_row" field.
+func (m *ContactImportMutation) ResetCheckpointRow() {
+	m.checkpoint_row = nil
+	m.addcheckpoint_row = nil
+}
+
+// SetCheckpointChunk sets the "checkpoint_chunk" field.
+func (m *ContactImportMutation) SetCheckpointChunk(i int) {
+	m.checkpoint_chunk = &i
+	m.addcheckpoint_chunk = nil
+}
+
+// CheckpointChunk returns the value of the "checkpoint_chunk" field in the mutation.
+func (m *ContactImportMutation) CheckpointChunk() (r int, exists bool) {
+	v := m.checkpoint_chunk
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCheckpointChunk returns the old "checkpoint_chunk" field's value of the ContactImport entity.
+// If the ContactImport object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactImportMutation) OldCheckpointChunk(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCheckpointChunk is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCheckpointChunk requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCheckpointChunk: %w", err)
+	}
+	return oldValue.CheckpointChunk, nil
+}
+
+// AddCheckpointChunk adds i to the "checkpoint_chunk" field.
+func (m *ContactImportMutation) AddCheckpointChunk(i int) {
+	if m.addcheckpoint_chunk != nil {
+		*m.addcheckpoint_chunk += i
+	} else {
+		m.addcheckpoint_chunk = &i
+	}
+}
+
+// AddedCheckpointChunk returns the value that was added to the "checkpoint_chunk" field in this mutation.
+func (m *ContactImportMutation) AddedCheckpointChunk() (r int, exists bool) {
+	v := m.addcheckpoint_chunk
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetCheckpointChunk resets all changes to the "checkpoint_chunk" field.
+func (m *ContactImportMutation) ResetCheckpointChunk() {
+	m.checkpoint_chunk = nil
+	m.addcheckpoint_chunk = nil
+}
+
+// SetCheckpointOffset sets the "checkpoint_offset" field.
+func (m *ContactImportMutation) SetCheckpointOffset(i int64) {
+	m.checkpoint_offset = &i
+	m.addcheckpoint_offset = nil
+}
+
+// CheckpointOffset returns the value of the "checkpoint_offset" field in the mutation.
+func (m *ContactImportMutation) CheckpointOffset() (r int64, exists bool) {
+	v := m.checkpoint_offset
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCheckpointOffset returns the old "checkpoint_offset" field's value of the ContactImport entity.
+// If the ContactImport object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactImportMutation) OldCheckpointOffset(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCheckpointOffset is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCheckpointOffset requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCheckpointOffset: %w", err)
+	}
+	return oldValue.CheckpointOffset, nil
+}
+
+// AddCheckpointOffset adds i to the "checkpoint_offset" field.
+func (m *ContactImportMutation) AddCheckpointOffset(i int64) {
+	if m.addcheckpoint_offset != nil {
+		*m.addcheckpoint_offset += i
+	} else {
+		m.addcheckpoint_offset = &i
+	}
+}
+
+// AddedCheckpointOffset returns the value that was added to the "checkpoint_offset" field in this mutation.
+func (m *ContactImportMutation) AddedCheckpointOffset() (r int64, exists bool) {
+	v := m.addcheckpoint_offset
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetCheckpointOffset resets all changes to the "checkpoint_offset" field.
+func (m *ContactImportMutation) ResetCheckpointOffset() {
+	m.checkpoint_offset = nil
+	m.addcheckpoint_offset = nil
+}
+
+// SetProcessed sets the "processed" field.
+func (m *ContactImportMutation) SetProcessed(i int) {
+	m.processed = &i
+	m.addprocessed = nil
+}
+
+// Processed returns the value of the "processed" field in the mutation.
+func (m *ContactImportMutation) Processed() (r int, exists bool) {
+	v := m.processed
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProcessed returns the old "processed" field's value of the ContactImport entity.
+// If the ContactImport object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactImportMutation) OldProcessed(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProcessed is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProcessed requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProcessed: %w", err)
+	}
+	return oldValue.Processed, nil
+}
+
+// AddProcessed adds i to the "processed" field.
+func (m *ContactImportMutation) AddProcessed(i int) {
+	if m.addprocessed != nil {
+		*m.addprocessed += i
+	} else {
+		m.addprocessed = &i
+	}
+}
+
+// AddedProcessed returns the value that was added to the "processed" field in this mutation.
+func (m *ContactImportMutation) AddedProcessed() (r int, exists bool) {
+	v := m.addprocessed
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetProcessed resets all changes to the "processed" field.
+func (m *ContactImportMutation) ResetProcessed() {
+	m.processed = nil
+	m.addprocessed = nil
+}
+
+// SetCreated sets the "created" field.
+func (m *ContactImportMutation) SetCreated(i int) {
+	m.created = &i
+	m.addcreated = nil
+}
+
+// Created returns the value of the "created" field in the mutation.
+func (m *ContactImportMutation) Created() (r int, exists bool) {
+	v := m.created
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreated returns the old "created" field's value of the ContactImport entity.
+// If the ContactImport object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactImportMutation) OldCreated(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreated is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreated requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreated: %w", err)
+	}
+	return oldValue.Created, nil
+}
+
+// AddCreated adds i to the "created" field.
+func (m *ContactImportMutation) AddCreated(i int) {
+	if m.addcreated != nil {
+		*m.addcreated += i
+	} else {
+		m.addcreated = &i
+	}
+}
+
+// AddedCreated returns the value that was added to the "created" field in this mutation.
+func (m *ContactImportMutation) AddedCreated() (r int, exists bool) {
+	v := m.addcreated
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetCreated resets all changes to the "created" field.
+func (m *ContactImportMutation) ResetCreated() {
+	m.created = nil
+	m.addcreated = nil
+}
+
+// SetUpdated sets the "updated" field.
+func (m *ContactImportMutation) SetUpdated(i int) {
+	m.updated = &i
+	m.addupdated = nil
+}
+
+// Updated returns the value of the "updated" field in the mutation.
+func (m *ContactImportMutation) Updated() (r int, exists bool) {
+	v := m.updated
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdated returns the old "updated" field's value of the ContactImport entity.
+// If the ContactImport object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactImportMutation) OldUpdated(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdated is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdated requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdated: %w", err)
+	}
+	return oldValue.Updated, nil
+}
+
+// AddUpdated adds i to the "updated" field.
+func (m *ContactImportMutation) AddUpdated(i int) {
+	if m.addupdated != nil {
+		*m.addupdated += i
+	} else {
+		m.addupdated = &i
+	}
+}
+
+// AddedUpdated returns the value that was added to the "updated" field in this mutation.
+func (m *ContactImportMutation) AddedUpdated() (r int, exists bool) {
+	v := m.addupdated
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetUpdated resets all changes to the "updated" field.
+func (m *ContactImportMutation) ResetUpdated() {
+	m.updated = nil
+	m.addupdated = nil
+}
+
+// SetRefused sets the "refused" field.
+func (m *ContactImportMutation) SetRefused(i int) {
+	m.refused = &i
+	m.addrefused = nil
+}
+
+// Refused returns the value of the "refused" field in the mutation.
+func (m *ContactImportMutation) Refused() (r int, exists bool) {
+	v := m.refused
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRefused returns the old "refused" field's value of the ContactImport entity.
+// If the ContactImport object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactImportMutation) OldRefused(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRefused is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRefused requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRefused: %w", err)
+	}
+	return oldValue.Refused, nil
+}
+
+// AddRefused adds i to the "refused" field.
+func (m *ContactImportMutation) AddRefused(i int) {
+	if m.addrefused != nil {
+		*m.addrefused += i
+	} else {
+		m.addrefused = &i
+	}
+}
+
+// AddedRefused returns the value that was added to the "refused" field in this mutation.
+func (m *ContactImportMutation) AddedRefused() (r int, exists bool) {
+	v := m.addrefused
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetRefused resets all changes to the "refused" field.
+func (m *ContactImportMutation) ResetRefused() {
+	m.refused = nil
+	m.addrefused = nil
+}
+
+// SetDropped sets the "dropped" field.
+func (m *ContactImportMutation) SetDropped(i int) {
+	m.dropped = &i
+	m.adddropped = nil
+}
+
+// Dropped returns the value of the "dropped" field in the mutation.
+func (m *ContactImportMutation) Dropped() (r int, exists bool) {
+	v := m.dropped
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDropped returns the old "dropped" field's value of the ContactImport entity.
+// If the ContactImport object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactImportMutation) OldDropped(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDropped is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDropped requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDropped: %w", err)
+	}
+	return oldValue.Dropped, nil
+}
+
+// AddDropped adds i to the "dropped" field.
+func (m *ContactImportMutation) AddDropped(i int) {
+	if m.adddropped != nil {
+		*m.adddropped += i
+	} else {
+		m.adddropped = &i
+	}
+}
+
+// AddedDropped returns the value that was added to the "dropped" field in this mutation.
+func (m *ContactImportMutation) AddedDropped() (r int, exists bool) {
+	v := m.adddropped
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetDropped resets all changes to the "dropped" field.
+func (m *ContactImportMutation) ResetDropped() {
+	m.dropped = nil
+	m.adddropped = nil
+}
+
+// SetOptedOut sets the "opted_out" field.
+func (m *ContactImportMutation) SetOptedOut(i int) {
+	m.opted_out = &i
+	m.addopted_out = nil
+}
+
+// OptedOut returns the value of the "opted_out" field in the mutation.
+func (m *ContactImportMutation) OptedOut() (r int, exists bool) {
+	v := m.opted_out
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOptedOut returns the old "opted_out" field's value of the ContactImport entity.
+// If the ContactImport object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactImportMutation) OldOptedOut(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOptedOut is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOptedOut requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOptedOut: %w", err)
+	}
+	return oldValue.OptedOut, nil
+}
+
+// AddOptedOut adds i to the "opted_out" field.
+func (m *ContactImportMutation) AddOptedOut(i int) {
+	if m.addopted_out != nil {
+		*m.addopted_out += i
+	} else {
+		m.addopted_out = &i
+	}
+}
+
+// AddedOptedOut returns the value that was added to the "opted_out" field in this mutation.
+func (m *ContactImportMutation) AddedOptedOut() (r int, exists bool) {
+	v := m.addopted_out
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetOptedOut resets all changes to the "opted_out" field.
+func (m *ContactImportMutation) ResetOptedOut() {
+	m.opted_out = nil
+	m.addopted_out = nil
+}
+
+// SetSuppressed sets the "suppressed" field.
+func (m *ContactImportMutation) SetSuppressed(i int) {
+	m.suppressed = &i
+	m.addsuppressed = nil
+}
+
+// Suppressed returns the value of the "suppressed" field in the mutation.
+func (m *ContactImportMutation) Suppressed() (r int, exists bool) {
+	v := m.suppressed
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSuppressed returns the old "suppressed" field's value of the ContactImport entity.
+// If the ContactImport object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactImportMutation) OldSuppressed(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSuppressed is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSuppressed requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSuppressed: %w", err)
+	}
+	return oldValue.Suppressed, nil
+}
+
+// AddSuppressed adds i to the "suppressed" field.
+func (m *ContactImportMutation) AddSuppressed(i int) {
+	if m.addsuppressed != nil {
+		*m.addsuppressed += i
+	} else {
+		m.addsuppressed = &i
+	}
+}
+
+// AddedSuppressed returns the value that was added to the "suppressed" field in this mutation.
+func (m *ContactImportMutation) AddedSuppressed() (r int, exists bool) {
+	v := m.addsuppressed
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSuppressed resets all changes to the "suppressed" field.
+func (m *ContactImportMutation) ResetSuppressed() {
+	m.suppressed = nil
+	m.addsuppressed = nil
+}
+
+// SetStartedAt sets the "started_at" field.
+func (m *ContactImportMutation) SetStartedAt(t time.Time) {
+	m.started_at = &t
+}
+
+// StartedAt returns the value of the "started_at" field in the mutation.
+func (m *ContactImportMutation) StartedAt() (r time.Time, exists bool) {
+	v := m.started_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStartedAt returns the old "started_at" field's value of the ContactImport entity.
+// If the ContactImport object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactImportMutation) OldStartedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStartedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStartedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStartedAt: %w", err)
+	}
+	return oldValue.StartedAt, nil
+}
+
+// ClearStartedAt clears the value of the "started_at" field.
+func (m *ContactImportMutation) ClearStartedAt() {
+	m.started_at = nil
+	m.clearedFields[contactimport.FieldStartedAt] = struct{}{}
+}
+
+// StartedAtCleared returns if the "started_at" field was cleared in this mutation.
+func (m *ContactImportMutation) StartedAtCleared() bool {
+	_, ok := m.clearedFields[contactimport.FieldStartedAt]
+	return ok
+}
+
+// ResetStartedAt resets all changes to the "started_at" field.
+func (m *ContactImportMutation) ResetStartedAt() {
+	m.started_at = nil
+	delete(m.clearedFields, contactimport.FieldStartedAt)
+}
+
+// SetEndedAt sets the "ended_at" field.
+func (m *ContactImportMutation) SetEndedAt(t time.Time) {
+	m.ended_at = &t
+}
+
+// EndedAt returns the value of the "ended_at" field in the mutation.
+func (m *ContactImportMutation) EndedAt() (r time.Time, exists bool) {
+	v := m.ended_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEndedAt returns the old "ended_at" field's value of the ContactImport entity.
+// If the ContactImport object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactImportMutation) OldEndedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEndedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEndedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEndedAt: %w", err)
+	}
+	return oldValue.EndedAt, nil
+}
+
+// ClearEndedAt clears the value of the "ended_at" field.
+func (m *ContactImportMutation) ClearEndedAt() {
+	m.ended_at = nil
+	m.clearedFields[contactimport.FieldEndedAt] = struct{}{}
+}
+
+// EndedAtCleared returns if the "ended_at" field was cleared in this mutation.
+func (m *ContactImportMutation) EndedAtCleared() bool {
+	_, ok := m.clearedFields[contactimport.FieldEndedAt]
+	return ok
+}
+
+// ResetEndedAt resets all changes to the "ended_at" field.
+func (m *ContactImportMutation) ResetEndedAt() {
+	m.ended_at = nil
+	delete(m.clearedFields, contactimport.FieldEndedAt)
+}
+
+// SetCancelRequestedAt sets the "cancel_requested_at" field.
+func (m *ContactImportMutation) SetCancelRequestedAt(t time.Time) {
+	m.cancel_requested_at = &t
+}
+
+// CancelRequestedAt returns the value of the "cancel_requested_at" field in the mutation.
+func (m *ContactImportMutation) CancelRequestedAt() (r time.Time, exists bool) {
+	v := m.cancel_requested_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCancelRequestedAt returns the old "cancel_requested_at" field's value of the ContactImport entity.
+// If the ContactImport object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactImportMutation) OldCancelRequestedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCancelRequestedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCancelRequestedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCancelRequestedAt: %w", err)
+	}
+	return oldValue.CancelRequestedAt, nil
+}
+
+// ClearCancelRequestedAt clears the value of the "cancel_requested_at" field.
+func (m *ContactImportMutation) ClearCancelRequestedAt() {
+	m.cancel_requested_at = nil
+	m.clearedFields[contactimport.FieldCancelRequestedAt] = struct{}{}
+}
+
+// CancelRequestedAtCleared returns if the "cancel_requested_at" field was cleared in this mutation.
+func (m *ContactImportMutation) CancelRequestedAtCleared() bool {
+	_, ok := m.clearedFields[contactimport.FieldCancelRequestedAt]
+	return ok
+}
+
+// ResetCancelRequestedAt resets all changes to the "cancel_requested_at" field.
+func (m *ContactImportMutation) ResetCancelRequestedAt() {
+	m.cancel_requested_at = nil
+	delete(m.clearedFields, contactimport.FieldCancelRequestedAt)
+}
+
+// SetReportExpiresAt sets the "report_expires_at" field.
+func (m *ContactImportMutation) SetReportExpiresAt(t time.Time) {
+	m.report_expires_at = &t
+}
+
+// ReportExpiresAt returns the value of the "report_expires_at" field in the mutation.
+func (m *ContactImportMutation) ReportExpiresAt() (r time.Time, exists bool) {
+	v := m.report_expires_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReportExpiresAt returns the old "report_expires_at" field's value of the ContactImport entity.
+// If the ContactImport object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactImportMutation) OldReportExpiresAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReportExpiresAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReportExpiresAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReportExpiresAt: %w", err)
+	}
+	return oldValue.ReportExpiresAt, nil
+}
+
+// ClearReportExpiresAt clears the value of the "report_expires_at" field.
+func (m *ContactImportMutation) ClearReportExpiresAt() {
+	m.report_expires_at = nil
+	m.clearedFields[contactimport.FieldReportExpiresAt] = struct{}{}
+}
+
+// ReportExpiresAtCleared returns if the "report_expires_at" field was cleared in this mutation.
+func (m *ContactImportMutation) ReportExpiresAtCleared() bool {
+	_, ok := m.clearedFields[contactimport.FieldReportExpiresAt]
+	return ok
+}
+
+// ResetReportExpiresAt resets all changes to the "report_expires_at" field.
+func (m *ContactImportMutation) ResetReportExpiresAt() {
+	m.report_expires_at = nil
+	delete(m.clearedFields, contactimport.FieldReportExpiresAt)
+}
+
+// ClearWorkspace clears the "workspace" edge to the Workspace entity.
+func (m *ContactImportMutation) ClearWorkspace() {
+	m.clearedworkspace = true
+	m.clearedFields[contactimport.FieldWorkspaceID] = struct{}{}
+}
+
+// WorkspaceCleared reports if the "workspace" edge to the Workspace entity was cleared.
+func (m *ContactImportMutation) WorkspaceCleared() bool {
+	return m.clearedworkspace
+}
+
+// WorkspaceIDs returns the "workspace" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// WorkspaceID instead. It exists only for internal usage by the builders.
+func (m *ContactImportMutation) WorkspaceIDs() (ids []int64) {
+	if id := m.workspace; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetWorkspace resets all changes to the "workspace" edge.
+func (m *ContactImportMutation) ResetWorkspace() {
+	m.workspace = nil
+	m.clearedworkspace = false
+}
+
+// ClearMembership clears the "membership" edge to the Membership entity.
+func (m *ContactImportMutation) ClearMembership() {
+	m.clearedmembership = true
+	m.clearedFields[contactimport.FieldMembershipID] = struct{}{}
+}
+
+// MembershipCleared reports if the "membership" edge to the Membership entity was cleared.
+func (m *ContactImportMutation) MembershipCleared() bool {
+	return m.MembershipIDCleared() || m.clearedmembership
+}
+
+// MembershipIDs returns the "membership" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// MembershipID instead. It exists only for internal usage by the builders.
+func (m *ContactImportMutation) MembershipIDs() (ids []int64) {
+	if id := m.membership; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetMembership resets all changes to the "membership" edge.
+func (m *ContactImportMutation) ResetMembership() {
+	m.membership = nil
+	m.clearedmembership = false
+}
+
+// AddChunkIDs adds the "chunks" edge to the ContactImportChunk entity by ids.
+func (m *ContactImportMutation) AddChunkIDs(ids ...int64) {
+	if m.chunks == nil {
+		m.chunks = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.chunks[ids[i]] = struct{}{}
+	}
+}
+
+// ClearChunks clears the "chunks" edge to the ContactImportChunk entity.
+func (m *ContactImportMutation) ClearChunks() {
+	m.clearedchunks = true
+}
+
+// ChunksCleared reports if the "chunks" edge to the ContactImportChunk entity was cleared.
+func (m *ContactImportMutation) ChunksCleared() bool {
+	return m.clearedchunks
+}
+
+// RemoveChunkIDs removes the "chunks" edge to the ContactImportChunk entity by IDs.
+func (m *ContactImportMutation) RemoveChunkIDs(ids ...int64) {
+	if m.removedchunks == nil {
+		m.removedchunks = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.chunks, ids[i])
+		m.removedchunks[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedChunks returns the removed IDs of the "chunks" edge to the ContactImportChunk entity.
+func (m *ContactImportMutation) RemovedChunksIDs() (ids []int64) {
+	for id := range m.removedchunks {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ChunksIDs returns the "chunks" edge IDs in the mutation.
+func (m *ContactImportMutation) ChunksIDs() (ids []int64) {
+	for id := range m.chunks {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetChunks resets all changes to the "chunks" edge.
+func (m *ContactImportMutation) ResetChunks() {
+	m.chunks = nil
+	m.clearedchunks = false
+	m.removedchunks = nil
+}
+
+// AddReportRowIDs adds the "report_rows" edge to the ContactImportReportRow entity by ids.
+func (m *ContactImportMutation) AddReportRowIDs(ids ...int64) {
+	if m.report_rows == nil {
+		m.report_rows = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.report_rows[ids[i]] = struct{}{}
+	}
+}
+
+// ClearReportRows clears the "report_rows" edge to the ContactImportReportRow entity.
+func (m *ContactImportMutation) ClearReportRows() {
+	m.clearedreport_rows = true
+}
+
+// ReportRowsCleared reports if the "report_rows" edge to the ContactImportReportRow entity was cleared.
+func (m *ContactImportMutation) ReportRowsCleared() bool {
+	return m.clearedreport_rows
+}
+
+// RemoveReportRowIDs removes the "report_rows" edge to the ContactImportReportRow entity by IDs.
+func (m *ContactImportMutation) RemoveReportRowIDs(ids ...int64) {
+	if m.removedreport_rows == nil {
+		m.removedreport_rows = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.report_rows, ids[i])
+		m.removedreport_rows[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedReportRows returns the removed IDs of the "report_rows" edge to the ContactImportReportRow entity.
+func (m *ContactImportMutation) RemovedReportRowsIDs() (ids []int64) {
+	for id := range m.removedreport_rows {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ReportRowsIDs returns the "report_rows" edge IDs in the mutation.
+func (m *ContactImportMutation) ReportRowsIDs() (ids []int64) {
+	for id := range m.report_rows {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetReportRows resets all changes to the "report_rows" edge.
+func (m *ContactImportMutation) ResetReportRows() {
+	m.report_rows = nil
+	m.clearedreport_rows = false
+	m.removedreport_rows = nil
+}
+
+// Where appends a list predicates to the ContactImportMutation builder.
+func (m *ContactImportMutation) Where(ps ...predicate.ContactImport) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the ContactImportMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *ContactImportMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.ContactImport, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *ContactImportMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *ContactImportMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (ContactImport).
+func (m *ContactImportMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *ContactImportMutation) Fields() []string {
+	fields := make([]string, 0, 27)
+	if m.created_at != nil {
+		fields = append(fields, contactimport.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, contactimport.FieldUpdatedAt)
+	}
+	if m.workspace != nil {
+		fields = append(fields, contactimport.FieldWorkspaceID)
+	}
+	if m.membership != nil {
+		fields = append(fields, contactimport.FieldMembershipID)
+	}
+	if m.state != nil {
+		fields = append(fields, contactimport.FieldState)
+	}
+	if m.delimiter != nil {
+		fields = append(fields, contactimport.FieldDelimiter)
+	}
+	if m.header != nil {
+		fields = append(fields, contactimport.FieldHeader)
+	}
+	if m.size != nil {
+		fields = append(fields, contactimport.FieldSize)
+	}
+	if m.row_count != nil {
+		fields = append(fields, contactimport.FieldRowCount)
+	}
+	if m.malformed_rows != nil {
+		fields = append(fields, contactimport.FieldMalformedRows)
+	}
+	if m.mapping != nil {
+		fields = append(fields, contactimport.FieldMapping)
+	}
+	if m.only_add_new != nil {
+		fields = append(fields, contactimport.FieldOnlyAddNew)
+	}
+	if m.as_new_sign_ups != nil {
+		fields = append(fields, contactimport.FieldAsNewSignUps)
+	}
+	if m.checkpoint_row != nil {
+		fields = append(fields, contactimport.FieldCheckpointRow)
+	}
+	if m.checkpoint_chunk != nil {
+		fields = append(fields, contactimport.FieldCheckpointChunk)
+	}
+	if m.checkpoint_offset != nil {
+		fields = append(fields, contactimport.FieldCheckpointOffset)
+	}
+	if m.processed != nil {
+		fields = append(fields, contactimport.FieldProcessed)
+	}
+	if m.created != nil {
+		fields = append(fields, contactimport.FieldCreated)
+	}
+	if m.updated != nil {
+		fields = append(fields, contactimport.FieldUpdated)
+	}
+	if m.refused != nil {
+		fields = append(fields, contactimport.FieldRefused)
+	}
+	if m.dropped != nil {
+		fields = append(fields, contactimport.FieldDropped)
+	}
+	if m.opted_out != nil {
+		fields = append(fields, contactimport.FieldOptedOut)
+	}
+	if m.suppressed != nil {
+		fields = append(fields, contactimport.FieldSuppressed)
+	}
+	if m.started_at != nil {
+		fields = append(fields, contactimport.FieldStartedAt)
+	}
+	if m.ended_at != nil {
+		fields = append(fields, contactimport.FieldEndedAt)
+	}
+	if m.cancel_requested_at != nil {
+		fields = append(fields, contactimport.FieldCancelRequestedAt)
+	}
+	if m.report_expires_at != nil {
+		fields = append(fields, contactimport.FieldReportExpiresAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *ContactImportMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case contactimport.FieldCreatedAt:
+		return m.CreatedAt()
+	case contactimport.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case contactimport.FieldWorkspaceID:
+		return m.WorkspaceID()
+	case contactimport.FieldMembershipID:
+		return m.MembershipID()
+	case contactimport.FieldState:
+		return m.State()
+	case contactimport.FieldDelimiter:
+		return m.Delimiter()
+	case contactimport.FieldHeader:
+		return m.Header()
+	case contactimport.FieldSize:
+		return m.Size()
+	case contactimport.FieldRowCount:
+		return m.RowCount()
+	case contactimport.FieldMalformedRows:
+		return m.MalformedRows()
+	case contactimport.FieldMapping:
+		return m.Mapping()
+	case contactimport.FieldOnlyAddNew:
+		return m.OnlyAddNew()
+	case contactimport.FieldAsNewSignUps:
+		return m.AsNewSignUps()
+	case contactimport.FieldCheckpointRow:
+		return m.CheckpointRow()
+	case contactimport.FieldCheckpointChunk:
+		return m.CheckpointChunk()
+	case contactimport.FieldCheckpointOffset:
+		return m.CheckpointOffset()
+	case contactimport.FieldProcessed:
+		return m.Processed()
+	case contactimport.FieldCreated:
+		return m.Created()
+	case contactimport.FieldUpdated:
+		return m.Updated()
+	case contactimport.FieldRefused:
+		return m.Refused()
+	case contactimport.FieldDropped:
+		return m.Dropped()
+	case contactimport.FieldOptedOut:
+		return m.OptedOut()
+	case contactimport.FieldSuppressed:
+		return m.Suppressed()
+	case contactimport.FieldStartedAt:
+		return m.StartedAt()
+	case contactimport.FieldEndedAt:
+		return m.EndedAt()
+	case contactimport.FieldCancelRequestedAt:
+		return m.CancelRequestedAt()
+	case contactimport.FieldReportExpiresAt:
+		return m.ReportExpiresAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *ContactImportMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case contactimport.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case contactimport.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case contactimport.FieldWorkspaceID:
+		return m.OldWorkspaceID(ctx)
+	case contactimport.FieldMembershipID:
+		return m.OldMembershipID(ctx)
+	case contactimport.FieldState:
+		return m.OldState(ctx)
+	case contactimport.FieldDelimiter:
+		return m.OldDelimiter(ctx)
+	case contactimport.FieldHeader:
+		return m.OldHeader(ctx)
+	case contactimport.FieldSize:
+		return m.OldSize(ctx)
+	case contactimport.FieldRowCount:
+		return m.OldRowCount(ctx)
+	case contactimport.FieldMalformedRows:
+		return m.OldMalformedRows(ctx)
+	case contactimport.FieldMapping:
+		return m.OldMapping(ctx)
+	case contactimport.FieldOnlyAddNew:
+		return m.OldOnlyAddNew(ctx)
+	case contactimport.FieldAsNewSignUps:
+		return m.OldAsNewSignUps(ctx)
+	case contactimport.FieldCheckpointRow:
+		return m.OldCheckpointRow(ctx)
+	case contactimport.FieldCheckpointChunk:
+		return m.OldCheckpointChunk(ctx)
+	case contactimport.FieldCheckpointOffset:
+		return m.OldCheckpointOffset(ctx)
+	case contactimport.FieldProcessed:
+		return m.OldProcessed(ctx)
+	case contactimport.FieldCreated:
+		return m.OldCreated(ctx)
+	case contactimport.FieldUpdated:
+		return m.OldUpdated(ctx)
+	case contactimport.FieldRefused:
+		return m.OldRefused(ctx)
+	case contactimport.FieldDropped:
+		return m.OldDropped(ctx)
+	case contactimport.FieldOptedOut:
+		return m.OldOptedOut(ctx)
+	case contactimport.FieldSuppressed:
+		return m.OldSuppressed(ctx)
+	case contactimport.FieldStartedAt:
+		return m.OldStartedAt(ctx)
+	case contactimport.FieldEndedAt:
+		return m.OldEndedAt(ctx)
+	case contactimport.FieldCancelRequestedAt:
+		return m.OldCancelRequestedAt(ctx)
+	case contactimport.FieldReportExpiresAt:
+		return m.OldReportExpiresAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown ContactImport field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ContactImportMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case contactimport.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case contactimport.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case contactimport.FieldWorkspaceID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWorkspaceID(v)
+		return nil
+	case contactimport.FieldMembershipID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMembershipID(v)
+		return nil
+	case contactimport.FieldState:
+		v, ok := value.(contactimport.State)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetState(v)
+		return nil
+	case contactimport.FieldDelimiter:
+		v, ok := value.(contactimport.Delimiter)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDelimiter(v)
+		return nil
+	case contactimport.FieldHeader:
+		v, ok := value.([]string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetHeader(v)
+		return nil
+	case contactimport.FieldSize:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSize(v)
+		return nil
+	case contactimport.FieldRowCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRowCount(v)
+		return nil
+	case contactimport.FieldMalformedRows:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMalformedRows(v)
+		return nil
+	case contactimport.FieldMapping:
+		v, ok := value.(csvimport.Mapping)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMapping(v)
+		return nil
+	case contactimport.FieldOnlyAddNew:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOnlyAddNew(v)
+		return nil
+	case contactimport.FieldAsNewSignUps:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAsNewSignUps(v)
+		return nil
+	case contactimport.FieldCheckpointRow:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCheckpointRow(v)
+		return nil
+	case contactimport.FieldCheckpointChunk:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCheckpointChunk(v)
+		return nil
+	case contactimport.FieldCheckpointOffset:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCheckpointOffset(v)
+		return nil
+	case contactimport.FieldProcessed:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProcessed(v)
+		return nil
+	case contactimport.FieldCreated:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreated(v)
+		return nil
+	case contactimport.FieldUpdated:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdated(v)
+		return nil
+	case contactimport.FieldRefused:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRefused(v)
+		return nil
+	case contactimport.FieldDropped:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDropped(v)
+		return nil
+	case contactimport.FieldOptedOut:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOptedOut(v)
+		return nil
+	case contactimport.FieldSuppressed:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSuppressed(v)
+		return nil
+	case contactimport.FieldStartedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStartedAt(v)
+		return nil
+	case contactimport.FieldEndedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEndedAt(v)
+		return nil
+	case contactimport.FieldCancelRequestedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCancelRequestedAt(v)
+		return nil
+	case contactimport.FieldReportExpiresAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReportExpiresAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ContactImport field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *ContactImportMutation) AddedFields() []string {
+	var fields []string
+	if m.addsize != nil {
+		fields = append(fields, contactimport.FieldSize)
+	}
+	if m.addrow_count != nil {
+		fields = append(fields, contactimport.FieldRowCount)
+	}
+	if m.addmalformed_rows != nil {
+		fields = append(fields, contactimport.FieldMalformedRows)
+	}
+	if m.addcheckpoint_row != nil {
+		fields = append(fields, contactimport.FieldCheckpointRow)
+	}
+	if m.addcheckpoint_chunk != nil {
+		fields = append(fields, contactimport.FieldCheckpointChunk)
+	}
+	if m.addcheckpoint_offset != nil {
+		fields = append(fields, contactimport.FieldCheckpointOffset)
+	}
+	if m.addprocessed != nil {
+		fields = append(fields, contactimport.FieldProcessed)
+	}
+	if m.addcreated != nil {
+		fields = append(fields, contactimport.FieldCreated)
+	}
+	if m.addupdated != nil {
+		fields = append(fields, contactimport.FieldUpdated)
+	}
+	if m.addrefused != nil {
+		fields = append(fields, contactimport.FieldRefused)
+	}
+	if m.adddropped != nil {
+		fields = append(fields, contactimport.FieldDropped)
+	}
+	if m.addopted_out != nil {
+		fields = append(fields, contactimport.FieldOptedOut)
+	}
+	if m.addsuppressed != nil {
+		fields = append(fields, contactimport.FieldSuppressed)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *ContactImportMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case contactimport.FieldSize:
+		return m.AddedSize()
+	case contactimport.FieldRowCount:
+		return m.AddedRowCount()
+	case contactimport.FieldMalformedRows:
+		return m.AddedMalformedRows()
+	case contactimport.FieldCheckpointRow:
+		return m.AddedCheckpointRow()
+	case contactimport.FieldCheckpointChunk:
+		return m.AddedCheckpointChunk()
+	case contactimport.FieldCheckpointOffset:
+		return m.AddedCheckpointOffset()
+	case contactimport.FieldProcessed:
+		return m.AddedProcessed()
+	case contactimport.FieldCreated:
+		return m.AddedCreated()
+	case contactimport.FieldUpdated:
+		return m.AddedUpdated()
+	case contactimport.FieldRefused:
+		return m.AddedRefused()
+	case contactimport.FieldDropped:
+		return m.AddedDropped()
+	case contactimport.FieldOptedOut:
+		return m.AddedOptedOut()
+	case contactimport.FieldSuppressed:
+		return m.AddedSuppressed()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ContactImportMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case contactimport.FieldSize:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSize(v)
+		return nil
+	case contactimport.FieldRowCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddRowCount(v)
+		return nil
+	case contactimport.FieldMalformedRows:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddMalformedRows(v)
+		return nil
+	case contactimport.FieldCheckpointRow:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCheckpointRow(v)
+		return nil
+	case contactimport.FieldCheckpointChunk:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCheckpointChunk(v)
+		return nil
+	case contactimport.FieldCheckpointOffset:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCheckpointOffset(v)
+		return nil
+	case contactimport.FieldProcessed:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddProcessed(v)
+		return nil
+	case contactimport.FieldCreated:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCreated(v)
+		return nil
+	case contactimport.FieldUpdated:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddUpdated(v)
+		return nil
+	case contactimport.FieldRefused:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddRefused(v)
+		return nil
+	case contactimport.FieldDropped:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDropped(v)
+		return nil
+	case contactimport.FieldOptedOut:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddOptedOut(v)
+		return nil
+	case contactimport.FieldSuppressed:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSuppressed(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ContactImport numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *ContactImportMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(contactimport.FieldMembershipID) {
+		fields = append(fields, contactimport.FieldMembershipID)
+	}
+	if m.FieldCleared(contactimport.FieldMapping) {
+		fields = append(fields, contactimport.FieldMapping)
+	}
+	if m.FieldCleared(contactimport.FieldStartedAt) {
+		fields = append(fields, contactimport.FieldStartedAt)
+	}
+	if m.FieldCleared(contactimport.FieldEndedAt) {
+		fields = append(fields, contactimport.FieldEndedAt)
+	}
+	if m.FieldCleared(contactimport.FieldCancelRequestedAt) {
+		fields = append(fields, contactimport.FieldCancelRequestedAt)
+	}
+	if m.FieldCleared(contactimport.FieldReportExpiresAt) {
+		fields = append(fields, contactimport.FieldReportExpiresAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *ContactImportMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ContactImportMutation) ClearField(name string) error {
+	switch name {
+	case contactimport.FieldMembershipID:
+		m.ClearMembershipID()
+		return nil
+	case contactimport.FieldMapping:
+		m.ClearMapping()
+		return nil
+	case contactimport.FieldStartedAt:
+		m.ClearStartedAt()
+		return nil
+	case contactimport.FieldEndedAt:
+		m.ClearEndedAt()
+		return nil
+	case contactimport.FieldCancelRequestedAt:
+		m.ClearCancelRequestedAt()
+		return nil
+	case contactimport.FieldReportExpiresAt:
+		m.ClearReportExpiresAt()
+		return nil
+	}
+	return fmt.Errorf("unknown ContactImport nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *ContactImportMutation) ResetField(name string) error {
+	switch name {
+	case contactimport.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case contactimport.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case contactimport.FieldWorkspaceID:
+		m.ResetWorkspaceID()
+		return nil
+	case contactimport.FieldMembershipID:
+		m.ResetMembershipID()
+		return nil
+	case contactimport.FieldState:
+		m.ResetState()
+		return nil
+	case contactimport.FieldDelimiter:
+		m.ResetDelimiter()
+		return nil
+	case contactimport.FieldHeader:
+		m.ResetHeader()
+		return nil
+	case contactimport.FieldSize:
+		m.ResetSize()
+		return nil
+	case contactimport.FieldRowCount:
+		m.ResetRowCount()
+		return nil
+	case contactimport.FieldMalformedRows:
+		m.ResetMalformedRows()
+		return nil
+	case contactimport.FieldMapping:
+		m.ResetMapping()
+		return nil
+	case contactimport.FieldOnlyAddNew:
+		m.ResetOnlyAddNew()
+		return nil
+	case contactimport.FieldAsNewSignUps:
+		m.ResetAsNewSignUps()
+		return nil
+	case contactimport.FieldCheckpointRow:
+		m.ResetCheckpointRow()
+		return nil
+	case contactimport.FieldCheckpointChunk:
+		m.ResetCheckpointChunk()
+		return nil
+	case contactimport.FieldCheckpointOffset:
+		m.ResetCheckpointOffset()
+		return nil
+	case contactimport.FieldProcessed:
+		m.ResetProcessed()
+		return nil
+	case contactimport.FieldCreated:
+		m.ResetCreated()
+		return nil
+	case contactimport.FieldUpdated:
+		m.ResetUpdated()
+		return nil
+	case contactimport.FieldRefused:
+		m.ResetRefused()
+		return nil
+	case contactimport.FieldDropped:
+		m.ResetDropped()
+		return nil
+	case contactimport.FieldOptedOut:
+		m.ResetOptedOut()
+		return nil
+	case contactimport.FieldSuppressed:
+		m.ResetSuppressed()
+		return nil
+	case contactimport.FieldStartedAt:
+		m.ResetStartedAt()
+		return nil
+	case contactimport.FieldEndedAt:
+		m.ResetEndedAt()
+		return nil
+	case contactimport.FieldCancelRequestedAt:
+		m.ResetCancelRequestedAt()
+		return nil
+	case contactimport.FieldReportExpiresAt:
+		m.ResetReportExpiresAt()
+		return nil
+	}
+	return fmt.Errorf("unknown ContactImport field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *ContactImportMutation) AddedEdges() []string {
+	edges := make([]string, 0, 4)
+	if m.workspace != nil {
+		edges = append(edges, contactimport.EdgeWorkspace)
+	}
+	if m.membership != nil {
+		edges = append(edges, contactimport.EdgeMembership)
+	}
+	if m.chunks != nil {
+		edges = append(edges, contactimport.EdgeChunks)
+	}
+	if m.report_rows != nil {
+		edges = append(edges, contactimport.EdgeReportRows)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *ContactImportMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case contactimport.EdgeWorkspace:
+		if id := m.workspace; id != nil {
+			return []ent.Value{*id}
+		}
+	case contactimport.EdgeMembership:
+		if id := m.membership; id != nil {
+			return []ent.Value{*id}
+		}
+	case contactimport.EdgeChunks:
+		ids := make([]ent.Value, 0, len(m.chunks))
+		for id := range m.chunks {
+			ids = append(ids, id)
+		}
+		return ids
+	case contactimport.EdgeReportRows:
+		ids := make([]ent.Value, 0, len(m.report_rows))
+		for id := range m.report_rows {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *ContactImportMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 4)
+	if m.removedchunks != nil {
+		edges = append(edges, contactimport.EdgeChunks)
+	}
+	if m.removedreport_rows != nil {
+		edges = append(edges, contactimport.EdgeReportRows)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *ContactImportMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case contactimport.EdgeChunks:
+		ids := make([]ent.Value, 0, len(m.removedchunks))
+		for id := range m.removedchunks {
+			ids = append(ids, id)
+		}
+		return ids
+	case contactimport.EdgeReportRows:
+		ids := make([]ent.Value, 0, len(m.removedreport_rows))
+		for id := range m.removedreport_rows {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *ContactImportMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 4)
+	if m.clearedworkspace {
+		edges = append(edges, contactimport.EdgeWorkspace)
+	}
+	if m.clearedmembership {
+		edges = append(edges, contactimport.EdgeMembership)
+	}
+	if m.clearedchunks {
+		edges = append(edges, contactimport.EdgeChunks)
+	}
+	if m.clearedreport_rows {
+		edges = append(edges, contactimport.EdgeReportRows)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *ContactImportMutation) EdgeCleared(name string) bool {
+	switch name {
+	case contactimport.EdgeWorkspace:
+		return m.clearedworkspace
+	case contactimport.EdgeMembership:
+		return m.clearedmembership
+	case contactimport.EdgeChunks:
+		return m.clearedchunks
+	case contactimport.EdgeReportRows:
+		return m.clearedreport_rows
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *ContactImportMutation) ClearEdge(name string) error {
+	switch name {
+	case contactimport.EdgeWorkspace:
+		m.ClearWorkspace()
+		return nil
+	case contactimport.EdgeMembership:
+		m.ClearMembership()
+		return nil
+	}
+	return fmt.Errorf("unknown ContactImport unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *ContactImportMutation) ResetEdge(name string) error {
+	switch name {
+	case contactimport.EdgeWorkspace:
+		m.ResetWorkspace()
+		return nil
+	case contactimport.EdgeMembership:
+		m.ResetMembership()
+		return nil
+	case contactimport.EdgeChunks:
+		m.ResetChunks()
+		return nil
+	case contactimport.EdgeReportRows:
+		m.ResetReportRows()
+		return nil
+	}
+	return fmt.Errorf("unknown ContactImport edge %s", name)
+}
+
+// ContactImportChunkMutation represents an operation that mutates the ContactImportChunk nodes in the graph.
+type ContactImportChunkMutation struct {
+	config
+	op                    Op
+	typ                   string
+	id                    *int64
+	created_at            *time.Time
+	updated_at            *time.Time
+	seq                   *int
+	addseq                *int
+	data                  *[]byte
+	clearedFields         map[string]struct{}
+	workspace             *int64
+	clearedworkspace      bool
+	contact_import        *int64
+	clearedcontact_import bool
+	done                  bool
+	oldValue              func(context.Context) (*ContactImportChunk, error)
+	predicates            []predicate.ContactImportChunk
+}
+
+var _ ent.Mutation = (*ContactImportChunkMutation)(nil)
+
+// contactimportchunkOption allows management of the mutation configuration using functional options.
+type contactimportchunkOption func(*ContactImportChunkMutation)
+
+// newContactImportChunkMutation creates new mutation for the ContactImportChunk entity.
+func newContactImportChunkMutation(c config, op Op, opts ...contactimportchunkOption) *ContactImportChunkMutation {
+	m := &ContactImportChunkMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeContactImportChunk,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withContactImportChunkID sets the ID field of the mutation.
+func withContactImportChunkID(id int64) contactimportchunkOption {
+	return func(m *ContactImportChunkMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *ContactImportChunk
+		)
+		m.oldValue = func(ctx context.Context) (*ContactImportChunk, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().ContactImportChunk.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withContactImportChunk sets the old ContactImportChunk of the mutation.
+func withContactImportChunk(node *ContactImportChunk) contactimportchunkOption {
+	return func(m *ContactImportChunkMutation) {
+		m.oldValue = func(context.Context) (*ContactImportChunk, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ContactImportChunkMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ContactImportChunkMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of ContactImportChunk entities.
+func (m *ContactImportChunkMutation) SetID(id int64) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *ContactImportChunkMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *ContactImportChunkMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().ContactImportChunk.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *ContactImportChunkMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *ContactImportChunkMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the ContactImportChunk entity.
+// If the ContactImportChunk object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactImportChunkMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *ContactImportChunkMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *ContactImportChunkMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *ContactImportChunkMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the ContactImportChunk entity.
+// If the ContactImportChunk object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactImportChunkMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *ContactImportChunkMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetWorkspaceID sets the "workspace_id" field.
+func (m *ContactImportChunkMutation) SetWorkspaceID(i int64) {
+	m.workspace = &i
+}
+
+// WorkspaceID returns the value of the "workspace_id" field in the mutation.
+func (m *ContactImportChunkMutation) WorkspaceID() (r int64, exists bool) {
+	v := m.workspace
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWorkspaceID returns the old "workspace_id" field's value of the ContactImportChunk entity.
+// If the ContactImportChunk object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactImportChunkMutation) OldWorkspaceID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWorkspaceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWorkspaceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWorkspaceID: %w", err)
+	}
+	return oldValue.WorkspaceID, nil
+}
+
+// ResetWorkspaceID resets all changes to the "workspace_id" field.
+func (m *ContactImportChunkMutation) ResetWorkspaceID() {
+	m.workspace = nil
+}
+
+// SetContactImportID sets the "contact_import_id" field.
+func (m *ContactImportChunkMutation) SetContactImportID(i int64) {
+	m.contact_import = &i
+}
+
+// ContactImportID returns the value of the "contact_import_id" field in the mutation.
+func (m *ContactImportChunkMutation) ContactImportID() (r int64, exists bool) {
+	v := m.contact_import
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldContactImportID returns the old "contact_import_id" field's value of the ContactImportChunk entity.
+// If the ContactImportChunk object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactImportChunkMutation) OldContactImportID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldContactImportID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldContactImportID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldContactImportID: %w", err)
+	}
+	return oldValue.ContactImportID, nil
+}
+
+// ResetContactImportID resets all changes to the "contact_import_id" field.
+func (m *ContactImportChunkMutation) ResetContactImportID() {
+	m.contact_import = nil
+}
+
+// SetSeq sets the "seq" field.
+func (m *ContactImportChunkMutation) SetSeq(i int) {
+	m.seq = &i
+	m.addseq = nil
+}
+
+// Seq returns the value of the "seq" field in the mutation.
+func (m *ContactImportChunkMutation) Seq() (r int, exists bool) {
+	v := m.seq
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSeq returns the old "seq" field's value of the ContactImportChunk entity.
+// If the ContactImportChunk object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactImportChunkMutation) OldSeq(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSeq is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSeq requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSeq: %w", err)
+	}
+	return oldValue.Seq, nil
+}
+
+// AddSeq adds i to the "seq" field.
+func (m *ContactImportChunkMutation) AddSeq(i int) {
+	if m.addseq != nil {
+		*m.addseq += i
+	} else {
+		m.addseq = &i
+	}
+}
+
+// AddedSeq returns the value that was added to the "seq" field in this mutation.
+func (m *ContactImportChunkMutation) AddedSeq() (r int, exists bool) {
+	v := m.addseq
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSeq resets all changes to the "seq" field.
+func (m *ContactImportChunkMutation) ResetSeq() {
+	m.seq = nil
+	m.addseq = nil
+}
+
+// SetData sets the "data" field.
+func (m *ContactImportChunkMutation) SetData(b []byte) {
+	m.data = &b
+}
+
+// Data returns the value of the "data" field in the mutation.
+func (m *ContactImportChunkMutation) Data() (r []byte, exists bool) {
+	v := m.data
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldData returns the old "data" field's value of the ContactImportChunk entity.
+// If the ContactImportChunk object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactImportChunkMutation) OldData(ctx context.Context) (v []byte, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldData is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldData requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldData: %w", err)
+	}
+	return oldValue.Data, nil
+}
+
+// ResetData resets all changes to the "data" field.
+func (m *ContactImportChunkMutation) ResetData() {
+	m.data = nil
+}
+
+// ClearWorkspace clears the "workspace" edge to the Workspace entity.
+func (m *ContactImportChunkMutation) ClearWorkspace() {
+	m.clearedworkspace = true
+	m.clearedFields[contactimportchunk.FieldWorkspaceID] = struct{}{}
+}
+
+// WorkspaceCleared reports if the "workspace" edge to the Workspace entity was cleared.
+func (m *ContactImportChunkMutation) WorkspaceCleared() bool {
+	return m.clearedworkspace
+}
+
+// WorkspaceIDs returns the "workspace" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// WorkspaceID instead. It exists only for internal usage by the builders.
+func (m *ContactImportChunkMutation) WorkspaceIDs() (ids []int64) {
+	if id := m.workspace; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetWorkspace resets all changes to the "workspace" edge.
+func (m *ContactImportChunkMutation) ResetWorkspace() {
+	m.workspace = nil
+	m.clearedworkspace = false
+}
+
+// ClearContactImport clears the "contact_import" edge to the ContactImport entity.
+func (m *ContactImportChunkMutation) ClearContactImport() {
+	m.clearedcontact_import = true
+	m.clearedFields[contactimportchunk.FieldContactImportID] = struct{}{}
+}
+
+// ContactImportCleared reports if the "contact_import" edge to the ContactImport entity was cleared.
+func (m *ContactImportChunkMutation) ContactImportCleared() bool {
+	return m.clearedcontact_import
+}
+
+// ContactImportIDs returns the "contact_import" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ContactImportID instead. It exists only for internal usage by the builders.
+func (m *ContactImportChunkMutation) ContactImportIDs() (ids []int64) {
+	if id := m.contact_import; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetContactImport resets all changes to the "contact_import" edge.
+func (m *ContactImportChunkMutation) ResetContactImport() {
+	m.contact_import = nil
+	m.clearedcontact_import = false
+}
+
+// Where appends a list predicates to the ContactImportChunkMutation builder.
+func (m *ContactImportChunkMutation) Where(ps ...predicate.ContactImportChunk) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the ContactImportChunkMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *ContactImportChunkMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.ContactImportChunk, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *ContactImportChunkMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *ContactImportChunkMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (ContactImportChunk).
+func (m *ContactImportChunkMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *ContactImportChunkMutation) Fields() []string {
+	fields := make([]string, 0, 6)
+	if m.created_at != nil {
+		fields = append(fields, contactimportchunk.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, contactimportchunk.FieldUpdatedAt)
+	}
+	if m.workspace != nil {
+		fields = append(fields, contactimportchunk.FieldWorkspaceID)
+	}
+	if m.contact_import != nil {
+		fields = append(fields, contactimportchunk.FieldContactImportID)
+	}
+	if m.seq != nil {
+		fields = append(fields, contactimportchunk.FieldSeq)
+	}
+	if m.data != nil {
+		fields = append(fields, contactimportchunk.FieldData)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *ContactImportChunkMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case contactimportchunk.FieldCreatedAt:
+		return m.CreatedAt()
+	case contactimportchunk.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case contactimportchunk.FieldWorkspaceID:
+		return m.WorkspaceID()
+	case contactimportchunk.FieldContactImportID:
+		return m.ContactImportID()
+	case contactimportchunk.FieldSeq:
+		return m.Seq()
+	case contactimportchunk.FieldData:
+		return m.Data()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *ContactImportChunkMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case contactimportchunk.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case contactimportchunk.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case contactimportchunk.FieldWorkspaceID:
+		return m.OldWorkspaceID(ctx)
+	case contactimportchunk.FieldContactImportID:
+		return m.OldContactImportID(ctx)
+	case contactimportchunk.FieldSeq:
+		return m.OldSeq(ctx)
+	case contactimportchunk.FieldData:
+		return m.OldData(ctx)
+	}
+	return nil, fmt.Errorf("unknown ContactImportChunk field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ContactImportChunkMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case contactimportchunk.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case contactimportchunk.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case contactimportchunk.FieldWorkspaceID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWorkspaceID(v)
+		return nil
+	case contactimportchunk.FieldContactImportID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetContactImportID(v)
+		return nil
+	case contactimportchunk.FieldSeq:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSeq(v)
+		return nil
+	case contactimportchunk.FieldData:
+		v, ok := value.([]byte)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetData(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ContactImportChunk field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *ContactImportChunkMutation) AddedFields() []string {
+	var fields []string
+	if m.addseq != nil {
+		fields = append(fields, contactimportchunk.FieldSeq)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *ContactImportChunkMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case contactimportchunk.FieldSeq:
+		return m.AddedSeq()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ContactImportChunkMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case contactimportchunk.FieldSeq:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSeq(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ContactImportChunk numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *ContactImportChunkMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *ContactImportChunkMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ContactImportChunkMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown ContactImportChunk nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *ContactImportChunkMutation) ResetField(name string) error {
+	switch name {
+	case contactimportchunk.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case contactimportchunk.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case contactimportchunk.FieldWorkspaceID:
+		m.ResetWorkspaceID()
+		return nil
+	case contactimportchunk.FieldContactImportID:
+		m.ResetContactImportID()
+		return nil
+	case contactimportchunk.FieldSeq:
+		m.ResetSeq()
+		return nil
+	case contactimportchunk.FieldData:
+		m.ResetData()
+		return nil
+	}
+	return fmt.Errorf("unknown ContactImportChunk field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *ContactImportChunkMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.workspace != nil {
+		edges = append(edges, contactimportchunk.EdgeWorkspace)
+	}
+	if m.contact_import != nil {
+		edges = append(edges, contactimportchunk.EdgeContactImport)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *ContactImportChunkMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case contactimportchunk.EdgeWorkspace:
+		if id := m.workspace; id != nil {
+			return []ent.Value{*id}
+		}
+	case contactimportchunk.EdgeContactImport:
+		if id := m.contact_import; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *ContactImportChunkMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *ContactImportChunkMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *ContactImportChunkMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedworkspace {
+		edges = append(edges, contactimportchunk.EdgeWorkspace)
+	}
+	if m.clearedcontact_import {
+		edges = append(edges, contactimportchunk.EdgeContactImport)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *ContactImportChunkMutation) EdgeCleared(name string) bool {
+	switch name {
+	case contactimportchunk.EdgeWorkspace:
+		return m.clearedworkspace
+	case contactimportchunk.EdgeContactImport:
+		return m.clearedcontact_import
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *ContactImportChunkMutation) ClearEdge(name string) error {
+	switch name {
+	case contactimportchunk.EdgeWorkspace:
+		m.ClearWorkspace()
+		return nil
+	case contactimportchunk.EdgeContactImport:
+		m.ClearContactImport()
+		return nil
+	}
+	return fmt.Errorf("unknown ContactImportChunk unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *ContactImportChunkMutation) ResetEdge(name string) error {
+	switch name {
+	case contactimportchunk.EdgeWorkspace:
+		m.ResetWorkspace()
+		return nil
+	case contactimportchunk.EdgeContactImport:
+		m.ResetContactImport()
+		return nil
+	}
+	return fmt.Errorf("unknown ContactImportChunk edge %s", name)
+}
+
+// ContactImportReportRowMutation represents an operation that mutates the ContactImportReportRow nodes in the graph.
+type ContactImportReportRowMutation struct {
+	config
+	op                    Op
+	typ                   string
+	id                    *int64
+	created_at            *time.Time
+	updated_at            *time.Time
+	row                   *int
+	addrow                *int
+	cells                 *[]string
+	appendcells           []string
+	issues                *[]csvimport.Issue
+	appendissues          []csvimport.Issue
+	clearedFields         map[string]struct{}
+	workspace             *int64
+	clearedworkspace      bool
+	contact_import        *int64
+	clearedcontact_import bool
+	done                  bool
+	oldValue              func(context.Context) (*ContactImportReportRow, error)
+	predicates            []predicate.ContactImportReportRow
+}
+
+var _ ent.Mutation = (*ContactImportReportRowMutation)(nil)
+
+// contactimportreportrowOption allows management of the mutation configuration using functional options.
+type contactimportreportrowOption func(*ContactImportReportRowMutation)
+
+// newContactImportReportRowMutation creates new mutation for the ContactImportReportRow entity.
+func newContactImportReportRowMutation(c config, op Op, opts ...contactimportreportrowOption) *ContactImportReportRowMutation {
+	m := &ContactImportReportRowMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeContactImportReportRow,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withContactImportReportRowID sets the ID field of the mutation.
+func withContactImportReportRowID(id int64) contactimportreportrowOption {
+	return func(m *ContactImportReportRowMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *ContactImportReportRow
+		)
+		m.oldValue = func(ctx context.Context) (*ContactImportReportRow, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().ContactImportReportRow.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withContactImportReportRow sets the old ContactImportReportRow of the mutation.
+func withContactImportReportRow(node *ContactImportReportRow) contactimportreportrowOption {
+	return func(m *ContactImportReportRowMutation) {
+		m.oldValue = func(context.Context) (*ContactImportReportRow, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ContactImportReportRowMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ContactImportReportRowMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of ContactImportReportRow entities.
+func (m *ContactImportReportRowMutation) SetID(id int64) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *ContactImportReportRowMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *ContactImportReportRowMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().ContactImportReportRow.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *ContactImportReportRowMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *ContactImportReportRowMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the ContactImportReportRow entity.
+// If the ContactImportReportRow object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactImportReportRowMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *ContactImportReportRowMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *ContactImportReportRowMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *ContactImportReportRowMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the ContactImportReportRow entity.
+// If the ContactImportReportRow object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactImportReportRowMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *ContactImportReportRowMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetWorkspaceID sets the "workspace_id" field.
+func (m *ContactImportReportRowMutation) SetWorkspaceID(i int64) {
+	m.workspace = &i
+}
+
+// WorkspaceID returns the value of the "workspace_id" field in the mutation.
+func (m *ContactImportReportRowMutation) WorkspaceID() (r int64, exists bool) {
+	v := m.workspace
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWorkspaceID returns the old "workspace_id" field's value of the ContactImportReportRow entity.
+// If the ContactImportReportRow object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactImportReportRowMutation) OldWorkspaceID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWorkspaceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWorkspaceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWorkspaceID: %w", err)
+	}
+	return oldValue.WorkspaceID, nil
+}
+
+// ResetWorkspaceID resets all changes to the "workspace_id" field.
+func (m *ContactImportReportRowMutation) ResetWorkspaceID() {
+	m.workspace = nil
+}
+
+// SetContactImportID sets the "contact_import_id" field.
+func (m *ContactImportReportRowMutation) SetContactImportID(i int64) {
+	m.contact_import = &i
+}
+
+// ContactImportID returns the value of the "contact_import_id" field in the mutation.
+func (m *ContactImportReportRowMutation) ContactImportID() (r int64, exists bool) {
+	v := m.contact_import
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldContactImportID returns the old "contact_import_id" field's value of the ContactImportReportRow entity.
+// If the ContactImportReportRow object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactImportReportRowMutation) OldContactImportID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldContactImportID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldContactImportID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldContactImportID: %w", err)
+	}
+	return oldValue.ContactImportID, nil
+}
+
+// ResetContactImportID resets all changes to the "contact_import_id" field.
+func (m *ContactImportReportRowMutation) ResetContactImportID() {
+	m.contact_import = nil
+}
+
+// SetRow sets the "row" field.
+func (m *ContactImportReportRowMutation) SetRow(i int) {
+	m.row = &i
+	m.addrow = nil
+}
+
+// Row returns the value of the "row" field in the mutation.
+func (m *ContactImportReportRowMutation) Row() (r int, exists bool) {
+	v := m.row
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRow returns the old "row" field's value of the ContactImportReportRow entity.
+// If the ContactImportReportRow object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactImportReportRowMutation) OldRow(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRow is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRow requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRow: %w", err)
+	}
+	return oldValue.Row, nil
+}
+
+// AddRow adds i to the "row" field.
+func (m *ContactImportReportRowMutation) AddRow(i int) {
+	if m.addrow != nil {
+		*m.addrow += i
+	} else {
+		m.addrow = &i
+	}
+}
+
+// AddedRow returns the value that was added to the "row" field in this mutation.
+func (m *ContactImportReportRowMutation) AddedRow() (r int, exists bool) {
+	v := m.addrow
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetRow resets all changes to the "row" field.
+func (m *ContactImportReportRowMutation) ResetRow() {
+	m.row = nil
+	m.addrow = nil
+}
+
+// SetCells sets the "cells" field.
+func (m *ContactImportReportRowMutation) SetCells(s []string) {
+	m.cells = &s
+	m.appendcells = nil
+}
+
+// Cells returns the value of the "cells" field in the mutation.
+func (m *ContactImportReportRowMutation) Cells() (r []string, exists bool) {
+	v := m.cells
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCells returns the old "cells" field's value of the ContactImportReportRow entity.
+// If the ContactImportReportRow object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactImportReportRowMutation) OldCells(ctx context.Context) (v []string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCells is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCells requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCells: %w", err)
+	}
+	return oldValue.Cells, nil
+}
+
+// AppendCells adds s to the "cells" field.
+func (m *ContactImportReportRowMutation) AppendCells(s []string) {
+	m.appendcells = append(m.appendcells, s...)
+}
+
+// AppendedCells returns the list of values that were appended to the "cells" field in this mutation.
+func (m *ContactImportReportRowMutation) AppendedCells() ([]string, bool) {
+	if len(m.appendcells) == 0 {
+		return nil, false
+	}
+	return m.appendcells, true
+}
+
+// ResetCells resets all changes to the "cells" field.
+func (m *ContactImportReportRowMutation) ResetCells() {
+	m.cells = nil
+	m.appendcells = nil
+}
+
+// SetIssues sets the "issues" field.
+func (m *ContactImportReportRowMutation) SetIssues(c []csvimport.Issue) {
+	m.issues = &c
+	m.appendissues = nil
+}
+
+// Issues returns the value of the "issues" field in the mutation.
+func (m *ContactImportReportRowMutation) Issues() (r []csvimport.Issue, exists bool) {
+	v := m.issues
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIssues returns the old "issues" field's value of the ContactImportReportRow entity.
+// If the ContactImportReportRow object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactImportReportRowMutation) OldIssues(ctx context.Context) (v []csvimport.Issue, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIssues is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIssues requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIssues: %w", err)
+	}
+	return oldValue.Issues, nil
+}
+
+// AppendIssues adds c to the "issues" field.
+func (m *ContactImportReportRowMutation) AppendIssues(c []csvimport.Issue) {
+	m.appendissues = append(m.appendissues, c...)
+}
+
+// AppendedIssues returns the list of values that were appended to the "issues" field in this mutation.
+func (m *ContactImportReportRowMutation) AppendedIssues() ([]csvimport.Issue, bool) {
+	if len(m.appendissues) == 0 {
+		return nil, false
+	}
+	return m.appendissues, true
+}
+
+// ResetIssues resets all changes to the "issues" field.
+func (m *ContactImportReportRowMutation) ResetIssues() {
+	m.issues = nil
+	m.appendissues = nil
+}
+
+// ClearWorkspace clears the "workspace" edge to the Workspace entity.
+func (m *ContactImportReportRowMutation) ClearWorkspace() {
+	m.clearedworkspace = true
+	m.clearedFields[contactimportreportrow.FieldWorkspaceID] = struct{}{}
+}
+
+// WorkspaceCleared reports if the "workspace" edge to the Workspace entity was cleared.
+func (m *ContactImportReportRowMutation) WorkspaceCleared() bool {
+	return m.clearedworkspace
+}
+
+// WorkspaceIDs returns the "workspace" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// WorkspaceID instead. It exists only for internal usage by the builders.
+func (m *ContactImportReportRowMutation) WorkspaceIDs() (ids []int64) {
+	if id := m.workspace; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetWorkspace resets all changes to the "workspace" edge.
+func (m *ContactImportReportRowMutation) ResetWorkspace() {
+	m.workspace = nil
+	m.clearedworkspace = false
+}
+
+// ClearContactImport clears the "contact_import" edge to the ContactImport entity.
+func (m *ContactImportReportRowMutation) ClearContactImport() {
+	m.clearedcontact_import = true
+	m.clearedFields[contactimportreportrow.FieldContactImportID] = struct{}{}
+}
+
+// ContactImportCleared reports if the "contact_import" edge to the ContactImport entity was cleared.
+func (m *ContactImportReportRowMutation) ContactImportCleared() bool {
+	return m.clearedcontact_import
+}
+
+// ContactImportIDs returns the "contact_import" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ContactImportID instead. It exists only for internal usage by the builders.
+func (m *ContactImportReportRowMutation) ContactImportIDs() (ids []int64) {
+	if id := m.contact_import; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetContactImport resets all changes to the "contact_import" edge.
+func (m *ContactImportReportRowMutation) ResetContactImport() {
+	m.contact_import = nil
+	m.clearedcontact_import = false
+}
+
+// Where appends a list predicates to the ContactImportReportRowMutation builder.
+func (m *ContactImportReportRowMutation) Where(ps ...predicate.ContactImportReportRow) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the ContactImportReportRowMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *ContactImportReportRowMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.ContactImportReportRow, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *ContactImportReportRowMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *ContactImportReportRowMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (ContactImportReportRow).
+func (m *ContactImportReportRowMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *ContactImportReportRowMutation) Fields() []string {
+	fields := make([]string, 0, 7)
+	if m.created_at != nil {
+		fields = append(fields, contactimportreportrow.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, contactimportreportrow.FieldUpdatedAt)
+	}
+	if m.workspace != nil {
+		fields = append(fields, contactimportreportrow.FieldWorkspaceID)
+	}
+	if m.contact_import != nil {
+		fields = append(fields, contactimportreportrow.FieldContactImportID)
+	}
+	if m.row != nil {
+		fields = append(fields, contactimportreportrow.FieldRow)
+	}
+	if m.cells != nil {
+		fields = append(fields, contactimportreportrow.FieldCells)
+	}
+	if m.issues != nil {
+		fields = append(fields, contactimportreportrow.FieldIssues)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *ContactImportReportRowMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case contactimportreportrow.FieldCreatedAt:
+		return m.CreatedAt()
+	case contactimportreportrow.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case contactimportreportrow.FieldWorkspaceID:
+		return m.WorkspaceID()
+	case contactimportreportrow.FieldContactImportID:
+		return m.ContactImportID()
+	case contactimportreportrow.FieldRow:
+		return m.Row()
+	case contactimportreportrow.FieldCells:
+		return m.Cells()
+	case contactimportreportrow.FieldIssues:
+		return m.Issues()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *ContactImportReportRowMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case contactimportreportrow.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case contactimportreportrow.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case contactimportreportrow.FieldWorkspaceID:
+		return m.OldWorkspaceID(ctx)
+	case contactimportreportrow.FieldContactImportID:
+		return m.OldContactImportID(ctx)
+	case contactimportreportrow.FieldRow:
+		return m.OldRow(ctx)
+	case contactimportreportrow.FieldCells:
+		return m.OldCells(ctx)
+	case contactimportreportrow.FieldIssues:
+		return m.OldIssues(ctx)
+	}
+	return nil, fmt.Errorf("unknown ContactImportReportRow field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ContactImportReportRowMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case contactimportreportrow.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case contactimportreportrow.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case contactimportreportrow.FieldWorkspaceID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWorkspaceID(v)
+		return nil
+	case contactimportreportrow.FieldContactImportID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetContactImportID(v)
+		return nil
+	case contactimportreportrow.FieldRow:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRow(v)
+		return nil
+	case contactimportreportrow.FieldCells:
+		v, ok := value.([]string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCells(v)
+		return nil
+	case contactimportreportrow.FieldIssues:
+		v, ok := value.([]csvimport.Issue)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIssues(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ContactImportReportRow field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *ContactImportReportRowMutation) AddedFields() []string {
+	var fields []string
+	if m.addrow != nil {
+		fields = append(fields, contactimportreportrow.FieldRow)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *ContactImportReportRowMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case contactimportreportrow.FieldRow:
+		return m.AddedRow()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ContactImportReportRowMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case contactimportreportrow.FieldRow:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddRow(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ContactImportReportRow numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *ContactImportReportRowMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *ContactImportReportRowMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ContactImportReportRowMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown ContactImportReportRow nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *ContactImportReportRowMutation) ResetField(name string) error {
+	switch name {
+	case contactimportreportrow.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case contactimportreportrow.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case contactimportreportrow.FieldWorkspaceID:
+		m.ResetWorkspaceID()
+		return nil
+	case contactimportreportrow.FieldContactImportID:
+		m.ResetContactImportID()
+		return nil
+	case contactimportreportrow.FieldRow:
+		m.ResetRow()
+		return nil
+	case contactimportreportrow.FieldCells:
+		m.ResetCells()
+		return nil
+	case contactimportreportrow.FieldIssues:
+		m.ResetIssues()
+		return nil
+	}
+	return fmt.Errorf("unknown ContactImportReportRow field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *ContactImportReportRowMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.workspace != nil {
+		edges = append(edges, contactimportreportrow.EdgeWorkspace)
+	}
+	if m.contact_import != nil {
+		edges = append(edges, contactimportreportrow.EdgeContactImport)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *ContactImportReportRowMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case contactimportreportrow.EdgeWorkspace:
+		if id := m.workspace; id != nil {
+			return []ent.Value{*id}
+		}
+	case contactimportreportrow.EdgeContactImport:
+		if id := m.contact_import; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *ContactImportReportRowMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *ContactImportReportRowMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *ContactImportReportRowMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedworkspace {
+		edges = append(edges, contactimportreportrow.EdgeWorkspace)
+	}
+	if m.clearedcontact_import {
+		edges = append(edges, contactimportreportrow.EdgeContactImport)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *ContactImportReportRowMutation) EdgeCleared(name string) bool {
+	switch name {
+	case contactimportreportrow.EdgeWorkspace:
+		return m.clearedworkspace
+	case contactimportreportrow.EdgeContactImport:
+		return m.clearedcontact_import
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *ContactImportReportRowMutation) ClearEdge(name string) error {
+	switch name {
+	case contactimportreportrow.EdgeWorkspace:
+		m.ClearWorkspace()
+		return nil
+	case contactimportreportrow.EdgeContactImport:
+		m.ClearContactImport()
+		return nil
+	}
+	return fmt.Errorf("unknown ContactImportReportRow unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *ContactImportReportRowMutation) ResetEdge(name string) error {
+	switch name {
+	case contactimportreportrow.EdgeWorkspace:
+		m.ResetWorkspace()
+		return nil
+	case contactimportreportrow.EdgeContactImport:
+		m.ResetContactImport()
+		return nil
+	}
+	return fmt.Errorf("unknown ContactImportReportRow edge %s", name)
+}
+
 // ContactTagMutation represents an operation that mutates the ContactTag nodes in the graph.
 type ContactTagMutation struct {
 	config
@@ -31670,6 +35810,789 @@ func (m *DefaultSendCapMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *DefaultSendCapMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown DefaultSendCap edge %s", name)
+}
+
+// DownloadLinkMutation represents an operation that mutates the DownloadLink nodes in the graph.
+type DownloadLinkMutation struct {
+	config
+	op               Op
+	typ              string
+	id               *int64
+	created_at       *time.Time
+	updated_at       *time.Time
+	purpose          *downloadlink.Purpose
+	token_hash       *string
+	session_hash     *string
+	payload          *json.RawMessage
+	appendpayload    json.RawMessage
+	expires_at       *time.Time
+	clearedFields    map[string]struct{}
+	workspace        *int64
+	clearedworkspace bool
+	done             bool
+	oldValue         func(context.Context) (*DownloadLink, error)
+	predicates       []predicate.DownloadLink
+}
+
+var _ ent.Mutation = (*DownloadLinkMutation)(nil)
+
+// downloadlinkOption allows management of the mutation configuration using functional options.
+type downloadlinkOption func(*DownloadLinkMutation)
+
+// newDownloadLinkMutation creates new mutation for the DownloadLink entity.
+func newDownloadLinkMutation(c config, op Op, opts ...downloadlinkOption) *DownloadLinkMutation {
+	m := &DownloadLinkMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeDownloadLink,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withDownloadLinkID sets the ID field of the mutation.
+func withDownloadLinkID(id int64) downloadlinkOption {
+	return func(m *DownloadLinkMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *DownloadLink
+		)
+		m.oldValue = func(ctx context.Context) (*DownloadLink, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().DownloadLink.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withDownloadLink sets the old DownloadLink of the mutation.
+func withDownloadLink(node *DownloadLink) downloadlinkOption {
+	return func(m *DownloadLinkMutation) {
+		m.oldValue = func(context.Context) (*DownloadLink, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m DownloadLinkMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m DownloadLinkMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of DownloadLink entities.
+func (m *DownloadLinkMutation) SetID(id int64) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *DownloadLinkMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *DownloadLinkMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().DownloadLink.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *DownloadLinkMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *DownloadLinkMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the DownloadLink entity.
+// If the DownloadLink object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DownloadLinkMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *DownloadLinkMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *DownloadLinkMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *DownloadLinkMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the DownloadLink entity.
+// If the DownloadLink object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DownloadLinkMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *DownloadLinkMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetWorkspaceID sets the "workspace_id" field.
+func (m *DownloadLinkMutation) SetWorkspaceID(i int64) {
+	m.workspace = &i
+}
+
+// WorkspaceID returns the value of the "workspace_id" field in the mutation.
+func (m *DownloadLinkMutation) WorkspaceID() (r int64, exists bool) {
+	v := m.workspace
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWorkspaceID returns the old "workspace_id" field's value of the DownloadLink entity.
+// If the DownloadLink object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DownloadLinkMutation) OldWorkspaceID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWorkspaceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWorkspaceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWorkspaceID: %w", err)
+	}
+	return oldValue.WorkspaceID, nil
+}
+
+// ResetWorkspaceID resets all changes to the "workspace_id" field.
+func (m *DownloadLinkMutation) ResetWorkspaceID() {
+	m.workspace = nil
+}
+
+// SetPurpose sets the "purpose" field.
+func (m *DownloadLinkMutation) SetPurpose(d downloadlink.Purpose) {
+	m.purpose = &d
+}
+
+// Purpose returns the value of the "purpose" field in the mutation.
+func (m *DownloadLinkMutation) Purpose() (r downloadlink.Purpose, exists bool) {
+	v := m.purpose
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPurpose returns the old "purpose" field's value of the DownloadLink entity.
+// If the DownloadLink object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DownloadLinkMutation) OldPurpose(ctx context.Context) (v downloadlink.Purpose, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPurpose is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPurpose requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPurpose: %w", err)
+	}
+	return oldValue.Purpose, nil
+}
+
+// ResetPurpose resets all changes to the "purpose" field.
+func (m *DownloadLinkMutation) ResetPurpose() {
+	m.purpose = nil
+}
+
+// SetTokenHash sets the "token_hash" field.
+func (m *DownloadLinkMutation) SetTokenHash(s string) {
+	m.token_hash = &s
+}
+
+// TokenHash returns the value of the "token_hash" field in the mutation.
+func (m *DownloadLinkMutation) TokenHash() (r string, exists bool) {
+	v := m.token_hash
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTokenHash returns the old "token_hash" field's value of the DownloadLink entity.
+// If the DownloadLink object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DownloadLinkMutation) OldTokenHash(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTokenHash is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTokenHash requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTokenHash: %w", err)
+	}
+	return oldValue.TokenHash, nil
+}
+
+// ResetTokenHash resets all changes to the "token_hash" field.
+func (m *DownloadLinkMutation) ResetTokenHash() {
+	m.token_hash = nil
+}
+
+// SetSessionHash sets the "session_hash" field.
+func (m *DownloadLinkMutation) SetSessionHash(s string) {
+	m.session_hash = &s
+}
+
+// SessionHash returns the value of the "session_hash" field in the mutation.
+func (m *DownloadLinkMutation) SessionHash() (r string, exists bool) {
+	v := m.session_hash
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSessionHash returns the old "session_hash" field's value of the DownloadLink entity.
+// If the DownloadLink object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DownloadLinkMutation) OldSessionHash(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSessionHash is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSessionHash requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSessionHash: %w", err)
+	}
+	return oldValue.SessionHash, nil
+}
+
+// ResetSessionHash resets all changes to the "session_hash" field.
+func (m *DownloadLinkMutation) ResetSessionHash() {
+	m.session_hash = nil
+}
+
+// SetPayload sets the "payload" field.
+func (m *DownloadLinkMutation) SetPayload(jm json.RawMessage) {
+	m.payload = &jm
+	m.appendpayload = nil
+}
+
+// Payload returns the value of the "payload" field in the mutation.
+func (m *DownloadLinkMutation) Payload() (r json.RawMessage, exists bool) {
+	v := m.payload
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPayload returns the old "payload" field's value of the DownloadLink entity.
+// If the DownloadLink object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DownloadLinkMutation) OldPayload(ctx context.Context) (v json.RawMessage, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPayload is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPayload requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPayload: %w", err)
+	}
+	return oldValue.Payload, nil
+}
+
+// AppendPayload adds jm to the "payload" field.
+func (m *DownloadLinkMutation) AppendPayload(jm json.RawMessage) {
+	m.appendpayload = append(m.appendpayload, jm...)
+}
+
+// AppendedPayload returns the list of values that were appended to the "payload" field in this mutation.
+func (m *DownloadLinkMutation) AppendedPayload() (json.RawMessage, bool) {
+	if len(m.appendpayload) == 0 {
+		return nil, false
+	}
+	return m.appendpayload, true
+}
+
+// ResetPayload resets all changes to the "payload" field.
+func (m *DownloadLinkMutation) ResetPayload() {
+	m.payload = nil
+	m.appendpayload = nil
+}
+
+// SetExpiresAt sets the "expires_at" field.
+func (m *DownloadLinkMutation) SetExpiresAt(t time.Time) {
+	m.expires_at = &t
+}
+
+// ExpiresAt returns the value of the "expires_at" field in the mutation.
+func (m *DownloadLinkMutation) ExpiresAt() (r time.Time, exists bool) {
+	v := m.expires_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExpiresAt returns the old "expires_at" field's value of the DownloadLink entity.
+// If the DownloadLink object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DownloadLinkMutation) OldExpiresAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExpiresAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExpiresAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExpiresAt: %w", err)
+	}
+	return oldValue.ExpiresAt, nil
+}
+
+// ResetExpiresAt resets all changes to the "expires_at" field.
+func (m *DownloadLinkMutation) ResetExpiresAt() {
+	m.expires_at = nil
+}
+
+// ClearWorkspace clears the "workspace" edge to the Workspace entity.
+func (m *DownloadLinkMutation) ClearWorkspace() {
+	m.clearedworkspace = true
+	m.clearedFields[downloadlink.FieldWorkspaceID] = struct{}{}
+}
+
+// WorkspaceCleared reports if the "workspace" edge to the Workspace entity was cleared.
+func (m *DownloadLinkMutation) WorkspaceCleared() bool {
+	return m.clearedworkspace
+}
+
+// WorkspaceIDs returns the "workspace" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// WorkspaceID instead. It exists only for internal usage by the builders.
+func (m *DownloadLinkMutation) WorkspaceIDs() (ids []int64) {
+	if id := m.workspace; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetWorkspace resets all changes to the "workspace" edge.
+func (m *DownloadLinkMutation) ResetWorkspace() {
+	m.workspace = nil
+	m.clearedworkspace = false
+}
+
+// Where appends a list predicates to the DownloadLinkMutation builder.
+func (m *DownloadLinkMutation) Where(ps ...predicate.DownloadLink) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the DownloadLinkMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *DownloadLinkMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.DownloadLink, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *DownloadLinkMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *DownloadLinkMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (DownloadLink).
+func (m *DownloadLinkMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *DownloadLinkMutation) Fields() []string {
+	fields := make([]string, 0, 8)
+	if m.created_at != nil {
+		fields = append(fields, downloadlink.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, downloadlink.FieldUpdatedAt)
+	}
+	if m.workspace != nil {
+		fields = append(fields, downloadlink.FieldWorkspaceID)
+	}
+	if m.purpose != nil {
+		fields = append(fields, downloadlink.FieldPurpose)
+	}
+	if m.token_hash != nil {
+		fields = append(fields, downloadlink.FieldTokenHash)
+	}
+	if m.session_hash != nil {
+		fields = append(fields, downloadlink.FieldSessionHash)
+	}
+	if m.payload != nil {
+		fields = append(fields, downloadlink.FieldPayload)
+	}
+	if m.expires_at != nil {
+		fields = append(fields, downloadlink.FieldExpiresAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *DownloadLinkMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case downloadlink.FieldCreatedAt:
+		return m.CreatedAt()
+	case downloadlink.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case downloadlink.FieldWorkspaceID:
+		return m.WorkspaceID()
+	case downloadlink.FieldPurpose:
+		return m.Purpose()
+	case downloadlink.FieldTokenHash:
+		return m.TokenHash()
+	case downloadlink.FieldSessionHash:
+		return m.SessionHash()
+	case downloadlink.FieldPayload:
+		return m.Payload()
+	case downloadlink.FieldExpiresAt:
+		return m.ExpiresAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *DownloadLinkMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case downloadlink.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case downloadlink.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case downloadlink.FieldWorkspaceID:
+		return m.OldWorkspaceID(ctx)
+	case downloadlink.FieldPurpose:
+		return m.OldPurpose(ctx)
+	case downloadlink.FieldTokenHash:
+		return m.OldTokenHash(ctx)
+	case downloadlink.FieldSessionHash:
+		return m.OldSessionHash(ctx)
+	case downloadlink.FieldPayload:
+		return m.OldPayload(ctx)
+	case downloadlink.FieldExpiresAt:
+		return m.OldExpiresAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown DownloadLink field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *DownloadLinkMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case downloadlink.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case downloadlink.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case downloadlink.FieldWorkspaceID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWorkspaceID(v)
+		return nil
+	case downloadlink.FieldPurpose:
+		v, ok := value.(downloadlink.Purpose)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPurpose(v)
+		return nil
+	case downloadlink.FieldTokenHash:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTokenHash(v)
+		return nil
+	case downloadlink.FieldSessionHash:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSessionHash(v)
+		return nil
+	case downloadlink.FieldPayload:
+		v, ok := value.(json.RawMessage)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPayload(v)
+		return nil
+	case downloadlink.FieldExpiresAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExpiresAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown DownloadLink field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *DownloadLinkMutation) AddedFields() []string {
+	var fields []string
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *DownloadLinkMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *DownloadLinkMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown DownloadLink numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *DownloadLinkMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *DownloadLinkMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *DownloadLinkMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown DownloadLink nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *DownloadLinkMutation) ResetField(name string) error {
+	switch name {
+	case downloadlink.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case downloadlink.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case downloadlink.FieldWorkspaceID:
+		m.ResetWorkspaceID()
+		return nil
+	case downloadlink.FieldPurpose:
+		m.ResetPurpose()
+		return nil
+	case downloadlink.FieldTokenHash:
+		m.ResetTokenHash()
+		return nil
+	case downloadlink.FieldSessionHash:
+		m.ResetSessionHash()
+		return nil
+	case downloadlink.FieldPayload:
+		m.ResetPayload()
+		return nil
+	case downloadlink.FieldExpiresAt:
+		m.ResetExpiresAt()
+		return nil
+	}
+	return fmt.Errorf("unknown DownloadLink field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *DownloadLinkMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.workspace != nil {
+		edges = append(edges, downloadlink.EdgeWorkspace)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *DownloadLinkMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case downloadlink.EdgeWorkspace:
+		if id := m.workspace; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *DownloadLinkMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *DownloadLinkMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *DownloadLinkMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedworkspace {
+		edges = append(edges, downloadlink.EdgeWorkspace)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *DownloadLinkMutation) EdgeCleared(name string) bool {
+	switch name {
+	case downloadlink.EdgeWorkspace:
+		return m.clearedworkspace
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *DownloadLinkMutation) ClearEdge(name string) error {
+	switch name {
+	case downloadlink.EdgeWorkspace:
+		m.ClearWorkspace()
+		return nil
+	}
+	return fmt.Errorf("unknown DownloadLink unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *DownloadLinkMutation) ResetEdge(name string) error {
+	switch name {
+	case downloadlink.EdgeWorkspace:
+		m.ResetWorkspace()
+		return nil
+	}
+	return fmt.Errorf("unknown DownloadLink edge %s", name)
 }
 
 // EmailTemplateMutation represents an operation that mutates the EmailTemplate nodes in the graph.
@@ -48658,6 +53581,9 @@ type MembershipMutation struct {
 	oauth_codes               map[int64]struct{}
 	removedoauth_codes        map[int64]struct{}
 	clearedoauth_codes        bool
+	contact_imports           map[int64]struct{}
+	removedcontact_imports    map[int64]struct{}
+	clearedcontact_imports    bool
 	done                      bool
 	oldValue                  func(context.Context) (*Membership, error)
 	predicates                []predicate.Membership
@@ -49194,6 +54120,60 @@ func (m *MembershipMutation) ResetOauthCodes() {
 	m.removedoauth_codes = nil
 }
 
+// AddContactImportIDs adds the "contact_imports" edge to the ContactImport entity by ids.
+func (m *MembershipMutation) AddContactImportIDs(ids ...int64) {
+	if m.contact_imports == nil {
+		m.contact_imports = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.contact_imports[ids[i]] = struct{}{}
+	}
+}
+
+// ClearContactImports clears the "contact_imports" edge to the ContactImport entity.
+func (m *MembershipMutation) ClearContactImports() {
+	m.clearedcontact_imports = true
+}
+
+// ContactImportsCleared reports if the "contact_imports" edge to the ContactImport entity was cleared.
+func (m *MembershipMutation) ContactImportsCleared() bool {
+	return m.clearedcontact_imports
+}
+
+// RemoveContactImportIDs removes the "contact_imports" edge to the ContactImport entity by IDs.
+func (m *MembershipMutation) RemoveContactImportIDs(ids ...int64) {
+	if m.removedcontact_imports == nil {
+		m.removedcontact_imports = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.contact_imports, ids[i])
+		m.removedcontact_imports[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedContactImports returns the removed IDs of the "contact_imports" edge to the ContactImport entity.
+func (m *MembershipMutation) RemovedContactImportsIDs() (ids []int64) {
+	for id := range m.removedcontact_imports {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ContactImportsIDs returns the "contact_imports" edge IDs in the mutation.
+func (m *MembershipMutation) ContactImportsIDs() (ids []int64) {
+	for id := range m.contact_imports {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetContactImports resets all changes to the "contact_imports" edge.
+func (m *MembershipMutation) ResetContactImports() {
+	m.contact_imports = nil
+	m.clearedcontact_imports = false
+	m.removedcontact_imports = nil
+}
+
 // Where appends a list predicates to the MembershipMutation builder.
 func (m *MembershipMutation) Where(ps ...predicate.Membership) {
 	m.predicates = append(m.predicates, ps...)
@@ -49441,7 +54421,7 @@ func (m *MembershipMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *MembershipMutation) AddedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.workspace != nil {
 		edges = append(edges, membership.EdgeWorkspace)
 	}
@@ -49453,6 +54433,9 @@ func (m *MembershipMutation) AddedEdges() []string {
 	}
 	if m.oauth_codes != nil {
 		edges = append(edges, membership.EdgeOauthCodes)
+	}
+	if m.contact_imports != nil {
+		edges = append(edges, membership.EdgeContactImports)
 	}
 	return edges
 }
@@ -49481,18 +54464,27 @@ func (m *MembershipMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case membership.EdgeContactImports:
+		ids := make([]ent.Value, 0, len(m.contact_imports))
+		for id := range m.contact_imports {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *MembershipMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.removedconnections != nil {
 		edges = append(edges, membership.EdgeConnections)
 	}
 	if m.removedoauth_codes != nil {
 		edges = append(edges, membership.EdgeOauthCodes)
+	}
+	if m.removedcontact_imports != nil {
+		edges = append(edges, membership.EdgeContactImports)
 	}
 	return edges
 }
@@ -49513,13 +54505,19 @@ func (m *MembershipMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case membership.EdgeContactImports:
+		ids := make([]ent.Value, 0, len(m.removedcontact_imports))
+		for id := range m.removedcontact_imports {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *MembershipMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.clearedworkspace {
 		edges = append(edges, membership.EdgeWorkspace)
 	}
@@ -49531,6 +54529,9 @@ func (m *MembershipMutation) ClearedEdges() []string {
 	}
 	if m.clearedoauth_codes {
 		edges = append(edges, membership.EdgeOauthCodes)
+	}
+	if m.clearedcontact_imports {
+		edges = append(edges, membership.EdgeContactImports)
 	}
 	return edges
 }
@@ -49547,6 +54548,8 @@ func (m *MembershipMutation) EdgeCleared(name string) bool {
 		return m.clearedconnections
 	case membership.EdgeOauthCodes:
 		return m.clearedoauth_codes
+	case membership.EdgeContactImports:
+		return m.clearedcontact_imports
 	}
 	return false
 }
@@ -49580,6 +54583,9 @@ func (m *MembershipMutation) ResetEdge(name string) error {
 		return nil
 	case membership.EdgeOauthCodes:
 		m.ResetOauthCodes()
+		return nil
+	case membership.EdgeContactImports:
+		m.ResetContactImports()
 		return nil
 	}
 	return fmt.Errorf("unknown Membership edge %s", name)
@@ -88790,6 +93796,9 @@ type WorkspaceMutation struct {
 	start_tokens                         map[int64]struct{}
 	removedstart_tokens                  map[int64]struct{}
 	clearedstart_tokens                  bool
+	download_links                       map[int64]struct{}
+	removeddownload_links                map[int64]struct{}
+	cleareddownload_links                bool
 	api_tokens                           map[int64]struct{}
 	removedapi_tokens                    map[int64]struct{}
 	clearedapi_tokens                    bool
@@ -88823,6 +93832,15 @@ type WorkspaceMutation struct {
 	frequency_counts                     map[int64]struct{}
 	removedfrequency_counts              map[int64]struct{}
 	clearedfrequency_counts              bool
+	contact_imports                      map[int64]struct{}
+	removedcontact_imports               map[int64]struct{}
+	clearedcontact_imports               bool
+	contact_import_chunks                map[int64]struct{}
+	removedcontact_import_chunks         map[int64]struct{}
+	clearedcontact_import_chunks         bool
+	contact_import_report_rows           map[int64]struct{}
+	removedcontact_import_report_rows    map[int64]struct{}
+	clearedcontact_import_report_rows    bool
 	sending_windows                      map[int64]struct{}
 	removedsending_windows               map[int64]struct{}
 	clearedsending_windows               bool
@@ -91136,6 +96154,60 @@ func (m *WorkspaceMutation) ResetStartTokens() {
 	m.removedstart_tokens = nil
 }
 
+// AddDownloadLinkIDs adds the "download_links" edge to the DownloadLink entity by ids.
+func (m *WorkspaceMutation) AddDownloadLinkIDs(ids ...int64) {
+	if m.download_links == nil {
+		m.download_links = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.download_links[ids[i]] = struct{}{}
+	}
+}
+
+// ClearDownloadLinks clears the "download_links" edge to the DownloadLink entity.
+func (m *WorkspaceMutation) ClearDownloadLinks() {
+	m.cleareddownload_links = true
+}
+
+// DownloadLinksCleared reports if the "download_links" edge to the DownloadLink entity was cleared.
+func (m *WorkspaceMutation) DownloadLinksCleared() bool {
+	return m.cleareddownload_links
+}
+
+// RemoveDownloadLinkIDs removes the "download_links" edge to the DownloadLink entity by IDs.
+func (m *WorkspaceMutation) RemoveDownloadLinkIDs(ids ...int64) {
+	if m.removeddownload_links == nil {
+		m.removeddownload_links = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.download_links, ids[i])
+		m.removeddownload_links[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedDownloadLinks returns the removed IDs of the "download_links" edge to the DownloadLink entity.
+func (m *WorkspaceMutation) RemovedDownloadLinksIDs() (ids []int64) {
+	for id := range m.removeddownload_links {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// DownloadLinksIDs returns the "download_links" edge IDs in the mutation.
+func (m *WorkspaceMutation) DownloadLinksIDs() (ids []int64) {
+	for id := range m.download_links {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetDownloadLinks resets all changes to the "download_links" edge.
+func (m *WorkspaceMutation) ResetDownloadLinks() {
+	m.download_links = nil
+	m.cleareddownload_links = false
+	m.removeddownload_links = nil
+}
+
 // AddAPITokenIDs adds the "api_tokens" edge to the ApiToken entity by ids.
 func (m *WorkspaceMutation) AddAPITokenIDs(ids ...int64) {
 	if m.api_tokens == nil {
@@ -91728,6 +96800,168 @@ func (m *WorkspaceMutation) ResetFrequencyCounts() {
 	m.frequency_counts = nil
 	m.clearedfrequency_counts = false
 	m.removedfrequency_counts = nil
+}
+
+// AddContactImportIDs adds the "contact_imports" edge to the ContactImport entity by ids.
+func (m *WorkspaceMutation) AddContactImportIDs(ids ...int64) {
+	if m.contact_imports == nil {
+		m.contact_imports = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.contact_imports[ids[i]] = struct{}{}
+	}
+}
+
+// ClearContactImports clears the "contact_imports" edge to the ContactImport entity.
+func (m *WorkspaceMutation) ClearContactImports() {
+	m.clearedcontact_imports = true
+}
+
+// ContactImportsCleared reports if the "contact_imports" edge to the ContactImport entity was cleared.
+func (m *WorkspaceMutation) ContactImportsCleared() bool {
+	return m.clearedcontact_imports
+}
+
+// RemoveContactImportIDs removes the "contact_imports" edge to the ContactImport entity by IDs.
+func (m *WorkspaceMutation) RemoveContactImportIDs(ids ...int64) {
+	if m.removedcontact_imports == nil {
+		m.removedcontact_imports = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.contact_imports, ids[i])
+		m.removedcontact_imports[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedContactImports returns the removed IDs of the "contact_imports" edge to the ContactImport entity.
+func (m *WorkspaceMutation) RemovedContactImportsIDs() (ids []int64) {
+	for id := range m.removedcontact_imports {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ContactImportsIDs returns the "contact_imports" edge IDs in the mutation.
+func (m *WorkspaceMutation) ContactImportsIDs() (ids []int64) {
+	for id := range m.contact_imports {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetContactImports resets all changes to the "contact_imports" edge.
+func (m *WorkspaceMutation) ResetContactImports() {
+	m.contact_imports = nil
+	m.clearedcontact_imports = false
+	m.removedcontact_imports = nil
+}
+
+// AddContactImportChunkIDs adds the "contact_import_chunks" edge to the ContactImportChunk entity by ids.
+func (m *WorkspaceMutation) AddContactImportChunkIDs(ids ...int64) {
+	if m.contact_import_chunks == nil {
+		m.contact_import_chunks = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.contact_import_chunks[ids[i]] = struct{}{}
+	}
+}
+
+// ClearContactImportChunks clears the "contact_import_chunks" edge to the ContactImportChunk entity.
+func (m *WorkspaceMutation) ClearContactImportChunks() {
+	m.clearedcontact_import_chunks = true
+}
+
+// ContactImportChunksCleared reports if the "contact_import_chunks" edge to the ContactImportChunk entity was cleared.
+func (m *WorkspaceMutation) ContactImportChunksCleared() bool {
+	return m.clearedcontact_import_chunks
+}
+
+// RemoveContactImportChunkIDs removes the "contact_import_chunks" edge to the ContactImportChunk entity by IDs.
+func (m *WorkspaceMutation) RemoveContactImportChunkIDs(ids ...int64) {
+	if m.removedcontact_import_chunks == nil {
+		m.removedcontact_import_chunks = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.contact_import_chunks, ids[i])
+		m.removedcontact_import_chunks[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedContactImportChunks returns the removed IDs of the "contact_import_chunks" edge to the ContactImportChunk entity.
+func (m *WorkspaceMutation) RemovedContactImportChunksIDs() (ids []int64) {
+	for id := range m.removedcontact_import_chunks {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ContactImportChunksIDs returns the "contact_import_chunks" edge IDs in the mutation.
+func (m *WorkspaceMutation) ContactImportChunksIDs() (ids []int64) {
+	for id := range m.contact_import_chunks {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetContactImportChunks resets all changes to the "contact_import_chunks" edge.
+func (m *WorkspaceMutation) ResetContactImportChunks() {
+	m.contact_import_chunks = nil
+	m.clearedcontact_import_chunks = false
+	m.removedcontact_import_chunks = nil
+}
+
+// AddContactImportReportRowIDs adds the "contact_import_report_rows" edge to the ContactImportReportRow entity by ids.
+func (m *WorkspaceMutation) AddContactImportReportRowIDs(ids ...int64) {
+	if m.contact_import_report_rows == nil {
+		m.contact_import_report_rows = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.contact_import_report_rows[ids[i]] = struct{}{}
+	}
+}
+
+// ClearContactImportReportRows clears the "contact_import_report_rows" edge to the ContactImportReportRow entity.
+func (m *WorkspaceMutation) ClearContactImportReportRows() {
+	m.clearedcontact_import_report_rows = true
+}
+
+// ContactImportReportRowsCleared reports if the "contact_import_report_rows" edge to the ContactImportReportRow entity was cleared.
+func (m *WorkspaceMutation) ContactImportReportRowsCleared() bool {
+	return m.clearedcontact_import_report_rows
+}
+
+// RemoveContactImportReportRowIDs removes the "contact_import_report_rows" edge to the ContactImportReportRow entity by IDs.
+func (m *WorkspaceMutation) RemoveContactImportReportRowIDs(ids ...int64) {
+	if m.removedcontact_import_report_rows == nil {
+		m.removedcontact_import_report_rows = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.contact_import_report_rows, ids[i])
+		m.removedcontact_import_report_rows[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedContactImportReportRows returns the removed IDs of the "contact_import_report_rows" edge to the ContactImportReportRow entity.
+func (m *WorkspaceMutation) RemovedContactImportReportRowsIDs() (ids []int64) {
+	for id := range m.removedcontact_import_report_rows {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ContactImportReportRowsIDs returns the "contact_import_report_rows" edge IDs in the mutation.
+func (m *WorkspaceMutation) ContactImportReportRowsIDs() (ids []int64) {
+	for id := range m.contact_import_report_rows {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetContactImportReportRows resets all changes to the "contact_import_report_rows" edge.
+func (m *WorkspaceMutation) ResetContactImportReportRows() {
+	m.contact_import_report_rows = nil
+	m.clearedcontact_import_report_rows = false
+	m.removedcontact_import_report_rows = nil
 }
 
 // AddSendingWindowIDs adds the "sending_windows" edge to the SendingWindow entity by ids.
@@ -94387,7 +99621,7 @@ func (m *WorkspaceMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *WorkspaceMutation) AddedEdges() []string {
-	edges := make([]string, 0, 59)
+	edges := make([]string, 0, 63)
 	if m.contacts != nil {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -94427,6 +99661,9 @@ func (m *WorkspaceMutation) AddedEdges() []string {
 	if m.start_tokens != nil {
 		edges = append(edges, workspace.EdgeStartTokens)
 	}
+	if m.download_links != nil {
+		edges = append(edges, workspace.EdgeDownloadLinks)
+	}
 	if m.api_tokens != nil {
 		edges = append(edges, workspace.EdgeAPITokens)
 	}
@@ -94459,6 +99696,15 @@ func (m *WorkspaceMutation) AddedEdges() []string {
 	}
 	if m.frequency_counts != nil {
 		edges = append(edges, workspace.EdgeFrequencyCounts)
+	}
+	if m.contact_imports != nil {
+		edges = append(edges, workspace.EdgeContactImports)
+	}
+	if m.contact_import_chunks != nil {
+		edges = append(edges, workspace.EdgeContactImportChunks)
+	}
+	if m.contact_import_report_rows != nil {
+		edges = append(edges, workspace.EdgeContactImportReportRows)
 	}
 	if m.sending_windows != nil {
 		edges = append(edges, workspace.EdgeSendingWindows)
@@ -94650,6 +99896,12 @@ func (m *WorkspaceMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case workspace.EdgeDownloadLinks:
+		ids := make([]ent.Value, 0, len(m.download_links))
+		for id := range m.download_links {
+			ids = append(ids, id)
+		}
+		return ids
 	case workspace.EdgeAPITokens:
 		ids := make([]ent.Value, 0, len(m.api_tokens))
 		for id := range m.api_tokens {
@@ -94713,6 +99965,24 @@ func (m *WorkspaceMutation) AddedIDs(name string) []ent.Value {
 	case workspace.EdgeFrequencyCounts:
 		ids := make([]ent.Value, 0, len(m.frequency_counts))
 		for id := range m.frequency_counts {
+			ids = append(ids, id)
+		}
+		return ids
+	case workspace.EdgeContactImports:
+		ids := make([]ent.Value, 0, len(m.contact_imports))
+		for id := range m.contact_imports {
+			ids = append(ids, id)
+		}
+		return ids
+	case workspace.EdgeContactImportChunks:
+		ids := make([]ent.Value, 0, len(m.contact_import_chunks))
+		for id := range m.contact_import_chunks {
+			ids = append(ids, id)
+		}
+		return ids
+	case workspace.EdgeContactImportReportRows:
+		ids := make([]ent.Value, 0, len(m.contact_import_report_rows))
+		for id := range m.contact_import_report_rows {
 			ids = append(ids, id)
 		}
 		return ids
@@ -94930,7 +100200,7 @@ func (m *WorkspaceMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *WorkspaceMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 59)
+	edges := make([]string, 0, 63)
 	if m.removedcontacts != nil {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -94970,6 +100240,9 @@ func (m *WorkspaceMutation) RemovedEdges() []string {
 	if m.removedstart_tokens != nil {
 		edges = append(edges, workspace.EdgeStartTokens)
 	}
+	if m.removeddownload_links != nil {
+		edges = append(edges, workspace.EdgeDownloadLinks)
+	}
 	if m.removedapi_tokens != nil {
 		edges = append(edges, workspace.EdgeAPITokens)
 	}
@@ -95002,6 +100275,15 @@ func (m *WorkspaceMutation) RemovedEdges() []string {
 	}
 	if m.removedfrequency_counts != nil {
 		edges = append(edges, workspace.EdgeFrequencyCounts)
+	}
+	if m.removedcontact_imports != nil {
+		edges = append(edges, workspace.EdgeContactImports)
+	}
+	if m.removedcontact_import_chunks != nil {
+		edges = append(edges, workspace.EdgeContactImportChunks)
+	}
+	if m.removedcontact_import_report_rows != nil {
+		edges = append(edges, workspace.EdgeContactImportReportRows)
 	}
 	if m.removedsending_windows != nil {
 		edges = append(edges, workspace.EdgeSendingWindows)
@@ -95190,6 +100472,12 @@ func (m *WorkspaceMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case workspace.EdgeDownloadLinks:
+		ids := make([]ent.Value, 0, len(m.removeddownload_links))
+		for id := range m.removeddownload_links {
+			ids = append(ids, id)
+		}
+		return ids
 	case workspace.EdgeAPITokens:
 		ids := make([]ent.Value, 0, len(m.removedapi_tokens))
 		for id := range m.removedapi_tokens {
@@ -95253,6 +100541,24 @@ func (m *WorkspaceMutation) RemovedIDs(name string) []ent.Value {
 	case workspace.EdgeFrequencyCounts:
 		ids := make([]ent.Value, 0, len(m.removedfrequency_counts))
 		for id := range m.removedfrequency_counts {
+			ids = append(ids, id)
+		}
+		return ids
+	case workspace.EdgeContactImports:
+		ids := make([]ent.Value, 0, len(m.removedcontact_imports))
+		for id := range m.removedcontact_imports {
+			ids = append(ids, id)
+		}
+		return ids
+	case workspace.EdgeContactImportChunks:
+		ids := make([]ent.Value, 0, len(m.removedcontact_import_chunks))
+		for id := range m.removedcontact_import_chunks {
+			ids = append(ids, id)
+		}
+		return ids
+	case workspace.EdgeContactImportReportRows:
+		ids := make([]ent.Value, 0, len(m.removedcontact_import_report_rows))
+		for id := range m.removedcontact_import_report_rows {
 			ids = append(ids, id)
 		}
 		return ids
@@ -95466,7 +100772,7 @@ func (m *WorkspaceMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *WorkspaceMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 59)
+	edges := make([]string, 0, 63)
 	if m.clearedcontacts {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -95506,6 +100812,9 @@ func (m *WorkspaceMutation) ClearedEdges() []string {
 	if m.clearedstart_tokens {
 		edges = append(edges, workspace.EdgeStartTokens)
 	}
+	if m.cleareddownload_links {
+		edges = append(edges, workspace.EdgeDownloadLinks)
+	}
 	if m.clearedapi_tokens {
 		edges = append(edges, workspace.EdgeAPITokens)
 	}
@@ -95538,6 +100847,15 @@ func (m *WorkspaceMutation) ClearedEdges() []string {
 	}
 	if m.clearedfrequency_counts {
 		edges = append(edges, workspace.EdgeFrequencyCounts)
+	}
+	if m.clearedcontact_imports {
+		edges = append(edges, workspace.EdgeContactImports)
+	}
+	if m.clearedcontact_import_chunks {
+		edges = append(edges, workspace.EdgeContactImportChunks)
+	}
+	if m.clearedcontact_import_report_rows {
+		edges = append(edges, workspace.EdgeContactImportReportRows)
 	}
 	if m.clearedsending_windows {
 		edges = append(edges, workspace.EdgeSendingWindows)
@@ -95677,6 +100995,8 @@ func (m *WorkspaceMutation) EdgeCleared(name string) bool {
 		return m.clearedbindings
 	case workspace.EdgeStartTokens:
 		return m.clearedstart_tokens
+	case workspace.EdgeDownloadLinks:
+		return m.cleareddownload_links
 	case workspace.EdgeAPITokens:
 		return m.clearedapi_tokens
 	case workspace.EdgeOauthCodes:
@@ -95699,6 +101019,12 @@ func (m *WorkspaceMutation) EdgeCleared(name string) bool {
 		return m.clearedfrequency_caps
 	case workspace.EdgeFrequencyCounts:
 		return m.clearedfrequency_counts
+	case workspace.EdgeContactImports:
+		return m.clearedcontact_imports
+	case workspace.EdgeContactImportChunks:
+		return m.clearedcontact_import_chunks
+	case workspace.EdgeContactImportReportRows:
+		return m.clearedcontact_import_report_rows
 	case workspace.EdgeSendingWindows:
 		return m.clearedsending_windows
 	case workspace.EdgeBroadcasts:
@@ -95827,6 +101153,9 @@ func (m *WorkspaceMutation) ResetEdge(name string) error {
 	case workspace.EdgeStartTokens:
 		m.ResetStartTokens()
 		return nil
+	case workspace.EdgeDownloadLinks:
+		m.ResetDownloadLinks()
+		return nil
 	case workspace.EdgeAPITokens:
 		m.ResetAPITokens()
 		return nil
@@ -95859,6 +101188,15 @@ func (m *WorkspaceMutation) ResetEdge(name string) error {
 		return nil
 	case workspace.EdgeFrequencyCounts:
 		m.ResetFrequencyCounts()
+		return nil
+	case workspace.EdgeContactImports:
+		m.ResetContactImports()
+		return nil
+	case workspace.EdgeContactImportChunks:
+		m.ResetContactImportChunks()
+		return nil
+	case workspace.EdgeContactImportReportRows:
+		m.ResetContactImportReportRows()
 		return nil
 	case workspace.EdgeSendingWindows:
 		m.ResetSendingWindows()

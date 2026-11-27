@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/apitoken"
+	"github.com/getsphericon/sphericon/ent/contactimport"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/oauthcode"
 	"github.com/getsphericon/sphericon/ent/predicate"
@@ -24,15 +25,16 @@ import (
 // MembershipQuery is the builder for querying Membership entities.
 type MembershipQuery struct {
 	config
-	ctx             *QueryContext
-	order           []membership.OrderOption
-	inters          []Interceptor
-	predicates      []predicate.Membership
-	withWorkspace   *WorkspaceQuery
-	withUser        *UserQuery
-	withConnections *ApiTokenQuery
-	withOauthCodes  *OAuthCodeQuery
-	modifiers       []func(*sql.Selector)
+	ctx                *QueryContext
+	order              []membership.OrderOption
+	inters             []Interceptor
+	predicates         []predicate.Membership
+	withWorkspace      *WorkspaceQuery
+	withUser           *UserQuery
+	withConnections    *ApiTokenQuery
+	withOauthCodes     *OAuthCodeQuery
+	withContactImports *ContactImportQuery
+	modifiers          []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -150,6 +152,28 @@ func (_q *MembershipQuery) QueryOauthCodes() *OAuthCodeQuery {
 			sqlgraph.From(membership.Table, membership.FieldID, selector),
 			sqlgraph.To(oauthcode.Table, oauthcode.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, membership.OauthCodesTable, membership.OauthCodesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryContactImports chains the current query on the "contact_imports" edge.
+func (_q *MembershipQuery) QueryContactImports() *ContactImportQuery {
+	query := (&ContactImportClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(membership.Table, membership.FieldID, selector),
+			sqlgraph.To(contactimport.Table, contactimport.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, membership.ContactImportsTable, membership.ContactImportsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -344,15 +368,16 @@ func (_q *MembershipQuery) Clone() *MembershipQuery {
 		return nil
 	}
 	return &MembershipQuery{
-		config:          _q.config,
-		ctx:             _q.ctx.Clone(),
-		order:           append([]membership.OrderOption{}, _q.order...),
-		inters:          append([]Interceptor{}, _q.inters...),
-		predicates:      append([]predicate.Membership{}, _q.predicates...),
-		withWorkspace:   _q.withWorkspace.Clone(),
-		withUser:        _q.withUser.Clone(),
-		withConnections: _q.withConnections.Clone(),
-		withOauthCodes:  _q.withOauthCodes.Clone(),
+		config:             _q.config,
+		ctx:                _q.ctx.Clone(),
+		order:              append([]membership.OrderOption{}, _q.order...),
+		inters:             append([]Interceptor{}, _q.inters...),
+		predicates:         append([]predicate.Membership{}, _q.predicates...),
+		withWorkspace:      _q.withWorkspace.Clone(),
+		withUser:           _q.withUser.Clone(),
+		withConnections:    _q.withConnections.Clone(),
+		withOauthCodes:     _q.withOauthCodes.Clone(),
+		withContactImports: _q.withContactImports.Clone(),
 		// clone intermediate query.
 		sql:       _q.sql.Clone(),
 		path:      _q.path,
@@ -401,6 +426,17 @@ func (_q *MembershipQuery) WithOauthCodes(opts ...func(*OAuthCodeQuery)) *Member
 		opt(query)
 	}
 	_q.withOauthCodes = query
+	return _q
+}
+
+// WithContactImports tells the query-builder to eager-load the nodes that are connected to
+// the "contact_imports" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *MembershipQuery) WithContactImports(opts ...func(*ContactImportQuery)) *MembershipQuery {
+	query := (&ContactImportClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withContactImports = query
 	return _q
 }
 
@@ -482,11 +518,12 @@ func (_q *MembershipQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*M
 	var (
 		nodes       = []*Membership{}
 		_spec       = _q.querySpec()
-		loadedTypes = [4]bool{
+		loadedTypes = [5]bool{
 			_q.withWorkspace != nil,
 			_q.withUser != nil,
 			_q.withConnections != nil,
 			_q.withOauthCodes != nil,
+			_q.withContactImports != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -533,6 +570,13 @@ func (_q *MembershipQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*M
 		if err := _q.loadOauthCodes(ctx, query, nodes,
 			func(n *Membership) { n.Edges.OauthCodes = []*OAuthCode{} },
 			func(n *Membership, e *OAuthCode) { n.Edges.OauthCodes = append(n.Edges.OauthCodes, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withContactImports; query != nil {
+		if err := _q.loadContactImports(ctx, query, nodes,
+			func(n *Membership) { n.Edges.ContactImports = []*ContactImport{} },
+			func(n *Membership, e *ContactImport) { n.Edges.ContactImports = append(n.Edges.ContactImports, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -655,6 +699,39 @@ func (_q *MembershipQuery) loadOauthCodes(ctx context.Context, query *OAuthCodeQ
 		node, ok := nodeids[fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "membership_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *MembershipQuery) loadContactImports(ctx context.Context, query *ContactImportQuery, nodes []*Membership, init func(*Membership), assign func(*Membership, *ContactImport)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Membership)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(contactimport.FieldMembershipID)
+	}
+	query.Where(predicate.ContactImport(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(membership.ContactImportsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.MembershipID
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "membership_id" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "membership_id" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}

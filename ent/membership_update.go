@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/apitoken"
+	"github.com/getsphericon/sphericon/ent/contactimport"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/oauthcode"
 	"github.com/getsphericon/sphericon/ent/predicate"
@@ -155,6 +156,21 @@ func (_u *MembershipUpdate) AddOauthCodes(v ...*OAuthCode) *MembershipUpdate {
 	return _u.AddOauthCodeIDs(ids...)
 }
 
+// AddContactImportIDs adds the "contact_imports" edge to the ContactImport entity by IDs.
+func (_u *MembershipUpdate) AddContactImportIDs(ids ...int64) *MembershipUpdate {
+	_u.mutation.AddContactImportIDs(ids...)
+	return _u
+}
+
+// AddContactImports adds the "contact_imports" edges to the ContactImport entity.
+func (_u *MembershipUpdate) AddContactImports(v ...*ContactImport) *MembershipUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddContactImportIDs(ids...)
+}
+
 // Mutation returns the MembershipMutation object of the builder.
 func (_u *MembershipUpdate) Mutation() *MembershipMutation {
 	return _u.mutation
@@ -212,6 +228,27 @@ func (_u *MembershipUpdate) RemoveOauthCodes(v ...*OAuthCode) *MembershipUpdate 
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveOauthCodeIDs(ids...)
+}
+
+// ClearContactImports clears all "contact_imports" edges to the ContactImport entity.
+func (_u *MembershipUpdate) ClearContactImports() *MembershipUpdate {
+	_u.mutation.ClearContactImports()
+	return _u
+}
+
+// RemoveContactImportIDs removes the "contact_imports" edge to ContactImport entities by IDs.
+func (_u *MembershipUpdate) RemoveContactImportIDs(ids ...int64) *MembershipUpdate {
+	_u.mutation.RemoveContactImportIDs(ids...)
+	return _u
+}
+
+// RemoveContactImports removes "contact_imports" edges to ContactImport entities.
+func (_u *MembershipUpdate) RemoveContactImports(v ...*ContactImport) *MembershipUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveContactImportIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -452,6 +489,51 @@ func (_u *MembershipUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.ContactImportsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   membership.ContactImportsTable,
+			Columns: []string{membership.ContactImportsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contactimport.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedContactImportsIDs(); len(nodes) > 0 && !_u.mutation.ContactImportsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   membership.ContactImportsTable,
+			Columns: []string{membership.ContactImportsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contactimport.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ContactImportsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   membership.ContactImportsTable,
+			Columns: []string{membership.ContactImportsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contactimport.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -596,6 +678,21 @@ func (_u *MembershipUpdateOne) AddOauthCodes(v ...*OAuthCode) *MembershipUpdateO
 	return _u.AddOauthCodeIDs(ids...)
 }
 
+// AddContactImportIDs adds the "contact_imports" edge to the ContactImport entity by IDs.
+func (_u *MembershipUpdateOne) AddContactImportIDs(ids ...int64) *MembershipUpdateOne {
+	_u.mutation.AddContactImportIDs(ids...)
+	return _u
+}
+
+// AddContactImports adds the "contact_imports" edges to the ContactImport entity.
+func (_u *MembershipUpdateOne) AddContactImports(v ...*ContactImport) *MembershipUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddContactImportIDs(ids...)
+}
+
 // Mutation returns the MembershipMutation object of the builder.
 func (_u *MembershipUpdateOne) Mutation() *MembershipMutation {
 	return _u.mutation
@@ -653,6 +750,27 @@ func (_u *MembershipUpdateOne) RemoveOauthCodes(v ...*OAuthCode) *MembershipUpda
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveOauthCodeIDs(ids...)
+}
+
+// ClearContactImports clears all "contact_imports" edges to the ContactImport entity.
+func (_u *MembershipUpdateOne) ClearContactImports() *MembershipUpdateOne {
+	_u.mutation.ClearContactImports()
+	return _u
+}
+
+// RemoveContactImportIDs removes the "contact_imports" edge to ContactImport entities by IDs.
+func (_u *MembershipUpdateOne) RemoveContactImportIDs(ids ...int64) *MembershipUpdateOne {
+	_u.mutation.RemoveContactImportIDs(ids...)
+	return _u
+}
+
+// RemoveContactImports removes "contact_imports" edges to ContactImport entities.
+func (_u *MembershipUpdateOne) RemoveContactImports(v ...*ContactImport) *MembershipUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveContactImportIDs(ids...)
 }
 
 // Where appends a list predicates to the MembershipUpdate builder.
@@ -916,6 +1034,51 @@ func (_u *MembershipUpdateOne) sqlSave(ctx context.Context) (_node *Membership, 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(oauthcode.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ContactImportsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   membership.ContactImportsTable,
+			Columns: []string{membership.ContactImportsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contactimport.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedContactImportsIDs(); len(nodes) > 0 && !_u.mutation.ContactImportsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   membership.ContactImportsTable,
+			Columns: []string{membership.ContactImportsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contactimport.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ContactImportsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   membership.ContactImportsTable,
+			Columns: []string{membership.ContactImportsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contactimport.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

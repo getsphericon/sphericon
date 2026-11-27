@@ -14,6 +14,7 @@ import (
 	workspace "github.com/getsphericon/sphericon/ent/workspace"
 	site "github.com/getsphericon/sphericon/gen/site"
 	confirmations "github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
+	contactimports "github.com/getsphericon/sphericon/internal/domain/contacts/contactimports"
 	contacts "github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	engagementtracking "github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	segments "github.com/getsphericon/sphericon/internal/domain/contacts/segments"
@@ -40,6 +41,7 @@ import (
 	automationstep "github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	channels "github.com/getsphericon/sphericon/internal/kernel/channels"
 	conditiontree "github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	csvimport "github.com/getsphericon/sphericon/internal/kernel/csvimport"
 	datetrigger "github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 	httpheader "github.com/getsphericon/sphericon/internal/kernel/httpheader"
 	localcalendar "github.com/getsphericon/sphericon/internal/kernel/localcalendar"
@@ -415,6 +417,51 @@ func (c *InputsImpl) ContactExport(source site.SiteContactsExportParams) dataexp
 	dataexportOpenInput.ID = entityIDPtrIn(source.ID)
 	dataexportOpenInput.Email = emailPtrIn(source.Email)
 	return dataexportOpenInput
+}
+func (c *InputsImpl) ContactImportDateFormatIn(source site.ContactImportDateFormat) csvimport.DateFormat {
+	var csvimportDateFormat csvimport.DateFormat
+	switch source {
+	case site.ContactImportDateFormatDdDotMmDotYyyy:
+		csvimportDateFormat = csvimport.DateDMYDot
+	case site.ContactImportDateFormatDdMinusMmMinusYyyy:
+		csvimportDateFormat = csvimport.DateDMYDash
+	case site.ContactImportDateFormatDdSlashMmSlashYyyy:
+		csvimportDateFormat = csvimport.DateDMYSlash
+	case site.ContactImportDateFormatMmDotDdDotYyyy:
+		csvimportDateFormat = csvimport.DateMDYDot
+	case site.ContactImportDateFormatMmMinusDdMinusYyyy:
+		csvimportDateFormat = csvimport.DateMDYDash
+	case site.ContactImportDateFormatMmSlashDdSlashYyyy:
+		csvimportDateFormat = csvimport.DateMDYSlash
+	case site.ContactImportDateFormatRfc3339:
+		csvimportDateFormat = csvimport.DateTimeRFC3339
+	case site.ContactImportDateFormatYyyyMinusMmMinusDd:
+		csvimportDateFormat = csvimport.DateISO
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return csvimportDateFormat
+}
+func (c *InputsImpl) ContactImportMapping(source *site.ContactImportMappingInput) contactimports.MappingInput {
+	var contactimportsMappingInput contactimports.MappingInput
+	if source != nil {
+		contactimportsMappingInput.Mapping = contactImportMappingIn(c, source)
+		contactimportsMappingInput.OnlyAddNew = (*source).OnlyAddNew
+	}
+	return contactimportsMappingInput
+}
+func (c *InputsImpl) ContactImportReport(source site.SiteContactImportsReportParams) contactimports.ReportInput {
+	var contactimportsReportInput contactimports.ReportInput
+	contactimportsReportInput.ImportID = int64(source.ImportId)
+	contactimportsReportInput.Token = source.Token
+	// contactimportsReportInput.Session: ignore
+	return contactimportsReportInput
+}
+func (c *InputsImpl) ContactImportUpload(source site.SiteContactImportsUploadReq) contactimports.UploadInput {
+	var contactimportsUploadInput contactimports.UploadInput
+	contactimportsUploadInput.File = fileIn(source.Data)
+	// contactimportsUploadInput.MembershipID: ignore
+	return contactimportsUploadInput
 }
 func (c *InputsImpl) ContactUpdate(source *site.SiteUpdateContactInput) contacts.UpdateInput {
 	var contactsUpdateInput contacts.UpdateInput

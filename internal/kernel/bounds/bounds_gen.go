@@ -310,6 +310,12 @@ const (
 	ContactBatchMaxItems = 1000
 )
 
+// ContactImportColumns are the columns a CSV import of Contacts maps: a file of more is refused at upload.
+// From site ContactImportMappingInput.columns.
+const (
+	ContactImportColumnsMaxItems = 200
+)
+
 // IdentifyPhone is the phone an Identify of the tracker names its Contact by.
 // From collect CollectIdentifyInput.phone.
 const (
@@ -527,6 +533,7 @@ var Owners = map[string][]string{
 	"EventBatchMaxItems":                 {"internal/domain/contacts/eventrecording"},
 	"ContactBatchMinItems":               {"Contact"},
 	"ContactBatchMaxItems":               {"Contact"},
+	"ContactImportColumnsMaxItems":       {"ContactImport"},
 	"IdentifyPhoneMaxLength":             {"internal/usecase/visitoridentification"},
 	"IdentifySubjectIDMaxLength":         {"internal/usecase/visitoridentification"},
 	"IdentifyTimeZoneMaxLength":          {"internal/usecase/visitoridentification"},

@@ -50,6 +50,7 @@ import "./resources/consent.tsp";
 import "./resources/sms-consent.tsp";
 import "./resources/engagement-tracking.tsp";
 import "./resources/contacts.tsp";
+import "./resources/contact-imports.tsp";
 import "./resources/custom-fields.tsp";
 import "./resources/segments.tsp";
 import "./resources/tags.tsp";

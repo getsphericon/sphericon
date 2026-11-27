@@ -30,7 +30,11 @@ import (
 	"github.com/getsphericon/sphericon/ent/consentstamp"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/contactdate"
+	"github.com/getsphericon/sphericon/ent/contactimport"
+	"github.com/getsphericon/sphericon/ent/contactimportchunk"
+	"github.com/getsphericon/sphericon/ent/contactimportreportrow"
 	"github.com/getsphericon/sphericon/ent/customfield"
+	"github.com/getsphericon/sphericon/ent/downloadlink"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
 	"github.com/getsphericon/sphericon/ent/erasure"
@@ -670,6 +674,21 @@ func (_c *WorkspaceCreate) AddStartTokens(v ...*StartToken) *WorkspaceCreate {
 	return _c.AddStartTokenIDs(ids...)
 }
 
+// AddDownloadLinkIDs adds the "download_links" edge to the DownloadLink entity by IDs.
+func (_c *WorkspaceCreate) AddDownloadLinkIDs(ids ...int64) *WorkspaceCreate {
+	_c.mutation.AddDownloadLinkIDs(ids...)
+	return _c
+}
+
+// AddDownloadLinks adds the "download_links" edges to the DownloadLink entity.
+func (_c *WorkspaceCreate) AddDownloadLinks(v ...*DownloadLink) *WorkspaceCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddDownloadLinkIDs(ids...)
+}
+
 // AddAPITokenIDs adds the "api_tokens" edge to the ApiToken entity by IDs.
 func (_c *WorkspaceCreate) AddAPITokenIDs(ids ...int64) *WorkspaceCreate {
 	_c.mutation.AddAPITokenIDs(ids...)
@@ -833,6 +852,51 @@ func (_c *WorkspaceCreate) AddFrequencyCounts(v ...*FrequencyCount) *WorkspaceCr
 		ids[i] = v[i].ID
 	}
 	return _c.AddFrequencyCountIDs(ids...)
+}
+
+// AddContactImportIDs adds the "contact_imports" edge to the ContactImport entity by IDs.
+func (_c *WorkspaceCreate) AddContactImportIDs(ids ...int64) *WorkspaceCreate {
+	_c.mutation.AddContactImportIDs(ids...)
+	return _c
+}
+
+// AddContactImports adds the "contact_imports" edges to the ContactImport entity.
+func (_c *WorkspaceCreate) AddContactImports(v ...*ContactImport) *WorkspaceCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddContactImportIDs(ids...)
+}
+
+// AddContactImportChunkIDs adds the "contact_import_chunks" edge to the ContactImportChunk entity by IDs.
+func (_c *WorkspaceCreate) AddContactImportChunkIDs(ids ...int64) *WorkspaceCreate {
+	_c.mutation.AddContactImportChunkIDs(ids...)
+	return _c
+}
+
+// AddContactImportChunks adds the "contact_import_chunks" edges to the ContactImportChunk entity.
+func (_c *WorkspaceCreate) AddContactImportChunks(v ...*ContactImportChunk) *WorkspaceCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddContactImportChunkIDs(ids...)
+}
+
+// AddContactImportReportRowIDs adds the "contact_import_report_rows" edge to the ContactImportReportRow entity by IDs.
+func (_c *WorkspaceCreate) AddContactImportReportRowIDs(ids ...int64) *WorkspaceCreate {
+	_c.mutation.AddContactImportReportRowIDs(ids...)
+	return _c
+}
+
+// AddContactImportReportRows adds the "contact_import_report_rows" edges to the ContactImportReportRow entity.
+func (_c *WorkspaceCreate) AddContactImportReportRows(v ...*ContactImportReportRow) *WorkspaceCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddContactImportReportRowIDs(ids...)
 }
 
 // AddSendingWindowIDs adds the "sending_windows" edge to the SendingWindow entity by IDs.
@@ -1917,6 +1981,22 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
+	if nodes := _c.mutation.DownloadLinksIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.DownloadLinksTable,
+			Columns: []string{workspace.DownloadLinksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(downloadlink.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
 	if nodes := _c.mutation.APITokensIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -2086,6 +2166,54 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(frequencycount.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ContactImportsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ContactImportsTable,
+			Columns: []string{workspace.ContactImportsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contactimport.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ContactImportChunksIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ContactImportChunksTable,
+			Columns: []string{workspace.ContactImportChunksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contactimportchunk.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ContactImportReportRowsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ContactImportReportRowsTable,
+			Columns: []string{workspace.ContactImportReportRowsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contactimportreportrow.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

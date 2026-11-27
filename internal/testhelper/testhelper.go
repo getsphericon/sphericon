@@ -37,6 +37,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	apisite "github.com/getsphericon/sphericon/internal/api/site"
 	"github.com/getsphericon/sphericon/internal/app"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contactimports"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
@@ -764,6 +765,7 @@ func addScheduled(tb testing.TB, p performers, sqlDB *sql.DB, client *ent.Client
 	add(tb, p, sqlDB, ws, jobs.NewRefreshIntegrationQuotaWorker(client, do.MustInvoke[*integrations.Module](injector)))
 	add(tb, p, sqlDB, ws, jobs.NewReleaseWebhookWorker(client, do.MustInvoke[*integrations.Module](injector)))
 	add(tb, p, sqlDB, ws, jobs.NewVerifySendingDomainWorker(client, do.MustInvoke[*sendingdomains.Module](injector)))
+	add(tb, p, sqlDB, ws, jobs.NewRunContactImportWorker(client, do.MustInvoke[*contactimports.Module](injector)))
 	retention := do.MustInvoke[*messageretention.UseCase](injector)
 	add(tb, p, sqlDB, ws, jobs.NewPruneMessagesWorker(retention))
 	add(tb, p, sqlDB, ws, jobs.NewPruneWorkspaceMessagesWorker(retention))

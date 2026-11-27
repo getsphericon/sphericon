@@ -5423,6 +5423,7 @@ export const Permission = {
   SENDING_DOMAINS_MANAGE: 'sending_domains:manage',
   CONTACTS_ERASE: 'contacts:erase',
   CONTACTS_EXPORT: 'contacts:export',
+  CONTACTS_IMPORT: 'contacts:import',
   CUSTOM_FIELDS_MANAGE: 'custom_fields:manage',
   SUPPRESSIONS_MANAGE: 'suppressions:manage',
   SECOND_FACTOR_MANAGE: 'second_factor:manage',

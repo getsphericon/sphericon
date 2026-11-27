@@ -343,8 +343,9 @@ func recoverer(next http.Handler) http.Handler {
 func isCollectPath(path string) bool { return strings.HasPrefix(path, paths.Collect+"/") }
 
 // bodyLimit caps every request body before a handler or the ogen decoder reads it:
-// collect gets its own (smaller) caps (a batch of events, or a single event), everything else the default. An oversized
-// body surfaces as *http.MaxBytesError, which problem.ErrorHandler renders as 413.
+// collect gets its own (smaller) caps (a batch of events, or a single event), the upload of a CSV
+// import its own (larger) one, everything else the default. An oversized body surfaces as
+// *http.MaxBytesError, which problem.ErrorHandler renders as 413 with the cap.
 func bodyLimit(limits config.BodyLimits) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -354,11 +355,20 @@ func bodyLimit(limits config.BodyLimits) func(http.Handler) http.Handler {
 				limit = limits.Collect // a batch
 			case isCollectPath(r.URL.Path):
 				limit = limits.CollectEvent // one event
+			case isContactImportUpload(r):
+				limit = limits.CSVImport // a CSV file of Contacts (ADR 0138)
 			}
 			r.Body = http.MaxBytesReader(w, r.Body, limit)
 			next.ServeHTTP(w, r)
 		})
 	}
+}
+
+// isContactImportUpload is the upload of a CSV import's file (POST
+// /site/workspaces/{workspaceId}/contact-imports), which has its own cap.
+func isContactImportUpload(r *http.Request) bool {
+	rest, ok := strings.CutPrefix(r.URL.Path, paths.Site+"/workspaces/")
+	return ok && r.Method == http.MethodPost && strings.Count(rest, "/") == 1 && strings.HasSuffix(rest, "/contact-imports")
 }
 
 func requestID(next http.Handler) http.Handler {

@@ -96,7 +96,10 @@ They take a `*ent.Scoped` (modules: an explicit `s *ent.Scoped` parameter) and n
 4. jobs and event consumers, right after the row that names the Workspace is loaded
    (`client.Scoped(run.WorkspaceID)` in `internal/jobs`; `EvaluateTriggerWorker` loads the
    contact and scopes from its Workspace; `DecideOccurrencesWorker`, the date scheduler's decision
-   of one Automation (ADR 0126), loads the Automation its tick named and scopes from its Workspace; the suppression consumer (`jobs.SuppressEventWorker`), and the webhooks
+   of one Automation (ADR 0126), loads the Automation its tick named and scopes from its Workspace; the run of a CSV import
+   (`RunContactImportWorker`, ADR 0138) loads the import its job names and scopes from its Workspace,
+   and the run then acts as the import's Member through `memberships.Module.ScopeOf` of the
+   Membership it reads there; the suppression consumer (`jobs.SuppressEventWorker`), and the webhooks
    consumer (`jobs.WebhookEventWorker`), which builds the scope it hands to `Dispatch` from the
    event envelope: an event job is the raw-client entry, an envelope carries only a Workspace
    id; and the orders consumer (`events.RecordOrder`, ADR 0064), which opens a transaction on the raw

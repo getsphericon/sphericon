@@ -2084,6 +2084,399 @@ export type ContactExportVisitor = {
 };
 
 /**
+ * A core attribute a column of an import writes, by the contract's name (ADR 0072)
+ */
+export const ContactImportAttribute = {
+  FIRST_NAME: 'firstName',
+  LAST_NAME: 'lastName',
+  TIME_ZONE: 'timeZone',
+  COUNTRY: 'country',
+  LOCALE: 'locale',
+  CITY: 'city',
+  AVATAR: 'avatar',
+  BIRTHDAY: 'birthday'
+} as const;
+
+/**
+ * A core attribute a column of an import writes, by the contract's name (ADR 0072)
+ */
+export type ContactImportAttribute = typeof ContactImportAttribute[keyof typeof ContactImportAttribute];
+
+/**
+ * A column whose cells write a core attribute
+ */
+export type ContactImportAttributeColumn = {
+  kind: 'attribute';
+  /**
+   * The attribute the cells write
+   */
+  attribute: ContactImportAttribute;
+  /**
+   * How the cells write a date: required for `birthday`, null for any other attribute
+   */
+  dateFormat: ContactImportDateFormat | null;
+};
+
+/**
+ * A column whose cells write a core attribute
+ */
+export type ContactImportAttributeColumnInput = {
+  kind: 'attribute';
+  /**
+   * The attribute the cells write
+   */
+  attribute: ContactImportAttribute;
+  /**
+   * How the cells write a date: required for `birthday`, null for any other attribute
+   */
+  dateFormat: ContactImportDateFormat | null;
+};
+
+/**
+ * What a column of the file is, by `kind`
+ */
+export type ContactImportColumn = ({
+  kind: 'key';
+} & ContactImportKeyColumn) | ({
+  kind: 'attribute';
+} & ContactImportAttributeColumn) | ({
+  kind: 'customField';
+} & ContactImportCustomFieldColumn) | ({
+  kind: 'tags';
+} & ContactImportTagsColumn) | ({
+  kind: 'ignore';
+} & ContactImportIgnoreColumn);
+
+/**
+ * What a column of the file is, by `kind`, as a request writes it
+ */
+export type ContactImportColumnInput = ({
+  kind: 'key';
+} & ContactImportKeyColumnInput) | ({
+  kind: 'attribute';
+} & ContactImportAttributeColumnInput) | ({
+  kind: 'customField';
+} & ContactImportCustomFieldColumnInput) | ({
+  kind: 'tags';
+} & ContactImportTagsColumnInput) | ({
+  kind: 'ignore';
+} & ContactImportIgnoreColumnInput);
+
+/**
+ * What an import's run has written so far
+ */
+export type ContactImportCounts = {
+  /**
+   * Rows read so far
+   */
+  processed: number;
+  /**
+   * Contacts created
+   */
+  created: number;
+  /**
+   * Contacts the rows updated, or left as they were with only new ones added
+   */
+  updated: number;
+  /**
+   * Rows refused: no alias key, a cell count other than the header's, or a row the Contact intake refused
+   */
+  refused: number;
+  /**
+   * Values dropped from rows that were written, because their column could not read them
+   */
+  dropped: number;
+};
+
+/**
+ * A column whose cells write a Custom field the Workspace has, by its key
+ */
+export type ContactImportCustomFieldColumn = {
+  kind: 'customField';
+  /**
+   * The Custom field's key
+   */
+  key: string;
+  /**
+   * How the cells write a date: required for a `datetime` field, null for any other type
+   */
+  dateFormat: ContactImportDateFormat | null;
+};
+
+/**
+ * A column whose cells write a Custom field the Workspace has, by its key
+ */
+export type ContactImportCustomFieldColumnInput = {
+  kind: 'customField';
+  /**
+   * The Custom field's key
+   */
+  key: string;
+  /**
+   * How the cells write a date: required for a `datetime` field, null for any other type
+   */
+  dateFormat: ContactImportDateFormat | null;
+};
+
+/**
+ * How a column writes its dates, which the Member chooses (ADR 0138): a date by the order of its
+ * day, month and year and their separator, or `rfc3339` for a date and time with its offset. A date
+ * without an offset is read in the Workspace time zone.
+ */
+export const ContactImportDateFormat = {
+  YYYY_MM_DD: 'yyyy-mm-dd',
+  DD_MM_YYYY: 'dd/mm/yyyy',
+  DD_MM_YYYY2: 'dd.mm.yyyy',
+  DD_MM_YYYY3: 'dd-mm-yyyy',
+  MM_DD_YYYY: 'mm/dd/yyyy',
+  MM_DD_YYYY2: 'mm.dd.yyyy',
+  MM_DD_YYYY3: 'mm-dd-yyyy',
+  RFC3339: 'rfc3339'
+} as const;
+
+/**
+ * How a column writes its dates, which the Member chooses (ADR 0138): a date by the order of its
+ * day, month and year and their separator, or `rfc3339` for a date and time with its offset. A date
+ * without an offset is read in the Workspace time zone.
+ */
+export type ContactImportDateFormat = typeof ContactImportDateFormat[keyof typeof ContactImportDateFormat];
+
+/**
+ * The character a file's numbers write their decimals after
+ */
+export const ContactImportDecimalSeparator = { '': '.', ',': ',' } as const;
+
+/**
+ * The character a file's numbers write their decimals after
+ */
+export type ContactImportDecimalSeparator = typeof ContactImportDecimalSeparator[keyof typeof ContactImportDecimalSeparator];
+
+/**
+ * The character a file's cells are separated by, detected at upload
+ */
+export const ContactImportDelimiter = {
+  COMMA: 'comma',
+  SEMICOLON: 'semicolon',
+  TAB: 'tab'
+} as const;
+
+/**
+ * The character a file's cells are separated by, detected at upload
+ */
+export type ContactImportDelimiter = typeof ContactImportDelimiter[keyof typeof ContactImportDelimiter];
+
+/**
+ * A column the import does not read
+ */
+export type ContactImportIgnoreColumn = {
+  kind: 'ignore';
+};
+
+/**
+ * A column the import does not read
+ */
+export type ContactImportIgnoreColumnInput = {
+  kind: 'ignore';
+};
+
+/**
+ * A value or a row of an import that is not written, or a row written with a warning, and why
+ */
+export type ContactImportIssue = {
+  /**
+   * The column, counted from 0; null for an issue of the whole row
+   */
+  column: number | null;
+  reason: ContactImportIssueReason;
+  /**
+   * Why, in words
+   */
+  message: string;
+};
+
+/**
+ * Why a value or a row of an import is not written
+ */
+export const ContactImportIssueReason = {
+  NO_KEY: 'noKey',
+  CELL_COUNT: 'cellCount',
+  REFUSED: 'refused',
+  TOO_LONG: 'tooLong',
+  NOT_NUMBER: 'notNumber',
+  NOT_BOOLEAN: 'notBoolean',
+  NOT_DATE: 'notDate',
+  NOT_PHONE: 'notPhone',
+  NOT_EMAIL: 'notEmail',
+  NOT_TIME_ZONE: 'notTimeZone',
+  NOT_COUNTRY: 'notCountry',
+  NOT_LOCALE: 'notLocale',
+  NOT_IMAGE_URL: 'notImageUrl',
+  NOT_TAG: 'notTag',
+  KEYS_NAME_TWO_CONTACTS: 'keysNameTwoContacts'
+} as const;
+
+/**
+ * Why a value or a row of an import is not written
+ */
+export type ContactImportIssueReason = typeof ContactImportIssueReason[keyof typeof ContactImportIssueReason];
+
+/**
+ * An alias key a column of an import fills, by the contract's name (ADR 0002)
+ */
+export const ContactImportKey = {
+  SUBJECT_ID: 'subjectId',
+  EMAIL: 'email',
+  PHONE: 'phone'
+} as const;
+
+/**
+ * An alias key a column of an import fills, by the contract's name (ADR 0002)
+ */
+export type ContactImportKey = typeof ContactImportKey[keyof typeof ContactImportKey];
+
+/**
+ * A column whose cells fill an alias key
+ */
+export type ContactImportKeyColumn = {
+  kind: 'key';
+  /**
+   * The alias key the cells fill
+   */
+  key: ContactImportKey;
+};
+
+/**
+ * A column whose cells fill an alias key
+ */
+export type ContactImportKeyColumnInput = {
+  kind: 'key';
+  /**
+   * The alias key the cells fill
+   */
+  key: ContactImportKey;
+};
+
+/**
+ * How an import reads its file: what each column is, and the choices that hold for every row
+ */
+export type ContactImportMapping = {
+  /**
+   * One per column of the file, in the file's order
+   */
+  columns: Array<ContactImportColumn>;
+  /**
+   * The character the file's numbers write their decimals after
+   */
+  decimalSeparator: ContactImportDecimalSeparator;
+  /**
+   * The country a phone written without its country code is read in, when its row names no country; null for none
+   */
+  defaultCountry: CountryCode | null;
+  /**
+   * A Tag given to every row, created on first use; null for none
+   */
+  tag: Name | null;
+  /**
+   * Leave a Contact the Workspace has as it is, writing only new ones
+   */
+  onlyAddNew: boolean;
+};
+
+/**
+ * How an import reads its file, as a request writes it
+ */
+export type ContactImportMappingInput = {
+  /**
+   * One per column of the file, in the file's order: as many as the file has
+   */
+  columns: Array<ContactImportColumnInput>;
+  /**
+   * The character the file's numbers write their decimals after
+   */
+  decimalSeparator: ContactImportDecimalSeparator;
+  /**
+   * The country a phone written without its country code is read in, when its row names no country; null for none
+   */
+  defaultCountry: CountryCode | null;
+  /**
+   * A Tag given to every row, created on first use; null for none
+   */
+  tag: Name | null;
+  /**
+   * Leave a Contact the Workspace has as it is, writing only new ones
+   */
+  onlyAddNew: boolean;
+};
+
+/**
+ * A row of the file as the import would write it
+ */
+export type ContactImportPreviewRow = {
+  /**
+   * The row's number below the header, from 1
+   */
+  row: number;
+  /**
+   * The row's cells as the file writes them
+   */
+  cells: Array<string>;
+  /**
+   * Why the row would be refused; null when it would be written
+   */
+  refusal: ContactImportIssue | null;
+  /**
+   * The values the row would drop
+   */
+  dropped: Array<ContactImportIssue>;
+  warnings: Array<ContactImportWarning>;
+};
+
+/**
+ * Where an import stands: `uploaded` until a mapping is saved, `ready` to run, `running` while its
+ * job writes the rows, then `done`; `cancelled` and `failed` end it early, keeping what it wrote.
+ */
+export const ContactImportState = {
+  UPLOADED: 'uploaded',
+  READY: 'ready',
+  RUNNING: 'running',
+  CANCELLED: 'cancelled',
+  FAILED: 'failed',
+  DONE: 'done'
+} as const;
+
+/**
+ * Where an import stands: `uploaded` until a mapping is saved, `ready` to run, `running` while its
+ * job writes the rows, then `done`; `cancelled` and `failed` end it early, keeping what it wrote.
+ */
+export type ContactImportState = typeof ContactImportState[keyof typeof ContactImportState];
+
+/**
+ * A column whose cells name the Tags a row adds, separated by commas; a Tag holding a comma is quoted
+ */
+export type ContactImportTagsColumn = {
+  kind: 'tags';
+};
+
+/**
+ * A column whose cells name the Tags a row adds, separated by commas; a Tag holding a comma is quoted
+ */
+export type ContactImportTagsColumnInput = {
+  kind: 'tags';
+};
+
+/**
+ * A trait of a previewed row worth a look; the row is written all the same. `disposable_email` and
+ * `role_email` are ADR 0117's verdicts on its address.
+ */
+export const ContactImportWarning = { DISPOSABLE_EMAIL: 'disposable_email', ROLE_EMAIL: 'role_email' } as const;
+
+/**
+ * A trait of a previewed row worth a look; the row is written all the same. `disposable_email` and
+ * `role_email` are ADR 0117's verdicts on its address.
+ */
+export type ContactImportWarning = typeof ContactImportWarning[keyof typeof ContactImportWarning];
+
+/**
  * An ISO 3166-1 alpha-2 country code, upper case (`US`, `DE`)
  */
 export type CountryCode = string;
@@ -2627,6 +3020,20 @@ export type DnsRecord = {
    * The record value to publish
    */
   value: string;
+};
+
+/**
+ * A link a browser follows once, in the session that asked for it, within a minute
+ */
+export type DownloadLink = {
+  /**
+   * Where the browser goes to download: a path of this Instance
+   */
+  url: string;
+  /**
+   * When the link stops working
+   */
+  expiresAt: Timestamp;
 };
 
 /**
@@ -4153,6 +4560,7 @@ export const Permission = {
   SENDING_DOMAINS_MANAGE: 'sending_domains:manage',
   CONTACTS_ERASE: 'contacts:erase',
   CONTACTS_EXPORT: 'contacts:export',
+  CONTACTS_IMPORT: 'contacts:import',
   CUSTOM_FIELDS_MANAGE: 'custom_fields:manage',
   SUPPRESSIONS_MANAGE: 'suppressions:manage',
   SECOND_FACTOR_MANAGE: 'second_factor:manage',
@@ -6894,6 +7302,80 @@ export type SiteContactHoldings = {
    * Captured messages (Test inbox) sent to the address; a count, never their content
    */
   capturedMessages: number;
+};
+
+/**
+ * A CSV import of Contacts (ADR 0138): its file's facts, its mapping and how far its run is
+ */
+export type SiteContactImport = {
+  /**
+   * Unique identifier
+   */
+  id: EntityId;
+  state: ContactImportState;
+  /**
+   * The character the file's cells are separated by
+   */
+  delimiter: ContactImportDelimiter;
+  /**
+   * The file's header, a name per column; a blank name stays blank
+   */
+  header: Array<string>;
+  /**
+   * The file's rows below its header
+   */
+  rows: number;
+  /**
+   * Rows whose number of cells differs from the header's, which the import refuses
+   */
+  malformedRows: number;
+  /**
+   * The saved mapping, or before one is saved the proposal read from the header and the first rows: a header that names a key, a core attribute or a Custom field is mapped to it, a date column gets the format its sample reads in when only one fits
+   */
+  mapping: ContactImportMapping;
+  counts: ContactImportCounts;
+  /**
+   * Rows of the refused rows' report, refused rows and rows with dropped values: 0 when there is nothing to download
+   */
+  reportRows: number;
+  /**
+   * Upload timestamp
+   */
+  createdAt: Timestamp;
+  /**
+   * When the run began; null before it
+   */
+  startedAt: Timestamp | null;
+  /**
+   * When the run ended; null before it
+   */
+  endedAt: Timestamp | null;
+};
+
+/**
+ * What an import would do with its saved mapping (ADR 0138): its first rows, and counts over the whole file
+ */
+export type SiteContactImportPreview = {
+  /**
+   * The first rows of the file
+   */
+  rows: Array<ContactImportPreviewRow>;
+  /**
+   * Rows of the file below its header
+   */
+  totalRows: number;
+  /**
+   * Rows that name no alias key, which the import refuses
+   */
+  rowsWithoutKey: number;
+  /**
+   * Rows whose number of cells differs from the header's, which the import refuses
+   */
+  malformedRows: number;
+  /**
+   * Distinct Tags the rows would add, the Tag for every row included
+   */
+  distinctTags: number;
 };
 
 /**
@@ -16282,6 +16764,238 @@ export type SiteConnectionsDeleteResponses = {
 };
 
 export type SiteConnectionsDeleteResponse = SiteConnectionsDeleteResponses[keyof SiteConnectionsDeleteResponses];
+
+export type SiteContactImportsUploadData = {
+  body: Blob | File;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/contact-imports';
+};
+
+export type SiteContactImportsUploadErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SiteContactImportsUploadError = SiteContactImportsUploadErrors[keyof SiteContactImportsUploadErrors];
+
+export type SiteContactImportsUploadResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteContactImport;
+};
+
+export type SiteContactImportsUploadResponse = SiteContactImportsUploadResponses[keyof SiteContactImportsUploadResponses];
+
+export type SiteContactImportsGetData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+    importId: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/contact-imports/{importId}';
+};
+
+export type SiteContactImportsGetErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SiteContactImportsGetError = SiteContactImportsGetErrors[keyof SiteContactImportsGetErrors];
+
+export type SiteContactImportsGetResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteContactImport;
+};
+
+export type SiteContactImportsGetResponse = SiteContactImportsGetResponses[keyof SiteContactImportsGetResponses];
+
+export type SiteContactImportsSaveMappingData = {
+  body: ContactImportMappingInput;
+  path: {
+    workspaceId: WorkspaceId;
+    importId: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/contact-imports/{importId}/mapping';
+};
+
+export type SiteContactImportsSaveMappingErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SiteContactImportsSaveMappingError = SiteContactImportsSaveMappingErrors[keyof SiteContactImportsSaveMappingErrors];
+
+export type SiteContactImportsSaveMappingResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteContactImport;
+};
+
+export type SiteContactImportsSaveMappingResponse = SiteContactImportsSaveMappingResponses[keyof SiteContactImportsSaveMappingResponses];
+
+export type SiteContactImportsPreviewData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+    importId: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/contact-imports/{importId}/preview';
+};
+
+export type SiteContactImportsPreviewErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SiteContactImportsPreviewError = SiteContactImportsPreviewErrors[keyof SiteContactImportsPreviewErrors];
+
+export type SiteContactImportsPreviewResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteContactImportPreview;
+};
+
+export type SiteContactImportsPreviewResponse = SiteContactImportsPreviewResponses[keyof SiteContactImportsPreviewResponses];
+
+export type SiteContactImportsReportData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+    importId: EntityId;
+  };
+  query: {
+    token: string;
+  };
+  url: '/workspaces/{workspaceId}/contact-imports/{importId}/report';
+};
+
+export type SiteContactImportsReportErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SiteContactImportsReportError = SiteContactImportsReportErrors[keyof SiteContactImportsReportErrors];
+
+export type SiteContactImportsReportResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: Blob | File;
+};
+
+export type SiteContactImportsReportResponse = SiteContactImportsReportResponses[keyof SiteContactImportsReportResponses];
+
+export type SiteContactImportsReportLinkData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+    importId: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/contact-imports/{importId}/report-link';
+};
+
+export type SiteContactImportsReportLinkErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SiteContactImportsReportLinkError = SiteContactImportsReportLinkErrors[keyof SiteContactImportsReportLinkErrors];
+
+export type SiteContactImportsReportLinkResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: DownloadLink;
+};
+
+export type SiteContactImportsReportLinkResponse = SiteContactImportsReportLinkResponses[keyof SiteContactImportsReportLinkResponses];
+
+export type SiteContactImportsRunData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+    importId: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/contact-imports/{importId}/run';
+};
+
+export type SiteContactImportsRunErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SiteContactImportsRunError = SiteContactImportsRunErrors[keyof SiteContactImportsRunErrors];
+
+export type SiteContactImportsRunResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteContactImport;
+};
+
+export type SiteContactImportsRunResponse = SiteContactImportsRunResponses[keyof SiteContactImportsRunResponses];
 
 export type SiteContactsListData = {
   body?: never;

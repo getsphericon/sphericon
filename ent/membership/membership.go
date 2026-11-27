@@ -37,6 +37,8 @@ const (
 	EdgeConnections = "connections"
 	// EdgeOauthCodes holds the string denoting the oauth_codes edge name in mutations.
 	EdgeOauthCodes = "oauth_codes"
+	// EdgeContactImports holds the string denoting the contact_imports edge name in mutations.
+	EdgeContactImports = "contact_imports"
 	// Table holds the table name of the membership in the database.
 	Table = "memberships"
 	// WorkspaceTable is the table that holds the workspace relation/edge.
@@ -67,6 +69,13 @@ const (
 	OauthCodesInverseTable = "oauth_codes"
 	// OauthCodesColumn is the table column denoting the oauth_codes relation/edge.
 	OauthCodesColumn = "membership_id"
+	// ContactImportsTable is the table that holds the contact_imports relation/edge.
+	ContactImportsTable = "contact_imports"
+	// ContactImportsInverseTable is the table name for the ContactImport entity.
+	// It exists in this package in order to avoid circular dependency with the "contactimport" package.
+	ContactImportsInverseTable = "contact_imports"
+	// ContactImportsColumn is the table column denoting the contact_imports relation/edge.
+	ContactImportsColumn = "membership_id"
 )
 
 // Columns holds all SQL columns for membership fields.
@@ -232,6 +241,20 @@ func ByOauthCodes(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newOauthCodesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByContactImportsCount orders the results by contact_imports count.
+func ByContactImportsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newContactImportsStep(), opts...)
+	}
+}
+
+// ByContactImports orders the results by contact_imports terms.
+func ByContactImports(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newContactImportsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newWorkspaceStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -258,5 +281,12 @@ func newOauthCodesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(OauthCodesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, OauthCodesTable, OauthCodesColumn),
+	)
+}
+func newContactImportsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ContactImportsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ContactImportsTable, ContactImportsColumn),
 	)
 }

@@ -382,6 +382,29 @@ func HasOauthCodesWith(preds ...predicate.OAuthCode) predicate.Membership {
 	})
 }
 
+// HasContactImports applies the HasEdge predicate on the "contact_imports" edge.
+func HasContactImports() predicate.Membership {
+	return predicate.Membership(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ContactImportsTable, ContactImportsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasContactImportsWith applies the HasEdge predicate on the "contact_imports" edge with a given conditions (other predicates).
+func HasContactImportsWith(preds ...predicate.ContactImport) predicate.Membership {
+	return predicate.Membership(func(s *sql.Selector) {
+		step := newContactImportsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Membership) predicate.Membership {
 	return predicate.Membership(sql.AndPredicates(predicates...))

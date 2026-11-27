@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/apitoken"
+	"github.com/getsphericon/sphericon/ent/contactimport"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/oauthcode"
 	"github.com/getsphericon/sphericon/ent/user"
@@ -136,6 +137,21 @@ func (_c *MembershipCreate) AddOauthCodes(v ...*OAuthCode) *MembershipCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddOauthCodeIDs(ids...)
+}
+
+// AddContactImportIDs adds the "contact_imports" edge to the ContactImport entity by IDs.
+func (_c *MembershipCreate) AddContactImportIDs(ids ...int64) *MembershipCreate {
+	_c.mutation.AddContactImportIDs(ids...)
+	return _c
+}
+
+// AddContactImports adds the "contact_imports" edges to the ContactImport entity.
+func (_c *MembershipCreate) AddContactImports(v ...*ContactImport) *MembershipCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddContactImportIDs(ids...)
 }
 
 // Mutation returns the MembershipMutation object of the builder.
@@ -331,6 +347,22 @@ func (_c *MembershipCreate) createSpec() (*Membership, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(oauthcode.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ContactImportsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   membership.ContactImportsTable,
+			Columns: []string{membership.ContactImportsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contactimport.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

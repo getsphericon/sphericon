@@ -13766,6 +13766,7 @@
           "sending_domains:manage",
           "contacts:erase",
           "contacts:export",
+          "contacts:import",
           "custom_fields:manage",
           "suppressions:manage",
           "second_factor:manage",

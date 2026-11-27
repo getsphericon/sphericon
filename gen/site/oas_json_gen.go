@@ -14798,6 +14798,3076 @@ func (s *ContactExportVisitor) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes ContactImportAttribute as json.
+func (s ContactImportAttribute) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes ContactImportAttribute from json.
+func (s *ContactImportAttribute) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ContactImportAttribute to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch ContactImportAttribute(v) {
+	case ContactImportAttributeFirstName:
+		*s = ContactImportAttributeFirstName
+	case ContactImportAttributeLastName:
+		*s = ContactImportAttributeLastName
+	case ContactImportAttributeTimeZone:
+		*s = ContactImportAttributeTimeZone
+	case ContactImportAttributeCountry:
+		*s = ContactImportAttributeCountry
+	case ContactImportAttributeLocale:
+		*s = ContactImportAttributeLocale
+	case ContactImportAttributeCity:
+		*s = ContactImportAttributeCity
+	case ContactImportAttributeAvatar:
+		*s = ContactImportAttributeAvatar
+	case ContactImportAttributeBirthday:
+		*s = ContactImportAttributeBirthday
+	default:
+		*s = ContactImportAttribute(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s ContactImportAttribute) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ContactImportAttribute) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *ContactImportAttributeColumn) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *ContactImportAttributeColumn) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("kind")
+		s.Kind.Encode(e)
+	}
+	{
+		e.FieldStart("attribute")
+		s.Attribute.Encode(e)
+	}
+	{
+		e.FieldStart("dateFormat")
+		s.DateFormat.Encode(e)
+	}
+}
+
+var jsonFieldsNameOfContactImportAttributeColumn = [3]string{
+	0: "kind",
+	1: "attribute",
+	2: "dateFormat",
+}
+
+// Decode decodes ContactImportAttributeColumn from json.
+func (s *ContactImportAttributeColumn) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ContactImportAttributeColumn to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "kind":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Kind.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"kind\"")
+			}
+		case "attribute":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Attribute.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"attribute\"")
+			}
+		case "dateFormat":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				if err := s.DateFormat.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"dateFormat\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode ContactImportAttributeColumn")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfContactImportAttributeColumn) {
+					name = jsonFieldsNameOfContactImportAttributeColumn[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *ContactImportAttributeColumn) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ContactImportAttributeColumn) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *ContactImportAttributeColumnInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *ContactImportAttributeColumnInput) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("kind")
+		s.Kind.Encode(e)
+	}
+	{
+		e.FieldStart("attribute")
+		s.Attribute.Encode(e)
+	}
+	{
+		e.FieldStart("dateFormat")
+		s.DateFormat.Encode(e)
+	}
+}
+
+var jsonFieldsNameOfContactImportAttributeColumnInput = [3]string{
+	0: "kind",
+	1: "attribute",
+	2: "dateFormat",
+}
+
+// Decode decodes ContactImportAttributeColumnInput from json.
+func (s *ContactImportAttributeColumnInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ContactImportAttributeColumnInput to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "kind":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Kind.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"kind\"")
+			}
+		case "attribute":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Attribute.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"attribute\"")
+			}
+		case "dateFormat":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				if err := s.DateFormat.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"dateFormat\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode ContactImportAttributeColumnInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfContactImportAttributeColumnInput) {
+					name = jsonFieldsNameOfContactImportAttributeColumnInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *ContactImportAttributeColumnInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ContactImportAttributeColumnInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ContactImportAttributeColumnInputKind as json.
+func (s ContactImportAttributeColumnInputKind) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes ContactImportAttributeColumnInputKind from json.
+func (s *ContactImportAttributeColumnInputKind) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ContactImportAttributeColumnInputKind to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch ContactImportAttributeColumnInputKind(v) {
+	case ContactImportAttributeColumnInputKindAttribute:
+		*s = ContactImportAttributeColumnInputKindAttribute
+	default:
+		*s = ContactImportAttributeColumnInputKind(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s ContactImportAttributeColumnInputKind) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ContactImportAttributeColumnInputKind) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ContactImportAttributeColumnKind as json.
+func (s ContactImportAttributeColumnKind) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes ContactImportAttributeColumnKind from json.
+func (s *ContactImportAttributeColumnKind) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ContactImportAttributeColumnKind to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch ContactImportAttributeColumnKind(v) {
+	case ContactImportAttributeColumnKindAttribute:
+		*s = ContactImportAttributeColumnKindAttribute
+	default:
+		*s = ContactImportAttributeColumnKind(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s ContactImportAttributeColumnKind) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ContactImportAttributeColumnKind) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *ContactImportColumn) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *ContactImportColumn) encodeFields(e *jx.Encoder) {
+	s.OneOf.encodeFields(e)
+}
+
+var jsonFieldsNameOfContactImportColumn = [0]string{}
+
+// Decode decodes ContactImportColumn from json.
+func (s *ContactImportColumn) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ContactImportColumn to nil")
+	}
+	if err := d.Capture(func(d *jx.Decoder) error {
+		return s.OneOf.Decode(d)
+	}); err != nil {
+		return errors.Wrap(err, "decode field OneOf")
+	}
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		default:
+			return d.Skip()
+		}
+	}); err != nil {
+		return errors.Wrap(err, "decode ContactImportColumn")
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *ContactImportColumn) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ContactImportColumn) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *ContactImportColumnInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *ContactImportColumnInput) encodeFields(e *jx.Encoder) {
+	s.OneOf.encodeFields(e)
+}
+
+var jsonFieldsNameOfContactImportColumnInput = [0]string{}
+
+// Decode decodes ContactImportColumnInput from json.
+func (s *ContactImportColumnInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ContactImportColumnInput to nil")
+	}
+	if err := d.Capture(func(d *jx.Decoder) error {
+		return s.OneOf.Decode(d)
+	}); err != nil {
+		return errors.Wrap(err, "decode field OneOf")
+	}
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		default:
+			return d.Skip()
+		}
+	}); err != nil {
+		return errors.Wrap(err, "decode ContactImportColumnInput")
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *ContactImportColumnInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ContactImportColumnInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ContactImportColumnInputSum as json.
+func (s ContactImportColumnInputSum) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+func (s ContactImportColumnInputSum) encodeFields(e *jx.Encoder) {
+	switch s.Type {
+	case ContactImportKeyColumnInputContactImportColumnInputSum:
+		e.FieldStart("kind")
+		e.Str("key")
+		{
+			s := s.ContactImportKeyColumnInput
+			{
+				e.FieldStart("key")
+				s.Key.Encode(e)
+			}
+		}
+	case ContactImportAttributeColumnInputContactImportColumnInputSum:
+		e.FieldStart("kind")
+		e.Str("attribute")
+		{
+			s := s.ContactImportAttributeColumnInput
+			{
+				e.FieldStart("attribute")
+				s.Attribute.Encode(e)
+			}
+			{
+				e.FieldStart("dateFormat")
+				s.DateFormat.Encode(e)
+			}
+		}
+	case ContactImportCustomFieldColumnInputContactImportColumnInputSum:
+		e.FieldStart("kind")
+		e.Str("customField")
+		{
+			s := s.ContactImportCustomFieldColumnInput
+			{
+				e.FieldStart("key")
+				e.Str(s.Key)
+			}
+			{
+				e.FieldStart("dateFormat")
+				s.DateFormat.Encode(e)
+			}
+		}
+	case ContactImportTagsColumnInputContactImportColumnInputSum:
+		e.FieldStart("kind")
+		e.Str("tags")
+	case ContactImportIgnoreColumnInputContactImportColumnInputSum:
+		e.FieldStart("kind")
+		e.Str("ignore")
+	}
+}
+
+// Decode decodes ContactImportColumnInputSum from json.
+func (s *ContactImportColumnInputSum) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ContactImportColumnInputSum to nil")
+	}
+	// Sum type discriminator.
+	if typ := d.Next(); typ != jx.Object {
+		return errors.Errorf("unexpected json type %q", typ)
+	}
+
+	var found bool
+	if err := d.Capture(func(d *jx.Decoder) error {
+		return d.ObjBytes(func(d *jx.Decoder, key []byte) error {
+			if found {
+				return d.Skip()
+			}
+			switch string(key) {
+			case "kind":
+				typ, err := d.Str()
+				if err != nil {
+					return err
+				}
+				switch typ {
+				case "key":
+					s.Type = ContactImportKeyColumnInputContactImportColumnInputSum
+					found = true
+				case "attribute":
+					s.Type = ContactImportAttributeColumnInputContactImportColumnInputSum
+					found = true
+				case "customField":
+					s.Type = ContactImportCustomFieldColumnInputContactImportColumnInputSum
+					found = true
+				case "tags":
+					s.Type = ContactImportTagsColumnInputContactImportColumnInputSum
+					found = true
+				case "ignore":
+					s.Type = ContactImportIgnoreColumnInputContactImportColumnInputSum
+					found = true
+				default:
+					return errors.Errorf("unknown type %s", typ)
+				}
+				return nil
+			}
+			return d.Skip()
+		})
+	}); err != nil {
+		return errors.Wrap(err, "capture")
+	}
+	if !found {
+		return errors.New("unable to detect sum type variant")
+	}
+	switch s.Type {
+	case ContactImportKeyColumnInputContactImportColumnInputSum:
+		if err := s.ContactImportKeyColumnInput.Decode(d); err != nil {
+			return err
+		}
+	case ContactImportAttributeColumnInputContactImportColumnInputSum:
+		if err := s.ContactImportAttributeColumnInput.Decode(d); err != nil {
+			return err
+		}
+	case ContactImportCustomFieldColumnInputContactImportColumnInputSum:
+		if err := s.ContactImportCustomFieldColumnInput.Decode(d); err != nil {
+			return err
+		}
+	case ContactImportTagsColumnInputContactImportColumnInputSum:
+		if err := s.ContactImportTagsColumnInput.Decode(d); err != nil {
+			return err
+		}
+	case ContactImportIgnoreColumnInputContactImportColumnInputSum:
+		if err := s.ContactImportIgnoreColumnInput.Decode(d); err != nil {
+			return err
+		}
+	default:
+		return errors.Errorf("inferred invalid type: %s", s.Type)
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s ContactImportColumnInputSum) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ContactImportColumnInputSum) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ContactImportColumnSum as json.
+func (s ContactImportColumnSum) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+func (s ContactImportColumnSum) encodeFields(e *jx.Encoder) {
+	switch s.Type {
+	case ContactImportKeyColumnContactImportColumnSum:
+		e.FieldStart("kind")
+		e.Str("key")
+		{
+			s := s.ContactImportKeyColumn
+			{
+				e.FieldStart("key")
+				s.Key.Encode(e)
+			}
+		}
+	case ContactImportAttributeColumnContactImportColumnSum:
+		e.FieldStart("kind")
+		e.Str("attribute")
+		{
+			s := s.ContactImportAttributeColumn
+			{
+				e.FieldStart("attribute")
+				s.Attribute.Encode(e)
+			}
+			{
+				e.FieldStart("dateFormat")
+				s.DateFormat.Encode(e)
+			}
+		}
+	case ContactImportCustomFieldColumnContactImportColumnSum:
+		e.FieldStart("kind")
+		e.Str("customField")
+		{
+			s := s.ContactImportCustomFieldColumn
+			{
+				e.FieldStart("key")
+				e.Str(s.Key)
+			}
+			{
+				e.FieldStart("dateFormat")
+				s.DateFormat.Encode(e)
+			}
+		}
+	case ContactImportTagsColumnContactImportColumnSum:
+		e.FieldStart("kind")
+		e.Str("tags")
+	case ContactImportIgnoreColumnContactImportColumnSum:
+		e.FieldStart("kind")
+		e.Str("ignore")
+	}
+}
+
+// Decode decodes ContactImportColumnSum from json.
+func (s *ContactImportColumnSum) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ContactImportColumnSum to nil")
+	}
+	// Sum type discriminator.
+	if typ := d.Next(); typ != jx.Object {
+		return errors.Errorf("unexpected json type %q", typ)
+	}
+
+	var found bool
+	if err := d.Capture(func(d *jx.Decoder) error {
+		return d.ObjBytes(func(d *jx.Decoder, key []byte) error {
+			if found {
+				return d.Skip()
+			}
+			switch string(key) {
+			case "kind":
+				typ, err := d.Str()
+				if err != nil {
+					return err
+				}
+				switch typ {
+				case "key":
+					s.Type = ContactImportKeyColumnContactImportColumnSum
+					found = true
+				case "attribute":
+					s.Type = ContactImportAttributeColumnContactImportColumnSum
+					found = true
+				case "customField":
+					s.Type = ContactImportCustomFieldColumnContactImportColumnSum
+					found = true
+				case "tags":
+					s.Type = ContactImportTagsColumnContactImportColumnSum
+					found = true
+				case "ignore":
+					s.Type = ContactImportIgnoreColumnContactImportColumnSum
+					found = true
+				default:
+					return errors.Errorf("unknown type %s", typ)
+				}
+				return nil
+			}
+			return d.Skip()
+		})
+	}); err != nil {
+		return errors.Wrap(err, "capture")
+	}
+	if !found {
+		return errors.New("unable to detect sum type variant")
+	}
+	switch s.Type {
+	case ContactImportKeyColumnContactImportColumnSum:
+		if err := s.ContactImportKeyColumn.Decode(d); err != nil {
+			return err
+		}
+	case ContactImportAttributeColumnContactImportColumnSum:
+		if err := s.ContactImportAttributeColumn.Decode(d); err != nil {
+			return err
+		}
+	case ContactImportCustomFieldColumnContactImportColumnSum:
+		if err := s.ContactImportCustomFieldColumn.Decode(d); err != nil {
+			return err
+		}
+	case ContactImportTagsColumnContactImportColumnSum:
+		if err := s.ContactImportTagsColumn.Decode(d); err != nil {
+			return err
+		}
+	case ContactImportIgnoreColumnContactImportColumnSum:
+		if err := s.ContactImportIgnoreColumn.Decode(d); err != nil {
+			return err
+		}
+	default:
+		return errors.Errorf("inferred invalid type: %s", s.Type)
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s ContactImportColumnSum) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ContactImportColumnSum) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *ContactImportCounts) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *ContactImportCounts) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("processed")
+		e.Int32(s.Processed)
+	}
+	{
+		e.FieldStart("created")
+		e.Int32(s.Created)
+	}
+	{
+		e.FieldStart("updated")
+		e.Int32(s.Updated)
+	}
+	{
+		e.FieldStart("refused")
+		e.Int32(s.Refused)
+	}
+	{
+		e.FieldStart("dropped")
+		e.Int32(s.Dropped)
+	}
+}
+
+var jsonFieldsNameOfContactImportCounts = [5]string{
+	0: "processed",
+	1: "created",
+	2: "updated",
+	3: "refused",
+	4: "dropped",
+}
+
+// Decode decodes ContactImportCounts from json.
+func (s *ContactImportCounts) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ContactImportCounts to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "processed":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := d.Int32()
+				s.Processed = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"processed\"")
+			}
+		case "created":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Int32()
+				s.Created = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"created\"")
+			}
+		case "updated":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Int32()
+				s.Updated = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"updated\"")
+			}
+		case "refused":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				v, err := d.Int32()
+				s.Refused = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"refused\"")
+			}
+		case "dropped":
+			requiredBitSet[0] |= 1 << 4
+			if err := func() error {
+				v, err := d.Int32()
+				s.Dropped = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"dropped\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode ContactImportCounts")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00011111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfContactImportCounts) {
+					name = jsonFieldsNameOfContactImportCounts[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *ContactImportCounts) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ContactImportCounts) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *ContactImportCustomFieldColumn) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *ContactImportCustomFieldColumn) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("kind")
+		s.Kind.Encode(e)
+	}
+	{
+		e.FieldStart("key")
+		e.Str(s.Key)
+	}
+	{
+		e.FieldStart("dateFormat")
+		s.DateFormat.Encode(e)
+	}
+}
+
+var jsonFieldsNameOfContactImportCustomFieldColumn = [3]string{
+	0: "kind",
+	1: "key",
+	2: "dateFormat",
+}
+
+// Decode decodes ContactImportCustomFieldColumn from json.
+func (s *ContactImportCustomFieldColumn) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ContactImportCustomFieldColumn to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "kind":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Kind.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"kind\"")
+			}
+		case "key":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.Key = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"key\"")
+			}
+		case "dateFormat":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				if err := s.DateFormat.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"dateFormat\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode ContactImportCustomFieldColumn")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfContactImportCustomFieldColumn) {
+					name = jsonFieldsNameOfContactImportCustomFieldColumn[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *ContactImportCustomFieldColumn) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ContactImportCustomFieldColumn) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *ContactImportCustomFieldColumnInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *ContactImportCustomFieldColumnInput) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("kind")
+		s.Kind.Encode(e)
+	}
+	{
+		e.FieldStart("key")
+		e.Str(s.Key)
+	}
+	{
+		e.FieldStart("dateFormat")
+		s.DateFormat.Encode(e)
+	}
+}
+
+var jsonFieldsNameOfContactImportCustomFieldColumnInput = [3]string{
+	0: "kind",
+	1: "key",
+	2: "dateFormat",
+}
+
+// Decode decodes ContactImportCustomFieldColumnInput from json.
+func (s *ContactImportCustomFieldColumnInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ContactImportCustomFieldColumnInput to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "kind":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Kind.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"kind\"")
+			}
+		case "key":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.Key = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"key\"")
+			}
+		case "dateFormat":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				if err := s.DateFormat.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"dateFormat\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode ContactImportCustomFieldColumnInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfContactImportCustomFieldColumnInput) {
+					name = jsonFieldsNameOfContactImportCustomFieldColumnInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *ContactImportCustomFieldColumnInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ContactImportCustomFieldColumnInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ContactImportCustomFieldColumnInputKind as json.
+func (s ContactImportCustomFieldColumnInputKind) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes ContactImportCustomFieldColumnInputKind from json.
+func (s *ContactImportCustomFieldColumnInputKind) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ContactImportCustomFieldColumnInputKind to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch ContactImportCustomFieldColumnInputKind(v) {
+	case ContactImportCustomFieldColumnInputKindCustomField:
+		*s = ContactImportCustomFieldColumnInputKindCustomField
+	default:
+		*s = ContactImportCustomFieldColumnInputKind(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s ContactImportCustomFieldColumnInputKind) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ContactImportCustomFieldColumnInputKind) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ContactImportCustomFieldColumnKind as json.
+func (s ContactImportCustomFieldColumnKind) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes ContactImportCustomFieldColumnKind from json.
+func (s *ContactImportCustomFieldColumnKind) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ContactImportCustomFieldColumnKind to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch ContactImportCustomFieldColumnKind(v) {
+	case ContactImportCustomFieldColumnKindCustomField:
+		*s = ContactImportCustomFieldColumnKindCustomField
+	default:
+		*s = ContactImportCustomFieldColumnKind(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s ContactImportCustomFieldColumnKind) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ContactImportCustomFieldColumnKind) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ContactImportDateFormat as json.
+func (s ContactImportDateFormat) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes ContactImportDateFormat from json.
+func (s *ContactImportDateFormat) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ContactImportDateFormat to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch ContactImportDateFormat(v) {
+	case ContactImportDateFormatYyyyMinusMmMinusDd:
+		*s = ContactImportDateFormatYyyyMinusMmMinusDd
+	case ContactImportDateFormatDdSlashMmSlashYyyy:
+		*s = ContactImportDateFormatDdSlashMmSlashYyyy
+	case ContactImportDateFormatDdDotMmDotYyyy:
+		*s = ContactImportDateFormatDdDotMmDotYyyy
+	case ContactImportDateFormatDdMinusMmMinusYyyy:
+		*s = ContactImportDateFormatDdMinusMmMinusYyyy
+	case ContactImportDateFormatMmSlashDdSlashYyyy:
+		*s = ContactImportDateFormatMmSlashDdSlashYyyy
+	case ContactImportDateFormatMmDotDdDotYyyy:
+		*s = ContactImportDateFormatMmDotDdDotYyyy
+	case ContactImportDateFormatMmMinusDdMinusYyyy:
+		*s = ContactImportDateFormatMmMinusDdMinusYyyy
+	case ContactImportDateFormatRfc3339:
+		*s = ContactImportDateFormatRfc3339
+	default:
+		*s = ContactImportDateFormat(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s ContactImportDateFormat) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ContactImportDateFormat) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ContactImportDecimalSeparator as json.
+func (s ContactImportDecimalSeparator) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes ContactImportDecimalSeparator from json.
+func (s *ContactImportDecimalSeparator) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ContactImportDecimalSeparator to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch ContactImportDecimalSeparator(v) {
+	case ContactImportDecimalSeparator_Dot:
+		*s = ContactImportDecimalSeparator_Dot
+	case ContactImportDecimalSeparator_:
+		*s = ContactImportDecimalSeparator_
+	default:
+		*s = ContactImportDecimalSeparator(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s ContactImportDecimalSeparator) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ContactImportDecimalSeparator) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ContactImportDelimiter as json.
+func (s ContactImportDelimiter) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes ContactImportDelimiter from json.
+func (s *ContactImportDelimiter) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ContactImportDelimiter to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch ContactImportDelimiter(v) {
+	case ContactImportDelimiterComma:
+		*s = ContactImportDelimiterComma
+	case ContactImportDelimiterSemicolon:
+		*s = ContactImportDelimiterSemicolon
+	case ContactImportDelimiterTab:
+		*s = ContactImportDelimiterTab
+	default:
+		*s = ContactImportDelimiter(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s ContactImportDelimiter) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ContactImportDelimiter) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *ContactImportIgnoreColumn) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *ContactImportIgnoreColumn) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("kind")
+		s.Kind.Encode(e)
+	}
+}
+
+var jsonFieldsNameOfContactImportIgnoreColumn = [1]string{
+	0: "kind",
+}
+
+// Decode decodes ContactImportIgnoreColumn from json.
+func (s *ContactImportIgnoreColumn) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ContactImportIgnoreColumn to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "kind":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Kind.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"kind\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode ContactImportIgnoreColumn")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000001,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfContactImportIgnoreColumn) {
+					name = jsonFieldsNameOfContactImportIgnoreColumn[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *ContactImportIgnoreColumn) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ContactImportIgnoreColumn) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *ContactImportIgnoreColumnInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *ContactImportIgnoreColumnInput) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("kind")
+		s.Kind.Encode(e)
+	}
+}
+
+var jsonFieldsNameOfContactImportIgnoreColumnInput = [1]string{
+	0: "kind",
+}
+
+// Decode decodes ContactImportIgnoreColumnInput from json.
+func (s *ContactImportIgnoreColumnInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ContactImportIgnoreColumnInput to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "kind":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Kind.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"kind\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode ContactImportIgnoreColumnInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000001,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfContactImportIgnoreColumnInput) {
+					name = jsonFieldsNameOfContactImportIgnoreColumnInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *ContactImportIgnoreColumnInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ContactImportIgnoreColumnInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ContactImportIgnoreColumnInputKind as json.
+func (s ContactImportIgnoreColumnInputKind) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes ContactImportIgnoreColumnInputKind from json.
+func (s *ContactImportIgnoreColumnInputKind) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ContactImportIgnoreColumnInputKind to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch ContactImportIgnoreColumnInputKind(v) {
+	case ContactImportIgnoreColumnInputKindIgnore:
+		*s = ContactImportIgnoreColumnInputKindIgnore
+	default:
+		*s = ContactImportIgnoreColumnInputKind(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s ContactImportIgnoreColumnInputKind) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ContactImportIgnoreColumnInputKind) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ContactImportIgnoreColumnKind as json.
+func (s ContactImportIgnoreColumnKind) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes ContactImportIgnoreColumnKind from json.
+func (s *ContactImportIgnoreColumnKind) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ContactImportIgnoreColumnKind to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch ContactImportIgnoreColumnKind(v) {
+	case ContactImportIgnoreColumnKindIgnore:
+		*s = ContactImportIgnoreColumnKindIgnore
+	default:
+		*s = ContactImportIgnoreColumnKind(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s ContactImportIgnoreColumnKind) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ContactImportIgnoreColumnKind) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *ContactImportIssue) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *ContactImportIssue) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("column")
+		s.Column.Encode(e)
+	}
+	{
+		e.FieldStart("reason")
+		s.Reason.Encode(e)
+	}
+	{
+		e.FieldStart("message")
+		e.Str(s.Message)
+	}
+}
+
+var jsonFieldsNameOfContactImportIssue = [3]string{
+	0: "column",
+	1: "reason",
+	2: "message",
+}
+
+// Decode decodes ContactImportIssue from json.
+func (s *ContactImportIssue) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ContactImportIssue to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "column":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Column.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"column\"")
+			}
+		case "reason":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Reason.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"reason\"")
+			}
+		case "message":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Str()
+				s.Message = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"message\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode ContactImportIssue")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfContactImportIssue) {
+					name = jsonFieldsNameOfContactImportIssue[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *ContactImportIssue) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ContactImportIssue) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ContactImportIssueReason as json.
+func (s ContactImportIssueReason) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes ContactImportIssueReason from json.
+func (s *ContactImportIssueReason) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ContactImportIssueReason to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch ContactImportIssueReason(v) {
+	case ContactImportIssueReasonNoKey:
+		*s = ContactImportIssueReasonNoKey
+	case ContactImportIssueReasonCellCount:
+		*s = ContactImportIssueReasonCellCount
+	case ContactImportIssueReasonRefused:
+		*s = ContactImportIssueReasonRefused
+	case ContactImportIssueReasonTooLong:
+		*s = ContactImportIssueReasonTooLong
+	case ContactImportIssueReasonNotNumber:
+		*s = ContactImportIssueReasonNotNumber
+	case ContactImportIssueReasonNotBoolean:
+		*s = ContactImportIssueReasonNotBoolean
+	case ContactImportIssueReasonNotDate:
+		*s = ContactImportIssueReasonNotDate
+	case ContactImportIssueReasonNotPhone:
+		*s = ContactImportIssueReasonNotPhone
+	case ContactImportIssueReasonNotEmail:
+		*s = ContactImportIssueReasonNotEmail
+	case ContactImportIssueReasonNotTimeZone:
+		*s = ContactImportIssueReasonNotTimeZone
+	case ContactImportIssueReasonNotCountry:
+		*s = ContactImportIssueReasonNotCountry
+	case ContactImportIssueReasonNotLocale:
+		*s = ContactImportIssueReasonNotLocale
+	case ContactImportIssueReasonNotImageUrl:
+		*s = ContactImportIssueReasonNotImageUrl
+	case ContactImportIssueReasonNotTag:
+		*s = ContactImportIssueReasonNotTag
+	case ContactImportIssueReasonKeysNameTwoContacts:
+		*s = ContactImportIssueReasonKeysNameTwoContacts
+	default:
+		*s = ContactImportIssueReason(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s ContactImportIssueReason) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ContactImportIssueReason) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ContactImportKey as json.
+func (s ContactImportKey) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes ContactImportKey from json.
+func (s *ContactImportKey) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ContactImportKey to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch ContactImportKey(v) {
+	case ContactImportKeySubjectId:
+		*s = ContactImportKeySubjectId
+	case ContactImportKeyEmail:
+		*s = ContactImportKeyEmail
+	case ContactImportKeyPhone:
+		*s = ContactImportKeyPhone
+	default:
+		*s = ContactImportKey(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s ContactImportKey) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ContactImportKey) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *ContactImportKeyColumn) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *ContactImportKeyColumn) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("kind")
+		s.Kind.Encode(e)
+	}
+	{
+		e.FieldStart("key")
+		s.Key.Encode(e)
+	}
+}
+
+var jsonFieldsNameOfContactImportKeyColumn = [2]string{
+	0: "kind",
+	1: "key",
+}
+
+// Decode decodes ContactImportKeyColumn from json.
+func (s *ContactImportKeyColumn) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ContactImportKeyColumn to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "kind":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Kind.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"kind\"")
+			}
+		case "key":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Key.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"key\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode ContactImportKeyColumn")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000011,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfContactImportKeyColumn) {
+					name = jsonFieldsNameOfContactImportKeyColumn[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *ContactImportKeyColumn) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ContactImportKeyColumn) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *ContactImportKeyColumnInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *ContactImportKeyColumnInput) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("kind")
+		s.Kind.Encode(e)
+	}
+	{
+		e.FieldStart("key")
+		s.Key.Encode(e)
+	}
+}
+
+var jsonFieldsNameOfContactImportKeyColumnInput = [2]string{
+	0: "kind",
+	1: "key",
+}
+
+// Decode decodes ContactImportKeyColumnInput from json.
+func (s *ContactImportKeyColumnInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ContactImportKeyColumnInput to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "kind":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Kind.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"kind\"")
+			}
+		case "key":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Key.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"key\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode ContactImportKeyColumnInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000011,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfContactImportKeyColumnInput) {
+					name = jsonFieldsNameOfContactImportKeyColumnInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *ContactImportKeyColumnInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ContactImportKeyColumnInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ContactImportKeyColumnInputKind as json.
+func (s ContactImportKeyColumnInputKind) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes ContactImportKeyColumnInputKind from json.
+func (s *ContactImportKeyColumnInputKind) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ContactImportKeyColumnInputKind to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch ContactImportKeyColumnInputKind(v) {
+	case ContactImportKeyColumnInputKindKey:
+		*s = ContactImportKeyColumnInputKindKey
+	default:
+		*s = ContactImportKeyColumnInputKind(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s ContactImportKeyColumnInputKind) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ContactImportKeyColumnInputKind) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ContactImportKeyColumnKind as json.
+func (s ContactImportKeyColumnKind) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes ContactImportKeyColumnKind from json.
+func (s *ContactImportKeyColumnKind) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ContactImportKeyColumnKind to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch ContactImportKeyColumnKind(v) {
+	case ContactImportKeyColumnKindKey:
+		*s = ContactImportKeyColumnKindKey
+	default:
+		*s = ContactImportKeyColumnKind(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s ContactImportKeyColumnKind) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ContactImportKeyColumnKind) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *ContactImportMapping) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *ContactImportMapping) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("columns")
+		e.ArrStart()
+		for _, elem := range s.Columns {
+			elem.Encode(e)
+		}
+		e.ArrEnd()
+	}
+	{
+		e.FieldStart("decimalSeparator")
+		s.DecimalSeparator.Encode(e)
+	}
+	{
+		e.FieldStart("defaultCountry")
+		s.DefaultCountry.Encode(e)
+	}
+	{
+		e.FieldStart("tag")
+		s.Tag.Encode(e)
+	}
+	{
+		e.FieldStart("onlyAddNew")
+		e.Bool(s.OnlyAddNew)
+	}
+}
+
+var jsonFieldsNameOfContactImportMapping = [5]string{
+	0: "columns",
+	1: "decimalSeparator",
+	2: "defaultCountry",
+	3: "tag",
+	4: "onlyAddNew",
+}
+
+// Decode decodes ContactImportMapping from json.
+func (s *ContactImportMapping) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ContactImportMapping to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "columns":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				s.Columns = make([]ContactImportColumn, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem ContactImportColumn
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.Columns = append(s.Columns, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"columns\"")
+			}
+		case "decimalSeparator":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.DecimalSeparator.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"decimalSeparator\"")
+			}
+		case "defaultCountry":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				if err := s.DefaultCountry.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"defaultCountry\"")
+			}
+		case "tag":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				if err := s.Tag.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"tag\"")
+			}
+		case "onlyAddNew":
+			requiredBitSet[0] |= 1 << 4
+			if err := func() error {
+				v, err := d.Bool()
+				s.OnlyAddNew = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"onlyAddNew\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode ContactImportMapping")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00011111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfContactImportMapping) {
+					name = jsonFieldsNameOfContactImportMapping[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *ContactImportMapping) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ContactImportMapping) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *ContactImportMappingInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *ContactImportMappingInput) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("columns")
+		e.ArrStart()
+		for _, elem := range s.Columns {
+			elem.Encode(e)
+		}
+		e.ArrEnd()
+	}
+	{
+		e.FieldStart("decimalSeparator")
+		s.DecimalSeparator.Encode(e)
+	}
+	{
+		e.FieldStart("defaultCountry")
+		s.DefaultCountry.Encode(e)
+	}
+	{
+		e.FieldStart("tag")
+		s.Tag.Encode(e)
+	}
+	{
+		e.FieldStart("onlyAddNew")
+		e.Bool(s.OnlyAddNew)
+	}
+}
+
+var jsonFieldsNameOfContactImportMappingInput = [5]string{
+	0: "columns",
+	1: "decimalSeparator",
+	2: "defaultCountry",
+	3: "tag",
+	4: "onlyAddNew",
+}
+
+// Decode decodes ContactImportMappingInput from json.
+func (s *ContactImportMappingInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ContactImportMappingInput to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "columns":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				s.Columns = make([]ContactImportColumnInput, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem ContactImportColumnInput
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.Columns = append(s.Columns, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"columns\"")
+			}
+		case "decimalSeparator":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.DecimalSeparator.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"decimalSeparator\"")
+			}
+		case "defaultCountry":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				if err := s.DefaultCountry.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"defaultCountry\"")
+			}
+		case "tag":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				if err := s.Tag.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"tag\"")
+			}
+		case "onlyAddNew":
+			requiredBitSet[0] |= 1 << 4
+			if err := func() error {
+				v, err := d.Bool()
+				s.OnlyAddNew = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"onlyAddNew\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode ContactImportMappingInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00011111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfContactImportMappingInput) {
+					name = jsonFieldsNameOfContactImportMappingInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *ContactImportMappingInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ContactImportMappingInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *ContactImportPreviewRow) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *ContactImportPreviewRow) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("row")
+		e.Int32(s.Row)
+	}
+	{
+		e.FieldStart("cells")
+		e.ArrStart()
+		for _, elem := range s.Cells {
+			e.Str(elem)
+		}
+		e.ArrEnd()
+	}
+	{
+		e.FieldStart("refusal")
+		s.Refusal.Encode(e)
+	}
+	{
+		e.FieldStart("dropped")
+		e.ArrStart()
+		for _, elem := range s.Dropped {
+			elem.Encode(e)
+		}
+		e.ArrEnd()
+	}
+	{
+		e.FieldStart("warnings")
+		e.ArrStart()
+		for _, elem := range s.Warnings {
+			elem.Encode(e)
+		}
+		e.ArrEnd()
+	}
+}
+
+var jsonFieldsNameOfContactImportPreviewRow = [5]string{
+	0: "row",
+	1: "cells",
+	2: "refusal",
+	3: "dropped",
+	4: "warnings",
+}
+
+// Decode decodes ContactImportPreviewRow from json.
+func (s *ContactImportPreviewRow) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ContactImportPreviewRow to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "row":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := d.Int32()
+				s.Row = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"row\"")
+			}
+		case "cells":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				s.Cells = make([]string, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem string
+					v, err := d.Str()
+					elem = string(v)
+					if err != nil {
+						return err
+					}
+					s.Cells = append(s.Cells, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"cells\"")
+			}
+		case "refusal":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				if err := s.Refusal.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"refusal\"")
+			}
+		case "dropped":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				s.Dropped = make([]ContactImportIssue, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem ContactImportIssue
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.Dropped = append(s.Dropped, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"dropped\"")
+			}
+		case "warnings":
+			requiredBitSet[0] |= 1 << 4
+			if err := func() error {
+				s.Warnings = make([]ContactImportWarning, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem ContactImportWarning
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.Warnings = append(s.Warnings, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"warnings\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode ContactImportPreviewRow")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00011111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfContactImportPreviewRow) {
+					name = jsonFieldsNameOfContactImportPreviewRow[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *ContactImportPreviewRow) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ContactImportPreviewRow) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ContactImportState as json.
+func (s ContactImportState) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes ContactImportState from json.
+func (s *ContactImportState) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ContactImportState to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch ContactImportState(v) {
+	case ContactImportStateUploaded:
+		*s = ContactImportStateUploaded
+	case ContactImportStateReady:
+		*s = ContactImportStateReady
+	case ContactImportStateRunning:
+		*s = ContactImportStateRunning
+	case ContactImportStateCancelled:
+		*s = ContactImportStateCancelled
+	case ContactImportStateFailed:
+		*s = ContactImportStateFailed
+	case ContactImportStateDone:
+		*s = ContactImportStateDone
+	default:
+		*s = ContactImportState(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s ContactImportState) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ContactImportState) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *ContactImportTagsColumn) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *ContactImportTagsColumn) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("kind")
+		s.Kind.Encode(e)
+	}
+}
+
+var jsonFieldsNameOfContactImportTagsColumn = [1]string{
+	0: "kind",
+}
+
+// Decode decodes ContactImportTagsColumn from json.
+func (s *ContactImportTagsColumn) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ContactImportTagsColumn to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "kind":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Kind.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"kind\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode ContactImportTagsColumn")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000001,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfContactImportTagsColumn) {
+					name = jsonFieldsNameOfContactImportTagsColumn[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *ContactImportTagsColumn) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ContactImportTagsColumn) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *ContactImportTagsColumnInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *ContactImportTagsColumnInput) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("kind")
+		s.Kind.Encode(e)
+	}
+}
+
+var jsonFieldsNameOfContactImportTagsColumnInput = [1]string{
+	0: "kind",
+}
+
+// Decode decodes ContactImportTagsColumnInput from json.
+func (s *ContactImportTagsColumnInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ContactImportTagsColumnInput to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "kind":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Kind.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"kind\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode ContactImportTagsColumnInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000001,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfContactImportTagsColumnInput) {
+					name = jsonFieldsNameOfContactImportTagsColumnInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *ContactImportTagsColumnInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ContactImportTagsColumnInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ContactImportTagsColumnInputKind as json.
+func (s ContactImportTagsColumnInputKind) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes ContactImportTagsColumnInputKind from json.
+func (s *ContactImportTagsColumnInputKind) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ContactImportTagsColumnInputKind to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch ContactImportTagsColumnInputKind(v) {
+	case ContactImportTagsColumnInputKindTags:
+		*s = ContactImportTagsColumnInputKindTags
+	default:
+		*s = ContactImportTagsColumnInputKind(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s ContactImportTagsColumnInputKind) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ContactImportTagsColumnInputKind) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ContactImportTagsColumnKind as json.
+func (s ContactImportTagsColumnKind) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes ContactImportTagsColumnKind from json.
+func (s *ContactImportTagsColumnKind) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ContactImportTagsColumnKind to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch ContactImportTagsColumnKind(v) {
+	case ContactImportTagsColumnKindTags:
+		*s = ContactImportTagsColumnKindTags
+	default:
+		*s = ContactImportTagsColumnKind(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s ContactImportTagsColumnKind) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ContactImportTagsColumnKind) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ContactImportWarning as json.
+func (s ContactImportWarning) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes ContactImportWarning from json.
+func (s *ContactImportWarning) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ContactImportWarning to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch ContactImportWarning(v) {
+	case ContactImportWarningDisposableEmail:
+		*s = ContactImportWarningDisposableEmail
+	case ContactImportWarningRoleEmail:
+		*s = ContactImportWarningRoleEmail
+	default:
+		*s = ContactImportWarning(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s ContactImportWarning) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ContactImportWarning) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes CountryCode as json.
 func (s CountryCode) Encode(e *jx.Encoder) {
 	unwrapped := string(s)
@@ -18456,6 +21526,117 @@ func (s DnsRecordType) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *DnsRecordType) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *DownloadLink) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *DownloadLink) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("url")
+		e.Str(s.URL)
+	}
+	{
+		e.FieldStart("expiresAt")
+		s.ExpiresAt.Encode(e)
+	}
+}
+
+var jsonFieldsNameOfDownloadLink = [2]string{
+	0: "url",
+	1: "expiresAt",
+}
+
+// Decode decodes DownloadLink from json.
+func (s *DownloadLink) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode DownloadLink to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "url":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := d.Str()
+				s.URL = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"url\"")
+			}
+		case "expiresAt":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.ExpiresAt.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"expiresAt\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode DownloadLink")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000011,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfDownloadLink) {
+					name = jsonFieldsNameOfDownloadLink[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *DownloadLink) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *DownloadLink) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -28105,6 +31286,94 @@ func (s *NilAutomationVersion) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes ContactImportDateFormat as json.
+func (o NilContactImportDateFormat) Encode(e *jx.Encoder) {
+	if o.Null {
+		e.Null()
+		return
+	}
+	e.Str(string(o.Value))
+}
+
+// Decode decodes ContactImportDateFormat from json.
+func (o *NilContactImportDateFormat) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode NilContactImportDateFormat to nil")
+	}
+	if d.Next() == jx.Null {
+		if err := d.Null(); err != nil {
+			return err
+		}
+
+		var v ContactImportDateFormat
+		o.Value = v
+		o.Null = true
+		return nil
+	}
+	o.Null = false
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s NilContactImportDateFormat) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *NilContactImportDateFormat) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ContactImportIssue as json.
+func (o NilContactImportIssue) Encode(e *jx.Encoder) {
+	if o.Null {
+		e.Null()
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes ContactImportIssue from json.
+func (o *NilContactImportIssue) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode NilContactImportIssue to nil")
+	}
+	if d.Next() == jx.Null {
+		if err := d.Null(); err != nil {
+			return err
+		}
+
+		var v ContactImportIssue
+		o.Value = v
+		o.Null = true
+		return nil
+	}
+	o.Null = false
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s NilContactImportIssue) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *NilContactImportIssue) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes CountryCode as json.
 func (o NilCountryCode) Encode(e *jx.Encoder) {
 	if o.Null {
@@ -28593,6 +31862,50 @@ func (s NilInt64) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *NilInt64) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes Name as json.
+func (o NilName) Encode(e *jx.Encoder) {
+	if o.Null {
+		e.Null()
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes Name from json.
+func (o *NilName) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode NilName to nil")
+	}
+	if d.Next() == jx.Null {
+		if err := d.Null(); err != nil {
+			return err
+		}
+
+		var v Name
+		o.Value = v
+		o.Null = true
+		return nil
+	}
+	o.Null = false
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s NilName) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *NilName) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -29717,6 +33030,39 @@ func (s OptBroadcastContentInput) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *OptBroadcastContentInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes CountryCode as json.
+func (o OptCountryCode) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes CountryCode from json.
+func (o *OptCountryCode) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptCountryCode to nil")
+	}
+	o.Set = true
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptCountryCode) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptCountryCode) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -33544,6 +36890,8 @@ func (s *Permission) Decode(d *jx.Decoder) error {
 		*s = PermissionContactsErase
 	case PermissionContactsExport:
 		*s = PermissionContactsExport
+	case PermissionContactsImport:
+		*s = PermissionContactsImport
 	case PermissionCustomFieldsManage:
 		*s = PermissionCustomFieldsManage
 	case PermissionSuppressionsManage:
@@ -51399,6 +54747,460 @@ func (s *SiteContactHoldings) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *SiteContactHoldings) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *SiteContactImport) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SiteContactImport) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("id")
+		s.ID.Encode(e)
+	}
+	{
+		e.FieldStart("state")
+		s.State.Encode(e)
+	}
+	{
+		e.FieldStart("delimiter")
+		s.Delimiter.Encode(e)
+	}
+	{
+		e.FieldStart("header")
+		e.ArrStart()
+		for _, elem := range s.Header {
+			e.Str(elem)
+		}
+		e.ArrEnd()
+	}
+	{
+		e.FieldStart("rows")
+		e.Int32(s.Rows)
+	}
+	{
+		e.FieldStart("malformedRows")
+		e.Int32(s.MalformedRows)
+	}
+	{
+		e.FieldStart("mapping")
+		s.Mapping.Encode(e)
+	}
+	{
+		e.FieldStart("counts")
+		s.Counts.Encode(e)
+	}
+	{
+		e.FieldStart("reportRows")
+		e.Int32(s.ReportRows)
+	}
+	{
+		e.FieldStart("createdAt")
+		s.CreatedAt.Encode(e)
+	}
+	{
+		e.FieldStart("startedAt")
+		s.StartedAt.Encode(e)
+	}
+	{
+		e.FieldStart("endedAt")
+		s.EndedAt.Encode(e)
+	}
+}
+
+var jsonFieldsNameOfSiteContactImport = [12]string{
+	0:  "id",
+	1:  "state",
+	2:  "delimiter",
+	3:  "header",
+	4:  "rows",
+	5:  "malformedRows",
+	6:  "mapping",
+	7:  "counts",
+	8:  "reportRows",
+	9:  "createdAt",
+	10: "startedAt",
+	11: "endedAt",
+}
+
+// Decode decodes SiteContactImport from json.
+func (s *SiteContactImport) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteContactImport to nil")
+	}
+	var requiredBitSet [2]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "id":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.ID.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"id\"")
+			}
+		case "state":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.State.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"state\"")
+			}
+		case "delimiter":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				if err := s.Delimiter.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"delimiter\"")
+			}
+		case "header":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				s.Header = make([]string, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem string
+					v, err := d.Str()
+					elem = string(v)
+					if err != nil {
+						return err
+					}
+					s.Header = append(s.Header, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"header\"")
+			}
+		case "rows":
+			requiredBitSet[0] |= 1 << 4
+			if err := func() error {
+				v, err := d.Int32()
+				s.Rows = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"rows\"")
+			}
+		case "malformedRows":
+			requiredBitSet[0] |= 1 << 5
+			if err := func() error {
+				v, err := d.Int32()
+				s.MalformedRows = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"malformedRows\"")
+			}
+		case "mapping":
+			requiredBitSet[0] |= 1 << 6
+			if err := func() error {
+				if err := s.Mapping.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"mapping\"")
+			}
+		case "counts":
+			requiredBitSet[0] |= 1 << 7
+			if err := func() error {
+				if err := s.Counts.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"counts\"")
+			}
+		case "reportRows":
+			requiredBitSet[1] |= 1 << 0
+			if err := func() error {
+				v, err := d.Int32()
+				s.ReportRows = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"reportRows\"")
+			}
+		case "createdAt":
+			requiredBitSet[1] |= 1 << 1
+			if err := func() error {
+				if err := s.CreatedAt.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"createdAt\"")
+			}
+		case "startedAt":
+			requiredBitSet[1] |= 1 << 2
+			if err := func() error {
+				if err := s.StartedAt.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"startedAt\"")
+			}
+		case "endedAt":
+			requiredBitSet[1] |= 1 << 3
+			if err := func() error {
+				if err := s.EndedAt.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"endedAt\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SiteContactImport")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [2]uint8{
+		0b11111111,
+		0b00001111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSiteContactImport) {
+					name = jsonFieldsNameOfSiteContactImport[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteContactImport) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteContactImport) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *SiteContactImportPreview) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SiteContactImportPreview) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("rows")
+		e.ArrStart()
+		for _, elem := range s.Rows {
+			elem.Encode(e)
+		}
+		e.ArrEnd()
+	}
+	{
+		e.FieldStart("totalRows")
+		e.Int32(s.TotalRows)
+	}
+	{
+		e.FieldStart("rowsWithoutKey")
+		e.Int32(s.RowsWithoutKey)
+	}
+	{
+		e.FieldStart("malformedRows")
+		e.Int32(s.MalformedRows)
+	}
+	{
+		e.FieldStart("distinctTags")
+		e.Int32(s.DistinctTags)
+	}
+}
+
+var jsonFieldsNameOfSiteContactImportPreview = [5]string{
+	0: "rows",
+	1: "totalRows",
+	2: "rowsWithoutKey",
+	3: "malformedRows",
+	4: "distinctTags",
+}
+
+// Decode decodes SiteContactImportPreview from json.
+func (s *SiteContactImportPreview) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteContactImportPreview to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "rows":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				s.Rows = make([]ContactImportPreviewRow, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem ContactImportPreviewRow
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.Rows = append(s.Rows, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"rows\"")
+			}
+		case "totalRows":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Int32()
+				s.TotalRows = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"totalRows\"")
+			}
+		case "rowsWithoutKey":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Int32()
+				s.RowsWithoutKey = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"rowsWithoutKey\"")
+			}
+		case "malformedRows":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				v, err := d.Int32()
+				s.MalformedRows = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"malformedRows\"")
+			}
+		case "distinctTags":
+			requiredBitSet[0] |= 1 << 4
+			if err := func() error {
+				v, err := d.Int32()
+				s.DistinctTags = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"distinctTags\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SiteContactImportPreview")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00011111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSiteContactImportPreview) {
+					name = jsonFieldsNameOfSiteContactImportPreview[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteContactImportPreview) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteContactImportPreview) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
