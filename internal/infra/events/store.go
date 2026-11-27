@@ -29,7 +29,7 @@ var _ = db.Declare(
 // again. The row stays as it was and the caller publishes nothing more. The insert skips the
 // conflict rather than failing on it, because a failed statement would abort the producer's
 // whole transaction.
-func storeEvent(ctx context.Context, client *ent.Client, env Envelope, ev DomainEvent, p Projection) (bool, error) {
+func storeEvent(ctx context.Context, client *ent.Client, env Envelope, p Projection) (bool, error) {
 	create := client.Event.Create().
 		SetWorkspaceID(env.WorkspaceID).
 		SetSubjectID(p.Subject).

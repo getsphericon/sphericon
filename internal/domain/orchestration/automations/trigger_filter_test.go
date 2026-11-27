@@ -1,7 +1,6 @@
 package automations_test
 
 import (
-	"context"
 	"encoding/json"
 	"testing"
 	"time"
@@ -47,13 +46,14 @@ func liveOn(t *testing.T, env *testhelper.TestEnv, trigger eventmatcher.Matcher)
 // to the Automations as its trigger job does.
 func handStored(t *testing.T, env *testhelper.TestEnv, contactID int64, action string, ev events.DomainEvent) {
 	t.Helper()
-	handStoredIn(t.Context(), t, env, contactID, action, ev)
+	handStoredAs(t, env, contactID, action, events.Cause{}, ev)
 }
 
-// handStoredIn is handStored with ev published in ctx (events.WithCause, a history mark).
-func handStoredIn(ctx context.Context, t *testing.T, env *testhelper.TestEnv, contactID int64, action string, ev events.DomainEvent) {
+// handStoredAs is handStored with ev published as brought by cause (events.WithCause): a Backfill
+// or an import's is history.
+func handStoredAs(t *testing.T, env *testhelper.TestEnv, contactID int64, action string, cause events.Cause, ev events.DomainEvent) {
 	t.Helper()
-	require.NoError(t, env.Publisher().Publish(ctx, ev))
+	require.NoError(t, env.Publisher().Publish(events.WithCause(t.Context(), cause), ev))
 	stored := env.StoredEvents(t, action)
 	require.NotEmpty(t, stored)
 	last := stored[len(stored)-1]

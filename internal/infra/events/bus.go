@@ -292,7 +292,7 @@ func (p *txPublisher) Publish(ctx context.Context, ev DomainEvent) (err error) {
 		return err
 	}
 	if projected {
-		first, err := storeEvent(ctx, p.client, env, ev, projection)
+		first, err := storeEvent(ctx, p.client, env, projection)
 		if err != nil {
 			return err
 		}
