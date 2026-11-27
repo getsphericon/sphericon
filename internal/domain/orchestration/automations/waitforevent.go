@@ -133,7 +133,7 @@ func checkAwaitedEndings(def definition) error {
 		}
 	}
 	for st, w := range automationstep.WaitsForEvents(def.steps) {
-		for _, action := range awaitedActions(w) {
+		for _, action := range awaitedActions(*w) {
 			if unfiltered[action] {
 				return refuse(st, fmt.Sprintf("it awaits %q, which an exit or the goal ends the enrollment on with no filter, so it would never arrive", action))
 			}

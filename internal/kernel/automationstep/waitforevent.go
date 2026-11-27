@@ -195,12 +195,13 @@ func (w *WaitForEvent) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// WaitsForEvents yields each Wait for event of the tree with its Step, in the walker's order (All).
-func WaitsForEvents(p Path) iter.Seq2[*Step, WaitForEvent] {
-	return func(yield func(*Step, WaitForEvent) bool) {
+// WaitsForEvents yields each Wait for event of the tree with its Step, in the walker's order (All),
+// as a copy the caller may read.
+func WaitsForEvents(p Path) iter.Seq2[*Step, *WaitForEvent] {
+	return func(yield func(*Step, *WaitForEvent) bool) {
 		for _, st := range All(p) {
 			w, ok := st.Payload.(WaitForEvent)
-			if ok && !yield(st, w) {
+			if ok && !yield(st, &w) {
 				return
 			}
 		}
