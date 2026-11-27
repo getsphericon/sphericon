@@ -1,0 +1,30 @@
+id: one-csv-writer
+valid:
+  - |
+    func export(rows [][]string) iter.Seq2[[]byte, error] {
+    	return csvfile.Chunks(func(yield func([][]string, error) bool) { yield(rows, nil) })
+    }
+  - |
+    func report(w http.ResponseWriter, rows [][]string) error {
+    	out := csvfile.NewWriter(w)
+    	for _, row := range rows {
+    		if err := out.Write(row); err != nil {
+    			return err
+    		}
+    	}
+    	return out.Flush()
+    }
+  - |
+    func read(r io.Reader) ([][]string, error) {
+    	return csv.NewReader(r).ReadAll()
+    }
+invalid:
+  - |
+    func export(buf *bytes.Buffer, rows [][]string) error {
+    	return csv.NewWriter(buf).WriteAll(rows)
+    }
+  - |
+    func report(w http.ResponseWriter) {
+    	out := csv.NewWriter(w)
+    	out.Flush()
+    }
