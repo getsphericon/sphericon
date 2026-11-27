@@ -65,9 +65,6 @@ const (
 	PartConfirmedAt = "confirmedAt"
 )
 
-// channelParts are a Channel's columns, in their order.
-var channelParts = []string{PartState, PartOptedOutScopes, PartOptedOutAt, PartSuppressionReason, PartConfirmation, PartConfirmedAt}
-
 // CustomFieldHeader is the header of the Custom field key.
 func CustomFieldHeader(key string) string { return CustomFieldPrefix + key }
 
@@ -141,23 +138,25 @@ type layout struct {
 func newLayout(ctx context.Context, s *ent.Scoped, cols []Column) (layout, error) {
 	var l layout
 	for _, col := range cols {
-		if attr, ok := attributes[col]; ok {
+		switch col {
+		case ColumnSubjectID, ColumnEmail, ColumnPhone, ColumnFirstName, ColumnLastName, ColumnTimeZone,
+			ColumnCountry, ColumnLocale, ColumnBirthday, ColumnCity, ColumnAvatar, ColumnSource,
+			ColumnCreatedAt, ColumnUpdatedAt, ColumnTags:
+			attr := attributes[col]
 			l.cells = append(l.cells, cell{header: string(col), value: func(c *ent.Contact, _ eligibility.ContactStates) string { return attr(c) }})
-			continue
-		}
-		if ch, ok := channelOf[col]; ok {
+		case ColumnEmailChannel, ColumnSMSChannel, ColumnTelegramChannel:
 			l.states = true
-			l.cells = append(l.cells, channelCells(ch)...)
-			continue
-		}
-		var keys []string
-		if err := s.CustomField().Query().Order(ent.Asc(customfield.FieldKey)).Select(customfield.FieldKey).Scan(ctx, &keys); err != nil {
-			return layout{}, err
-		}
-		for _, key := range keys {
-			l.cells = append(l.cells, cell{header: CustomFieldHeader(key), value: func(c *ent.Contact, _ eligibility.ContactStates) string {
-				return fieldValue(c.CustomFields[key])
-			}})
+			l.cells = append(l.cells, channelCells(channelOf[col])...)
+		case ColumnCustomFields:
+			var keys []string
+			if err := s.CustomField().Query().Order(ent.Asc(customfield.FieldKey)).Select(customfield.FieldKey).Scan(ctx, &keys); err != nil {
+				return layout{}, err
+			}
+			for _, key := range keys {
+				l.cells = append(l.cells, cell{header: CustomFieldHeader(key), value: func(c *ent.Contact, _ eligibility.ContactStates) string {
+					return fieldValue(c.CustomFields[key])
+				}})
+			}
 		}
 	}
 	return l, nil
