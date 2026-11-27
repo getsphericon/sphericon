@@ -539,6 +539,14 @@ type Invoker interface {
 	//
 	// GET /workspaces/{workspaceId}/contact-exports/{token}
 	SiteContactCsvExportsDownload(ctx context.Context, params SiteContactCsvExportsDownloadParams) (*SiteContactCsvExportsDownloadOKHeaders, error)
+	// SiteContactImportsCancel invokes SiteContactImports_cancel operation.
+	//
+	// Stop a running import: its job stops after the batch it is writing and it ends `cancelled`, keeping
+	// the Contacts it wrote and its report; its file is deleted. An import not running, or asked to stop
+	// already, is refused (409).
+	//
+	// POST /workspaces/{workspaceId}/contact-imports/{importId}/cancel
+	SiteContactImportsCancel(ctx context.Context, params SiteContactImportsCancelParams) (*SiteContactImport, error)
 	// SiteContactImportsGet invokes SiteContactImports_get operation.
 	//
 	// Read an import: its state, its mapping and how far its run is.
@@ -568,7 +576,9 @@ type Invoker interface {
 	// SiteContactImportsRun invokes SiteContactImports_run operation.
 	//
 	// Run a `ready` import: its job writes the rows through the Contact intake, acting as the Member, and
-	// starts nothing (its Events are history). A date column without a format is refused (422).
+	// starts nothing (its Events are history). A date column without a format is refused (422); so is a
+	// run while another import of the Workspace runs (409): one runs at a time. A run resumes from its
+	// last batch after a restart, and ends `failed` when its job's tries are spent.
 	//
 	// POST /workspaces/{workspaceId}/contact-imports/{importId}/run
 	SiteContactImportsRun(ctx context.Context, params SiteContactImportsRunParams) (*SiteContactImport, error)
@@ -11573,6 +11583,165 @@ func (c *Client) sendSiteContactCsvExportsDownload(ctx context.Context, params S
 	return result, nil
 }
 
+// SiteContactImportsCancel invokes SiteContactImports_cancel operation.
+//
+// Stop a running import: its job stops after the batch it is writing and it ends `cancelled`, keeping
+// the Contacts it wrote and its report; its file is deleted. An import not running, or asked to stop
+// already, is refused (409).
+//
+// POST /workspaces/{workspaceId}/contact-imports/{importId}/cancel
+func (c *Client) SiteContactImportsCancel(ctx context.Context, params SiteContactImportsCancelParams) (*SiteContactImport, error) {
+	res, err := c.sendSiteContactImportsCancel(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendSiteContactImportsCancel(ctx context.Context, params SiteContactImportsCancelParams) (res *SiteContactImport, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteContactImports_cancel"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/workspaces/{workspaceId}/contact-imports/{importId}/cancel"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteContactImportsCancelOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [5]string
+	pathParts[0] = "/workspaces/"
+	{
+		// Encode "workspaceId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "workspaceId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := string(params.WorkspaceId); true {
+				return e.EncodeValue(conv.StringToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/contact-imports/"
+	{
+		// Encode "importId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "importId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := publicid.ID(params.ImportId); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[3] = encoded
+	}
+	pathParts[4] = "/cancel"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, SiteContactImportsCancelOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteContactImportsCancelResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
 // SiteContactImportsGet invokes SiteContactImports_get operation.
 //
 // Read an import: its state, its mapping and how far its run is.
@@ -12223,7 +12392,9 @@ func (c *Client) sendSiteContactImportsReportLink(ctx context.Context, params Si
 // SiteContactImportsRun invokes SiteContactImports_run operation.
 //
 // Run a `ready` import: its job writes the rows through the Contact intake, acting as the Member, and
-// starts nothing (its Events are history). A date column without a format is refused (422).
+// starts nothing (its Events are history). A date column without a format is refused (422); so is a
+// run while another import of the Workspace runs (409): one runs at a time. A run resumes from its
+// last batch after a restart, and ends `failed` when its job's tries are spent.
 //
 // POST /workspaces/{workspaceId}/contact-imports/{importId}/run
 func (c *Client) SiteContactImportsRun(ctx context.Context, params SiteContactImportsRunParams) (*SiteContactImport, error) {

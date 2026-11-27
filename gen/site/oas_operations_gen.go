@@ -72,6 +72,7 @@ const (
 	SiteConnectionsListOperation                        OperationName = "SiteConnectionsList"
 	SiteContactCsvExportsCreateOperation                OperationName = "SiteContactCsvExportsCreate"
 	SiteContactCsvExportsDownloadOperation              OperationName = "SiteContactCsvExportsDownload"
+	SiteContactImportsCancelOperation                   OperationName = "SiteContactImportsCancel"
 	SiteContactImportsGetOperation                      OperationName = "SiteContactImportsGet"
 	SiteContactImportsPreviewOperation                  OperationName = "SiteContactImportsPreview"
 	SiteContactImportsReportOperation                   OperationName = "SiteContactImportsReport"

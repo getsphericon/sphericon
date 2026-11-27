@@ -7427,6 +7427,10 @@ export type SiteContactImport = {
    * When the run ended; null before it
    */
   endedAt: Timestamp | null;
+  /**
+   * When a Member asked the running import to stop; it stops after the batch it is writing. Null when no one did
+   */
+  cancelRequestedAt: Timestamp | null;
 };
 
 /**
@@ -16985,6 +16989,39 @@ export type SiteContactImportsGetResponses = {
 };
 
 export type SiteContactImportsGetResponse = SiteContactImportsGetResponses[keyof SiteContactImportsGetResponses];
+
+export type SiteContactImportsCancelData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+    importId: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/contact-imports/{importId}/cancel';
+};
+
+export type SiteContactImportsCancelErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SiteContactImportsCancelError = SiteContactImportsCancelErrors[keyof SiteContactImportsCancelErrors];
+
+export type SiteContactImportsCancelResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteContactImport;
+};
+
+export type SiteContactImportsCancelResponse = SiteContactImportsCancelResponses[keyof SiteContactImportsCancelResponses];
 
 export type SiteContactImportsSaveMappingData = {
   body: ContactImportMappingInput;

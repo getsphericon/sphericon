@@ -55122,9 +55122,13 @@ func (s *SiteContactImport) encodeFields(e *jx.Encoder) {
 		e.FieldStart("endedAt")
 		s.EndedAt.Encode(e)
 	}
+	{
+		e.FieldStart("cancelRequestedAt")
+		s.CancelRequestedAt.Encode(e)
+	}
 }
 
-var jsonFieldsNameOfSiteContactImport = [12]string{
+var jsonFieldsNameOfSiteContactImport = [13]string{
 	0:  "id",
 	1:  "state",
 	2:  "delimiter",
@@ -55137,6 +55141,7 @@ var jsonFieldsNameOfSiteContactImport = [12]string{
 	9:  "createdAt",
 	10: "startedAt",
 	11: "endedAt",
+	12: "cancelRequestedAt",
 }
 
 // Decode decodes SiteContactImport from json.
@@ -55284,6 +55289,16 @@ func (s *SiteContactImport) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"endedAt\"")
 			}
+		case "cancelRequestedAt":
+			requiredBitSet[1] |= 1 << 4
+			if err := func() error {
+				if err := s.CancelRequestedAt.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"cancelRequestedAt\"")
+			}
 		default:
 			return d.Skip()
 		}
@@ -55295,7 +55310,7 @@ func (s *SiteContactImport) Decode(d *jx.Decoder) error {
 	var failures []validate.FieldError
 	for i, mask := range [2]uint8{
 		0b11111111,
-		0b00001111,
+		0b00011111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

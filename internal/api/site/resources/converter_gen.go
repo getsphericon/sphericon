@@ -1294,6 +1294,11 @@ func (c *ConverterImpl) ContactImportToResource(source contactimports.View) site
 		pTimeTime3 = source.Import.EndedAt
 	}
 	siteapiSiteContactImport.EndedAt = nilTimestamp(pTimeTime3)
+	var pTimeTime4 *time.Time
+	if source.Import != nil {
+		pTimeTime4 = source.Import.CancelRequestedAt
+	}
+	siteapiSiteContactImport.CancelRequestedAt = nilTimestamp(pTimeTime4)
 	return siteapiSiteContactImport
 }
 func (c *ConverterImpl) ContactImportWarning(source contacts.Warning) site.ContactImportWarning {

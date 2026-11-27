@@ -300,3 +300,43 @@ func TestAContactImportReportDownloadsOnceInItsSession(t *testing.T) {
 	testhelper.SiteRefusal(t, again, http.StatusBadRequest)
 	testhelper.SiteRefusal(t, gone, http.StatusNotFound)
 }
+
+// One import of a Workspace runs at a time, and a running one is cancelled once: it is asked to
+// stop, then stops at its next batch, cancelled.
+func TestAContactImportRunsAloneAndIsCancelledOnce(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	first := uploaded(t, owner, "email\nfirst@example.com\n")
+	second := uploaded(t, owner, "email\nsecond@example.com\n")
+	_, err := saveMapping(t, owner, first, mappingInput(t, first))
+	require.NoError(t, err)
+	_, err = saveMapping(t, owner, second, mappingInput(t, second))
+	require.NoError(t, err)
+	run := func(imp *siteapi.SiteContactImport) error {
+		_, err := owner.SiteContactImportsRun(ctx, siteapi.SiteContactImportsRunParams{WorkspaceId: fixtures.AcmePublicID, ImportId: imp.ID})
+		return err
+	}
+	cancel := func(imp *siteapi.SiteContactImport) (*siteapi.SiteContactImport, error) {
+		return owner.SiteContactImportsCancel(ctx, siteapi.SiteContactImportsCancelParams{WorkspaceId: fixtures.AcmePublicID, ImportId: imp.ID})
+	}
+
+	require.NoError(t, run(first))
+	alongside := run(second)
+	asked, err := cancel(first)
+	require.NoError(t, err)
+	_, twice := cancel(first)
+	_, notRunning := cancel(second)
+	env.PerformEnqueuedJobs(t)
+	ended, err := owner.SiteContactImportsGet(ctx, siteapi.SiteContactImportsGetParams{WorkspaceId: fixtures.AcmePublicID, ImportId: first.ID})
+	require.NoError(t, err)
+
+	testhelper.SiteRefusal(t, alongside, http.StatusConflict)
+	assert.False(t, asked.CancelRequestedAt.Null, "the stop is asked")
+	assert.Equal(t, siteapi.ContactImportStateRunning, asked.State)
+	testhelper.SiteRefusal(t, twice, http.StatusConflict)
+	testhelper.SiteRefusal(t, notRunning, http.StatusConflict)
+	assert.Equal(t, siteapi.ContactImportStateCancelled, ended.State)
+	assert.Nil(t, contactByEmail(t, env, "first@example.com"), "it stopped before its batch")
+	require.NoError(t, run(second), "the next import runs once the first ended")
+}

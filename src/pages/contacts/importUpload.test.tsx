@@ -30,6 +30,7 @@ const UPLOADED: SiteContactImport = {
   createdAt: TIMESTAMPS.createdAt,
   startedAt: null,
   endedAt: null,
+  cancelRequestedAt: null,
 }
 
 // The critical path of an import: the file the Member picks is sent whole as the request's

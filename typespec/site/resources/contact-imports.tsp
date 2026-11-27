@@ -220,6 +220,9 @@ model SiteContactImport {
 
   /** When the run ended; null before it */
   endedAt: Timestamp | null;
+
+  /** When a Member asked the running import to stop; it stops after the batch it is writing. Null when no one did */
+  cancelRequestedAt: Timestamp | null;
 }
 
 /** Why a value or a row of an import is not written */
@@ -383,12 +386,26 @@ namespace SiteContactImports {
 
   /**
    * Run a `ready` import: its job writes the rows through the Contact intake, acting as the Member,
-   * and starts nothing (its Events are history). A date column without a format is refused (422).
+   * and starts nothing (its Events are history). A date column without a format is refused (422);
+   * so is a run while another import of the Workspace runs (409): one runs at a time. A run resumes
+   * from its last batch after a restart, and ends `failed` when its job's tries are spent.
    */
   @post
   @route("/{importId}/run")
   @requiresPermissions(#[Permission.contactsImport])
   op run(@path workspaceId: WorkspaceId, @path importId: EntityId):
+    | SiteContactImport
+    | Problem;
+
+  /**
+   * Stop a running import: its job stops after the batch it is writing and it ends `cancelled`,
+   * keeping the Contacts it wrote and its report; its file is deleted. An import not running, or
+   * asked to stop already, is refused (409).
+   */
+  @post
+  @route("/{importId}/cancel")
+  @requiresPermissions(#[Permission.contactsImport])
+  op cancel(@path workspaceId: WorkspaceId, @path importId: EntityId):
     | SiteContactImport
     | Problem;
 

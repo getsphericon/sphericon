@@ -33860,6 +33860,9 @@ type SiteContactImport struct {
 	StartedAt NilTimestamp `json:"startedAt"`
 	// When the run ended; null before it.
 	EndedAt NilTimestamp `json:"endedAt"`
+	// When a Member asked the running import to stop; it stops after the batch it is writing. Null when no
+	// one did.
+	CancelRequestedAt NilTimestamp `json:"cancelRequestedAt"`
 }
 
 // GetID returns the value of ID.
@@ -33922,6 +33925,11 @@ func (s *SiteContactImport) GetEndedAt() NilTimestamp {
 	return s.EndedAt
 }
 
+// GetCancelRequestedAt returns the value of CancelRequestedAt.
+func (s *SiteContactImport) GetCancelRequestedAt() NilTimestamp {
+	return s.CancelRequestedAt
+}
+
 // SetID sets the value of ID.
 func (s *SiteContactImport) SetID(val EntityId) {
 	s.ID = val
@@ -33980,6 +33988,11 @@ func (s *SiteContactImport) SetStartedAt(val NilTimestamp) {
 // SetEndedAt sets the value of EndedAt.
 func (s *SiteContactImport) SetEndedAt(val NilTimestamp) {
 	s.EndedAt = val
+}
+
+// SetCancelRequestedAt sets the value of CancelRequestedAt.
+func (s *SiteContactImport) SetCancelRequestedAt(val NilTimestamp) {
+	s.CancelRequestedAt = val
 }
 
 // What an import would do with its saved mapping (ADR 0138): its first rows, and counts over the whole

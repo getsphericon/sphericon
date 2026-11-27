@@ -92,3 +92,13 @@ func (h *Handlers) SiteContactImportsReport(ctx context.Context, params siteapi.
 		Response:           siteapi.SiteContactImportsReportOK{Data: seqreader.New(d.Chunks)},
 	}, nil
 }
+
+// SiteContactImportsCancel asks a running import to stop after its batch.
+func (h *Handlers) SiteContactImportsCancel(ctx context.Context, params siteapi.SiteContactImportsCancelParams) (*siteapi.SiteContactImport, error) {
+	v, err := h.contactImports.Cancel(ctx, workspaceScope(ctx), int64(params.ImportId))
+	if err != nil {
+		return nil, err
+	}
+	res := mapper.ContactImportToResource(v)
+	return &res, nil
+}

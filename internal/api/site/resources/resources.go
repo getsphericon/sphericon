@@ -575,6 +575,7 @@ type Converter interface {
 	// goverter:map Import Counts
 	// goverter:map Import.StartedAt StartedAt
 	// goverter:map Import.EndedAt EndedAt
+	// goverter:map Import.CancelRequestedAt CancelRequestedAt
 	// goverter:useEmptyOnNil:slice
 	ContactImportToResource(source contactimports.View) siteapi.SiteContactImport
 	ContactImportCounts(source *ent.ContactImport) siteapi.ContactImportCounts

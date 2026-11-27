@@ -4508,7 +4508,8 @@ export const zSiteContactImport = z.object({
   reportRows: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   createdAt: zTimestamp,
   startedAt: zTimestamp.nullable(),
-  endedAt: zTimestamp.nullable()
+  endedAt: zTimestamp.nullable(),
+  cancelRequestedAt: zTimestamp.nullable()
 });
 
 /**
@@ -8221,6 +8222,16 @@ export const zSiteContactImportsGetPath = z.object({
  * The request has succeeded.
  */
 export const zSiteContactImportsGetResponse = zSiteContactImport;
+
+export const zSiteContactImportsCancelPath = z.object({
+  workspaceId: zWorkspaceId,
+  importId: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteContactImportsCancelResponse = zSiteContactImport;
 
 export const zSiteContactImportsSaveMappingBody = zContactImportMappingInput;
 
