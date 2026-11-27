@@ -79,7 +79,8 @@ func TestATestOfTheAwaitedEventNamesAWaitForEventBeforeIt(t *testing.T) {
 
 // A save is refused, naming the Step, when a test of the awaited Event names no Wait for event that
 // can come before the Branch or the Wait for event holding it: a later one, the Wait for event
-// itself, or none of the version.
+// itself, or none of the version; or names one on an open or a click, which keeps no copy (ADR
+// 0136).
 func TestATestOfTheAwaitedEventNamingNoWaitForEventBeforeItIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 	for name, c := range map[string]struct {
@@ -97,6 +98,14 @@ func TestATestOfTheAwaitedEventNamingNoWaitForEventBeforeItIsRefused(t *testing.
 		"a Wait for event naming itself": {
 			automationstep.Root(waitNamed(t, purchaseID, "purchase", []string{awaitedOver100("purchase")})),
 			"step " + string(purchaseID) + ` (wait_for_event): the condition: the awaited event test names "purchase", which is no wait for event before it`,
+		},
+		"a Branch naming a wait for an open, which keeps no Event": {
+			automationstep.Root(emailStep(emailID), waitingFor(emailID, conditiontree.MessageOpened), judging(t, awaitedOver100("welcome_open"))),
+			"step " + string(judgeID) + ` (branch): path 1: the awaited event test names "welcome_open", a wait for an open or a click, which keeps no event`,
+		},
+		"a Wait for event naming a wait for a click": {
+			automationstep.Root(emailStep(emailID), waitingFor(emailID, conditiontree.MessageClicked), waitNamed(t, purchaseID, "purchase", []string{awaitedOver100("welcome_open")})),
+			"step " + string(purchaseID) + ` (wait_for_event): the condition: the awaited event test names "welcome_open", a wait for an open or a click, which keeps no event`,
 		},
 		"a Wait for event naming a later one": {
 			automationstep.Root(waitNamed(t, purchaseID, "purchase", []string{awaitedOver100("review")}), waitNamed(t, reviewID, "review", nil)),

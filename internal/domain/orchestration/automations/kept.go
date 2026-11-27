@@ -114,14 +114,15 @@ func awaitedFor(ctx context.Context, s *ent.Scoped, runID int64, index *automati
 // test of the awaited Event that names no Wait for event that can come before the Step holding it
 // (ADR 0136), by the rule a Branch's test of an earlier message follows (automationstep.Before): a
 // later one, the Wait for event itself, one of a path the Enrollment did not take, or none of the
-// version, whose test would always fail.
+// version, whose test would always fail. So is one that names a Wait for event on an open or a
+// click, which keeps no copy for it to test.
 func checkAwaitedTests(steps automationstep.Path) error {
 	for _, st := range automationstep.All(steps) {
 		switch p := st.Payload.(type) {
 		case automationstep.Branch:
 			for i, path := range p.Paths {
-				if name, ok := awaitedNotBefore(steps, st.ID, path.Condition.Group); ok {
-					return refuse(st, fmt.Sprintf("path %d: the awaited event test names %q, which is no wait for event before the branch", i+1, name))
+				if why := awaitedProblem(steps, st.ID, path.Condition.Group, "the branch"); why != "" {
+					return refuse(st, fmt.Sprintf("path %d: %s", i+1, why))
 				}
 			}
 		case automationstep.WaitForEvent:
@@ -129,28 +130,40 @@ func checkAwaitedTests(steps automationstep.Path) error {
 			if cond == nil {
 				continue
 			}
-			if name, ok := awaitedNotBefore(steps, st.ID, cond.Group); ok {
-				return refuse(st, fmt.Sprintf("the condition: the awaited event test names %q, which is no wait for event before it", name))
+			if why := awaitedProblem(steps, st.ID, cond.Group, "it"); why != "" {
+				return refuse(st, "the condition: "+why)
 			}
 		}
 	}
 	return nil
 }
 
-// awaitedNotBefore is the first name g's tests of the awaited Event read that no Wait for event
-// that can come before the Step at in steps holds, and whether there is one.
-func awaitedNotBefore(steps automationstep.Path, at automationstep.ID, g conditiontree.Group) (string, bool) {
+// awaitedProblem is why the first test of the awaited Event in g that cannot read a copy, at the
+// Step at in steps (named before in the refusal), cannot: the name it reads is held by no Wait for
+// event that can come before the Step, or by one on an open or a click, which keeps none; "" when
+// every test can.
+func awaitedProblem(steps automationstep.Path, at automationstep.ID, g conditiontree.Group, before string) string {
 	names := condition.AwaitedNames(g)
 	if len(names) == 0 {
-		return "", false
+		return ""
 	}
-	before := map[string]bool{}
+	keeps := map[string]bool{}
 	for _, st := range automationstep.Before(steps, at) {
 		if w, ok := st.Payload.(automationstep.WaitForEvent); ok {
-			before[w.Name] = true
+			_, onEvent := w.Awaits.(automationstep.AwaitedEvent)
+			keeps[w.Name] = onEvent
 		}
 	}
-	return lo.Find(names, func(name string) bool { return !before[name] })
+	for _, name := range names {
+		onEvent, found := keeps[name]
+		switch {
+		case !found:
+			return fmt.Sprintf("the awaited event test names %q, which is no wait for event before %s", name, before)
+		case !onEvent:
+			return fmt.Sprintf("the awaited event test names %q, a wait for an open or a click, which keeps no event", name)
+		}
+	}
+	return ""
 }
 
 // ForgetKept clears every copy a Wait for event kept of one of the Events of eventIDs (ADR 0136):
