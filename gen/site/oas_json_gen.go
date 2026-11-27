@@ -17095,14 +17095,19 @@ func (s *ContactImportMapping) encodeFields(e *jx.Encoder) {
 		e.FieldStart("onlyAddNew")
 		e.Bool(s.OnlyAddNew)
 	}
+	{
+		e.FieldStart("asNewSignUps")
+		e.Bool(s.AsNewSignUps)
+	}
 }
 
-var jsonFieldsNameOfContactImportMapping = [5]string{
+var jsonFieldsNameOfContactImportMapping = [6]string{
 	0: "columns",
 	1: "decimalSeparator",
 	2: "defaultCountry",
 	3: "tag",
 	4: "onlyAddNew",
+	5: "asNewSignUps",
 }
 
 // Decode decodes ContactImportMapping from json.
@@ -17174,6 +17179,18 @@ func (s *ContactImportMapping) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"onlyAddNew\"")
 			}
+		case "asNewSignUps":
+			requiredBitSet[0] |= 1 << 5
+			if err := func() error {
+				v, err := d.Bool()
+				s.AsNewSignUps = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"asNewSignUps\"")
+			}
 		default:
 			return d.Skip()
 		}
@@ -17184,7 +17201,7 @@ func (s *ContactImportMapping) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00011111,
+		0b00111111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -17263,14 +17280,19 @@ func (s *ContactImportMappingInput) encodeFields(e *jx.Encoder) {
 		e.FieldStart("onlyAddNew")
 		e.Bool(s.OnlyAddNew)
 	}
+	{
+		e.FieldStart("asNewSignUps")
+		e.Bool(s.AsNewSignUps)
+	}
 }
 
-var jsonFieldsNameOfContactImportMappingInput = [5]string{
+var jsonFieldsNameOfContactImportMappingInput = [6]string{
 	0: "columns",
 	1: "decimalSeparator",
 	2: "defaultCountry",
 	3: "tag",
 	4: "onlyAddNew",
+	5: "asNewSignUps",
 }
 
 // Decode decodes ContactImportMappingInput from json.
@@ -17342,6 +17364,18 @@ func (s *ContactImportMappingInput) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"onlyAddNew\"")
 			}
+		case "asNewSignUps":
+			requiredBitSet[0] |= 1 << 5
+			if err := func() error {
+				v, err := d.Bool()
+				s.AsNewSignUps = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"asNewSignUps\"")
+			}
 		default:
 			return errors.Errorf("unexpected field %q", k)
 		}
@@ -17352,7 +17386,7 @@ func (s *ContactImportMappingInput) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00011111,
+		0b00111111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

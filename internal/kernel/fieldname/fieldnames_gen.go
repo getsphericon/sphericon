@@ -17,6 +17,7 @@ const (
 	AllowSetup                = "allowSetup"
 	Approve                   = "approve"
 	Arrived                   = "arrived"
+	AsNewSignUps              = "asNewSignUps"
 	At                        = "at"
 	Attribute                 = "attribute"
 	AttributionWindowDays     = "attributionWindowDays"
