@@ -716,6 +716,8 @@ func (c *ConverterImpl) ContactExportSourceToResource(source contact.Source) ext
 	switch source {
 	case contact.SourceAPI:
 		externalapiContactExportSource = external.ContactExportSourceAPI
+	case contact.SourceImport:
+		externalapiContactExportSource = external.ContactExportSourceImport
 	case contact.SourceManual:
 		externalapiContactExportSource = external.ContactExportSourceManual
 	case contact.SourceTracker:

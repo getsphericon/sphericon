@@ -3573,6 +3573,8 @@ func (s ContactExportSource) Validate() error {
 		return nil
 	case "tracker":
 		return nil
+	case "import":
+		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
 	}

@@ -2429,7 +2429,8 @@ export type ContactExportOutboundMessage = {
 export const ContactExportSource = {
   MANUAL: 'manual',
   API: 'api',
-  TRACKER: 'tracker'
+  TRACKER: 'tracker',
+  IMPORT: 'import'
 } as const;
 
 /**
