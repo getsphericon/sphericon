@@ -264,7 +264,7 @@ func waitForEventName(name string) externalapi.WaitForEventName {
 
 // waitForEventAwaits is the arm of what a Wait for event waits for: a oneOf is beyond goverter, so
 // only the switch is written here. One with no arm fails the response.
-func waitForEventAwaits(a automationstep.Awaits) (externalapi.WaitForEventAwaits, error) {
+func waitForEventAwaits(c Converter, a automationstep.Awaits) (externalapi.WaitForEventAwaits, error) {
 	switch a := a.(type) {
 	case automationstep.AwaitedEvent:
 		ev, err := awaitedEvent(a)
@@ -273,7 +273,7 @@ func waitForEventAwaits(a automationstep.Awaits) (externalapi.WaitForEventAwaits
 		}
 		return externalapi.WaitForEventAwaits{OneOf: externalapi.NewAwaitedEventWaitForEventAwaitsSum(ev)}, nil
 	case automationstep.AwaitedMessage:
-		m := externalapi.AwaitedMessage{Kind: externalapi.AwaitedMessageKindMessage, Step: externalapi.StepId(a.Step), Engagement: externalapi.MessageEngagement(a.Engagement)}
+		m := externalapi.AwaitedMessage{Kind: externalapi.AwaitedMessageKindMessage, Step: externalapi.StepId(a.Step), Engagement: c.MessageEngagementToResource(a.Engagement)}
 		return externalapi.WaitForEventAwaits{OneOf: externalapi.NewAwaitedMessageWaitForEventAwaitsSum(m)}, nil
 	case nil:
 	}
@@ -486,6 +486,8 @@ type Converter interface {
 	ConditionTestsToResource(source condition.Tests) externalapi.CustomFieldConditionTests
 	// goverter:enum:transform value
 	TextOperatorToResource(source conditiontree.TextOperator) externalapi.TextOperator
+	// goverter:enum:transform value
+	MessageEngagementToResource(source conditiontree.Engagement) externalapi.MessageEngagement
 	// goverter:enum:transform value
 	NumberOperatorToResource(source conditiontree.NumberOperator) externalapi.NumberOperator
 	// goverter:enum:transform value

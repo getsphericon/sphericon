@@ -1332,6 +1332,18 @@ func (c *ConverterImpl) LintFindingsToResource(source []emailrender.Finding) []e
 	}
 	return externalapiLintFindingList
 }
+func (c *ConverterImpl) MessageEngagementToResource(source conditiontree.Engagement) external.MessageEngagement {
+	var externalapiMessageEngagement external.MessageEngagement
+	switch source {
+	case conditiontree.MessageClicked:
+		externalapiMessageEngagement = external.MessageEngagementClicked
+	case conditiontree.MessageOpened:
+		externalapiMessageEngagement = external.MessageEngagementOpened
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiMessageEngagement
+}
 func (c *ConverterImpl) MessageRevenueToResource(source orders.Revenue) external.MessageRevenue {
 	var externalapiMessageRevenue external.MessageRevenue
 	externalapiMessageRevenue.ReportingCurrency = nilCurrencyCode(source.Currency)
@@ -2409,7 +2421,7 @@ func (c *ConverterImpl) WaitForEventStepToResource(source automations.WaitForEve
 	externalapiWaitForEventStep.Type = waitForEventStepType(source.Type)
 	externalapiWaitForEventStep.Name = waitForEventName(source.Name)
 	externalapiWaitForEventStep.TimeoutSeconds = count(source.TimeoutSeconds)
-	externalapiWaitForEventAwaits, err := waitForEventAwaits(source.Awaits)
+	externalapiWaitForEventAwaits, err := waitForEventAwaits(c, source.Awaits)
 	if err != nil {
 		return externalapiWaitForEventStep, err
 	}

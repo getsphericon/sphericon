@@ -191,6 +191,8 @@ type Inputs interface {
 	FrequencyCapChannelIn(source siteapi.FrequencyCapChannel) channels.Channel
 	// goverter:enum:transform value
 	SendingWindowChannelIn(source siteapi.SendingWindowChannel) channels.Channel
+	// goverter:enum:transform value
+	MessageEngagementIn(source siteapi.MessageEngagement) conditiontree.Engagement
 	ConfirmationEmailSet(source *siteapi.SiteUpdateConfirmationEmailInput) workspaces.SetConfirmationEmailInput
 	// goverter:map Enabled On
 	ConfirmedOptInSet(source *siteapi.SiteSetConfirmedOptInInput) workspaceview.SetConfirmedOptInInput
@@ -671,7 +673,7 @@ func splitStepIn(c Inputs, in *siteapi.SplitStepInput) (automationstep.Step, err
 // waitForEventStepIn maps a Wait for event: its name, its timeout, what it awaits and its paths.
 // The save checks them.
 func waitForEventStepIn(c Inputs, in *siteapi.WaitForEventStepInput) (automationstep.Step, error) {
-	awaits, err := waitForEventAwaitsIn(in.Awaits)
+	awaits, err := waitForEventAwaitsIn(c, in.Awaits)
 	if err != nil {
 		return automationstep.Step{}, err
 	}
@@ -698,13 +700,13 @@ func waitForEventStepIn(c Inputs, in *siteapi.WaitForEventStepInput) (automation
 
 // waitForEventAwaitsIn maps what a Wait for event waits for onto its kind's: a oneOf is beyond
 // goverter, so only the switch is written here.
-func waitForEventAwaitsIn(in siteapi.WaitForEventAwaitsInput) (automationstep.Awaits, error) {
+func waitForEventAwaitsIn(c Inputs, in siteapi.WaitForEventAwaitsInput) (automationstep.Awaits, error) {
 	switch in.OneOf.Type {
 	case siteapi.AwaitedEventInputWaitForEventAwaitsInputSum:
 		return awaitedEventIn(in.OneOf.AwaitedEventInput)
 	case siteapi.AwaitedMessageInputWaitForEventAwaitsInputSum:
 		m := in.OneOf.AwaitedMessageInput
-		return automationstep.AwaitedMessage{Step: automationstep.ID(m.Step), Engagement: conditiontree.Engagement(m.Engagement)}, nil
+		return automationstep.AwaitedMessage{Step: automationstep.ID(m.Step), Engagement: c.MessageEngagementIn(m.Engagement)}, nil
 	default:
 		return nil, fmt.Errorf("what a wait for event awaits has no kind %q", in.OneOf.Type)
 	}

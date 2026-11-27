@@ -1882,6 +1882,18 @@ func (c *ConverterImpl) MembershipsToResources(source []*ent.Membership) []site.
 	}
 	return siteapiSiteMembershipResourceList
 }
+func (c *ConverterImpl) MessageEngagementToResource(source conditiontree.Engagement) site.MessageEngagement {
+	var siteapiMessageEngagement site.MessageEngagement
+	switch source {
+	case conditiontree.MessageClicked:
+		siteapiMessageEngagement = site.MessageEngagementClicked
+	case conditiontree.MessageOpened:
+		siteapiMessageEngagement = site.MessageEngagementOpened
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiMessageEngagement
+}
 func (c *ConverterImpl) MessageRevenueToResource(source orders.Revenue) site.MessageRevenue {
 	var siteapiMessageRevenue site.MessageRevenue
 	siteapiMessageRevenue.ReportingCurrency = nilCurrencyCode(source.Currency)
@@ -3379,7 +3391,7 @@ func (c *ConverterImpl) WaitForEventStepToResource(source automations.WaitForEve
 	siteapiWaitForEventStep.Type = waitForEventStepType(source.Type)
 	siteapiWaitForEventStep.Name = waitForEventName(source.Name)
 	siteapiWaitForEventStep.TimeoutSeconds = count(source.TimeoutSeconds)
-	siteapiWaitForEventAwaits, err := waitForEventAwaits(source.Awaits)
+	siteapiWaitForEventAwaits, err := waitForEventAwaits(c, source.Awaits)
 	if err != nil {
 		return siteapiWaitForEventStep, err
 	}

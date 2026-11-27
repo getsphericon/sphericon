@@ -25,6 +25,7 @@ import (
 	sendingdomains "github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
 	automationstep "github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	channels "github.com/getsphericon/sphericon/internal/kernel/channels"
+	conditiontree "github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	datetrigger "github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 	httpheader "github.com/getsphericon/sphericon/internal/kernel/httpheader"
 	localcalendar "github.com/getsphericon/sphericon/internal/kernel/localcalendar"
@@ -520,6 +521,18 @@ func (c *InputsImpl) IntegrationUpdate(source *external.UpdateIntegrationInput) 
 		integrationsUpdateInput.RetireSecrets = boolIn((*source).RetireSecrets)
 	}
 	return integrationsUpdateInput, nil
+}
+func (c *InputsImpl) MessageEngagementIn(source external.MessageEngagement) conditiontree.Engagement {
+	var conditiontreeEngagement conditiontree.Engagement
+	switch source {
+	case external.MessageEngagementClicked:
+		conditiontreeEngagement = conditiontree.MessageClicked
+	case external.MessageEngagementOpened:
+		conditiontreeEngagement = conditiontree.MessageOpened
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return conditiontreeEngagement
 }
 func (c *InputsImpl) OptOut(source *external.CreateUnsubscribeInput) unsubscriberecording.OptOutInput {
 	var unsubscriberecordingOptOutInput unsubscriberecording.OptOutInput

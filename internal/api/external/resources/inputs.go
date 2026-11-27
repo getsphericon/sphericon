@@ -213,6 +213,8 @@ type Inputs interface {
 	WaitUntilTimeOfDayIn(source externalapi.WaitUntilTimeOfDayInput) automationstep.TimeOfDay
 	// goverter:enum:transform value
 	WeekdayIn(source externalapi.Weekday) localcalendar.Weekday
+	// goverter:enum:transform value
+	MessageEngagementIn(source externalapi.MessageEngagement) conditiontree.Engagement
 	ApplyTagStepIn(source externalapi.ApplyTagStepInput) automationstep.ApplyTag
 	RemoveTagStepIn(source externalapi.RemoveTagStepInput) automationstep.RemoveTag
 	HttpStepIn(source externalapi.HttpStepInput) automationstep.HTTP
@@ -575,7 +577,7 @@ func splitStepIn(c Inputs, in *externalapi.SplitStepInput) (automationstep.Step,
 // waitForEventStepIn maps a Wait for event: its name, its timeout, what it awaits and its paths.
 // The save checks them.
 func waitForEventStepIn(c Inputs, in *externalapi.WaitForEventStepInput) (automationstep.Step, error) {
-	awaits, err := waitForEventAwaitsIn(in.Awaits)
+	awaits, err := waitForEventAwaitsIn(c, in.Awaits)
 	if err != nil {
 		return automationstep.Step{}, err
 	}
@@ -602,13 +604,13 @@ func waitForEventStepIn(c Inputs, in *externalapi.WaitForEventStepInput) (automa
 
 // waitForEventAwaitsIn maps what a Wait for event waits for onto its kind's: a oneOf is beyond
 // goverter, so only the switch is written here.
-func waitForEventAwaitsIn(in externalapi.WaitForEventAwaitsInput) (automationstep.Awaits, error) {
+func waitForEventAwaitsIn(c Inputs, in externalapi.WaitForEventAwaitsInput) (automationstep.Awaits, error) {
 	switch in.OneOf.Type {
 	case externalapi.AwaitedEventInputWaitForEventAwaitsInputSum:
 		return awaitedEventIn(in.OneOf.AwaitedEventInput)
 	case externalapi.AwaitedMessageInputWaitForEventAwaitsInputSum:
 		m := in.OneOf.AwaitedMessageInput
-		return automationstep.AwaitedMessage{Step: automationstep.ID(m.Step), Engagement: conditiontree.Engagement(m.Engagement)}, nil
+		return automationstep.AwaitedMessage{Step: automationstep.ID(m.Step), Engagement: c.MessageEngagementIn(m.Engagement)}, nil
 	default:
 		return nil, fmt.Errorf("what a wait for event awaits has no kind %q", in.OneOf.Type)
 	}

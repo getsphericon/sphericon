@@ -704,6 +704,18 @@ func (c *InputsImpl) MembershipRoleChange(source *site.SiteUpdateMembershipInput
 	}
 	return membershipsChangeRoleInput
 }
+func (c *InputsImpl) MessageEngagementIn(source site.MessageEngagement) conditiontree.Engagement {
+	var conditiontreeEngagement conditiontree.Engagement
+	switch source {
+	case site.MessageEngagementClicked:
+		conditiontreeEngagement = conditiontree.MessageClicked
+	case site.MessageEngagementOpened:
+		conditiontreeEngagement = conditiontree.MessageOpened
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return conditiontreeEngagement
+}
 func (c *InputsImpl) OptionalConsentChange(source *site.SiteOptionalConsentChange) consentrecords.SetOptionalConsentInput {
 	var consentrecordsSetOptionalConsentInput consentrecords.SetOptionalConsentInput
 	if source != nil {

@@ -550,6 +550,8 @@ type Converter interface {
 	// goverter:enum:transform value
 	TextOperatorToResource(source conditiontree.TextOperator) siteapi.TextOperator
 	// goverter:enum:transform value
+	MessageEngagementToResource(source conditiontree.Engagement) siteapi.MessageEngagement
+	// goverter:enum:transform value
 	NumberOperatorToResource(source conditiontree.NumberOperator) siteapi.NumberOperator
 	// goverter:enum:transform value
 	MomentOperatorToResource(source conditiontree.MomentOperator) siteapi.MomentOperator
@@ -1403,7 +1405,7 @@ func waitForEventName(name string) siteapi.WaitForEventName { return siteapi.Wai
 
 // waitForEventAwaits is the arm of what a Wait for event waits for: a oneOf is beyond goverter, so
 // only the switch is written here. One with no arm fails the response.
-func waitForEventAwaits(a automationstep.Awaits) (siteapi.WaitForEventAwaits, error) {
+func waitForEventAwaits(c Converter, a automationstep.Awaits) (siteapi.WaitForEventAwaits, error) {
 	switch a := a.(type) {
 	case automationstep.AwaitedEvent:
 		ev, err := awaitedEvent(a)
@@ -1412,7 +1414,7 @@ func waitForEventAwaits(a automationstep.Awaits) (siteapi.WaitForEventAwaits, er
 		}
 		return siteapi.WaitForEventAwaits{OneOf: siteapi.NewAwaitedEventWaitForEventAwaitsSum(ev)}, nil
 	case automationstep.AwaitedMessage:
-		m := siteapi.AwaitedMessage{Kind: siteapi.AwaitedMessageKindMessage, Step: siteapi.StepId(a.Step), Engagement: siteapi.MessageEngagement(a.Engagement)}
+		m := siteapi.AwaitedMessage{Kind: siteapi.AwaitedMessageKindMessage, Step: siteapi.StepId(a.Step), Engagement: c.MessageEngagementToResource(a.Engagement)}
 		return siteapi.WaitForEventAwaits{OneOf: siteapi.NewAwaitedMessageWaitForEventAwaitsSum(m)}, nil
 	case nil:
 	}
