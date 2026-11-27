@@ -7,6 +7,9 @@ import (
 	"errors"
 	"fmt"
 	"time"
+	// The zone database is linked into the binary, so a zone loads on a host that has none
+	// installed or an older one: the host's database is still read first.
+	_ "time/tzdata"
 
 	"entgo.io/ent/dialect/sql"
 )
