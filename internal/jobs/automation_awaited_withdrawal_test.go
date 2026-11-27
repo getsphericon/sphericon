@@ -8,6 +8,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	externalapi "github.com/getsphericon/sphericon/gen/external"
+	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages/engagement"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -164,4 +168,47 @@ func TestARefusalOfTrackingDeletesTheKeptCopyOfTheDestinationsClick(t *testing.T
 	bobsThanks := thanksTo(t, fs, fixtures.ContactBobEmail)
 	assert.Contains(t, alicesThanks, "Clicked []", "a later Step reads the name as absent")
 	assert.Contains(t, bobsThanks, "Clicked [email.clicked]")
+}
+
+// moveAddress gives the Acme Contact the address, as its Owner does in the app.
+func moveAddress(t *testing.T, env *testhelper.TestEnv, contactID int64, address string) {
+	t.Helper()
+	ctx := t.Context()
+	john := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	_, err := john.SiteContactsUpdate(ctx, &siteapi.SiteUpdateContactInput{
+		Revision: siteapi.Revision(env.ContactRevision(ctx, t, contactID)),
+		Email:    siteapi.NewOptNilEmailAddress(siteapi.EmailAddress(address)),
+	}, siteapi.SiteContactsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(contactID)})
+	require.NoError(t, err)
+}
+
+// Alice clicks her welcome email and a Wait for event keeps the click; she then moves to another
+// address, and Bob takes her old one and refuses its tracking. An Erasure of Bob before that
+// refusal's reach-back runs does the reach-back's work itself (ADR 0120): it deletes the click of
+// Alice's earlier message to the address, and with it the copy her Enrollment kept (ADR 0136),
+// whose path stays.
+func TestAnErasureBeforeTheReachBackDeletesTheKeptCopyOfTheAddressesClick(t *testing.T) {
+	env, clock := waitUntilEnv(t, time.Now().UTC().Truncate(time.Second))
+	fs := &fakeSender{}
+	stepper := stepperAt(env, newMod(env, resolvingTo(fs), clock.read), clock.read)
+	welcome := welcomeEmail()
+	clicks := publishedAwaiting(t, env, clickFlowTrigger, "click", systemevent.EmailClicked, []automationstep.Step{welcome}, nil)
+	alice := enrollOn(t, env, clock, clickFlowTrigger, clicks.automationID, fixtures.ContactAliceID)
+	require.True(t, env.RunNextStep(t, stepper), "Alice's welcome is sent")
+	clickAs(t, env, sentMessageOf(t, env, alice, welcome.ID))
+	keptClick, _ := keptBy(t, env, alice, clicks.wait)
+	require.Equal(t, systemevent.EmailClicked, keptClick, "the click is kept")
+	moveAddress(t, env, fixtures.ContactAliceID, "alice.moved@example.com")
+	moveAddress(t, env, fixtures.ContactBobID, fixtures.ContactAliceEmail)
+	_, err := testhelper.Module[*engagementtracking.Module](env).Record(t.Context(), env.DB.Scoped(fixtures.AcmeID), engagementtracking.RecordInput{
+		Channel: channels.Email, Destination: fixtures.ContactAliceEmail, State: engagementtracking.Denied, Provenance: engagementtracking.Manual,
+	})
+	require.NoError(t, err)
+
+	err = env.ExternalScoped(t, apitokens.ScopeContactsErase).ContactsDelete(t.Context(), externalapi.ContactsDeleteParams{ID: externalapi.EntityId(fixtures.ContactBobID)})
+	require.NoError(t, err)
+
+	aliceClick, alicePath := keptBy(t, env, alice, clicks.wait)
+	assert.Empty(t, aliceClick, "the copy of the click of the address is deleted")
+	assert.Equal(t, clicks.arrived, alicePath, "the path taken stays")
 }

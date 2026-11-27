@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
@@ -106,7 +107,7 @@ func TestContactsDoesNotCountAnAnonymousContact(t *testing.T) {
 func TestContactsDoesNotCountAnErasedContact(t *testing.T) {
 	now := at(2027, time.February, 10, 12)
 	env, _, base := contactsEnv(t, now)
-	require.NoError(t, contacterasure.New(env.Bus, testhelper.Module[*broadcasts.Module](env), testhelper.Module[*contacts.Module](env), testhelper.Module[*unsubscribes.Module](env), testhelper.Module[*bindings.Chats](env), testhelper.Module[*engagementtracking.Module](env), testhelper.Module[*outboundmessages.Module](env), testhelper.Module[*orders.Module](env), time.Now).Erase(t.Context(), env.DB.Scoped(fixtures.AcmeID),
+	require.NoError(t, contacterasure.New(env.Bus, testhelper.Module[*broadcasts.Module](env), testhelper.Module[*contacts.Module](env), testhelper.Module[*unsubscribes.Module](env), testhelper.Module[*bindings.Chats](env), testhelper.Module[*engagementtracking.Module](env), testhelper.Module[*outboundmessages.Module](env), testhelper.Module[*orders.Module](env), testhelper.Module[*automations.Module](env), time.Now).Erase(t.Context(), env.DB.Scoped(fixtures.AcmeID),
 		contacterasure.Identifier{ContactID: fixtures.ContactAliceID}, contacterasure.Requester{Kind: contacterasure.RequesterAPIToken, ID: 1}))
 	addContact(t, env, "after-erasure@example.com")
 

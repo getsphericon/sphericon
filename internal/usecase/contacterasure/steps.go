@@ -155,9 +155,13 @@ func (u *UseCase) withdrawFrom(ctx context.Context, s *ent.Scoped, d heldDestina
 		if err := u.messages.ForgetEngagement(ctx, s, ids); err != nil {
 			return err
 		}
-		// The copies a Wait for event kept of these Events are not cleared here: the Contact's own
-		// Enrollments go with it, and with them their copies.
-		if _, err := u.events.DeleteEngagementOf(ctx, s, taken); err != nil {
+		deleted, err := u.events.DeleteEngagementOf(ctx, s, taken)
+		if err != nil {
+			return err
+		}
+		// A message of the Destination may have gone to another Contact that held it before, whose
+		// Enrollment kept one of these Events as `awaited.<name>` (ADR 0136): its copy goes too.
+		if err := u.kept.ForgetKept(ctx, s, deleted); err != nil {
 			return err
 		}
 		if err := u.credits.ClearCredits(ctx, s, ids); err != nil {

@@ -155,8 +155,9 @@ func awaitedNotBefore(steps automationstep.Path, at automationstep.ID, g conditi
 
 // ForgetKept clears every copy a Wait for event kept of one of the Events of eventIDs (ADR 0136):
 // the opens and clicks a refusal of tracking deletes of its Destination's earlier messages (ADR
-// 0120), cleared by the use case internal/usecase/trackingwithdrawal in the transaction that
-// deletes them. Each Step record keeps the path it took, and a later Step reads the name as absent.
+// 0120), cleared in the transaction that deletes them by the use case of the reach-back
+// (internal/usecase/trackingwithdrawal) or by an Erasure that does its work first
+// (internal/usecase/contacterasure). Each Step record keeps the path it took, and a later Step reads the name as absent.
 // A copy cleared before, or of another Event, is left as it is, so a second run clears nothing more.
 func (m *Module) ForgetKept(ctx context.Context, s *ent.Scoped, eventIDs []int64) error {
 	for _, chunk := range lo.Chunk(eventIDs, forgetChunk) {

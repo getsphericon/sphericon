@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
@@ -22,7 +23,7 @@ var apiRequester = contacterasure.Requester{Kind: contacterasure.RequesterAPITok
 
 func TestAnErasureNamesExactlyOneIdentifier(t *testing.T) {
 	env := testhelper.Setup(t)
-	erasure := contacterasure.New(env.Bus, testhelper.Module[*broadcasts.Module](env), testhelper.Module[*contacts.Module](env), testhelper.Module[*unsubscribes.Module](env), testhelper.Module[*bindings.Chats](env), testhelper.Module[*engagementtracking.Module](env), testhelper.Module[*outboundmessages.Module](env), testhelper.Module[*orders.Module](env), time.Now)
+	erasure := contacterasure.New(env.Bus, testhelper.Module[*broadcasts.Module](env), testhelper.Module[*contacts.Module](env), testhelper.Module[*unsubscribes.Module](env), testhelper.Module[*bindings.Chats](env), testhelper.Module[*engagementtracking.Module](env), testhelper.Module[*outboundmessages.Module](env), testhelper.Module[*orders.Module](env), testhelper.Module[*automations.Module](env), time.Now)
 	acme := env.DB.Scoped(fixtures.AcmeID)
 
 	neither := erasure.Erase(t.Context(), acme, contacterasure.Identifier{}, apiRequester)
@@ -39,7 +40,7 @@ func TestAnErasureNamesExactlyOneIdentifier(t *testing.T) {
 func TestAnErasureByAnAddressThatIsNotOnePlainAddressIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	err := contacterasure.New(env.Bus, testhelper.Module[*broadcasts.Module](env), testhelper.Module[*contacts.Module](env), testhelper.Module[*unsubscribes.Module](env), testhelper.Module[*bindings.Chats](env), testhelper.Module[*engagementtracking.Module](env), testhelper.Module[*outboundmessages.Module](env), testhelper.Module[*orders.Module](env), time.Now).Erase(t.Context(), env.DB.Scoped(fixtures.AcmeID),
+	err := contacterasure.New(env.Bus, testhelper.Module[*broadcasts.Module](env), testhelper.Module[*contacts.Module](env), testhelper.Module[*unsubscribes.Module](env), testhelper.Module[*bindings.Chats](env), testhelper.Module[*engagementtracking.Module](env), testhelper.Module[*outboundmessages.Module](env), testhelper.Module[*orders.Module](env), testhelper.Module[*automations.Module](env), time.Now).Erase(t.Context(), env.DB.Scoped(fixtures.AcmeID),
 		contacterasure.Identifier{Email: new("Alice <" + fixtures.ContactAliceEmail + ">")}, apiRequester)
 
 	require.ErrorIs(t, err, contacterasure.ErrInvalidEmail)

@@ -906,7 +906,7 @@ var audiencePackage = do.Package(
 		return contacterasure.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*broadcasts.Module](i),
 			do.MustInvoke[*contacts.Module](i), do.MustInvoke[*unsubscribes.Module](i), do.MustInvoke[*bindings.Chats](i),
 			do.MustInvoke[*engagementtracking.Module](i), do.MustInvoke[*outboundmessages.Module](i),
-			do.MustInvoke[*orders.Module](i), do.MustInvoke[Clock](i)), nil
+			do.MustInvoke[*orders.Module](i), do.MustInvoke[*automations.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
 	// The consent of the Destinations: the opt-outs, the Suppressions, the Confirmations, the
 	// Engagement tracking consent and the Channel stops, which write their rows (ADR 0102).

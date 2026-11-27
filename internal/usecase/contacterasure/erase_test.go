@@ -55,7 +55,7 @@ import (
 // erase erases what id names in the Workspace, as an API token asks for it.
 func erase(t *testing.T, env *testhelper.TestEnv, workspaceID int64, id contacterasure.Identifier) error {
 	t.Helper()
-	return contacterasure.New(env.Bus, testhelper.Module[*broadcasts.Module](env), testhelper.Module[*contacts.Module](env), testhelper.Module[*unsubscribes.Module](env), testhelper.Module[*bindings.Chats](env), testhelper.Module[*engagementtracking.Module](env), testhelper.Module[*outboundmessages.Module](env), testhelper.Module[*orders.Module](env), time.Now).Erase(t.Context(), env.DB.Scoped(workspaceID), id, apiRequester)
+	return contacterasure.New(env.Bus, testhelper.Module[*broadcasts.Module](env), testhelper.Module[*contacts.Module](env), testhelper.Module[*unsubscribes.Module](env), testhelper.Module[*bindings.Chats](env), testhelper.Module[*engagementtracking.Module](env), testhelper.Module[*outboundmessages.Module](env), testhelper.Module[*orders.Module](env), testhelper.Module[*automations.Module](env), time.Now).Erase(t.Context(), env.DB.Scoped(workspaceID), id, apiRequester)
 }
 
 // eraseErasable erases ContactErasable by its id.
