@@ -5,7 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"iter"
+	"slices"
 	"strings"
+
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 )
 
 // WaitForEvent holds the Enrollment until what it Awaits arrives or TimeoutSeconds pass from when
@@ -32,20 +36,35 @@ type Awaits interface {
 	stored() Awaits
 }
 
-// AwaitedEvent waits for an Event of one of Actions.
+// AwaitedEvent waits for an Event one of Matchers matches (ADR 0124, ADR 0180): of the matcher's
+// action, its properties passing the matcher's filter. Condition, when set, must hold for the
+// Contact, on its live data and the Event the Enrollment began with, when that Event is handled:
+// false and unknown leave the Enrollment waiting.
 type AwaitedEvent struct {
-	Actions []string `json:"actions"`
+	Matchers  []eventmatcher.Matcher      `json:"matchers"`
+	Condition *conditiontree.WaitForEvent `json:"condition,omitempty"`
 }
 
 func (AwaitedEvent) AwaitsKind() AwaitsKind { return AwaitsEvent }
 
-// stored trims each action, as an Event matcher's action is stored.
+// stored trims each matcher's action, as an Event matcher's action is stored.
 func (a AwaitedEvent) stored() Awaits {
-	actions := make([]string, len(a.Actions))
-	for i, action := range a.Actions {
-		actions[i] = strings.TrimSpace(action)
+	matchers := make([]eventmatcher.Matcher, len(a.Matchers))
+	for i, m := range a.Matchers {
+		matchers[i] = eventmatcher.Matcher{Action: strings.TrimSpace(m.Action), Filter: m.Filter}
 	}
-	return AwaitedEvent{Actions: actions}
+	return AwaitedEvent{Matchers: matchers, Condition: a.Condition}
+}
+
+// Actions are the Event actions the matchers name, each once, in their order.
+func (a AwaitedEvent) Actions() []string {
+	var out []string
+	for _, m := range a.Matchers {
+		if !slices.Contains(out, m.Action) {
+			out = append(out, m.Action)
+		}
+	}
+	return out
 }
 
 // The places of a Wait for event's paths in its Step's document, which are its fields.

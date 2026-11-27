@@ -127,6 +127,7 @@ const (
 	MainGoal                  = "mainGoal"
 	MainGoalOther             = "mainGoalOther"
 	Markdown                  = "markdown"
+	Matchers                  = "matchers"
 	MaxMessages               = "maxMessages"
 	MaxPerDay                 = "maxPerDay"
 	MaxPerSecond              = "maxPerSecond"

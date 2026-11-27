@@ -6764,18 +6764,25 @@ func (s *AwaitedEvent) encodeFields(e *jx.Encoder) {
 		s.Kind.Encode(e)
 	}
 	{
-		e.FieldStart("actions")
+		e.FieldStart("matchers")
 		e.ArrStart()
-		for _, elem := range s.Actions {
-			e.Str(elem)
+		for _, elem := range s.Matchers {
+			elem.Encode(e)
 		}
 		e.ArrEnd()
 	}
+	{
+		if s.Condition.Set {
+			e.FieldStart("condition")
+			s.Condition.Encode(e)
+		}
+	}
 }
 
-var jsonFieldsNameOfAwaitedEvent = [2]string{
+var jsonFieldsNameOfAwaitedEvent = [3]string{
 	0: "kind",
-	1: "actions",
+	1: "matchers",
+	2: "condition",
 }
 
 // Decode decodes AwaitedEvent from json.
@@ -6797,25 +6804,33 @@ func (s *AwaitedEvent) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"kind\"")
 			}
-		case "actions":
+		case "matchers":
 			requiredBitSet[0] |= 1 << 1
 			if err := func() error {
-				s.Actions = make([]string, 0)
+				s.Matchers = make([]EventMatcher, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
-					var elem string
-					v, err := d.Str()
-					elem = string(v)
-					if err != nil {
+					var elem EventMatcher
+					if err := elem.Decode(d); err != nil {
 						return err
 					}
-					s.Actions = append(s.Actions, elem)
+					s.Matchers = append(s.Matchers, elem)
 					return nil
 				}); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"actions\"")
+				return errors.Wrap(err, "decode field \"matchers\"")
+			}
+		case "condition":
+			if err := func() error {
+				s.Condition.Reset()
+				if err := s.Condition.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"condition\"")
 			}
 		default:
 			return d.Skip()
@@ -6887,18 +6902,25 @@ func (s *AwaitedEventInput) encodeFields(e *jx.Encoder) {
 		s.Kind.Encode(e)
 	}
 	{
-		e.FieldStart("actions")
+		e.FieldStart("matchers")
 		e.ArrStart()
-		for _, elem := range s.Actions {
-			e.Str(elem)
+		for _, elem := range s.Matchers {
+			elem.Encode(e)
 		}
 		e.ArrEnd()
 	}
+	{
+		if s.Condition.Set {
+			e.FieldStart("condition")
+			s.Condition.Encode(e)
+		}
+	}
 }
 
-var jsonFieldsNameOfAwaitedEventInput = [2]string{
+var jsonFieldsNameOfAwaitedEventInput = [3]string{
 	0: "kind",
-	1: "actions",
+	1: "matchers",
+	2: "condition",
 }
 
 // Decode decodes AwaitedEventInput from json.
@@ -6920,25 +6942,33 @@ func (s *AwaitedEventInput) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"kind\"")
 			}
-		case "actions":
+		case "matchers":
 			requiredBitSet[0] |= 1 << 1
 			if err := func() error {
-				s.Actions = make([]string, 0)
+				s.Matchers = make([]EventMatcherInput, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
-					var elem string
-					v, err := d.Str()
-					elem = string(v)
-					if err != nil {
+					var elem EventMatcherInput
+					if err := elem.Decode(d); err != nil {
 						return err
 					}
-					s.Actions = append(s.Actions, elem)
+					s.Matchers = append(s.Matchers, elem)
 					return nil
 				}); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"actions\"")
+				return errors.Wrap(err, "decode field \"matchers\"")
+			}
+		case "condition":
+			if err := func() error {
+				s.Condition.Reset()
+				if err := s.Condition.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"condition\"")
 			}
 		default:
 			return errors.Errorf("unexpected field %q", k)
@@ -37503,6 +37533,72 @@ func (s *OptTrackingReason) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes WaitForEventCondition as json.
+func (o OptWaitForEventCondition) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes WaitForEventCondition from json.
+func (o *OptWaitForEventCondition) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptWaitForEventCondition to nil")
+	}
+	o.Set = true
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptWaitForEventCondition) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptWaitForEventCondition) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes WaitForEventConditionInput as json.
+func (o OptWaitForEventConditionInput) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes WaitForEventConditionInput from json.
+func (o *OptWaitForEventConditionInput) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptWaitForEventConditionInput to nil")
+	}
+	o.Set = true
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptWaitForEventConditionInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptWaitForEventConditionInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes WebhookDisabledReason as json.
 func (o OptWebhookDisabledReason) Encode(e *jx.Encoder) {
 	if !o.Set {
@@ -62212,12 +62308,18 @@ func (s WaitForEventAwaitsInputSum) encodeFields(e *jx.Encoder) {
 		{
 			s := s.AwaitedEventInput
 			{
-				e.FieldStart("actions")
+				e.FieldStart("matchers")
 				e.ArrStart()
-				for _, elem := range s.Actions {
-					e.Str(elem)
+				for _, elem := range s.Matchers {
+					elem.Encode(e)
 				}
 				e.ArrEnd()
+			}
+			{
+				if s.Condition.Set {
+					e.FieldStart("condition")
+					s.Condition.Encode(e)
+				}
 			}
 		}
 	}
@@ -62301,12 +62403,18 @@ func (s WaitForEventAwaitsSum) encodeFields(e *jx.Encoder) {
 		{
 			s := s.AwaitedEvent
 			{
-				e.FieldStart("actions")
+				e.FieldStart("matchers")
 				e.ArrStart()
-				for _, elem := range s.Actions {
-					e.Str(elem)
+				for _, elem := range s.Matchers {
+					elem.Encode(e)
 				}
 				e.ArrEnd()
+			}
+			{
+				if s.Condition.Set {
+					e.FieldStart("condition")
+					s.Condition.Encode(e)
+				}
 			}
 		}
 	}
@@ -62375,6 +62483,1080 @@ func (s *WaitForEventAwaitsSum) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode implements json.Marshaler.
+func (s *WaitForEventCondition) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *WaitForEventCondition) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("kind")
+		s.Kind.Encode(e)
+	}
+	{
+		e.FieldStart("combinator")
+		s.Combinator.Encode(e)
+	}
+	{
+		if s.Not.Set {
+			e.FieldStart("not")
+			s.Not.Encode(e)
+		}
+	}
+	{
+		e.FieldStart("entries")
+		e.ArrStart()
+		for _, elem := range s.Entries {
+			elem.Encode(e)
+		}
+		e.ArrEnd()
+	}
+}
+
+var jsonFieldsNameOfWaitForEventCondition = [4]string{
+	0: "kind",
+	1: "combinator",
+	2: "not",
+	3: "entries",
+}
+
+// Decode decodes WaitForEventCondition from json.
+func (s *WaitForEventCondition) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode WaitForEventCondition to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "kind":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Kind.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"kind\"")
+			}
+		case "combinator":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Combinator.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"combinator\"")
+			}
+		case "not":
+			if err := func() error {
+				s.Not.Reset()
+				if err := s.Not.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"not\"")
+			}
+		case "entries":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				s.Entries = make([]WaitForEventConditionNode, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem WaitForEventConditionNode
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.Entries = append(s.Entries, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"entries\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode WaitForEventCondition")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00001011,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfWaitForEventCondition) {
+					name = jsonFieldsNameOfWaitForEventCondition[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *WaitForEventCondition) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *WaitForEventCondition) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *WaitForEventConditionInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *WaitForEventConditionInput) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("kind")
+		s.Kind.Encode(e)
+	}
+	{
+		e.FieldStart("combinator")
+		s.Combinator.Encode(e)
+	}
+	{
+		if s.Not.Set {
+			e.FieldStart("not")
+			s.Not.Encode(e)
+		}
+	}
+	{
+		e.FieldStart("entries")
+		e.ArrStart()
+		for _, elem := range s.Entries {
+			elem.Encode(e)
+		}
+		e.ArrEnd()
+	}
+}
+
+var jsonFieldsNameOfWaitForEventConditionInput = [4]string{
+	0: "kind",
+	1: "combinator",
+	2: "not",
+	3: "entries",
+}
+
+// Decode decodes WaitForEventConditionInput from json.
+func (s *WaitForEventConditionInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode WaitForEventConditionInput to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "kind":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Kind.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"kind\"")
+			}
+		case "combinator":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Combinator.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"combinator\"")
+			}
+		case "not":
+			if err := func() error {
+				s.Not.Reset()
+				if err := s.Not.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"not\"")
+			}
+		case "entries":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				s.Entries = make([]WaitForEventConditionNodeInput, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem WaitForEventConditionNodeInput
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.Entries = append(s.Entries, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"entries\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode WaitForEventConditionInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00001011,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfWaitForEventConditionInput) {
+					name = jsonFieldsNameOfWaitForEventConditionInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *WaitForEventConditionInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *WaitForEventConditionInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes WaitForEventConditionInputKind as json.
+func (s WaitForEventConditionInputKind) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes WaitForEventConditionInputKind from json.
+func (s *WaitForEventConditionInputKind) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode WaitForEventConditionInputKind to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch WaitForEventConditionInputKind(v) {
+	case WaitForEventConditionInputKindGroup:
+		*s = WaitForEventConditionInputKindGroup
+	default:
+		*s = WaitForEventConditionInputKind(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s WaitForEventConditionInputKind) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *WaitForEventConditionInputKind) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes WaitForEventConditionKind as json.
+func (s WaitForEventConditionKind) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes WaitForEventConditionKind from json.
+func (s *WaitForEventConditionKind) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode WaitForEventConditionKind to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch WaitForEventConditionKind(v) {
+	case WaitForEventConditionKindGroup:
+		*s = WaitForEventConditionKindGroup
+	default:
+		*s = WaitForEventConditionKind(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s WaitForEventConditionKind) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *WaitForEventConditionKind) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *WaitForEventConditionNode) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *WaitForEventConditionNode) encodeFields(e *jx.Encoder) {
+	s.OneOf.encodeFields(e)
+}
+
+var jsonFieldsNameOfWaitForEventConditionNode = [0]string{}
+
+// Decode decodes WaitForEventConditionNode from json.
+func (s *WaitForEventConditionNode) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode WaitForEventConditionNode to nil")
+	}
+	if err := d.Capture(func(d *jx.Decoder) error {
+		return s.OneOf.Decode(d)
+	}); err != nil {
+		return errors.Wrap(err, "decode field OneOf")
+	}
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		default:
+			return d.Skip()
+		}
+	}); err != nil {
+		return errors.Wrap(err, "decode WaitForEventConditionNode")
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *WaitForEventConditionNode) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *WaitForEventConditionNode) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *WaitForEventConditionNodeInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *WaitForEventConditionNodeInput) encodeFields(e *jx.Encoder) {
+	s.OneOf.encodeFields(e)
+}
+
+var jsonFieldsNameOfWaitForEventConditionNodeInput = [0]string{}
+
+// Decode decodes WaitForEventConditionNodeInput from json.
+func (s *WaitForEventConditionNodeInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode WaitForEventConditionNodeInput to nil")
+	}
+	if err := d.Capture(func(d *jx.Decoder) error {
+		return s.OneOf.Decode(d)
+	}); err != nil {
+		return errors.Wrap(err, "decode field OneOf")
+	}
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		default:
+			return d.Skip()
+		}
+	}); err != nil {
+		return errors.Wrap(err, "decode WaitForEventConditionNodeInput")
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *WaitForEventConditionNodeInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *WaitForEventConditionNodeInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes WaitForEventConditionNodeInputSum as json.
+func (s WaitForEventConditionNodeInputSum) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+func (s WaitForEventConditionNodeInputSum) encodeFields(e *jx.Encoder) {
+	switch s.Type {
+	case WaitForEventConditionInputWaitForEventConditionNodeInputSum:
+		e.FieldStart("kind")
+		e.Str("group")
+		{
+			s := s.WaitForEventConditionInput
+			{
+				e.FieldStart("combinator")
+				s.Combinator.Encode(e)
+			}
+			{
+				if s.Not.Set {
+					e.FieldStart("not")
+					s.Not.Encode(e)
+				}
+			}
+			{
+				e.FieldStart("entries")
+				e.ArrStart()
+				for _, elem := range s.Entries {
+					elem.Encode(e)
+				}
+				e.ArrEnd()
+			}
+		}
+	case AttributeLeafInputWaitForEventConditionNodeInputSum:
+		e.FieldStart("kind")
+		e.Str("attribute")
+		{
+			s := s.AttributeLeafInput
+			{
+				e.FieldStart("attribute")
+				s.Attribute.Encode(e)
+			}
+			{
+				e.FieldStart("test")
+				s.Test.Encode(e)
+			}
+		}
+	case BirthdayLeafInputWaitForEventConditionNodeInputSum:
+		e.FieldStart("kind")
+		e.Str("birthday")
+		{
+			s := s.BirthdayLeafInput
+			{
+				e.FieldStart("test")
+				s.Test.Encode(e)
+			}
+		}
+	case TagLeafInputWaitForEventConditionNodeInputSum:
+		e.FieldStart("kind")
+		e.Str("tag")
+		{
+			s := s.TagLeafInput
+			{
+				e.FieldStart("name")
+				e.Str(s.Name)
+			}
+			{
+				e.FieldStart("operator")
+				s.Operator.Encode(e)
+			}
+		}
+	case TelegramLeafInputWaitForEventConditionNodeInputSum:
+		e.FieldStart("kind")
+		e.Str("telegram")
+		{
+			s := s.TelegramLeafInput
+			{
+				e.FieldStart("operator")
+				s.Operator.Encode(e)
+			}
+		}
+	case SmsLeafInputWaitForEventConditionNodeInputSum:
+		e.FieldStart("kind")
+		e.Str("sms")
+		{
+			s := s.SmsLeafInput
+			{
+				e.FieldStart("operator")
+				s.Operator.Encode(e)
+			}
+		}
+	case EngagementTrackingLeafInputWaitForEventConditionNodeInputSum:
+		e.FieldStart("kind")
+		e.Str("engagementTracking")
+		{
+			s := s.EngagementTrackingLeafInput
+			{
+				e.FieldStart("channel")
+				s.Channel.Encode(e)
+			}
+			{
+				e.FieldStart("test")
+				s.Test.Encode(e)
+			}
+		}
+	case CustomFieldLeafInputWaitForEventConditionNodeInputSum:
+		e.FieldStart("kind")
+		e.Str("customField")
+		{
+			s := s.CustomFieldLeafInput
+			{
+				e.FieldStart("key")
+				e.Str(s.Key)
+			}
+			{
+				e.FieldStart("test")
+				s.Test.Encode(e)
+			}
+		}
+	case EventLeafInputWaitForEventConditionNodeInputSum:
+		e.FieldStart("kind")
+		e.Str("event")
+		{
+			s := s.EventLeafInput
+			{
+				e.FieldStart("action")
+				e.Str(s.Action)
+			}
+			{
+				e.FieldStart("operator")
+				s.Operator.Encode(e)
+			}
+			{
+				e.FieldStart("times")
+				e.Int32(s.Times)
+			}
+			{
+				if s.WithinDays.Set {
+					e.FieldStart("withinDays")
+					s.WithinDays.Encode(e)
+				}
+			}
+			{
+				if s.Filter.Set {
+					e.FieldStart("filter")
+					s.Filter.Encode(e)
+				}
+			}
+		}
+	case WaitForEventPropertyLeafInputWaitForEventConditionNodeInputSum:
+		e.FieldStart("kind")
+		e.Str("property")
+		{
+			s := s.WaitForEventPropertyLeafInput
+			{
+				e.FieldStart("of")
+				s.Of.Encode(e)
+			}
+			{
+				e.FieldStart("key")
+				e.Str(s.Key)
+			}
+			{
+				e.FieldStart("test")
+				s.Test.Encode(e)
+			}
+		}
+	}
+}
+
+// Decode decodes WaitForEventConditionNodeInputSum from json.
+func (s *WaitForEventConditionNodeInputSum) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode WaitForEventConditionNodeInputSum to nil")
+	}
+	// Sum type discriminator.
+	if typ := d.Next(); typ != jx.Object {
+		return errors.Errorf("unexpected json type %q", typ)
+	}
+
+	var found bool
+	if err := d.Capture(func(d *jx.Decoder) error {
+		return d.ObjBytes(func(d *jx.Decoder, key []byte) error {
+			if found {
+				return d.Skip()
+			}
+			switch string(key) {
+			case "kind":
+				typ, err := d.Str()
+				if err != nil {
+					return err
+				}
+				switch typ {
+				case "group":
+					s.Type = WaitForEventConditionInputWaitForEventConditionNodeInputSum
+					found = true
+				case "attribute":
+					s.Type = AttributeLeafInputWaitForEventConditionNodeInputSum
+					found = true
+				case "birthday":
+					s.Type = BirthdayLeafInputWaitForEventConditionNodeInputSum
+					found = true
+				case "tag":
+					s.Type = TagLeafInputWaitForEventConditionNodeInputSum
+					found = true
+				case "telegram":
+					s.Type = TelegramLeafInputWaitForEventConditionNodeInputSum
+					found = true
+				case "sms":
+					s.Type = SmsLeafInputWaitForEventConditionNodeInputSum
+					found = true
+				case "engagementTracking":
+					s.Type = EngagementTrackingLeafInputWaitForEventConditionNodeInputSum
+					found = true
+				case "customField":
+					s.Type = CustomFieldLeafInputWaitForEventConditionNodeInputSum
+					found = true
+				case "event":
+					s.Type = EventLeafInputWaitForEventConditionNodeInputSum
+					found = true
+				case "property":
+					s.Type = WaitForEventPropertyLeafInputWaitForEventConditionNodeInputSum
+					found = true
+				default:
+					return errors.Errorf("unknown type %s", typ)
+				}
+				return nil
+			}
+			return d.Skip()
+		})
+	}); err != nil {
+		return errors.Wrap(err, "capture")
+	}
+	if !found {
+		return errors.New("unable to detect sum type variant")
+	}
+	switch s.Type {
+	case WaitForEventConditionInputWaitForEventConditionNodeInputSum:
+		if err := s.WaitForEventConditionInput.Decode(d); err != nil {
+			return err
+		}
+	case AttributeLeafInputWaitForEventConditionNodeInputSum:
+		if err := s.AttributeLeafInput.Decode(d); err != nil {
+			return err
+		}
+	case BirthdayLeafInputWaitForEventConditionNodeInputSum:
+		if err := s.BirthdayLeafInput.Decode(d); err != nil {
+			return err
+		}
+	case TagLeafInputWaitForEventConditionNodeInputSum:
+		if err := s.TagLeafInput.Decode(d); err != nil {
+			return err
+		}
+	case TelegramLeafInputWaitForEventConditionNodeInputSum:
+		if err := s.TelegramLeafInput.Decode(d); err != nil {
+			return err
+		}
+	case SmsLeafInputWaitForEventConditionNodeInputSum:
+		if err := s.SmsLeafInput.Decode(d); err != nil {
+			return err
+		}
+	case EngagementTrackingLeafInputWaitForEventConditionNodeInputSum:
+		if err := s.EngagementTrackingLeafInput.Decode(d); err != nil {
+			return err
+		}
+	case CustomFieldLeafInputWaitForEventConditionNodeInputSum:
+		if err := s.CustomFieldLeafInput.Decode(d); err != nil {
+			return err
+		}
+	case EventLeafInputWaitForEventConditionNodeInputSum:
+		if err := s.EventLeafInput.Decode(d); err != nil {
+			return err
+		}
+	case WaitForEventPropertyLeafInputWaitForEventConditionNodeInputSum:
+		if err := s.WaitForEventPropertyLeafInput.Decode(d); err != nil {
+			return err
+		}
+	default:
+		return errors.Errorf("inferred invalid type: %s", s.Type)
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s WaitForEventConditionNodeInputSum) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *WaitForEventConditionNodeInputSum) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes WaitForEventConditionNodeSum as json.
+func (s WaitForEventConditionNodeSum) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+func (s WaitForEventConditionNodeSum) encodeFields(e *jx.Encoder) {
+	switch s.Type {
+	case WaitForEventConditionWaitForEventConditionNodeSum:
+		e.FieldStart("kind")
+		e.Str("group")
+		{
+			s := s.WaitForEventCondition
+			{
+				e.FieldStart("combinator")
+				s.Combinator.Encode(e)
+			}
+			{
+				if s.Not.Set {
+					e.FieldStart("not")
+					s.Not.Encode(e)
+				}
+			}
+			{
+				e.FieldStart("entries")
+				e.ArrStart()
+				for _, elem := range s.Entries {
+					elem.Encode(e)
+				}
+				e.ArrEnd()
+			}
+		}
+	case AttributeLeafWaitForEventConditionNodeSum:
+		e.FieldStart("kind")
+		e.Str("attribute")
+		{
+			s := s.AttributeLeaf
+			{
+				e.FieldStart("attribute")
+				s.Attribute.Encode(e)
+			}
+			{
+				e.FieldStart("test")
+				s.Test.Encode(e)
+			}
+		}
+	case BirthdayLeafWaitForEventConditionNodeSum:
+		e.FieldStart("kind")
+		e.Str("birthday")
+		{
+			s := s.BirthdayLeaf
+			{
+				e.FieldStart("test")
+				s.Test.Encode(e)
+			}
+		}
+	case TagLeafWaitForEventConditionNodeSum:
+		e.FieldStart("kind")
+		e.Str("tag")
+		{
+			s := s.TagLeaf
+			{
+				e.FieldStart("name")
+				e.Str(s.Name)
+			}
+			{
+				e.FieldStart("operator")
+				s.Operator.Encode(e)
+			}
+		}
+	case TelegramLeafWaitForEventConditionNodeSum:
+		e.FieldStart("kind")
+		e.Str("telegram")
+		{
+			s := s.TelegramLeaf
+			{
+				e.FieldStart("operator")
+				s.Operator.Encode(e)
+			}
+		}
+	case SmsLeafWaitForEventConditionNodeSum:
+		e.FieldStart("kind")
+		e.Str("sms")
+		{
+			s := s.SmsLeaf
+			{
+				e.FieldStart("operator")
+				s.Operator.Encode(e)
+			}
+		}
+	case EngagementTrackingLeafWaitForEventConditionNodeSum:
+		e.FieldStart("kind")
+		e.Str("engagementTracking")
+		{
+			s := s.EngagementTrackingLeaf
+			{
+				e.FieldStart("channel")
+				s.Channel.Encode(e)
+			}
+			{
+				e.FieldStart("test")
+				s.Test.Encode(e)
+			}
+		}
+	case CustomFieldLeafWaitForEventConditionNodeSum:
+		e.FieldStart("kind")
+		e.Str("customField")
+		{
+			s := s.CustomFieldLeaf
+			{
+				e.FieldStart("key")
+				e.Str(s.Key)
+			}
+			{
+				e.FieldStart("test")
+				s.Test.Encode(e)
+			}
+		}
+	case EventLeafWaitForEventConditionNodeSum:
+		e.FieldStart("kind")
+		e.Str("event")
+		{
+			s := s.EventLeaf
+			{
+				e.FieldStart("action")
+				e.Str(s.Action)
+			}
+			{
+				e.FieldStart("operator")
+				s.Operator.Encode(e)
+			}
+			{
+				e.FieldStart("times")
+				e.Int32(s.Times)
+			}
+			{
+				if s.WithinDays.Set {
+					e.FieldStart("withinDays")
+					s.WithinDays.Encode(e)
+				}
+			}
+			{
+				if s.Filter.Set {
+					e.FieldStart("filter")
+					s.Filter.Encode(e)
+				}
+			}
+		}
+	case WaitForEventPropertyLeafWaitForEventConditionNodeSum:
+		e.FieldStart("kind")
+		e.Str("property")
+		{
+			s := s.WaitForEventPropertyLeaf
+			{
+				e.FieldStart("of")
+				s.Of.Encode(e)
+			}
+			{
+				e.FieldStart("key")
+				e.Str(s.Key)
+			}
+			{
+				e.FieldStart("test")
+				s.Test.Encode(e)
+			}
+		}
+	}
+}
+
+// Decode decodes WaitForEventConditionNodeSum from json.
+func (s *WaitForEventConditionNodeSum) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode WaitForEventConditionNodeSum to nil")
+	}
+	// Sum type discriminator.
+	if typ := d.Next(); typ != jx.Object {
+		return errors.Errorf("unexpected json type %q", typ)
+	}
+
+	var found bool
+	if err := d.Capture(func(d *jx.Decoder) error {
+		return d.ObjBytes(func(d *jx.Decoder, key []byte) error {
+			if found {
+				return d.Skip()
+			}
+			switch string(key) {
+			case "kind":
+				typ, err := d.Str()
+				if err != nil {
+					return err
+				}
+				switch typ {
+				case "group":
+					s.Type = WaitForEventConditionWaitForEventConditionNodeSum
+					found = true
+				case "attribute":
+					s.Type = AttributeLeafWaitForEventConditionNodeSum
+					found = true
+				case "birthday":
+					s.Type = BirthdayLeafWaitForEventConditionNodeSum
+					found = true
+				case "tag":
+					s.Type = TagLeafWaitForEventConditionNodeSum
+					found = true
+				case "telegram":
+					s.Type = TelegramLeafWaitForEventConditionNodeSum
+					found = true
+				case "sms":
+					s.Type = SmsLeafWaitForEventConditionNodeSum
+					found = true
+				case "engagementTracking":
+					s.Type = EngagementTrackingLeafWaitForEventConditionNodeSum
+					found = true
+				case "customField":
+					s.Type = CustomFieldLeafWaitForEventConditionNodeSum
+					found = true
+				case "event":
+					s.Type = EventLeafWaitForEventConditionNodeSum
+					found = true
+				case "property":
+					s.Type = WaitForEventPropertyLeafWaitForEventConditionNodeSum
+					found = true
+				default:
+					return errors.Errorf("unknown type %s", typ)
+				}
+				return nil
+			}
+			return d.Skip()
+		})
+	}); err != nil {
+		return errors.Wrap(err, "capture")
+	}
+	if !found {
+		return errors.New("unable to detect sum type variant")
+	}
+	switch s.Type {
+	case WaitForEventConditionWaitForEventConditionNodeSum:
+		if err := s.WaitForEventCondition.Decode(d); err != nil {
+			return err
+		}
+	case AttributeLeafWaitForEventConditionNodeSum:
+		if err := s.AttributeLeaf.Decode(d); err != nil {
+			return err
+		}
+	case BirthdayLeafWaitForEventConditionNodeSum:
+		if err := s.BirthdayLeaf.Decode(d); err != nil {
+			return err
+		}
+	case TagLeafWaitForEventConditionNodeSum:
+		if err := s.TagLeaf.Decode(d); err != nil {
+			return err
+		}
+	case TelegramLeafWaitForEventConditionNodeSum:
+		if err := s.TelegramLeaf.Decode(d); err != nil {
+			return err
+		}
+	case SmsLeafWaitForEventConditionNodeSum:
+		if err := s.SmsLeaf.Decode(d); err != nil {
+			return err
+		}
+	case EngagementTrackingLeafWaitForEventConditionNodeSum:
+		if err := s.EngagementTrackingLeaf.Decode(d); err != nil {
+			return err
+		}
+	case CustomFieldLeafWaitForEventConditionNodeSum:
+		if err := s.CustomFieldLeaf.Decode(d); err != nil {
+			return err
+		}
+	case EventLeafWaitForEventConditionNodeSum:
+		if err := s.EventLeaf.Decode(d); err != nil {
+			return err
+		}
+	case WaitForEventPropertyLeafWaitForEventConditionNodeSum:
+		if err := s.WaitForEventPropertyLeaf.Decode(d); err != nil {
+			return err
+		}
+	default:
+		return errors.Errorf("inferred invalid type: %s", s.Type)
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s WaitForEventConditionNodeSum) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *WaitForEventConditionNodeSum) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes WaitForEventName as json.
 func (s WaitForEventName) Encode(e *jx.Encoder) {
 	unwrapped := string(s)
@@ -62411,6 +63593,620 @@ func (s WaitForEventName) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *WaitForEventName) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *WaitForEventPropertyLeaf) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *WaitForEventPropertyLeaf) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("kind")
+		s.Kind.Encode(e)
+	}
+	{
+		e.FieldStart("of")
+		s.Of.Encode(e)
+	}
+	{
+		e.FieldStart("key")
+		e.Str(s.Key)
+	}
+	{
+		e.FieldStart("test")
+		s.Test.Encode(e)
+	}
+}
+
+var jsonFieldsNameOfWaitForEventPropertyLeaf = [4]string{
+	0: "kind",
+	1: "of",
+	2: "key",
+	3: "test",
+}
+
+// Decode decodes WaitForEventPropertyLeaf from json.
+func (s *WaitForEventPropertyLeaf) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode WaitForEventPropertyLeaf to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "kind":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Kind.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"kind\"")
+			}
+		case "of":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Of.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"of\"")
+			}
+		case "key":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Str()
+				s.Key = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"key\"")
+			}
+		case "test":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				if err := s.Test.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"test\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode WaitForEventPropertyLeaf")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00001111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfWaitForEventPropertyLeaf) {
+					name = jsonFieldsNameOfWaitForEventPropertyLeaf[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *WaitForEventPropertyLeaf) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *WaitForEventPropertyLeaf) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *WaitForEventPropertyLeafInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *WaitForEventPropertyLeafInput) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("kind")
+		s.Kind.Encode(e)
+	}
+	{
+		e.FieldStart("of")
+		s.Of.Encode(e)
+	}
+	{
+		e.FieldStart("key")
+		e.Str(s.Key)
+	}
+	{
+		e.FieldStart("test")
+		s.Test.Encode(e)
+	}
+}
+
+var jsonFieldsNameOfWaitForEventPropertyLeafInput = [4]string{
+	0: "kind",
+	1: "of",
+	2: "key",
+	3: "test",
+}
+
+// Decode decodes WaitForEventPropertyLeafInput from json.
+func (s *WaitForEventPropertyLeafInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode WaitForEventPropertyLeafInput to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "kind":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Kind.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"kind\"")
+			}
+		case "of":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Of.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"of\"")
+			}
+		case "key":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Str()
+				s.Key = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"key\"")
+			}
+		case "test":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				if err := s.Test.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"test\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode WaitForEventPropertyLeafInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00001111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfWaitForEventPropertyLeafInput) {
+					name = jsonFieldsNameOfWaitForEventPropertyLeafInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *WaitForEventPropertyLeafInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *WaitForEventPropertyLeafInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes WaitForEventPropertyLeafInputKind as json.
+func (s WaitForEventPropertyLeafInputKind) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes WaitForEventPropertyLeafInputKind from json.
+func (s *WaitForEventPropertyLeafInputKind) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode WaitForEventPropertyLeafInputKind to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch WaitForEventPropertyLeafInputKind(v) {
+	case WaitForEventPropertyLeafInputKindProperty:
+		*s = WaitForEventPropertyLeafInputKindProperty
+	default:
+		*s = WaitForEventPropertyLeafInputKind(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s WaitForEventPropertyLeafInputKind) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *WaitForEventPropertyLeafInputKind) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes WaitForEventPropertyLeafKind as json.
+func (s WaitForEventPropertyLeafKind) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes WaitForEventPropertyLeafKind from json.
+func (s *WaitForEventPropertyLeafKind) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode WaitForEventPropertyLeafKind to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch WaitForEventPropertyLeafKind(v) {
+	case WaitForEventPropertyLeafKindProperty:
+		*s = WaitForEventPropertyLeafKindProperty
+	default:
+		*s = WaitForEventPropertyLeafKind(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s WaitForEventPropertyLeafKind) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *WaitForEventPropertyLeafKind) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *WaitForEventPropertySource) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *WaitForEventPropertySource) encodeFields(e *jx.Encoder) {
+	s.OneOf.encodeFields(e)
+}
+
+var jsonFieldsNameOfWaitForEventPropertySource = [0]string{}
+
+// Decode decodes WaitForEventPropertySource from json.
+func (s *WaitForEventPropertySource) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode WaitForEventPropertySource to nil")
+	}
+	if err := d.Capture(func(d *jx.Decoder) error {
+		return s.OneOf.Decode(d)
+	}); err != nil {
+		return errors.Wrap(err, "decode field OneOf")
+	}
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		default:
+			return d.Skip()
+		}
+	}); err != nil {
+		return errors.Wrap(err, "decode WaitForEventPropertySource")
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *WaitForEventPropertySource) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *WaitForEventPropertySource) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *WaitForEventPropertySourceInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *WaitForEventPropertySourceInput) encodeFields(e *jx.Encoder) {
+	s.OneOf.encodeFields(e)
+}
+
+var jsonFieldsNameOfWaitForEventPropertySourceInput = [0]string{}
+
+// Decode decodes WaitForEventPropertySourceInput from json.
+func (s *WaitForEventPropertySourceInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode WaitForEventPropertySourceInput to nil")
+	}
+	if err := d.Capture(func(d *jx.Decoder) error {
+		return s.OneOf.Decode(d)
+	}); err != nil {
+		return errors.Wrap(err, "decode field OneOf")
+	}
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		default:
+			return d.Skip()
+		}
+	}); err != nil {
+		return errors.Wrap(err, "decode WaitForEventPropertySourceInput")
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *WaitForEventPropertySourceInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *WaitForEventPropertySourceInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes WaitForEventPropertySourceInputSum as json.
+func (s WaitForEventPropertySourceInputSum) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+func (s WaitForEventPropertySourceInputSum) encodeFields(e *jx.Encoder) {
+	switch s.Type {
+	case TriggerSourceInputWaitForEventPropertySourceInputSum:
+		e.FieldStart("kind")
+		e.Str("trigger")
+	}
+}
+
+// Decode decodes WaitForEventPropertySourceInputSum from json.
+func (s *WaitForEventPropertySourceInputSum) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode WaitForEventPropertySourceInputSum to nil")
+	}
+	// Sum type discriminator.
+	if typ := d.Next(); typ != jx.Object {
+		return errors.Errorf("unexpected json type %q", typ)
+	}
+
+	var found bool
+	if err := d.Capture(func(d *jx.Decoder) error {
+		return d.ObjBytes(func(d *jx.Decoder, key []byte) error {
+			if found {
+				return d.Skip()
+			}
+			switch string(key) {
+			case "kind":
+				typ, err := d.Str()
+				if err != nil {
+					return err
+				}
+				switch typ {
+				case "trigger":
+					s.Type = TriggerSourceInputWaitForEventPropertySourceInputSum
+					found = true
+				default:
+					return errors.Errorf("unknown type %s", typ)
+				}
+				return nil
+			}
+			return d.Skip()
+		})
+	}); err != nil {
+		return errors.Wrap(err, "capture")
+	}
+	if !found {
+		return errors.New("unable to detect sum type variant")
+	}
+	switch s.Type {
+	case TriggerSourceInputWaitForEventPropertySourceInputSum:
+		if err := s.TriggerSourceInput.Decode(d); err != nil {
+			return err
+		}
+	default:
+		return errors.Errorf("inferred invalid type: %s", s.Type)
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s WaitForEventPropertySourceInputSum) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *WaitForEventPropertySourceInputSum) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes WaitForEventPropertySourceSum as json.
+func (s WaitForEventPropertySourceSum) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+func (s WaitForEventPropertySourceSum) encodeFields(e *jx.Encoder) {
+	switch s.Type {
+	case TriggerSourceWaitForEventPropertySourceSum:
+		e.FieldStart("kind")
+		e.Str("trigger")
+	}
+}
+
+// Decode decodes WaitForEventPropertySourceSum from json.
+func (s *WaitForEventPropertySourceSum) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode WaitForEventPropertySourceSum to nil")
+	}
+	// Sum type discriminator.
+	if typ := d.Next(); typ != jx.Object {
+		return errors.Errorf("unexpected json type %q", typ)
+	}
+
+	var found bool
+	if err := d.Capture(func(d *jx.Decoder) error {
+		return d.ObjBytes(func(d *jx.Decoder, key []byte) error {
+			if found {
+				return d.Skip()
+			}
+			switch string(key) {
+			case "kind":
+				typ, err := d.Str()
+				if err != nil {
+					return err
+				}
+				switch typ {
+				case "trigger":
+					s.Type = TriggerSourceWaitForEventPropertySourceSum
+					found = true
+				default:
+					return errors.Errorf("unknown type %s", typ)
+				}
+				return nil
+			}
+			return d.Skip()
+		})
+	}); err != nil {
+		return errors.Wrap(err, "capture")
+	}
+	if !found {
+		return errors.New("unable to detect sum type variant")
+	}
+	switch s.Type {
+	case TriggerSourceWaitForEventPropertySourceSum:
+		if err := s.TriggerSource.Decode(d); err != nil {
+			return err
+		}
+	default:
+		return errors.Errorf("inferred invalid type: %s", s.Type)
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s WaitForEventPropertySourceSum) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *WaitForEventPropertySourceSum) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

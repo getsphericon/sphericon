@@ -64,7 +64,7 @@ func awaitThenOn(t *testing.T, env *testhelper.TestEnv, clock *testhelper.Clock,
 	m := testhelper.Module[*automations.Module](env)
 	wait := automationstep.WaitForEvent{
 		Name: "purchase", TimeoutSeconds: int(waitTimeout / time.Second),
-		Awaits:  automationstep.AwaitedEvent{Actions: []string{awaitedAction}},
+		Awaits:  automationstep.AwaitedEvent{Matchers: []eventmatcher.Matcher{{Action: awaitedAction}}},
 		Arrived: automationstep.Root(), TimedOut: automationstep.Root(),
 	}
 	a, err := m.Create(ctx, s, automations.CreateInput{

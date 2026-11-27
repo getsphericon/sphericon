@@ -45,6 +45,20 @@ func waitFor(t *testing.T, trigger string, actions []string, goal *eventmatcher.
 // goal).
 func waitWith(t *testing.T, trigger string, actions []string, with func(in *automations.CreateInput)) waiting {
 	t.Helper()
+	matchers := lo.Map(actions, func(action string, _ int) eventmatcher.Matcher { return eventmatcher.Matcher{Action: action} })
+	return awaitingWith(t, trigger, automationstep.AwaitedEvent{Matchers: matchers}, with)
+}
+
+// awaiting is waitFor of a Wait for event that awaits what awaited says: its matchers and its
+// Condition.
+func awaiting(t *testing.T, trigger string, awaited automationstep.AwaitedEvent, goal *eventmatcher.Matcher) waiting {
+	t.Helper()
+	return awaitingWith(t, trigger, awaited, func(in *automations.CreateInput) { in.GoalEvent = goal })
+}
+
+// awaitingWith is waitWith of a Wait for event that awaits what awaited says.
+func awaitingWith(t *testing.T, trigger string, awaited automationstep.AwaitedEvent, with func(in *automations.CreateInput)) waiting {
+	t.Helper()
 	clock := testhelper.NewClock(time.Now().UTC().Truncate(time.Second))
 	env := testhelper.Setup(t, testhelper.WithClock(clock.Now))
 	ctx := t.Context()
@@ -52,7 +66,7 @@ func waitWith(t *testing.T, trigger string, actions []string, with func(in *auto
 	m := testhelper.Module[*automations.Module](env)
 	wait := automationstep.WaitForEvent{
 		Name: "purchase", TimeoutSeconds: int(waitTimeout / time.Second),
-		Awaits:   automationstep.AwaitedEvent{Actions: actions},
+		Awaits:   awaited,
 		Arrived:  automationstep.Root(automationstep.New(automationstep.ApplyTag{Tag: "buyer"})),
 		TimedOut: automationstep.Root(automationstep.New(automationstep.ApplyTag{Tag: "reminded"})),
 	}

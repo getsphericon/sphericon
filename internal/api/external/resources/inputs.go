@@ -598,10 +598,28 @@ func waitForEventStepIn(c Inputs, in *externalapi.WaitForEventStepInput) (automa
 func waitForEventAwaitsIn(in externalapi.WaitForEventAwaitsInput) (automationstep.Awaits, error) {
 	switch in.OneOf.Type {
 	case externalapi.AwaitedEventInputWaitForEventAwaitsInputSum:
-		return automationstep.AwaitedEvent{Actions: in.OneOf.AwaitedEventInput.Actions}, nil
+		return awaitedEventIn(in.OneOf.AwaitedEventInput)
 	default:
 		return nil, fmt.Errorf("what a wait for event awaits has no kind %q", in.OneOf.Type)
 	}
+}
+
+// awaitedEventIn maps a Wait for event's Event matchers and its Condition (the contract's typed
+// tree is the stored shape, ADR 0169). The save checks them.
+func awaitedEventIn(in externalapi.AwaitedEventInput) (automationstep.Awaits, error) {
+	matchers := make([]eventmatcher.Matcher, len(in.Matchers))
+	for i, m := range in.Matchers {
+		matcher, err := eventMatcherIn(m)
+		if err != nil {
+			return nil, err
+		}
+		matchers[i] = matcher
+	}
+	cond, err := condition.FromOptionalDTO[conditiontree.WaitForEvent](in.Condition)
+	if err != nil {
+		return nil, err
+	}
+	return automationstep.AwaitedEvent{Matchers: matchers, Condition: cond}, nil
 }
 
 // ruleActionsPtrIn is the Actions an update replaces: omitted (nil) keeps the stored ones.

@@ -12653,40 +12653,56 @@
       },
       "AwaitedEvent": {
         "type": "object",
-        "required": ["kind", "actions"],
+        "required": ["kind", "matchers"],
         "properties": {
           "kind": {
             "type": "string",
             "enum": ["event"]
           },
-          "actions": {
+          "matchers": {
             "type": "array",
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/EventMatcher"
             },
-            "description": "The Event actions it waits for, each at most once"
+            "description": "The Event matchers it waits for: an Event of a matcher's action whose properties pass its\nfilter"
+          },
+          "condition": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WaitForEventCondition"
+              }
+            ],
+            "description": "The tests the Contact and the Event the Enrollment began with must pass when the Event is\nhandled; absent, every matching Event arrives"
           }
         },
-        "description": "A Wait for event waits for an Event of one of the actions it names (ADR 0124)"
+        "description": "A Wait for event waits for an Event one of its Event matchers matches, on the Contact its\nCondition, if any, holds for (ADR 0124, ADR 0180)"
       },
       "AwaitedEventInput": {
         "type": "object",
-        "required": ["kind", "actions"],
+        "required": ["kind", "matchers"],
         "properties": {
           "kind": {
             "type": "string",
             "enum": ["event"]
           },
-          "actions": {
+          "matchers": {
             "type": "array",
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/EventMatcherInput"
             },
             "minItems": 1,
-            "description": "The Event actions it waits for, at least one, each at most once. An action an exit or the\ngoal of the version matches with no filter refuses the save, naming the Step: that Event would\nend the enrollment, never take `arrived`."
+            "description": "The Event matchers it waits for, at least one, none twice: an Event of a matcher's action whose\nproperties pass its filter. A matcher on an action an exit or the goal of the version matches\nwith no filter refuses the save, naming the Step: that Event would end the enrollment, never\ntake `arrived`."
+          },
+          "condition": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WaitForEventConditionInput"
+              }
+            ],
+            "description": "The tests the Contact and the Event the Enrollment began with must pass when the Event is\nhandled, read on the Contact's live data; false and unknown leave the Enrollment waiting.\nOmitted, every matching Event arrives."
           }
         },
-        "description": "A Wait for event waits for an Event of one of the actions it names, as a request writes it",
+        "description": "A Wait for event waits for an Event one of its Event matchers matches, as a request writes it",
         "additionalProperties": false
       },
       "BirthdayDateField": {
@@ -15996,7 +16012,7 @@
             "description": "The tests of the Event's own properties it must pass; absent, every Event of the action\nmatches. The `tag` of contact.tagged and contact.untagged and the `key` of\ncontact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace. On\na message's sent, delivery and engagement Events it may name the Broadcast or Automation that\nsent the message (`sentBy`)."
           }
         },
-        "description": "An Event matcher that ends an enrollment (ADR 0133): an action, and an optional filter on that\nEvent's own properties, so `order.closed` where `status` is `cancelled` exits and the same action\nwhere `status` is `paid` reaches the goal. The Event that began the enrollment never ends it."
+        "description": "An Event matcher that ends an enrollment or that a Wait for event awaits (ADR 0133): an action,\nand an optional filter on that Event's own properties, so `order.closed` where `status` is `cancelled` exits and the same action\nwhere `status` is `paid` reaches the goal. The Event that began the enrollment never ends it."
       },
       "EventMatcherInput": {
         "type": "object",
@@ -16015,7 +16031,7 @@
             "description": "The tests of the Event's own properties it must pass; omitted, every Event of the action\nmatches. The `tag` of contact.tagged and contact.untagged and the `key` of\ncontact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace. On\na message's sent, delivery and engagement Events it may name the Broadcast or Automation that\nsent the message (`sentBy`)."
           }
         },
-        "description": "An Event matcher that ends an enrollment (ADR 0133), as a request writes it",
+        "description": "An Event matcher that ends an enrollment or that a Wait for event awaits (ADR 0133), as a\nrequest writes it",
         "additionalProperties": false
       },
       "EventTrigger": {
@@ -26912,11 +26928,267 @@
         },
         "description": "What a Wait for event waits for, by `kind`, as a request writes it"
       },
+      "WaitForEventCondition": {
+        "type": "object",
+        "required": ["kind", "combinator", "entries"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["group"]
+          },
+          "combinator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ConditionCombinator"
+              }
+            ],
+            "description": "How the entries combine"
+          },
+          "not": {
+            "type": "boolean",
+            "description": "Negate the whole group"
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WaitForEventConditionNode"
+            },
+            "description": "The group's tests and nested groups"
+          }
+        },
+        "description": "A Wait for event's Condition (ADR 0124, ADR 0180): the tree of tests the Contact, on its live\ndata when the awaited Event is handled, and the Event the Enrollment began with match. An Event\nits matcher matches arrives only when the Condition holds; false and unknown leave the\nEnrollment waiting."
+      },
+      "WaitForEventConditionInput": {
+        "type": "object",
+        "required": ["kind", "combinator", "entries"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["group"]
+          },
+          "combinator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ConditionCombinator"
+              }
+            ],
+            "description": "How the entries combine"
+          },
+          "not": {
+            "type": "boolean",
+            "description": "Negate the whole group"
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WaitForEventConditionNodeInput"
+            },
+            "description": "The group's tests and nested groups"
+          }
+        },
+        "description": "A Wait for event's Condition (ADR 0124, ADR 0180): the tree of tests the Contact, on its live\ndata when the awaited Event is handled, and the Event the Enrollment began with match. An Event\nits matcher matches arrives only when the Condition holds; false and unknown leave the\nEnrollment waiting.",
+        "additionalProperties": false
+      },
+      "WaitForEventConditionNode": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/WaitForEventCondition"
+          },
+          {
+            "$ref": "#/components/schemas/AttributeLeaf"
+          },
+          {
+            "$ref": "#/components/schemas/BirthdayLeaf"
+          },
+          {
+            "$ref": "#/components/schemas/TagLeaf"
+          },
+          {
+            "$ref": "#/components/schemas/TelegramLeaf"
+          },
+          {
+            "$ref": "#/components/schemas/SmsLeaf"
+          },
+          {
+            "$ref": "#/components/schemas/EngagementTrackingLeaf"
+          },
+          {
+            "$ref": "#/components/schemas/CustomFieldLeaf"
+          },
+          {
+            "$ref": "#/components/schemas/EventLeaf"
+          },
+          {
+            "$ref": "#/components/schemas/WaitForEventPropertyLeaf"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "attribute": "#/components/schemas/AttributeLeaf",
+            "birthday": "#/components/schemas/BirthdayLeaf",
+            "tag": "#/components/schemas/TagLeaf",
+            "telegram": "#/components/schemas/TelegramLeaf",
+            "sms": "#/components/schemas/SmsLeaf",
+            "engagementTracking": "#/components/schemas/EngagementTrackingLeaf",
+            "customField": "#/components/schemas/CustomFieldLeaf",
+            "event": "#/components/schemas/EventLeaf",
+            "property": "#/components/schemas/WaitForEventPropertyLeaf",
+            "group": "#/components/schemas/WaitForEventCondition"
+          }
+        },
+        "description": "An entry of a Wait for event's Condition, by `kind`: a Rule's, and the property test reading\nthe Event the Enrollment began with. The test of the Enrollment's own message is a Branch's\nonly: a Wait for event on an open or click waits for one."
+      },
+      "WaitForEventConditionNodeInput": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/WaitForEventConditionInput"
+          },
+          {
+            "$ref": "#/components/schemas/AttributeLeafInput"
+          },
+          {
+            "$ref": "#/components/schemas/BirthdayLeafInput"
+          },
+          {
+            "$ref": "#/components/schemas/TagLeafInput"
+          },
+          {
+            "$ref": "#/components/schemas/TelegramLeafInput"
+          },
+          {
+            "$ref": "#/components/schemas/SmsLeafInput"
+          },
+          {
+            "$ref": "#/components/schemas/EngagementTrackingLeafInput"
+          },
+          {
+            "$ref": "#/components/schemas/CustomFieldLeafInput"
+          },
+          {
+            "$ref": "#/components/schemas/EventLeafInput"
+          },
+          {
+            "$ref": "#/components/schemas/WaitForEventPropertyLeafInput"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "attribute": "#/components/schemas/AttributeLeafInput",
+            "birthday": "#/components/schemas/BirthdayLeafInput",
+            "tag": "#/components/schemas/TagLeafInput",
+            "telegram": "#/components/schemas/TelegramLeafInput",
+            "sms": "#/components/schemas/SmsLeafInput",
+            "engagementTracking": "#/components/schemas/EngagementTrackingLeafInput",
+            "customField": "#/components/schemas/CustomFieldLeafInput",
+            "event": "#/components/schemas/EventLeafInput",
+            "property": "#/components/schemas/WaitForEventPropertyLeafInput",
+            "group": "#/components/schemas/WaitForEventConditionInput"
+          }
+        },
+        "description": "An entry of a Wait for event's Condition, by `kind`: a Rule's, and the property test reading\nthe Event the Enrollment began with. The test of the Enrollment's own message is a Branch's\nonly: a Wait for event on an open or click waits for one."
+      },
       "WaitForEventName": {
         "type": "string",
         "maxLength": 64,
         "pattern": "^[a-z][a-z0-9_]*$",
         "description": "The name of a Wait for event (ADR 0136): lower-case letters, digits and underscores, starting\nwith a letter. It belongs to one Step id across every version of its Automation."
+      },
+      "WaitForEventPropertyLeaf": {
+        "type": "object",
+        "required": ["kind", "of", "key", "test"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["property"]
+          },
+          "of": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WaitForEventPropertySource"
+              }
+            ],
+            "description": "Whose property it is"
+          },
+          "key": {
+            "type": "string",
+            "description": "The property's key"
+          },
+          "test": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PropertyTest"
+              }
+            ],
+            "description": "What it asks of the property's value"
+          }
+        },
+        "description": "A test of one property of an Event: whose it is in `of`, its key in a field of its own, so a\nkey holding a dot is one key"
+      },
+      "WaitForEventPropertyLeafInput": {
+        "type": "object",
+        "required": ["kind", "of", "key", "test"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["property"]
+          },
+          "of": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WaitForEventPropertySourceInput"
+              }
+            ],
+            "description": "Whose property it is"
+          },
+          "key": {
+            "type": "string",
+            "description": "The property's key"
+          },
+          "test": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PropertyTestInput"
+              }
+            ],
+            "description": "What it asks of the property's value"
+          }
+        },
+        "description": "A test of one property of an Event: whose it is in `of`, its key in a field of its own, so a\nkey holding a dot is one key",
+        "additionalProperties": false
+      },
+      "WaitForEventPropertySource": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/TriggerSource"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "trigger": "#/components/schemas/TriggerSource"
+          }
+        },
+        "description": "Whose properties a Wait for event's property test reads, by `kind`: the Event the Enrollment\nbegan with. The Event the Wait for event awaits is tested by its matcher's filter."
+      },
+      "WaitForEventPropertySourceInput": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/TriggerSourceInput"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "trigger": "#/components/schemas/TriggerSourceInput"
+          }
+        },
+        "description": "Whose properties a Wait for event's property test reads, by `kind`: the Event the Enrollment\nbegan with. The Event the Wait for event awaits is tested by its matcher's filter."
       },
       "WaitForEventStep": {
         "type": "object",
@@ -26972,7 +27244,7 @@
             "description": "The path taken when the timeout passes first"
           }
         },
-        "description": "A Step that holds the Enrollment until what it awaits arrives or its timeout passes (ADR\n0124), then takes `arrived` or `timedOut`; the paths rejoin at the Step after it. An Event counts\nwhen it is the Contact's, occurred at or after the moment the Enrollment reached the Step and no\nlater than the timeout, and is neither a machine open or click, loaded history nor the Event that\nbegan the Enrollment. One that occurred within the window but was recorded late is taken at the\ntimeout. An Event an exit or the goal matches ends the Enrollment instead."
+        "description": "A Step that holds the Enrollment until what it awaits arrives or its timeout passes (ADR\n0124), then takes `arrived` or `timedOut`; the paths rejoin at the Step after it. An Event counts\nwhen one of its matchers matches it, its Condition, if any, holds for the Contact, and it is the\nContact's, occurred at or after the moment the Enrollment reached the Step and no later than the\ntimeout, and is neither a machine open or click, loaded history nor the Event that\nbegan the Enrollment. One that occurred within the window but was recorded late is taken at the\ntimeout. An Event an exit or the goal matches ends the Enrollment instead."
       },
       "WaitForEventStepInput": {
         "type": "object",
