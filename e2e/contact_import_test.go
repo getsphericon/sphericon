@@ -34,6 +34,24 @@ func TestACSVImportBringsContactsInAndStartsNothing(t *testing.T) {
 	w.Inbox.RequireNone(Match{To: other})
 }
 
+// With "treat them as new sign-ups" ticked, a CSV import's Contacts start what a sign-up starts
+// (ADR 0138): an Automation on contact.created sends its mail to an imported Contact.
+func TestACSVImportOfNewSignUpsStartsTheirAutomations(t *testing.T) {
+	t.Parallel()
+	w := env.NewWorkspace(t).Ready()
+	imported := w.NewRecipient()
+	w.PublishAutomation(Automation{
+		TriggerEvent: systemevent.ContactCreated,
+		Subject:      "Welcome aboard",
+		Body:         HTML("Glad to have you"),
+	})
+
+	w.ImportCSVAsNewSignUps("email,first_name\n"+imported+",Ann\n", "Signed up elsewhere")
+
+	w.RequireImported(imported, "Signed up elsewhere")
+	w.Inbox.Wait(Match{To: imported, Subject: "Welcome aboard"})
+}
+
 // A file whose status column says one address unsubscribed on the old platform brings that
 // refusal (ADR 0138): a Broadcast to everyone reaches the others and not that address.
 func TestAnImportedUnsubscribeKeepsABroadcastAway(t *testing.T) {

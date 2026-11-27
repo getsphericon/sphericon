@@ -352,6 +352,13 @@ function MappingForm({ workspaceId, imp }: { workspaceId: string; imp: SiteConta
           checked={values.onlyAddNew}
           onChange={(event) => edit({ onlyAddNew: event.currentTarget.checked })}
         />
+        <Checkbox
+          mt="lg"
+          label={t(($) => $.contactImports.asNewSignUps)}
+          description={t(($) => $.contactImports.asNewSignUpsHint)}
+          checked={values.asNewSignUps}
+          onChange={(event) => edit({ asNewSignUps: event.currentTarget.checked })}
+        />
       </SimpleGrid>
 
       {save.isError ? (

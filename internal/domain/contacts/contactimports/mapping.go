@@ -50,10 +50,12 @@ var (
 	}
 )
 
-// MappingInput is a mapping a Member saves and the "only add new Contacts" choice.
+// MappingInput is a mapping a Member saves, the "only add new Contacts" choice and the "treat
+// them as new sign-ups" one, which makes the run's Events live (events.ImportAsNew).
 type MappingInput struct {
-	Mapping    csvimport.Mapping
-	OnlyAddNew bool
+	Mapping      csvimport.Mapping
+	OnlyAddNew   bool
+	AsNewSignUps bool
 	// Role is the saving Member's: a mapping that records a Suppression needs
 	// suppressions:manage (ADR 0138).
 	Role membership.Role
@@ -80,7 +82,7 @@ func (m *Module) SaveMapping(ctx context.Context, s *ent.Scoped, id int64, in Ma
 	}
 	err = m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		return m.machine(ts, imp.ID, func(q *ent.ContactImportScopedUpdate) {
-			q.SetMapping(mapping).SetOnlyAddNew(in.OnlyAddNew)
+			q.SetMapping(mapping).SetOnlyAddNew(in.OnlyAddNew).SetAsNewSignUps(in.AsNewSignUps)
 		}).FireCtx(ctx, triggerSaveMapping)
 	})
 	if err != nil {

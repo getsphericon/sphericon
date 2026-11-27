@@ -24,6 +24,7 @@ const UPLOADED: SiteContactImport = {
     defaultCountry: null,
     tag: 'Imported 2026-11-27',
     onlyAddNew: false,
+    asNewSignUps: false,
   },
   counts: {
     processed: 0,

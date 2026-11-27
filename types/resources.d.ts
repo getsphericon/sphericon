@@ -1297,6 +1297,8 @@ export default interface Resources {
     },
     "contactImports": {
       "addressWarning": "The address looks like a disposable or a role address.",
+      "asNewSignUps": "Treat them as new sign-ups",
+      "asNewSignUpsHint": "Automations start for these contacts, rules fire and webhooks are sent, as for anyone who signs up. Left off, the import starts nothing.",
       "attributes": {
         "avatar": "Avatar",
         "birthday": "Birthday",
@@ -1376,7 +1378,7 @@ export default interface Resources {
       "keysGroup": "Keys",
       "leaveMessage": "The mapping you changed has not been saved.",
       "loadError": "Could not load the import",
-      "malformedRows": "{{count}} row has another number of cells than the header and will be refused." | "{{count}} rows have another number of cells than the header and will be refused.",
+      "malformedRows": "{{count, number}} row has another number of cells than the header and will be refused." | "{{count, number}} rows have another number of cells than the header and will be refused.",
       "mappingTitle": "Map the columns",
       "onlyAddNew": "Only add new contacts",
       "onlyAddNewHint": "Contacts the workspace has are left as they are.",
@@ -1387,7 +1389,7 @@ export default interface Resources {
       "previewTotals": "{{rows}} rows, {{withoutKey}} without an email, phone or subject ID, {{malformed}} with another number of cells, {{tags}} distinct tags.",
       "progress": "{{processed}} of {{rows}} rows read",
       "reportError": "Could not download the report",
-      "reportHint": "{{count}} row was refused or written without some of its values." | "{{count}} rows were refused or written without some of their values.",
+      "reportHint": "{{count, number}} row was refused or written without some of its values." | "{{count, number}} rows were refused or written without some of their values.",
       "row": "Row",
       "run": "Run import",
       "runError": "Could not run the import",

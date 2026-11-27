@@ -26,6 +26,7 @@ const proposal: ContactImportMapping = {
   defaultCountry: null,
   tag: 'Imported 2026-11-27',
   onlyAddNew: false,
+  asNewSignUps: true,
 }
 
 test('a mapping read back is the mapping a request saves', () => {
