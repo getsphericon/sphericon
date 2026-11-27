@@ -134,10 +134,11 @@ func TestAReaderThatStopsStopsThePages(t *testing.T) {
 }
 
 // A list held in one cell (a Contact's Tags) is one CSV record, which a CSV reader gives back as the
-// list whatever its names hold: a comma, a quote or a line break.
+// list whatever its names hold: a comma, a quote or a line feed. A carriage return is left out: a
+// CSV reader folds a quoted CRLF into a line feed, whoever wrote it.
 func TestAListInOneCellReadsBackAsTheList(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
-		names := rapid.SliceOfN(rapid.StringMatching(`[^\x00]{1,12}`), 1, 6).Draw(t, "names")
+		names := rapid.SliceOfN(rapid.StringMatching(`[^\x00\r]{1,12}`), 1, 6).Draw(t, "names")
 
 		cell := csvfile.List(names)
 
