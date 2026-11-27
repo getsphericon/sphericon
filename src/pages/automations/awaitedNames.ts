@@ -31,13 +31,16 @@ export function awaitedBefore(root: FlowPath, id: string): string[] {
 
 // A Liquid output or tag, `{{ … }}` or `{% … %}`, whose text a merge tag lives in.
 const LIQUID = /\{\{([\s\S]*?)\}\}|\{%([\s\S]*?)%\}/g
-// `awaited.<name>` within it, not as a part of a longer path.
-const AWAITED = /(?<![\w.])awaited\.([a-z][a-z0-9_]*)/g
+// `awaited.<word>` within it, not as a part of a longer path: a word that is a name of the form the
+// contract takes (zWaitForEventName) is a name read.
+const AWAITED = /(?<![\w.])awaited\.(\w+)/g
 
 // namesInText are the names a text's Liquid reads as `awaited.<name>`.
 function namesInText(text: string): string[] {
   return [...text.matchAll(LIQUID)].flatMap((liquid) =>
-    [...(liquid[1] ?? liquid[2] ?? '').matchAll(AWAITED)].map((match) => match[1] ?? ''),
+    [...(liquid[1] ?? liquid[2] ?? '').matchAll(AWAITED)]
+      .map((match) => match[1] ?? '')
+      .filter((name) => zWaitForEventName.safeParse(name).success),
   )
 }
 
