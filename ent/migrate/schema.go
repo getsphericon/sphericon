@@ -574,6 +574,14 @@ var (
 				Unique:  true,
 				Columns: []*schema.Column{AutomationStepRecordsColumns[18], AutomationStepRecordsColumns[17], AutomationStepRecordsColumns[3]},
 			},
+			{
+				Name:    "automation_step_records_awaited_event_id",
+				Unique:  false,
+				Columns: []*schema.Column{AutomationStepRecordsColumns[18], AutomationStepRecordsColumns[13]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "awaited_event_id IS NOT NULL",
+				},
+			},
 		},
 	}
 	// AutomationVersionsColumns holds the columns for the "automation_versions" table.

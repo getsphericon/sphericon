@@ -173,5 +173,11 @@ func (AutomationStepRecord) Indexes() []ent.Index {
 		index.Fields("workspace_id", "run_id", "step_id").
 			Unique().
 			StorageKey("automation_step_records_workspace_id_run_id_step_id"),
+		// The records that keep a copy of an Event, by the Event's id: a refusal of tracking clears
+		// the copies of the opens and clicks it deletes by their ids (ForgetKept, ADR 0136). Only a
+		// record of a Wait for event that arrived on an Event and still runs holds one.
+		index.Fields("workspace_id", "awaited_event_id").
+			Annotations(entsql.IndexWhere("awaited_event_id IS NOT NULL")).
+			StorageKey("automation_step_records_awaited_event_id"),
 	}
 }
