@@ -286,57 +286,47 @@ func (m *Module) recordTracking(ctx context.Context, s *ent.Scoped, res Result, 
 	})
 }
 
-// Verdict is what the Contact intake would make of a row, written or not: why it would refuse it
-// (nil when it would write it) and the Warnings of its address.
-type Verdict struct {
-	Refusal  error
-	Warnings []Warning
-}
-
-// Verdicts judge rows as the intake would, writing nothing (a CSV import's preview, ADR 0138): a
-// row with no alias key, an address that is none or whose domain cannot receive mail while no
-// Contact holds it (ADR 0117, the domains read once), a phone that cannot be read, or a Custom field
-// value its field's type does not read is refused with the intake's own refusal; a row it would
-// write carries the Warnings of its address. A refusal of a key another Contact holds is not
-// judged: it needs the rows written before it.
-func (m *Module) Verdicts(ctx context.Context, s *ent.Scoped, rows []IntakeInput) ([]Verdict, error) {
+// Verdicts judge rows as the intake would, writing nothing (a CSV import's preview, ADR 0138): an
+// item's error is the intake's own refusal of its row (no alias key, an address that is none or
+// whose domain cannot receive mail while no Contact holds it, ADR 0117, the domains read once, a
+// phone that cannot be read, a Custom field value its field's type does not read), and the value
+// of a row it would write the Warnings of its address. A refusal of a key another Contact holds is
+// not judged: it needs the rows written before it. An error of a read ends the whole.
+func (m *Module) Verdicts(ctx context.Context, s *ent.Scoped, rows []IntakeInput) (batch.Result[[]Warning], error) {
 	mail := m.mailVerdicts(ctx, rows)
-	out := make([]Verdict, len(rows))
-	for i, row := range rows {
-		v, err := verdict(ctx, s, row, mail)
-		if err != nil {
-			return nil, err
+	out := batch.Result[[]Warning]{Items: make([]batch.Item[[]Warning], len(rows))}
+	for i := range rows {
+		warnings, err := verdict(ctx, s, &rows[i], mail)
+		if _, refused := validation.Shown(err); err != nil && !refused {
+			return batch.Result[[]Warning]{}, err
 		}
-		out[i] = v
+		out.Items[i] = batch.Item[[]Warning]{Value: warnings, Err: err}
 	}
 	return out, nil
 }
 
-// verdict is the Verdict of row, or the error of a read.
-func verdict(ctx context.Context, s *ent.Scoped, row IntakeInput, mail map[string]addresscheck.Verdict) (Verdict, error) {
-	in := row.UpsertInput.normalized()
+// verdict is the Warnings of the row's address, or the intake's refusal of the row, or the error
+// of a read.
+func verdict(ctx context.Context, s *ent.Scoped, row *IntakeInput, mail map[string]addresscheck.Verdict) ([]Warning, error) {
+	in := row.normalized()
 	if lo.FromPtr(in.SubjectID) == "" && in.Email == nil && in.Phone == nil {
-		return Verdict{Refusal: ErrIdentityRequired}, nil
+		return nil, ErrIdentityRequired
 	}
 	email, err := checked(in.Email, in.City.Ptr(), in.Country.Ptr(), in.Locale.Ptr(), in.Avatar.Ptr())
 	if err != nil {
-		return Verdict{Refusal: err}, nil
+		return nil, err
 	}
-	for _, check := range []func() error{
-		func() error { return admitAddress(ctx, s, email, mail) },
-		func() error { _, err := upsertedPhone(ctx, s, in); return err },
-		func() error { return checkFieldTypes(ctx, s, in.CustomFields) },
-	} {
-		err := check()
-		if _, refused := validation.Shown(err); refused {
-			return Verdict{Refusal: err}, nil
-		}
-		if err != nil {
-			return Verdict{}, err
-		}
+	if err := admitAddress(ctx, s, email, mail); err != nil {
+		return nil, err
+	}
+	if _, err := upsertedPhone(ctx, s, in); err != nil {
+		return nil, err
+	}
+	if err := checkFieldTypes(ctx, s, in.CustomFields); err != nil {
+		return nil, err
 	}
 	if email == nil {
-		return Verdict{}, nil
+		return nil, nil
 	}
-	return Verdict{Warnings: addressWarnings(*email)}, nil
+	return addressWarnings(*email), nil
 }

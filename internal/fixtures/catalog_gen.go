@@ -1509,6 +1509,10 @@ const (
 	ContactHostileQuotesEmail = "quotes@babel.test"
 	// ContactHostileQuotesID is from fixtures/contacts.
 	ContactHostileQuotesID = 7411
+	// ContactImportAcmeDoneID is from fixtures/contact_imports.
+	ContactImportAcmeDoneID = 1
+	// ContactImportGlobexUploadedID is from fixtures/contact_imports.
+	ContactImportGlobexUploadedID = 2
 	// ContactJobsNoEmailID is from fixtures/contacts.
 	ContactJobsNoEmailID = 5560
 	// ContactKrustyBayConfirmedID is from fixtures/contacts.
@@ -1781,6 +1785,10 @@ const (
 	DownloadLinkAcmeLapsedID = 1
 	// DownloadLinkAcmeLapsedToken is from fixtures/download_links.
 	DownloadLinkAcmeLapsedToken = "fixture-download-link-acme"
+	// DownloadLinkGlobexLapsedID is from fixtures/download_links.
+	DownloadLinkGlobexLapsedID = 2
+	// DownloadLinkGlobexLapsedToken is from fixtures/download_links.
+	DownloadLinkGlobexLapsedToken = "fixture-download-link-globex"
 	// DuffCollectKey is from fixtures/workspaces.
 	DuffCollectKey = "omck_test_duff_collect_key"
 	// DuffDanMembershipID is from fixtures/memberships.

@@ -104,9 +104,9 @@ func TestAnImportRowWhoseKeysNameTwoContactsIsWrittenByTheKeysRank(t *testing.T)
 
 	out, err := intake.Import(ctx, acme, contacts.ImportInput{
 		Cause: events.Import(42),
-		Rows: []contacts.IntakeInput{{UpsertInput: contacts.UpsertInput{
+		Rows: []contacts.IntakeInput{{
 			Email: new(fixtures.ContactAliceEmail), Phone: new(fixtures.ContactTexterPhone), City: patch.Set("Lisbon"),
-		}}},
+		}},
 	})
 	require.NoError(t, err)
 	alice, err := intake.Get(ctx, acme, fixtures.ContactAliceID)
@@ -128,9 +128,9 @@ func TestABatchUpsertRefusesARowWhoseKeysNameTwoContacts(t *testing.T) {
 	env := testhelper.Setup(t)
 	intake := testhelper.Module[*contacts.Module](env)
 
-	out, err := intake.UpsertBatch(t.Context(), env.DB.Scoped(fixtures.AcmeID), contact.SourceAPI, []contacts.IntakeInput{{UpsertInput: contacts.UpsertInput{
+	out, err := intake.UpsertBatch(t.Context(), env.DB.Scoped(fixtures.AcmeID), contact.SourceAPI, []contacts.IntakeInput{{
 		Email: new(fixtures.ContactAliceEmail), Phone: new(fixtures.ContactTexterPhone),
-	}}})
+	}})
 	require.NoError(t, err)
 
 	require.ErrorIs(t, out.Items[0].Err, contacts.ErrPhoneTaken)
@@ -144,18 +144,18 @@ func TestTheIntakeJudgesRowsWithoutWritingThem(t *testing.T) {
 	intake := testhelper.Module[*contacts.Module](env)
 
 	verdicts, err := intake.Verdicts(t.Context(), acme, []contacts.IntakeInput{
-		{UpsertInput: contacts.UpsertInput{FirstName: patch.Set("Nobody")}},
-		{UpsertInput: contacts.UpsertInput{Email: new("not an address")}},
-		{UpsertInput: contacts.UpsertInput{Email: new("info@example.com")}},
+		{FirstName: patch.Set("Nobody")},
+		{Email: new("not an address")},
+		{Email: new("info@example.com")},
 	})
 	require.NoError(t, err)
 	unwritten, err := intake.Resolve(t.Context(), acme, contacts.AliasKeys{Email: new("info@example.com")})
 	require.NoError(t, err)
 
-	require.Len(t, verdicts, 3)
-	require.ErrorIs(t, verdicts[0].Refusal, contacts.ErrIdentityRequired)
-	assert.Error(t, verdicts[1].Refusal)
-	require.NoError(t, verdicts[2].Refusal)
-	assert.Equal(t, []contacts.Warning{contacts.WarningRoleEmail}, verdicts[2].Warnings)
+	require.Len(t, verdicts.Items, 3)
+	require.ErrorIs(t, verdicts.Items[0].Err, contacts.ErrIdentityRequired)
+	require.Error(t, verdicts.Items[1].Err)
+	require.NoError(t, verdicts.Items[2].Err)
+	assert.Equal(t, []contacts.Warning{contacts.WarningRoleEmail}, verdicts.Items[2].Value)
 	assert.Nil(t, unwritten)
 }

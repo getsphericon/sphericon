@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"pgregory.net/rapid"
 
 	"github.com/getsphericon/sphericon/ent/customfield"
@@ -25,14 +26,14 @@ func TestANumberReadsWithItsSeparator(t *testing.T) {
 		sign := rapid.SampledFrom([]string{"", "-", "+"}).Draw(t, "sign")
 		cell := fmt.Sprintf("%s%d%s%02d", sign, whole, sep, cents)
 		want, err := strconv.ParseFloat(strings.Replace(cell, sep, ".", 1), 64)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		got, reason := contacts.ReadNumber(cell, sep)
 		other := map[string]string{".": ",", ",": "."}[sep]
 		_, otherReason := contacts.ReadNumber(cell, other)
 
 		assert.Empty(t, reason)
-		assert.Equal(t, want, got)
+		assert.InDelta(t, want, got, 0)
 		assert.Equal(t, csvimport.ReasonNotNumber, otherReason)
 	})
 }
@@ -103,7 +104,7 @@ func TestADateReadsInItsFormat(t *testing.T) {
 // its instant in the Workspace's time zone.
 func TestADateAndTimeIsDatedInTheWorkspaceZone(t *testing.T) {
 	tokyo, err := time.LoadLocation("Asia/Tokyo")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	birthday, reason := contacts.ReadDate("2024-03-04T20:00:00Z", csvimport.DateTimeRFC3339, tokyo)
 	value, valueReason := contacts.ReadDatetime("2024-03-04T20:00:00-05:00", csvimport.DateTimeRFC3339)

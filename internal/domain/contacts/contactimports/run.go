@@ -53,7 +53,7 @@ func (m *Module) Run(ctx context.Context, s *ent.Scoped, id int64) (View, error)
 		if err != nil {
 			return err
 		}
-		return q.Enqueue(ctx, RunArgs{Workspace: jobkind.Workspace{WorkspaceID: ts.WorkspaceID()}, ImportID: imp.ID}, nil)
+		return q.Enqueue(ctx, RunArgs{WorkspaceID: ts.WorkspaceID(), ImportID: imp.ID}, nil)
 	})
 	if err != nil {
 		return View{}, err

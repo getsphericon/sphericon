@@ -98,8 +98,8 @@ func fileIn(r io.Reader) io.Reader { return r }
 // request leaves null).
 func contactImportMappingIn(c Inputs, source *siteapi.ContactImportMappingInput) csvimport.Mapping {
 	columns := make([]csvimport.Column, len(source.Columns))
-	for i, col := range source.Columns {
-		columns[i] = contactImportColumnIn(c, col)
+	for i := range source.Columns {
+		columns[i] = contactImportColumnIn(c, &source.Columns[i])
 	}
 	return csvimport.Mapping{
 		Columns:          columns,
@@ -111,7 +111,7 @@ func contactImportMappingIn(c Inputs, source *siteapi.ContactImportMappingInput)
 
 // contactImportColumnIn is a column a request maps, by its kind; a column of no kind writes
 // nothing, which the save refuses.
-func contactImportColumnIn(c Inputs, col siteapi.ContactImportColumnInput) csvimport.Column {
+func contactImportColumnIn(c Inputs, col *siteapi.ContactImportColumnInput) csvimport.Column {
 	dateFormat := func(f siteapi.NilContactImportDateFormat) csvimport.DateFormat {
 		if v, ok := f.Get(); ok {
 			return c.ContactImportDateFormatIn(v)

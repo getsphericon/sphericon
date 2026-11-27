@@ -185,18 +185,29 @@ func newReader(r io.Reader, d contactimport.Delimiter) *csv.Reader {
 // fileOf reads the file of imp from its chunks, in order, one chunk at a time, from the chunk seq
 // at offset: the reader of a run that resumes, or of the whole file from 0, 0.
 func fileOf(ctx context.Context, s *ent.Scoped, imp *ent.ContactImport, seq int, offset int64) io.Reader {
-	return &chunkReader{ctx: ctx, s: s, importID: imp.ID, seq: seq, offset: offset}
+	load := func(seq int) ([]byte, bool, error) {
+		chunk, err := s.ContactImportChunk().Query().
+			Where(contactimportchunk.ContactImportID(imp.ID), contactimportchunk.Seq(seq)).
+			Only(ctx)
+		if ent.IsNotFound(err) {
+			return nil, false, nil
+		}
+		if err != nil {
+			return nil, false, fmt.Errorf("read chunk %d: %w", seq, err)
+		}
+		return chunk.Data, true, nil
+	}
+	return &chunkReader{load: load, seq: seq, offset: offset}
 }
 
-// chunkReader reads an import's chunks in order, loading each when the one before it is read.
+// chunkReader reads a file's chunks in order, loading each (load: its bytes, false past the last)
+// when the one before it is read.
 type chunkReader struct {
-	ctx      context.Context
-	s        *ent.Scoped
-	importID int64
-	seq      int
-	offset   int64
-	current  []byte
-	done     bool
+	load    func(seq int) ([]byte, bool, error)
+	seq     int
+	offset  int64
+	current []byte
+	done    bool
 }
 
 func (c *chunkReader) Read(p []byte) (int, error) {
@@ -204,17 +215,15 @@ func (c *chunkReader) Read(p []byte) (int, error) {
 		if c.done {
 			return 0, io.EOF
 		}
-		chunk, err := c.s.ContactImportChunk().Query().
-			Where(contactimportchunk.ContactImportID(c.importID), contactimportchunk.Seq(c.seq)).
-			Only(c.ctx)
-		if ent.IsNotFound(err) {
+		data, ok, err := c.load(c.seq)
+		if err != nil {
+			return 0, err
+		}
+		if !ok {
 			c.done = true
 			continue
 		}
-		if err != nil {
-			return 0, fmt.Errorf("read chunk %d: %w", c.seq, err)
-		}
-		c.current = chunk.Data[min(c.offset, int64(len(chunk.Data))):]
+		c.current = data[min(c.offset, int64(len(data))):]
 		c.seq++
 		c.offset = 0
 	}

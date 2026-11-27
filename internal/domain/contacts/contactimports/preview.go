@@ -91,11 +91,12 @@ func (m *Module) judge(ctx context.Context, s *ent.Scoped, rows []PreviewRow, re
 		return err
 	}
 	for j, i := range at {
-		rows[i].Warnings = verdicts[j].Warnings
-		if verdicts[j].Refusal == nil {
+		item := verdicts.Items[j]
+		rows[i].Warnings = item.Value
+		if item.Err == nil {
 			continue
 		}
-		shown, _ := validation.Shown(verdicts[j].Refusal)
+		shown, _ := validation.Shown(item.Err)
 		refusal := refusedIssue(shown)
 		rows[i].Refusal = &refusal
 	}

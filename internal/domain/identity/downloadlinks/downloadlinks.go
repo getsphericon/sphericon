@@ -8,6 +8,7 @@ package downloadlinks
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -71,7 +72,7 @@ type Link struct {
 // the next one is issued.
 func (m *Module) Issue(ctx context.Context, s *ent.Scoped, in IssueInput) (Link, error) {
 	if in.Session == "" {
-		return Link{}, fmt.Errorf("issue download link: no session")
+		return Link{}, errors.New("issue download link: no session")
 	}
 	payload, err := json.Marshal(in.Payload)
 	if err != nil {
