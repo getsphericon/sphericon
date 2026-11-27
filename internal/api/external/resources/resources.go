@@ -272,6 +272,9 @@ func waitForEventAwaits(a automationstep.Awaits) (externalapi.WaitForEventAwaits
 			return externalapi.WaitForEventAwaits{}, err
 		}
 		return externalapi.WaitForEventAwaits{OneOf: externalapi.NewAwaitedEventWaitForEventAwaitsSum(ev)}, nil
+	case automationstep.AwaitedMessage:
+		m := externalapi.AwaitedMessage{Kind: externalapi.AwaitedMessageKindMessage, Step: externalapi.StepId(a.Step), Engagement: externalapi.MessageEngagement(a.Engagement)}
+		return externalapi.WaitForEventAwaits{OneOf: externalapi.NewAwaitedMessageWaitForEventAwaitsSum(m)}, nil
 	case nil:
 	}
 	return externalapi.WaitForEventAwaits{}, errors.New("a wait for event that awaits nothing")

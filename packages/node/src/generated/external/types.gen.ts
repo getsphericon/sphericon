@@ -1008,6 +1008,50 @@ export type AwaitedEventInput = {
 };
 
 /**
+ * A Wait for event waits for an open or a click of the message a send Step sent to this
+ * Enrollment (ADR 0124), with the meaning of a Branch's test of that message (ADR 0122): its first
+ * human open or click, whenever it happened, one before the Enrollment reached the Step included. It
+ * takes `unknown` at once when the message went out untracked or its tracking was withdrawn since
+ * (ADR 0120), when the send Step was skipped and when the Enrollment never passed it, and at the
+ * timeout, instead of `timedOut`, when its tracking was withdrawn during the wait. The Step must be a
+ * send Step that can come before the Wait for event: an email Step for `opened`, any send Step for
+ * `clicked`. A Step it names cannot be removed.
+ */
+export type AwaitedMessage = {
+  kind: 'message';
+  /**
+   * The send Step's id
+   */
+  step: StepId;
+  /**
+   * Whether it waits for an open or a click of the message
+   */
+  engagement: MessageEngagement;
+};
+
+/**
+ * A Wait for event waits for an open or a click of the message a send Step sent to this
+ * Enrollment (ADR 0124), with the meaning of a Branch's test of that message (ADR 0122): its first
+ * human open or click, whenever it happened, one before the Enrollment reached the Step included. It
+ * takes `unknown` at once when the message went out untracked or its tracking was withdrawn since
+ * (ADR 0120), when the send Step was skipped and when the Enrollment never passed it, and at the
+ * timeout, instead of `timedOut`, when its tracking was withdrawn during the wait. The Step must be a
+ * send Step that can come before the Wait for event: an email Step for `opened`, any send Step for
+ * `clicked`. A Step it names cannot be removed.
+ */
+export type AwaitedMessageInput = {
+  kind: 'message';
+  /**
+   * The send Step's id
+   */
+  step: StepId;
+  /**
+   * Whether it waits for an open or a click of the message
+   */
+  engagement: MessageEngagement;
+};
+
+/**
  * The Contact's date of birth, a date field every Contact has
  */
 export type BirthdayDateField = {
@@ -8393,12 +8437,20 @@ export type Versions = typeof Versions[keyof typeof Versions];
 /**
  * What a Wait for event waits for, by `kind`
  */
-export type WaitForEventAwaits = AwaitedEvent;
+export type WaitForEventAwaits = ({
+  kind: 'event';
+} & AwaitedEvent) | ({
+  kind: 'message';
+} & AwaitedMessage);
 
 /**
  * What a Wait for event waits for, by `kind`, as a request writes it
  */
-export type WaitForEventAwaitsInput = AwaitedEventInput;
+export type WaitForEventAwaitsInput = ({
+  kind: 'event';
+} & AwaitedEventInput) | ({
+  kind: 'message';
+} & AwaitedMessageInput);
 
 /**
  * A Wait for event's Condition (ADR 0124, ADR 0180): the tree of tests the Contact, on its live
@@ -8558,10 +8610,11 @@ export type WaitForEventPropertySourceInput = TriggerSourceInput;
 
 /**
  * A Step that holds the Enrollment until what it awaits arrives or its timeout passes (ADR
- * 0124), then takes `arrived` or `timedOut`; the paths rejoin at the Step after it. An Event counts
- * when one of its matchers matches it, its Condition, if any, holds for the Contact, and it is the
- * Contact's, occurred at or after the moment the Enrollment reached the Step and no later than the
- * timeout, and is neither a machine open or click, loaded history nor the Event that
+ * 0124), then takes `arrived` or `timedOut`, or `unknown` when it waits for an open or a click
+ * that it cannot know of; the paths rejoin at the Step after it. An Event counts when one of its
+ * matchers matches it, its Condition, if any, holds for the Contact, and it is the Contact's,
+ * occurred at or after the moment the Enrollment reached the Step and no later than the timeout, and
+ * is neither a machine open or click, loaded history nor the Event that
  * began the Enrollment. One that occurred within the window but was recorded late is taken at the
  * timeout. An Event an exit or the goal matches ends the Enrollment instead.
  */
@@ -8591,6 +8644,11 @@ export type WaitForEventStep = {
    * The path taken when the timeout passes first
    */
   timedOut: AutomationPath;
+  /**
+   * The path taken when the Step waits for an open or a click (`message`) and cannot know whether
+   * one happened; never present when it waits for an Event
+   */
+  unknown?: AutomationPath;
 };
 
 /**
@@ -8625,6 +8683,12 @@ export type WaitForEventStepInput = {
    * The path taken when the timeout passes first
    */
   timedOut: AutomationPathInput;
+  /**
+   * The path taken when the Step waits for an open or a click (`message`) and cannot know whether
+   * one happened. Publish refuses a Wait for event on a message without it, and a save refuses it
+   * on a Wait for event on an Event.
+   */
+  unknown?: AutomationPathInput;
 };
 
 /**
