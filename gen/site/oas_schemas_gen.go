@@ -39410,68 +39410,32 @@ func (s *SiteSecondFactorStatus) SetIdentityProofFresh(val bool) {
 	s.IdentityProofFresh = val
 }
 
-// Paginated response.
-type SiteSegmentContactsListOK struct {
-	// List of items.
+// A page of the contacts a segment matches.
+// Ref: #/components/schemas/SiteSegmentContactList
+type SiteSegmentContactList struct {
 	Items []SiteContactResource `json:"items"`
-	// Page number (1-based).
-	Page int32 `json:"page"`
-	// Page size.
-	PageSize int32 `json:"pageSize"`
-	// Total number of elements.
-	TotalItems int32 `json:"totalItems"`
-	// Total number of pages.
-	TotalPages int32 `json:"totalPages"`
+	// Pass as `cursor` for the next page; absent on the last page.
+	NextCursor OptNilString `json:"nextCursor"`
 }
 
 // GetItems returns the value of Items.
-func (s *SiteSegmentContactsListOK) GetItems() []SiteContactResource {
+func (s *SiteSegmentContactList) GetItems() []SiteContactResource {
 	return s.Items
 }
 
-// GetPage returns the value of Page.
-func (s *SiteSegmentContactsListOK) GetPage() int32 {
-	return s.Page
-}
-
-// GetPageSize returns the value of PageSize.
-func (s *SiteSegmentContactsListOK) GetPageSize() int32 {
-	return s.PageSize
-}
-
-// GetTotalItems returns the value of TotalItems.
-func (s *SiteSegmentContactsListOK) GetTotalItems() int32 {
-	return s.TotalItems
-}
-
-// GetTotalPages returns the value of TotalPages.
-func (s *SiteSegmentContactsListOK) GetTotalPages() int32 {
-	return s.TotalPages
+// GetNextCursor returns the value of NextCursor.
+func (s *SiteSegmentContactList) GetNextCursor() OptNilString {
+	return s.NextCursor
 }
 
 // SetItems sets the value of Items.
-func (s *SiteSegmentContactsListOK) SetItems(val []SiteContactResource) {
+func (s *SiteSegmentContactList) SetItems(val []SiteContactResource) {
 	s.Items = val
 }
 
-// SetPage sets the value of Page.
-func (s *SiteSegmentContactsListOK) SetPage(val int32) {
-	s.Page = val
-}
-
-// SetPageSize sets the value of PageSize.
-func (s *SiteSegmentContactsListOK) SetPageSize(val int32) {
-	s.PageSize = val
-}
-
-// SetTotalItems sets the value of TotalItems.
-func (s *SiteSegmentContactsListOK) SetTotalItems(val int32) {
-	s.TotalItems = val
-}
-
-// SetTotalPages sets the value of TotalPages.
-func (s *SiteSegmentContactsListOK) SetTotalPages(val int32) {
-	s.TotalPages = val
+// SetNextCursor sets the value of NextCursor.
+func (s *SiteSegmentContactList) SetNextCursor(val OptNilString) {
+	s.NextCursor = val
 }
 
 // Segment resource used by the site UI.

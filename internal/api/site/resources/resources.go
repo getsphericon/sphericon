@@ -825,8 +825,6 @@ type Converter interface {
 	// goverter:useEmptyOnNil:slice
 	ContactsListPage(source pagination.Page[*ent.Contact]) *siteapi.SiteContactsListOK
 	// goverter:useEmptyOnNil:slice
-	SegmentContactsListPage(source pagination.Page[*ent.Contact]) *siteapi.SiteSegmentContactsListOK
-	// goverter:useEmptyOnNil:slice
 	SegmentsListPage(source pagination.Page[*ent.Segment]) (*siteapi.SiteSegmentsListOK, error)
 	// goverter:useEmptyOnNil:slice
 	CustomFieldsListPage(source pagination.Page[*ent.CustomField]) *siteapi.SiteCustomFieldsListOK

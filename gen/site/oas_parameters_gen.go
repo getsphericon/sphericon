@@ -18545,10 +18545,10 @@ func decodeSiteRulesUpdateParams(args [2]string, argsEscaped bool, r *http.Reque
 type SiteSegmentContactsListParams struct {
 	WorkspaceId WorkspaceId
 	SegmentId   EntityId
-	// Page number (1-based).
-	Page OptInt32 `json:",omitempty,omitzero"`
+	// Cursor from a previous page.
+	Cursor OptString `json:",omitempty,omitzero"`
 	// Page size.
-	PageSize OptInt32 `json:",omitempty,omitzero"`
+	Limit OptInt32 `json:",omitempty,omitzero"`
 }
 
 func unpackSiteSegmentContactsListParams(packed middleware.Parameters) (params SiteSegmentContactsListParams) {
@@ -18568,20 +18568,20 @@ func unpackSiteSegmentContactsListParams(packed middleware.Parameters) (params S
 	}
 	{
 		key := middleware.ParameterKey{
-			Name: "page",
+			Name: "cursor",
 			In:   "query",
 		}
 		if v, ok := packed[key]; ok {
-			params.Page = v.(OptInt32)
+			params.Cursor = v.(OptString)
 		}
 	}
 	{
 		key := middleware.ParameterKey{
-			Name: "pageSize",
+			Name: "limit",
 			In:   "query",
 		}
 		if v, ok := packed[key]; ok {
-			params.PageSize = v.(OptInt32)
+			params.Limit = v.(OptInt32)
 		}
 	}
 	return params
@@ -18701,93 +18701,63 @@ func decodeSiteSegmentContactsListParams(args [2]string, argsEscaped bool, r *ht
 			Err:  err,
 		}
 	}
-	// Set default value for query: page.
-	{
-		val := int32(1)
-		params.Page.SetTo(val)
-	}
-	// Decode query: page.
+	// Decode query: cursor.
 	if err := func() error {
 		cfg := uri.QueryParameterDecodingConfig{
-			Name:    "page",
+			Name:    "cursor",
 			Style:   uri.QueryStyleForm,
 			Explode: false,
 		}
 
 		if err := q.HasParam(cfg); err == nil {
 			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
-				var paramsDotPageVal int32
+				var paramsDotCursorVal string
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToInt32(val)
+					c, err := conv.ToString(val)
 					if err != nil {
 						return err
 					}
 
-					paramsDotPageVal = c
+					paramsDotCursorVal = c
 					return nil
 				}(); err != nil {
 					return err
 				}
-				params.Page.SetTo(paramsDotPageVal)
+				params.Cursor.SetTo(paramsDotCursorVal)
 				return nil
 			}); err != nil {
-				return err
-			}
-			if err := func() error {
-				if value, ok := params.Page.Get(); ok {
-					if err := func() error {
-						if err := (validate.Int{
-							MinSet:        true,
-							Min:           1,
-							MaxSet:        false,
-							Max:           0,
-							MinExclusive:  false,
-							MaxExclusive:  false,
-							MultipleOfSet: false,
-							MultipleOf:    0,
-							Pattern:       nil,
-						}).Validate(int64(value)); err != nil {
-							return errors.Wrap(err, "int")
-						}
-						return nil
-					}(); err != nil {
-						return err
-					}
-				}
-				return nil
-			}(); err != nil {
 				return err
 			}
 		}
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "page",
+			Name: "cursor",
 			In:   "query",
 			Err:  err,
 		}
 	}
-	// Set default value for query: pageSize.
+	// Set default value for query: limit.
 	{
 		val := int32(25)
-		params.PageSize.SetTo(val)
+		params.Limit.SetTo(val)
 	}
-	// Decode query: pageSize.
+	// Decode query: limit.
 	if err := func() error {
 		cfg := uri.QueryParameterDecodingConfig{
-			Name:    "pageSize",
+			Name:    "limit",
 			Style:   uri.QueryStyleForm,
 			Explode: false,
 		}
 
 		if err := q.HasParam(cfg); err == nil {
 			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
-				var paramsDotPageSizeVal int32
+				var paramsDotLimitVal int32
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
@@ -18799,18 +18769,18 @@ func decodeSiteSegmentContactsListParams(args [2]string, argsEscaped bool, r *ht
 						return err
 					}
 
-					paramsDotPageSizeVal = c
+					paramsDotLimitVal = c
 					return nil
 				}(); err != nil {
 					return err
 				}
-				params.PageSize.SetTo(paramsDotPageSizeVal)
+				params.Limit.SetTo(paramsDotLimitVal)
 				return nil
 			}); err != nil {
 				return err
 			}
 			if err := func() error {
-				if value, ok := params.PageSize.Get(); ok {
+				if value, ok := params.Limit.Get(); ok {
 					if err := func() error {
 						if err := (validate.Int{
 							MinSet:        true,
@@ -18838,7 +18808,7 @@ func decodeSiteSegmentContactsListParams(args [2]string, argsEscaped bool, r *ht
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "pageSize",
+			Name: "limit",
 			In:   "query",
 			Err:  err,
 		}

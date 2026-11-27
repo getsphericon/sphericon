@@ -2354,7 +2354,7 @@ func encodeSiteSecondFactorStartEnrollmentResponse(response *SiteSecondFactorEnr
 	return nil
 }
 
-func encodeSiteSegmentContactsListResponse(response *SiteSegmentContactsListOK, w http.ResponseWriter, span trace.Span) error {
+func encodeSiteSegmentContactsListResponse(response *SiteSegmentContactList, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 

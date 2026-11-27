@@ -68681,14 +68681,14 @@ func (s *SiteSecondFactorStatus) UnmarshalJSON(data []byte) error {
 }
 
 // Encode implements json.Marshaler.
-func (s *SiteSegmentContactsListOK) Encode(e *jx.Encoder) {
+func (s *SiteSegmentContactList) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
 	e.ObjEnd()
 }
 
 // encodeFields encodes fields.
-func (s *SiteSegmentContactsListOK) encodeFields(e *jx.Encoder) {
+func (s *SiteSegmentContactList) encodeFields(e *jx.Encoder) {
 	{
 		e.FieldStart("items")
 		e.ArrStart()
@@ -68698,35 +68698,22 @@ func (s *SiteSegmentContactsListOK) encodeFields(e *jx.Encoder) {
 		e.ArrEnd()
 	}
 	{
-		e.FieldStart("page")
-		e.Int32(s.Page)
-	}
-	{
-		e.FieldStart("pageSize")
-		e.Int32(s.PageSize)
-	}
-	{
-		e.FieldStart("totalItems")
-		e.Int32(s.TotalItems)
-	}
-	{
-		e.FieldStart("totalPages")
-		e.Int32(s.TotalPages)
+		if s.NextCursor.Set {
+			e.FieldStart("nextCursor")
+			s.NextCursor.Encode(e)
+		}
 	}
 }
 
-var jsonFieldsNameOfSiteSegmentContactsListOK = [5]string{
+var jsonFieldsNameOfSiteSegmentContactList = [2]string{
 	0: "items",
-	1: "page",
-	2: "pageSize",
-	3: "totalItems",
-	4: "totalPages",
+	1: "nextCursor",
 }
 
-// Decode decodes SiteSegmentContactsListOK from json.
-func (s *SiteSegmentContactsListOK) Decode(d *jx.Decoder) error {
+// Decode decodes SiteSegmentContactList from json.
+func (s *SiteSegmentContactList) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode SiteSegmentContactsListOK to nil")
+		return errors.New("invalid: unable to decode SiteSegmentContactList to nil")
 	}
 	var requiredBitSet [1]uint8
 
@@ -68750,65 +68737,27 @@ func (s *SiteSegmentContactsListOK) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"items\"")
 			}
-		case "page":
-			requiredBitSet[0] |= 1 << 1
+		case "nextCursor":
 			if err := func() error {
-				v, err := d.Int32()
-				s.Page = int32(v)
-				if err != nil {
+				s.NextCursor.Reset()
+				if err := s.NextCursor.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"page\"")
-			}
-		case "pageSize":
-			requiredBitSet[0] |= 1 << 2
-			if err := func() error {
-				v, err := d.Int32()
-				s.PageSize = int32(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"pageSize\"")
-			}
-		case "totalItems":
-			requiredBitSet[0] |= 1 << 3
-			if err := func() error {
-				v, err := d.Int32()
-				s.TotalItems = int32(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"totalItems\"")
-			}
-		case "totalPages":
-			requiredBitSet[0] |= 1 << 4
-			if err := func() error {
-				v, err := d.Int32()
-				s.TotalPages = int32(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"totalPages\"")
+				return errors.Wrap(err, "decode field \"nextCursor\"")
 			}
 		default:
 			return d.Skip()
 		}
 		return nil
 	}); err != nil {
-		return errors.Wrap(err, "decode SiteSegmentContactsListOK")
+		return errors.Wrap(err, "decode SiteSegmentContactList")
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00011111,
+		0b00000001,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -68820,8 +68769,8 @@ func (s *SiteSegmentContactsListOK) Decode(d *jx.Decoder) error {
 				bitIdx := bits.TrailingZeros8(result)
 				fieldIdx := i*8 + bitIdx
 				var name string
-				if fieldIdx < len(jsonFieldsNameOfSiteSegmentContactsListOK) {
-					name = jsonFieldsNameOfSiteSegmentContactsListOK[fieldIdx]
+				if fieldIdx < len(jsonFieldsNameOfSiteSegmentContactList) {
+					name = jsonFieldsNameOfSiteSegmentContactList[fieldIdx]
 				} else {
 					name = strconv.Itoa(fieldIdx)
 				}
@@ -68842,14 +68791,14 @@ func (s *SiteSegmentContactsListOK) Decode(d *jx.Decoder) error {
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s *SiteSegmentContactsListOK) MarshalJSON() ([]byte, error) {
+func (s *SiteSegmentContactList) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *SiteSegmentContactsListOK) UnmarshalJSON(data []byte) error {
+func (s *SiteSegmentContactList) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

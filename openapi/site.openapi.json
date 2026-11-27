@@ -9295,7 +9295,7 @@
     "/workspaces/{workspaceId}/segments/{segmentId}/contacts": {
       "get": {
         "operationId": "SiteSegmentContacts_list",
-        "description": "List the contacts a segment matches right now, evaluated live, ascending by id. A stored\ncondition that no longer fits the contact schema is a 422.",
+        "description": "List the contacts a segment matches right now, evaluated live, ascending by id, read by a\ncursor on the contact id: a contact that joins while the pages are read neither shifts a page\nnor comes twice. A stored condition that no longer fits the contact schema is a 422; a cursor\nno page handed out is a 400.",
         "parameters": [
           {
             "name": "workspaceId",
@@ -9314,10 +9314,28 @@
             }
           },
           {
-            "$ref": "#/components/parameters/PageQuery.page"
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "Cursor from a previous page",
+            "schema": {
+              "type": "string"
+            },
+            "explode": false
           },
           {
-            "$ref": "#/components/parameters/PageQuery.pageSize"
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Page size",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            },
+            "explode": false
           }
         ],
         "responses": {
@@ -9326,38 +9344,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
-                  "properties": {
-                    "items": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/SiteContactResource"
-                      },
-                      "description": "List of items"
-                    },
-                    "page": {
-                      "type": "integer",
-                      "format": "int32",
-                      "description": "Page number (1-based)"
-                    },
-                    "pageSize": {
-                      "type": "integer",
-                      "format": "int32",
-                      "description": "Page size"
-                    },
-                    "totalItems": {
-                      "type": "integer",
-                      "format": "int32",
-                      "description": "Total number of elements"
-                    },
-                    "totalPages": {
-                      "type": "integer",
-                      "format": "int32",
-                      "description": "Total number of pages"
-                    }
-                  },
-                  "description": "Paginated response"
+                  "$ref": "#/components/schemas/SiteSegmentContactList"
                 }
               }
             }
@@ -24617,6 +24604,24 @@
           }
         },
         "description": "The authenticated User's Second factor (ADR 0020). Recovery codes are never\nreadable here: only how many are left."
+      },
+      "SiteSegmentContactList": {
+        "type": "object",
+        "required": ["items"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteContactResource"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true,
+            "description": "Pass as `cursor` for the next page; absent on the last page"
+          }
+        },
+        "description": "A page of the contacts a segment matches"
       },
       "SiteSegmentResource": {
         "type": "object",

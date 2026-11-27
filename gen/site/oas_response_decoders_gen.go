@@ -15529,7 +15529,7 @@ func decodeSiteSecondFactorStartEnrollmentResponse(resp *http.Response) (res *Si
 	return res, errors.Wrap(defRes, "error")
 }
 
-func decodeSiteSegmentContactsListResponse(resp *http.Response) (res *SiteSegmentContactsListOK, _ error) {
+func decodeSiteSegmentContactsListResponse(resp *http.Response) (res *SiteSegmentContactList, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -15545,7 +15545,7 @@ func decodeSiteSegmentContactsListResponse(resp *http.Response) (res *SiteSegmen
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response SiteSegmentContactsListOK
+			var response SiteSegmentContactList
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err

@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
@@ -36,7 +37,24 @@ var (
 	// ErrUnknownSender: an event test's filter names a Broadcast or an Automation the Workspace does
 	// not have (ADR 0153), an unknown reference. The message names the test's path and the id.
 	ErrUnknownSender = validation.UnknownReference("segments: unknown sender", i18n.ErrorsSegmentSenderUnknown)
+	// ErrBadCursor: a cursor of a Segment's Contacts that no page handed out.
+	ErrBadCursor = validation.UnknownReference("segments: invalid cursor", i18n.ErrorsSegmentCursorInvalid)
 )
+
+// Cursor reads the cursor of a page of a Segment's Contacts, a Contact id: empty is the first page.
+func Cursor(cursor string) (int64, error) {
+	if cursor == "" {
+		return 0, nil
+	}
+	after, err := publicid.Decode(cursor)
+	if err != nil || after < 1 {
+		return 0, ErrBadCursor
+	}
+	return after, nil
+}
+
+// NextCursor is the cursor of the page after the Contact id next.
+func NextCursor(next int64) string { return publicid.Encode(next) }
 
 // RefuseUnknownSender is the refusal of a Condition whose event test's filter names the sender n,
 // which the Workspace does not have: the segment saving use case asks messagesenders, a module
@@ -200,22 +218,51 @@ func (s *Module) Count(ctx context.Context, ws *ent.Scoped, id int64) (Counts, e
 	return s.Preview(ctx, ws, PreviewInput{Condition: &seg.Condition})
 }
 
-// Contacts returns one page of the Contacts a stored Segment matches, evaluated live, ascending by id.
-func (s *Module) Contacts(ctx context.Context, ws *ent.Scoped, id int64, p pagination.Params) (pagination.Page[*ent.Contact], error) {
-	seg, err := ws.Segment().Get(ctx, id)
-	if ent.IsNotFound(err) {
-		return pagination.Page[*ent.Contact]{}, ErrNotFound
+// ContactsInput names a page of Contacts to read by cursor: a stored Segment's, or every Contact of
+// the Workspace when SegmentID is nil.
+type ContactsInput struct {
+	SegmentID *int64
+	// After is the id of the last Contact of the page before, 0 for the first page.
+	After int64
+	// Limit is the most Contacts on the page, the contract's default page size when below 1. It is
+	// not held to the contract's maximum: an export reads larger pages.
+	Limit int
+}
+
+// Contacts returns one page of the Contacts a stored Segment matches, evaluated live, or of every
+// Contact without a Segment, ascending by id after the cursor in.After (a keyset cursor, ADR 0138):
+// a Contact that becomes a member while the pages are read neither shifts the next page nor is read
+// twice, and one whose id the cursor has not passed yet is read when it does. The page's Next is
+// the cursor of the page after it, 0 on the last. An unknown Segment is ErrNotFound.
+func (s *Module) Contacts(ctx context.Context, ws *ent.Scoped, in ContactsInput) (pagination.IDPage[*ent.Contact], error) {
+	cond := conditiontree.Segment{Group: conditiontree.Empty()}
+	if in.SegmentID != nil {
+		seg, err := ws.Segment().Get(ctx, *in.SegmentID)
+		if ent.IsNotFound(err) {
+			return pagination.IDPage[*ent.Contact]{}, ErrNotFound
+		}
+		if err != nil {
+			return pagination.IDPage[*ent.Contact]{}, err
+		}
+		cond = seg.Condition
 	}
+	pred, err := s.conditions.Compile(ctx, ws, cond)
 	if err != nil {
-		return pagination.Page[*ent.Contact]{}, err
+		return pagination.IDPage[*ent.Contact]{}, ErrInvalidCondition.With(err.Error())
 	}
-	pred, err := s.conditions.Compile(ctx, ws, seg.Condition)
-	if err != nil {
-		return pagination.Page[*ent.Contact]{}, ErrInvalidCondition.With(err.Error())
+	limit := in.Limit
+	if limit < 1 {
+		limit = pagination.DefaultPageSize
 	}
-	return pagination.List(ctx, p, ws.Contact().Query().Where(pred).
+	rows, err := ws.Contact().Query().Where(pred, contact.IDGT(in.After)).
 		WithTags(func(q *ent.TagQuery) { q.Order(ent.Asc(tag.FieldName)) }).
-		Order(ent.Asc(contact.FieldID)))
+		Order(ent.Asc(contact.FieldID)).
+		Limit(limit + 1).
+		All(ctx)
+	if err != nil {
+		return pagination.IDPage[*ent.Contact]{}, err
+	}
+	return pagination.ByID(rows, limit, func(c *ent.Contact) int64 { return c.ID }), nil
 }
 
 // List returns one page of the Workspace's Segments, ascending by id: the kept ones, or with

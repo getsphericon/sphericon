@@ -4607,8 +4607,10 @@ export const siteSegmentsUnarchiveMutation = (options?: Partial<Options<SiteSegm
 export const siteSegmentContactsListQueryKey = (options: Options<SiteSegmentContactsListData>) => createQueryKey('siteSegmentContactsList', options, false, ['Site Segments']);
 
 /**
- * List the contacts a segment matches right now, evaluated live, ascending by id. A stored
- * condition that no longer fits the contact schema is a 422.
+ * List the contacts a segment matches right now, evaluated live, ascending by id, read by a
+ * cursor on the contact id: a contact that joins while the pages are read neither shifts a page
+ * nor comes twice. A stored condition that no longer fits the contact schema is a 422; a cursor
+ * no page handed out is a 400.
  */
 export const siteSegmentContactsListOptions = (options: Options<SiteSegmentContactsListData>) => queryOptions<SiteSegmentContactsListResponse, SiteSegmentContactsListError, SiteSegmentContactsListResponse, ReturnType<typeof siteSegmentContactsListQueryKey>>({
   queryFn: async ({ queryKey, signal }) => {
@@ -4626,18 +4628,20 @@ export const siteSegmentContactsListOptions = (options: Options<SiteSegmentConta
 export const siteSegmentContactsListInfiniteQueryKey = (options: Options<SiteSegmentContactsListData>): QueryKey<Options<SiteSegmentContactsListData>> => createQueryKey('siteSegmentContactsList', options, true);
 
 /**
- * List the contacts a segment matches right now, evaluated live, ascending by id. A stored
- * condition that no longer fits the contact schema is a 422.
+ * List the contacts a segment matches right now, evaluated live, ascending by id, read by a
+ * cursor on the contact id: a contact that joins while the pages are read neither shifts a page
+ * nor comes twice. A stored condition that no longer fits the contact schema is a 422; a cursor
+ * no page handed out is a 400.
  */
 export const siteSegmentContactsListInfiniteOptions = (options: Options<SiteSegmentContactsListData>) => {
-  const opts = infiniteQueryOptions<SiteSegmentContactsListResponse, SiteSegmentContactsListError, InfiniteData<SiteSegmentContactsListResponse>, QueryKey<Options<SiteSegmentContactsListData>>, number | Pick<QueryKey<Options<SiteSegmentContactsListData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+  const opts = infiniteQueryOptions<SiteSegmentContactsListResponse, SiteSegmentContactsListError, InfiniteData<SiteSegmentContactsListResponse>, QueryKey<Options<SiteSegmentContactsListData>>, string | Pick<QueryKey<Options<SiteSegmentContactsListData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
   // @ts-ignore
   {
     queryFn: async ({ pageParam, queryKey, signal }) => {
       // @ts-ignore
       const page: Pick<QueryKey<Options<SiteSegmentContactsListData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
         query: {
-          page: pageParam
+          cursor: pageParam
         }
       };
       const params = createInfiniteParams(queryKey, page);
