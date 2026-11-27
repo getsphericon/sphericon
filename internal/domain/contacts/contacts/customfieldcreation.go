@@ -29,12 +29,17 @@ type NewCustomField struct {
 	Type customfield.Type
 }
 
-// CheckNewCustomFieldKey refuses a key no new Custom field may take: a blank one
-// (ErrCustomFieldKeyBlank), one naming a core attribute or an alias key (ErrReservedKey), or, when
-// taken says the Workspace has a field of it, a taken one (ErrCustomFieldKeyTaken, naming it).
+// NewCustomFieldKey is a new Custom field's key as it is kept: without the spaces around it.
+func NewCustomFieldKey(key string) string { return strings.TrimSpace(key) }
+
+// CheckNewCustomFieldKey refuses a key (as NewCustomFieldKey keeps it) no new Custom field may take:
+// a blank one (ErrCustomFieldKeyBlank), one naming a core attribute or an alias key
+// (ErrReservedKey), or, when taken says the Workspace has a field of it, a taken one
+// (ErrCustomFieldKeyTaken, naming it).
 func CheckNewCustomFieldKey(key string, taken bool) error {
+	key = NewCustomFieldKey(key)
 	switch {
-	case strings.TrimSpace(key) == "":
+	case key == "":
 		return ErrCustomFieldKeyBlank
 	case reservedKeys[key]:
 		return ErrReservedKey
@@ -49,6 +54,7 @@ func CheckNewCustomFieldKey(key string, taken bool) error {
 // checks it, its name by the name rule, and a key the Workspace has a field of already, even one
 // declared a moment before, is ErrCustomFieldKeyTaken: nothing is retyped.
 func (m *Module) CreateCustomFieldIn(ctx context.Context, s *ent.Scoped, in NewCustomField) (*ent.CustomField, error) {
+	in.Key = NewCustomFieldKey(in.Key)
 	if err := CheckNewCustomFieldKey(in.Key, false); err != nil {
 		return nil, err
 	}

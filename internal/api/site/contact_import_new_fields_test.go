@@ -53,11 +53,15 @@ func TestAContactImportRefusesANewCustomFieldOfAKeyTaken(t *testing.T) {
 	imp := uploaded(t, owner, "email,plan\nann@example.com,gold\n")
 	in := mappingInput(t, imp)
 	in.Columns[1] = newFieldColumn(fixtures.CustomFieldAcmePlanKey, "Plan", siteapi.CustomFieldTypeString, siteapi.NilContactImportDateFormat{Null: true})
+	padded := mappingInput(t, imp)
+	padded.Columns[1] = newFieldColumn(" "+fixtures.CustomFieldAcmePlanKey+" ", "Plan", siteapi.CustomFieldTypeString, siteapi.NilContactImportDateFormat{Null: true})
 
 	_, err := saveMapping(t, owner, imp, in)
+	_, paddedErr := saveMapping(t, owner, imp, padded)
 
 	refused := testhelper.SiteRefusal(t, err, http.StatusConflict)
 	assert.Contains(t, refused.Detail.Value, fixtures.CustomFieldAcmePlanKey)
+	testhelper.SiteRefusal(t, paddedErr, http.StatusConflict, "a key is read without its spaces")
 }
 
 // The preview reads a new field's column in its chosen type before any field exists, counts the

@@ -189,7 +189,10 @@ func checkedColumn(col csvimport.Column, fields map[string]customfield.Type) (cs
 // customFieldTypes are the types of the Workspace's Custom fields the columns name, by key.
 func customFieldTypes(ctx context.Context, s *ent.Scoped, columns []csvimport.Column) (map[string]customfield.Type, error) {
 	named := lo.FilterMap(columns, func(c csvimport.Column, _ int) (string, bool) {
-		return c.Key, c.Kind == csvimport.KindCustomField || c.Kind == csvimport.KindNewCustomField
+		if c.Kind == csvimport.KindNewCustomField {
+			return contacts.NewCustomFieldKey(c.Key), true
+		}
+		return c.Key, c.Kind == csvimport.KindCustomField
 	})
 	defined, err := s.CustomField().Query().Where(customfield.KeyIn(named...)).All(ctx)
 	if err != nil {

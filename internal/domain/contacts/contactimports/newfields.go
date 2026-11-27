@@ -37,14 +37,16 @@ func newCustomFields(mapping csvimport.Mapping) []contacts.NewCustomField {
 }
 
 // checkedNewCustomField is a column mapped to a new Custom field as a mapping keeps it and the value
-// it writes, or its refusal: a key a new field may take (contacts.CheckNewCustomFieldKey) and the
-// Workspace has no field of (contacts.ErrCustomFieldKeyTaken; fields are the types of the fields
-// the mapping names that the Workspace has), a label by the name rule, a type of a Custom field,
-// and a datetime field's date format. Its value is the Custom field's, so a second column of the
+// it writes, or its refusal: a key (kept without its spaces) a new field may take
+// (contacts.CheckNewCustomFieldKey) and the Workspace has no field of
+// (contacts.ErrCustomFieldKeyTaken; fields are the types of the fields the mapping names that the
+// Workspace has), a label by the name rule, a type of a Custom field, and a datetime field's date
+// format. Its value is the Custom field's, so a second column of the
 // key is refused as any repeated target is.
 func checkedNewCustomField(col csvimport.Column, fields map[string]customfield.Type) (csvimport.Column, string, error) {
-	_, taken := fields[col.Key]
-	if err := contacts.CheckNewCustomFieldKey(col.Key, taken); err != nil {
+	key := contacts.NewCustomFieldKey(col.Key)
+	_, taken := fields[key]
+	if err := contacts.CheckNewCustomFieldKey(key, taken); err != nil {
 		return col, "", err
 	}
 	label, err := validation.Name(col.Label)
@@ -55,14 +57,14 @@ func checkedNewCustomField(col csvimport.Column, fields map[string]customfield.T
 	if customfield.TypeValidator(t) != nil {
 		return col, "", ErrUnknownTarget
 	}
-	out := csvimport.Column{Kind: col.Kind, Key: col.Key, Label: label, FieldType: col.FieldType}
+	out := csvimport.Column{Kind: col.Kind, Key: key, Label: label, FieldType: col.FieldType}
 	if t == customfield.TypeDatetime {
 		if col.DateFormat.Layout() == "" {
 			return col, "", ErrDateFormatRequired
 		}
 		out.DateFormat = col.DateFormat
 	}
-	return out, "customField:" + col.Key, nil
+	return out, "customField:" + key, nil
 }
 
 // withNewFields adds to fields the type of each Custom field the mapping creates, the one its
