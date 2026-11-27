@@ -1443,6 +1443,7 @@ func (c *ConverterImpl) EnrollmentToResource(source *ent.AutomationRun) site.Enr
 		siteapiEnrollmentResource.DeferredSince = optTimestamp((*source).DeferredSince)
 		siteapiEnrollmentResource.DeferralCause = optDeferralCause(c, (*source).DeferralCause)
 		siteapiEnrollmentResource.Failure = enrollmentFailure(c, (*source))
+		siteapiEnrollmentResource.Awaited = enrollmentAwaited(c, (*source))
 		siteapiEnrollmentResource.CreatedAt = timestamp((*source).CreatedAt)
 		siteapiEnrollmentResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
@@ -1752,6 +1753,21 @@ func (c *ConverterImpl) JoinDomainsToResources(source []*ent.JoinDomain) []site.
 	}
 	return siteapiSiteJoinDomainResourceList
 }
+func (c *ConverterImpl) KeptEventToResource(source automations.KeptEvent) site.KeptEvent {
+	var siteapiKeptEvent site.KeptEvent
+	siteapiKeptEvent.Name = source.Name
+	siteapiKeptEvent.Action = source.Action
+	siteapiKeptEvent.Properties = awaitedProperties(source.Properties)
+	return siteapiKeptEvent
+}
+func (c *ConverterImpl) KeptEventsToResources(source []automations.KeptEvent) []site.KeptEvent {
+	var siteapiKeptEventList []site.KeptEvent
+	siteapiKeptEventList = make([]site.KeptEvent, len(source))
+	for i := 0; i < len(source); i++ {
+		siteapiKeptEventList[i] = c.KeptEventToResource(source[i])
+	}
+	return siteapiKeptEventList
+}
 func (c *ConverterImpl) LegalDocumentToSite(source signupitems.Document) site.SiteLegalDocument {
 	var siteapiSiteLegalDocument site.SiteLegalDocument
 	siteapiSiteLegalDocument.Key = site.SignupItemKey(source.Key)
@@ -1865,6 +1881,18 @@ func (c *ConverterImpl) MembershipsToResources(source []*ent.Membership) []site.
 		siteapiSiteMembershipResourceList[i] = c.MembershipToResource(source[i])
 	}
 	return siteapiSiteMembershipResourceList
+}
+func (c *ConverterImpl) MessageEngagementToResource(source conditiontree.Engagement) site.MessageEngagement {
+	var siteapiMessageEngagement site.MessageEngagement
+	switch source {
+	case conditiontree.MessageClicked:
+		siteapiMessageEngagement = site.MessageEngagementClicked
+	case conditiontree.MessageOpened:
+		siteapiMessageEngagement = site.MessageEngagementOpened
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiMessageEngagement
 }
 func (c *ConverterImpl) MessageRevenueToResource(source orders.Revenue) site.MessageRevenue {
 	var siteapiMessageRevenue site.MessageRevenue
@@ -2036,6 +2064,7 @@ func (c *ConverterImpl) PathStepSum(source site.AutomationStepSum) site.PathStep
 	siteapiPathStepSum.EndStep = source.EndStep
 	siteapiPathStepSum.BranchStep = source.BranchStep
 	siteapiPathStepSum.SplitStep = source.SplitStep
+	siteapiPathStepSum.WaitForEventStep = source.WaitForEventStep
 	return siteapiPathStepSum
 }
 func (c *ConverterImpl) PathStepType(source site.AutomationStepSumType) site.PathStepSumType {
@@ -2059,6 +2088,8 @@ func (c *ConverterImpl) PathStepType(source site.AutomationStepSumType) site.Pat
 		siteapiPathStepSumType = site.SplitStepPathStepSum
 	case site.TelegramStepAutomationStepSum:
 		siteapiPathStepSumType = site.TelegramStepPathStepSum
+	case site.WaitForEventStepAutomationStepSum:
+		siteapiPathStepSumType = site.WaitForEventStepPathStepSum
 	case site.WaitStepAutomationStepSum:
 		siteapiPathStepSumType = site.WaitStepPathStepSum
 	case site.WaitUntilStepAutomationStepSum:
@@ -2917,6 +2948,7 @@ func (c *ConverterImpl) SplitPathStepSum(source site.AutomationStepSum) site.Spl
 	siteapiSplitPathStepSum.EndStep = source.EndStep
 	siteapiSplitPathStepSum.BranchStep = source.BranchStep
 	siteapiSplitPathStepSum.SplitStep = source.SplitStep
+	siteapiSplitPathStepSum.WaitForEventStep = source.WaitForEventStep
 	return siteapiSplitPathStepSum
 }
 func (c *ConverterImpl) SplitPathStepType(source site.AutomationStepSumType) site.SplitPathStepSumType {
@@ -2940,6 +2972,8 @@ func (c *ConverterImpl) SplitPathStepType(source site.AutomationStepSumType) sit
 		siteapiSplitPathStepSumType = site.SplitStepSplitPathStepSum
 	case site.TelegramStepAutomationStepSum:
 		siteapiSplitPathStepSumType = site.TelegramStepSplitPathStepSum
+	case site.WaitForEventStepAutomationStepSum:
+		siteapiSplitPathStepSumType = site.WaitForEventStepSplitPathStepSum
 	case site.WaitStepAutomationStepSum:
 		siteapiSplitPathStepSumType = site.WaitStepSplitPathStepSum
 	case site.WaitUntilStepAutomationStepSum:
@@ -3350,6 +3384,34 @@ func (c *ConverterImpl) VisitorToExport(source *ent.Visitor) site.ContactExportV
 		siteapiContactExportVisitor.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return siteapiContactExportVisitor
+}
+func (c *ConverterImpl) WaitForEventStepToResource(source automations.WaitForEventView) (site.WaitForEventStep, error) {
+	var siteapiWaitForEventStep site.WaitForEventStep
+	siteapiWaitForEventStep.ID = c.automationstepIDToSiteapiStepId(source.ID)
+	siteapiWaitForEventStep.Type = waitForEventStepType(source.Type)
+	siteapiWaitForEventStep.Name = waitForEventName(source.Name)
+	siteapiWaitForEventStep.TimeoutSeconds = count(source.TimeoutSeconds)
+	siteapiWaitForEventAwaits, err := waitForEventAwaits(c, source.Awaits)
+	if err != nil {
+		return siteapiWaitForEventStep, err
+	}
+	siteapiWaitForEventStep.Awaits = siteapiWaitForEventAwaits
+	siteapiAutomationPath, err := c.AutomationPathToResource(source.Arrived)
+	if err != nil {
+		return siteapiWaitForEventStep, err
+	}
+	siteapiWaitForEventStep.Arrived = siteapiAutomationPath
+	siteapiAutomationPath2, err := c.AutomationPathToResource(source.TimedOut)
+	if err != nil {
+		return siteapiWaitForEventStep, err
+	}
+	siteapiWaitForEventStep.TimedOut = siteapiAutomationPath2
+	siteapiOptAutomationPath, err := optAutomationPath(c, source.Unknown)
+	if err != nil {
+		return siteapiWaitForEventStep, err
+	}
+	siteapiWaitForEventStep.Unknown = siteapiOptAutomationPath
+	return siteapiWaitForEventStep, nil
 }
 func (c *ConverterImpl) WaitStepToResource(source automations.WaitView) site.WaitStep {
 	var siteapiWaitStep site.WaitStep

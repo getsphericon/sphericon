@@ -141,3 +141,56 @@ test('an End is offered only at the last place of a path', () => {
     ].toSorted(),
   )
 })
+
+// A Wait for event (ADR 0124) hangs its `arrived` path, then its `timedOut` path, under it, each
+// headed by a node that names it and reads its figures by the Step's and the path's ids.
+test("a Wait for event's arrived and timed out paths hang under it and rejoin after it", () => {
+  const wait: AutomationStep = {
+    id: stepId(40),
+    type: 'wait_for_event',
+    name: 'purchase',
+    timeoutSeconds: 3600,
+    awaits: { kind: 'event', matchers: [{ action: 'order.created' }] },
+    arrived: { id: stepId(41), steps: [{ id: stepId(43), type: 'apply_tag', tag: 'buyer' }] },
+    timedOut: { id: stepId(42), steps: [] },
+  }
+  const { nodes, edges } = layoutFlow(flowOf(version([wait])))
+
+  const heads = nodes.flatMap((node) =>
+    node.type === 'path' ? [[node.data.fork.id, node.data.pathId, node.data.role.kind]] : [],
+  )
+  const after = `insert-${stepId(1)}-1`
+  const into = edges.filter((e) => e.target === after).map((e) => e.source)
+
+  expect(heads).toEqual([
+    [stepId(40), stepId(41), 'arrived'],
+    [stepId(40), stepId(42), 'timedOut'],
+  ])
+  expect(into.toSorted()).toEqual([`insert-${stepId(41)}-1`, `insert-${stepId(42)}-0`].toSorted())
+})
+
+// A Wait for event on an open or click hangs its unknown path last, headed as a Branch's is.
+test("a Wait for event's unknown path hangs under it after timed out", () => {
+  const wait: AutomationStep = {
+    id: stepId(40),
+    type: 'wait_for_event',
+    name: 'opened',
+    timeoutSeconds: 3600,
+    awaits: { kind: 'message', step: stepId(30), engagement: 'opened' },
+    arrived: { id: stepId(41), steps: [] },
+    timedOut: { id: stepId(42), steps: [] },
+    unknown: { id: stepId(43), steps: [] },
+  }
+  const email: AutomationStep = { id: stepId(30), type: 'email', subject: 'Hi', body: '<p></p>' }
+  const { nodes } = layoutFlow(flowOf(version([email, wait])))
+
+  const heads = nodes.flatMap((node) =>
+    node.type === 'path' ? [[node.data.pathId, node.data.role.kind]] : [],
+  )
+
+  expect(heads).toEqual([
+    [stepId(41), 'arrived'],
+    [stepId(42), 'timedOut'],
+    [stepId(43), 'unknown'],
+  ])
+})

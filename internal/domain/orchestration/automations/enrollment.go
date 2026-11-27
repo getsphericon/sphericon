@@ -240,7 +240,11 @@ func (m *StepExecution) enroll(ctx context.Context, s *ent.Scoped, pub events.Pu
 	first, stepping := automationstep.First(a.row.Edges.LiveVersion.Steps)
 	var arrived automationstep.Due
 	if stepping && !ended {
-		arrived, err = arrive(first, now, func() (automationstep.Contact, error) { return calendarOf(ctx, s, held.Contact()) })
+		arrived, err = arrive(first, now, arrival{
+			contact: func() (automationstep.Contact, error) { return calendarOf(ctx, s, held.Contact()) },
+			// An Enrollment that begins has passed no send Step: it was sent no message.
+			message: func(automationstep.AwaitedMessage) (heard, error) { return heard{}, nil },
+		})
 		if err != nil {
 			return entered{}, err
 		}

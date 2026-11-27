@@ -16,7 +16,8 @@ type PathView struct {
 }
 
 // StepView is a stored Step as the API shows it, one type per kind (EmailView, TelegramView,
-// SMSView, WaitView, WaitUntilView, TagView, HTTPView, EndView, BranchView, SplitView): each holds
+// SMSView, WaitView, WaitUntilView, TagView, HTTPView, EndView, BranchView, SplitView,
+// WaitForEventView): each holds
 // its kind's fields only, the defaults it was stored without filled in. An HTTP step is masked: its
 // URL, header values and signing secret never leave the server, only the header names and whether
 // a secret is set.
@@ -122,16 +123,30 @@ type SplitPathView struct {
 	Steps  []StepView
 }
 
-func (EmailView) stepView()     {}
-func (BranchView) stepView()    {}
-func (SplitView) stepView()     {}
-func (TelegramView) stepView()  {}
-func (SMSView) stepView()       {}
-func (WaitView) stepView()      {}
-func (WaitUntilView) stepView() {}
-func (TagView) stepView()       {}
-func (HTTPView) stepView()      {}
-func (EndView) stepView()       {}
+// WaitForEventView is a Wait for event: its name, its timeout, what it awaits and its paths, the
+// unknown one only when it has it, each path's Steps views too.
+type WaitForEventView struct {
+	ID             automationstep.ID
+	Type           automationstep.Kind
+	Name           string
+	TimeoutSeconds int
+	Awaits         automationstep.Awaits
+	Arrived        PathView
+	TimedOut       PathView
+	Unknown        *PathView
+}
+
+func (WaitForEventView) stepView() {}
+func (EmailView) stepView()        {}
+func (BranchView) stepView()       {}
+func (SplitView) stepView()        {}
+func (TelegramView) stepView()     {}
+func (SMSView) stepView()          {}
+func (WaitView) stepView()         {}
+func (WaitUntilView) stepView()    {}
+func (TagView) stepView()          {}
+func (HTTPView) stepView()         {}
+func (EndView) stepView()          {}
 
 // HeaderName is a header of an HTTP step without its value.
 type HeaderName struct {
@@ -190,6 +205,30 @@ func splitView(id automationstep.ID, sp automationstep.Split) (StepView, error) 
 	return v, nil
 }
 
+// waitForEventView is the view of a Wait for event, each of its paths viewed (View).
+func waitForEventView(id automationstep.ID, w automationstep.WaitForEvent) (StepView, error) {
+	arrived, err := View(w.Arrived)
+	if err != nil {
+		return nil, err
+	}
+	timedOut, err := View(w.TimedOut)
+	if err != nil {
+		return nil, err
+	}
+	v := WaitForEventView{
+		ID: id, Type: automationstep.KindWaitForEvent, Name: w.Name, TimeoutSeconds: w.TimeoutSeconds, Awaits: w.Awaits,
+		Arrived: arrived, TimedOut: timedOut,
+	}
+	if w.Unknown != nil {
+		unknown, err := View(*w.Unknown)
+		if err != nil {
+			return nil, err
+		}
+		v.Unknown = &unknown
+	}
+	return v, nil
+}
+
 // viewOf is the view of the Step; a kind with none is an error.
 func viewOf(st *automationstep.Step) (StepView, error) {
 	switch p := st.Payload.(type) {
@@ -197,6 +236,8 @@ func viewOf(st *automationstep.Step) (StepView, error) {
 		return branchView(st.ID, p)
 	case automationstep.Split:
 		return splitView(st.ID, p)
+	case automationstep.WaitForEvent:
+		return waitForEventView(st.ID, p)
 	}
 	if v := leafView(st); v != nil {
 		return v, nil

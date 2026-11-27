@@ -120,9 +120,11 @@ type EnrollOnRuleInput struct {
 
 // OnEvent is what an Event of the Contact does to the Automations (#751): it first ends the
 // Contact's active Enrollments whose version has an exit or goal event matching it
-// (endOnEvent, in a transaction of its own, which it needs for the Contact's lock),
-// then enrolls the Contact into every active Automation whose live version's Trigger is the action
-// (ADR 0065), one transaction per Automation (enrollOnTrigger), again after an earlier Enrollment
+// (endOnEvent, in a transaction of its own, which it needs for the Contact's lock), then wakes the
+// Contact's active Enrollments standing on a Wait for event it satisfies, down `arrived` (wake, ADR
+// 0124; wakeOnMessage for an open or a click of a message one awaits), then enrolls the Contact
+// into every active Automation whose live version's Trigger is the action (ADR 0065), one
+// transaction per Automation (enrollOnTrigger), again after an earlier Enrollment
 // ended when the version's Entry policy is `again` (ADR 0127). Each entry runs the entry checks,
 // which skip one whose Event's chain already passed through the Automation (Event.Chain, `cycle`):
 // its own Tag or lifecycle Event never enrolls the Contact again. An open or click of the
@@ -131,8 +133,8 @@ type EnrollOnRuleInput struct {
 // when it occurred, which
 // an Event without one does not say, so it is refused. Every Enrollment it makes copies the stored
 // Event's action and properties, read once (originOf, #752). An Event a write through a Connection
-// without mcp:send published (Event.SendLocked) ends Enrollments as any other, and enrolls no one:
-// it starts nothing that sends (ADR 0132), and the lifecycle Events of the endings it makes
+// without mcp:send published (Event.SendLocked) ends Enrollments as any other, and wakes and enrolls
+// no one: it starts nothing that sends (ADR 0132), and the lifecycle Events of the endings it makes
 // (automation.exited, automation.goal_reached) carry its mark, so they start nothing either.
 func (m *StepExecution) OnEvent(ctx context.Context, s *ent.Scoped, in OnEventInput) error {
 	contactID, ev := in.ContactID, in.Event
@@ -147,6 +149,13 @@ func (m *StepExecution) OnEvent(ctx context.Context, s *ent.Scoped, in OnEventIn
 		return m.endOnEvent(ctx, ts, pub, contactID, ev)
 	})
 	if err != nil || ev.SendLocked {
+		return err
+	}
+	// An Event that ended an Enrollment ended it first: it wakes only those still active.
+	if err := m.wake(ctx, s, contactID, ev); err != nil {
+		return err
+	}
+	if err := m.wakeOnMessage(ctx, s, contactID, ev); err != nil {
 		return err
 	}
 	triggered, err := triggeredBy(ctx, s, ev)
@@ -311,6 +320,12 @@ func (m *StepExecution) Step(ctx context.Context, s *ent.Scoped, runID int64, st
 	case automationstep.Branch:
 		return m.branch(ctx, s, run, at, p)
 
+	case automationstep.WaitForEvent:
+		if a, onMessage := p.Message(); onMessage {
+			return m.awaitMessage(ctx, s, run, at, p, a)
+		}
+		return m.timeout(ctx, s, run, version, at, p)
+
 	case automationstep.Split:
 		// The draw holds no random state (ADR 0124): the same Enrollment always lands on the same
 		// path, and the move down it commits behind the compare-and-set on the cursor, so a job
@@ -349,9 +364,10 @@ func splitRound(run *ent.AutomationRun) int {
 }
 
 // branch decides a Branch for the Enrollment (ADR 0124): every path's Condition is read for its
-// Contact, on its live data now, in one read, the Enrollment's `event` copy given to the property
-// tests (ADR 0180), and the first path whose Condition is not false decides: true takes it,
-// unknown takes the unknown path, and none takes otherwise. The move down the path, the Branch's
+// Contact, on its live data now, in one read, the Enrollment's `event` copy and the copies of the
+// Events its Wait for event Steps arrived on given to the property tests (ADR 0180, ADR 0136), and
+// the first path whose Condition is not false decides: true takes it, unknown takes the unknown
+// path, and none takes otherwise. The move down the path, the Branch's
 // record of the path and of every path's outcome, and the reach of the Step it leads to commit in
 // one transaction behind the compare-and-set on the cursor, so the path is decided once: a job
 // delivered again finds the Enrollment moved on. A Condition that no longer reads (a Custom field
@@ -361,7 +377,14 @@ func (m *StepExecution) branch(ctx context.Context, s *ent.Scoped, run *ent.Auto
 	if err != nil {
 		return err
 	}
-	truths, err := m.conditions.Outcomes(ctx, s, condition.OutcomesInput{ContactID: run.ContactID, Conditions: b.Conditions(), Properties: run.EventProperties, Messages: messages})
+	conds := b.Conditions()
+	awaited, err := awaitedFor(ctx, s, run.ID, at.index, lo.Map(conds, func(c conditiontree.Branch, _ int) conditiontree.Group { return c.Group })...)
+	if err != nil {
+		return err
+	}
+	truths, err := m.conditions.Outcomes(ctx, s, condition.OutcomesInput{
+		ContactID: run.ContactID, Conditions: conds, Properties: run.EventProperties, Awaited: awaited, Messages: messages,
+	})
 	if errors.Is(err, condition.ErrStorage) {
 		return err
 	}
@@ -372,10 +395,8 @@ func (m *StepExecution) branch(ctx context.Context, s *ent.Scoped, run *ent.Auto
 }
 
 // messagesOf is what the Branch's tests of the Enrollment's own messages read (ADR 0122): the
-// message each send Step they name sent to the Enrollment run, by the Step. A message is read
-// tracked only when it went out (sent) tracked and its tracking was not withdrawn since (ADR 0120);
-// its opened and clicked are its stamps of the first human open and click, which no machine sets
-// (ADR 0053). A Step that sent the Enrollment no message (it was skipped, or the Enrollment never
+// message each send Step they name sent to the Enrollment run, by the Step, read as sentMessageOf
+// reads it. A Step that sent the Enrollment no message (it was skipped, or the Enrollment never
 // passed it) is absent, and so read unknown. None when the Branch tests no message of its own.
 func messagesOf(ctx context.Context, s *ent.Scoped, runID int64, b automationstep.Branch) (map[automationstep.ID]condition.SentMessage, error) {
 	var steps []automationstep.ID
@@ -397,13 +418,22 @@ func messagesOf(ctx context.Context, s *ent.Scoped, runID int64, b automationste
 	out := make(map[automationstep.ID]condition.SentMessage, len(sent))
 	for _, msg := range sent {
 		// The query names a Step, so every message it reads has one.
-		out[lo.FromPtr(msg.AutomationStepID)] = condition.SentMessage{
-			Tracked: msg.Status == outboundmessage.StatusSent && engagementtracking.IsTracked(msg),
-			Opened:  msg.OpenedAt != nil,
-			Clicked: msg.ClickedAt != nil,
-		}
+		out[lo.FromPtr(msg.AutomationStepID)] = sentMessageOf(msg)
 	}
 	return out, nil
+}
+
+// sentMessageOf is what a Step reads of the message msg a send Step sent to the Enrollment (ADR
+// 0122): tracked only when it went out (sent) tracked and its tracking was not withdrawn since
+// (engagementtracking.IsTracked, ADR 0120), and its stamps of the first human open and click, which
+// no machine sets (ADR 0053). A Branch's test of the message and a Wait for event on its open or
+// click read it alike.
+func sentMessageOf(msg *ent.OutboundMessage) condition.SentMessage {
+	return condition.SentMessage{
+		Tracked: msg.Status == outboundmessage.StatusSent && engagementtracking.IsTracked(msg),
+		Opened:  msg.OpenedAt != nil,
+		Clicked: msg.ClickedAt != nil,
+	}
 }
 
 // chosen is the path of the Branch its paths' truths send the Enrollment down (ADR 0124), with each
@@ -462,12 +492,16 @@ func (m *StepExecution) send(ctx context.Context, s *ent.Scoped, a *ent.Automati
 	if err != nil {
 		return err
 	}
+	awaited, err := keptOn(ctx, s, run.ID, at.index)
+	if err != nil {
+		return err
+	}
 	// The send is fenced against an exit (Fencer): it starts only on an Enrollment that is
 	// still active and an exit waits for it, so nothing is sent after an exit.
 	var res outboundmessages.Result
 	err = m.fence(ctx, s, run.ID, func(ctx context.Context) error {
 		var sendErr error
-		res, sendErr = m.out.Send(ctx, s, outboundmessages.AutomationStep(a, run, at.step, st.Step.Integration(), c, content, waitedOf(run)))
+		res, sendErr = m.out.Send(ctx, s, outboundmessages.AutomationStep(a, run, awaited, at.step, st.Step.Integration(), c, content, waitedOf(run)))
 		return sendErr
 	})
 	if stale(err) {
@@ -553,9 +587,9 @@ type place struct {
 // advance moves the Enrollment off the Step it stands on, in one transaction with mv's own writes
 // and the Step records of the move (ADR 0124): onto the next Step, which it reaches then, queueing
 // the job that runs it (at the due moment of a wait, which holds the Enrollment on itself until
-// then), or, with no next Step, to its end: it completes, on the Step it left, and nothing is
-// queued. The next Step is the one after the Step left (Index.Next) or, down a fork's path, the
-// path's first Step or, for an empty path, the Step after the fork (Index.Enter). A move that finds
+// then, and at once otherwise), or, with no next Step,
+// to its end: it completes, on the Step it left, and nothing is queued. The next Step is the one
+// after the Step left (Index.Next) or, down a fork's path, the path's first Step or, for an empty path, the Step after the fork (Index.Enter). A move that finds
 // the Enrollment gone or elsewhere, or its Contact gone, writes nothing and returns nil.
 func (m *StepExecution) advance(ctx context.Context, s *ent.Scoped, runID int64, from place, mv stepMove) error {
 	next, more := from.index.Next(from.step)
@@ -570,20 +604,27 @@ func (m *StepExecution) advance(ctx context.Context, s *ent.Scoped, runID int64,
 				return err // an erased Contact's Enrollment is erased with it
 			}
 		}
+		how, err := stillKept(ctx, ts, mv.leaving)
+		if err != nil {
+			return err
+		}
 		var arrived automationstep.Due
 		if more {
 			var err error
-			arrived, err = arrive(next, now, func() (automationstep.Contact, error) { return runCalendar(ctx, ts, runID) })
+			arrived, err = arrive(next, now, arrival{
+				contact: func() (automationstep.Contact, error) { return runCalendar(ctx, ts, runID) },
+				message: func(a automationstep.AwaitedMessage) (heard, error) { return runHeard(ctx, ts, runID, a) },
+			})
 			if err != nil {
 				return err
 			}
 			if err := advanceRun(ctx, ts, runID, from.step, next.ID, dueAt(arrived)); err != nil {
 				return err
 			}
-			if err := leave(ctx, ts, runID, from.step, now, mv.leaving); err != nil {
+			if err := leave(ctx, ts, runID, from.step, now, how); err != nil {
 				return err
 			}
-		} else if err := completeOn(ctx, ts, pub, runID, from.step, now, mv.leaving); err != nil {
+		} else if err := completeOn(ctx, ts, pub, runID, from.step, now, how); err != nil {
 			return err
 		}
 		if mv.with != nil {
@@ -612,10 +653,16 @@ func (m *StepExecution) end(ctx context.Context, s *ent.Scoped, runID int64, at 
 }
 
 // completeOn completes the Enrollment on the Step of the id, which it leaves at now as how says, in
-// the transaction s is bound to.
+// the transaction s is bound to. A Wait for event it leaves keeps no copy of the Event it arrived
+// on: the end clears every copy (clearKept), and no Step comes after to read it.
 func completeOn(ctx context.Context, s *ent.Scoped, pub events.Publisher, runID int64, step automationstep.ID, now time.Time, how leaving) error {
 	if err := completeRun(ctx, s, pub, runID, step, now); err != nil {
 		return err
+	}
+	if how.path != nil && how.path.kept != nil {
+		path := *how.path
+		path.kept = nil
+		how.path = &path
 	}
 	return leave(ctx, s, runID, step, now, how)
 }

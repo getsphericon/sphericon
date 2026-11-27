@@ -20,6 +20,7 @@ import type {
   AttributeLeafInput,
   BirthdayLeafInput,
   BranchCondition,
+  BranchPropertyLeafInput,
   BranchConditionInput,
   BranchConditionNode,
   CustomFieldLeafInput,
@@ -36,7 +37,6 @@ import type {
   PresenceTestInput,
   RuleCondition,
   RuleConditionInput,
-  RulePropertyLeafInput,
   SegmentCondition,
   SegmentConditionInput,
   SentByLeafInput,
@@ -45,6 +45,8 @@ import type {
   TagLeafInput,
   TelegramLeafInput,
   TextTestInput,
+  WaitForEventCondition,
+  WaitForEventConditionInput,
   WithinLastTestInput,
 } from '../../generated/site/types.gen.ts'
 import {
@@ -60,31 +62,35 @@ import {
   zPropertyTestInput,
   zRuleConditionInput,
   zSegmentConditionInput,
+  zWaitForEventConditionInput,
 } from '../../generated/site/zod.gen.ts'
 import { dayOf, nextDay, startOfDay } from '../../utils/datetime.ts'
 
 // The places a Condition is edited in (ADR 0181): a Segment's tests the Contact, a Rule's also the
-// Event that fired it, a Branch path's also the Event its Enrollment began with (ADR 0124), and an
-// Event matcher's filter only the properties of the one Event it is about (ADR 0133). Each place's
-// generated schema decides what its Condition admits.
+// Event that fired it, a Branch path's and a Wait for event's also the Event its Enrollment began
+// with (ADR 0124, ADR 0180), and an Event matcher's filter only the properties of the one Event it
+// is about (ADR 0133). Each place's generated schema decides what its Condition admits.
 interface PlaceConditions {
   segment: SegmentConditionInput
   rule: RuleConditionInput
   branch: BranchConditionInput
+  waitForEvent: WaitForEventConditionInput
   eventFilter: EventFilterInput
 }
 export type ConditionPlace = keyof PlaceConditions
 
-// A Condition the builder loads: a Segment's, a Rule's, a Branch path's or an Event filter, as read
-// or as sent.
+// A Condition the builder loads: a Segment's, a Rule's, a Branch path's, a Wait for event's or an
+// Event filter, as read or as sent.
 export type AnyCondition =
   | SegmentCondition
   | RuleCondition
   | BranchCondition
+  | WaitForEventCondition
   | EventFilter
   | SegmentConditionInput
   | RuleConditionInput
   | BranchConditionInput
+  | WaitForEventConditionInput
   | EventFilterInput
 
 // The empty group matches every contact, in either place.
@@ -111,6 +117,7 @@ export const eventFieldPrefix = 'event:'
 const trackingFieldPrefix = 'engagementTracking:'
 const sentByFieldPrefix = 'sentBy:'
 const stepMessageFieldPrefix = 'stepMessage:'
+const awaitedFieldPrefix = 'awaited:'
 
 // A sent-by test is edited as a rule on the field "sentBy:<sender>", whose one operator names the
 // Broadcast or Automation picked as its value.
@@ -125,6 +132,19 @@ export function sentByFieldId(sender: MessageSender): string {
 // Enrollment (ADR 0122), whose operator is the engagement it asks for: opened or clicked.
 export function stepMessageFieldId(stepId: string): string {
   return `${stepMessageFieldPrefix}${stepId}`
+}
+
+// awaitedFieldId is the field of a property test of the Event the Wait for event of the name arrived
+// on (ADR 0136, ADR 0181): the name is the field, the property's key is typed in the value, as the
+// triggering Event's.
+export function awaitedFieldId(name: string): string {
+  return `${awaitedFieldPrefix}${name}`
+}
+
+// isPropertyField tells a field whose rule is a property test: of the triggering Event, or of an
+// awaited one.
+export function isPropertyField(field: string): boolean {
+  return field === subjectFields.property || field.startsWith(awaitedFieldPrefix)
 }
 
 export function customFieldId(key: string): string {
@@ -397,7 +417,11 @@ function toRule(
       break
     case 'property': {
       const { operator, value } = testRule(node.test, timeZone)
-      rule = { field: subjectFields.property, operator, value: propertyValueOf(node.key, value) }
+      const field =
+        'of' in node && node.of.kind === 'awaited'
+          ? awaitedFieldId(node.of.name)
+          : subjectFields.property
+      rule = { field, operator, value: propertyValueOf(node.key, value) }
       break
     }
     case 'sentBy':
@@ -445,7 +469,7 @@ type NodeDraft =
   | Tested<EngagementTrackingLeafInput>
   | Tested<CustomFieldLeafInput>
   | (Omit<Blank<EventLeafInput, 'times'>, 'filter'> & { filter?: ConditionDraft })
-  | Blank<Tested<RulePropertyLeafInput>, 'key'>
+  | Blank<Tested<BranchPropertyLeafInput>, 'key'>
   | Blank<Tested<FilterPropertyLeafInput>, 'key'>
   | SentByLeafInput
   | StepMessageLeafInput
@@ -562,7 +586,12 @@ function toPropertyLeaf(rule: RuleType, timeZone?: string): NodeDraft[] {
   if (test === undefined) {
     return []
   }
-  return [{ kind: 'property', of: { kind: 'trigger' }, ...(key === '' ? {} : { key }), test }]
+  // The field names whose property it is: an awaited Event's by its Wait for event's name, else the
+  // triggering Event's.
+  const of = rule.field.startsWith(awaitedFieldPrefix)
+    ? { kind: 'awaited' as const, name: rule.field.slice(awaitedFieldPrefix.length) }
+    : { kind: 'trigger' as const }
+  return [{ kind: 'property', of, ...(key === '' ? {} : { key }), test }]
 }
 
 const engagementByName = byName(MessageEngagement)
@@ -634,6 +663,9 @@ function leafKindOf(field: string): LeafKind | undefined {
   if (field.startsWith(stepMessageFieldPrefix)) {
     return 'stepMessage'
   }
+  if (field.startsWith(awaitedFieldPrefix)) {
+    return 'property'
+  }
   return attributeByName.has(field) ? 'attribute' : subjectKinds.get(field)
 }
 
@@ -666,6 +698,7 @@ const conditionSchemas: { [P in ConditionPlace]: z.ZodType<PlaceConditions[P]> }
   segment: zSegmentConditionInput,
   rule: zRuleConditionInput,
   branch: zBranchConditionInput,
+  waitForEvent: zWaitForEventConditionInput,
   eventFilter: zEventFilterInput,
 }
 

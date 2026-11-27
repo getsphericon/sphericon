@@ -5,23 +5,23 @@ import { useTranslation } from 'react-i18next'
 
 import {
   eventFieldPrefix,
+  isPropertyField,
   namedOperator,
   propertyValue,
   propertyValueOf,
-  subjectFields,
 } from './condition.ts'
 import { EventCountEditor } from './EventCountEditor.tsx'
 import { isPresence } from './fieldOperators.ts'
 import type { ValueEditorContext } from './valueEditorContext.ts'
 
-// ConditionValueEditor is the builder's value editor: an event field edits its count and window, an
-// Event property its key and the value its test compares with, and every other field keeps the
+// ConditionValueEditor is the builder's value editor: an event field edits its count and window, a
+// property of the triggering or an awaited Event its key and the value its test compares with, and every other field keeps the
 // Mantine editor.
 export function ConditionValueEditor(props: MantineValueEditorProps) {
   if (props.field.startsWith(eventFieldPrefix)) {
     return <EventCountEditor {...props} />
   }
-  if (props.field === subjectFields.property) {
+  if (isPropertyField(props.field)) {
     return <PropertyEditor {...props} />
   }
   return <MantineValueEditor {...props} />

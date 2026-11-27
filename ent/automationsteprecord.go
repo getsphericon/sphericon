@@ -49,6 +49,16 @@ type AutomationStepRecord struct {
 	DueAt *time.Time `json:"due_at,omitempty"`
 	// WentOn holds the value of the "went_on" field.
 	WentOn *automationstep.WentOn `json:"went_on,omitempty"`
+	// DecidedPathID holds the value of the "decided_path_id" field.
+	DecidedPathID *automationstep.ID `json:"decided_path_id,omitempty"`
+	// AwaitedEventID holds the value of the "awaited_event_id" field.
+	AwaitedEventID *int64 `json:"awaited_event_id,omitempty"`
+	// AwaitedAction holds the value of the "awaited_action" field.
+	AwaitedAction *string `json:"awaited_action,omitempty"`
+	// AwaitedProperties holds the value of the "awaited_properties" field.
+	AwaitedProperties map[string]interface{} `json:"awaited_properties,omitempty"`
+	// DeclinedEventIds holds the value of the "declined_event_ids" field.
+	DeclinedEventIds []int64 `json:"declined_event_ids,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the AutomationStepRecordQuery when eager-loading is set.
 	Edges        AutomationStepRecordEdges `json:"edges"`
@@ -93,11 +103,11 @@ func (*AutomationStepRecord) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case automationsteprecord.FieldPathOutcomes:
+		case automationsteprecord.FieldPathOutcomes, automationsteprecord.FieldAwaitedProperties, automationsteprecord.FieldDeclinedEventIds:
 			values[i] = new([]byte)
-		case automationsteprecord.FieldID, automationsteprecord.FieldWorkspaceID, automationsteprecord.FieldRunID:
+		case automationsteprecord.FieldID, automationsteprecord.FieldWorkspaceID, automationsteprecord.FieldRunID, automationsteprecord.FieldAwaitedEventID:
 			values[i] = new(sql.NullInt64)
-		case automationsteprecord.FieldStepID, automationsteprecord.FieldOutcome, automationsteprecord.FieldSkipReason, automationsteprecord.FieldPathID, automationsteprecord.FieldWentOn:
+		case automationsteprecord.FieldStepID, automationsteprecord.FieldOutcome, automationsteprecord.FieldSkipReason, automationsteprecord.FieldPathID, automationsteprecord.FieldWentOn, automationsteprecord.FieldDecidedPathID, automationsteprecord.FieldAwaitedAction:
 			values[i] = new(sql.NullString)
 		case automationsteprecord.FieldCreatedAt, automationsteprecord.FieldUpdatedAt, automationsteprecord.FieldReachedAt, automationsteprecord.FieldLeftAt, automationsteprecord.FieldDueAt:
 			values[i] = new(sql.NullTime)
@@ -208,6 +218,43 @@ func (_m *AutomationStepRecord) assignValues(columns []string, values []any) err
 				_m.WentOn = new(automationstep.WentOn)
 				*_m.WentOn = automationstep.WentOn(value.String)
 			}
+		case automationsteprecord.FieldDecidedPathID:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field decided_path_id", values[i])
+			} else if value.Valid {
+				_m.DecidedPathID = new(automationstep.ID)
+				*_m.DecidedPathID = automationstep.ID(value.String)
+			}
+		case automationsteprecord.FieldAwaitedEventID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field awaited_event_id", values[i])
+			} else if value.Valid {
+				_m.AwaitedEventID = new(int64)
+				*_m.AwaitedEventID = value.Int64
+			}
+		case automationsteprecord.FieldAwaitedAction:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field awaited_action", values[i])
+			} else if value.Valid {
+				_m.AwaitedAction = new(string)
+				*_m.AwaitedAction = value.String
+			}
+		case automationsteprecord.FieldAwaitedProperties:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field awaited_properties", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.AwaitedProperties); err != nil {
+					return fmt.Errorf("unmarshal field awaited_properties: %w", err)
+				}
+			}
+		case automationsteprecord.FieldDeclinedEventIds:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field declined_event_ids", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.DeclinedEventIds); err != nil {
+					return fmt.Errorf("unmarshal field declined_event_ids: %w", err)
+				}
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -304,6 +351,27 @@ func (_m *AutomationStepRecord) String() string {
 		builder.WriteString("went_on=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
+	builder.WriteString(", ")
+	if v := _m.DecidedPathID; v != nil {
+		builder.WriteString("decided_path_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.AwaitedEventID; v != nil {
+		builder.WriteString("awaited_event_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.AwaitedAction; v != nil {
+		builder.WriteString("awaited_action=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	builder.WriteString("awaited_properties=")
+	builder.WriteString(fmt.Sprintf("%v", _m.AwaitedProperties))
+	builder.WriteString(", ")
+	builder.WriteString("declined_event_ids=")
+	builder.WriteString(fmt.Sprintf("%v", _m.DeclinedEventIds))
 	builder.WriteByte(')')
 	return builder.String()
 }

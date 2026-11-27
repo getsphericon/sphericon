@@ -146,6 +146,22 @@ var WaitUntilForms = Table{
 	}.Decls,
 }
 
+// AwaitsKinds is the kinds of what a Wait for event waits for, the discriminators of the
+// contract's WaitForEventAwaits union, which a stored Wait for event keeps under `kind` (ADR 0124).
+var AwaitsKinds = Table{
+	Spec:    siteSpec,
+	Out:     "internal/kernel/automationstep/awaits_gen.go",
+	Package: "automationstep",
+	Decls: Discriminators{
+		Doc:    []string{"AwaitsKind is what a Wait for event waits for: the `kind` it is stored and shown under."},
+		Type:   "AwaitsKind",
+		Prefix: "Awaits",
+		Unions: []Union{
+			{Schema: "WaitForEventAwaits", List: "AwaitsKinds", Doc: []string{"AwaitsKinds is every AwaitsKind, in the contract's order."}},
+		},
+	}.Decls,
+}
+
 // ConditionCombinators is how a condition Group joins its entries, from the
 // contract's ConditionCombinator enum.
 var ConditionCombinators = Table{
@@ -247,6 +263,9 @@ var ConditionKinds = Table{
 				{Schema: "SegmentConditionNode", List: "SegmentKinds", Doc: []string{"SegmentKinds is every Kind a Segment's Condition admits."}},
 				{Schema: "RuleConditionNode", List: "RuleKinds", Doc: []string{"RuleKinds is every Kind a Rule's Condition admits."}},
 				{Schema: "BranchConditionNode", List: "BranchKinds", Doc: []string{"BranchKinds is every Kind a Branch path's Condition admits."}},
+				{Schema: "WaitForEventConditionNode", List: "WaitForEventKinds", Doc: []string{
+					"WaitForEventKinds is every Kind a Wait for event's Condition admits.",
+				}},
 				{Schema: "EventFilterNode", List: "EventFilterKinds", Doc: []string{"EventFilterKinds is every Kind an Event filter admits."}},
 			},
 		},
@@ -273,6 +292,9 @@ var ConditionKinds = Table{
 			Unions: []Union{
 				{Schema: "RulePropertySource", List: "RuleSources", Doc: []string{"RuleSources is every Source a Rule's property leaf reads."}},
 				{Schema: "BranchPropertySource", List: "BranchSources", Doc: []string{"BranchSources is every Source a Branch path's property leaf reads."}},
+				{Schema: "WaitForEventPropertySource", List: "WaitForEventSources", Doc: []string{
+					"WaitForEventSources is every Source a Wait for event's property leaf reads.",
+				}},
 			},
 		},
 	),

@@ -213,6 +213,8 @@ type Inputs interface {
 	WaitUntilTimeOfDayIn(source externalapi.WaitUntilTimeOfDayInput) automationstep.TimeOfDay
 	// goverter:enum:transform value
 	WeekdayIn(source externalapi.Weekday) localcalendar.Weekday
+	// goverter:enum:transform value
+	MessageEngagementIn(source externalapi.MessageEngagement) conditiontree.Engagement
 	ApplyTagStepIn(source externalapi.ApplyTagStepInput) automationstep.ApplyTag
 	RemoveTagStepIn(source externalapi.RemoveTagStepInput) automationstep.RemoveTag
 	HttpStepIn(source externalapi.HttpStepInput) automationstep.HTTP
@@ -507,6 +509,8 @@ func automationStepIn(c Inputs, s *externalapi.AutomationStepInputSum) (automati
 		return branchStepIn(c, &s.BranchStepInput)
 	case externalapi.SplitStepInputAutomationStepInputSum:
 		return splitStepIn(c, &s.SplitStepInput)
+	case externalapi.WaitForEventStepInputAutomationStepInputSum:
+		return waitForEventStepIn(c, &s.WaitForEventStepInput)
 	default:
 		return automationstep.Step{}, nil // the save refuses a Step of no kind
 	}
@@ -568,6 +572,66 @@ func splitStepIn(c Inputs, in *externalapi.SplitStepInput) (automationstep.Step,
 		sp.Paths[i] = automationstep.SplitPath{ID: stepIDIn(p.ID), Weight: int(p.Weight), Steps: steps}
 	}
 	return automationstep.Step{ID: stepIDIn(in.ID), Payload: sp}, nil
+}
+
+// waitForEventStepIn maps a Wait for event: its name, its timeout, what it awaits and its paths.
+// The save checks them.
+func waitForEventStepIn(c Inputs, in *externalapi.WaitForEventStepInput) (automationstep.Step, error) {
+	awaits, err := waitForEventAwaitsIn(c, in.Awaits)
+	if err != nil {
+		return automationstep.Step{}, err
+	}
+	arrived, err := c.AutomationPath(in.Arrived)
+	if err != nil {
+		return automationstep.Step{}, err
+	}
+	timedOut, err := c.AutomationPath(in.TimedOut)
+	if err != nil {
+		return automationstep.Step{}, err
+	}
+	w := automationstep.WaitForEvent{
+		Name: string(in.Name), TimeoutSeconds: int(in.TimeoutSeconds), Awaits: awaits, Arrived: arrived, TimedOut: timedOut,
+	}
+	if u, ok := in.Unknown.Get(); ok {
+		unknown, err := c.AutomationPath(u)
+		if err != nil {
+			return automationstep.Step{}, err
+		}
+		w.Unknown = &unknown
+	}
+	return automationstep.Step{ID: stepIDIn(in.ID), Payload: w}, nil
+}
+
+// waitForEventAwaitsIn maps what a Wait for event waits for onto its kind's: a oneOf is beyond
+// goverter, so only the switch is written here.
+func waitForEventAwaitsIn(c Inputs, in externalapi.WaitForEventAwaitsInput) (automationstep.Awaits, error) {
+	switch in.OneOf.Type {
+	case externalapi.AwaitedEventInputWaitForEventAwaitsInputSum:
+		return awaitedEventIn(in.OneOf.AwaitedEventInput)
+	case externalapi.AwaitedMessageInputWaitForEventAwaitsInputSum:
+		m := in.OneOf.AwaitedMessageInput
+		return automationstep.AwaitedMessage{Step: automationstep.ID(m.Step), Engagement: c.MessageEngagementIn(m.Engagement)}, nil
+	default:
+		return nil, fmt.Errorf("what a wait for event awaits has no kind %q", in.OneOf.Type)
+	}
+}
+
+// awaitedEventIn maps a Wait for event's Event matchers and its Condition (the contract's typed
+// tree is the stored shape, ADR 0169). The save checks them.
+func awaitedEventIn(in externalapi.AwaitedEventInput) (automationstep.Awaits, error) {
+	matchers := make([]eventmatcher.Matcher, len(in.Matchers))
+	for i, m := range in.Matchers {
+		matcher, err := eventMatcherIn(m)
+		if err != nil {
+			return nil, err
+		}
+		matchers[i] = matcher
+	}
+	cond, err := condition.FromOptionalDTO[conditiontree.WaitForEvent](in.Condition)
+	if err != nil {
+		return nil, err
+	}
+	return automationstep.AwaitedEvent{Matchers: matchers, Condition: cond}, nil
 }
 
 // ruleActionsPtrIn is the Actions an update replaces: omitted (nil) keeps the stored ones.

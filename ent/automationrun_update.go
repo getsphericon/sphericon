@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/automationsteprecord"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/predicate"
@@ -298,6 +299,21 @@ func (_u *AutomationRunUpdate) SetContact(v *Contact) *AutomationRunUpdate {
 	return _u.SetContactID(v.ID)
 }
 
+// AddStepRecordIDs adds the "step_records" edge to the AutomationStepRecord entity by IDs.
+func (_u *AutomationRunUpdate) AddStepRecordIDs(ids ...int64) *AutomationRunUpdate {
+	_u.mutation.AddStepRecordIDs(ids...)
+	return _u
+}
+
+// AddStepRecords adds the "step_records" edges to the AutomationStepRecord entity.
+func (_u *AutomationRunUpdate) AddStepRecords(v ...*AutomationStepRecord) *AutomationRunUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddStepRecordIDs(ids...)
+}
+
 // Mutation returns the AutomationRunMutation object of the builder.
 func (_u *AutomationRunUpdate) Mutation() *AutomationRunMutation {
 	return _u.mutation
@@ -325,6 +341,27 @@ func (_u *AutomationRunUpdate) ClearVersion() *AutomationRunUpdate {
 func (_u *AutomationRunUpdate) ClearContact() *AutomationRunUpdate {
 	_u.mutation.ClearContact()
 	return _u
+}
+
+// ClearStepRecords clears all "step_records" edges to the AutomationStepRecord entity.
+func (_u *AutomationRunUpdate) ClearStepRecords() *AutomationRunUpdate {
+	_u.mutation.ClearStepRecords()
+	return _u
+}
+
+// RemoveStepRecordIDs removes the "step_records" edge to AutomationStepRecord entities by IDs.
+func (_u *AutomationRunUpdate) RemoveStepRecordIDs(ids ...int64) *AutomationRunUpdate {
+	_u.mutation.RemoveStepRecordIDs(ids...)
+	return _u
+}
+
+// RemoveStepRecords removes "step_records" edges to AutomationStepRecord entities.
+func (_u *AutomationRunUpdate) RemoveStepRecords(v ...*AutomationStepRecord) *AutomationRunUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveStepRecordIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -594,6 +631,51 @@ func (_u *AutomationRunUpdate) sqlSave(ctx context.Context) (_node int, err erro
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(contact.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.StepRecordsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   automationrun.StepRecordsTable,
+			Columns: []string{automationrun.StepRecordsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationsteprecord.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedStepRecordsIDs(); len(nodes) > 0 && !_u.mutation.StepRecordsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   automationrun.StepRecordsTable,
+			Columns: []string{automationrun.StepRecordsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationsteprecord.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.StepRecordsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   automationrun.StepRecordsTable,
+			Columns: []string{automationrun.StepRecordsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationsteprecord.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -886,6 +968,21 @@ func (_u *AutomationRunUpdateOne) SetContact(v *Contact) *AutomationRunUpdateOne
 	return _u.SetContactID(v.ID)
 }
 
+// AddStepRecordIDs adds the "step_records" edge to the AutomationStepRecord entity by IDs.
+func (_u *AutomationRunUpdateOne) AddStepRecordIDs(ids ...int64) *AutomationRunUpdateOne {
+	_u.mutation.AddStepRecordIDs(ids...)
+	return _u
+}
+
+// AddStepRecords adds the "step_records" edges to the AutomationStepRecord entity.
+func (_u *AutomationRunUpdateOne) AddStepRecords(v ...*AutomationStepRecord) *AutomationRunUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddStepRecordIDs(ids...)
+}
+
 // Mutation returns the AutomationRunMutation object of the builder.
 func (_u *AutomationRunUpdateOne) Mutation() *AutomationRunMutation {
 	return _u.mutation
@@ -913,6 +1010,27 @@ func (_u *AutomationRunUpdateOne) ClearVersion() *AutomationRunUpdateOne {
 func (_u *AutomationRunUpdateOne) ClearContact() *AutomationRunUpdateOne {
 	_u.mutation.ClearContact()
 	return _u
+}
+
+// ClearStepRecords clears all "step_records" edges to the AutomationStepRecord entity.
+func (_u *AutomationRunUpdateOne) ClearStepRecords() *AutomationRunUpdateOne {
+	_u.mutation.ClearStepRecords()
+	return _u
+}
+
+// RemoveStepRecordIDs removes the "step_records" edge to AutomationStepRecord entities by IDs.
+func (_u *AutomationRunUpdateOne) RemoveStepRecordIDs(ids ...int64) *AutomationRunUpdateOne {
+	_u.mutation.RemoveStepRecordIDs(ids...)
+	return _u
+}
+
+// RemoveStepRecords removes "step_records" edges to AutomationStepRecord entities.
+func (_u *AutomationRunUpdateOne) RemoveStepRecords(v ...*AutomationStepRecord) *AutomationRunUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveStepRecordIDs(ids...)
 }
 
 // Where appends a list predicates to the AutomationRunUpdate builder.
@@ -1212,6 +1330,51 @@ func (_u *AutomationRunUpdateOne) sqlSave(ctx context.Context) (_node *Automatio
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(contact.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.StepRecordsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   automationrun.StepRecordsTable,
+			Columns: []string{automationrun.StepRecordsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationsteprecord.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedStepRecordsIDs(); len(nodes) > 0 && !_u.mutation.StepRecordsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   automationrun.StepRecordsTable,
+			Columns: []string{automationrun.StepRecordsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationsteprecord.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.StepRecordsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   automationrun.StepRecordsTable,
+			Columns: []string{automationrun.StepRecordsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationsteprecord.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

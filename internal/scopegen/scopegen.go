@@ -128,7 +128,7 @@ const (
 var Tables = []Table{
 	ServiceScopes, ExternalScopes, ExternalPermissions, SitePermissions, GrantPermissions,
 	Permissions, TokenScopes, CredentialScopes, UserScopes, SystemEventActions, ConditionCombinators, ConditionAttributes, ConditionOperators,
-	Weekdays, DateRecurrences, DateFieldKinds, WaitUntilForms,
+	Weekdays, DateRecurrences, DateFieldKinds, WaitUntilForms, AwaitsKinds,
 	ConditionKinds, SiteRateLimits,
 	StaffRateLimits,
 }

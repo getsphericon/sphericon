@@ -104,6 +104,22 @@ func DueAt(v time.Time) predicate.AutomationStepRecord {
 	return predicate.AutomationStepRecord(sql.FieldEQ(FieldDueAt, v))
 }
 
+// DecidedPathID applies equality check predicate on the "decided_path_id" field. It's identical to DecidedPathIDEQ.
+func DecidedPathID(v automationstep.ID) predicate.AutomationStepRecord {
+	vc := string(v)
+	return predicate.AutomationStepRecord(sql.FieldEQ(FieldDecidedPathID, vc))
+}
+
+// AwaitedEventID applies equality check predicate on the "awaited_event_id" field. It's identical to AwaitedEventIDEQ.
+func AwaitedEventID(v int64) predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldEQ(FieldAwaitedEventID, v))
+}
+
+// AwaitedAction applies equality check predicate on the "awaited_action" field. It's identical to AwaitedActionEQ.
+func AwaitedAction(v string) predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldEQ(FieldAwaitedAction, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.AutomationStepRecord {
 	return predicate.AutomationStepRecord(sql.FieldEQ(FieldCreatedAt, v))
@@ -660,6 +676,245 @@ func WentOnIsNil() predicate.AutomationStepRecord {
 // WentOnNotNil applies the NotNil predicate on the "went_on" field.
 func WentOnNotNil() predicate.AutomationStepRecord {
 	return predicate.AutomationStepRecord(sql.FieldNotNull(FieldWentOn))
+}
+
+// DecidedPathIDEQ applies the EQ predicate on the "decided_path_id" field.
+func DecidedPathIDEQ(v automationstep.ID) predicate.AutomationStepRecord {
+	vc := string(v)
+	return predicate.AutomationStepRecord(sql.FieldEQ(FieldDecidedPathID, vc))
+}
+
+// DecidedPathIDNEQ applies the NEQ predicate on the "decided_path_id" field.
+func DecidedPathIDNEQ(v automationstep.ID) predicate.AutomationStepRecord {
+	vc := string(v)
+	return predicate.AutomationStepRecord(sql.FieldNEQ(FieldDecidedPathID, vc))
+}
+
+// DecidedPathIDIn applies the In predicate on the "decided_path_id" field.
+func DecidedPathIDIn(vs ...automationstep.ID) predicate.AutomationStepRecord {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = string(vs[i])
+	}
+	return predicate.AutomationStepRecord(sql.FieldIn(FieldDecidedPathID, v...))
+}
+
+// DecidedPathIDNotIn applies the NotIn predicate on the "decided_path_id" field.
+func DecidedPathIDNotIn(vs ...automationstep.ID) predicate.AutomationStepRecord {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = string(vs[i])
+	}
+	return predicate.AutomationStepRecord(sql.FieldNotIn(FieldDecidedPathID, v...))
+}
+
+// DecidedPathIDGT applies the GT predicate on the "decided_path_id" field.
+func DecidedPathIDGT(v automationstep.ID) predicate.AutomationStepRecord {
+	vc := string(v)
+	return predicate.AutomationStepRecord(sql.FieldGT(FieldDecidedPathID, vc))
+}
+
+// DecidedPathIDGTE applies the GTE predicate on the "decided_path_id" field.
+func DecidedPathIDGTE(v automationstep.ID) predicate.AutomationStepRecord {
+	vc := string(v)
+	return predicate.AutomationStepRecord(sql.FieldGTE(FieldDecidedPathID, vc))
+}
+
+// DecidedPathIDLT applies the LT predicate on the "decided_path_id" field.
+func DecidedPathIDLT(v automationstep.ID) predicate.AutomationStepRecord {
+	vc := string(v)
+	return predicate.AutomationStepRecord(sql.FieldLT(FieldDecidedPathID, vc))
+}
+
+// DecidedPathIDLTE applies the LTE predicate on the "decided_path_id" field.
+func DecidedPathIDLTE(v automationstep.ID) predicate.AutomationStepRecord {
+	vc := string(v)
+	return predicate.AutomationStepRecord(sql.FieldLTE(FieldDecidedPathID, vc))
+}
+
+// DecidedPathIDContains applies the Contains predicate on the "decided_path_id" field.
+func DecidedPathIDContains(v automationstep.ID) predicate.AutomationStepRecord {
+	vc := string(v)
+	return predicate.AutomationStepRecord(sql.FieldContains(FieldDecidedPathID, vc))
+}
+
+// DecidedPathIDHasPrefix applies the HasPrefix predicate on the "decided_path_id" field.
+func DecidedPathIDHasPrefix(v automationstep.ID) predicate.AutomationStepRecord {
+	vc := string(v)
+	return predicate.AutomationStepRecord(sql.FieldHasPrefix(FieldDecidedPathID, vc))
+}
+
+// DecidedPathIDHasSuffix applies the HasSuffix predicate on the "decided_path_id" field.
+func DecidedPathIDHasSuffix(v automationstep.ID) predicate.AutomationStepRecord {
+	vc := string(v)
+	return predicate.AutomationStepRecord(sql.FieldHasSuffix(FieldDecidedPathID, vc))
+}
+
+// DecidedPathIDIsNil applies the IsNil predicate on the "decided_path_id" field.
+func DecidedPathIDIsNil() predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldIsNull(FieldDecidedPathID))
+}
+
+// DecidedPathIDNotNil applies the NotNil predicate on the "decided_path_id" field.
+func DecidedPathIDNotNil() predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldNotNull(FieldDecidedPathID))
+}
+
+// DecidedPathIDEqualFold applies the EqualFold predicate on the "decided_path_id" field.
+func DecidedPathIDEqualFold(v automationstep.ID) predicate.AutomationStepRecord {
+	vc := string(v)
+	return predicate.AutomationStepRecord(sql.FieldEqualFold(FieldDecidedPathID, vc))
+}
+
+// DecidedPathIDContainsFold applies the ContainsFold predicate on the "decided_path_id" field.
+func DecidedPathIDContainsFold(v automationstep.ID) predicate.AutomationStepRecord {
+	vc := string(v)
+	return predicate.AutomationStepRecord(sql.FieldContainsFold(FieldDecidedPathID, vc))
+}
+
+// AwaitedEventIDEQ applies the EQ predicate on the "awaited_event_id" field.
+func AwaitedEventIDEQ(v int64) predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldEQ(FieldAwaitedEventID, v))
+}
+
+// AwaitedEventIDNEQ applies the NEQ predicate on the "awaited_event_id" field.
+func AwaitedEventIDNEQ(v int64) predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldNEQ(FieldAwaitedEventID, v))
+}
+
+// AwaitedEventIDIn applies the In predicate on the "awaited_event_id" field.
+func AwaitedEventIDIn(vs ...int64) predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldIn(FieldAwaitedEventID, vs...))
+}
+
+// AwaitedEventIDNotIn applies the NotIn predicate on the "awaited_event_id" field.
+func AwaitedEventIDNotIn(vs ...int64) predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldNotIn(FieldAwaitedEventID, vs...))
+}
+
+// AwaitedEventIDGT applies the GT predicate on the "awaited_event_id" field.
+func AwaitedEventIDGT(v int64) predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldGT(FieldAwaitedEventID, v))
+}
+
+// AwaitedEventIDGTE applies the GTE predicate on the "awaited_event_id" field.
+func AwaitedEventIDGTE(v int64) predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldGTE(FieldAwaitedEventID, v))
+}
+
+// AwaitedEventIDLT applies the LT predicate on the "awaited_event_id" field.
+func AwaitedEventIDLT(v int64) predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldLT(FieldAwaitedEventID, v))
+}
+
+// AwaitedEventIDLTE applies the LTE predicate on the "awaited_event_id" field.
+func AwaitedEventIDLTE(v int64) predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldLTE(FieldAwaitedEventID, v))
+}
+
+// AwaitedEventIDIsNil applies the IsNil predicate on the "awaited_event_id" field.
+func AwaitedEventIDIsNil() predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldIsNull(FieldAwaitedEventID))
+}
+
+// AwaitedEventIDNotNil applies the NotNil predicate on the "awaited_event_id" field.
+func AwaitedEventIDNotNil() predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldNotNull(FieldAwaitedEventID))
+}
+
+// AwaitedActionEQ applies the EQ predicate on the "awaited_action" field.
+func AwaitedActionEQ(v string) predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldEQ(FieldAwaitedAction, v))
+}
+
+// AwaitedActionNEQ applies the NEQ predicate on the "awaited_action" field.
+func AwaitedActionNEQ(v string) predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldNEQ(FieldAwaitedAction, v))
+}
+
+// AwaitedActionIn applies the In predicate on the "awaited_action" field.
+func AwaitedActionIn(vs ...string) predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldIn(FieldAwaitedAction, vs...))
+}
+
+// AwaitedActionNotIn applies the NotIn predicate on the "awaited_action" field.
+func AwaitedActionNotIn(vs ...string) predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldNotIn(FieldAwaitedAction, vs...))
+}
+
+// AwaitedActionGT applies the GT predicate on the "awaited_action" field.
+func AwaitedActionGT(v string) predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldGT(FieldAwaitedAction, v))
+}
+
+// AwaitedActionGTE applies the GTE predicate on the "awaited_action" field.
+func AwaitedActionGTE(v string) predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldGTE(FieldAwaitedAction, v))
+}
+
+// AwaitedActionLT applies the LT predicate on the "awaited_action" field.
+func AwaitedActionLT(v string) predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldLT(FieldAwaitedAction, v))
+}
+
+// AwaitedActionLTE applies the LTE predicate on the "awaited_action" field.
+func AwaitedActionLTE(v string) predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldLTE(FieldAwaitedAction, v))
+}
+
+// AwaitedActionContains applies the Contains predicate on the "awaited_action" field.
+func AwaitedActionContains(v string) predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldContains(FieldAwaitedAction, v))
+}
+
+// AwaitedActionHasPrefix applies the HasPrefix predicate on the "awaited_action" field.
+func AwaitedActionHasPrefix(v string) predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldHasPrefix(FieldAwaitedAction, v))
+}
+
+// AwaitedActionHasSuffix applies the HasSuffix predicate on the "awaited_action" field.
+func AwaitedActionHasSuffix(v string) predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldHasSuffix(FieldAwaitedAction, v))
+}
+
+// AwaitedActionIsNil applies the IsNil predicate on the "awaited_action" field.
+func AwaitedActionIsNil() predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldIsNull(FieldAwaitedAction))
+}
+
+// AwaitedActionNotNil applies the NotNil predicate on the "awaited_action" field.
+func AwaitedActionNotNil() predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldNotNull(FieldAwaitedAction))
+}
+
+// AwaitedActionEqualFold applies the EqualFold predicate on the "awaited_action" field.
+func AwaitedActionEqualFold(v string) predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldEqualFold(FieldAwaitedAction, v))
+}
+
+// AwaitedActionContainsFold applies the ContainsFold predicate on the "awaited_action" field.
+func AwaitedActionContainsFold(v string) predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldContainsFold(FieldAwaitedAction, v))
+}
+
+// AwaitedPropertiesIsNil applies the IsNil predicate on the "awaited_properties" field.
+func AwaitedPropertiesIsNil() predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldIsNull(FieldAwaitedProperties))
+}
+
+// AwaitedPropertiesNotNil applies the NotNil predicate on the "awaited_properties" field.
+func AwaitedPropertiesNotNil() predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldNotNull(FieldAwaitedProperties))
+}
+
+// DeclinedEventIdsIsNil applies the IsNil predicate on the "declined_event_ids" field.
+func DeclinedEventIdsIsNil() predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldIsNull(FieldDeclinedEventIds))
+}
+
+// DeclinedEventIdsNotNil applies the NotNil predicate on the "declined_event_ids" field.
+func DeclinedEventIdsNotNil() predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldNotNull(FieldDeclinedEventIds))
 }
 
 // HasWorkspace applies the HasEdge predicate on the "workspace" edge.

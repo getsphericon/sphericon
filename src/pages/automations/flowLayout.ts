@@ -1,7 +1,7 @@
 import { graphlib, layout } from '@dagrejs/dagre'
 import type { Edge, Node } from '@xyflow/react'
 
-import { sendsMessage } from './definition.ts'
+import { isFork, sendsMessage } from './definition.ts'
 import type { Flow, FlowPath, FlowStep, ForkStep } from './definition.ts'
 
 // The canvas is drawn from the flow on every change, laid out top to bottom by dagre: the Trigger,
@@ -28,12 +28,15 @@ const PATH_GAP = 32
 type TriggerNode = Node<Record<string, never>, 'trigger'>
 export type StepNode = Node<{ step: FlowStep }, 'step'>
 // What heads a fork's path: a Branch's listed path by its place in the order (1 is tested first),
-// `otherwise`, the unknown path, or a Split's path by its weight.
+// `otherwise`, the unknown path, a Split's path by its weight, or a Wait for event's `arrived`,
+// `timedOut` or unknown path.
 export type PathRole =
   | { kind: 'condition'; index: number }
   | { kind: 'otherwise' }
   | { kind: 'unknown' }
   | { kind: 'weight'; index: number; weight: number | '' }
+  | { kind: 'arrived' }
+  | { kind: 'timedOut' }
 // The head of a fork's path: a click opens the fork; it shows the path's figures.
 export type PathNode = Node<{ fork: ForkStep; pathId: string; role: PathRole }, 'path'>
 // An insertion point puts a new Step at `at` of the path of the id: 0 is its start. `end` says it
@@ -57,6 +60,13 @@ function edge(source: string, target: string): Edge {
 
 // The roles of a fork's paths, in forkPaths' order.
 function pathRoles(step: ForkStep): { path: FlowPath; role: PathRole }[] {
+  if (step.kind === 'wait_for_event') {
+    return [
+      { path: step.arrived, role: { kind: 'arrived' } },
+      { path: step.timedOut, role: { kind: 'timedOut' } },
+      ...(step.unknown ? [{ path: step.unknown, role: { kind: 'unknown' } as const }] : []),
+    ]
+  }
   if (step.kind === 'split') {
     return step.paths.map((path, index) => ({
       path,
@@ -126,7 +136,7 @@ function drawStep(step: FlowStep): Drawn {
   if (step.kind === 'end') {
     return { nodes: [node], edges: [], exits: [] }
   }
-  if (step.kind !== 'branch' && step.kind !== 'split') {
+  if (!isFork(step)) {
     return { nodes: [node], edges: [], exits: [step.id] }
   }
   const drawn: Drawn = { nodes: [node], edges: [], exits: [] }

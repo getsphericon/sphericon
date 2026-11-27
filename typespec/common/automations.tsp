@@ -516,6 +516,144 @@ model SplitStepInput {
   paths: SplitPathInput[];
 }
 
+/** The name of a Wait for event (ADR 0136): lower-case letters, digits and underscores, starting
+ * with a letter. It belongs to one Step id across every version of its Automation. */
+@pattern("^[a-z][a-z0-9_]*$")
+@maxLength(64)
+scalar WaitForEventName extends string;
+
+/** A Wait for event waits for an Event one of its Event matchers matches, on the Contact its
+ * Condition, if any, holds for (ADR 0124, ADR 0180) */
+model AwaitedEvent {
+  kind: "event";
+
+  /** The Event matchers it waits for: an Event of a matcher's action whose properties pass its
+   * filter */
+  matchers: EventMatcher[];
+
+  /** The tests the Contact and the Event the Enrollment began with must pass when the Event is
+   * handled; absent, every matching Event arrives */
+  condition?: WaitForEventCondition;
+}
+
+/** A Wait for event waits for an Event one of its Event matchers matches, as a request writes it */
+model AwaitedEventInput {
+  kind: "event";
+
+  /** The Event matchers it waits for, at least one, none twice: an Event of a matcher's action whose
+   * properties pass its filter. A matcher on an action an exit or the goal of the version matches
+   * with no filter refuses the save, naming the Step: that Event would end the enrollment, never
+   * take `arrived`. */
+  @minItems(1)
+  matchers: EventMatcherInput[];
+
+  /** The tests the Contact and the Event the Enrollment began with must pass when the Event is
+   * handled, read on the Contact's live data; false and unknown leave the Enrollment waiting.
+   * Omitted, every matching Event arrives. */
+  condition?: WaitForEventConditionInput;
+}
+
+/** A Wait for event waits for an open or a click of the message a send Step sent to this
+ * Enrollment (ADR 0124), with the meaning of a Branch's test of that message (ADR 0122): its first
+ * human open or click, whenever it happened, one before the Enrollment reached the Step included. It
+ * takes `unknown` at once when the message went out untracked or its tracking was withdrawn since
+ * (ADR 0120), when the send Step was skipped and when the Enrollment never passed it, and at the
+ * timeout, instead of `timedOut`, when its tracking was withdrawn during the wait. The Step must be a
+ * send Step that can come before the Wait for event: an email Step for `opened`, any send Step for
+ * `clicked`. A Step it names cannot be removed. */
+model AwaitedMessage {
+  kind: "message";
+
+  /** The send Step's id */
+  step: StepId;
+
+  /** Whether it waits for an open or a click of the message */
+  engagement: MessageEngagement;
+}
+
+model AwaitedMessageInput is AwaitedMessage;
+
+/** What a Wait for event waits for, by `kind` */
+@discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
+union WaitForEventAwaits {
+  event: AwaitedEvent,
+  message: AwaitedMessage,
+}
+
+/** What a Wait for event waits for, by `kind`, as a request writes it */
+@discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
+union WaitForEventAwaitsInput {
+  event: AwaitedEventInput,
+  message: AwaitedMessageInput,
+}
+
+/** A Step that holds the Enrollment until what it awaits arrives or its timeout passes (ADR
+ * 0124), then takes `arrived` or `timedOut`, or `unknown` when it waits for an open or a click
+ * that it cannot know of; the paths rejoin at the Step after it. An Event counts when one of its
+ * matchers matches it, its Condition, if any, holds for the Contact, and it is the Contact's,
+ * occurred at or after the moment the Enrollment reached the Step and no later than the timeout, and
+ * is neither a machine open or click, loaded history nor the Event that
+ * began the Enrollment. One that occurred within the window but was recorded late is taken at the
+ * timeout. An Event an exit or the goal matches ends the Enrollment instead. */
+model WaitForEventStep {
+  /** The Step's id */
+  id: StepId;
+
+  type: "wait_for_event";
+
+  /** The Step's name, fixed when it is created */
+  name: WaitForEventName;
+
+  /** How long the Step waits, in seconds from the moment the Enrollment reaches it */
+  @minValue(1)
+  timeoutSeconds: int32;
+
+  /** What the Step waits for */
+  awaits: WaitForEventAwaits;
+
+  /** The path taken when what the Step awaits arrives in time */
+  arrived: AutomationPath;
+
+  /** The path taken when the timeout passes first */
+  timedOut: AutomationPath;
+
+  /** The path taken when the Step waits for an open or a click (`message`) and cannot know whether
+   * one happened; never present when it waits for an Event */
+  `unknown`?: AutomationPath;
+}
+
+/** A Wait for event, as a request writes it */
+model WaitForEventStepInput {
+  /** The Step's id; omitted, the Step is given one. A Step saved before keeps its name: send its
+   * id back, since a save that gives a name another Step id of the Automation holds, in any
+   * version, is refused, naming the Step. */
+  id?: StepId;
+
+  type: "wait_for_event";
+
+  /** The Step's name, fixed when it is created: a save that renames the Step, or gives two Wait for
+   * event Steps of the Automation the same name, is refused, naming the Step */
+  name: WaitForEventName;
+
+  /** How long the Step waits, in seconds, as a wait's delay is: at least one */
+  @minValue(1)
+  timeoutSeconds: int32;
+
+  /** What the Step waits for */
+  awaits: WaitForEventAwaitsInput;
+
+  /** The path taken when what the Step awaits arrives in time */
+  arrived: AutomationPathInput;
+
+  /** The path taken when the timeout passes first */
+  timedOut: AutomationPathInput;
+
+  /** The path taken when the Step waits for an open or a click (`message`) and cannot know whether
+   * one happened. Publish refuses a Wait for event on a message without it, and a save refuses it
+   * on a Wait for event on an Event. */
+  `unknown`?: AutomationPathInput;
+}
+
 /** One Step of an automation, by `type` */
 @discriminated(#{ envelope: "none", discriminatorPropertyName: "type" })
 union AutomationStep {
@@ -530,6 +668,7 @@ union AutomationStep {
   end: EndStep,
   branch: BranchStep,
   split: SplitStep,
+  wait_for_event: WaitForEventStep,
 }
 
 /** One Step of an automation, by `type`, as a request writes it. A field of another kind is refused. */
@@ -546,6 +685,7 @@ union AutomationStepInput {
   end: EndStepInput,
   branch: BranchStepInput,
   split: SplitStepInput,
+  wait_for_event: WaitForEventStepInput,
 }
 
 // A fork's listed paths hold their Steps through a union of their own, the same arms as
@@ -567,6 +707,7 @@ union PathStep {
   end: EndStep,
   branch: BranchStep,
   split: SplitStep,
+  wait_for_event: WaitForEventStep,
 }
 
 /** One Step of a Branch's listed path, by `type`, as a request writes it: the arms of AutomationStepInput */
@@ -583,6 +724,7 @@ union PathStepInput {
   end: EndStepInput,
   branch: BranchStepInput,
   split: SplitStepInput,
+  wait_for_event: WaitForEventStepInput,
 }
 
 /** One Step of a Split's path, by `type`: the arms of AutomationStep */
@@ -599,6 +741,7 @@ union SplitPathStep {
   end: EndStep,
   branch: BranchStep,
   split: SplitStep,
+  wait_for_event: WaitForEventStep,
 }
 
 /** One Step of a Split's path, by `type`, as a request writes it: the arms of AutomationStepInput */
@@ -615,6 +758,7 @@ union SplitPathStepInput {
   end: EndStepInput,
   branch: BranchStepInput,
   split: SplitStepInput,
+  wait_for_event: WaitForEventStepInput,
 }
 
 /** A path of Steps, in the order an Enrollment walks them. A version's Steps are its root path. */
@@ -747,8 +891,8 @@ union AutomationTriggerInput {
   date: DateTriggerInput,
 }
 
-/** An Event matcher that ends an enrollment (ADR 0133): an action, and an optional filter on that
- * Event's own properties, so `order.closed` where `status` is `cancelled` exits and the same action
+/** An Event matcher that ends an enrollment or that a Wait for event awaits (ADR 0133): an action,
+ * and an optional filter on that Event's own properties, so `order.closed` where `status` is `cancelled` exits and the same action
  * where `status` is `paid` reaches the goal. The Event that began the enrollment never ends it. */
 model EventMatcher {
   /** The Event action (e.g. "plan_downgraded", "contact.tagged"). Any customer action; of the
@@ -763,7 +907,8 @@ model EventMatcher {
   filter?: EventFilter;
 }
 
-/** An Event matcher that ends an enrollment (ADR 0133), as a request writes it */
+/** An Event matcher that ends an enrollment or that a Wait for event awaits (ADR 0133), as a
+ * request writes it */
 model EventMatcherInput {
   /** The Event action (e.g. "plan_downgraded", "contact.tagged"). Any customer action; of the
    * email events only opened, clicked and unsubscribed. */
@@ -992,11 +1137,11 @@ model AutomationReport {
    * its Step order */
   versionSteps: AutomationVersionStepFigures[];
 
-  /** Each path of a Branch (its unknown path included) and of a Split by its fork's Step id and
-   * its own id: the enrollments that took it and how many of them reached the goal, over the
-   * automation's whole history, each summed over every version that had the path. Sorted by the
-   * newest of those versions, then by the fork's place there and the path's place in the fork:
-   * one entry per path an enrollment took, so a path none took has none */
+  /** Each path of a Branch (its unknown path included), of a Split and of a Wait for event by its
+   * fork's Step id and its own id: the enrollments that took it and how many of them reached the
+   * goal, over the automation's whole history, each summed over every version that had the path.
+   * Sorted by the newest of those versions, then by the fork's place there and the path's place in
+   * the fork: one entry per path an enrollment took, so a path none took has none */
   paths: AutomationPathFigures[];
 
   /** Each Wait until by its Step id, summed over every version that had it: the enrollments that

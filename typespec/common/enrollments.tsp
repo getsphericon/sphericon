@@ -58,6 +58,20 @@ union EnrollmentOccurrence {
   once: OnceEnrollmentOccurrence,
 }
 
+/** The copy an Enrollment keeps of the Event one of its Wait for event Steps arrived on (ADR 0136), which later Steps read as `awaited.<name>`. */
+model KeptEvent {
+  /** The name of the Wait for event that arrived on it */
+  name: string;
+
+  /** The Event's action */
+  @untrusted
+  action: string;
+
+  /** The Event's properties, bounded at 32 KiB as the triggering Event's copy is: empty when they weighed more */
+  @untrusted
+  properties: JsonObject;
+}
+
 /** One Contact's progress through an Automation. Erased with the Contact. */
 model EnrollmentResource {
   /** Unique identifier */
@@ -100,6 +114,9 @@ model EnrollmentResource {
 
   /** Present on a failed Enrollment whose failure an HTTP step recorded */
   failure?: EnrollmentFailure;
+
+  /** The Events its Wait for event Steps arrived on, by name (ADR 0136): kept while the Enrollment runs, and cleared when it ends, so empty once it ended */
+  awaited: KeptEvent[];
 
   /** When the Contact was enrolled */
   createdAt: Timestamp;

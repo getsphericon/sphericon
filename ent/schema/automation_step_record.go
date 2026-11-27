@@ -35,15 +35,17 @@ func (AutomationStepRecord) Annotations() []schema.Annotation {
 	a.Checks["automation_step_records_reason_check"] = "outcome IS NOT NULL OR skip_reason IS NULL"
 	a.Checks["automation_step_records_skipped_check"] = variantCheck("outcome", stepOutcome)
 	a.Checks["automation_step_records_wait_check"] = "due_at IS NULL OR went_on IS NULL"
+	a.Checks["automation_step_records_awaited_check"] = "(awaited_event_id IS NULL) = (awaited_action IS NULL)"
 	return []schema.Annotation{a}
 }
 
 // stepOutcome is the column that explains each outcome: a skipped Step its reason, a fork the
-// path it sent the Enrollment down and, at a Branch, each path's outcome.
+// path it sent the Enrollment down and, at a Branch, each path's outcome and, at a Wait for event
+// that arrived on an Event, the copy of that Event.
 var stepOutcome = []variant{
 	{value: "done"},
 	{value: "skipped", required: []string{"skip_reason"}},
-	{value: "path", required: []string{"path_id"}, optional: []string{"path_outcomes"}},
+	{value: "path", required: []string{"path_id"}, optional: []string{"path_outcomes", "awaited_event_id", "awaited_action", "awaited_properties"}},
 }
 
 func (AutomationStepRecord) Mixin() []ent.Mixin {
@@ -115,6 +117,43 @@ func (AutomationStepRecord) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			Immutable(),
+		// At a Wait for event on an open or a click, the path it decided when the Enrollment
+		// reached it, in the transaction of that move (ADR 0124): `unknown` when the message went out
+		// untracked, was never sent or had its tracking withdrawn, `arrived` when it was already
+		// opened or clicked. Its job, queued at once, takes it, whatever happened since; its record
+		// keeps its deadline all the same. Null for one that waits, and for any other Step.
+		field.String("decided_path_id").
+			GoType(automationstep.ID("")).
+			Optional().
+			Nillable().
+			Immutable(),
+		// At a Wait for event that took `arrived` on an Event, the copy of that Event the Steps
+		// after it read under its name (ADR 0136): its action and its properties, bounded as the
+		// Enrollment's own `event` is (events.BoundedProperties, none when the Event weighed more),
+		// and the id of the Event it was copied from. Written once, in the latch of left_at with path_id; cleared, all three, in the
+		// move that ends the Enrollment, whatever its end, since nothing reads it after and it may
+		// hold the person's own words. Null for any other Step.
+		field.Int64("awaited_event_id").
+			Optional().
+			Nillable().
+			Annotations(ScopedRef{
+				Unchecked: true,
+				Reason: "a snapshot of the Event the copy was taken from, as the Enrollment's own triggering " +
+					"Event's source id is: Retention may delete the Event during the wait while the copy stays",
+			}),
+		field.String("awaited_action").
+			Optional().
+			Nillable(),
+		field.JSON("awaited_properties", map[string]any{}).
+			Optional(),
+		// At a Wait for event on an Event with a Condition, the Events its wake handled while the
+		// Enrollment waited and found the Condition false for, by id (ADR 0124): the Condition is
+		// read when an Event is handled, so the timeout never takes `arrived` on one of them,
+		// whatever the Contact's data became since. Null while there is none, and for any other Step.
+		// A list with no key: a record of what the wake decided, read only while the Enrollment
+		// waits, and an Event deleted since is no candidate of the timeout anyway.
+		field.JSON("declined_event_ids", []int64{}).
+			Optional(),
 	}
 }
 
@@ -132,5 +171,11 @@ func (AutomationStepRecord) Indexes() []ent.Index {
 		index.Fields("workspace_id", "run_id", "step_id").
 			Unique().
 			StorageKey("automation_step_records_workspace_id_run_id_step_id"),
+		// The records that keep a copy of an Event, by the Event's id: a refusal of tracking clears
+		// the copies of the opens and clicks it deletes by their ids (ForgetKept, ADR 0136). Only a
+		// record of a Wait for event that arrived on an Event and still runs holds one.
+		index.Fields("workspace_id", "awaited_event_id").
+			Annotations(entsql.IndexWhere("awaited_event_id IS NOT NULL")).
+			StorageKey("automation_step_records_awaited_event_id"),
 	}
 }

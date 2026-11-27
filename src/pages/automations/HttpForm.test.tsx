@@ -12,6 +12,7 @@ import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
+import { automationTags } from '../../utils/mergeTags.ts'
 import type { StepDrafts } from './definition.ts'
 import { HttpForm } from './StepForms.tsx'
 
@@ -32,6 +33,7 @@ function StepField({ data, onChange }: { data: StepData; onChange?: (data: StepD
       step={{ id: stepId(11), kind: 'http', draft: data }}
       onEdit={(step) => onChange?.(step.draft)}
       validatorRef={validatorRef}
+      bound={automationTags([])}
     />
   )
 }

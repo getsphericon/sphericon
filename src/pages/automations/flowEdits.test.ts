@@ -6,7 +6,7 @@ import type {
   BranchCondition,
 } from '../../generated/site/types.gen.ts'
 import { stepId } from '../../test/payloads.ts'
-import { flowOf, pathInputOf } from './definition.ts'
+import { flowOf, forkPaths, pathInputOf } from './definition.ts'
 import type { BranchStep, Flow } from './definition.ts'
 import {
   addPath,
@@ -16,8 +16,10 @@ import {
   nestedSteps,
   removePath,
   removeStep,
+  setAwaitedForm,
   setUnknownPath,
   updateFork,
+  updateWaitForEvent,
 } from './flowEdits.ts'
 
 const ROOT = stepId(1)
@@ -273,4 +275,122 @@ test('a copied fork follows its original, it and every path and Step in it with 
   })
   const ids = JSON.stringify(copy).match(/[\da-f]{8}-[\da-f-]{27}/g) ?? []
   expect(ids.some((id) => JSON.stringify(original).includes(id))).toBe(false)
+})
+
+const PURCHASE: AutomationStep = {
+  id: stepId(40),
+  type: 'wait_for_event',
+  name: 'purchase',
+  timeoutSeconds: 3600,
+  awaits: { kind: 'event', matchers: [{ action: 'order.created' }] },
+  arrived: { id: stepId(41), steps: [{ id: stepId(43), type: 'apply_tag', tag: 'buyer' }] },
+  timedOut: { id: stepId(42), steps: [] },
+}
+
+// A name belongs to one Step id (ADR 0136): a copy, which has an id of its own, asks for its own.
+test('a copied Wait for event asks for a name, its paths and Steps with new ids', () => {
+  const copied = copyStep(flowOf(version([PURCHASE])), stepId(40))
+  const copy = copied.flow.path.steps[1]
+
+  expect(copy).toEqual({
+    id: copied.id,
+    kind: 'wait_for_event',
+    draft: {
+      name: '',
+      timeoutSeconds: 3600,
+      form: 'event',
+      matchers: [{ action: 'order.created', filterText: '' }],
+      conditionText: '',
+      messageStep: '',
+      engagement: 'opened',
+    },
+    arrived: {
+      id: expect.stringMatching(UUID),
+      steps: [{ id: expect.stringMatching(UUID), kind: 'apply_tag', draft: { tag: 'buyer' } }],
+    },
+    timedOut: { id: expect.stringMatching(UUID), steps: [] },
+    unknown: null,
+  })
+})
+
+test("a Wait for event's panel sets its draft, its paths' Steps left as they are", () => {
+  const flow = flowOf(version([PURCHASE]))
+  const draft = {
+    name: 'purchase',
+    timeoutSeconds: 7200,
+    form: 'event' as const,
+    matchers: [{ action: 'call.booked', filterText: '' }],
+    conditionText: '',
+    messageStep: '',
+    engagement: 'opened' as const,
+  }
+
+  const edited = updateWaitForEvent(flow, stepId(40), draft)
+
+  expect(pathInputOf(edited)?.steps).toEqual([
+    {
+      ...PURCHASE,
+      timeoutSeconds: 7200,
+      awaits: { kind: 'event', matchers: [{ action: 'call.booked' }] },
+    },
+  ])
+})
+
+const WELCOME: AutomationStep = {
+  id: stepId(30),
+  type: 'email',
+  subject: 'Welcome',
+  body: '<p></p>',
+}
+
+// A Wait for event on an open or click (ADR 0124) has an unknown path; one on an Event never has.
+// Switching keeps what the other form holds.
+test('switching a Wait for event to an open or click adds an empty unknown path, and back removes it', () => {
+  const flow = flowOf(version([WELCOME, PURCHASE]))
+
+  const onClick = updateWaitForEvent(setAwaitedForm(flow, stepId(40), 'message'), stepId(40), {
+    name: 'purchase',
+    timeoutSeconds: 3600,
+    form: 'message',
+    matchers: [{ action: 'order.created', filterText: '' }],
+    conditionText: '',
+    messageStep: stepId(30),
+    engagement: 'clicked',
+  })
+  // The Wait for event's paths, the only fork's: `arrived`, `timedOut` and the unknown path.
+  const [, , unknown] = onClick.path.steps.flatMap((step) => forkPaths(step))
+  const filled = insertStep(onClick, { path: unknown?.id ?? '', at: 0 }, 'apply_tag').flow
+  const back = setAwaitedForm(filled, stepId(40), 'event')
+
+  expect(pathInputOf(filled)?.steps[1]).toEqual({
+    ...PURCHASE,
+    awaits: { kind: 'message', step: stepId(30), engagement: 'clicked' },
+    unknown: {
+      id: expect.stringMatching(UUID),
+      steps: [{ id: expect.stringMatching(UUID), type: 'apply_tag', tag: '' }],
+    },
+  })
+  expect(pathInputOf(back)?.steps[1]).toEqual(PURCHASE)
+})
+
+test('a copied Wait for event on an open copies its unknown path with new ids', () => {
+  const onOpen: AutomationStep = {
+    ...PURCHASE,
+    awaits: { kind: 'message', step: stepId(30), engagement: 'opened' },
+    unknown: { id: stepId(44), steps: [{ id: stepId(45), type: 'wait', seconds: 60 }] },
+  }
+  const flow = flowOf(version([WELCOME, onOpen]))
+
+  const copied = copyStep(flow, stepId(40))
+  const copy = pathInputOf(copied.flow)?.steps[2]
+
+  expect(copy).toMatchObject({
+    awaits: { kind: 'message', step: stepId(30), engagement: 'opened' },
+    unknown: {
+      id: expect.stringMatching(UUID),
+      steps: [{ id: expect.stringMatching(UUID), type: 'wait', seconds: 60 }],
+    },
+  })
+  expect(JSON.stringify(copy)).not.toContain(stepId(44))
+  expect(JSON.stringify(copy)).not.toContain(stepId(45))
 })

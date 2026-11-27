@@ -1219,6 +1219,11 @@ func (s AutomationStepInputSum) Validate() error {
 			return err
 		}
 		return nil
+	case WaitForEventStepInputAutomationStepInputSum:
+		if err := s.WaitForEventStepInput.Validate(); err != nil {
+			return err
+		}
+		return nil
 	default:
 		return errors.Errorf("invalid type %q", s.Type)
 	}
@@ -1278,6 +1283,11 @@ func (s AutomationStepSum) Validate() error {
 		return nil
 	case SplitStepAutomationStepSum:
 		if err := s.SplitStep.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case WaitForEventStepAutomationStepSum:
+		if err := s.WaitForEventStep.Validate(); err != nil {
 			return err
 		}
 		return nil
@@ -1512,6 +1522,342 @@ func (s *AutomationVersionStepFigures) Validate() error {
 		return &validate.Error{Fields: failures}
 	}
 	return nil
+}
+
+func (s *AwaitedEvent) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Kind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "kind",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if s.Matchers == nil {
+			return errors.New("nil is invalid value")
+		}
+		var failures []validate.FieldError
+		for i, elem := range s.Matchers {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "matchers",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.Condition.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "condition",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *AwaitedEventInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Kind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "kind",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if s.Matchers == nil {
+			return errors.New("nil is invalid value")
+		}
+		if err := (validate.Array{
+			MinLength:    1,
+			MinLengthSet: true,
+			MaxLength:    0,
+			MaxLengthSet: false,
+		}).ValidateLength(len(s.Matchers)); err != nil {
+			return errors.Wrap(err, "array")
+		}
+		var failures []validate.FieldError
+		for i, elem := range s.Matchers {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "matchers",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.Condition.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "condition",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s AwaitedEventInputKind) Validate() error {
+	switch s {
+	case "event":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s AwaitedEventKind) Validate() error {
+	switch s {
+	case "event":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *AwaitedMessage) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Kind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "kind",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Engagement.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "engagement",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *AwaitedMessageInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Kind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "kind",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Engagement.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "engagement",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s AwaitedMessageInputKind) Validate() error {
+	switch s {
+	case "message":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s AwaitedMessageKind) Validate() error {
+	switch s {
+	case "message":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *AwaitedSource) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Kind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "kind",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Name.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "name",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *AwaitedSourceInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Kind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "kind",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Name.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "name",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s AwaitedSourceInputKind) Validate() error {
+	switch s {
+	case "awaited":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s AwaitedSourceKind) Validate() error {
+	switch s {
+	case "awaited":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
 }
 
 func (s *BirthdayDateField) Validate() error {
@@ -2319,6 +2665,11 @@ func (s BranchPropertySourceInputSum) Validate() error {
 			return err
 		}
 		return nil
+	case AwaitedSourceInputBranchPropertySourceInputSum:
+		if err := s.AwaitedSourceInput.Validate(); err != nil {
+			return err
+		}
+		return nil
 	default:
 		return errors.Errorf("invalid type %q", s.Type)
 	}
@@ -2328,6 +2679,11 @@ func (s BranchPropertySourceSum) Validate() error {
 	switch s.Type {
 	case TriggerSourceBranchPropertySourceSum:
 		if err := s.TriggerSource.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case AwaitedSourceBranchPropertySourceSum:
+		if err := s.AwaitedSource.Validate(); err != nil {
 			return err
 		}
 		return nil
@@ -5261,6 +5617,17 @@ func (s *EnrollmentResource) Validate() error {
 			Error: err,
 		})
 	}
+	if err := func() error {
+		if s.Awaited == nil {
+			return errors.New("nil is invalid value")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "awaited",
+			Error: err,
+		})
+	}
 	if len(failures) > 0 {
 		return &validate.Error{Fields: failures}
 	}
@@ -7365,6 +7732,11 @@ func (s PathStepInputSum) Validate() error {
 			return err
 		}
 		return nil
+	case WaitForEventStepInputPathStepInputSum:
+		if err := s.WaitForEventStepInput.Validate(); err != nil {
+			return err
+		}
+		return nil
 	default:
 		return errors.Errorf("invalid type %q", s.Type)
 	}
@@ -7424,6 +7796,11 @@ func (s PathStepSum) Validate() error {
 		return nil
 	case SplitStepPathStepSum:
 		if err := s.SplitStep.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case WaitForEventStepPathStepSum:
+		if err := s.WaitForEventStep.Validate(); err != nil {
 			return err
 		}
 		return nil
@@ -17524,6 +17901,11 @@ func (s SplitPathStepInputSum) Validate() error {
 			return err
 		}
 		return nil
+	case WaitForEventStepInputSplitPathStepInputSum:
+		if err := s.WaitForEventStepInput.Validate(); err != nil {
+			return err
+		}
+		return nil
 	default:
 		return errors.Errorf("invalid type %q", s.Type)
 	}
@@ -17583,6 +17965,11 @@ func (s SplitPathStepSum) Validate() error {
 		return nil
 	case SplitStepSplitPathStepSum:
 		if err := s.SplitStep.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case WaitForEventStepSplitPathStepSum:
+		if err := s.WaitForEventStep.Validate(); err != nil {
 			return err
 		}
 		return nil
@@ -19322,6 +19709,826 @@ func (s UserName) Validate() error {
 		return errors.Wrap(err, "string")
 	}
 	return nil
+}
+
+func (s *WaitForEventAwaits) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.OneOf.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "OneOf",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *WaitForEventAwaitsInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.OneOf.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "OneOf",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s WaitForEventAwaitsInputSum) Validate() error {
+	switch s.Type {
+	case AwaitedEventInputWaitForEventAwaitsInputSum:
+		if err := s.AwaitedEventInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case AwaitedMessageInputWaitForEventAwaitsInputSum:
+		if err := s.AwaitedMessageInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	default:
+		return errors.Errorf("invalid type %q", s.Type)
+	}
+}
+
+func (s WaitForEventAwaitsSum) Validate() error {
+	switch s.Type {
+	case AwaitedEventWaitForEventAwaitsSum:
+		if err := s.AwaitedEvent.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case AwaitedMessageWaitForEventAwaitsSum:
+		if err := s.AwaitedMessage.Validate(); err != nil {
+			return err
+		}
+		return nil
+	default:
+		return errors.Errorf("invalid type %q", s.Type)
+	}
+}
+
+func (s *WaitForEventCondition) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Kind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "kind",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Combinator.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "combinator",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if s.Entries == nil {
+			return errors.New("nil is invalid value")
+		}
+		var failures []validate.FieldError
+		for i, elem := range s.Entries {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "entries",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *WaitForEventConditionInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Kind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "kind",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Combinator.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "combinator",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if s.Entries == nil {
+			return errors.New("nil is invalid value")
+		}
+		var failures []validate.FieldError
+		for i, elem := range s.Entries {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "entries",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s WaitForEventConditionInputKind) Validate() error {
+	switch s {
+	case "group":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s WaitForEventConditionKind) Validate() error {
+	switch s {
+	case "group":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *WaitForEventConditionNode) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.OneOf.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "OneOf",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *WaitForEventConditionNodeInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.OneOf.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "OneOf",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s WaitForEventConditionNodeInputSum) Validate() error {
+	switch s.Type {
+	case WaitForEventConditionInputWaitForEventConditionNodeInputSum:
+		if err := s.WaitForEventConditionInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case AttributeLeafInputWaitForEventConditionNodeInputSum:
+		if err := s.AttributeLeafInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case BirthdayLeafInputWaitForEventConditionNodeInputSum:
+		if err := s.BirthdayLeafInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case TagLeafInputWaitForEventConditionNodeInputSum:
+		if err := s.TagLeafInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case TelegramLeafInputWaitForEventConditionNodeInputSum:
+		if err := s.TelegramLeafInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case SmsLeafInputWaitForEventConditionNodeInputSum:
+		if err := s.SmsLeafInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case EngagementTrackingLeafInputWaitForEventConditionNodeInputSum:
+		if err := s.EngagementTrackingLeafInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case CustomFieldLeafInputWaitForEventConditionNodeInputSum:
+		if err := s.CustomFieldLeafInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case EventLeafInputWaitForEventConditionNodeInputSum:
+		if err := s.EventLeafInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case WaitForEventPropertyLeafInputWaitForEventConditionNodeInputSum:
+		if err := s.WaitForEventPropertyLeafInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	default:
+		return errors.Errorf("invalid type %q", s.Type)
+	}
+}
+
+func (s WaitForEventConditionNodeSum) Validate() error {
+	switch s.Type {
+	case WaitForEventConditionWaitForEventConditionNodeSum:
+		if err := s.WaitForEventCondition.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case AttributeLeafWaitForEventConditionNodeSum:
+		if err := s.AttributeLeaf.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case BirthdayLeafWaitForEventConditionNodeSum:
+		if err := s.BirthdayLeaf.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case TagLeafWaitForEventConditionNodeSum:
+		if err := s.TagLeaf.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case TelegramLeafWaitForEventConditionNodeSum:
+		if err := s.TelegramLeaf.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case SmsLeafWaitForEventConditionNodeSum:
+		if err := s.SmsLeaf.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case EngagementTrackingLeafWaitForEventConditionNodeSum:
+		if err := s.EngagementTrackingLeaf.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case CustomFieldLeafWaitForEventConditionNodeSum:
+		if err := s.CustomFieldLeaf.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case EventLeafWaitForEventConditionNodeSum:
+		if err := s.EventLeaf.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case WaitForEventPropertyLeafWaitForEventConditionNodeSum:
+		if err := s.WaitForEventPropertyLeaf.Validate(); err != nil {
+			return err
+		}
+		return nil
+	default:
+		return errors.Errorf("invalid type %q", s.Type)
+	}
+}
+
+func (s WaitForEventName) Validate() error {
+	alias := (string)(s)
+	if err := (validate.String{
+		MinLength:     0,
+		MinLengthSet:  false,
+		MaxLength:     64,
+		MaxLengthSet:  true,
+		Email:         false,
+		Hostname:      false,
+		Regex:         regexMap["^[a-z][a-z0-9_]*$"],
+		MinNumeric:    0,
+		MinNumericSet: false,
+		MaxNumeric:    0,
+		MaxNumericSet: false,
+	}).Validate(string(alias)); err != nil {
+		return errors.Wrap(err, "string")
+	}
+	return nil
+}
+
+func (s *WaitForEventPropertyLeaf) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Kind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "kind",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Of.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "of",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Test.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "test",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *WaitForEventPropertyLeafInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Kind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "kind",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Of.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "of",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Test.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "test",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s WaitForEventPropertyLeafInputKind) Validate() error {
+	switch s {
+	case "property":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s WaitForEventPropertyLeafKind) Validate() error {
+	switch s {
+	case "property":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *WaitForEventPropertySource) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.OneOf.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "OneOf",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *WaitForEventPropertySourceInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.OneOf.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "OneOf",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s WaitForEventPropertySourceInputSum) Validate() error {
+	switch s.Type {
+	case TriggerSourceInputWaitForEventPropertySourceInputSum:
+		if err := s.TriggerSourceInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case AwaitedSourceInputWaitForEventPropertySourceInputSum:
+		if err := s.AwaitedSourceInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	default:
+		return errors.Errorf("invalid type %q", s.Type)
+	}
+}
+
+func (s WaitForEventPropertySourceSum) Validate() error {
+	switch s.Type {
+	case TriggerSourceWaitForEventPropertySourceSum:
+		if err := s.TriggerSource.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case AwaitedSourceWaitForEventPropertySourceSum:
+		if err := s.AwaitedSource.Validate(); err != nil {
+			return err
+		}
+		return nil
+	default:
+		return errors.Errorf("invalid type %q", s.Type)
+	}
+}
+
+func (s *WaitForEventStep) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Type.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "type",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Name.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "name",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := (validate.Int{
+			MinSet:        true,
+			Min:           1,
+			MaxSet:        false,
+			Max:           0,
+			MinExclusive:  false,
+			MaxExclusive:  false,
+			MultipleOfSet: false,
+			MultipleOf:    0,
+			Pattern:       nil,
+		}).Validate(int64(s.TimeoutSeconds)); err != nil {
+			return errors.Wrap(err, "int")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "timeoutSeconds",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Awaits.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "awaits",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Arrived.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "arrived",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.TimedOut.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "timedOut",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.Unknown.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "unknown",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *WaitForEventStepInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Type.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "type",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Name.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "name",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := (validate.Int{
+			MinSet:        true,
+			Min:           1,
+			MaxSet:        false,
+			Max:           0,
+			MinExclusive:  false,
+			MaxExclusive:  false,
+			MultipleOfSet: false,
+			MultipleOf:    0,
+			Pattern:       nil,
+		}).Validate(int64(s.TimeoutSeconds)); err != nil {
+			return errors.Wrap(err, "int")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "timeoutSeconds",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Awaits.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "awaits",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Arrived.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "arrived",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.TimedOut.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "timedOut",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.Unknown.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "unknown",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s WaitForEventStepInputType) Validate() error {
+	switch s {
+	case "wait_for_event":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s WaitForEventStepType) Validate() error {
+	switch s {
+	case "wait_for_event":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
 }
 
 func (s *WaitStep) Validate() error {

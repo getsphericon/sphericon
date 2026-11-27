@@ -16,16 +16,19 @@ export function stepLabel(t: TFunction, step: AutomationStep): string {
     end: t(($) => $.automations.stepEnd),
     branch: t(($) => $.automations.stepBranch),
     split: t(($) => $.automations.stepSplit),
+    wait_for_event: t(($) => $.automations.stepWaitForEvent),
   }
   const detail = stepDetail(step)
   return detail ? `${kind[step.type]}: ${detail}` : kind[step.type]
 }
 
-// What a step says beside its kind: an email's subject, a tag step's Tag.
+// What a step says beside its kind: an email's subject, a tag step's Tag, a Wait for event's name.
 function stepDetail(step: AutomationStep): string {
   switch (step.type) {
     case 'email':
       return step.subject
+    case 'wait_for_event':
+      return step.name
     case 'apply_tag':
     case 'remove_tag':
       return step.tag

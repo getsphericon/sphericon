@@ -582,11 +582,11 @@ export type AutomationReport = {
    */
   versionSteps: Array<AutomationVersionStepFigures>;
   /**
-   * Each path of a Branch (its unknown path included) and of a Split by its fork's Step id and
-   * its own id: the enrollments that took it and how many of them reached the goal, over the
-   * automation's whole history, each summed over every version that had the path. Sorted by the
-   * newest of those versions, then by the fork's place there and the path's place in the fork:
-   * one entry per path an enrollment took, so a path none took has none
+   * Each path of a Branch (its unknown path included), of a Split and of a Wait for event by its
+   * fork's Step id and its own id: the enrollments that took it and how many of them reached the
+   * goal, over the automation's whole history, each summed over every version that had the path.
+   * Sorted by the newest of those versions, then by the fork's place there and the path's place in
+   * the fork: one entry per path an enrollment took, so a path none took has none
    */
   paths: Array<AutomationPathFigures>;
   /**
@@ -772,7 +772,9 @@ export type AutomationStep = ({
   type: 'branch';
 } & BranchStep) | ({
   type: 'split';
-} & SplitStep);
+} & SplitStep) | ({
+  type: 'wait_for_event';
+} & WaitForEventStep);
 
 /**
  * The messages of one send Step, over every version that had it
@@ -833,7 +835,9 @@ export type AutomationStepInput = ({
   type: 'branch';
 } & BranchStepInput) | ({
   type: 'split';
-} & SplitStepInput);
+} & SplitStepInput) | ({
+  type: 'wait_for_event';
+} & WaitForEventStepInput);
 
 /**
  * What enrolls a Contact in an automation, by `kind`: an Event matcher or a date
@@ -939,6 +943,116 @@ export type AutomationWaitUntilFigures = {
    * future
    */
   beyondBound: number;
+};
+
+/**
+ * A Wait for event waits for an Event one of its Event matchers matches, on the Contact its
+ * Condition, if any, holds for (ADR 0124, ADR 0180)
+ */
+export type AwaitedEvent = {
+  kind: 'event';
+  /**
+   * The Event matchers it waits for: an Event of a matcher's action whose properties pass its
+   * filter
+   */
+  matchers: Array<EventMatcher>;
+  /**
+   * The tests the Contact and the Event the Enrollment began with must pass when the Event is
+   * handled; absent, every matching Event arrives
+   */
+  condition?: WaitForEventCondition;
+};
+
+/**
+ * A Wait for event waits for an Event one of its Event matchers matches, as a request writes it
+ */
+export type AwaitedEventInput = {
+  kind: 'event';
+  /**
+   * The Event matchers it waits for, at least one, none twice: an Event of a matcher's action whose
+   * properties pass its filter. A matcher on an action an exit or the goal of the version matches
+   * with no filter refuses the save, naming the Step: that Event would end the enrollment, never
+   * take `arrived`.
+   */
+  matchers: Array<EventMatcherInput>;
+  /**
+   * The tests the Contact and the Event the Enrollment began with must pass when the Event is
+   * handled, read on the Contact's live data; false and unknown leave the Enrollment waiting.
+   * Omitted, every matching Event arrives.
+   */
+  condition?: WaitForEventConditionInput;
+};
+
+/**
+ * A Wait for event waits for an open or a click of the message a send Step sent to this
+ * Enrollment (ADR 0124), with the meaning of a Branch's test of that message (ADR 0122): its first
+ * human open or click, whenever it happened, one before the Enrollment reached the Step included. It
+ * takes `unknown` at once when the message went out untracked or its tracking was withdrawn since
+ * (ADR 0120), when the send Step was skipped and when the Enrollment never passed it, and at the
+ * timeout, instead of `timedOut`, when its tracking was withdrawn during the wait. The Step must be a
+ * send Step that can come before the Wait for event: an email Step for `opened`, any send Step for
+ * `clicked`. A Step it names cannot be removed.
+ */
+export type AwaitedMessage = {
+  kind: 'message';
+  /**
+   * The send Step's id
+   */
+  step: StepId;
+  /**
+   * Whether it waits for an open or a click of the message
+   */
+  engagement: MessageEngagement;
+};
+
+/**
+ * A Wait for event waits for an open or a click of the message a send Step sent to this
+ * Enrollment (ADR 0124), with the meaning of a Branch's test of that message (ADR 0122): its first
+ * human open or click, whenever it happened, one before the Enrollment reached the Step included. It
+ * takes `unknown` at once when the message went out untracked or its tracking was withdrawn since
+ * (ADR 0120), when the send Step was skipped and when the Enrollment never passed it, and at the
+ * timeout, instead of `timedOut`, when its tracking was withdrawn during the wait. The Step must be a
+ * send Step that can come before the Wait for event: an email Step for `opened`, any send Step for
+ * `clicked`. A Step it names cannot be removed.
+ */
+export type AwaitedMessageInput = {
+  kind: 'message';
+  /**
+   * The send Step's id
+   */
+  step: StepId;
+  /**
+   * Whether it waits for an open or a click of the message
+   */
+  engagement: MessageEngagement;
+};
+
+/**
+ * The Event a Wait for event of the Automation arrived on, kept by the Enrollment under the Wait
+ * for event's name (ADR 0136), whose properties a property test reads. The Wait for event must be
+ * one that can come before the Step holding the test. Where the Enrollment keeps no copy of it
+ * (the Wait for event timed out, or its path never passed it), the test fails.
+ */
+export type AwaitedSource = {
+  kind: 'awaited';
+  /**
+   * The Wait for event's name
+   */
+  name: WaitForEventName;
+};
+
+/**
+ * The Event a Wait for event of the Automation arrived on, kept by the Enrollment under the Wait
+ * for event's name (ADR 0136), whose properties a property test reads. The Wait for event must be
+ * one that can come before the Step holding the test. Where the Enrollment keeps no copy of it
+ * (the Wait for event timed out, or its path never passed it), the test fails.
+ */
+export type AwaitedSourceInput = {
+  kind: 'awaited';
+  /**
+   * The Wait for event's name
+   */
+  name: WaitForEventName;
 };
 
 /**
@@ -1172,15 +1286,23 @@ export type BranchPropertyLeafInput = {
 
 /**
  * Whose properties a Branch path's property test reads, by `kind`: the Event the Enrollment
- * began with
+ * began with, or the one an earlier Wait for event arrived on
  */
-export type BranchPropertySource = TriggerSource;
+export type BranchPropertySource = ({
+  kind: 'trigger';
+} & TriggerSource) | ({
+  kind: 'awaited';
+} & AwaitedSource);
 
 /**
  * Whose properties a Branch path's property test reads, by `kind`: the Event the Enrollment
- * began with
+ * began with, or the one an earlier Wait for event arrived on
  */
-export type BranchPropertySourceInput = TriggerSourceInput;
+export type BranchPropertySourceInput = ({
+  kind: 'trigger';
+} & TriggerSourceInput) | ({
+  kind: 'awaited';
+} & AwaitedSourceInput);
 
 /**
  * A Step that sends each Enrollment down the first of its paths whose Condition holds, on the
@@ -3022,6 +3144,10 @@ export type EnrollmentResource = {
    */
   failure?: EnrollmentFailure;
   /**
+   * The Events its Wait for event Steps arrived on, by name (ADR 0136): kept while the Enrollment runs, and cleared when it ends, so empty once it ended
+   */
+  awaited: Array<KeptEvent>;
+  /**
    * When the Contact was enrolled
    */
   createdAt: Timestamp;
@@ -3227,8 +3353,8 @@ export type EventLeafInput = {
 };
 
 /**
- * An Event matcher that ends an enrollment (ADR 0133): an action, and an optional filter on that
- * Event's own properties, so `order.closed` where `status` is `cancelled` exits and the same action
+ * An Event matcher that ends an enrollment or that a Wait for event awaits (ADR 0133): an action,
+ * and an optional filter on that Event's own properties, so `order.closed` where `status` is `cancelled` exits and the same action
  * where `status` is `paid` reaches the goal. The Event that began the enrollment never ends it.
  */
 export type EventMatcher = {
@@ -3248,7 +3374,8 @@ export type EventMatcher = {
 };
 
 /**
- * An Event matcher that ends an enrollment (ADR 0133), as a request writes it
+ * An Event matcher that ends an enrollment or that a Wait for event awaits (ADR 0133), as a
+ * request writes it
  */
 export type EventMatcherInput = {
   /**
@@ -3671,6 +3798,24 @@ export type JsonObject = {
 };
 
 /**
+ * The copy an Enrollment keeps of the Event one of its Wait for event Steps arrived on (ADR 0136), which later Steps read as `awaited.<name>`.
+ */
+export type KeptEvent = {
+  /**
+   * The name of the Wait for event that arrived on it
+   */
+  name: string;
+  /**
+   * The Event's action
+   */
+  action: string;
+  /**
+   * The Event's properties, bounded at 32 KiB as the triggering Event's copy is: empty when they weighed more
+   */
+  properties: JsonObject;
+};
+
+/**
  * The label a Staff member gives a published Legal document version, unique per item
  */
 export type LegalDocumentLabel = string;
@@ -3957,7 +4102,9 @@ export type PathStep = ({
   type: 'branch';
 } & BranchStep) | ({
   type: 'split';
-} & SplitStep);
+} & SplitStep) | ({
+  type: 'wait_for_event';
+} & WaitForEventStep);
 
 /**
  * One Step of a Branch's listed path, by `type`, as a request writes it: the arms of AutomationStepInput
@@ -3984,7 +4131,9 @@ export type PathStepInput = ({
   type: 'branch';
 } & BranchStepInput) | ({
   type: 'split';
-} & SplitStepInput);
+} & SplitStepInput) | ({
+  type: 'wait_for_event';
+} & WaitForEventStepInput);
 
 /**
  * A named action in a Workspace that a Role allows (ADR 0061, GLOSSARY "Permission"),
@@ -9944,7 +10093,9 @@ export type SplitPathStep = ({
   type: 'branch';
 } & BranchStep) | ({
   type: 'split';
-} & SplitStep);
+} & SplitStep) | ({
+  type: 'wait_for_event';
+} & WaitForEventStep);
 
 /**
  * One Step of a Split's path, by `type`, as a request writes it: the arms of AutomationStepInput
@@ -9971,7 +10122,9 @@ export type SplitPathStepInput = ({
   type: 'branch';
 } & BranchStepInput) | ({
   type: 'split';
-} & SplitStepInput);
+} & SplitStepInput) | ({
+  type: 'wait_for_event';
+} & WaitForEventStepInput);
 
 /**
  * A Step that sends each Enrollment down one of its paths by weight (ADR 0124): a hash of the
@@ -10971,6 +11124,273 @@ export type UsedByKind = typeof UsedByKind[keyof typeof UsedByKind];
  * by the handler (422), which applies the same limit to a Sign-in provider's name.
  */
 export type UserName = string;
+
+/**
+ * What a Wait for event waits for, by `kind`
+ */
+export type WaitForEventAwaits = ({
+  kind: 'event';
+} & AwaitedEvent) | ({
+  kind: 'message';
+} & AwaitedMessage);
+
+/**
+ * What a Wait for event waits for, by `kind`, as a request writes it
+ */
+export type WaitForEventAwaitsInput = ({
+  kind: 'event';
+} & AwaitedEventInput) | ({
+  kind: 'message';
+} & AwaitedMessageInput);
+
+/**
+ * A Wait for event's Condition (ADR 0124, ADR 0180): the tree of tests the Contact, on its live
+ * data when the awaited Event is handled, and the Event the Enrollment began with match. An Event
+ * its matcher matches arrives only when the Condition holds; false and unknown leave the
+ * Enrollment waiting.
+ */
+export type WaitForEventCondition = {
+  kind: 'group';
+  /**
+   * How the entries combine
+   */
+  combinator: ConditionCombinator;
+  /**
+   * Negate the whole group
+   */
+  not?: boolean;
+  /**
+   * The group's tests and nested groups
+   */
+  entries: Array<WaitForEventConditionNode>;
+};
+
+/**
+ * A Wait for event's Condition (ADR 0124, ADR 0180): the tree of tests the Contact, on its live
+ * data when the awaited Event is handled, and the Event the Enrollment began with match. An Event
+ * its matcher matches arrives only when the Condition holds; false and unknown leave the
+ * Enrollment waiting.
+ */
+export type WaitForEventConditionInput = {
+  kind: 'group';
+  /**
+   * How the entries combine
+   */
+  combinator: ConditionCombinator;
+  /**
+   * Negate the whole group
+   */
+  not?: boolean;
+  /**
+   * The group's tests and nested groups
+   */
+  entries: Array<WaitForEventConditionNodeInput>;
+};
+
+/**
+ * An entry of a Wait for event's Condition, by `kind`: a Rule's, and the property test reading
+ * the Event the Enrollment began with. The test of the Enrollment's own message is a Branch's
+ * only: a Wait for event on an open or click waits for one.
+ */
+export type WaitForEventConditionNode = ({
+  kind: 'group';
+} & WaitForEventCondition) | ({
+  kind: 'attribute';
+} & AttributeLeaf) | ({
+  kind: 'birthday';
+} & BirthdayLeaf) | ({
+  kind: 'tag';
+} & TagLeaf) | ({
+  kind: 'telegram';
+} & TelegramLeaf) | ({
+  kind: 'sms';
+} & SmsLeaf) | ({
+  kind: 'engagementTracking';
+} & EngagementTrackingLeaf) | ({
+  kind: 'customField';
+} & CustomFieldLeaf) | ({
+  kind: 'event';
+} & EventLeaf) | ({
+  kind: 'property';
+} & WaitForEventPropertyLeaf);
+
+/**
+ * An entry of a Wait for event's Condition, by `kind`: a Rule's, and the property test reading
+ * the Event the Enrollment began with. The test of the Enrollment's own message is a Branch's
+ * only: a Wait for event on an open or click waits for one.
+ */
+export type WaitForEventConditionNodeInput = ({
+  kind: 'group';
+} & WaitForEventConditionInput) | ({
+  kind: 'attribute';
+} & AttributeLeafInput) | ({
+  kind: 'birthday';
+} & BirthdayLeafInput) | ({
+  kind: 'tag';
+} & TagLeafInput) | ({
+  kind: 'telegram';
+} & TelegramLeafInput) | ({
+  kind: 'sms';
+} & SmsLeafInput) | ({
+  kind: 'engagementTracking';
+} & EngagementTrackingLeafInput) | ({
+  kind: 'customField';
+} & CustomFieldLeafInput) | ({
+  kind: 'event';
+} & EventLeafInput) | ({
+  kind: 'property';
+} & WaitForEventPropertyLeafInput);
+
+/**
+ * The name of a Wait for event (ADR 0136): lower-case letters, digits and underscores, starting
+ * with a letter. It belongs to one Step id across every version of its Automation.
+ */
+export type WaitForEventName = string;
+
+/**
+ * A test of one property of an Event: whose it is in `of`, its key in a field of its own, so a
+ * key holding a dot is one key
+ */
+export type WaitForEventPropertyLeaf = {
+  kind: 'property';
+  /**
+   * Whose property it is
+   */
+  of: WaitForEventPropertySource;
+  /**
+   * The property's key
+   */
+  key: string;
+  /**
+   * What it asks of the property's value
+   */
+  test: PropertyTest;
+};
+
+/**
+ * A test of one property of an Event: whose it is in `of`, its key in a field of its own, so a
+ * key holding a dot is one key
+ */
+export type WaitForEventPropertyLeafInput = {
+  kind: 'property';
+  /**
+   * Whose property it is
+   */
+  of: WaitForEventPropertySourceInput;
+  /**
+   * The property's key
+   */
+  key: string;
+  /**
+   * What it asks of the property's value
+   */
+  test: PropertyTestInput;
+};
+
+/**
+ * Whose properties a Wait for event's property test reads, by `kind`: the Event the Enrollment
+ * began with, or the one an earlier Wait for event arrived on. The Event the Wait for event awaits
+ * is tested by its matcher's filter.
+ */
+export type WaitForEventPropertySource = ({
+  kind: 'trigger';
+} & TriggerSource) | ({
+  kind: 'awaited';
+} & AwaitedSource);
+
+/**
+ * Whose properties a Wait for event's property test reads, by `kind`: the Event the Enrollment
+ * began with, or the one an earlier Wait for event arrived on. The Event the Wait for event awaits
+ * is tested by its matcher's filter.
+ */
+export type WaitForEventPropertySourceInput = ({
+  kind: 'trigger';
+} & TriggerSourceInput) | ({
+  kind: 'awaited';
+} & AwaitedSourceInput);
+
+/**
+ * A Step that holds the Enrollment until what it awaits arrives or its timeout passes (ADR
+ * 0124), then takes `arrived` or `timedOut`, or `unknown` when it waits for an open or a click
+ * that it cannot know of; the paths rejoin at the Step after it. An Event counts when one of its
+ * matchers matches it, its Condition, if any, holds for the Contact, and it is the Contact's,
+ * occurred at or after the moment the Enrollment reached the Step and no later than the timeout, and
+ * is neither a machine open or click, loaded history nor the Event that
+ * began the Enrollment. One that occurred within the window but was recorded late is taken at the
+ * timeout. An Event an exit or the goal matches ends the Enrollment instead.
+ */
+export type WaitForEventStep = {
+  /**
+   * The Step's id
+   */
+  id: StepId;
+  type: 'wait_for_event';
+  /**
+   * The Step's name, fixed when it is created
+   */
+  name: WaitForEventName;
+  /**
+   * How long the Step waits, in seconds from the moment the Enrollment reaches it
+   */
+  timeoutSeconds: number;
+  /**
+   * What the Step waits for
+   */
+  awaits: WaitForEventAwaits;
+  /**
+   * The path taken when what the Step awaits arrives in time
+   */
+  arrived: AutomationPath;
+  /**
+   * The path taken when the timeout passes first
+   */
+  timedOut: AutomationPath;
+  /**
+   * The path taken when the Step waits for an open or a click (`message`) and cannot know whether
+   * one happened; never present when it waits for an Event
+   */
+  unknown?: AutomationPath;
+};
+
+/**
+ * A Wait for event, as a request writes it
+ */
+export type WaitForEventStepInput = {
+  /**
+   * The Step's id; omitted, the Step is given one. A Step saved before keeps its name: send its
+   * id back, since a save that gives a name another Step id of the Automation holds, in any
+   * version, is refused, naming the Step.
+   */
+  id?: StepId;
+  type: 'wait_for_event';
+  /**
+   * The Step's name, fixed when it is created: a save that renames the Step, or gives two Wait for
+   * event Steps of the Automation the same name, is refused, naming the Step
+   */
+  name: WaitForEventName;
+  /**
+   * How long the Step waits, in seconds, as a wait's delay is: at least one
+   */
+  timeoutSeconds: number;
+  /**
+   * What the Step waits for
+   */
+  awaits: WaitForEventAwaitsInput;
+  /**
+   * The path taken when what the Step awaits arrives in time
+   */
+  arrived: AutomationPathInput;
+  /**
+   * The path taken when the timeout passes first
+   */
+  timedOut: AutomationPathInput;
+  /**
+   * The path taken when the Step waits for an open or a click (`message`) and cannot know whether
+   * one happened. Publish refuses a Wait for event on a message without it, and a save refuses it
+   * on a Wait for event on an Event.
+   */
+  unknown?: AutomationPathInput;
+};
 
 /**
  * A Step that waits before the next one

@@ -169,6 +169,60 @@ func (_c *AutomationStepRecordCreate) SetNillableWentOn(v *automationstep.WentOn
 	return _c
 }
 
+// SetDecidedPathID sets the "decided_path_id" field.
+func (_c *AutomationStepRecordCreate) SetDecidedPathID(v automationstep.ID) *AutomationStepRecordCreate {
+	_c.mutation.SetDecidedPathID(v)
+	return _c
+}
+
+// SetNillableDecidedPathID sets the "decided_path_id" field if the given value is not nil.
+func (_c *AutomationStepRecordCreate) SetNillableDecidedPathID(v *automationstep.ID) *AutomationStepRecordCreate {
+	if v != nil {
+		_c.SetDecidedPathID(*v)
+	}
+	return _c
+}
+
+// SetAwaitedEventID sets the "awaited_event_id" field.
+func (_c *AutomationStepRecordCreate) SetAwaitedEventID(v int64) *AutomationStepRecordCreate {
+	_c.mutation.SetAwaitedEventID(v)
+	return _c
+}
+
+// SetNillableAwaitedEventID sets the "awaited_event_id" field if the given value is not nil.
+func (_c *AutomationStepRecordCreate) SetNillableAwaitedEventID(v *int64) *AutomationStepRecordCreate {
+	if v != nil {
+		_c.SetAwaitedEventID(*v)
+	}
+	return _c
+}
+
+// SetAwaitedAction sets the "awaited_action" field.
+func (_c *AutomationStepRecordCreate) SetAwaitedAction(v string) *AutomationStepRecordCreate {
+	_c.mutation.SetAwaitedAction(v)
+	return _c
+}
+
+// SetNillableAwaitedAction sets the "awaited_action" field if the given value is not nil.
+func (_c *AutomationStepRecordCreate) SetNillableAwaitedAction(v *string) *AutomationStepRecordCreate {
+	if v != nil {
+		_c.SetAwaitedAction(*v)
+	}
+	return _c
+}
+
+// SetAwaitedProperties sets the "awaited_properties" field.
+func (_c *AutomationStepRecordCreate) SetAwaitedProperties(v map[string]interface{}) *AutomationStepRecordCreate {
+	_c.mutation.SetAwaitedProperties(v)
+	return _c
+}
+
+// SetDeclinedEventIds sets the "declined_event_ids" field.
+func (_c *AutomationStepRecordCreate) SetDeclinedEventIds(v []int64) *AutomationStepRecordCreate {
+	_c.mutation.SetDeclinedEventIds(v)
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *AutomationStepRecordCreate) SetID(v int64) *AutomationStepRecordCreate {
 	_c.mutation.SetID(v)
@@ -347,6 +401,26 @@ func (_c *AutomationStepRecordCreate) createSpec() (*AutomationStepRecord, *sqlg
 	if value, ok := _c.mutation.WentOn(); ok {
 		_spec.SetField(automationsteprecord.FieldWentOn, field.TypeEnum, value)
 		_node.WentOn = &value
+	}
+	if value, ok := _c.mutation.DecidedPathID(); ok {
+		_spec.SetField(automationsteprecord.FieldDecidedPathID, field.TypeString, value)
+		_node.DecidedPathID = &value
+	}
+	if value, ok := _c.mutation.AwaitedEventID(); ok {
+		_spec.SetField(automationsteprecord.FieldAwaitedEventID, field.TypeInt64, value)
+		_node.AwaitedEventID = &value
+	}
+	if value, ok := _c.mutation.AwaitedAction(); ok {
+		_spec.SetField(automationsteprecord.FieldAwaitedAction, field.TypeString, value)
+		_node.AwaitedAction = &value
+	}
+	if value, ok := _c.mutation.AwaitedProperties(); ok {
+		_spec.SetField(automationsteprecord.FieldAwaitedProperties, field.TypeJSON, value)
+		_node.AwaitedProperties = value
+	}
+	if value, ok := _c.mutation.DeclinedEventIds(); ok {
+		_spec.SetField(automationsteprecord.FieldDeclinedEventIds, field.TypeJSON, value)
+		_node.DeclinedEventIds = value
 	}
 	if nodes := _c.mutation.WorkspaceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -548,6 +622,84 @@ func (u *AutomationStepRecordUpsert) ClearPathOutcomes() *AutomationStepRecordUp
 	return u
 }
 
+// SetAwaitedEventID sets the "awaited_event_id" field.
+func (u *AutomationStepRecordUpsert) SetAwaitedEventID(v int64) *AutomationStepRecordUpsert {
+	u.Set(automationsteprecord.FieldAwaitedEventID, v)
+	return u
+}
+
+// UpdateAwaitedEventID sets the "awaited_event_id" field to the value that was provided on create.
+func (u *AutomationStepRecordUpsert) UpdateAwaitedEventID() *AutomationStepRecordUpsert {
+	u.SetExcluded(automationsteprecord.FieldAwaitedEventID)
+	return u
+}
+
+// AddAwaitedEventID adds v to the "awaited_event_id" field.
+func (u *AutomationStepRecordUpsert) AddAwaitedEventID(v int64) *AutomationStepRecordUpsert {
+	u.Add(automationsteprecord.FieldAwaitedEventID, v)
+	return u
+}
+
+// ClearAwaitedEventID clears the value of the "awaited_event_id" field.
+func (u *AutomationStepRecordUpsert) ClearAwaitedEventID() *AutomationStepRecordUpsert {
+	u.SetNull(automationsteprecord.FieldAwaitedEventID)
+	return u
+}
+
+// SetAwaitedAction sets the "awaited_action" field.
+func (u *AutomationStepRecordUpsert) SetAwaitedAction(v string) *AutomationStepRecordUpsert {
+	u.Set(automationsteprecord.FieldAwaitedAction, v)
+	return u
+}
+
+// UpdateAwaitedAction sets the "awaited_action" field to the value that was provided on create.
+func (u *AutomationStepRecordUpsert) UpdateAwaitedAction() *AutomationStepRecordUpsert {
+	u.SetExcluded(automationsteprecord.FieldAwaitedAction)
+	return u
+}
+
+// ClearAwaitedAction clears the value of the "awaited_action" field.
+func (u *AutomationStepRecordUpsert) ClearAwaitedAction() *AutomationStepRecordUpsert {
+	u.SetNull(automationsteprecord.FieldAwaitedAction)
+	return u
+}
+
+// SetAwaitedProperties sets the "awaited_properties" field.
+func (u *AutomationStepRecordUpsert) SetAwaitedProperties(v map[string]interface{}) *AutomationStepRecordUpsert {
+	u.Set(automationsteprecord.FieldAwaitedProperties, v)
+	return u
+}
+
+// UpdateAwaitedProperties sets the "awaited_properties" field to the value that was provided on create.
+func (u *AutomationStepRecordUpsert) UpdateAwaitedProperties() *AutomationStepRecordUpsert {
+	u.SetExcluded(automationsteprecord.FieldAwaitedProperties)
+	return u
+}
+
+// ClearAwaitedProperties clears the value of the "awaited_properties" field.
+func (u *AutomationStepRecordUpsert) ClearAwaitedProperties() *AutomationStepRecordUpsert {
+	u.SetNull(automationsteprecord.FieldAwaitedProperties)
+	return u
+}
+
+// SetDeclinedEventIds sets the "declined_event_ids" field.
+func (u *AutomationStepRecordUpsert) SetDeclinedEventIds(v []int64) *AutomationStepRecordUpsert {
+	u.Set(automationsteprecord.FieldDeclinedEventIds, v)
+	return u
+}
+
+// UpdateDeclinedEventIds sets the "declined_event_ids" field to the value that was provided on create.
+func (u *AutomationStepRecordUpsert) UpdateDeclinedEventIds() *AutomationStepRecordUpsert {
+	u.SetExcluded(automationsteprecord.FieldDeclinedEventIds)
+	return u
+}
+
+// ClearDeclinedEventIds clears the value of the "declined_event_ids" field.
+func (u *AutomationStepRecordUpsert) ClearDeclinedEventIds() *AutomationStepRecordUpsert {
+	u.SetNull(automationsteprecord.FieldDeclinedEventIds)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -582,6 +734,9 @@ func (u *AutomationStepRecordUpsertOne) UpdateNewValues() *AutomationStepRecordU
 		}
 		if _, exists := u.create.mutation.WentOn(); exists {
 			s.SetIgnore(automationsteprecord.FieldWentOn)
+		}
+		if _, exists := u.create.mutation.DecidedPathID(); exists {
+			s.SetIgnore(automationsteprecord.FieldDecidedPathID)
 		}
 	}))
 	return u
@@ -744,6 +899,97 @@ func (u *AutomationStepRecordUpsertOne) UpdatePathOutcomes() *AutomationStepReco
 func (u *AutomationStepRecordUpsertOne) ClearPathOutcomes() *AutomationStepRecordUpsertOne {
 	return u.Update(func(s *AutomationStepRecordUpsert) {
 		s.ClearPathOutcomes()
+	})
+}
+
+// SetAwaitedEventID sets the "awaited_event_id" field.
+func (u *AutomationStepRecordUpsertOne) SetAwaitedEventID(v int64) *AutomationStepRecordUpsertOne {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.SetAwaitedEventID(v)
+	})
+}
+
+// AddAwaitedEventID adds v to the "awaited_event_id" field.
+func (u *AutomationStepRecordUpsertOne) AddAwaitedEventID(v int64) *AutomationStepRecordUpsertOne {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.AddAwaitedEventID(v)
+	})
+}
+
+// UpdateAwaitedEventID sets the "awaited_event_id" field to the value that was provided on create.
+func (u *AutomationStepRecordUpsertOne) UpdateAwaitedEventID() *AutomationStepRecordUpsertOne {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.UpdateAwaitedEventID()
+	})
+}
+
+// ClearAwaitedEventID clears the value of the "awaited_event_id" field.
+func (u *AutomationStepRecordUpsertOne) ClearAwaitedEventID() *AutomationStepRecordUpsertOne {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.ClearAwaitedEventID()
+	})
+}
+
+// SetAwaitedAction sets the "awaited_action" field.
+func (u *AutomationStepRecordUpsertOne) SetAwaitedAction(v string) *AutomationStepRecordUpsertOne {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.SetAwaitedAction(v)
+	})
+}
+
+// UpdateAwaitedAction sets the "awaited_action" field to the value that was provided on create.
+func (u *AutomationStepRecordUpsertOne) UpdateAwaitedAction() *AutomationStepRecordUpsertOne {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.UpdateAwaitedAction()
+	})
+}
+
+// ClearAwaitedAction clears the value of the "awaited_action" field.
+func (u *AutomationStepRecordUpsertOne) ClearAwaitedAction() *AutomationStepRecordUpsertOne {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.ClearAwaitedAction()
+	})
+}
+
+// SetAwaitedProperties sets the "awaited_properties" field.
+func (u *AutomationStepRecordUpsertOne) SetAwaitedProperties(v map[string]interface{}) *AutomationStepRecordUpsertOne {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.SetAwaitedProperties(v)
+	})
+}
+
+// UpdateAwaitedProperties sets the "awaited_properties" field to the value that was provided on create.
+func (u *AutomationStepRecordUpsertOne) UpdateAwaitedProperties() *AutomationStepRecordUpsertOne {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.UpdateAwaitedProperties()
+	})
+}
+
+// ClearAwaitedProperties clears the value of the "awaited_properties" field.
+func (u *AutomationStepRecordUpsertOne) ClearAwaitedProperties() *AutomationStepRecordUpsertOne {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.ClearAwaitedProperties()
+	})
+}
+
+// SetDeclinedEventIds sets the "declined_event_ids" field.
+func (u *AutomationStepRecordUpsertOne) SetDeclinedEventIds(v []int64) *AutomationStepRecordUpsertOne {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.SetDeclinedEventIds(v)
+	})
+}
+
+// UpdateDeclinedEventIds sets the "declined_event_ids" field to the value that was provided on create.
+func (u *AutomationStepRecordUpsertOne) UpdateDeclinedEventIds() *AutomationStepRecordUpsertOne {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.UpdateDeclinedEventIds()
+	})
+}
+
+// ClearDeclinedEventIds clears the value of the "declined_event_ids" field.
+func (u *AutomationStepRecordUpsertOne) ClearDeclinedEventIds() *AutomationStepRecordUpsertOne {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.ClearDeclinedEventIds()
 	})
 }
 
@@ -947,6 +1193,9 @@ func (u *AutomationStepRecordUpsertBulk) UpdateNewValues() *AutomationStepRecord
 			if _, exists := b.mutation.WentOn(); exists {
 				s.SetIgnore(automationsteprecord.FieldWentOn)
 			}
+			if _, exists := b.mutation.DecidedPathID(); exists {
+				s.SetIgnore(automationsteprecord.FieldDecidedPathID)
+			}
 		}
 	}))
 	return u
@@ -1109,6 +1358,97 @@ func (u *AutomationStepRecordUpsertBulk) UpdatePathOutcomes() *AutomationStepRec
 func (u *AutomationStepRecordUpsertBulk) ClearPathOutcomes() *AutomationStepRecordUpsertBulk {
 	return u.Update(func(s *AutomationStepRecordUpsert) {
 		s.ClearPathOutcomes()
+	})
+}
+
+// SetAwaitedEventID sets the "awaited_event_id" field.
+func (u *AutomationStepRecordUpsertBulk) SetAwaitedEventID(v int64) *AutomationStepRecordUpsertBulk {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.SetAwaitedEventID(v)
+	})
+}
+
+// AddAwaitedEventID adds v to the "awaited_event_id" field.
+func (u *AutomationStepRecordUpsertBulk) AddAwaitedEventID(v int64) *AutomationStepRecordUpsertBulk {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.AddAwaitedEventID(v)
+	})
+}
+
+// UpdateAwaitedEventID sets the "awaited_event_id" field to the value that was provided on create.
+func (u *AutomationStepRecordUpsertBulk) UpdateAwaitedEventID() *AutomationStepRecordUpsertBulk {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.UpdateAwaitedEventID()
+	})
+}
+
+// ClearAwaitedEventID clears the value of the "awaited_event_id" field.
+func (u *AutomationStepRecordUpsertBulk) ClearAwaitedEventID() *AutomationStepRecordUpsertBulk {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.ClearAwaitedEventID()
+	})
+}
+
+// SetAwaitedAction sets the "awaited_action" field.
+func (u *AutomationStepRecordUpsertBulk) SetAwaitedAction(v string) *AutomationStepRecordUpsertBulk {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.SetAwaitedAction(v)
+	})
+}
+
+// UpdateAwaitedAction sets the "awaited_action" field to the value that was provided on create.
+func (u *AutomationStepRecordUpsertBulk) UpdateAwaitedAction() *AutomationStepRecordUpsertBulk {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.UpdateAwaitedAction()
+	})
+}
+
+// ClearAwaitedAction clears the value of the "awaited_action" field.
+func (u *AutomationStepRecordUpsertBulk) ClearAwaitedAction() *AutomationStepRecordUpsertBulk {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.ClearAwaitedAction()
+	})
+}
+
+// SetAwaitedProperties sets the "awaited_properties" field.
+func (u *AutomationStepRecordUpsertBulk) SetAwaitedProperties(v map[string]interface{}) *AutomationStepRecordUpsertBulk {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.SetAwaitedProperties(v)
+	})
+}
+
+// UpdateAwaitedProperties sets the "awaited_properties" field to the value that was provided on create.
+func (u *AutomationStepRecordUpsertBulk) UpdateAwaitedProperties() *AutomationStepRecordUpsertBulk {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.UpdateAwaitedProperties()
+	})
+}
+
+// ClearAwaitedProperties clears the value of the "awaited_properties" field.
+func (u *AutomationStepRecordUpsertBulk) ClearAwaitedProperties() *AutomationStepRecordUpsertBulk {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.ClearAwaitedProperties()
+	})
+}
+
+// SetDeclinedEventIds sets the "declined_event_ids" field.
+func (u *AutomationStepRecordUpsertBulk) SetDeclinedEventIds(v []int64) *AutomationStepRecordUpsertBulk {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.SetDeclinedEventIds(v)
+	})
+}
+
+// UpdateDeclinedEventIds sets the "declined_event_ids" field to the value that was provided on create.
+func (u *AutomationStepRecordUpsertBulk) UpdateDeclinedEventIds() *AutomationStepRecordUpsertBulk {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.UpdateDeclinedEventIds()
+	})
+}
+
+// ClearDeclinedEventIds clears the value of the "declined_event_ids" field.
+func (u *AutomationStepRecordUpsertBulk) ClearDeclinedEventIds() *AutomationStepRecordUpsertBulk {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.ClearDeclinedEventIds()
 	})
 }
 

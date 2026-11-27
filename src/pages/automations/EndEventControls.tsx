@@ -2,6 +2,7 @@ import { ActionIcon, Autocomplete, Button, Group, Input, Paper, Stack } from '@m
 import { IconPlus, IconTrash } from '@tabler/icons-react'
 import { useMount } from 'ahooks'
 import { useState } from 'react'
+import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { EventActionOption } from '../../components/EventActionName.tsx'
@@ -62,17 +63,24 @@ function EndingEditor({
   )
 }
 
-// The exit events end an active Enrollment early (#751), each an Event matcher (ADR 0133). A filter
-// left half-typed is dropped when the panel opens again, and one still being typed is refused at the
-// Save.
-export function ExitEventsControl({
+// A list of Event matchers (ADR 0133), each its action and its filter, with a button that adds one:
+// the exit events of the Trigger, or the Events a Wait for event awaits. A filter left half-typed is
+// dropped when the panel opens again, and one still being typed is refused at the Save.
+export function MatcherListControl({
+  label,
+  description,
+  addLabel,
+  error,
   value: drafts,
   onChange: write,
 }: {
+  label: string
+  description: string
+  addLabel: string
+  error?: ReactNode
   value: EndingDraft[]
   onChange: (drafts: EndingDraft[]) => void
 }) {
-  const { t } = useTranslation()
   // Each row keeps its key while the panel is open, so removing one never hands its builder to
   // the next.
   const [keys, setKeys] = useState(() => drafts.map(() => crypto.randomUUID()))
@@ -84,10 +92,7 @@ export function ExitEventsControl({
   })
 
   return (
-    <Input.Wrapper
-      label={t(($) => $.automations.exitEventsLabel)}
-      description={t(($) => $.automations.exitEventsHint)}
-    >
+    <Input.Wrapper label={label} description={description} error={error}>
       <Stack gap="xs" mt="xs">
         {drafts.map((draft, i) => (
           <EndingEditor
@@ -108,10 +113,30 @@ export function ExitEventsControl({
             write([...drafts, NO_ENDING])
           }}
         >
-          {t(($) => $.automations.exitEventAdd)}
+          {addLabel}
         </Button>
       </Stack>
     </Input.Wrapper>
+  )
+}
+
+// The exit events end an active Enrollment early (#751), each an Event matcher (ADR 0133).
+export function ExitEventsControl({
+  value,
+  onChange,
+}: {
+  value: EndingDraft[]
+  onChange: (drafts: EndingDraft[]) => void
+}) {
+  const { t } = useTranslation()
+  return (
+    <MatcherListControl
+      label={t(($) => $.automations.exitEventsLabel)}
+      description={t(($) => $.automations.exitEventsHint)}
+      addLabel={t(($) => $.automations.exitEventAdd)}
+      value={value}
+      onChange={onChange}
+    />
   )
 }
 

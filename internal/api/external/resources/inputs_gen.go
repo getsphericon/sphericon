@@ -25,6 +25,7 @@ import (
 	sendingdomains "github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
 	automationstep "github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	channels "github.com/getsphericon/sphericon/internal/kernel/channels"
+	conditiontree "github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	datetrigger "github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 	httpheader "github.com/getsphericon/sphericon/internal/kernel/httpheader"
 	localcalendar "github.com/getsphericon/sphericon/internal/kernel/localcalendar"
@@ -521,6 +522,18 @@ func (c *InputsImpl) IntegrationUpdate(source *external.UpdateIntegrationInput) 
 	}
 	return integrationsUpdateInput, nil
 }
+func (c *InputsImpl) MessageEngagementIn(source external.MessageEngagement) conditiontree.Engagement {
+	var conditiontreeEngagement conditiontree.Engagement
+	switch source {
+	case external.MessageEngagementClicked:
+		conditiontreeEngagement = conditiontree.MessageClicked
+	case external.MessageEngagementOpened:
+		conditiontreeEngagement = conditiontree.MessageOpened
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return conditiontreeEngagement
+}
 func (c *InputsImpl) OptOut(source *external.CreateUnsubscribeInput) unsubscriberecording.OptOutInput {
 	var unsubscriberecordingOptOutInput unsubscriberecording.OptOutInput
 	if source != nil {
@@ -544,6 +557,7 @@ func (c *InputsImpl) PathStepInputSum(source external.PathStepInputSum) external
 	externalapiAutomationStepInputSum.EndStepInput = source.EndStepInput
 	externalapiAutomationStepInputSum.BranchStepInput = source.BranchStepInput
 	externalapiAutomationStepInputSum.SplitStepInput = source.SplitStepInput
+	externalapiAutomationStepInputSum.WaitForEventStepInput = source.WaitForEventStepInput
 	return externalapiAutomationStepInputSum
 }
 func (c *InputsImpl) PathStepInputType(source external.PathStepInputSumType) external.AutomationStepInputSumType {
@@ -567,6 +581,8 @@ func (c *InputsImpl) PathStepInputType(source external.PathStepInputSumType) ext
 		externalapiAutomationStepInputSumType = external.SplitStepInputAutomationStepInputSum
 	case external.TelegramStepInputPathStepInputSum:
 		externalapiAutomationStepInputSumType = external.TelegramStepInputAutomationStepInputSum
+	case external.WaitForEventStepInputPathStepInputSum:
+		externalapiAutomationStepInputSumType = external.WaitForEventStepInputAutomationStepInputSum
 	case external.WaitStepInputPathStepInputSum:
 		externalapiAutomationStepInputSumType = external.WaitStepInputAutomationStepInputSum
 	case external.WaitUntilStepInputPathStepInputSum:
@@ -733,6 +749,7 @@ func (c *InputsImpl) SplitPathStepInputSum(source external.SplitPathStepInputSum
 	externalapiAutomationStepInputSum.EndStepInput = source.EndStepInput
 	externalapiAutomationStepInputSum.BranchStepInput = source.BranchStepInput
 	externalapiAutomationStepInputSum.SplitStepInput = source.SplitStepInput
+	externalapiAutomationStepInputSum.WaitForEventStepInput = source.WaitForEventStepInput
 	return externalapiAutomationStepInputSum
 }
 func (c *InputsImpl) SplitPathStepInputType(source external.SplitPathStepInputSumType) external.AutomationStepInputSumType {
@@ -756,6 +773,8 @@ func (c *InputsImpl) SplitPathStepInputType(source external.SplitPathStepInputSu
 		externalapiAutomationStepInputSumType = external.SplitStepInputAutomationStepInputSum
 	case external.TelegramStepInputSplitPathStepInputSum:
 		externalapiAutomationStepInputSumType = external.TelegramStepInputAutomationStepInputSum
+	case external.WaitForEventStepInputSplitPathStepInputSum:
+		externalapiAutomationStepInputSumType = external.WaitForEventStepInputAutomationStepInputSum
 	case external.WaitStepInputSplitPathStepInputSum:
 		externalapiAutomationStepInputSumType = external.WaitStepInputAutomationStepInputSum
 	case external.WaitUntilStepInputSplitPathStepInputSum:

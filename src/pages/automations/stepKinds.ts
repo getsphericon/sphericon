@@ -6,6 +6,7 @@ import {
   IconClock,
   IconFlag,
   IconGitBranch,
+  IconHourglass,
   IconMail,
   IconMessage,
   IconPuzzle,
@@ -55,6 +56,11 @@ export function useStepKinds(): Record<InsertedKind, StepKindInfo> {
         label: t(($) => $.automations.stepWaitUntil),
         description: t(($) => $.automations.waitUntilNodeDescription),
         icon: IconCalendarTime,
+      },
+      wait_for_event: {
+        label: t(($) => $.automations.stepWaitForEvent),
+        description: t(($) => $.automations.waitForEventNodeDescription),
+        icon: IconHourglass,
       },
       apply_tag: {
         label: t(($) => $.automations.stepApplyTag),

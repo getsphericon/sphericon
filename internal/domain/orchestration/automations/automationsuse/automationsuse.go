@@ -1,7 +1,8 @@
 // Package automationsuse reads the use the Automations make of a row: the Definition use of a kept
 // Automation's live version or draft that applies or removes a Tag, whose Trigger's, exit's or
-// goal's filter names a Tag or a Custom field (ADR 0133), or whose Branch's Conditions test a Tag
-// or a Custom field (ADR 0124), read as a Rule's Condition is read, and the Live use of the versions that will still send (ADR
+// goal's filter, or a Wait for event's matcher filter, names a Tag or a Custom field (ADR 0133), or
+// whose Branch's or Wait for event's Conditions test a Tag or a Custom field (ADR 0124), read as a
+// Rule's Condition is read, and the Live use of the versions that will still send (ADR
 // 0099). It is a reader of the Removal check
 // (internal/domain/orchestration/removalcheck), the one package easement lets import it, so every
 // removal that checks a row reads every holder, and which builds its Module. The automations
@@ -38,28 +39,28 @@ type Module struct{}
 func New() *Module { return &Module{} }
 
 // UsingTag returns the Workspace's kept Automations whose live version or draft applies or
-// removes the Tag by its name, whose Trigger's, exit's or goal's filter names it (ADR 0133), or
-// whose Branch's Condition tests it or names it in an event test's filter (ADR 0124, ADR 0153), in
-// id order (spec #767, "In use"). An archived
+// removes the Tag by its name, whose Trigger's, exit's, goal's or Wait for event's matcher filter
+// names it (ADR 0133), or whose Branch's or Wait for event's Condition tests it or names it in an
+// event test's filter (ADR 0124, ADR 0153), in id order (spec #767, "In use"). An archived
 // Automation takes no part in new work.
 func (m *Module) UsingTag(ctx context.Context, l *ent.WorkspaceLocked, name string) ([]*ent.Automation, error) {
 	return using(ctx, l, func(v *ent.AutomationVersion) bool {
 		return stepsTag(v, name) || slices.ContainsFunc(matcherNames(v).Tags, func(n string) bool { return tagname.Same(n, name) }) ||
-			slices.ContainsFunc(branchConditions(v), func(g conditiontree.Branch) bool { return condition.NamesTag(g.Group, name) })
+			slices.ContainsFunc(stepConditions(v), func(g conditiontree.Group) bool { return condition.NamesTag(g, name) })
 	})
 }
 
 // UsingCustomField returns the Workspace's kept Automations whose live version or draft holds the
 // Custom field key against a retype to type t, in id order: its date Trigger or a Wait until waits
-// on its date (ADR 0126), which only a datetime field holds; its Trigger, exit or goal filter names
-// it (ADR 0133), a contact.field_changed matcher that tests its `key`, which any retype breaks; or
-// a Branch's Condition tests it with a leaf a field of type t does not take (ADR 0124) or names it
-// in an event test's filter (ADR 0153), the check a Rule's Condition holds a field by
-// (condition.HoldsCustomField).
+// on its date (ADR 0126), which only a datetime field holds; its Trigger's, exit's, goal's or Wait
+// for event's matcher filter names it (ADR 0133), a contact.field_changed matcher that tests its
+// `key`, which any retype breaks; or a Branch's or Wait for event's Condition tests it with a leaf
+// a field of type t does not take (ADR 0124) or names it in an event test's filter (ADR 0153), the
+// check a Rule's Condition holds a field by (condition.HoldsCustomField).
 func (m *Module) UsingCustomField(ctx context.Context, l *ent.WorkspaceLocked, key string, t customfield.Type) ([]*ent.Automation, error) {
 	return using(ctx, l, func(v *ent.AutomationVersion) bool {
 		return datesField(v, key) || slices.Contains(matcherNames(v).CustomFields, key) ||
-			slices.ContainsFunc(branchConditions(v), func(g conditiontree.Branch) bool { return condition.HoldsCustomField(g.Group, key, t) })
+			slices.ContainsFunc(stepConditions(v), func(g conditiontree.Group) bool { return condition.HoldsCustomField(g, key, t) })
 	})
 }
 
@@ -82,12 +83,20 @@ func datesField(v *ent.AutomationVersion, key string) bool {
 	return false
 }
 
-// branchConditions are the Conditions of the paths of every Branch of the version, at any depth.
-func branchConditions(v *ent.AutomationVersion) []conditiontree.Branch {
-	var out []conditiontree.Branch
+// stepConditions are the Conditions the version's Steps hold, at any depth: those of the paths of
+// every Branch, and of every Wait for event (ADR 0124).
+func stepConditions(v *ent.AutomationVersion) []conditiontree.Group {
+	var out []conditiontree.Group
 	for _, st := range automationstep.All(v.Steps) {
-		if b, ok := st.Payload.(automationstep.Branch); ok {
-			out = append(out, b.Conditions()...)
+		switch p := st.Payload.(type) {
+		case automationstep.Branch:
+			for _, c := range p.Conditions() {
+				out = append(out, c.Group)
+			}
+		case automationstep.WaitForEvent:
+			if cond := p.Condition(); cond != nil {
+				out = append(out, cond.Group)
+			}
 		}
 	}
 	return out
@@ -121,7 +130,8 @@ func stepsTag(v *ent.AutomationVersion, name string) bool {
 }
 
 // matcherNames is what the filters of the version's Event matchers name in the catalogue
-// (condition.NamedDefinitions): its Trigger's, its exits' and its goal's.
+// (condition.NamedDefinitions): its Trigger's, its exits', its goal's and those each of its Wait
+// for events awaits.
 func matcherNames(v *ent.AutomationVersion) condition.Definitions {
 	var matchers []eventmatcher.Matcher
 	switch t := automations.TriggerOf(v).(type) {
@@ -132,6 +142,9 @@ func matcherNames(v *ent.AutomationVersion) condition.Definitions {
 	matchers = append(matchers, automations.ExitsOf(v)...)
 	if v.Goal != nil {
 		matchers = append(matchers, *v.Goal)
+	}
+	for _, w := range automationstep.WaitsForEvents(v.Steps) {
+		matchers = append(matchers, w.Matchers()...)
 	}
 	var named condition.Definitions
 	for _, m := range matchers {

@@ -74,6 +74,8 @@ const (
 	EdgeContact = "contact"
 	// EdgeFiring holds the string denoting the firing edge name in mutations.
 	EdgeFiring = "firing"
+	// EdgeStepRecords holds the string denoting the step_records edge name in mutations.
+	EdgeStepRecords = "step_records"
 	// Table holds the table name of the automationrun in the database.
 	Table = "automation_runs"
 	// WorkspaceTable is the table that holds the workspace relation/edge.
@@ -111,6 +113,13 @@ const (
 	FiringInverseTable = "rule_firings"
 	// FiringColumn is the table column denoting the firing relation/edge.
 	FiringColumn = "firing_id"
+	// StepRecordsTable is the table that holds the step_records relation/edge.
+	StepRecordsTable = "automation_step_records"
+	// StepRecordsInverseTable is the table name for the AutomationStepRecord entity.
+	// It exists in this package in order to avoid circular dependency with the "automationsteprecord" package.
+	StepRecordsInverseTable = "automation_step_records"
+	// StepRecordsColumn is the table column denoting the step_records relation/edge.
+	StepRecordsColumn = "run_id"
 )
 
 // Columns holds all SQL columns for automationrun fields.
@@ -382,6 +391,20 @@ func ByFiringField(field string, opts ...sql.OrderTermOption) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newFiringStep(), sql.OrderByField(field, opts...))
 	}
 }
+
+// ByStepRecordsCount orders the results by step_records count.
+func ByStepRecordsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newStepRecordsStep(), opts...)
+	}
+}
+
+// ByStepRecords orders the results by step_records terms.
+func ByStepRecords(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newStepRecordsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newWorkspaceStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -415,5 +438,12 @@ func newFiringStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(FiringInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, false, FiringTable, FiringColumn),
+	)
+}
+func newStepRecordsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(StepRecordsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, true, StepRecordsTable, StepRecordsColumn),
 	)
 }

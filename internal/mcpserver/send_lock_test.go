@@ -2,16 +2,22 @@ package mcpserver_test
 
 import (
 	"testing"
+	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/rulefiring"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
+	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -209,4 +215,91 @@ func TestAnEventRecordedThroughAConnectionWithoutMCPSendStillReachesAWebhookEndp
 	require.Len(t, deliveries, 1)
 	assert.EqualValues(t, fixtures.WebhookHalcyonID, deliveries[0].EndpointID)
 	assert.Equal(t, "agent_signal", deliveries[0].EventName)
+}
+
+// An Event recorded over MCP through a Connection without mcp:send never satisfies a Wait for
+// event (ADR 0132): it leaves the Enrollment waiting, and the timeout's lookup skips it, so the
+// Enrollment takes `timed_out`. Recorded with mcp:send, it takes `arrived` at once. Ida is enrolled
+// on halcyon_trial into an Automation that waits an hour for halcyon_bought.
+func TestAnEventRecordedThroughAConnectionWithoutMCPSendSatisfiesNoWaitForEvent(t *testing.T) {
+	for name, c := range map[string]struct {
+		scopes []apitokens.Scope
+		// onArrival is the Step the Event leaves the Enrollment on, and took the path its wait took.
+		onArrival, took func(wait automationstep.Step) automationstep.ID
+	}{
+		"without mcp:send": {
+			scopes:    writerScopes,
+			onArrival: func(wait automationstep.Step) automationstep.ID { return wait.ID },
+			took: func(wait automationstep.Step) automationstep.ID {
+				return wait.Payload.(automationstep.WaitForEvent).TimedOut.ID
+			},
+		},
+		"with mcp:send": {
+			scopes: withSend,
+			onArrival: func(wait automationstep.Step) automationstep.ID {
+				return wait.Payload.(automationstep.WaitForEvent).Arrived.Steps[0].ID
+			},
+			took: func(wait automationstep.Step) automationstep.ID {
+				return wait.Payload.(automationstep.WaitForEvent).Arrived.ID
+			},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			clock := testhelper.NewClock(time.Now().UTC().Add(-3 * time.Hour).Truncate(time.Second))
+			env := testhelper.Setup(t, testhelper.WithClock(clock.Now))
+			ctx := t.Context()
+			halcyon := env.DB.Scoped(fixtures.HalcyonID)
+			automationID, wait := waitingForAPurchase(t, env)
+			record := func(write func(string, map[string]any), action string, at time.Time) {
+				t.Helper()
+				write("events_record", map[string]any{"events": []any{map[string]any{
+					"subjectId": "ida", "email": fixtures.ContactHalcyonIdaEmail, "action": action, "occurredAt": at.Format(time.RFC3339),
+				}}})
+				reactTo(t, env)
+			}
+
+			record(halcyonWriter(t, env, withSend), "halcyon_trial", clock.Now())
+			run, err := env.DB.AutomationRun.Query().
+				Where(automationrun.AutomationID(automationID), automationrun.ContactID(fixtures.ContactHalcyonIdaID)).Only(ctx)
+			require.NoError(t, err)
+			record(halcyonWriter(t, env, c.scopes), "halcyon_bought", clock.Now().Add(time.Minute))
+			onArrival, err := env.DB.AutomationRun.Get(ctx, run.ID)
+			require.NoError(t, err)
+			clock.Advance(2 * time.Hour)
+			require.NoError(t, testhelper.Module[*automations.StepExecution](env).Step(ctx, halcyon, run.ID, wait.ID))
+			records, err := testhelper.Module[*automations.Module](env).StepRecords(ctx, halcyon, automationID, run.ID)
+			require.NoError(t, err)
+			ofTheWait, ok := lo.Find(records, func(r *ent.AutomationStepRecord) bool { return r.StepID == wait.ID })
+			require.True(t, ok)
+
+			assert.Equal(t, c.onArrival(wait), lo.FromPtr(onArrival.CurrentStepID), "where the Event left it")
+			assert.Equal(t, c.took(wait), lo.FromPtr(ofTheWait.PathID), "the path it took")
+		})
+	}
+}
+
+// waitingForAPurchase publishes in Halcyon an Automation triggered on halcyon_trial whose one Step
+// waits an hour for halcyon_bought, tagging `buyer` on arrived and `reminded` on timed out: its id
+// and its stored Wait for event.
+func waitingForAPurchase(t *testing.T, env *testhelper.TestEnv) (int64, automationstep.Step) {
+	t.Helper()
+	ctx := t.Context()
+	halcyon := env.DB.Scoped(fixtures.HalcyonID)
+	m := testhelper.Module[*automations.Module](env)
+	a, err := m.Create(ctx, halcyon, automations.CreateInput{
+		Name: "Waits for a purchase", Trigger: automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: "halcyon_trial"}},
+		Steps: new(automationstep.Root(automationstep.New(automationstep.WaitForEvent{
+			Name: "purchase", TimeoutSeconds: 3600,
+			Awaits:   automationstep.AwaitedEvent{Matchers: []eventmatcher.Matcher{{Action: "halcyon_bought"}}},
+			Arrived:  automationstep.Root(automationstep.New(automationstep.ApplyTag{Tag: "buyer"})),
+			TimedOut: automationstep.Root(automationstep.New(automationstep.ApplyTag{Tag: "reminded"})),
+		}))),
+	})
+	require.NoError(t, err)
+	_, err = m.Publish(ctx, halcyon, a.ID, testhelper.AutomationRevisionIn(ctx, t, halcyon, a.ID))
+	require.NoError(t, err)
+	live, err := m.Get(ctx, halcyon, a.ID)
+	require.NoError(t, err)
+	version, _ := automations.LiveAndDraft(live)
+	return a.ID, version.Steps.Steps[0]
 }

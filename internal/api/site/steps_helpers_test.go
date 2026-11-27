@@ -54,6 +54,8 @@ func siteStepIDs(p siteapi.AutomationPath) []string {
 			ids[i] = string(s.BranchStep.ID)
 		case siteapi.SplitStepAutomationStepSum:
 			ids[i] = string(s.SplitStep.ID)
+		case siteapi.WaitForEventStepAutomationStepSum:
+			ids[i] = string(s.WaitForEventStep.ID)
 		}
 	}
 	return ids

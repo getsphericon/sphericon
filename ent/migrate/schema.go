@@ -541,6 +541,11 @@ var (
 		{Name: "path_outcomes", Type: field.TypeJSON, Nullable: true},
 		{Name: "due_at", Type: field.TypeTime, Nullable: true},
 		{Name: "went_on", Type: field.TypeEnum, Nullable: true, Enums: []string{"past", "no_date", "beyond_bound"}},
+		{Name: "decided_path_id", Type: field.TypeString, Nullable: true},
+		{Name: "awaited_event_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "awaited_action", Type: field.TypeString, Nullable: true},
+		{Name: "awaited_properties", Type: field.TypeJSON, Nullable: true},
+		{Name: "declined_event_ids", Type: field.TypeJSON, Nullable: true},
 		{Name: "run_id", Type: field.TypeInt64},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
@@ -552,13 +557,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "automation_step_records_automation_runs_run",
-				Columns:    []*schema.Column{AutomationStepRecordsColumns[12]},
+				Columns:    []*schema.Column{AutomationStepRecordsColumns[17]},
 				RefColumns: []*schema.Column{AutomationRunsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "automation_step_records_workspaces_automation_step_records",
-				Columns:    []*schema.Column{AutomationStepRecordsColumns[13]},
+				Columns:    []*schema.Column{AutomationStepRecordsColumns[18]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -567,7 +572,15 @@ var (
 			{
 				Name:    "automation_step_records_workspace_id_run_id_step_id",
 				Unique:  true,
-				Columns: []*schema.Column{AutomationStepRecordsColumns[13], AutomationStepRecordsColumns[12], AutomationStepRecordsColumns[3]},
+				Columns: []*schema.Column{AutomationStepRecordsColumns[18], AutomationStepRecordsColumns[17], AutomationStepRecordsColumns[3]},
+			},
+			{
+				Name:    "automation_step_records_awaited_event_id",
+				Unique:  false,
+				Columns: []*schema.Column{AutomationStepRecordsColumns[18], AutomationStepRecordsColumns[13]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "awaited_event_id IS NOT NULL",
+				},
 			},
 		},
 	}
@@ -4021,11 +4034,12 @@ func init() {
 		Table: "automation_step_records",
 	}
 	AutomationStepRecordsTable.Annotation.Checks = map[string]string{
+		"automation_step_records_awaited_check":     "(awaited_event_id IS NULL) = (awaited_action IS NULL)",
 		"automation_step_records_left_check":        "outcome IS NULL OR left_at IS NOT NULL",
 		"automation_step_records_outcome_check":     "outcome IN ('done', 'skipped', 'path')",
 		"automation_step_records_reason_check":      "outcome IS NOT NULL OR skip_reason IS NULL",
 		"automation_step_records_skip_reason_check": "skip_reason IN ('suppressed', 'unsubscribed_everything', 'unsubscribed_source', 'unconfirmed', 'no_destination', 'contact_erased', 'no_local_time', 'frequency_cap')",
-		"automation_step_records_skipped_check":     "(outcome = 'done' AND skip_reason IS NULL AND path_id IS NULL AND path_outcomes IS NULL) OR (outcome = 'skipped' AND skip_reason IS NOT NULL AND path_id IS NULL AND path_outcomes IS NULL) OR (outcome = 'path' AND path_id IS NOT NULL AND skip_reason IS NULL)",
+		"automation_step_records_skipped_check":     "(outcome = 'done' AND skip_reason IS NULL AND path_id IS NULL AND path_outcomes IS NULL AND awaited_event_id IS NULL AND awaited_action IS NULL AND awaited_properties IS NULL) OR (outcome = 'skipped' AND skip_reason IS NOT NULL AND path_id IS NULL AND path_outcomes IS NULL AND awaited_event_id IS NULL AND awaited_action IS NULL AND awaited_properties IS NULL) OR (outcome = 'path' AND path_id IS NOT NULL AND skip_reason IS NULL)",
 		"automation_step_records_wait_check":        "due_at IS NULL OR went_on IS NULL",
 		"automation_step_records_went_on_check":     "went_on IN ('past', 'no_date', 'beyond_bound')",
 	}

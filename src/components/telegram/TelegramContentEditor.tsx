@@ -1,14 +1,4 @@
-import {
-  ActionIcon,
-  Button,
-  Group,
-  Menu,
-  Stack,
-  Switch,
-  Text,
-  Textarea,
-  TextInput,
-} from '@mantine/core'
+import { ActionIcon, Button, Group, Stack, Switch, Text, Textarea, TextInput } from '@mantine/core'
 import { IconTrash } from '@tabler/icons-react'
 import type { ReactNode } from 'react'
 import { useRef } from 'react'
@@ -17,13 +7,17 @@ import { useTranslation } from 'react-i18next'
 import { CONTACT_TAGS, TELEGRAM_START_TAG, UNSUBSCRIBE_URL_TAG } from '../../utils/mergeTags.ts'
 import type { TelegramContentValue } from '../../utils/telegramContent.ts'
 import { TELEGRAM_MAX_BUTTONS, telegramLimit } from '../../utils/telegramContent.ts'
+import { MergeTagMenu } from '../MergeTagMenu.tsx'
+import { PropertyTagInsert } from '../PropertyTagInsert.tsx'
 import { TelegramPreview } from './TelegramPreview.tsx'
 
 interface Props {
   value: TelegramContentValue
   onChange: (next: TelegramContentValue) => void
-  // Merge tags of the surface beyond the Contact's (an Automation adds the Event's).
+  // Merge tags of the surface beyond the Contact's, and the Events whose property it offers by name
+  // (an Automation's: the Event its Enrollment began on and those Wait for events arrived on).
   extraTags?: readonly string[]
+  propertySources?: readonly string[]
   // Controls of the content that other tickets own (the unsubscribe button), shown after the
   // link-preview toggle.
   children?: ReactNode
@@ -35,7 +29,13 @@ interface Props {
 // state of its own.
 const NO_TAGS: readonly string[] = []
 
-export function TelegramContentEditor({ value, onChange, extraTags = NO_TAGS, children }: Props) {
+export function TelegramContentEditor({
+  value,
+  onChange,
+  extraTags = NO_TAGS,
+  propertySources = NO_TAGS,
+  children,
+}: Props) {
   const { t } = useTranslation()
   const field = useRef<HTMLTextAreaElement>(null)
   const limit = telegramLimit(value.imageUrl)
@@ -77,20 +77,14 @@ export function TelegramContentEditor({ value, onChange, extraTags = NO_TAGS, ch
           onChange={(e) => patch({ text: e.currentTarget.value })}
         />
         <Group justify="space-between">
-          <Menu>
-            <Menu.Target>
-              <Text component="button" type="button" size="sm" c="blue">
-                {t(($) => $.telegramEditor.insertMergeTag)}
-              </Text>
-            </Menu.Target>
-            <Menu.Dropdown>
-              {tags.map((tag) => (
-                <Menu.Item key={tag} onClick={() => insert(tag)}>
-                  {tag}
-                </Menu.Item>
-              ))}
-            </Menu.Dropdown>
-          </Menu>
+          <Group gap="xs">
+            <MergeTagMenu
+              label={t(($) => $.telegramEditor.insertMergeTag)}
+              tags={tags}
+              onInsert={insert}
+            />
+            <PropertyTagInsert sources={propertySources} onInsert={insert} />
+          </Group>
           <Text size="sm" c={over ? 'red' : 'dimmed'}>
             {t(($) => $.telegramEditor.counter, { length: value.text.length, limit })}
           </Text>

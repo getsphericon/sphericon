@@ -5,15 +5,16 @@ import { useTranslation } from 'react-i18next'
 
 import { emptyGroup } from '../../components/conditions/condition.ts'
 import { ConditionBuilder } from '../../components/conditions/ConditionBuilder.tsx'
-import type { MessageStep } from '../../components/conditions/ConditionBuilder.tsx'
 import { zSplitPathInput } from '../../generated/site/zod.gen.ts'
 import { useSchemaForm } from '../../resources/schemaForm.ts'
 import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
 import { boundsOf } from '../../utils/bounds.ts'
-import { allSteps, branchConditionOf, filterText, sendsMessage, stepsBefore } from './definition.ts'
-import type { BranchStep, FlowPath, FlowStep, ForkStep, SplitStep } from './definition.ts'
+import { awaitedBefore } from './awaitedNames.ts'
+import { branchConditionOf, filterText } from './definition.ts'
+import type { BranchStep, FlowPath, ListedFork, SplitStep } from './definition.ts'
 import type { PathPatch } from './flowEdits.ts'
 import { canAddPath, canRemovePath, forkError, forkSchemas, weightSum } from './forkRules.ts'
+import { messageStepsOf } from './messageSteps.ts'
 import { useStepInfo } from './stepKinds.ts'
 import { useShownErrors, useValidator } from './stepValidator.ts'
 import type { StepValidator } from './stepValidator.ts'
@@ -23,7 +24,7 @@ const WEIGHT = boundsOf(zSplitPathInput.shape.weight)
 
 // What a fork's panel does to the flow: it sets its paths' Conditions or weights by path id, and
 // adds, removes and (on a Branch) moves a path. The Steps the paths hold are the canvas's.
-export interface ForkFormProps<S extends ForkStep> {
+export interface ForkFormProps<S extends ListedFork> {
   step: S
   // The fork was checked (on blur or on Save): its errors show as the panel opens.
   checked: boolean
@@ -87,7 +88,7 @@ function PathActions({
   )
 }
 
-function AddPathButton({ step, onAddPath }: { step: ForkStep; onAddPath: () => void }) {
+function AddPathButton({ step, onAddPath }: { step: ListedFork; onAddPath: () => void }) {
   const { t } = useTranslation()
   return (
     <Group>
@@ -104,33 +105,11 @@ function AddPathButton({ step, onAddPath }: { step: ForkStep; onAddPath: () => v
   )
 }
 
-// The send Steps whose message the Branch may test (ADR 0122): those an Enrollment may have passed
-// when it reaches it, each named by its place on the canvas, its kind (infoOf) and an email's
-// subject.
-function messageStepsOf(
-  infoOf: (step: FlowStep) => { label: string },
-  root: FlowPath,
-  branch: BranchStep,
-): MessageStep[] {
-  const places = allSteps(root).map((step) => step.id)
-  return stepsBefore(root, branch.id)
-    .filter((step) => sendsMessage(step))
-    .map((step) => {
-      const kind = infoOf(step).label
-      const named =
-        step.kind === 'email' && step.draft.subject !== '' ? `${kind}: ${step.draft.subject}` : kind
-      return {
-        id: step.id,
-        label: `${places.indexOf(step.id) + 1}. ${named}`,
-        opens: step.kind === 'email',
-      }
-    })
-}
-
 // A Branch's panel: each listed path's Condition, in the Condition builder of the Branch path's
 // place (ADR 0181), which tests the Contact and the Event the Enrollment began with, in the order
-// they are tested, and the messages of the send Steps before it (root is the version's Steps); then
-// `otherwise` and, while a Condition can be unknown, the unknown path.
+// they are tested, the messages of the send Steps before it (root is the version's Steps) and the
+// Events the Wait for events before it arrived on (ADR 0136); then `otherwise` and, while a
+// Condition can be unknown, the unknown path.
 export function BranchForm({
   root,
   step,
@@ -145,7 +124,8 @@ export function BranchForm({
   const { t } = useTranslation()
   const { workspaceId } = workspaceRoute.useParams()
   const infoOf = useStepInfo()
-  const messageSteps = useMemo(() => messageStepsOf(infoOf, root, step), [infoOf, root, step])
+  const messageSteps = useMemo(() => messageStepsOf(infoOf, root, step.id), [infoOf, root, step.id])
+  const awaitedNames = useMemo(() => awaitedBefore(root, step.id), [root, step.id])
   const form = useSchemaForm(
     forkSchemas.branch,
     { paths: step.paths.map(({ id, conditionText }) => ({ id, conditionText })) },
@@ -186,6 +166,7 @@ export function BranchForm({
                 workspaceId={workspaceId}
                 place="branch"
                 messageSteps={messageSteps}
+                awaitedNames={awaitedNames}
                 initialValue={branchConditionOf(path.conditionText) ?? emptyGroup}
                 onChange={(draft) => form.setFieldValue(field, filterText(draft))}
               />

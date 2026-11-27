@@ -1,5 +1,6 @@
 import {
   ActionIcon,
+  Alert,
   Box,
   CloseButton,
   Fieldset,
@@ -9,12 +10,23 @@ import {
   Text,
   Title,
 } from '@mantine/core'
-import { IconCopy } from '@tabler/icons-react'
+import { IconAlertTriangle, IconCopy } from '@tabler/icons-react'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
+import { automationTags } from '../../utils/mergeTags.ts'
+import { awaitedBefore, awaitedWarnings } from './awaitedNames.ts'
 import { allSteps, forkPaths } from './definition.ts'
-import type { EditedStep, Flow, FlowPath, FlowStep, TriggerDraft } from './definition.ts'
+import type {
+  AwaitedForm,
+  EditedStep,
+  Flow,
+  FlowPath,
+  FlowStep,
+  TriggerDraft,
+  WaitForEventDraft,
+} from './definition.ts'
 import type { PathPatch } from './flowEdits.ts'
 import { TRIGGER_NODE_ID } from './flowLayout.ts'
 import { BranchForm, SplitForm } from './ForkForms.tsx'
@@ -23,12 +35,18 @@ import { StepForm } from './StepForms.tsx'
 import { useStepInfo } from './stepKinds.ts'
 import type { StepValidator } from './stepValidator.ts'
 import { TriggerPanel } from './TriggerPanel.tsx'
+import { WaitForEventForm } from './WaitForEventForm.tsx'
 
-// What the panel does to a fork of the id (ForkForms.tsx), and whether a node was checked (on blur
-// or on Save), which then shows its errors: a fork, a Wait until or the Trigger.
+// What the panel does to a fork of the id (ForkForms.tsx, WaitForEventForm.tsx), whether a node was
+// checked (on blur or on Save), which then shows its errors: a fork, a Wait until or the Trigger, and
+// the name a Wait for event is stored with under its id, which is fixed (ADR 0136). Switching what a
+// Wait for event awaits (onAwaitedForm) adds or removes its unknown path.
 export interface ForkControls {
   checked: (id: string) => boolean
   onChecked: (id: string) => void
+  storedName: (id: string) => string | undefined
+  onWaitForEvent: (id: string, draft: WaitForEventDraft) => void
+  onAwaitedForm: (id: string, form: AwaitedForm) => void
   onPaths: (id: string, patches: PathPatch[]) => void
   onAddPath: (id: string) => void
   onRemovePath: (id: string, pathId: string) => void
@@ -76,11 +94,28 @@ function StepBody({
   if (step.kind === 'split') {
     return <SplitForm key={key} step={step} {...forkProps} />
   }
+  if (step.kind === 'wait_for_event') {
+    return (
+      <WaitForEventForm
+        // It opens anew when what it awaits is switched: the switch is the flow's edit, not its form's.
+        key={`${key}:${step.draft.form}`}
+        root={root}
+        step={step}
+        storedName={forks.storedName(step.id)}
+        checked={forks.checked(step.id)}
+        validatorRef={validatorRef}
+        onEdit={(draft) => forks.onWaitForEvent(step.id, draft)}
+        onForm={(form) => forks.onAwaitedForm(step.id, form)}
+        onChecked={() => forks.onChecked(step.id)}
+      />
+    )
+  }
   return (
     <StepForm
       step={step}
       onEdit={onStep}
       validatorRef={validatorRef}
+      bound={automationTags(awaitedBefore(root, step.id))}
       checked={forks.checked(step.id)}
       onChecked={() => forks.onChecked(step.id)}
     />
@@ -117,7 +152,9 @@ export function StepPanel({
 }) {
   const { t } = useTranslation()
   const info = useStepInfo()
+  const warnings = useMemo(() => awaitedWarnings(flow.path), [flow])
   const step = allSteps(flow.path).find((candidate) => candidate.id === selected)
+  const unpassed = step === undefined ? undefined : warnings.get(step.id)
   if (selected !== TRIGGER_NODE_ID && step === undefined) {
     return null
   }
@@ -162,6 +199,21 @@ export function StepPanel({
               message={refusal.message}
             />
           </Box>
+        )}
+        {/* A warning refuses nothing: the Step saves and runs, reading the name as empty where no
+            copy is kept (ADR 0136). */}
+        {unpassed !== undefined && (
+          <Alert
+            mb="md"
+            color="orange"
+            icon={<IconAlertTriangle size={16} />}
+            title={t(($) => $.automations.awaitedWarning.title)}
+          >
+            {t(($) => $.automations.awaitedWarning.panel, {
+              count: unpassed.length,
+              names: unpassed.join(', '),
+            })}
+          </Alert>
         )}
         <Fieldset disabled={!editable} variant="unstyled" m={0} miw={0}>
           {step === undefined ? (

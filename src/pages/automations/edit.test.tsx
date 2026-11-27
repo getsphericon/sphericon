@@ -442,7 +442,7 @@ test('a version holding forks and an End opens editable, and a save sends the wh
 test('a version holding a step of a kind the editor does not know opens read-only', async () => {
   // A kind the contract may gain, read as the server would send it.
   const newer: AutomationStep = JSON.parse(
-    JSON.stringify({ id: stepId(12), type: 'wait_for_event' }),
+    JSON.stringify({ id: stepId(12), type: 'wait_for_reply' }),
   )
   worker.use(
     handleSiteAutomationsGet({
@@ -455,7 +455,7 @@ test('a version holding a step of a kind the editor does not know opens read-onl
 
   const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
 
-  await expect.element(nodeButton(screen, 'wait_for_event')).toBeInTheDocument()
+  await expect.element(nodeButton(screen, 'wait_for_reply')).toBeInTheDocument()
   await expect
     .element(
       screen.getByText('This version holds a step of a kind this editor does not know', {
@@ -546,6 +546,7 @@ test('shows no failed enrollments when none has a recorded reason', async () => 
             contactId: testId(107),
             status: 'failed',
             ordinal: 1,
+            awaited: [],
             createdAt: NOW,
             updatedAt: NOW,
           },
@@ -588,6 +589,7 @@ test('lists the enrollments an HTTP step failed, with the reason and the respons
             contactId: testId(107),
             status: 'failed',
             ordinal: 1,
+            awaited: [],
             failure: { kind: 'http_status', status: 503, excerpt: 'upstream unavailable' },
             createdAt: NOW,
             updatedAt: NOW,

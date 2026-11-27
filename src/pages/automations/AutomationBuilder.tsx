@@ -19,7 +19,7 @@ import { useConfirmation } from '../../hooks/useConfirmation.tsx'
 import { useNotify } from '../../hooks/useNotify.ts'
 import { Route as automationsRoute } from '../../routes/workspaces/$workspaceId/automations/index.tsx'
 import { canvasFigures } from './canvasFigures.ts'
-import { allSteps, forkPaths, holdsKept } from './definition.ts'
+import { allSteps, forkPaths, holdsKept, storedNames } from './definition.ts'
 import type { Flow } from './definition.ts'
 import { automationOutcomeTexts } from './draftActions.ts'
 import {
@@ -38,10 +38,12 @@ import {
   nestedSteps,
   removePath,
   removeStep,
+  setAwaitedForm,
   setUnknownPath,
   updateFork,
   updateStep,
   updateTrigger,
+  updateWaitForEvent,
 } from './flowEdits.ts'
 import { TRIGGER_NODE_ID } from './flowLayout.ts'
 import { LeaveGuard } from './LeaveGuard.tsx'
@@ -241,6 +243,9 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
   const editable = !session.hasTag('readOnly') && !kept
   const { resource, operation } = session.context
   const sendsEmail = allSteps(flow.path).some((step) => step.kind === 'email')
+  // The Wait for event names stored under their Steps' ids, as the last read or acknowledged
+  // Automation holds them.
+  const names = useMemo(() => storedNames([resource.draft, resource.live]), [resource])
 
   useUnknownPaths({
     workspaceId,
@@ -280,6 +285,30 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
   const forks: ForkControls = {
     checked: (id) => checked.has(id),
     onChecked: (id) => check([id]),
+    storedName: (id) => names.get(id),
+    onWaitForEvent: (id, draft) => {
+      unrefuse(id)
+      edit((current) => updateWaitForEvent(current, id, draft))
+    },
+    // The Event form is never unknown: switching to it removes the unknown path, asking first when
+    // the path holds Steps, naming how many go with it.
+    onAwaitedForm: (id, awaited) => {
+      unrefuse(id)
+      const switched = () => edit((current) => setAwaitedForm(current, id, awaited))
+      const step = allSteps(latest.current.path).find((s) => s.id === id)
+      const unknown = step?.kind === 'wait_for_event' ? step.unknown : null
+      const count = awaited === 'event' && unknown !== null ? allSteps(unknown).length : 0
+      if (count === 0) {
+        switched()
+        return
+      }
+      confirm({
+        title: t(($) => $.automations.removeUnknownPathTitle),
+        description: t(($) => $.automations.waitForEvent.removeUnknownPathConfirm, { count }),
+        confirmLabel: t(($) => $.automations.removeConfirm),
+        onConfirm: switched,
+      })
+    },
     onPaths: (id, patches) => edit((current) => updateFork(current, id, patches)),
     onAddPath: (id) => edit((current) => addPath(current, id).flow),
     onRemovePath: (id, pathId) => {

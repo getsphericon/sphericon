@@ -183,6 +183,12 @@ func stepSum(c Converter, v automations.StepView) (externalapi.AutomationStepSum
 			return externalapi.AutomationStepSum{}, err
 		}
 		return externalapi.NewSplitStepAutomationStepSum(sp), nil
+	case automations.WaitForEventView:
+		w, err := c.WaitForEventStepToResource(v)
+		if err != nil {
+			return externalapi.AutomationStepSum{}, err
+		}
+		return externalapi.NewWaitForEventStepAutomationStepSum(w), nil
 	default:
 		return externalapi.AutomationStepSum{}, fmt.Errorf("the step view %T has no arm", v)
 	}
@@ -248,6 +254,51 @@ func branchStepType(automationstep.Kind) externalapi.BranchStepType {
 }
 func splitStepType(automationstep.Kind) externalapi.SplitStepType {
 	return externalapi.SplitStepTypeSplit
+}
+func waitForEventStepType(automationstep.Kind) externalapi.WaitForEventStepType {
+	return externalapi.WaitForEventStepTypeWaitForEvent
+}
+func waitForEventName(name string) externalapi.WaitForEventName {
+	return externalapi.WaitForEventName(name)
+}
+
+// waitForEventAwaits is the arm of what a Wait for event waits for: a oneOf is beyond goverter, so
+// only the switch is written here. One with no arm fails the response.
+func waitForEventAwaits(c Converter, a automationstep.Awaits) (externalapi.WaitForEventAwaits, error) {
+	switch a := a.(type) {
+	case automationstep.AwaitedEvent:
+		ev, err := awaitedEvent(a)
+		if err != nil {
+			return externalapi.WaitForEventAwaits{}, err
+		}
+		return externalapi.WaitForEventAwaits{OneOf: externalapi.NewAwaitedEventWaitForEventAwaitsSum(ev)}, nil
+	case automationstep.AwaitedMessage:
+		m := externalapi.AwaitedMessage{Kind: externalapi.AwaitedMessageKindMessage, Step: externalapi.StepId(a.Step), Engagement: c.MessageEngagementToResource(a.Engagement)}
+		return externalapi.WaitForEventAwaits{OneOf: externalapi.NewAwaitedMessageWaitForEventAwaitsSum(m)}, nil
+	case nil:
+	}
+	return externalapi.WaitForEventAwaits{}, errors.New("a wait for event that awaits nothing")
+}
+
+// awaitedEvent maps a Wait for event's Event matchers and its Condition into the typed DTO, each
+// checked as a stored Condition is (convert.Document).
+func awaitedEvent(a automationstep.AwaitedEvent) (externalapi.AwaitedEvent, error) {
+	ev := externalapi.AwaitedEvent{Kind: externalapi.AwaitedEventKindEvent, Matchers: make([]externalapi.EventMatcher, len(a.Matchers))}
+	for i, m := range a.Matchers {
+		matcher, err := eventMatcher(m)
+		if err != nil {
+			return externalapi.AwaitedEvent{}, err
+		}
+		ev.Matchers[i] = matcher
+	}
+	if a.Condition != nil {
+		cond, err := convert.Document[externalapi.WaitForEventCondition](*a.Condition)
+		if err != nil {
+			return externalapi.AwaitedEvent{}, err
+		}
+		ev.Condition = externalapi.NewOptWaitForEventCondition(cond)
+	}
+	return ev, nil
 }
 
 func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {
@@ -337,6 +388,9 @@ func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {
 // goverter:extend endStepType
 // goverter:extend branchStepType
 // goverter:extend splitStepType
+// goverter:extend waitForEventStepType
+// goverter:extend waitForEventName
+// goverter:extend waitForEventAwaits
 // goverter:extend splitPathStepViews
 // goverter:extend pathStepViews
 // goverter:extend optAutomationPath
@@ -433,6 +487,8 @@ type Converter interface {
 	// goverter:enum:transform value
 	TextOperatorToResource(source conditiontree.TextOperator) externalapi.TextOperator
 	// goverter:enum:transform value
+	MessageEngagementToResource(source conditiontree.Engagement) externalapi.MessageEngagement
+	// goverter:enum:transform value
 	NumberOperatorToResource(source conditiontree.NumberOperator) externalapi.NumberOperator
 	// goverter:enum:transform value
 	MomentOperatorToResource(source conditiontree.MomentOperator) externalapi.MomentOperator
@@ -494,6 +550,7 @@ type Converter interface {
 	// goverter:enum:transform value
 	SplitPathStepType(source externalapi.AutomationStepSumType) externalapi.SplitPathStepSumType
 	SplitStepToResource(source automations.SplitView) (externalapi.SplitStep, error)
+	WaitForEventStepToResource(source automations.WaitForEventView) (externalapi.WaitForEventStep, error)
 	SplitPathToResource(source automations.SplitPathView) (externalapi.SplitPath, error)
 	// goverter:ignore Value
 	AutomationHttpHeaderToResource(source automations.HeaderName) externalapi.AutomationHttpHeader
@@ -603,7 +660,12 @@ type Converter interface {
 
 	// goverter:map . Failure | enrollmentFailure
 	// goverter:map Occurrence | enrollmentOccurrence
+	// goverter:map . Awaited | enrollmentAwaited
 	EnrollmentToResource(source *ent.AutomationRun) externalapi.EnrollmentResource
+	// goverter:map Properties | awaitedProperties
+	KeptEventToResource(source automations.KeptEvent) externalapi.KeptEvent
+	// goverter:useEmptyOnNil:slice
+	KeptEventsToResources(source []automations.KeptEvent) []externalapi.KeptEvent
 	// The store names the triggering Event's source id; the contract says whose it is.
 	// goverter:map SourceID EventSourceId
 	SkippedEntryToResource(source *ent.AutomationSkippedEntry) externalapi.SkippedEntryResource
@@ -1163,6 +1225,17 @@ func enrollmentOccurrence(stored *datetrigger.StoredOccurrence) externalapi.OptE
 		})
 	}
 	return externalapi.NewOptEnrollmentOccurrence(externalapi.EnrollmentOccurrence{OneOf: sum})
+}
+
+// enrollmentAwaited is what the enrollment keeps of the Events its Wait for event Steps arrived on
+// (ADR 0136), by name; empty once it ended.
+func enrollmentAwaited(c Converter, r ent.AutomationRun) []externalapi.KeptEvent {
+	return c.KeptEventsToResources(automations.KeptEvents(&r))
+}
+
+// awaitedProperties is a kept Event's properties, an empty object when it kept none.
+func awaitedProperties(m map[string]any) externalapi.JsonObject {
+	return convert.RawObject[externalapi.JsonObject](m)
 }
 
 // enrollmentFailure is the enrollment's failure detail; absent unless it failed.

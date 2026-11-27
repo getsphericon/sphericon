@@ -336,6 +336,11 @@ export default interface Resources {
       "addAutomation": "Create automation",
       "addPath": "Add path",
       "applyTagNodeDescription": "Add a tag to the contact.",
+      "awaitedWarning": {
+        "node": "Not every path passes {{names}}",
+        "panel": "Not every path to this step passes the Wait for event {{names}}. On a path that skips it, what this step reads of its event renders empty and a test of it fails." | "Not every path to this step passes the Wait for events {{names}}. On a path that skips one, what this step reads of its event renders empty and a test of it fails.",
+        "title": "A Wait for event may be skipped"
+      },
       "bounced": "Bounced",
       "branchNodeDescription": "Send each contact down the first path whose condition holds.",
       "captured": "Captured, not delivered",
@@ -416,7 +421,7 @@ export default interface Resources {
       "goalEventAdd": "Add goal event",
       "goalEventHint": "This event ends a contact's enrollment as having reached the goal, even if it also matches an exit event.",
       "goalEventLabel": "Goal event",
-      "httpBodyHint": "JSON. It sees the contact's fields and event.action and event.properties of the event that started the enrollment. Merge tags like {{mergeTag}} are escaped for you, so write them inside quotes: the body must be valid JSON when they are empty.",
+      "httpBodyHint": "JSON. It sees the contact's fields, event.action and event.properties of the event that started the enrollment, and awaited.<name> of the event each Wait for event before it arrived on. Merge tags like {{mergeTag}} are escaped for you, so write them inside quotes: the body must be valid JSON when they are empty.",
       "httpBodyLabel": "JSON body",
       "httpDryRun": "Dry run",
       "httpDryRunContactLabel": "Render for contact",
@@ -425,6 +430,7 @@ export default interface Resources {
       "httpDryRunInvalid": "The body is not valid",
       "httpDryRunRendered": "The request body this contact would get (nothing was sent):",
       "httpHeadersLabel": "Headers (up to 5)",
+      "httpInsertMergeTag": "Insert a merge tag",
       "httpNodeDescription": "POST a JSON body to a URL such as a Slack or Zapier hook.",
       "httpSecretHint": "Optional. Signs the request; leave empty to keep the saved one.",
       "httpSecretLabel": "Signing secret",
@@ -453,11 +459,13 @@ export default interface Resources {
       "noSkippedEntriesMatch": "No skipped entries of this contact",
       "nodeFigures": "{{sent}} sent · {{skipped}} skipped",
       "opens": "Opens",
+      "pathArrived": "Arrived",
       "pathFigures": "{{enrollments}} took it · {{goalReached}} reached goal",
       "pathLabel": "path",
       "pathNumbered": "Path {{number}}",
       "pathOtherwise": "Otherwise",
       "pathOtherwiseHint": "Otherwise: the path taken when no condition above holds.",
+      "pathTimedOut": "Timed out",
       "pathUnknown": "Unknown",
       "pathUnknownHint": "Unknown: the path taken when a condition cannot be known for the contact, because its opens or clicks are not tracked, or the message it tests went out untracked or was never sent to them.",
       "pathWeightLabel": "Path {{number}} weight",
@@ -551,6 +559,7 @@ export default interface Resources {
       "stepTelegram": "Send Telegram message",
       "stepTrigger": "Trigger",
       "stepWait": "Wait",
+      "stepWaitForEvent": "Wait for event",
       "stepWaitUntil": "Wait until",
       "stepsLabel": "Steps",
       "tagNameLabel": "Tag",
@@ -573,6 +582,39 @@ export default interface Resources {
       "triggerKindLabel": "Enroll on",
       "triggerLabel": "Trigger event",
       "triggerOnDate": "On a date the contact holds",
+      "waitForEvent": {
+        "conditionHint": "Optional. An awaited event counts only while the contact matches it; leave it empty to count every one.",
+        "conditionIncomplete": "Finish every test of the condition: each needs a value.",
+        "conditionLabel": "Condition",
+        "engagementLabel": "Wait for the message to be",
+        "engagements": {
+          "clicked": "Clicked",
+          "opened": "Opened"
+        },
+        "formLabel": "Wait for",
+        "forms": {
+          "event": "An event",
+          "message": "An open or click"
+        },
+        "matcherAdd": "Add event",
+        "matcherFilterIncomplete": "Finish every test of the filters of the events: each needs a property key and a value.",
+        "matchersHint": "Any of these events, recorded for the contact while it waits, takes the arrived path.",
+        "matchersLabel": "Events to wait for",
+        "matchersRequired": "Name an event to wait for.",
+        "messageStepHint": "A message a send step before this wait sent. Only an email's opens are tracked; any message's clicks are.",
+        "messageStepLabel": "Message",
+        "messageStepNotBefore": "Choose a send step that comes before this wait.",
+        "nameFormat": "Use lower-case letters, digits and underscores, starting with a letter.",
+        "nameHint": "Later steps read the event it arrived on by this name. Lower-case letters, digits and underscores, starting with a letter.",
+        "nameLabel": "Name",
+        "nameLocked": "The name is fixed once the step is saved, so that later steps reading the event by it keep working.",
+        "openNotTracked": "Only an email's opens are tracked. Wait for a click of this message.",
+        "removeUnknownPathConfirm": "An event is never unknown, so this wait needs no unknown path. Removing it also removes the step it holds." | "An event is never unknown, so this wait needs no unknown path. Removing it also removes the {{count, number}} steps it holds.",
+        "timeoutHint": "How long a contact waits before taking the timed out path.",
+        "timeoutLabel": "Timeout (seconds)",
+        "timeoutPositive": "The timeout must be at least 1 second."
+      },
+      "waitForEventNodeDescription": "Wait for an event, or an open or click of a message, then take the path of what happened.",
       "waitNodeDescription": "Pause before the next step.",
       "waitSecondsLabel": "Wait (seconds)",
       "waitUntilFigures": {
@@ -801,6 +843,7 @@ export default interface Resources {
         "subject_id": "Subject ID",
         "time_zone": "Time zone"
       },
+      "awaitedProperty": "Property of awaited.{{name}}",
       "eventOperators": {
         "atLeast": "at least (times)",
         "atMost": "at most (times)",
@@ -1510,10 +1553,6 @@ export default interface Resources {
       "verifyRequiredTitle": "Verify your email first"
     },
     "messageEditor": {
-      "eventPropertyHint": "A property of the event that started the enrollment. One the event lacks renders empty.",
-      "eventPropertyInsert": "Insert",
-      "eventPropertyName": "Property name",
-      "insertEventProperty": "Insert event property",
       "insertVariable": "Insert variable",
       "label": "Message",
       "placeholder": "Write your message, or type / to add a heading, list, button or image",
@@ -1830,6 +1869,13 @@ export default interface Resources {
       "unverifiedBadge": "Not verified",
       "updated": "Profile updated",
       "verifiedBadge": "Verified"
+    },
+    "propertyTag": {
+      "insert": "Insert",
+      "nameHint": "A property of the event that started the enrollment, or of the one a Wait for event arrived on. One the event lacks renders empty.",
+      "nameLabel": "Property name",
+      "open": "Insert event property",
+      "sourceLabel": "Event"
     },
     "resetPassword": {
       "confirmPasswordLabel": "Confirm new password",

@@ -17,24 +17,26 @@ type EnrollmentsFilter struct {
 	Status       string
 }
 
-// Enrollments returns one page of an Automation's Enrollments, newest first, optionally
-// only those in one status. ErrNotFound when the Workspace has no such Automation.
+// Enrollments returns one page of an Automation's Enrollments, newest first, optionally only those
+// in one status, each read with what KeptEvents reads. ErrNotFound when the Workspace has no such
+// Automation.
 func (m *Module) Enrollments(ctx context.Context, s *ent.Scoped, p pagination.Params, f EnrollmentsFilter) (pagination.Page[*ent.AutomationRun], error) {
 	if _, err := s.Automation().Get(ctx, f.AutomationID); err != nil {
 		return pagination.Page[*ent.AutomationRun]{}, db.NotFoundAs(err, ErrNotFound)
 	}
-	q := s.AutomationRun().Query().Where(automationrun.AutomationID(f.AutomationID))
+	q := withKept(s.AutomationRun().Query().Where(automationrun.AutomationID(f.AutomationID)))
 	if f.Status != "" {
 		q = q.Where(automationrun.StatusEQ(automationrun.Status(f.Status)))
 	}
 	return pagination.List(ctx, p, q.Order(ent.Desc(automationrun.FieldID)))
 }
 
-// Enrollment returns one Enrollment of an Automation. ErrEnrollmentNotFound when the Workspace
-// has no such Automation, or the Automation no such Enrollment.
+// Enrollment returns one Enrollment of an Automation, read with what KeptEvents reads.
+// ErrEnrollmentNotFound when the Workspace has no such Automation, or the Automation no such
+// Enrollment.
 func (m *Module) Enrollment(ctx context.Context, s *ent.Scoped, automationID, id int64) (*ent.AutomationRun, error) {
-	r, err := s.AutomationRun().Query().
-		Where(automationrun.ID(id), automationrun.AutomationID(automationID)).Only(ctx)
+	r, err := withKept(s.AutomationRun().Query().
+		Where(automationrun.ID(id), automationrun.AutomationID(automationID))).Only(ctx)
 	if ent.IsNotFound(err) {
 		return nil, ErrEnrollmentNotFound
 	}

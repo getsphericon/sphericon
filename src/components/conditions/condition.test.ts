@@ -135,6 +135,37 @@ test("a Branch path's test of the Enrollment's own message survives the walk, an
   expect(toCondition(back, 'rule')).toBeUndefined()
 })
 
+// A test of the Event an earlier Wait for event arrived on (ADR 0136, ADR 0181): the Wait for
+// event's name and the property's key each in a field of their own, beside a test of the Event the
+// Enrollment began with.
+const awaited: BranchConditionInput = {
+  kind: 'group',
+  combinator: 'and',
+  entries: [
+    {
+      kind: 'property',
+      of: { kind: 'awaited', name: 'purchase' },
+      key: 'total',
+      test: { kind: 'number', operator: 'gt', value: 100 },
+    },
+    {
+      kind: 'property',
+      of: { kind: 'trigger' },
+      key: 'total',
+      test: { kind: 'number', operator: 'gt', value: 100 },
+    },
+  ],
+}
+
+test("a test of an awaited Event survives the walk as that Wait for event's, and a Rule refuses it", () => {
+  const back = toDraft(toQuery(awaited))
+
+  expect(back).toEqual(awaited)
+  expect(toCondition(back, 'branch')).toEqual(awaited)
+  expect(toCondition(back, 'waitForEvent')).toEqual(awaited)
+  expect(toCondition(back, 'rule')).toBeUndefined()
+})
+
 test('a message test with an engagement it does not know is dropped', () => {
   const draft = toDraft({
     combinator: 'and',

@@ -262,6 +262,10 @@ func validateStep(st *automationstep.Step, linkLength int) error {
 		if err := validateSplit(st, s); err != nil {
 			return err
 		}
+	case automationstep.WaitForEvent:
+		if err := validateWaitForEvent(st, s); err != nil {
+			return err
+		}
 	default:
 		return refuse(st, "the step has no known kind")
 	}
@@ -335,10 +339,17 @@ func NeedsUnknownPath(conditions []conditiontree.Branch) bool {
 
 // checkUnknownPaths refuses, naming it, a Branch of the tree whose Conditions can be unknown for a
 // Contact (NeedsUnknownPath) and that has no unknown path, and
-// a Branch whose Conditions cannot be unknown and that has one (ADR 0124). A save keeps either, so
-// the author can build the Branch up; Publish arms it.
+// a Branch whose Conditions cannot be unknown and that has one (ADR 0124); and a Wait for event on
+// an open or a click without its unknown path. A save keeps either, so the author can build the
+// Step up; Publish arms it.
 func checkUnknownPaths(steps automationstep.Path) error {
 	for _, st := range automationstep.All(steps) {
+		if w, ok := st.Payload.(automationstep.WaitForEvent); ok {
+			if _, onMessage := w.Message(); onMessage && w.Unknown == nil {
+				return refuse(st, "a wait for an open or a click needs an unknown path, taken when the app cannot know whether one happened")
+			}
+			continue
+		}
 		b, ok := st.Payload.(automationstep.Branch)
 		if !ok {
 			continue
@@ -355,41 +366,60 @@ func checkUnknownPaths(steps automationstep.Path) error {
 }
 
 // checkStepMessages refuses, naming the Branch and its path, a test of the Enrollment's own message
-// (ADR 0122) that names a Step which is not a send Step that can come before the Branch
-// (automationstep.Before): one after it, in its own paths, in another path of a fork it stands in,
-// or one the version does not hold, so a send Step a test names cannot be removed; and a test of an
-// open of a message that is no email, the one Channel whose opens are tracked. A click is tracked on
-// every Channel. The steps carry their ids (identify).
+// (ADR 0122), and, naming it, a Wait for event on an open or a click (ADR 0124), that names a Step
+// which is not a send Step that can come before the Branch or the wait (automationstep.Before):
+// one after it, in its own paths, in another path of a fork it stands in, or one the version does
+// not hold, so a send Step either names cannot be removed; and either of an open of a message that
+// is no email, the one Channel whose opens are tracked. A click is tracked on every Channel. The
+// steps carry their ids (identify).
 func checkStepMessages(steps automationstep.Path) error {
 	for _, st := range automationstep.All(steps) {
-		b, ok := st.Payload.(automationstep.Branch)
-		if !ok {
-			continue
+		before := func() map[automationstep.ID]*automationstep.Step {
+			passed := automationstep.Before(steps, st.ID)
+			return lo.KeyBy(passed, func(s *automationstep.Step) automationstep.ID { return s.ID })
 		}
-		passed := automationstep.Before(steps, st.ID)
-		before := lo.KeyBy(passed, func(s *automationstep.Step) automationstep.ID { return s.ID })
-		for i, p := range b.Paths {
-			for _, test := range condition.StepMessageTests(p.Condition.Group) {
-				if why := messageProblem(before[test.Step], test); why != "" {
-					return refuse(st, fmt.Sprintf("path %d: %s", i+1, why))
+		switch p := st.Payload.(type) {
+		case automationstep.Branch:
+			passed := before()
+			for i, path := range p.Paths {
+				for _, test := range condition.StepMessageTests(path.Condition.Group) {
+					refusal := messageRefusal{names: "the message test names step", before: "the branch"}
+					if why := refusal.problem(passed[test.Step], test.Step, test.Engagement); why != "" {
+						return refuse(st, fmt.Sprintf("path %d: %s", i+1, why))
+					}
 				}
+			}
+		case automationstep.WaitForEvent:
+			m, ok := p.Message()
+			if !ok {
+				continue
+			}
+			refusal := messageRefusal{names: "it waits for the message of step", before: "it"}
+			if why := refusal.problem(before()[m.Step], m.Step, m.Engagement); why != "" {
+				return refuse(st, why)
 			}
 		}
 	}
 	return nil
 }
 
-// messageProblem is why a Branch's test cannot read the message of the Step sent, one of the Steps
-// before the Branch (nil for none of them); "" when it can.
-func messageProblem(sent *automationstep.Step, test condition.StepMessageTest) string {
+// messageRefusal is how the refusal of a Step that reads the message of a send Step before it words
+// that send Step (names) and the Step itself (before).
+type messageRefusal struct {
+	names, before string
+}
+
+// problem is why the reader cannot read the open or click (e) of the message of the Step named,
+// which is sent, one of the Steps before the reader (nil for none of them); "" when it can.
+func (r messageRefusal) problem(sent *automationstep.Step, named automationstep.ID, e conditiontree.Engagement) string {
 	if sent == nil {
-		return fmt.Sprintf("the message test names step %s, which is no send step before the branch", test.Step)
+		return fmt.Sprintf("%s %s, which is no send step before %s", r.names, named, r.before)
 	}
 	ch, sends := sent.Kind().Channel()
 	if !sends {
-		return fmt.Sprintf("the message test names step %s (%s), which sends no message", sent.ID, sent.Kind())
+		return fmt.Sprintf("%s %s (%s), which sends no message", r.names, sent.ID, sent.Kind())
 	}
-	switch test.Engagement {
+	switch e {
 	case conditiontree.MessageOpened:
 		if ch != channels.Email {
 			return fmt.Sprintf("only an email step's message is opened, step %s sends %s", sent.ID, ch)
@@ -1078,22 +1108,47 @@ func (v versioned) Merge(ctx context.Context, l *ent.WorkspaceLocked, base *ent.
 	}
 	if e.exits != nil {
 		for _, exit := range def.exits {
-			if err := v.m.checkNamed(ctx, ts, exit, ErrInvalidExitEvent); err != nil {
+			if err := v.m.checkNamed(ctx, ts, exit, "", ErrInvalidExitEvent.With); err != nil {
 				return definition{}, err
 			}
 		}
 	}
 	if e.goal.Changes() && def.goal != nil {
-		if err := v.m.checkNamed(ctx, ts, *def.goal, ErrInvalidGoalEvent); err != nil {
+		if err := v.m.checkNamed(ctx, ts, *def.goal, "", ErrInvalidGoalEvent.With); err != nil {
 			return definition{}, err
 		}
+	}
+	return v.mergeTree(ctx, ts, base, e, def, stored)
+}
+
+// mergeTree lays the steps the edit writes over def (mergeSteps), each Wait for event keeping the
+// name its Step id holds in the Automation (checkWaitNamesHeld), and checks, once the steps, the
+// exits or the goal changed, that no Wait for event awaits what an exit or the goal ends the
+// Enrollment on with no filter (checkAwaitedEndings). A refusal of a Step is placed at its location
+// in the request.
+func (v versioned) mergeTree(ctx context.Context, ts *ent.Scoped, base *ent.AutomationVersion, e edit, def definition, stored automationstep.Path) (definition, error) {
+	place := func(err error) error {
+		if e.steps == nil {
+			return err
+		}
+		return placeStep(err, *e.steps)
 	}
 	if e.steps != nil {
 		steps, err := v.mergeSteps(ctx, ts, *e.steps, stored)
 		if err != nil {
-			return definition{}, placeStep(err, *e.steps)
+			return definition{}, place(err)
+		}
+		if base != nil {
+			if err := checkWaitNamesHeld(ctx, ts, base.AutomationID, steps); err != nil {
+				return definition{}, place(err)
+			}
 		}
 		def.steps = steps
+	}
+	if e.steps != nil || e.exits != nil || e.goal.Changes() {
+		if err := checkAwaitedEndings(def); err != nil {
+			return definition{}, place(err)
+		}
 	}
 	return def, nil
 }
@@ -1112,10 +1167,19 @@ func (v versioned) mergeSteps(ctx context.Context, ts *ent.Scoped, steps, stored
 	if err := checkEnds(steps); err != nil {
 		return automationstep.Path{}, err
 	}
+	if err := checkWaitNames(steps); err != nil {
+		return automationstep.Path{}, err
+	}
 	if err := checkStepMessages(steps); err != nil {
 		return automationstep.Path{}, err
 	}
+	if err := checkAwaitedTests(steps); err != nil {
+		return automationstep.Path{}, err
+	}
 	if err := v.m.checkBranches(ctx, ts, steps); err != nil {
+		return automationstep.Path{}, err
+	}
+	if err := v.m.checkWaits(ctx, ts, steps); err != nil {
 		return automationstep.Path{}, err
 	}
 	if err := v.m.checkDateFields(ctx, ts, steps); err != nil {
@@ -1160,7 +1224,7 @@ func eventMatcherOf(v *ent.AutomationVersion) eventmatcher.Matcher {
 func (m *Module) checkTrigger(ctx context.Context, s *ent.Scoped, t Trigger) error {
 	switch t := t.(type) {
 	case EventTrigger:
-		return m.checkNamed(ctx, s, t.Matcher, ErrInvalidTrigger)
+		return m.checkNamed(ctx, s, t.Matcher, "", ErrInvalidTrigger.With)
 	case DateTrigger:
 		return m.checkDate(ctx, s, t.Date)
 	}
@@ -1417,13 +1481,14 @@ func checkIntegration(ctx context.Context, s *ent.Scoped, id *int64) error {
 	return nil
 }
 
-// checkNamed refuses, with refusal, an Event matcher whose filter names a Tag or Custom field the
+// checkNamed refuses, with the refusal it words, an Event matcher whose filter names a Tag or Custom field the
 // Workspace's catalogue lacks (condition.NamedDefinitions, ADR 0133): such a filter would never
 // match. A Tag is named as the Event carries it, by its stored name, so another spelling of it is
 // refused too. The catalogues are their owners' (tags, contacts). A filter that names a Broadcast
 // or an Automation the Workspace does not have, archived ones being its own (messagesenders), is
-// ErrUnknownSender (ADR 0153).
-func (m *Module) checkNamed(ctx context.Context, s *ent.Scoped, matcher eventmatcher.Matcher, refusal *validation.RefusalError) error {
+// ErrUnknownSender (ADR 0153), its message after at, where the matcher stands ("" for none of the
+// Steps).
+func (m *Module) checkNamed(ctx context.Context, s *ent.Scoped, matcher eventmatcher.Matcher, at string, refusal func(why string) error) error {
 	if matcher.Filter == nil {
 		return nil
 	}
@@ -1432,7 +1497,7 @@ func (m *Module) checkNamed(ctx context.Context, s *ent.Scoped, matcher eventmat
 		return err
 	}
 	if unknown != nil {
-		return ErrUnknownSender.With("the filter: " + unknown.Missing())
+		return ErrUnknownSender.With(at + "the filter: " + unknown.Missing())
 	}
 	named := condition.NamedDefinitions(matcher.Action, *matcher.Filter)
 	for _, name := range named.Tags {
@@ -1441,7 +1506,7 @@ func (m *Module) checkNamed(ctx context.Context, s *ent.Scoped, matcher eventmat
 			return err
 		}
 		if !ok {
-			return refusal.With(fmt.Sprintf("the filter names the Tag %q, which the Workspace does not have", name))
+			return refusal(fmt.Sprintf("the filter names the Tag %q, which the Workspace does not have", name))
 		}
 	}
 	for _, key := range named.CustomFields {
@@ -1450,7 +1515,7 @@ func (m *Module) checkNamed(ctx context.Context, s *ent.Scoped, matcher eventmat
 			return err
 		}
 		if !ok {
-			return refusal.With(fmt.Sprintf("the filter names the Custom field %q, which the Workspace does not have", key))
+			return refusal(fmt.Sprintf("the filter names the Custom field %q, which the Workspace does not have", key))
 		}
 	}
 	return nil

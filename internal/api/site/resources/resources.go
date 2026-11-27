@@ -156,6 +156,9 @@ import (
 // goverter:extend endStepType
 // goverter:extend branchStepType
 // goverter:extend splitStepType
+// goverter:extend waitForEventStepType
+// goverter:extend waitForEventName
+// goverter:extend waitForEventAwaits
 // goverter:extend splitPathStepViews
 // goverter:extend pathStepViews
 // goverter:extend optAutomationPath
@@ -486,6 +489,7 @@ type Converter interface {
 	// goverter:enum:transform value
 	SplitPathStepType(source siteapi.AutomationStepSumType) siteapi.SplitPathStepSumType
 	SplitStepToResource(source automations.SplitView) (siteapi.SplitStep, error)
+	WaitForEventStepToResource(source automations.WaitForEventView) (siteapi.WaitForEventStep, error)
 	SplitPathToResource(source automations.SplitPathView) (siteapi.SplitPath, error)
 	// goverter:ignore Value
 	AutomationHttpHeaderToResource(source automations.HeaderName) siteapi.AutomationHttpHeader
@@ -545,6 +549,8 @@ type Converter interface {
 	ConditionTestsToResource(source condition.Tests) siteapi.CustomFieldConditionTests
 	// goverter:enum:transform value
 	TextOperatorToResource(source conditiontree.TextOperator) siteapi.TextOperator
+	// goverter:enum:transform value
+	MessageEngagementToResource(source conditiontree.Engagement) siteapi.MessageEngagement
 	// goverter:enum:transform value
 	NumberOperatorToResource(source conditiontree.NumberOperator) siteapi.NumberOperator
 	// goverter:enum:transform value
@@ -657,7 +663,12 @@ type Converter interface {
 
 	// goverter:map . Failure | enrollmentFailure
 	// goverter:map Occurrence | enrollmentOccurrence
+	// goverter:map . Awaited | enrollmentAwaited
 	EnrollmentToResource(source *ent.AutomationRun) siteapi.EnrollmentResource
+	// goverter:map Properties | awaitedProperties
+	KeptEventToResource(source automations.KeptEvent) siteapi.KeptEvent
+	// goverter:useEmptyOnNil:slice
+	KeptEventsToResources(source []automations.KeptEvent) []siteapi.KeptEvent
 	// The store names the triggering Event's source id; the contract says whose it is.
 	// goverter:map SourceID EventSourceId
 	SkippedEntryToResource(source *ent.AutomationSkippedEntry) siteapi.SkippedEntryResource
@@ -1317,6 +1328,12 @@ func stepSum(c Converter, v automations.StepView) (siteapi.AutomationStepSum, er
 			return siteapi.AutomationStepSum{}, err
 		}
 		return siteapi.NewSplitStepAutomationStepSum(sp), nil
+	case automations.WaitForEventView:
+		w, err := c.WaitForEventStepToResource(v)
+		if err != nil {
+			return siteapi.AutomationStepSum{}, err
+		}
+		return siteapi.NewWaitForEventStepAutomationStepSum(w), nil
 	default:
 		return siteapi.AutomationStepSum{}, fmt.Errorf("the step view %T has no arm", v)
 	}
@@ -1380,6 +1397,49 @@ func branchStepType(automationstep.Kind) siteapi.BranchStepType {
 }
 func splitStepType(automationstep.Kind) siteapi.SplitStepType {
 	return siteapi.SplitStepTypeSplit
+}
+func waitForEventStepType(automationstep.Kind) siteapi.WaitForEventStepType {
+	return siteapi.WaitForEventStepTypeWaitForEvent
+}
+func waitForEventName(name string) siteapi.WaitForEventName { return siteapi.WaitForEventName(name) }
+
+// waitForEventAwaits is the arm of what a Wait for event waits for: a oneOf is beyond goverter, so
+// only the switch is written here. One with no arm fails the response.
+func waitForEventAwaits(c Converter, a automationstep.Awaits) (siteapi.WaitForEventAwaits, error) {
+	switch a := a.(type) {
+	case automationstep.AwaitedEvent:
+		ev, err := awaitedEvent(a)
+		if err != nil {
+			return siteapi.WaitForEventAwaits{}, err
+		}
+		return siteapi.WaitForEventAwaits{OneOf: siteapi.NewAwaitedEventWaitForEventAwaitsSum(ev)}, nil
+	case automationstep.AwaitedMessage:
+		m := siteapi.AwaitedMessage{Kind: siteapi.AwaitedMessageKindMessage, Step: siteapi.StepId(a.Step), Engagement: c.MessageEngagementToResource(a.Engagement)}
+		return siteapi.WaitForEventAwaits{OneOf: siteapi.NewAwaitedMessageWaitForEventAwaitsSum(m)}, nil
+	case nil:
+	}
+	return siteapi.WaitForEventAwaits{}, errors.New("a wait for event that awaits nothing")
+}
+
+// awaitedEvent maps a Wait for event's Event matchers and its Condition into the typed DTO, each
+// checked as a stored Condition is (convert.Document).
+func awaitedEvent(a automationstep.AwaitedEvent) (siteapi.AwaitedEvent, error) {
+	ev := siteapi.AwaitedEvent{Kind: siteapi.AwaitedEventKindEvent, Matchers: make([]siteapi.EventMatcher, len(a.Matchers))}
+	for i, m := range a.Matchers {
+		matcher, err := eventMatcher(m)
+		if err != nil {
+			return siteapi.AwaitedEvent{}, err
+		}
+		ev.Matchers[i] = matcher
+	}
+	if a.Condition != nil {
+		cond, err := convert.Document[siteapi.WaitForEventCondition](*a.Condition)
+		if err != nil {
+			return siteapi.AwaitedEvent{}, err
+		}
+		ev.Condition = siteapi.NewOptWaitForEventCondition(cond)
+	}
+	return ev, nil
 }
 
 func optEditorDocument(doc json.RawMessage) siteapi.OptEditorDocument {
@@ -1577,6 +1637,17 @@ func enrollmentOccurrence(stored *datetrigger.StoredOccurrence) siteapi.OptEnrol
 		})
 	}
 	return siteapi.NewOptEnrollmentOccurrence(siteapi.EnrollmentOccurrence{OneOf: sum})
+}
+
+// enrollmentAwaited is what the enrollment keeps of the Events its Wait for event Steps arrived on
+// (ADR 0136), by name; empty once it ended.
+func enrollmentAwaited(c Converter, r ent.AutomationRun) []siteapi.KeptEvent {
+	return c.KeptEventsToResources(automations.KeptEvents(&r))
+}
+
+// awaitedProperties is a kept Event's properties, an empty object when it kept none.
+func awaitedProperties(m map[string]any) siteapi.JsonObject {
+	return convert.RawObject[siteapi.JsonObject](m)
 }
 
 // enrollmentFailure is the enrollment's failure detail; absent unless it failed.
