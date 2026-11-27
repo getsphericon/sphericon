@@ -720,6 +720,76 @@ func (UnimplementedHandler) SiteContactCsvExportsDownload(ctx context.Context, p
 	return r, ht.ErrNotImplemented
 }
 
+// SiteContactImportsGet implements SiteContactImports_get operation.
+//
+// Read an import: its state, its mapping and how far its run is.
+//
+// GET /workspaces/{workspaceId}/contact-imports/{importId}
+func (UnimplementedHandler) SiteContactImportsGet(ctx context.Context, params SiteContactImportsGetParams) (r *SiteContactImport, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteContactImportsPreview implements SiteContactImports_preview operation.
+//
+// Preview the saved mapping over the file, writing nothing.
+//
+// GET /workspaces/{workspaceId}/contact-imports/{importId}/preview
+func (UnimplementedHandler) SiteContactImportsPreview(ctx context.Context, params SiteContactImportsPreviewParams) (r *SiteContactImportPreview, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteContactImportsReport implements SiteContactImports_report operation.
+//
+// Download the refused rows' report the link names: the file's header and each reported row's original
+// cells, with a column saying why. It is deleted once downloaded whole; the link works once, in the
+// session that asked for it, within a minute (400 otherwise).
+//
+// GET /workspaces/{workspaceId}/contact-imports/{importId}/report/{token}
+func (UnimplementedHandler) SiteContactImportsReport(ctx context.Context, params SiteContactImportsReportParams) (r *SiteContactImportsReportOKHeaders, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteContactImportsReportLink implements SiteContactImports_reportLink operation.
+//
+// A link to the refused rows' report, good once, for this session, for a minute.
+//
+// POST /workspaces/{workspaceId}/contact-imports/{importId}/report-link
+func (UnimplementedHandler) SiteContactImportsReportLink(ctx context.Context, params SiteContactImportsReportLinkParams) (r *DownloadLink, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteContactImportsRun implements SiteContactImports_run operation.
+//
+// Run a `ready` import: its job writes the rows through the Contact intake, acting as the Member, and
+// starts nothing (its Events are history). A date column without a format is refused (422).
+//
+// POST /workspaces/{workspaceId}/contact-imports/{importId}/run
+func (UnimplementedHandler) SiteContactImportsRun(ctx context.Context, params SiteContactImportsRunParams) (r *SiteContactImport, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteContactImportsSaveMapping implements SiteContactImports_saveMapping operation.
+//
+// Save how the import reads its file, one entry per column; it is then `ready`. Refused before it runs
+// only: a running or ended import keeps its mapping (409).
+//
+// PUT /workspaces/{workspaceId}/contact-imports/{importId}/mapping
+func (UnimplementedHandler) SiteContactImportsSaveMapping(ctx context.Context, req *ContactImportMappingInput, params SiteContactImportsSaveMappingParams) (r *SiteContactImport, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteContactImportsUpload implements SiteContactImports_upload operation.
+//
+// Upload a CSV file of Contacts to import (ADR 0138): UTF-8 (a byte order mark allowed), its cells
+// separated by commas, semicolons or tabs, a header row first. It is refused whole when it is not
+// UTF-8, is larger than the Instance's import limit (413), has no header, has more than 200 columns or
+// cannot be read as CSV. The answer proposes a mapping from the header.
+//
+// POST /workspaces/{workspaceId}/contact-imports
+func (UnimplementedHandler) SiteContactImportsUpload(ctx context.Context, req SiteContactImportsUploadReq, params SiteContactImportsUploadParams) (r *SiteContactImport, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteContactsCreate implements SiteContacts_create operation.
 //
 // Create a resource from the site UI.

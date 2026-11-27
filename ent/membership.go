@@ -49,9 +49,11 @@ type MembershipEdges struct {
 	Connections []*ApiToken `json:"connections,omitempty"`
 	// OauthCodes holds the value of the oauth_codes edge.
 	OauthCodes []*OAuthCode `json:"oauth_codes,omitempty"`
+	// ContactImports holds the value of the contact_imports edge.
+	ContactImports []*ContactImport `json:"contact_imports,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [4]bool
+	loadedTypes [5]bool
 }
 
 // WorkspaceOrErr returns the Workspace value or an error if the edge
@@ -92,6 +94,15 @@ func (e MembershipEdges) OauthCodesOrErr() ([]*OAuthCode, error) {
 		return e.OauthCodes, nil
 	}
 	return nil, &NotLoadedError{edge: "oauth_codes"}
+}
+
+// ContactImportsOrErr returns the ContactImports value or an error if the edge
+// was not loaded in eager-loading.
+func (e MembershipEdges) ContactImportsOrErr() ([]*ContactImport, error) {
+	if e.loadedTypes[4] {
+		return e.ContactImports, nil
+	}
+	return nil, &NotLoadedError{edge: "contact_imports"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -200,6 +211,11 @@ func (_m *Membership) QueryConnections() *ApiTokenQuery {
 // QueryOauthCodes queries the "oauth_codes" edge of the Membership entity.
 func (_m *Membership) QueryOauthCodes() *OAuthCodeQuery {
 	return NewMembershipClient(_m.config).QueryOauthCodes(_m)
+}
+
+// QueryContactImports queries the "contact_imports" edge of the Membership entity.
+func (_m *Membership) QueryContactImports() *ContactImportQuery {
+	return NewMembershipClient(_m.config).QueryContactImports(_m)
 }
 
 // Update returns a builder for updating this Membership.

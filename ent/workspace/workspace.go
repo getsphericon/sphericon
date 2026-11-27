@@ -127,6 +127,12 @@ const (
 	EdgeFrequencyCaps = "frequency_caps"
 	// EdgeFrequencyCounts holds the string denoting the frequency_counts edge name in mutations.
 	EdgeFrequencyCounts = "frequency_counts"
+	// EdgeContactImports holds the string denoting the contact_imports edge name in mutations.
+	EdgeContactImports = "contact_imports"
+	// EdgeContactImportChunks holds the string denoting the contact_import_chunks edge name in mutations.
+	EdgeContactImportChunks = "contact_import_chunks"
+	// EdgeContactImportReportRows holds the string denoting the contact_import_report_rows edge name in mutations.
+	EdgeContactImportReportRows = "contact_import_report_rows"
 	// EdgeSendingWindows holds the string denoting the sending_windows edge name in mutations.
 	EdgeSendingWindows = "sending_windows"
 	// EdgeBroadcasts holds the string denoting the broadcasts edge name in mutations.
@@ -381,6 +387,27 @@ const (
 	FrequencyCountsInverseTable = "frequency_counts"
 	// FrequencyCountsColumn is the table column denoting the frequency_counts relation/edge.
 	FrequencyCountsColumn = "workspace_id"
+	// ContactImportsTable is the table that holds the contact_imports relation/edge.
+	ContactImportsTable = "contact_imports"
+	// ContactImportsInverseTable is the table name for the ContactImport entity.
+	// It exists in this package in order to avoid circular dependency with the "contactimport" package.
+	ContactImportsInverseTable = "contact_imports"
+	// ContactImportsColumn is the table column denoting the contact_imports relation/edge.
+	ContactImportsColumn = "workspace_id"
+	// ContactImportChunksTable is the table that holds the contact_import_chunks relation/edge.
+	ContactImportChunksTable = "contact_import_chunks"
+	// ContactImportChunksInverseTable is the table name for the ContactImportChunk entity.
+	// It exists in this package in order to avoid circular dependency with the "contactimportchunk" package.
+	ContactImportChunksInverseTable = "contact_import_chunks"
+	// ContactImportChunksColumn is the table column denoting the contact_import_chunks relation/edge.
+	ContactImportChunksColumn = "workspace_id"
+	// ContactImportReportRowsTable is the table that holds the contact_import_report_rows relation/edge.
+	ContactImportReportRowsTable = "contact_import_report_rows"
+	// ContactImportReportRowsInverseTable is the table name for the ContactImportReportRow entity.
+	// It exists in this package in order to avoid circular dependency with the "contactimportreportrow" package.
+	ContactImportReportRowsInverseTable = "contact_import_report_rows"
+	// ContactImportReportRowsColumn is the table column denoting the contact_import_report_rows relation/edge.
+	ContactImportReportRowsColumn = "workspace_id"
 	// SendingWindowsTable is the table that holds the sending_windows relation/edge.
 	SendingWindowsTable = "sending_windows"
 	// SendingWindowsInverseTable is the table name for the SendingWindow entity.
@@ -1289,6 +1316,48 @@ func ByFrequencyCounts(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// ByContactImportsCount orders the results by contact_imports count.
+func ByContactImportsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newContactImportsStep(), opts...)
+	}
+}
+
+// ByContactImports orders the results by contact_imports terms.
+func ByContactImports(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newContactImportsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByContactImportChunksCount orders the results by contact_import_chunks count.
+func ByContactImportChunksCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newContactImportChunksStep(), opts...)
+	}
+}
+
+// ByContactImportChunks orders the results by contact_import_chunks terms.
+func ByContactImportChunks(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newContactImportChunksStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByContactImportReportRowsCount orders the results by contact_import_report_rows count.
+func ByContactImportReportRowsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newContactImportReportRowsStep(), opts...)
+	}
+}
+
+// ByContactImportReportRows orders the results by contact_import_report_rows terms.
+func ByContactImportReportRows(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newContactImportReportRowsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // BySendingWindowsCount orders the results by sending_windows count.
 func BySendingWindowsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -1951,6 +2020,27 @@ func newFrequencyCountsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(FrequencyCountsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, FrequencyCountsTable, FrequencyCountsColumn),
+	)
+}
+func newContactImportsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ContactImportsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ContactImportsTable, ContactImportsColumn),
+	)
+}
+func newContactImportChunksStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ContactImportChunksInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ContactImportChunksTable, ContactImportChunksColumn),
+	)
+}
+func newContactImportReportRowsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ContactImportReportRowsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ContactImportReportRowsTable, ContactImportReportRowsColumn),
 	)
 }
 func newSendingWindowsStep() *sqlgraph.Step {

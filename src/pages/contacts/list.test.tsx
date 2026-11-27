@@ -16,9 +16,20 @@ import { ContactsListPage } from './list.tsx'
 
 const LIST_ROUTE = routeMount(contactsRoute, { workspaceId: 'TestWs01' })
 
-// The Workspace as its Owner sees it, who may export its contacts.
+// The Workspace as its Owner sees it, who may export its contacts and import them.
 beforeEach(() => {
-  worker.use(handleSiteWorkspacesList({ body: [workspace({ permissions: ['contacts:export'] })] }))
+  worker.use(
+    handleSiteWorkspacesList({
+      body: [workspace({ permissions: ['contacts:export', 'contacts:import'] })],
+    }),
+  )
+})
+
+test('offers the import to a Member holding contacts:import', async () => {
+  worker.use(handleSiteContactsList({ body: page([], 0) }))
+  const { screen } = await renderWithRouter(<ContactsListPage />, LIST_ROUTE)
+
+  await expect.element(screen.getByRole('link', { name: 'Import contacts' })).toBeVisible()
 })
 
 // Opens a column's filter: the button in its header, named by what it filters.

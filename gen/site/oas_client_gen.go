@@ -539,6 +539,55 @@ type Invoker interface {
 	//
 	// GET /workspaces/{workspaceId}/contact-exports/{token}
 	SiteContactCsvExportsDownload(ctx context.Context, params SiteContactCsvExportsDownloadParams) (*SiteContactCsvExportsDownloadOKHeaders, error)
+	// SiteContactImportsGet invokes SiteContactImports_get operation.
+	//
+	// Read an import: its state, its mapping and how far its run is.
+	//
+	// GET /workspaces/{workspaceId}/contact-imports/{importId}
+	SiteContactImportsGet(ctx context.Context, params SiteContactImportsGetParams) (*SiteContactImport, error)
+	// SiteContactImportsPreview invokes SiteContactImports_preview operation.
+	//
+	// Preview the saved mapping over the file, writing nothing.
+	//
+	// GET /workspaces/{workspaceId}/contact-imports/{importId}/preview
+	SiteContactImportsPreview(ctx context.Context, params SiteContactImportsPreviewParams) (*SiteContactImportPreview, error)
+	// SiteContactImportsReport invokes SiteContactImports_report operation.
+	//
+	// Download the refused rows' report the link names: the file's header and each reported row's original
+	// cells, with a column saying why. It is deleted once downloaded whole; the link works once, in the
+	// session that asked for it, within a minute (400 otherwise).
+	//
+	// GET /workspaces/{workspaceId}/contact-imports/{importId}/report/{token}
+	SiteContactImportsReport(ctx context.Context, params SiteContactImportsReportParams) (*SiteContactImportsReportOKHeaders, error)
+	// SiteContactImportsReportLink invokes SiteContactImports_reportLink operation.
+	//
+	// A link to the refused rows' report, good once, for this session, for a minute.
+	//
+	// POST /workspaces/{workspaceId}/contact-imports/{importId}/report-link
+	SiteContactImportsReportLink(ctx context.Context, params SiteContactImportsReportLinkParams) (*DownloadLink, error)
+	// SiteContactImportsRun invokes SiteContactImports_run operation.
+	//
+	// Run a `ready` import: its job writes the rows through the Contact intake, acting as the Member, and
+	// starts nothing (its Events are history). A date column without a format is refused (422).
+	//
+	// POST /workspaces/{workspaceId}/contact-imports/{importId}/run
+	SiteContactImportsRun(ctx context.Context, params SiteContactImportsRunParams) (*SiteContactImport, error)
+	// SiteContactImportsSaveMapping invokes SiteContactImports_saveMapping operation.
+	//
+	// Save how the import reads its file, one entry per column; it is then `ready`. Refused before it runs
+	// only: a running or ended import keeps its mapping (409).
+	//
+	// PUT /workspaces/{workspaceId}/contact-imports/{importId}/mapping
+	SiteContactImportsSaveMapping(ctx context.Context, request *ContactImportMappingInput, params SiteContactImportsSaveMappingParams) (*SiteContactImport, error)
+	// SiteContactImportsUpload invokes SiteContactImports_upload operation.
+	//
+	// Upload a CSV file of Contacts to import (ADR 0138): UTF-8 (a byte order mark allowed), its cells
+	// separated by commas, semicolons or tabs, a header row first. It is refused whole when it is not
+	// UTF-8, is larger than the Instance's import limit (413), has no header, has more than 200 columns or
+	// cannot be read as CSV. The answer proposes a mapping from the header.
+	//
+	// POST /workspaces/{workspaceId}/contact-imports
+	SiteContactImportsUpload(ctx context.Context, request SiteContactImportsUploadReq, params SiteContactImportsUploadParams) (*SiteContactImport, error)
 	// SiteContactsCreate invokes SiteContacts_create operation.
 	//
 	// Create a resource from the site UI.
@@ -11517,6 +11566,1113 @@ func (c *Client) sendSiteContactCsvExportsDownload(ctx context.Context, params S
 
 	stage = "DecodeResponse"
 	result, err := decodeSiteContactCsvExportsDownloadResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SiteContactImportsGet invokes SiteContactImports_get operation.
+//
+// Read an import: its state, its mapping and how far its run is.
+//
+// GET /workspaces/{workspaceId}/contact-imports/{importId}
+func (c *Client) SiteContactImportsGet(ctx context.Context, params SiteContactImportsGetParams) (*SiteContactImport, error) {
+	res, err := c.sendSiteContactImportsGet(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendSiteContactImportsGet(ctx context.Context, params SiteContactImportsGetParams) (res *SiteContactImport, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteContactImports_get"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/workspaces/{workspaceId}/contact-imports/{importId}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteContactImportsGetOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [4]string
+	pathParts[0] = "/workspaces/"
+	{
+		// Encode "workspaceId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "workspaceId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := string(params.WorkspaceId); true {
+				return e.EncodeValue(conv.StringToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/contact-imports/"
+	{
+		// Encode "importId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "importId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := publicid.ID(params.ImportId); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[3] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, SiteContactImportsGetOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteContactImportsGetResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SiteContactImportsPreview invokes SiteContactImports_preview operation.
+//
+// Preview the saved mapping over the file, writing nothing.
+//
+// GET /workspaces/{workspaceId}/contact-imports/{importId}/preview
+func (c *Client) SiteContactImportsPreview(ctx context.Context, params SiteContactImportsPreviewParams) (*SiteContactImportPreview, error) {
+	res, err := c.sendSiteContactImportsPreview(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendSiteContactImportsPreview(ctx context.Context, params SiteContactImportsPreviewParams) (res *SiteContactImportPreview, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteContactImports_preview"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/workspaces/{workspaceId}/contact-imports/{importId}/preview"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteContactImportsPreviewOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [5]string
+	pathParts[0] = "/workspaces/"
+	{
+		// Encode "workspaceId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "workspaceId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := string(params.WorkspaceId); true {
+				return e.EncodeValue(conv.StringToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/contact-imports/"
+	{
+		// Encode "importId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "importId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := publicid.ID(params.ImportId); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[3] = encoded
+	}
+	pathParts[4] = "/preview"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, SiteContactImportsPreviewOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteContactImportsPreviewResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SiteContactImportsReport invokes SiteContactImports_report operation.
+//
+// Download the refused rows' report the link names: the file's header and each reported row's original
+// cells, with a column saying why. It is deleted once downloaded whole; the link works once, in the
+// session that asked for it, within a minute (400 otherwise).
+//
+// GET /workspaces/{workspaceId}/contact-imports/{importId}/report/{token}
+func (c *Client) SiteContactImportsReport(ctx context.Context, params SiteContactImportsReportParams) (*SiteContactImportsReportOKHeaders, error) {
+	res, err := c.sendSiteContactImportsReport(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendSiteContactImportsReport(ctx context.Context, params SiteContactImportsReportParams) (res *SiteContactImportsReportOKHeaders, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteContactImports_report"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/workspaces/{workspaceId}/contact-imports/{importId}/report/{token}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteContactImportsReportOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [6]string
+	pathParts[0] = "/workspaces/"
+	{
+		// Encode "workspaceId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "workspaceId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := string(params.WorkspaceId); true {
+				return e.EncodeValue(conv.StringToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/contact-imports/"
+	{
+		// Encode "importId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "importId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := publicid.ID(params.ImportId); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[3] = encoded
+	}
+	pathParts[4] = "/report/"
+	{
+		// Encode "token" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "token",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.StringToString(params.Token))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[5] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, SiteContactImportsReportOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteContactImportsReportResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SiteContactImportsReportLink invokes SiteContactImports_reportLink operation.
+//
+// A link to the refused rows' report, good once, for this session, for a minute.
+//
+// POST /workspaces/{workspaceId}/contact-imports/{importId}/report-link
+func (c *Client) SiteContactImportsReportLink(ctx context.Context, params SiteContactImportsReportLinkParams) (*DownloadLink, error) {
+	res, err := c.sendSiteContactImportsReportLink(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendSiteContactImportsReportLink(ctx context.Context, params SiteContactImportsReportLinkParams) (res *DownloadLink, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteContactImports_reportLink"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/workspaces/{workspaceId}/contact-imports/{importId}/report-link"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteContactImportsReportLinkOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [5]string
+	pathParts[0] = "/workspaces/"
+	{
+		// Encode "workspaceId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "workspaceId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := string(params.WorkspaceId); true {
+				return e.EncodeValue(conv.StringToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/contact-imports/"
+	{
+		// Encode "importId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "importId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := publicid.ID(params.ImportId); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[3] = encoded
+	}
+	pathParts[4] = "/report-link"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, SiteContactImportsReportLinkOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteContactImportsReportLinkResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SiteContactImportsRun invokes SiteContactImports_run operation.
+//
+// Run a `ready` import: its job writes the rows through the Contact intake, acting as the Member, and
+// starts nothing (its Events are history). A date column without a format is refused (422).
+//
+// POST /workspaces/{workspaceId}/contact-imports/{importId}/run
+func (c *Client) SiteContactImportsRun(ctx context.Context, params SiteContactImportsRunParams) (*SiteContactImport, error) {
+	res, err := c.sendSiteContactImportsRun(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendSiteContactImportsRun(ctx context.Context, params SiteContactImportsRunParams) (res *SiteContactImport, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteContactImports_run"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/workspaces/{workspaceId}/contact-imports/{importId}/run"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteContactImportsRunOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [5]string
+	pathParts[0] = "/workspaces/"
+	{
+		// Encode "workspaceId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "workspaceId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := string(params.WorkspaceId); true {
+				return e.EncodeValue(conv.StringToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/contact-imports/"
+	{
+		// Encode "importId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "importId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := publicid.ID(params.ImportId); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[3] = encoded
+	}
+	pathParts[4] = "/run"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, SiteContactImportsRunOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteContactImportsRunResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SiteContactImportsSaveMapping invokes SiteContactImports_saveMapping operation.
+//
+// Save how the import reads its file, one entry per column; it is then `ready`. Refused before it runs
+// only: a running or ended import keeps its mapping (409).
+//
+// PUT /workspaces/{workspaceId}/contact-imports/{importId}/mapping
+func (c *Client) SiteContactImportsSaveMapping(ctx context.Context, request *ContactImportMappingInput, params SiteContactImportsSaveMappingParams) (*SiteContactImport, error) {
+	res, err := c.sendSiteContactImportsSaveMapping(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendSiteContactImportsSaveMapping(ctx context.Context, request *ContactImportMappingInput, params SiteContactImportsSaveMappingParams) (res *SiteContactImport, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteContactImports_saveMapping"),
+		semconv.HTTPRequestMethodKey.String("PUT"),
+		semconv.URLTemplateKey.String("/workspaces/{workspaceId}/contact-imports/{importId}/mapping"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteContactImportsSaveMappingOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [5]string
+	pathParts[0] = "/workspaces/"
+	{
+		// Encode "workspaceId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "workspaceId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := string(params.WorkspaceId); true {
+				return e.EncodeValue(conv.StringToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/contact-imports/"
+	{
+		// Encode "importId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "importId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := publicid.ID(params.ImportId); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[3] = encoded
+	}
+	pathParts[4] = "/mapping"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "PUT", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSiteContactImportsSaveMappingRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, SiteContactImportsSaveMappingOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteContactImportsSaveMappingResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SiteContactImportsUpload invokes SiteContactImports_upload operation.
+//
+// Upload a CSV file of Contacts to import (ADR 0138): UTF-8 (a byte order mark allowed), its cells
+// separated by commas, semicolons or tabs, a header row first. It is refused whole when it is not
+// UTF-8, is larger than the Instance's import limit (413), has no header, has more than 200 columns or
+// cannot be read as CSV. The answer proposes a mapping from the header.
+//
+// POST /workspaces/{workspaceId}/contact-imports
+func (c *Client) SiteContactImportsUpload(ctx context.Context, request SiteContactImportsUploadReq, params SiteContactImportsUploadParams) (*SiteContactImport, error) {
+	res, err := c.sendSiteContactImportsUpload(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendSiteContactImportsUpload(ctx context.Context, request SiteContactImportsUploadReq, params SiteContactImportsUploadParams) (res *SiteContactImport, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteContactImports_upload"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/workspaces/{workspaceId}/contact-imports"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteContactImportsUploadOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/workspaces/"
+	{
+		// Encode "workspaceId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "workspaceId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := string(params.WorkspaceId); true {
+				return e.EncodeValue(conv.StringToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/contact-imports"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSiteContactImportsUploadRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, SiteContactImportsUploadOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteContactImportsUploadResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}

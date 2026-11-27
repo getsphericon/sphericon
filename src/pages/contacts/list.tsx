@@ -10,7 +10,7 @@ import { ContactCsvExportModal } from '../../components/ContactCsvExportModal.ts
 import { CountryFlag } from '../../components/CountryFlag.tsx'
 import { PagedTable } from '../../components/PagedTable.tsx'
 import { RelativeTime } from '../../components/RelativeTime.tsx'
-import { MenuItemLink } from '../../components/RouterLink.tsx'
+import { ButtonLink, MenuItemLink } from '../../components/RouterLink.tsx'
 import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
 import {
   siteContactsListOptions,
@@ -19,6 +19,7 @@ import {
 import { zSiteTagsListQuery } from '../../generated/site/zod.gen.ts'
 import { Route as contactsEditRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/edit.tsx'
 import { Route as contactsDetailRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/index.tsx'
+import { Route as importRoute } from '../../routes/workspaces/$workspaceId/contacts/import.tsx'
 import { Route as contactsRoute } from '../../routes/workspaces/$workspaceId/contacts/index.tsx'
 import { withPage } from '../../searchSchemas.ts'
 import { maxPageSize } from '../../utils/bounds.ts'
@@ -100,6 +101,7 @@ export function ContactsListPage() {
   const navigate = useNavigate({ from: contactsRoute.fullPath })
   const [createOpened, { open: openCreate, close: closeCreate }] = useDisclosure(false)
   const [exportOpened, { open: openExport, close: closeExport }] = useDisclosure(false)
+  // Importing a file is offered only with contacts:import (the API refuses everyone else).
   const { data: workspace } = useQuery(workspaceOptions(workspaceId))
   const [search, setSearch] = useState(email ?? '')
   // Back/forward or a link changes the URL search: the field follows it, unless it already
@@ -142,6 +144,11 @@ export function ContactsListPage() {
             <Button variant="default" onClick={openExport}>
               {t(($) => $.contactCsvExport.action)}
             </Button>
+          ) : null}
+          {can(workspace, 'contacts:import') ? (
+            <ButtonLink variant="default" to={importRoute.to} params={{ workspaceId }}>
+              {t(($) => $.contacts.importContacts)}
+            </ButtonLink>
           ) : null}
           <Button onClick={openCreate}>{t(($) => $.contacts.addContact)}</Button>
         </Group>

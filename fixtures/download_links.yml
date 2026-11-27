@@ -9,3 +9,12 @@
   workspace_id: 1
   created_at: '{{daysAgo 1}}'
   updated_at: '{{daysAgo 1}}'
+- id: 2 # fixture: DownloadLinkGlobexLapsed
+  purpose: import_report
+  token_hash: '{{ secretHash "fixture-download-link-globex" }}'
+  session_hash: '{{ secretHash "fixture-session-globex" }}'
+  payload: '{"importId":2}'
+  expires_at: '{{daysAgo 1}}'
+  workspace_id: 2
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'

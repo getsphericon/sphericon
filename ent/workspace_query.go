@@ -32,6 +32,9 @@ import (
 	"github.com/getsphericon/sphericon/ent/consentstamp"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/contactdate"
+	"github.com/getsphericon/sphericon/ent/contactimport"
+	"github.com/getsphericon/sphericon/ent/contactimportchunk"
+	"github.com/getsphericon/sphericon/ent/contactimportreportrow"
 	"github.com/getsphericon/sphericon/ent/contacttag"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/downloadlink"
@@ -111,6 +114,9 @@ type WorkspaceQuery struct {
 	withHolds                       *HoldQuery
 	withFrequencyCaps               *FrequencyCapQuery
 	withFrequencyCounts             *FrequencyCountQuery
+	withContactImports              *ContactImportQuery
+	withContactImportChunks         *ContactImportChunkQuery
+	withContactImportReportRows     *ContactImportReportRowQuery
 	withSendingWindows              *SendingWindowQuery
 	withBroadcasts                  *BroadcastQuery
 	withBroadcastRecipients         *BroadcastRecipientQuery
@@ -748,6 +754,72 @@ func (_q *WorkspaceQuery) QueryFrequencyCounts() *FrequencyCountQuery {
 			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
 			sqlgraph.To(frequencycount.Table, frequencycount.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, workspace.FrequencyCountsTable, workspace.FrequencyCountsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryContactImports chains the current query on the "contact_imports" edge.
+func (_q *WorkspaceQuery) QueryContactImports() *ContactImportQuery {
+	query := (&ContactImportClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
+			sqlgraph.To(contactimport.Table, contactimport.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.ContactImportsTable, workspace.ContactImportsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryContactImportChunks chains the current query on the "contact_import_chunks" edge.
+func (_q *WorkspaceQuery) QueryContactImportChunks() *ContactImportChunkQuery {
+	query := (&ContactImportChunkClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
+			sqlgraph.To(contactimportchunk.Table, contactimportchunk.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.ContactImportChunksTable, workspace.ContactImportChunksColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryContactImportReportRows chains the current query on the "contact_import_report_rows" edge.
+func (_q *WorkspaceQuery) QueryContactImportReportRows() *ContactImportReportRowQuery {
+	query := (&ContactImportReportRowClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
+			sqlgraph.To(contactimportreportrow.Table, contactimportreportrow.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.ContactImportReportRowsTable, workspace.ContactImportReportRowsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -1743,6 +1815,9 @@ func (_q *WorkspaceQuery) Clone() *WorkspaceQuery {
 		withHolds:                       _q.withHolds.Clone(),
 		withFrequencyCaps:               _q.withFrequencyCaps.Clone(),
 		withFrequencyCounts:             _q.withFrequencyCounts.Clone(),
+		withContactImports:              _q.withContactImports.Clone(),
+		withContactImportChunks:         _q.withContactImportChunks.Clone(),
+		withContactImportReportRows:     _q.withContactImportReportRows.Clone(),
 		withSendingWindows:              _q.withSendingWindows.Clone(),
 		withBroadcasts:                  _q.withBroadcasts.Clone(),
 		withBroadcastRecipients:         _q.withBroadcastRecipients.Clone(),
@@ -2068,6 +2143,39 @@ func (_q *WorkspaceQuery) WithFrequencyCounts(opts ...func(*FrequencyCountQuery)
 		opt(query)
 	}
 	_q.withFrequencyCounts = query
+	return _q
+}
+
+// WithContactImports tells the query-builder to eager-load the nodes that are connected to
+// the "contact_imports" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *WorkspaceQuery) WithContactImports(opts ...func(*ContactImportQuery)) *WorkspaceQuery {
+	query := (&ContactImportClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withContactImports = query
+	return _q
+}
+
+// WithContactImportChunks tells the query-builder to eager-load the nodes that are connected to
+// the "contact_import_chunks" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *WorkspaceQuery) WithContactImportChunks(opts ...func(*ContactImportChunkQuery)) *WorkspaceQuery {
+	query := (&ContactImportChunkClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withContactImportChunks = query
+	return _q
+}
+
+// WithContactImportReportRows tells the query-builder to eager-load the nodes that are connected to
+// the "contact_import_report_rows" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *WorkspaceQuery) WithContactImportReportRows(opts ...func(*ContactImportReportRowQuery)) *WorkspaceQuery {
+	query := (&ContactImportReportRowClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withContactImportReportRows = query
 	return _q
 }
 
@@ -2534,7 +2642,7 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 	var (
 		nodes       = []*Workspace{}
 		_spec       = _q.querySpec()
-		loadedTypes = [61]bool{
+		loadedTypes = [64]bool{
 			_q.withContacts != nil,
 			_q.withCustomFields != nil,
 			_q.withTags != nil,
@@ -2561,6 +2669,9 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 			_q.withHolds != nil,
 			_q.withFrequencyCaps != nil,
 			_q.withFrequencyCounts != nil,
+			_q.withContactImports != nil,
+			_q.withContactImportChunks != nil,
+			_q.withContactImportReportRows != nil,
 			_q.withSendingWindows != nil,
 			_q.withBroadcasts != nil,
 			_q.withBroadcastRecipients != nil,
@@ -2800,6 +2911,31 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 		if err := _q.loadFrequencyCounts(ctx, query, nodes,
 			func(n *Workspace) { n.Edges.FrequencyCounts = []*FrequencyCount{} },
 			func(n *Workspace, e *FrequencyCount) { n.Edges.FrequencyCounts = append(n.Edges.FrequencyCounts, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withContactImports; query != nil {
+		if err := _q.loadContactImports(ctx, query, nodes,
+			func(n *Workspace) { n.Edges.ContactImports = []*ContactImport{} },
+			func(n *Workspace, e *ContactImport) { n.Edges.ContactImports = append(n.Edges.ContactImports, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withContactImportChunks; query != nil {
+		if err := _q.loadContactImportChunks(ctx, query, nodes,
+			func(n *Workspace) { n.Edges.ContactImportChunks = []*ContactImportChunk{} },
+			func(n *Workspace, e *ContactImportChunk) {
+				n.Edges.ContactImportChunks = append(n.Edges.ContactImportChunks, e)
+			}); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withContactImportReportRows; query != nil {
+		if err := _q.loadContactImportReportRows(ctx, query, nodes,
+			func(n *Workspace) { n.Edges.ContactImportReportRows = []*ContactImportReportRow{} },
+			func(n *Workspace, e *ContactImportReportRow) {
+				n.Edges.ContactImportReportRows = append(n.Edges.ContactImportReportRows, e)
+			}); err != nil {
 			return nil, err
 		}
 	}
@@ -3838,6 +3974,96 @@ func (_q *WorkspaceQuery) loadFrequencyCounts(ctx context.Context, query *Freque
 	}
 	query.Where(predicate.FrequencyCount(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(workspace.FrequencyCountsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.WorkspaceID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "workspace_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *WorkspaceQuery) loadContactImports(ctx context.Context, query *ContactImportQuery, nodes []*Workspace, init func(*Workspace), assign func(*Workspace, *ContactImport)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Workspace)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(contactimport.FieldWorkspaceID)
+	}
+	query.Where(predicate.ContactImport(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(workspace.ContactImportsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.WorkspaceID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "workspace_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *WorkspaceQuery) loadContactImportChunks(ctx context.Context, query *ContactImportChunkQuery, nodes []*Workspace, init func(*Workspace), assign func(*Workspace, *ContactImportChunk)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Workspace)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(contactimportchunk.FieldWorkspaceID)
+	}
+	query.Where(predicate.ContactImportChunk(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(workspace.ContactImportChunksColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.WorkspaceID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "workspace_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *WorkspaceQuery) loadContactImportReportRows(ctx context.Context, query *ContactImportReportRowQuery, nodes []*Workspace, init func(*Workspace), assign func(*Workspace, *ContactImportReportRow)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Workspace)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(contactimportreportrow.FieldWorkspaceID)
+	}
+	query.Where(predicate.ContactImportReportRow(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(workspace.ContactImportReportRowsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

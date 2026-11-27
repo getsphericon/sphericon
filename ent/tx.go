@@ -56,6 +56,12 @@ type Tx struct {
 	Contact *ContactClient
 	// ContactDate is the client for interacting with the ContactDate builders.
 	ContactDate *ContactDateClient
+	// ContactImport is the client for interacting with the ContactImport builders.
+	ContactImport *ContactImportClient
+	// ContactImportChunk is the client for interacting with the ContactImportChunk builders.
+	ContactImportChunk *ContactImportChunkClient
+	// ContactImportReportRow is the client for interacting with the ContactImportReportRow builders.
+	ContactImportReportRow *ContactImportReportRowClient
 	// ContactTag is the client for interacting with the ContactTag builders.
 	ContactTag *ContactTagClient
 	// CustomField is the client for interacting with the CustomField builders.
@@ -340,6 +346,9 @@ func (tx *Tx) init() {
 	tx.ConsentStamp = NewConsentStampClient(tx.config)
 	tx.Contact = NewContactClient(tx.config)
 	tx.ContactDate = NewContactDateClient(tx.config)
+	tx.ContactImport = NewContactImportClient(tx.config)
+	tx.ContactImportChunk = NewContactImportChunkClient(tx.config)
+	tx.ContactImportReportRow = NewContactImportReportRowClient(tx.config)
 	tx.ContactTag = NewContactTagClient(tx.config)
 	tx.CustomField = NewCustomFieldClient(tx.config)
 	tx.DefaultSendCap = NewDefaultSendCapClient(tx.config)

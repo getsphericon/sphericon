@@ -2258,6 +2258,75 @@ func HasFrequencyCountsWith(preds ...predicate.FrequencyCount) predicate.Workspa
 	})
 }
 
+// HasContactImports applies the HasEdge predicate on the "contact_imports" edge.
+func HasContactImports() predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ContactImportsTable, ContactImportsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasContactImportsWith applies the HasEdge predicate on the "contact_imports" edge with a given conditions (other predicates).
+func HasContactImportsWith(preds ...predicate.ContactImport) predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := newContactImportsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasContactImportChunks applies the HasEdge predicate on the "contact_import_chunks" edge.
+func HasContactImportChunks() predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ContactImportChunksTable, ContactImportChunksColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasContactImportChunksWith applies the HasEdge predicate on the "contact_import_chunks" edge with a given conditions (other predicates).
+func HasContactImportChunksWith(preds ...predicate.ContactImportChunk) predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := newContactImportChunksStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasContactImportReportRows applies the HasEdge predicate on the "contact_import_report_rows" edge.
+func HasContactImportReportRows() predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ContactImportReportRowsTable, ContactImportReportRowsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasContactImportReportRowsWith applies the HasEdge predicate on the "contact_import_report_rows" edge with a given conditions (other predicates).
+func HasContactImportReportRowsWith(preds ...predicate.ContactImportReportRow) predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := newContactImportReportRowsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasSendingWindows applies the HasEdge predicate on the "sending_windows" edge.
 func HasSendingWindows() predicate.Workspace {
 	return predicate.Workspace(func(s *sql.Selector) {

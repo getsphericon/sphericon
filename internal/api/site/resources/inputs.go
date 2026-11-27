@@ -16,6 +16,7 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contactimports"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contactsexport"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
@@ -44,6 +45,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
+	"github.com/getsphericon/sphericon/internal/kernel/csvimport"
 	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 	"github.com/getsphericon/sphericon/internal/kernel/localcalendar"
@@ -357,6 +359,17 @@ type Inputs interface {
 	// The Membership changed is the path's, not the request's: the handler sets it.
 	// goverter:ignore ID
 	MembershipRoleChange(source *siteapi.SiteUpdateMembershipInput) memberships.ChangeRoleInput
+	// The Member who uploads is the caller, whose Membership the handler sets.
+	// goverter:map Data File | fileIn
+	// goverter:ignore MembershipID
+	ContactImportUpload(source siteapi.SiteContactImportsUploadReq) contactimports.UploadInput
+	// goverter:map . Mapping | contactImportMappingIn
+	ContactImportMapping(source *siteapi.ContactImportMappingInput) contactimports.MappingInput
+	// The session a link is followed in is the request's, which the handler sets.
+	// goverter:ignore Session
+	ContactImportReport(source siteapi.SiteContactImportsReportParams) contactimports.ReportInput
+	// goverter:enum:transform value
+	ContactImportDateFormatIn(source siteapi.ContactImportDateFormat) csvimport.DateFormat
 	// The optional consent changed is the path's key, not the request's: the handler sets it.
 	// goverter:ignore Key
 	OptionalConsentChange(source *siteapi.SiteOptionalConsentChange) consentrecords.SetOptionalConsentInput

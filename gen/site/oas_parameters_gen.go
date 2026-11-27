@@ -8997,6 +8997,979 @@ func decodeSiteContactCsvExportsDownloadParams(args [2]string, argsEscaped bool,
 	return params, nil
 }
 
+// SiteContactImportsGetParams is parameters of SiteContactImports_get operation.
+type SiteContactImportsGetParams struct {
+	WorkspaceId WorkspaceId
+	ImportId    EntityId
+}
+
+func unpackSiteContactImportsGetParams(packed middleware.Parameters) (params SiteContactImportsGetParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "workspaceId",
+			In:   "path",
+		}
+		params.WorkspaceId = packed[key].(WorkspaceId)
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "importId",
+			In:   "path",
+		}
+		params.ImportId = packed[key].(EntityId)
+	}
+	return params
+}
+
+func decodeSiteContactImportsGetParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteContactImportsGetParams, _ error) {
+	// Decode path: workspaceId.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "workspaceId",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "workspaceId",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	// Decode path: importId.
+	if err := func() error {
+		param := args[1]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[1])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "importId",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotImportIdVal publicid.ID
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToText[publicid.ID](val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotImportIdVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.ImportId = EntityId(paramsDotImportIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "importId",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// SiteContactImportsPreviewParams is parameters of SiteContactImports_preview operation.
+type SiteContactImportsPreviewParams struct {
+	WorkspaceId WorkspaceId
+	ImportId    EntityId
+}
+
+func unpackSiteContactImportsPreviewParams(packed middleware.Parameters) (params SiteContactImportsPreviewParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "workspaceId",
+			In:   "path",
+		}
+		params.WorkspaceId = packed[key].(WorkspaceId)
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "importId",
+			In:   "path",
+		}
+		params.ImportId = packed[key].(EntityId)
+	}
+	return params
+}
+
+func decodeSiteContactImportsPreviewParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteContactImportsPreviewParams, _ error) {
+	// Decode path: workspaceId.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "workspaceId",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "workspaceId",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	// Decode path: importId.
+	if err := func() error {
+		param := args[1]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[1])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "importId",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotImportIdVal publicid.ID
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToText[publicid.ID](val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotImportIdVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.ImportId = EntityId(paramsDotImportIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "importId",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// SiteContactImportsReportParams is parameters of SiteContactImports_report operation.
+type SiteContactImportsReportParams struct {
+	WorkspaceId WorkspaceId
+	ImportId    EntityId
+	Token       string
+}
+
+func unpackSiteContactImportsReportParams(packed middleware.Parameters) (params SiteContactImportsReportParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "workspaceId",
+			In:   "path",
+		}
+		params.WorkspaceId = packed[key].(WorkspaceId)
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "importId",
+			In:   "path",
+		}
+		params.ImportId = packed[key].(EntityId)
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "token",
+			In:   "path",
+		}
+		params.Token = packed[key].(string)
+	}
+	return params
+}
+
+func decodeSiteContactImportsReportParams(args [3]string, argsEscaped bool, r *http.Request) (params SiteContactImportsReportParams, _ error) {
+	// Decode path: workspaceId.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "workspaceId",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "workspaceId",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	// Decode path: importId.
+	if err := func() error {
+		param := args[1]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[1])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "importId",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotImportIdVal publicid.ID
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToText[publicid.ID](val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotImportIdVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.ImportId = EntityId(paramsDotImportIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "importId",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	// Decode path: token.
+	if err := func() error {
+		param := args[2]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[2])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "token",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToString(val)
+				if err != nil {
+					return err
+				}
+
+				params.Token = c
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "token",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// SiteContactImportsReportLinkParams is parameters of SiteContactImports_reportLink operation.
+type SiteContactImportsReportLinkParams struct {
+	WorkspaceId WorkspaceId
+	ImportId    EntityId
+}
+
+func unpackSiteContactImportsReportLinkParams(packed middleware.Parameters) (params SiteContactImportsReportLinkParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "workspaceId",
+			In:   "path",
+		}
+		params.WorkspaceId = packed[key].(WorkspaceId)
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "importId",
+			In:   "path",
+		}
+		params.ImportId = packed[key].(EntityId)
+	}
+	return params
+}
+
+func decodeSiteContactImportsReportLinkParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteContactImportsReportLinkParams, _ error) {
+	// Decode path: workspaceId.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "workspaceId",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "workspaceId",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	// Decode path: importId.
+	if err := func() error {
+		param := args[1]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[1])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "importId",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotImportIdVal publicid.ID
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToText[publicid.ID](val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotImportIdVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.ImportId = EntityId(paramsDotImportIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "importId",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// SiteContactImportsRunParams is parameters of SiteContactImports_run operation.
+type SiteContactImportsRunParams struct {
+	WorkspaceId WorkspaceId
+	ImportId    EntityId
+}
+
+func unpackSiteContactImportsRunParams(packed middleware.Parameters) (params SiteContactImportsRunParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "workspaceId",
+			In:   "path",
+		}
+		params.WorkspaceId = packed[key].(WorkspaceId)
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "importId",
+			In:   "path",
+		}
+		params.ImportId = packed[key].(EntityId)
+	}
+	return params
+}
+
+func decodeSiteContactImportsRunParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteContactImportsRunParams, _ error) {
+	// Decode path: workspaceId.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "workspaceId",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "workspaceId",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	// Decode path: importId.
+	if err := func() error {
+		param := args[1]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[1])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "importId",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotImportIdVal publicid.ID
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToText[publicid.ID](val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotImportIdVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.ImportId = EntityId(paramsDotImportIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "importId",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// SiteContactImportsSaveMappingParams is parameters of SiteContactImports_saveMapping operation.
+type SiteContactImportsSaveMappingParams struct {
+	WorkspaceId WorkspaceId
+	ImportId    EntityId
+}
+
+func unpackSiteContactImportsSaveMappingParams(packed middleware.Parameters) (params SiteContactImportsSaveMappingParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "workspaceId",
+			In:   "path",
+		}
+		params.WorkspaceId = packed[key].(WorkspaceId)
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "importId",
+			In:   "path",
+		}
+		params.ImportId = packed[key].(EntityId)
+	}
+	return params
+}
+
+func decodeSiteContactImportsSaveMappingParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteContactImportsSaveMappingParams, _ error) {
+	// Decode path: workspaceId.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "workspaceId",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "workspaceId",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	// Decode path: importId.
+	if err := func() error {
+		param := args[1]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[1])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "importId",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotImportIdVal publicid.ID
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToText[publicid.ID](val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotImportIdVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.ImportId = EntityId(paramsDotImportIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "importId",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// SiteContactImportsUploadParams is parameters of SiteContactImports_upload operation.
+type SiteContactImportsUploadParams struct {
+	WorkspaceId WorkspaceId
+}
+
+func unpackSiteContactImportsUploadParams(packed middleware.Parameters) (params SiteContactImportsUploadParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "workspaceId",
+			In:   "path",
+		}
+		params.WorkspaceId = packed[key].(WorkspaceId)
+	}
+	return params
+}
+
+func decodeSiteContactImportsUploadParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteContactImportsUploadParams, _ error) {
+	// Decode path: workspaceId.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "workspaceId",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "workspaceId",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
 // SiteContactsCreateParams is parameters of SiteContacts_create operation.
 type SiteContactsCreateParams struct {
 	// The Workspace id: its short opaque public address and the route key for nested workspace resources

@@ -36,6 +36,9 @@ import (
 	"github.com/getsphericon/sphericon/ent/consentstamp"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/contactdate"
+	"github.com/getsphericon/sphericon/ent/contactimport"
+	"github.com/getsphericon/sphericon/ent/contactimportchunk"
+	"github.com/getsphericon/sphericon/ent/contactimportreportrow"
 	"github.com/getsphericon/sphericon/ent/contacttag"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/defaultsendcap"
@@ -153,6 +156,12 @@ type Client struct {
 	Contact *ContactClient
 	// ContactDate is the client for interacting with the ContactDate builders.
 	ContactDate *ContactDateClient
+	// ContactImport is the client for interacting with the ContactImport builders.
+	ContactImport *ContactImportClient
+	// ContactImportChunk is the client for interacting with the ContactImportChunk builders.
+	ContactImportChunk *ContactImportChunkClient
+	// ContactImportReportRow is the client for interacting with the ContactImportReportRow builders.
+	ContactImportReportRow *ContactImportReportRowClient
 	// ContactTag is the client for interacting with the ContactTag builders.
 	ContactTag *ContactTagClient
 	// CustomField is the client for interacting with the CustomField builders.
@@ -317,6 +326,9 @@ func (c *Client) init() {
 	c.ConsentStamp = NewConsentStampClient(c.config)
 	c.Contact = NewContactClient(c.config)
 	c.ContactDate = NewContactDateClient(c.config)
+	c.ContactImport = NewContactImportClient(c.config)
+	c.ContactImportChunk = NewContactImportChunkClient(c.config)
+	c.ContactImportReportRow = NewContactImportReportRowClient(c.config)
 	c.ContactTag = NewContactTagClient(c.config)
 	c.CustomField = NewCustomFieldClient(c.config)
 	c.DefaultSendCap = NewDefaultSendCapClient(c.config)
@@ -496,6 +508,9 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		ConsentStamp:               NewConsentStampClient(cfg),
 		Contact:                    NewContactClient(cfg),
 		ContactDate:                NewContactDateClient(cfg),
+		ContactImport:              NewContactImportClient(cfg),
+		ContactImportChunk:         NewContactImportChunkClient(cfg),
+		ContactImportReportRow:     NewContactImportReportRowClient(cfg),
 		ContactTag:                 NewContactTagClient(cfg),
 		CustomField:                NewCustomFieldClient(cfg),
 		DefaultSendCap:             NewDefaultSendCapClient(cfg),
@@ -602,6 +617,9 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		ConsentStamp:               NewConsentStampClient(cfg),
 		Contact:                    NewContactClient(cfg),
 		ContactDate:                NewContactDateClient(cfg),
+		ContactImport:              NewContactImportClient(cfg),
+		ContactImportChunk:         NewContactImportChunkClient(cfg),
+		ContactImportReportRow:     NewContactImportReportRowClient(cfg),
 		ContactTag:                 NewContactTagClient(cfg),
 		CustomField:                NewCustomFieldClient(cfg),
 		DefaultSendCap:             NewDefaultSendCapClient(cfg),
@@ -702,7 +720,8 @@ func (c *Client) Use(hooks ...Hook) {
 		c.AutomationStepRecord, c.AutomationVersion, c.Binding, c.BrandKit,
 		c.Broadcast, c.BroadcastFigure, c.BroadcastRecipient, c.CapturedMessage,
 		c.Confirmation, c.ConsentRecord, c.ConsentStamp, c.Contact, c.ContactDate,
-		c.ContactTag, c.CustomField, c.DefaultSendCap, c.DownloadLink, c.EmailTemplate,
+		c.ContactImport, c.ContactImportChunk, c.ContactImportReportRow, c.ContactTag,
+		c.CustomField, c.DefaultSendCap, c.DownloadLink, c.EmailTemplate,
 		c.EngagementTrackingConsent, c.Erasure, c.Event, c.EventJournalEntry,
 		c.EventReceipt, c.FrequencyCap, c.FrequencyCount, c.HeldOrderEvent, c.Hold,
 		c.IdentitySecret, c.InstanceAuditEntry, c.InstanceState, c.Integration,
@@ -731,7 +750,8 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.AutomationStepRecord, c.AutomationVersion, c.Binding, c.BrandKit,
 		c.Broadcast, c.BroadcastFigure, c.BroadcastRecipient, c.CapturedMessage,
 		c.Confirmation, c.ConsentRecord, c.ConsentStamp, c.Contact, c.ContactDate,
-		c.ContactTag, c.CustomField, c.DefaultSendCap, c.DownloadLink, c.EmailTemplate,
+		c.ContactImport, c.ContactImportChunk, c.ContactImportReportRow, c.ContactTag,
+		c.CustomField, c.DefaultSendCap, c.DownloadLink, c.EmailTemplate,
 		c.EngagementTrackingConsent, c.Erasure, c.Event, c.EventJournalEntry,
 		c.EventReceipt, c.FrequencyCap, c.FrequencyCount, c.HeldOrderEvent, c.Hold,
 		c.IdentitySecret, c.InstanceAuditEntry, c.InstanceState, c.Integration,
@@ -796,6 +816,12 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Contact.mutate(ctx, m)
 	case *ContactDateMutation:
 		return c.ContactDate.mutate(ctx, m)
+	case *ContactImportMutation:
+		return c.ContactImport.mutate(ctx, m)
+	case *ContactImportChunkMutation:
+		return c.ContactImportChunk.mutate(ctx, m)
+	case *ContactImportReportRowMutation:
+		return c.ContactImportReportRow.mutate(ctx, m)
 	case *ContactTagMutation:
 		return c.ContactTag.mutate(ctx, m)
 	case *CustomFieldMutation:
@@ -4750,6 +4776,533 @@ func (c *ContactDateClient) mutate(ctx context.Context, m *ContactDateMutation) 
 	}
 }
 
+// ContactImportClient is a client for the ContactImport schema.
+type ContactImportClient struct {
+	config
+}
+
+// NewContactImportClient returns a client for the ContactImport from the given config.
+func NewContactImportClient(c config) *ContactImportClient {
+	return &ContactImportClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `contactimport.Hooks(f(g(h())))`.
+func (c *ContactImportClient) Use(hooks ...Hook) {
+	c.hooks.ContactImport = append(c.hooks.ContactImport, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `contactimport.Intercept(f(g(h())))`.
+func (c *ContactImportClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ContactImport = append(c.inters.ContactImport, interceptors...)
+}
+
+// Create returns a builder for creating a ContactImport entity.
+func (c *ContactImportClient) Create() *ContactImportCreate {
+	mutation := newContactImportMutation(c.config, OpCreate)
+	return &ContactImportCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ContactImport entities.
+func (c *ContactImportClient) CreateBulk(builders ...*ContactImportCreate) *ContactImportCreateBulk {
+	return &ContactImportCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ContactImportClient) MapCreateBulk(slice any, setFunc func(*ContactImportCreate, int)) *ContactImportCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ContactImportCreateBulk{err: fmt.Errorf("calling to ContactImportClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ContactImportCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ContactImportCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ContactImport.
+func (c *ContactImportClient) Update() *ContactImportUpdate {
+	mutation := newContactImportMutation(c.config, OpUpdate)
+	return &ContactImportUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ContactImportClient) UpdateOne(_m *ContactImport) *ContactImportUpdateOne {
+	mutation := newContactImportMutation(c.config, OpUpdateOne, withContactImport(_m))
+	return &ContactImportUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ContactImportClient) UpdateOneID(id int64) *ContactImportUpdateOne {
+	mutation := newContactImportMutation(c.config, OpUpdateOne, withContactImportID(id))
+	return &ContactImportUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ContactImport.
+func (c *ContactImportClient) Delete() *ContactImportDelete {
+	mutation := newContactImportMutation(c.config, OpDelete)
+	return &ContactImportDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ContactImportClient) DeleteOne(_m *ContactImport) *ContactImportDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ContactImportClient) DeleteOneID(id int64) *ContactImportDeleteOne {
+	builder := c.Delete().Where(contactimport.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ContactImportDeleteOne{builder}
+}
+
+// Query returns a query builder for ContactImport.
+func (c *ContactImportClient) Query() *ContactImportQuery {
+	return &ContactImportQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeContactImport},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ContactImport entity by its id.
+func (c *ContactImportClient) Get(ctx context.Context, id int64) (*ContactImport, error) {
+	return c.Query().Where(contactimport.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ContactImportClient) GetX(ctx context.Context, id int64) *ContactImport {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryWorkspace queries the workspace edge of a ContactImport.
+func (c *ContactImportClient) QueryWorkspace(_m *ContactImport) *WorkspaceQuery {
+	query := (&WorkspaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(contactimport.Table, contactimport.FieldID, id),
+			sqlgraph.To(workspace.Table, workspace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, contactimport.WorkspaceTable, contactimport.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryMembership queries the membership edge of a ContactImport.
+func (c *ContactImportClient) QueryMembership(_m *ContactImport) *MembershipQuery {
+	query := (&MembershipClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(contactimport.Table, contactimport.FieldID, id),
+			sqlgraph.To(membership.Table, membership.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, contactimport.MembershipTable, contactimport.MembershipColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryChunks queries the chunks edge of a ContactImport.
+func (c *ContactImportClient) QueryChunks(_m *ContactImport) *ContactImportChunkQuery {
+	query := (&ContactImportChunkClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(contactimport.Table, contactimport.FieldID, id),
+			sqlgraph.To(contactimportchunk.Table, contactimportchunk.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, contactimport.ChunksTable, contactimport.ChunksColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryReportRows queries the report_rows edge of a ContactImport.
+func (c *ContactImportClient) QueryReportRows(_m *ContactImport) *ContactImportReportRowQuery {
+	query := (&ContactImportReportRowClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(contactimport.Table, contactimport.FieldID, id),
+			sqlgraph.To(contactimportreportrow.Table, contactimportreportrow.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, contactimport.ReportRowsTable, contactimport.ReportRowsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ContactImportClient) Hooks() []Hook {
+	return c.hooks.ContactImport
+}
+
+// Interceptors returns the client interceptors.
+func (c *ContactImportClient) Interceptors() []Interceptor {
+	return c.inters.ContactImport
+}
+
+func (c *ContactImportClient) mutate(ctx context.Context, m *ContactImportMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ContactImportCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ContactImportUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ContactImportUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ContactImportDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ContactImport mutation op: %q", m.Op())
+	}
+}
+
+// ContactImportChunkClient is a client for the ContactImportChunk schema.
+type ContactImportChunkClient struct {
+	config
+}
+
+// NewContactImportChunkClient returns a client for the ContactImportChunk from the given config.
+func NewContactImportChunkClient(c config) *ContactImportChunkClient {
+	return &ContactImportChunkClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `contactimportchunk.Hooks(f(g(h())))`.
+func (c *ContactImportChunkClient) Use(hooks ...Hook) {
+	c.hooks.ContactImportChunk = append(c.hooks.ContactImportChunk, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `contactimportchunk.Intercept(f(g(h())))`.
+func (c *ContactImportChunkClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ContactImportChunk = append(c.inters.ContactImportChunk, interceptors...)
+}
+
+// Create returns a builder for creating a ContactImportChunk entity.
+func (c *ContactImportChunkClient) Create() *ContactImportChunkCreate {
+	mutation := newContactImportChunkMutation(c.config, OpCreate)
+	return &ContactImportChunkCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ContactImportChunk entities.
+func (c *ContactImportChunkClient) CreateBulk(builders ...*ContactImportChunkCreate) *ContactImportChunkCreateBulk {
+	return &ContactImportChunkCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ContactImportChunkClient) MapCreateBulk(slice any, setFunc func(*ContactImportChunkCreate, int)) *ContactImportChunkCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ContactImportChunkCreateBulk{err: fmt.Errorf("calling to ContactImportChunkClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ContactImportChunkCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ContactImportChunkCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ContactImportChunk.
+func (c *ContactImportChunkClient) Update() *ContactImportChunkUpdate {
+	mutation := newContactImportChunkMutation(c.config, OpUpdate)
+	return &ContactImportChunkUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ContactImportChunkClient) UpdateOne(_m *ContactImportChunk) *ContactImportChunkUpdateOne {
+	mutation := newContactImportChunkMutation(c.config, OpUpdateOne, withContactImportChunk(_m))
+	return &ContactImportChunkUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ContactImportChunkClient) UpdateOneID(id int64) *ContactImportChunkUpdateOne {
+	mutation := newContactImportChunkMutation(c.config, OpUpdateOne, withContactImportChunkID(id))
+	return &ContactImportChunkUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ContactImportChunk.
+func (c *ContactImportChunkClient) Delete() *ContactImportChunkDelete {
+	mutation := newContactImportChunkMutation(c.config, OpDelete)
+	return &ContactImportChunkDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ContactImportChunkClient) DeleteOne(_m *ContactImportChunk) *ContactImportChunkDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ContactImportChunkClient) DeleteOneID(id int64) *ContactImportChunkDeleteOne {
+	builder := c.Delete().Where(contactimportchunk.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ContactImportChunkDeleteOne{builder}
+}
+
+// Query returns a query builder for ContactImportChunk.
+func (c *ContactImportChunkClient) Query() *ContactImportChunkQuery {
+	return &ContactImportChunkQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeContactImportChunk},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ContactImportChunk entity by its id.
+func (c *ContactImportChunkClient) Get(ctx context.Context, id int64) (*ContactImportChunk, error) {
+	return c.Query().Where(contactimportchunk.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ContactImportChunkClient) GetX(ctx context.Context, id int64) *ContactImportChunk {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryWorkspace queries the workspace edge of a ContactImportChunk.
+func (c *ContactImportChunkClient) QueryWorkspace(_m *ContactImportChunk) *WorkspaceQuery {
+	query := (&WorkspaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(contactimportchunk.Table, contactimportchunk.FieldID, id),
+			sqlgraph.To(workspace.Table, workspace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, contactimportchunk.WorkspaceTable, contactimportchunk.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryContactImport queries the contact_import edge of a ContactImportChunk.
+func (c *ContactImportChunkClient) QueryContactImport(_m *ContactImportChunk) *ContactImportQuery {
+	query := (&ContactImportClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(contactimportchunk.Table, contactimportchunk.FieldID, id),
+			sqlgraph.To(contactimport.Table, contactimport.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, contactimportchunk.ContactImportTable, contactimportchunk.ContactImportColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ContactImportChunkClient) Hooks() []Hook {
+	return c.hooks.ContactImportChunk
+}
+
+// Interceptors returns the client interceptors.
+func (c *ContactImportChunkClient) Interceptors() []Interceptor {
+	return c.inters.ContactImportChunk
+}
+
+func (c *ContactImportChunkClient) mutate(ctx context.Context, m *ContactImportChunkMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ContactImportChunkCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ContactImportChunkUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ContactImportChunkUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ContactImportChunkDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ContactImportChunk mutation op: %q", m.Op())
+	}
+}
+
+// ContactImportReportRowClient is a client for the ContactImportReportRow schema.
+type ContactImportReportRowClient struct {
+	config
+}
+
+// NewContactImportReportRowClient returns a client for the ContactImportReportRow from the given config.
+func NewContactImportReportRowClient(c config) *ContactImportReportRowClient {
+	return &ContactImportReportRowClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `contactimportreportrow.Hooks(f(g(h())))`.
+func (c *ContactImportReportRowClient) Use(hooks ...Hook) {
+	c.hooks.ContactImportReportRow = append(c.hooks.ContactImportReportRow, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `contactimportreportrow.Intercept(f(g(h())))`.
+func (c *ContactImportReportRowClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ContactImportReportRow = append(c.inters.ContactImportReportRow, interceptors...)
+}
+
+// Create returns a builder for creating a ContactImportReportRow entity.
+func (c *ContactImportReportRowClient) Create() *ContactImportReportRowCreate {
+	mutation := newContactImportReportRowMutation(c.config, OpCreate)
+	return &ContactImportReportRowCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ContactImportReportRow entities.
+func (c *ContactImportReportRowClient) CreateBulk(builders ...*ContactImportReportRowCreate) *ContactImportReportRowCreateBulk {
+	return &ContactImportReportRowCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ContactImportReportRowClient) MapCreateBulk(slice any, setFunc func(*ContactImportReportRowCreate, int)) *ContactImportReportRowCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ContactImportReportRowCreateBulk{err: fmt.Errorf("calling to ContactImportReportRowClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ContactImportReportRowCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ContactImportReportRowCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ContactImportReportRow.
+func (c *ContactImportReportRowClient) Update() *ContactImportReportRowUpdate {
+	mutation := newContactImportReportRowMutation(c.config, OpUpdate)
+	return &ContactImportReportRowUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ContactImportReportRowClient) UpdateOne(_m *ContactImportReportRow) *ContactImportReportRowUpdateOne {
+	mutation := newContactImportReportRowMutation(c.config, OpUpdateOne, withContactImportReportRow(_m))
+	return &ContactImportReportRowUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ContactImportReportRowClient) UpdateOneID(id int64) *ContactImportReportRowUpdateOne {
+	mutation := newContactImportReportRowMutation(c.config, OpUpdateOne, withContactImportReportRowID(id))
+	return &ContactImportReportRowUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ContactImportReportRow.
+func (c *ContactImportReportRowClient) Delete() *ContactImportReportRowDelete {
+	mutation := newContactImportReportRowMutation(c.config, OpDelete)
+	return &ContactImportReportRowDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ContactImportReportRowClient) DeleteOne(_m *ContactImportReportRow) *ContactImportReportRowDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ContactImportReportRowClient) DeleteOneID(id int64) *ContactImportReportRowDeleteOne {
+	builder := c.Delete().Where(contactimportreportrow.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ContactImportReportRowDeleteOne{builder}
+}
+
+// Query returns a query builder for ContactImportReportRow.
+func (c *ContactImportReportRowClient) Query() *ContactImportReportRowQuery {
+	return &ContactImportReportRowQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeContactImportReportRow},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ContactImportReportRow entity by its id.
+func (c *ContactImportReportRowClient) Get(ctx context.Context, id int64) (*ContactImportReportRow, error) {
+	return c.Query().Where(contactimportreportrow.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ContactImportReportRowClient) GetX(ctx context.Context, id int64) *ContactImportReportRow {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryWorkspace queries the workspace edge of a ContactImportReportRow.
+func (c *ContactImportReportRowClient) QueryWorkspace(_m *ContactImportReportRow) *WorkspaceQuery {
+	query := (&WorkspaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(contactimportreportrow.Table, contactimportreportrow.FieldID, id),
+			sqlgraph.To(workspace.Table, workspace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, contactimportreportrow.WorkspaceTable, contactimportreportrow.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryContactImport queries the contact_import edge of a ContactImportReportRow.
+func (c *ContactImportReportRowClient) QueryContactImport(_m *ContactImportReportRow) *ContactImportQuery {
+	query := (&ContactImportClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(contactimportreportrow.Table, contactimportreportrow.FieldID, id),
+			sqlgraph.To(contactimport.Table, contactimport.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, contactimportreportrow.ContactImportTable, contactimportreportrow.ContactImportColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ContactImportReportRowClient) Hooks() []Hook {
+	return c.hooks.ContactImportReportRow
+}
+
+// Interceptors returns the client interceptors.
+func (c *ContactImportReportRowClient) Interceptors() []Interceptor {
+	return c.inters.ContactImportReportRow
+}
+
+func (c *ContactImportReportRowClient) mutate(ctx context.Context, m *ContactImportReportRowMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ContactImportReportRowCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ContactImportReportRowUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ContactImportReportRowUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ContactImportReportRowDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ContactImportReportRow mutation op: %q", m.Op())
+	}
+}
+
 // ContactTagClient is a client for the ContactTag schema.
 type ContactTagClient struct {
 	config
@@ -8492,6 +9045,22 @@ func (c *MembershipClient) QueryOauthCodes(_m *Membership) *OAuthCodeQuery {
 			sqlgraph.From(membership.Table, membership.FieldID, id),
 			sqlgraph.To(oauthcode.Table, oauthcode.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, membership.OauthCodesTable, membership.OauthCodesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryContactImports queries the contact_imports edge of a Membership.
+func (c *MembershipClient) QueryContactImports(_m *Membership) *ContactImportQuery {
+	query := (&ContactImportClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(membership.Table, membership.FieldID, id),
+			sqlgraph.To(contactimport.Table, contactimport.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, membership.ContactImportsTable, membership.ContactImportsColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -15744,6 +16313,54 @@ func (c *WorkspaceClient) QueryFrequencyCounts(_m *Workspace) *FrequencyCountQue
 	return query
 }
 
+// QueryContactImports queries the contact_imports edge of a Workspace.
+func (c *WorkspaceClient) QueryContactImports(_m *Workspace) *ContactImportQuery {
+	query := (&ContactImportClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, id),
+			sqlgraph.To(contactimport.Table, contactimport.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.ContactImportsTable, workspace.ContactImportsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryContactImportChunks queries the contact_import_chunks edge of a Workspace.
+func (c *WorkspaceClient) QueryContactImportChunks(_m *Workspace) *ContactImportChunkQuery {
+	query := (&ContactImportChunkClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, id),
+			sqlgraph.To(contactimportchunk.Table, contactimportchunk.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.ContactImportChunksTable, workspace.ContactImportChunksColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryContactImportReportRows queries the contact_import_report_rows edge of a Workspace.
+func (c *WorkspaceClient) QueryContactImportReportRows(_m *Workspace) *ContactImportReportRowQuery {
+	query := (&ContactImportReportRowClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, id),
+			sqlgraph.To(contactimportreportrow.Table, contactimportreportrow.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.ContactImportReportRowsTable, workspace.ContactImportReportRowsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QuerySendingWindows queries the sending_windows edge of a Workspace.
 func (c *WorkspaceClient) QuerySendingWindows(_m *Workspace) *SendingWindowQuery {
 	query := (&SendingWindowClient{config: c.config}).Query()
@@ -16485,7 +17102,8 @@ type (
 		AutomationOccurrenceCursor, AutomationRun, AutomationSkippedEntry,
 		AutomationStepRecord, AutomationVersion, Binding, BrandKit, Broadcast,
 		BroadcastFigure, BroadcastRecipient, CapturedMessage, Confirmation,
-		ConsentRecord, ConsentStamp, Contact, ContactDate, ContactTag, CustomField,
+		ConsentRecord, ConsentStamp, Contact, ContactDate, ContactImport,
+		ContactImportChunk, ContactImportReportRow, ContactTag, CustomField,
 		DefaultSendCap, DownloadLink, EmailTemplate, EngagementTrackingConsent,
 		Erasure, Event, EventJournalEntry, EventReceipt, FrequencyCap, FrequencyCount,
 		HeldOrderEvent, Hold, IdentitySecret, InstanceAuditEntry, InstanceState,
@@ -16505,7 +17123,8 @@ type (
 		AutomationOccurrenceCursor, AutomationRun, AutomationSkippedEntry,
 		AutomationStepRecord, AutomationVersion, Binding, BrandKit, Broadcast,
 		BroadcastFigure, BroadcastRecipient, CapturedMessage, Confirmation,
-		ConsentRecord, ConsentStamp, Contact, ContactDate, ContactTag, CustomField,
+		ConsentRecord, ConsentStamp, Contact, ContactDate, ContactImport,
+		ContactImportChunk, ContactImportReportRow, ContactTag, CustomField,
 		DefaultSendCap, DownloadLink, EmailTemplate, EngagementTrackingConsent,
 		Erasure, Event, EventJournalEntry, EventReceipt, FrequencyCap, FrequencyCount,
 		HeldOrderEvent, Hold, IdentitySecret, InstanceAuditEntry, InstanceState,

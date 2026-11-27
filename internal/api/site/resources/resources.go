@@ -33,6 +33,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/consentrecord"
 	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/contactimport"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
 	"github.com/getsphericon/sphericon/ent/invitation"
@@ -46,6 +47,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contactimports"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contactsexport"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
@@ -88,6 +91,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/dkimstate"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
+	"github.com/getsphericon/sphericon/internal/kernel/csvimport"
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 	"github.com/getsphericon/sphericon/internal/kernel/narrow"
@@ -562,6 +566,40 @@ type Converter interface {
 	PresenceOperatorToResource(source conditiontree.PresenceOperator) siteapi.PresenceOperator
 	// goverter:map Type ConditionTests | customFieldConditionTests
 	CustomFieldToResource(source *ent.CustomField) siteapi.SiteCustomFieldResource
+
+	// A CSV import (ADR 0138): its row, the mapping it reads its file by (the saved one or the
+	// proposal) with its "only add new" choice, what its run wrote and its report's rows.
+	// goverter:autoMap Import
+	// goverter:map Import.RowCount Rows
+	// goverter:map . Mapping | contactImportMapping
+	// goverter:map Import Counts
+	// goverter:map Import.StartedAt StartedAt
+	// goverter:map Import.EndedAt EndedAt
+	// goverter:useEmptyOnNil:slice
+	ContactImportToResource(source contactimports.View) siteapi.SiteContactImport
+	ContactImportCounts(source *ent.ContactImport) siteapi.ContactImportCounts
+	// goverter:enum:transform value
+	ContactImportState(source contactimport.State) siteapi.ContactImportState
+	// goverter:enum:transform value
+	ContactImportDelimiter(source contactimport.Delimiter) siteapi.ContactImportDelimiter
+	// goverter:enum:transform value
+	ContactImportDateFormat(source csvimport.DateFormat) siteapi.ContactImportDateFormat
+	// goverter:enum:transform value
+	ContactImportIssueReason(source csvimport.Reason) siteapi.ContactImportIssueReason
+	// A preview carries only the address check's traits (ADR 0117): the consent and the
+	// two-Contacts warnings are the run's.
+	// goverter:enum:transform value
+	// goverter:enum:map WarningConsentTimeInFuture @panic
+	// goverter:enum:map WarningKeysNameTwoContacts @panic
+	ContactImportWarning(source contacts.Warning) siteapi.ContactImportWarning
+	// goverter:useEmptyOnNil:slice
+	ContactImportPreviewToResource(source contactimports.Preview) siteapi.SiteContactImportPreview
+	// goverter:map Refusal | contactImportRefusal
+	// goverter:useEmptyOnNil:slice
+	ContactImportPreviewRowToResource(source contactimports.PreviewRow) siteapi.ContactImportPreviewRow
+	ContactImportIssueToResource(source csvimport.Issue) siteapi.ContactImportIssue
+	// A link to download a file (downloadlinks): its path, which the handler builds, and its expiry.
+	DownloadLinkToResource(source DownloadLinkView) siteapi.DownloadLink
 	// goverter:useEmptyOnNil:slice
 	CustomFieldsToResources(source []*ent.CustomField) []siteapi.SiteCustomFieldResource
 	StartLinkToResource(source bindings.StartLink) siteapi.TelegramStartLinkResource

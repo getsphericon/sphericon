@@ -15,6 +15,7 @@ package problem
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -163,6 +164,11 @@ func decide(ctx context.Context, ex *exchange, err error) (int, *siteapi.Problem
 	if code < http.StatusInternalServerError {
 		// The client gets this text as the problem's detail; the log keeps it beside the access line.
 		p.Detail = siteapi.NewOptString(err.Error())
+		if mbe, ok := errors.AsType[*http.MaxBytesError](err); ok {
+			// A body over its cap says the cap, so the client knows how much to send at most (a
+			// CSV import's file, which it may split).
+			p.Detail = siteapi.NewOptString(fmt.Sprintf("the request body is larger than the limit of %d bytes", mbe.Limit))
+		}
 		// A body that does not decode names the property it fails at (ADR 0148).
 		if path, reason := undecodedProperty(ctx, err); path != "" && code == http.StatusBadRequest {
 			p.Errors = siteapi.NewOptProblemDetailsErrors(siteapi.ProblemDetailsErrors{path: {reason}})

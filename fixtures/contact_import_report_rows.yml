@@ -1,0 +1,17 @@
+# The refused rows' report of Acme's ended import (ADR 0138), and one of Globex's.
+- id: 1
+  contact_import_id: 1
+  row: 2
+  cells: '["","Nobody"]'
+  issues: '[{"reason":"noKey","message":"the row names no subject ID, email or phone"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 3}}'
+- id: 2
+  contact_import_id: 2
+  row: 1
+  cells: '["not an address"]'
+  issues: '[{"reason":"noKey","message":"the row names no subject ID, email or phone"}]'
+  workspace_id: 2
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'

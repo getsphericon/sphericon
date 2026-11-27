@@ -19,6 +19,7 @@ import (
 	"github.com/robfig/cron/v3"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contactimports"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
@@ -109,6 +110,8 @@ type Deps struct {
 	Orders   *orders.Module
 	// Contacts changes a Contact's Tags for a Rule's tag Actions.
 	Contacts *contacts.Module
+	// ContactImports runs a CSV import of Contacts (ADR 0138).
+	ContactImports *contactimports.Module
 	// Suppressions adds the address of a hard bounce or a complaint (the suppression consumer).
 	Suppressions *suppressions.Module
 	// CapturedMessages prunes the Captured messages past the Test inbox's retention (ADR 0058).
@@ -183,6 +186,7 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 	river.AddWorker(workers, NewSendNoticeWorker(systemSender))
 	river.AddWorker(workers, NewRemindSecondFactorWorker(deps.SecondFactor))
 	river.AddWorker(workers, NewVerifySendingDomainWorker(entClient, deps.SendingDomains))
+	river.AddWorker(workers, NewRunContactImportWorker(entClient, deps.ContactImports))
 	river.AddWorker(workers, NewRecheckSendingDomainsWorker(deps.SendingDomains))
 	river.AddWorker(workers, NewVerifyJoinDomainWorker(deps.JoinDomains))
 	river.AddWorker(workers, NewRecheckJoinDomainsWorker(deps.JoinDomains))

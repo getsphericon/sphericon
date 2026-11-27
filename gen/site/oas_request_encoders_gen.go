@@ -374,6 +374,30 @@ func encodeSiteContactCsvExportsCreateRequest(
 	return nil
 }
 
+func encodeSiteContactImportsSaveMappingRequest(
+	req *ContactImportMappingInput,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
+func encodeSiteContactImportsUploadRequest(
+	req SiteContactImportsUploadReq,
+	r *http.Request,
+) error {
+	const contentType = "text/csv"
+	body := req
+	ht.SetBody(r, body, contentType)
+	return nil
+}
+
 func encodeSiteContactsCreateRequest(
 	req *SiteCreateContactInput,
 	r *http.Request,

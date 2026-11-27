@@ -25,6 +25,9 @@ import (
 	"github.com/getsphericon/sphericon/ent/consentstamp"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/contactdate"
+	"github.com/getsphericon/sphericon/ent/contactimport"
+	"github.com/getsphericon/sphericon/ent/contactimportchunk"
+	"github.com/getsphericon/sphericon/ent/contactimportreportrow"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/downloadlink"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
@@ -1455,6 +1458,182 @@ func ScopedEntities() []*ScopedEntity {
 			Refs: []ScopedRef{},
 		},
 		{
+			Kind:         Kinds["ContactImport"],
+			Name:         "ContactImport",
+			Wrapper:      reflect.TypeFor[*ContactImportScoped](),
+			AuditActions: []string{},
+			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
+				return c.ContactImport.Query().Where(contactimport.WorkspaceID(ws)).Order(Asc(contactimport.FieldID)).IDs(ctx)
+			},
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.ContactImport().Get(ctx, id)
+			},
+			Touch: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.ContactImport().UpdateOneID(id).Exec(ctx)
+			},
+			BulkTouch: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.ContactImport().Update().Where(contactimport.ID(id)).Save(ctx)
+			},
+			Delete: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.ContactImport().DeleteOneID(id).Exec(ctx)
+			},
+			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.ContactImport().Delete().Where(contactimport.ID(id)).Exec(ctx)
+			},
+			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
+				src, err := s.c.ContactImport.Get(ctx, id)
+				if err != nil {
+					return 0, err
+				}
+				_ = remap
+				b := s.ContactImport().Create()
+				if src.MembershipID != nil {
+					b.SetMembershipID(remap("Membership", *src.MembershipID))
+				}
+				b.SetState(src.State)
+				b.SetDelimiter(src.Delimiter)
+				b.SetHeader(src.Header)
+				b.SetSize(src.Size)
+				b.SetRowCount(src.RowCount)
+				b.SetMalformedRows(src.MalformedRows)
+				if !reflect.ValueOf(src.Mapping).IsZero() {
+					b.SetMapping(src.Mapping)
+				}
+				b.SetOnlyAddNew(src.OnlyAddNew)
+				b.SetAsNewSignUps(src.AsNewSignUps)
+				b.SetCheckpointRow(src.CheckpointRow)
+				b.SetCheckpointChunk(src.CheckpointChunk)
+				b.SetCheckpointOffset(src.CheckpointOffset)
+				b.SetProcessed(src.Processed)
+				b.SetCreated(src.Created)
+				b.SetUpdated(src.Updated)
+				b.SetRefused(src.Refused)
+				b.SetDropped(src.Dropped)
+				b.SetOptedOut(src.OptedOut)
+				b.SetSuppressed(src.Suppressed)
+				if src.StartedAt != nil {
+					b.SetStartedAt(*src.StartedAt)
+				}
+				if src.EndedAt != nil {
+					b.SetEndedAt(*src.EndedAt)
+				}
+				if src.CancelRequestedAt != nil {
+					b.SetCancelRequestedAt(*src.CancelRequestedAt)
+				}
+				if src.ReportExpiresAt != nil {
+					b.SetReportExpiresAt(*src.ReportExpiresAt)
+				}
+				created, err := b.Save(ctx)
+				if err != nil {
+					return 0, err
+				}
+				return created.WorkspaceID, nil
+			},
+			Refs: []ScopedRef{
+				{
+					Name: "membership", Target: "Membership",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.ContactImport().UpdateOneID(id).SetMembershipID(target).Exec(ctx)
+					},
+				},
+				{
+					Name: "chunks", Target: "ContactImportChunk",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.ContactImport().UpdateOneID(id).AddChunkIDs(target).Exec(ctx)
+					},
+				},
+				{
+					Name: "report_rows", Target: "ContactImportReportRow",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.ContactImport().UpdateOneID(id).AddReportRowIDs(target).Exec(ctx)
+					},
+				},
+			},
+		},
+		{
+			Kind:         Kinds["ContactImportChunk"],
+			Name:         "ContactImportChunk",
+			Wrapper:      reflect.TypeFor[*ContactImportChunkScoped](),
+			AuditActions: []string{},
+			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
+				return c.ContactImportChunk.Query().Where(contactimportchunk.WorkspaceID(ws)).Order(Asc(contactimportchunk.FieldID)).IDs(ctx)
+			},
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.ContactImportChunk().Get(ctx, id)
+			},
+			Touch: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.ContactImportChunk().UpdateOneID(id).Exec(ctx)
+			},
+			BulkTouch: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.ContactImportChunk().Update().Where(contactimportchunk.ID(id)).Save(ctx)
+			},
+			Delete: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.ContactImportChunk().DeleteOneID(id).Exec(ctx)
+			},
+			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.ContactImportChunk().Delete().Where(contactimportchunk.ID(id)).Exec(ctx)
+			},
+			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
+				src, err := s.c.ContactImportChunk.Get(ctx, id)
+				if err != nil {
+					return 0, err
+				}
+				_ = remap
+				b := s.ContactImportChunk().Create()
+				b.SetContactImportID(remap("ContactImport", src.ContactImportID))
+				b.SetSeq(src.Seq)
+				b.SetData(src.Data)
+				created, err := b.Save(ctx)
+				if err != nil {
+					return 0, err
+				}
+				return created.WorkspaceID, nil
+			},
+			Refs: []ScopedRef{},
+		},
+		{
+			Kind:         Kinds["ContactImportReportRow"],
+			Name:         "ContactImportReportRow",
+			Wrapper:      reflect.TypeFor[*ContactImportReportRowScoped](),
+			AuditActions: []string{},
+			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
+				return c.ContactImportReportRow.Query().Where(contactimportreportrow.WorkspaceID(ws)).Order(Asc(contactimportreportrow.FieldID)).IDs(ctx)
+			},
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.ContactImportReportRow().Get(ctx, id)
+			},
+			Touch: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.ContactImportReportRow().UpdateOneID(id).Exec(ctx)
+			},
+			BulkTouch: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.ContactImportReportRow().Update().Where(contactimportreportrow.ID(id)).Save(ctx)
+			},
+			Delete: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.ContactImportReportRow().DeleteOneID(id).Exec(ctx)
+			},
+			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.ContactImportReportRow().Delete().Where(contactimportreportrow.ID(id)).Exec(ctx)
+			},
+			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
+				src, err := s.c.ContactImportReportRow.Get(ctx, id)
+				if err != nil {
+					return 0, err
+				}
+				_ = remap
+				b := s.ContactImportReportRow().Create()
+				b.SetContactImportID(remap("ContactImport", src.ContactImportID))
+				b.SetRow(src.Row)
+				b.SetCells(src.Cells)
+				b.SetIssues(src.Issues)
+				created, err := b.Save(ctx)
+				if err != nil {
+					return 0, err
+				}
+				return created.WorkspaceID, nil
+			},
+			Refs: []ScopedRef{},
+		},
+		{
 			Kind:         Kinds["CustomField"],
 			Name:         "CustomField",
 			Wrapper:      reflect.TypeFor[*CustomFieldScoped](),
@@ -2290,6 +2469,12 @@ func ScopedEntities() []*ScopedEntity {
 					Name: "oauth_codes", Target: "OAuthCode",
 					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
 						return s.Membership().UpdateOneID(id).AddOauthCodeIDs(target).Exec(ctx)
+					},
+				},
+				{
+					Name: "contact_imports", Target: "ContactImport",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.Membership().UpdateOneID(id).AddContactImportIDs(target).Exec(ctx)
 					},
 				},
 			},

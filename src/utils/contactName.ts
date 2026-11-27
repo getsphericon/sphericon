@@ -1,8 +1,9 @@
-import type { SiteContactResource } from '../generated/site/types.gen.ts'
+import type { ContactImportKey, SiteContactResource } from '../generated/site/types.gen.ts'
 import { formatPhone } from './phone.ts'
 
 type Named = Pick<SiteContactResource, 'firstName' | 'lastName'>
-type Identified = Pick<SiteContactResource, 'email' | 'subjectId' | 'phone'>
+// The alias keys of a Contact, by the contract's names (an import fills the same ones).
+type Identified = Pick<SiteContactResource, ContactImportKey>
 
 // A Contact's first and last name, or '' when it has neither.
 export function contactFullName(contact: Named): string {

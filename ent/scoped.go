@@ -30,6 +30,9 @@ import (
 	"github.com/getsphericon/sphericon/ent/consentstamp"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/contactdate"
+	"github.com/getsphericon/sphericon/ent/contactimport"
+	"github.com/getsphericon/sphericon/ent/contactimportchunk"
+	"github.com/getsphericon/sphericon/ent/contactimportreportrow"
 	"github.com/getsphericon/sphericon/ent/contacttag"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/downloadlink"
@@ -76,6 +79,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	"github.com/getsphericon/sphericon/internal/kernel/csvimport"
 	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
@@ -476,6 +480,54 @@ func (s *Scoped) verifyContactDate(ctx context.Context, ids []int64) error {
 	}
 	if n != len(ids) {
 		return fmt.Errorf("ContactDate: %w", ErrNotInWorkspace)
+	}
+	return nil
+}
+
+// verifyContactImport fails with ErrNotInWorkspace unless every id is a ContactImport of the Workspace.
+func (s *Scoped) verifyContactImport(ctx context.Context, ids []int64) error {
+	ids = uniqueIDs(ids)
+	if len(ids) == 0 {
+		return nil
+	}
+	n, err := s.c.ContactImport.Query().Where(s.inContactImport(contactimport.IDIn(ids...))...).Count(ctx)
+	if err != nil {
+		return err
+	}
+	if n != len(ids) {
+		return fmt.Errorf("ContactImport: %w", ErrNotInWorkspace)
+	}
+	return nil
+}
+
+// verifyContactImportChunk fails with ErrNotInWorkspace unless every id is a ContactImportChunk of the Workspace.
+func (s *Scoped) verifyContactImportChunk(ctx context.Context, ids []int64) error {
+	ids = uniqueIDs(ids)
+	if len(ids) == 0 {
+		return nil
+	}
+	n, err := s.c.ContactImportChunk.Query().Where(s.inContactImportChunk(contactimportchunk.IDIn(ids...))...).Count(ctx)
+	if err != nil {
+		return err
+	}
+	if n != len(ids) {
+		return fmt.Errorf("ContactImportChunk: %w", ErrNotInWorkspace)
+	}
+	return nil
+}
+
+// verifyContactImportReportRow fails with ErrNotInWorkspace unless every id is a ContactImportReportRow of the Workspace.
+func (s *Scoped) verifyContactImportReportRow(ctx context.Context, ids []int64) error {
+	ids = uniqueIDs(ids)
+	if len(ids) == 0 {
+		return nil
+	}
+	n, err := s.c.ContactImportReportRow.Query().Where(s.inContactImportReportRow(contactimportreportrow.IDIn(ids...))...).Count(ctx)
+	if err != nil {
+		return err
+	}
+	if n != len(ids) {
+		return fmt.Errorf("ContactImportReportRow: %w", ErrNotInWorkspace)
 	}
 	return nil
 }
@@ -29230,6 +29282,4112 @@ const (
 	RoleOf_ContactDateScopedUpdate_Exec   = RoleStep
 )
 
+// ContactImportScoped reaches ContactImport entities of one Workspace.
+type ContactImportScoped struct{ s *Scoped }
+
+// ContactImport returns the ContactImport entities of the Workspace.
+func (s *Scoped) ContactImport() *ContactImportScoped { return &ContactImportScoped{s: s} }
+
+const (
+	TypeOf_ContactImportScoped             = TypeWrapper
+	EntityOf_ContactImportScoped           = "ContactImport"
+	RoleOf_Scoped_ContactImport            = RoleNone
+	RoleOf_ContactImportScoped_Query       = RoleRead
+	RoleOf_ContactImportScoped_Get         = RoleRead
+	RoleOf_ContactImportScoped_DeleteOneID = RoleStart
+	RoleOf_ContactImportScoped_UpdateOneID = RoleStart
+	RoleOf_ContactImportScoped_Delete      = RoleStart
+	RoleOf_ContactImportScoped_Create      = RoleStart
+	RoleOf_ContactImportScoped_CreateBulk  = RoleStart
+	RoleOf_ContactImportScoped_Update      = RoleStart
+)
+
+// inContactImport confines predicates of ContactImport rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inContactImport(ps ...predicate.ContactImport) []predicate.ContactImport {
+	return append([]predicate.ContactImport{contactimport.WorkspaceID(s.ws)}, ps...)
+}
+
+// Query returns a ContactImport query already confined to the Workspace.
+func (t *ContactImportScoped) Query() *ContactImportQuery {
+	return t.s.c.ContactImport.Query().Where(t.s.inContactImport()...)
+}
+
+// Get returns the ContactImport with the id; a row of another Workspace is not found.
+func (t *ContactImportScoped) Get(ctx context.Context, id int64) (*ContactImport, error) {
+	return t.Query().Where(contactimport.ID(id)).Only(ctx)
+}
+
+// writeContactImport runs a write of ContactImport rows: run builds it on the client of the scope it is
+// given and executes it, and reaches no other client. The
+// entity is not audited, so run gets the scope itself.
+func (s *Scoped) writeContactImport(ctx context.Context, verb string, where []predicate.ContactImport, unchanged unchangedRows, run func(s *Scoped) ([]int64, error)) error {
+	_, _, _ = verb, where, unchanged
+	_, err := run(s)
+	return err
+}
+
+// checkContactImport verifies every reference the mutations set against the Workspace of s, one query per
+// reference for all of them.
+func (s *Scoped) checkContactImport(ctx context.Context, ms ...*ContactImportMutation) error {
+	{
+		var ids []int64
+		for _, m := range ms {
+			ids = append(ids, m.MembershipIDs()...)
+		}
+		if err := s.verifyMembership(ctx, ids); err != nil {
+			return fmt.Errorf("membership: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, m := range ms {
+			ids = append(ids, m.ChunksIDs()...)
+		}
+		if err := s.verifyContactImportChunk(ctx, ids); err != nil {
+			return fmt.Errorf("chunks: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, m := range ms {
+			ids = append(ids, m.ReportRowsIDs()...)
+		}
+		if err := s.verifyContactImportReportRow(ctx, ids); err != nil {
+			return fmt.Errorf("report_rows: %w", err)
+		}
+	}
+	return nil
+}
+
+// ContactImportScopedDeleteOne deletes one ContactImport: it keeps the row's id and its fences, and builds the
+// ent delete on the client the delete runs on.
+type ContactImportScopedDeleteOne struct {
+	s     *Scoped
+	id    int64
+	where []predicate.ContactImport
+}
+
+// DeleteOneID deletes the ContactImport with the id; a row of another Workspace is not found.
+func (t *ContactImportScoped) DeleteOneID(id int64) *ContactImportScopedDeleteOne {
+	return &ContactImportScopedDeleteOne{s: t.s, id: id}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *ContactImportScopedDeleteOne) Where(ps ...predicate.ContactImport) *ContactImportScopedDeleteOne {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+const (
+	TypeOf_ContactImportScopedDeleteOne       = TypeScopedDelete
+	EntityOf_ContactImportScopedDeleteOne     = "ContactImport"
+	RoleOf_ContactImportScopedDeleteOne_Where = RoleStep
+	RoleOf_ContactImportScopedDeleteOne_Exec  = RoleStep
+)
+
+// Exec deletes the row; a missing row is a NotFoundError.
+func (x *ContactImportScopedDeleteOne) Exec(ctx context.Context) error {
+	where := x.s.inContactImport(x.where...)
+	return x.s.writeContactImport(ctx, "delete", append([]predicate.ContactImport{contactimport.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
+		return nil, s.c.ContactImport.DeleteOneID(x.id).Where(where...).Exec(ctx)
+	})
+}
+
+// ContactImportScopedDelete deletes the ContactImport rows of one Workspace that match its predicates, which it
+// keeps until the delete is built on the client it runs on.
+type ContactImportScopedDelete struct {
+	s     *Scoped
+	where []predicate.ContactImport
+}
+
+// Delete deletes the ContactImport entities of the Workspace that match the predicates.
+func (t *ContactImportScoped) Delete() *ContactImportScopedDelete {
+	return &ContactImportScopedDelete{s: t.s}
+}
+
+// Where appends predicates the rows must match.
+func (x *ContactImportScopedDelete) Where(ps ...predicate.ContactImport) *ContactImportScopedDelete {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+const (
+	TypeOf_ContactImportScopedDelete       = TypeScopedDelete
+	EntityOf_ContactImportScopedDelete     = "ContactImport"
+	RoleOf_ContactImportScopedDelete_Where = RoleStep
+	RoleOf_ContactImportScopedDelete_Exec  = RoleStep
+)
+
+// Exec deletes the rows and returns how many were deleted.
+func (x *ContactImportScopedDelete) Exec(ctx context.Context) (int, error) {
+	where := x.s.inContactImport(x.where...)
+	var n int
+	err := x.s.writeContactImport(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		var err error
+		n, err = s.c.ContactImport.Delete().Where(where...).Exec(ctx)
+		return nil, err
+	})
+	return written(n, err)
+}
+
+// ---------------------------------------------------------------- create
+
+// ContactImportScopedCreate creates a ContactImport of one Workspace. It has no way to name a Workspace: it
+// keeps what its setters set and builds the ent create, in its Workspace, on the client the create
+// runs on.
+type ContactImportScopedCreate struct {
+	s   *Scoped
+	set []func(*ContactImportCreate)
+}
+
+// Create starts a ContactImport in the Workspace.
+func (t *ContactImportScoped) Create() *ContactImportScopedCreate {
+	return &ContactImportScopedCreate{s: t.s}
+}
+
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *ContactImportScopedCreate) raw(s *Scoped) *ContactImportCreate {
+	b := s.c.ContactImport.Create().SetWorkspaceID(s.ws)
+	for _, set := range x.set {
+		set(b)
+	}
+	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *ContactImportScopedCreate) build(ctx context.Context, s *Scoped) (*ContactImportCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkContactImport(ctx, b.Mutation()))
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (x *ContactImportScopedCreate) SetCreatedAt(v time.Time) *ContactImportScopedCreate {
+	x.set = append(x.set, func(b *ContactImportCreate) { b.SetCreatedAt(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetCreatedAt = RoleStep
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (x *ContactImportScopedCreate) SetNillableCreatedAt(v *time.Time) *ContactImportScopedCreate {
+	if v != nil {
+		x.SetCreatedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetNillableCreatedAt = RoleStep
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *ContactImportScopedCreate) SetUpdatedAt(v time.Time) *ContactImportScopedCreate {
+	x.set = append(x.set, func(b *ContactImportCreate) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetUpdatedAt = RoleStep
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (x *ContactImportScopedCreate) SetNillableUpdatedAt(v *time.Time) *ContactImportScopedCreate {
+	if v != nil {
+		x.SetUpdatedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetNillableUpdatedAt = RoleStep
+
+// SetMembershipID sets the "membership_id" field.
+func (x *ContactImportScopedCreate) SetMembershipID(v int64) *ContactImportScopedCreate {
+	x.set = append(x.set, func(b *ContactImportCreate) { b.SetMembershipID(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetMembershipID = RoleStep
+
+// SetNillableMembershipID sets the "membership_id" field if the given value is not nil.
+func (x *ContactImportScopedCreate) SetNillableMembershipID(v *int64) *ContactImportScopedCreate {
+	if v != nil {
+		x.SetMembershipID(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetNillableMembershipID = RoleStep
+
+// SetState sets the "state" field.
+func (x *ContactImportScopedCreate) SetState(v contactimport.State) *ContactImportScopedCreate {
+	x.set = append(x.set, func(b *ContactImportCreate) { b.SetState(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetState = RoleStep
+
+// SetNillableState sets the "state" field if the given value is not nil.
+func (x *ContactImportScopedCreate) SetNillableState(v *contactimport.State) *ContactImportScopedCreate {
+	if v != nil {
+		x.SetState(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetNillableState = RoleStep
+
+// SetDelimiter sets the "delimiter" field.
+func (x *ContactImportScopedCreate) SetDelimiter(v contactimport.Delimiter) *ContactImportScopedCreate {
+	x.set = append(x.set, func(b *ContactImportCreate) { b.SetDelimiter(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetDelimiter = RoleStep
+
+// SetHeader sets the "header" field.
+func (x *ContactImportScopedCreate) SetHeader(v []string) *ContactImportScopedCreate {
+	x.set = append(x.set, func(b *ContactImportCreate) { b.SetHeader(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetHeader = RoleStep
+
+// SetSize sets the "size" field.
+func (x *ContactImportScopedCreate) SetSize(v int64) *ContactImportScopedCreate {
+	x.set = append(x.set, func(b *ContactImportCreate) { b.SetSize(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetSize = RoleStep
+
+// SetRowCount sets the "row_count" field.
+func (x *ContactImportScopedCreate) SetRowCount(v int) *ContactImportScopedCreate {
+	x.set = append(x.set, func(b *ContactImportCreate) { b.SetRowCount(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetRowCount = RoleStep
+
+// SetMalformedRows sets the "malformed_rows" field.
+func (x *ContactImportScopedCreate) SetMalformedRows(v int) *ContactImportScopedCreate {
+	x.set = append(x.set, func(b *ContactImportCreate) { b.SetMalformedRows(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetMalformedRows = RoleStep
+
+// SetMapping sets the "mapping" field.
+func (x *ContactImportScopedCreate) SetMapping(v csvimport.Mapping) *ContactImportScopedCreate {
+	x.set = append(x.set, func(b *ContactImportCreate) { b.SetMapping(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetMapping = RoleStep
+
+// SetNillableMapping sets the "mapping" field if the given value is not nil.
+func (x *ContactImportScopedCreate) SetNillableMapping(v *csvimport.Mapping) *ContactImportScopedCreate {
+	if v != nil {
+		x.SetMapping(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetNillableMapping = RoleStep
+
+// SetOnlyAddNew sets the "only_add_new" field.
+func (x *ContactImportScopedCreate) SetOnlyAddNew(v bool) *ContactImportScopedCreate {
+	x.set = append(x.set, func(b *ContactImportCreate) { b.SetOnlyAddNew(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetOnlyAddNew = RoleStep
+
+// SetNillableOnlyAddNew sets the "only_add_new" field if the given value is not nil.
+func (x *ContactImportScopedCreate) SetNillableOnlyAddNew(v *bool) *ContactImportScopedCreate {
+	if v != nil {
+		x.SetOnlyAddNew(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetNillableOnlyAddNew = RoleStep
+
+// SetAsNewSignUps sets the "as_new_sign_ups" field.
+func (x *ContactImportScopedCreate) SetAsNewSignUps(v bool) *ContactImportScopedCreate {
+	x.set = append(x.set, func(b *ContactImportCreate) { b.SetAsNewSignUps(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetAsNewSignUps = RoleStep
+
+// SetNillableAsNewSignUps sets the "as_new_sign_ups" field if the given value is not nil.
+func (x *ContactImportScopedCreate) SetNillableAsNewSignUps(v *bool) *ContactImportScopedCreate {
+	if v != nil {
+		x.SetAsNewSignUps(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetNillableAsNewSignUps = RoleStep
+
+// SetCheckpointRow sets the "checkpoint_row" field.
+func (x *ContactImportScopedCreate) SetCheckpointRow(v int) *ContactImportScopedCreate {
+	x.set = append(x.set, func(b *ContactImportCreate) { b.SetCheckpointRow(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetCheckpointRow = RoleStep
+
+// SetNillableCheckpointRow sets the "checkpoint_row" field if the given value is not nil.
+func (x *ContactImportScopedCreate) SetNillableCheckpointRow(v *int) *ContactImportScopedCreate {
+	if v != nil {
+		x.SetCheckpointRow(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetNillableCheckpointRow = RoleStep
+
+// SetCheckpointChunk sets the "checkpoint_chunk" field.
+func (x *ContactImportScopedCreate) SetCheckpointChunk(v int) *ContactImportScopedCreate {
+	x.set = append(x.set, func(b *ContactImportCreate) { b.SetCheckpointChunk(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetCheckpointChunk = RoleStep
+
+// SetNillableCheckpointChunk sets the "checkpoint_chunk" field if the given value is not nil.
+func (x *ContactImportScopedCreate) SetNillableCheckpointChunk(v *int) *ContactImportScopedCreate {
+	if v != nil {
+		x.SetCheckpointChunk(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetNillableCheckpointChunk = RoleStep
+
+// SetCheckpointOffset sets the "checkpoint_offset" field.
+func (x *ContactImportScopedCreate) SetCheckpointOffset(v int64) *ContactImportScopedCreate {
+	x.set = append(x.set, func(b *ContactImportCreate) { b.SetCheckpointOffset(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetCheckpointOffset = RoleStep
+
+// SetNillableCheckpointOffset sets the "checkpoint_offset" field if the given value is not nil.
+func (x *ContactImportScopedCreate) SetNillableCheckpointOffset(v *int64) *ContactImportScopedCreate {
+	if v != nil {
+		x.SetCheckpointOffset(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetNillableCheckpointOffset = RoleStep
+
+// SetProcessed sets the "processed" field.
+func (x *ContactImportScopedCreate) SetProcessed(v int) *ContactImportScopedCreate {
+	x.set = append(x.set, func(b *ContactImportCreate) { b.SetProcessed(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetProcessed = RoleStep
+
+// SetNillableProcessed sets the "processed" field if the given value is not nil.
+func (x *ContactImportScopedCreate) SetNillableProcessed(v *int) *ContactImportScopedCreate {
+	if v != nil {
+		x.SetProcessed(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetNillableProcessed = RoleStep
+
+// SetCreated sets the "created" field.
+func (x *ContactImportScopedCreate) SetCreated(v int) *ContactImportScopedCreate {
+	x.set = append(x.set, func(b *ContactImportCreate) { b.SetCreated(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetCreated = RoleStep
+
+// SetNillableCreated sets the "created" field if the given value is not nil.
+func (x *ContactImportScopedCreate) SetNillableCreated(v *int) *ContactImportScopedCreate {
+	if v != nil {
+		x.SetCreated(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetNillableCreated = RoleStep
+
+// SetUpdated sets the "updated" field.
+func (x *ContactImportScopedCreate) SetUpdated(v int) *ContactImportScopedCreate {
+	x.set = append(x.set, func(b *ContactImportCreate) { b.SetUpdated(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetUpdated = RoleStep
+
+// SetNillableUpdated sets the "updated" field if the given value is not nil.
+func (x *ContactImportScopedCreate) SetNillableUpdated(v *int) *ContactImportScopedCreate {
+	if v != nil {
+		x.SetUpdated(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetNillableUpdated = RoleStep
+
+// SetRefused sets the "refused" field.
+func (x *ContactImportScopedCreate) SetRefused(v int) *ContactImportScopedCreate {
+	x.set = append(x.set, func(b *ContactImportCreate) { b.SetRefused(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetRefused = RoleStep
+
+// SetNillableRefused sets the "refused" field if the given value is not nil.
+func (x *ContactImportScopedCreate) SetNillableRefused(v *int) *ContactImportScopedCreate {
+	if v != nil {
+		x.SetRefused(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetNillableRefused = RoleStep
+
+// SetDropped sets the "dropped" field.
+func (x *ContactImportScopedCreate) SetDropped(v int) *ContactImportScopedCreate {
+	x.set = append(x.set, func(b *ContactImportCreate) { b.SetDropped(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetDropped = RoleStep
+
+// SetNillableDropped sets the "dropped" field if the given value is not nil.
+func (x *ContactImportScopedCreate) SetNillableDropped(v *int) *ContactImportScopedCreate {
+	if v != nil {
+		x.SetDropped(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetNillableDropped = RoleStep
+
+// SetOptedOut sets the "opted_out" field.
+func (x *ContactImportScopedCreate) SetOptedOut(v int) *ContactImportScopedCreate {
+	x.set = append(x.set, func(b *ContactImportCreate) { b.SetOptedOut(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetOptedOut = RoleStep
+
+// SetNillableOptedOut sets the "opted_out" field if the given value is not nil.
+func (x *ContactImportScopedCreate) SetNillableOptedOut(v *int) *ContactImportScopedCreate {
+	if v != nil {
+		x.SetOptedOut(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetNillableOptedOut = RoleStep
+
+// SetSuppressed sets the "suppressed" field.
+func (x *ContactImportScopedCreate) SetSuppressed(v int) *ContactImportScopedCreate {
+	x.set = append(x.set, func(b *ContactImportCreate) { b.SetSuppressed(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetSuppressed = RoleStep
+
+// SetNillableSuppressed sets the "suppressed" field if the given value is not nil.
+func (x *ContactImportScopedCreate) SetNillableSuppressed(v *int) *ContactImportScopedCreate {
+	if v != nil {
+		x.SetSuppressed(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetNillableSuppressed = RoleStep
+
+// SetStartedAt sets the "started_at" field.
+func (x *ContactImportScopedCreate) SetStartedAt(v time.Time) *ContactImportScopedCreate {
+	x.set = append(x.set, func(b *ContactImportCreate) { b.SetStartedAt(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetStartedAt = RoleStep
+
+// SetNillableStartedAt sets the "started_at" field if the given value is not nil.
+func (x *ContactImportScopedCreate) SetNillableStartedAt(v *time.Time) *ContactImportScopedCreate {
+	if v != nil {
+		x.SetStartedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetNillableStartedAt = RoleStep
+
+// SetEndedAt sets the "ended_at" field.
+func (x *ContactImportScopedCreate) SetEndedAt(v time.Time) *ContactImportScopedCreate {
+	x.set = append(x.set, func(b *ContactImportCreate) { b.SetEndedAt(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetEndedAt = RoleStep
+
+// SetNillableEndedAt sets the "ended_at" field if the given value is not nil.
+func (x *ContactImportScopedCreate) SetNillableEndedAt(v *time.Time) *ContactImportScopedCreate {
+	if v != nil {
+		x.SetEndedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetNillableEndedAt = RoleStep
+
+// SetCancelRequestedAt sets the "cancel_requested_at" field.
+func (x *ContactImportScopedCreate) SetCancelRequestedAt(v time.Time) *ContactImportScopedCreate {
+	x.set = append(x.set, func(b *ContactImportCreate) { b.SetCancelRequestedAt(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetCancelRequestedAt = RoleStep
+
+// SetNillableCancelRequestedAt sets the "cancel_requested_at" field if the given value is not nil.
+func (x *ContactImportScopedCreate) SetNillableCancelRequestedAt(v *time.Time) *ContactImportScopedCreate {
+	if v != nil {
+		x.SetCancelRequestedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetNillableCancelRequestedAt = RoleStep
+
+// SetReportExpiresAt sets the "report_expires_at" field.
+func (x *ContactImportScopedCreate) SetReportExpiresAt(v time.Time) *ContactImportScopedCreate {
+	x.set = append(x.set, func(b *ContactImportCreate) { b.SetReportExpiresAt(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetReportExpiresAt = RoleStep
+
+// SetNillableReportExpiresAt sets the "report_expires_at" field if the given value is not nil.
+func (x *ContactImportScopedCreate) SetNillableReportExpiresAt(v *time.Time) *ContactImportScopedCreate {
+	if v != nil {
+		x.SetReportExpiresAt(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetNillableReportExpiresAt = RoleStep
+
+// SetMembership sets the "membership" edge to the Membership entity.
+func (x *ContactImportScopedCreate) SetMembership(v *Membership) *ContactImportScopedCreate {
+	x.set = append(x.set, func(b *ContactImportCreate) { b.SetMembership(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetMembership = RoleStep
+
+// AddChunkIDs adds the "chunks" edge to the ContactImportChunk entity by IDs.
+func (x *ContactImportScopedCreate) AddChunkIDs(ids ...int64) *ContactImportScopedCreate {
+	x.set = append(x.set, func(b *ContactImportCreate) { b.AddChunkIDs(ids...) })
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_AddChunkIDs = RoleStep
+
+// AddChunks adds the "chunks" edges to the ContactImportChunk entity.
+func (x *ContactImportScopedCreate) AddChunks(v ...*ContactImportChunk) *ContactImportScopedCreate {
+	x.set = append(x.set, func(b *ContactImportCreate) { b.AddChunks(v...) })
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_AddChunks = RoleStep
+
+// AddReportRowIDs adds the "report_rows" edge to the ContactImportReportRow entity by IDs.
+func (x *ContactImportScopedCreate) AddReportRowIDs(ids ...int64) *ContactImportScopedCreate {
+	x.set = append(x.set, func(b *ContactImportCreate) { b.AddReportRowIDs(ids...) })
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_AddReportRowIDs = RoleStep
+
+// AddReportRows adds the "report_rows" edges to the ContactImportReportRow entity.
+func (x *ContactImportScopedCreate) AddReportRows(v ...*ContactImportReportRow) *ContactImportScopedCreate {
+	x.set = append(x.set, func(b *ContactImportCreate) { b.AddReportRows(v...) })
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_AddReportRows = RoleStep
+
+const (
+	TypeOf_ContactImportScopedCreate                        = TypeScopedCreate
+	EntityOf_ContactImportScopedCreate                      = "ContactImport"
+	RoleOf_ContactImportScopedCreate_Save                   = RoleStep
+	RoleOf_ContactImportScopedCreate_Exec                   = RoleStep
+	RoleOf_ContactImportScopedCreate_OnConflictColumns      = RoleStart
+	RoleOf_ContactImportScopedCreate_OnConflictColumnsWhere = RoleStart
+)
+
+// Save verifies the references against the Workspace, then creates the ContactImport.
+func (x *ContactImportScopedCreate) Save(ctx context.Context) (*ContactImport, error) {
+	var created *ContactImport
+	err := x.s.writeContactImport(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if created, err = b.Save(ctx); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+	return written(created, err)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *ContactImportScopedCreate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- create bulk
+
+// ContactImportScopedCreateBulk creates several ContactImport entities of one Workspace at once.
+type ContactImportScopedCreateBulk struct {
+	s  *Scoped
+	xs []*ContactImportScopedCreate
+}
+
+// CreateBulk batches creates started on this Workspace.
+func (t *ContactImportScoped) CreateBulk(xs ...*ContactImportScopedCreate) *ContactImportScopedCreateBulk {
+	return &ContactImportScopedCreateBulk{s: t.s, xs: xs}
+}
+
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *ContactImportScopedCreateBulk) refuseForeign() error {
+	for _, x := range b.xs {
+		if x.s.ws != b.s.ws {
+			return fmt.Errorf("ContactImport: builder of another scope: %w", ErrNotInWorkspace)
+		}
+	}
+	return nil
+}
+
+// build makes the ent bulk create on the client of s, every create of it in the Workspace, and
+// verifies the references of all of them, one query per reference rather than one per row.
+func (b *ContactImportScopedCreateBulk) build(ctx context.Context, s *Scoped) (*ContactImportCreateBulk, error) {
+	builders := make([]*ContactImportCreate, len(b.xs))
+	ms := make([]*ContactImportMutation, len(b.xs))
+	for i, x := range b.xs {
+		builders[i] = x.raw(s)
+		ms[i] = builders[i].Mutation()
+	}
+	if err := s.checkContactImport(ctx, ms...); err != nil {
+		return nil, err
+	}
+	return s.c.ContactImport.CreateBulk(builders...), nil
+}
+
+// Save verifies every builder's references, then creates the ContactImport entities.
+func (b *ContactImportScopedCreateBulk) Save(ctx context.Context) ([]*ContactImport, error) {
+	if err := b.refuseForeign(); err != nil {
+		return nil, err
+	}
+	var created []*ContactImport
+	err := b.s.writeContactImport(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		raw, err := b.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if created, err = raw.Save(ctx); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+	return written(created, err)
+}
+
+// Exec is like Save, discarding the entities.
+func (b *ContactImportScopedCreateBulk) Exec(ctx context.Context) error {
+	_, err := b.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_ContactImportScopedCreateBulk                   = TypeScopedCreate
+	EntityOf_ContactImportScopedCreateBulk                 = "ContactImport"
+	RoleOf_ContactImportScopedCreateBulk_Save              = RoleStep
+	RoleOf_ContactImportScopedCreateBulk_Exec              = RoleStep
+	RoleOf_ContactImportScopedCreateBulk_OnConflictColumns = RoleStart
+)
+
+// ---------------------------------------------------------------- upsert
+
+// ContactImportScopedUpsert is the "ON CONFLICT ... DO UPDATE" setter. It cannot move a row to
+// another Workspace or point a reference at a value that was not verified on create.
+type ContactImportScopedUpsert struct{ u *sql.UpdateSet }
+
+const (
+	TypeOf_ContactImportScopedUpsert   = TypeScopedUpsert
+	EntityOf_ContactImportScopedUpsert = "ContactImport"
+)
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *ContactImportScopedUpsert) SetUpdatedAt(v time.Time) *ContactImportScopedUpsert {
+	u.u.Set(contactimport.FieldUpdatedAt, v)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_SetUpdatedAt = RoleStep
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *ContactImportScopedUpsert) UpdateUpdatedAt() *ContactImportScopedUpsert {
+	u.u.SetExcluded(contactimport.FieldUpdatedAt)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_UpdateUpdatedAt = RoleStep
+
+// UpdateMembershipID sets the "membership_id" field to the value that was provided on create.
+func (u *ContactImportScopedUpsert) UpdateMembershipID() *ContactImportScopedUpsert {
+	u.u.SetExcluded(contactimport.FieldMembershipID)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_UpdateMembershipID = RoleStep
+
+// ClearMembershipID clears the value of the "membership_id" field.
+func (u *ContactImportScopedUpsert) ClearMembershipID() *ContactImportScopedUpsert {
+	u.u.SetNull(contactimport.FieldMembershipID)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_ClearMembershipID = RoleStep
+
+// SetState sets the "state" field.
+func (u *ContactImportScopedUpsert) SetState(v contactimport.State) *ContactImportScopedUpsert {
+	u.u.Set(contactimport.FieldState, v)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_SetState = RoleStep
+
+const SetsState_ContactImportScopedUpsert_SetState = "State"
+
+// UpdateState sets the "state" field to the value that was provided on create.
+func (u *ContactImportScopedUpsert) UpdateState() *ContactImportScopedUpsert {
+	u.u.SetExcluded(contactimport.FieldState)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_UpdateState = RoleStep
+
+const SetsState_ContactImportScopedUpsert_UpdateState = "State"
+
+// SetMapping sets the "mapping" field.
+func (u *ContactImportScopedUpsert) SetMapping(v csvimport.Mapping) *ContactImportScopedUpsert {
+	u.u.Set(contactimport.FieldMapping, v)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_SetMapping = RoleStep
+
+// UpdateMapping sets the "mapping" field to the value that was provided on create.
+func (u *ContactImportScopedUpsert) UpdateMapping() *ContactImportScopedUpsert {
+	u.u.SetExcluded(contactimport.FieldMapping)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_UpdateMapping = RoleStep
+
+// ClearMapping clears the value of the "mapping" field.
+func (u *ContactImportScopedUpsert) ClearMapping() *ContactImportScopedUpsert {
+	u.u.SetNull(contactimport.FieldMapping)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_ClearMapping = RoleStep
+
+// SetOnlyAddNew sets the "only_add_new" field.
+func (u *ContactImportScopedUpsert) SetOnlyAddNew(v bool) *ContactImportScopedUpsert {
+	u.u.Set(contactimport.FieldOnlyAddNew, v)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_SetOnlyAddNew = RoleStep
+
+// UpdateOnlyAddNew sets the "only_add_new" field to the value that was provided on create.
+func (u *ContactImportScopedUpsert) UpdateOnlyAddNew() *ContactImportScopedUpsert {
+	u.u.SetExcluded(contactimport.FieldOnlyAddNew)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_UpdateOnlyAddNew = RoleStep
+
+// SetAsNewSignUps sets the "as_new_sign_ups" field.
+func (u *ContactImportScopedUpsert) SetAsNewSignUps(v bool) *ContactImportScopedUpsert {
+	u.u.Set(contactimport.FieldAsNewSignUps, v)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_SetAsNewSignUps = RoleStep
+
+// UpdateAsNewSignUps sets the "as_new_sign_ups" field to the value that was provided on create.
+func (u *ContactImportScopedUpsert) UpdateAsNewSignUps() *ContactImportScopedUpsert {
+	u.u.SetExcluded(contactimport.FieldAsNewSignUps)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_UpdateAsNewSignUps = RoleStep
+
+// SetCheckpointRow sets the "checkpoint_row" field.
+func (u *ContactImportScopedUpsert) SetCheckpointRow(v int) *ContactImportScopedUpsert {
+	u.u.Set(contactimport.FieldCheckpointRow, v)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_SetCheckpointRow = RoleStep
+
+// AddCheckpointRow adds v to the "checkpoint_row" field.
+func (u *ContactImportScopedUpsert) AddCheckpointRow(v int) *ContactImportScopedUpsert {
+	u.u.Add(contactimport.FieldCheckpointRow, v)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_AddCheckpointRow = RoleStep
+
+// UpdateCheckpointRow sets the "checkpoint_row" field to the value that was provided on create.
+func (u *ContactImportScopedUpsert) UpdateCheckpointRow() *ContactImportScopedUpsert {
+	u.u.SetExcluded(contactimport.FieldCheckpointRow)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_UpdateCheckpointRow = RoleStep
+
+// SetCheckpointChunk sets the "checkpoint_chunk" field.
+func (u *ContactImportScopedUpsert) SetCheckpointChunk(v int) *ContactImportScopedUpsert {
+	u.u.Set(contactimport.FieldCheckpointChunk, v)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_SetCheckpointChunk = RoleStep
+
+// AddCheckpointChunk adds v to the "checkpoint_chunk" field.
+func (u *ContactImportScopedUpsert) AddCheckpointChunk(v int) *ContactImportScopedUpsert {
+	u.u.Add(contactimport.FieldCheckpointChunk, v)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_AddCheckpointChunk = RoleStep
+
+// UpdateCheckpointChunk sets the "checkpoint_chunk" field to the value that was provided on create.
+func (u *ContactImportScopedUpsert) UpdateCheckpointChunk() *ContactImportScopedUpsert {
+	u.u.SetExcluded(contactimport.FieldCheckpointChunk)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_UpdateCheckpointChunk = RoleStep
+
+// SetCheckpointOffset sets the "checkpoint_offset" field.
+func (u *ContactImportScopedUpsert) SetCheckpointOffset(v int64) *ContactImportScopedUpsert {
+	u.u.Set(contactimport.FieldCheckpointOffset, v)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_SetCheckpointOffset = RoleStep
+
+// AddCheckpointOffset adds v to the "checkpoint_offset" field.
+func (u *ContactImportScopedUpsert) AddCheckpointOffset(v int64) *ContactImportScopedUpsert {
+	u.u.Add(contactimport.FieldCheckpointOffset, v)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_AddCheckpointOffset = RoleStep
+
+// UpdateCheckpointOffset sets the "checkpoint_offset" field to the value that was provided on create.
+func (u *ContactImportScopedUpsert) UpdateCheckpointOffset() *ContactImportScopedUpsert {
+	u.u.SetExcluded(contactimport.FieldCheckpointOffset)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_UpdateCheckpointOffset = RoleStep
+
+// SetProcessed sets the "processed" field.
+func (u *ContactImportScopedUpsert) SetProcessed(v int) *ContactImportScopedUpsert {
+	u.u.Set(contactimport.FieldProcessed, v)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_SetProcessed = RoleStep
+
+// AddProcessed adds v to the "processed" field.
+func (u *ContactImportScopedUpsert) AddProcessed(v int) *ContactImportScopedUpsert {
+	u.u.Add(contactimport.FieldProcessed, v)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_AddProcessed = RoleStep
+
+// UpdateProcessed sets the "processed" field to the value that was provided on create.
+func (u *ContactImportScopedUpsert) UpdateProcessed() *ContactImportScopedUpsert {
+	u.u.SetExcluded(contactimport.FieldProcessed)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_UpdateProcessed = RoleStep
+
+// SetCreated sets the "created" field.
+func (u *ContactImportScopedUpsert) SetCreated(v int) *ContactImportScopedUpsert {
+	u.u.Set(contactimport.FieldCreated, v)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_SetCreated = RoleStep
+
+// AddCreated adds v to the "created" field.
+func (u *ContactImportScopedUpsert) AddCreated(v int) *ContactImportScopedUpsert {
+	u.u.Add(contactimport.FieldCreated, v)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_AddCreated = RoleStep
+
+// UpdateCreated sets the "created" field to the value that was provided on create.
+func (u *ContactImportScopedUpsert) UpdateCreated() *ContactImportScopedUpsert {
+	u.u.SetExcluded(contactimport.FieldCreated)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_UpdateCreated = RoleStep
+
+// SetUpdated sets the "updated" field.
+func (u *ContactImportScopedUpsert) SetUpdated(v int) *ContactImportScopedUpsert {
+	u.u.Set(contactimport.FieldUpdated, v)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_SetUpdated = RoleStep
+
+// AddUpdated adds v to the "updated" field.
+func (u *ContactImportScopedUpsert) AddUpdated(v int) *ContactImportScopedUpsert {
+	u.u.Add(contactimport.FieldUpdated, v)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_AddUpdated = RoleStep
+
+// UpdateUpdated sets the "updated" field to the value that was provided on create.
+func (u *ContactImportScopedUpsert) UpdateUpdated() *ContactImportScopedUpsert {
+	u.u.SetExcluded(contactimport.FieldUpdated)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_UpdateUpdated = RoleStep
+
+// SetRefused sets the "refused" field.
+func (u *ContactImportScopedUpsert) SetRefused(v int) *ContactImportScopedUpsert {
+	u.u.Set(contactimport.FieldRefused, v)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_SetRefused = RoleStep
+
+// AddRefused adds v to the "refused" field.
+func (u *ContactImportScopedUpsert) AddRefused(v int) *ContactImportScopedUpsert {
+	u.u.Add(contactimport.FieldRefused, v)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_AddRefused = RoleStep
+
+// UpdateRefused sets the "refused" field to the value that was provided on create.
+func (u *ContactImportScopedUpsert) UpdateRefused() *ContactImportScopedUpsert {
+	u.u.SetExcluded(contactimport.FieldRefused)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_UpdateRefused = RoleStep
+
+// SetDropped sets the "dropped" field.
+func (u *ContactImportScopedUpsert) SetDropped(v int) *ContactImportScopedUpsert {
+	u.u.Set(contactimport.FieldDropped, v)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_SetDropped = RoleStep
+
+// AddDropped adds v to the "dropped" field.
+func (u *ContactImportScopedUpsert) AddDropped(v int) *ContactImportScopedUpsert {
+	u.u.Add(contactimport.FieldDropped, v)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_AddDropped = RoleStep
+
+// UpdateDropped sets the "dropped" field to the value that was provided on create.
+func (u *ContactImportScopedUpsert) UpdateDropped() *ContactImportScopedUpsert {
+	u.u.SetExcluded(contactimport.FieldDropped)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_UpdateDropped = RoleStep
+
+// SetOptedOut sets the "opted_out" field.
+func (u *ContactImportScopedUpsert) SetOptedOut(v int) *ContactImportScopedUpsert {
+	u.u.Set(contactimport.FieldOptedOut, v)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_SetOptedOut = RoleStep
+
+// AddOptedOut adds v to the "opted_out" field.
+func (u *ContactImportScopedUpsert) AddOptedOut(v int) *ContactImportScopedUpsert {
+	u.u.Add(contactimport.FieldOptedOut, v)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_AddOptedOut = RoleStep
+
+// UpdateOptedOut sets the "opted_out" field to the value that was provided on create.
+func (u *ContactImportScopedUpsert) UpdateOptedOut() *ContactImportScopedUpsert {
+	u.u.SetExcluded(contactimport.FieldOptedOut)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_UpdateOptedOut = RoleStep
+
+// SetSuppressed sets the "suppressed" field.
+func (u *ContactImportScopedUpsert) SetSuppressed(v int) *ContactImportScopedUpsert {
+	u.u.Set(contactimport.FieldSuppressed, v)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_SetSuppressed = RoleStep
+
+// AddSuppressed adds v to the "suppressed" field.
+func (u *ContactImportScopedUpsert) AddSuppressed(v int) *ContactImportScopedUpsert {
+	u.u.Add(contactimport.FieldSuppressed, v)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_AddSuppressed = RoleStep
+
+// UpdateSuppressed sets the "suppressed" field to the value that was provided on create.
+func (u *ContactImportScopedUpsert) UpdateSuppressed() *ContactImportScopedUpsert {
+	u.u.SetExcluded(contactimport.FieldSuppressed)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_UpdateSuppressed = RoleStep
+
+// SetStartedAt sets the "started_at" field.
+func (u *ContactImportScopedUpsert) SetStartedAt(v time.Time) *ContactImportScopedUpsert {
+	u.u.Set(contactimport.FieldStartedAt, v)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_SetStartedAt = RoleStep
+
+// UpdateStartedAt sets the "started_at" field to the value that was provided on create.
+func (u *ContactImportScopedUpsert) UpdateStartedAt() *ContactImportScopedUpsert {
+	u.u.SetExcluded(contactimport.FieldStartedAt)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_UpdateStartedAt = RoleStep
+
+// ClearStartedAt clears the value of the "started_at" field.
+func (u *ContactImportScopedUpsert) ClearStartedAt() *ContactImportScopedUpsert {
+	u.u.SetNull(contactimport.FieldStartedAt)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_ClearStartedAt = RoleStep
+
+// SetEndedAt sets the "ended_at" field.
+func (u *ContactImportScopedUpsert) SetEndedAt(v time.Time) *ContactImportScopedUpsert {
+	u.u.Set(contactimport.FieldEndedAt, v)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_SetEndedAt = RoleStep
+
+// UpdateEndedAt sets the "ended_at" field to the value that was provided on create.
+func (u *ContactImportScopedUpsert) UpdateEndedAt() *ContactImportScopedUpsert {
+	u.u.SetExcluded(contactimport.FieldEndedAt)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_UpdateEndedAt = RoleStep
+
+// ClearEndedAt clears the value of the "ended_at" field.
+func (u *ContactImportScopedUpsert) ClearEndedAt() *ContactImportScopedUpsert {
+	u.u.SetNull(contactimport.FieldEndedAt)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_ClearEndedAt = RoleStep
+
+// SetCancelRequestedAt sets the "cancel_requested_at" field.
+func (u *ContactImportScopedUpsert) SetCancelRequestedAt(v time.Time) *ContactImportScopedUpsert {
+	u.u.Set(contactimport.FieldCancelRequestedAt, v)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_SetCancelRequestedAt = RoleStep
+
+const SetsState_ContactImportScopedUpsert_SetCancelRequestedAt = "CancelRequestedAt"
+
+// UpdateCancelRequestedAt sets the "cancel_requested_at" field to the value that was provided on create.
+func (u *ContactImportScopedUpsert) UpdateCancelRequestedAt() *ContactImportScopedUpsert {
+	u.u.SetExcluded(contactimport.FieldCancelRequestedAt)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_UpdateCancelRequestedAt = RoleStep
+
+const SetsState_ContactImportScopedUpsert_UpdateCancelRequestedAt = "CancelRequestedAt"
+
+// ClearCancelRequestedAt clears the value of the "cancel_requested_at" field.
+func (u *ContactImportScopedUpsert) ClearCancelRequestedAt() *ContactImportScopedUpsert {
+	u.u.SetNull(contactimport.FieldCancelRequestedAt)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_ClearCancelRequestedAt = RoleStep
+
+const ClearsState_ContactImportScopedUpsert_ClearCancelRequestedAt = "CancelRequestedAt"
+
+// SetReportExpiresAt sets the "report_expires_at" field.
+func (u *ContactImportScopedUpsert) SetReportExpiresAt(v time.Time) *ContactImportScopedUpsert {
+	u.u.Set(contactimport.FieldReportExpiresAt, v)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_SetReportExpiresAt = RoleStep
+
+// UpdateReportExpiresAt sets the "report_expires_at" field to the value that was provided on create.
+func (u *ContactImportScopedUpsert) UpdateReportExpiresAt() *ContactImportScopedUpsert {
+	u.u.SetExcluded(contactimport.FieldReportExpiresAt)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_UpdateReportExpiresAt = RoleStep
+
+// ClearReportExpiresAt clears the value of the "report_expires_at" field.
+func (u *ContactImportScopedUpsert) ClearReportExpiresAt() *ContactImportScopedUpsert {
+	u.u.SetNull(contactimport.FieldReportExpiresAt)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_ClearReportExpiresAt = RoleStep
+
+// conflictOptions confines the DO UPDATE part to rows of the Workspace.
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *ContactImportScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
+		sql.ConflictColumns(columns...),
+		sql.UpdateWhere(sql.EQ(contactimport.FieldWorkspaceID, t.s.ws)),
+	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
+}
+
+// ContactImportScopedUpsertOne is the "upsert" of one ContactImport: the create it was started on, which a setter
+// called later still changes, and what to do on a conflict.
+type ContactImportScopedUpsertOne struct {
+	x        *ContactImportScopedCreate
+	conflict []sql.ConflictOption
+	set      []func(*ContactImportUpsertOne)
+	// doNothing: the conflict action is DO NOTHING (the only upsert an audited entity allows).
+	doNothing bool
+}
+
+const (
+	TypeOf_ContactImportScopedUpsertOne                 = TypeScopedUpsert
+	EntityOf_ContactImportScopedUpsertOne               = "ContactImport"
+	RoleOf_ContactImportScopedUpsertOne_UpdateNewValues = RoleStep
+	RoleOf_ContactImportScopedUpsertOne_Ignore          = RoleStep
+	RoleOf_ContactImportScopedUpsertOne_DoNothing       = RoleStep
+	RoleOf_ContactImportScopedUpsertOne_Update          = RoleStep
+	RoleOf_ContactImportScopedUpsertOne_Exec            = RoleStep
+	RoleOf_ContactImportScopedUpsertOne_ID              = RoleStep
+)
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (x *ContactImportScopedCreate) OnConflictColumns(columns ...string) *ContactImportScopedUpsertOne {
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *ContactImportScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *ContactImportScopedUpsertOne {
+	return &ContactImportScopedUpsertOne{x: x, conflict: (&ContactImportScoped{s: x.s}).conflictOptions(columns, target)}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *ContactImportScopedUpsertOne) UpdateNewValues() *ContactImportScopedUpsertOne {
+	u.set = append(u.set, func(r *ContactImportUpsertOne) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *ContactImportScopedUpsertOne) Ignore() *ContactImportScopedUpsertOne {
+	u.set = append(u.set, func(r *ContactImportUpsertOne) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *ContactImportScopedUpsertOne) DoNothing() *ContactImportScopedUpsertOne {
+	u.set = append(u.set, func(r *ContactImportUpsertOne) { r.DoNothing() })
+	u.doNothing = true
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *ContactImportScopedUpsertOne) Update(set func(*ContactImportScopedUpsert)) *ContactImportScopedUpsertOne {
+	u.set = append(u.set, func(r *ContactImportUpsertOne) {
+		r.Update(func(s *ContactImportUpsert) { set(&ContactImportScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// build makes the ent upsert on the client of s and verifies the create's references.
+func (u *ContactImportScopedUpsertOne) build(ctx context.Context, s *Scoped) (*ContactImportUpsertOne, error) {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
+		return nil, err
+	}
+	r := b.OnConflict(u.conflict...)
+	for _, set := range u.set {
+		set(r)
+	}
+	return r, nil
+}
+
+// Exec verifies the references, then executes the upsert.
+func (u *ContactImportScopedUpsertOne) Exec(ctx context.Context) error {
+	_, err := u.ID(ctx)
+	return err
+}
+
+// ID is like Exec, returning the inserted or updated id.
+func (u *ContactImportScopedUpsertOne) ID(ctx context.Context) (int64, error) {
+	var id int64
+	err := u.x.s.writeContactImport(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		r, err := u.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if id, err = r.ID(ctx); err != nil {
+			return nil, err
+		}
+		return []int64{id}, nil
+	})
+	return written(id, err)
+}
+
+// ContactImportScopedUpsertBulk is the "upsert" of several ContactImport entities.
+type ContactImportScopedUpsertBulk struct {
+	b       *ContactImportScopedCreateBulk
+	t       *ContactImportScoped
+	columns []string
+	set     []func(*ContactImportUpsertBulk)
+}
+
+const (
+	TypeOf_ContactImportScopedUpsertBulk                 = TypeScopedUpsert
+	EntityOf_ContactImportScopedUpsertBulk               = "ContactImport"
+	RoleOf_ContactImportScopedUpsertBulk_UpdateNewValues = RoleStep
+	RoleOf_ContactImportScopedUpsertBulk_Ignore          = RoleStep
+	RoleOf_ContactImportScopedUpsertBulk_DoNothing       = RoleStep
+	RoleOf_ContactImportScopedUpsertBulk_Update          = RoleStep
+	RoleOf_ContactImportScopedUpsertBulk_Exec            = RoleStep
+)
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (b *ContactImportScopedCreateBulk) OnConflictColumns(columns ...string) *ContactImportScopedUpsertBulk {
+	return &ContactImportScopedUpsertBulk{b: b, t: &ContactImportScoped{s: b.s}, columns: columns}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *ContactImportScopedUpsertBulk) UpdateNewValues() *ContactImportScopedUpsertBulk {
+	u.set = append(u.set, func(r *ContactImportUpsertBulk) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *ContactImportScopedUpsertBulk) Ignore() *ContactImportScopedUpsertBulk {
+	u.set = append(u.set, func(r *ContactImportUpsertBulk) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *ContactImportScopedUpsertBulk) DoNothing() *ContactImportScopedUpsertBulk {
+	u.set = append(u.set, func(r *ContactImportUpsertBulk) { r.DoNothing() })
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *ContactImportScopedUpsertBulk) Update(set func(*ContactImportScopedUpsert)) *ContactImportScopedUpsertBulk {
+	u.set = append(u.set, func(r *ContactImportUpsertBulk) {
+		r.Update(func(s *ContactImportUpsert) { set(&ContactImportScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// Exec verifies every builder's references, then executes the upsert.
+func (u *ContactImportScopedUpsertBulk) Exec(ctx context.Context) error {
+	if err := u.b.refuseForeign(); err != nil {
+		return err
+	}
+	return u.b.s.writeContactImport(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		raw, err := u.b.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
+		for _, set := range u.set {
+			set(r)
+		}
+		return nil, r.Exec(ctx)
+	})
+}
+
+// ---------------------------------------------------------------- update
+
+// ContactImportScopedUpdateOne updates one ContactImport. It has no way to move the row to another Workspace: it
+// keeps the row's id, its fences and what its setters set, and builds the ent update on the client
+// the update runs on.
+type ContactImportScopedUpdateOne struct {
+	s     *Scoped
+	id    int64
+	where []predicate.ContactImport
+	set   []func(*ContactImportUpdateOne)
+}
+
+// UpdateOneID updates the ContactImport with the id; a row of another Workspace is not found.
+func (t *ContactImportScoped) UpdateOneID(id int64) *ContactImportScopedUpdateOne {
+	return &ContactImportScopedUpdateOne{s: t.s, id: id}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *ContactImportScopedUpdateOne) Where(ps ...predicate.ContactImport) *ContactImportScopedUpdateOne {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *ContactImportScopedUpdateOne) SetUpdatedAt(v time.Time) *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_SetUpdatedAt = RoleStep
+
+// SetMembershipID sets the "membership_id" field.
+func (x *ContactImportScopedUpdateOne) SetMembershipID(v int64) *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.SetMembershipID(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_SetMembershipID = RoleStep
+
+// SetNillableMembershipID sets the "membership_id" field if the given value is not nil.
+func (x *ContactImportScopedUpdateOne) SetNillableMembershipID(v *int64) *ContactImportScopedUpdateOne {
+	if v != nil {
+		x.SetMembershipID(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_SetNillableMembershipID = RoleStep
+
+// ClearMembershipID clears the value of the "membership_id" field.
+func (x *ContactImportScopedUpdateOne) ClearMembershipID() *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.ClearMembershipID() })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_ClearMembershipID = RoleStep
+
+// SetState sets the "state" field.
+func (x *ContactImportScopedUpdateOne) SetState(v contactimport.State) *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.SetState(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_SetState = RoleStep
+
+const SetsState_ContactImportScopedUpdateOne_SetState = "State"
+
+// SetNillableState sets the "state" field if the given value is not nil.
+func (x *ContactImportScopedUpdateOne) SetNillableState(v *contactimport.State) *ContactImportScopedUpdateOne {
+	if v != nil {
+		x.SetState(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_SetNillableState = RoleStep
+
+const SetsState_ContactImportScopedUpdateOne_SetNillableState = "State"
+
+// SetMapping sets the "mapping" field.
+func (x *ContactImportScopedUpdateOne) SetMapping(v csvimport.Mapping) *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.SetMapping(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_SetMapping = RoleStep
+
+// SetNillableMapping sets the "mapping" field if the given value is not nil.
+func (x *ContactImportScopedUpdateOne) SetNillableMapping(v *csvimport.Mapping) *ContactImportScopedUpdateOne {
+	if v != nil {
+		x.SetMapping(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_SetNillableMapping = RoleStep
+
+// ClearMapping clears the value of the "mapping" field.
+func (x *ContactImportScopedUpdateOne) ClearMapping() *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.ClearMapping() })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_ClearMapping = RoleStep
+
+// SetOnlyAddNew sets the "only_add_new" field.
+func (x *ContactImportScopedUpdateOne) SetOnlyAddNew(v bool) *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.SetOnlyAddNew(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_SetOnlyAddNew = RoleStep
+
+// SetNillableOnlyAddNew sets the "only_add_new" field if the given value is not nil.
+func (x *ContactImportScopedUpdateOne) SetNillableOnlyAddNew(v *bool) *ContactImportScopedUpdateOne {
+	if v != nil {
+		x.SetOnlyAddNew(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_SetNillableOnlyAddNew = RoleStep
+
+// SetAsNewSignUps sets the "as_new_sign_ups" field.
+func (x *ContactImportScopedUpdateOne) SetAsNewSignUps(v bool) *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.SetAsNewSignUps(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_SetAsNewSignUps = RoleStep
+
+// SetNillableAsNewSignUps sets the "as_new_sign_ups" field if the given value is not nil.
+func (x *ContactImportScopedUpdateOne) SetNillableAsNewSignUps(v *bool) *ContactImportScopedUpdateOne {
+	if v != nil {
+		x.SetAsNewSignUps(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_SetNillableAsNewSignUps = RoleStep
+
+// SetCheckpointRow sets the "checkpoint_row" field.
+func (x *ContactImportScopedUpdateOne) SetCheckpointRow(v int) *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.SetCheckpointRow(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_SetCheckpointRow = RoleStep
+
+// SetNillableCheckpointRow sets the "checkpoint_row" field if the given value is not nil.
+func (x *ContactImportScopedUpdateOne) SetNillableCheckpointRow(v *int) *ContactImportScopedUpdateOne {
+	if v != nil {
+		x.SetCheckpointRow(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_SetNillableCheckpointRow = RoleStep
+
+// AddCheckpointRow adds value to the "checkpoint_row" field.
+func (x *ContactImportScopedUpdateOne) AddCheckpointRow(v int) *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.AddCheckpointRow(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_AddCheckpointRow = RoleStep
+
+// SetCheckpointChunk sets the "checkpoint_chunk" field.
+func (x *ContactImportScopedUpdateOne) SetCheckpointChunk(v int) *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.SetCheckpointChunk(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_SetCheckpointChunk = RoleStep
+
+// SetNillableCheckpointChunk sets the "checkpoint_chunk" field if the given value is not nil.
+func (x *ContactImportScopedUpdateOne) SetNillableCheckpointChunk(v *int) *ContactImportScopedUpdateOne {
+	if v != nil {
+		x.SetCheckpointChunk(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_SetNillableCheckpointChunk = RoleStep
+
+// AddCheckpointChunk adds value to the "checkpoint_chunk" field.
+func (x *ContactImportScopedUpdateOne) AddCheckpointChunk(v int) *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.AddCheckpointChunk(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_AddCheckpointChunk = RoleStep
+
+// SetCheckpointOffset sets the "checkpoint_offset" field.
+func (x *ContactImportScopedUpdateOne) SetCheckpointOffset(v int64) *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.SetCheckpointOffset(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_SetCheckpointOffset = RoleStep
+
+// SetNillableCheckpointOffset sets the "checkpoint_offset" field if the given value is not nil.
+func (x *ContactImportScopedUpdateOne) SetNillableCheckpointOffset(v *int64) *ContactImportScopedUpdateOne {
+	if v != nil {
+		x.SetCheckpointOffset(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_SetNillableCheckpointOffset = RoleStep
+
+// AddCheckpointOffset adds value to the "checkpoint_offset" field.
+func (x *ContactImportScopedUpdateOne) AddCheckpointOffset(v int64) *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.AddCheckpointOffset(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_AddCheckpointOffset = RoleStep
+
+// SetProcessed sets the "processed" field.
+func (x *ContactImportScopedUpdateOne) SetProcessed(v int) *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.SetProcessed(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_SetProcessed = RoleStep
+
+// SetNillableProcessed sets the "processed" field if the given value is not nil.
+func (x *ContactImportScopedUpdateOne) SetNillableProcessed(v *int) *ContactImportScopedUpdateOne {
+	if v != nil {
+		x.SetProcessed(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_SetNillableProcessed = RoleStep
+
+// AddProcessed adds value to the "processed" field.
+func (x *ContactImportScopedUpdateOne) AddProcessed(v int) *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.AddProcessed(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_AddProcessed = RoleStep
+
+// SetCreated sets the "created" field.
+func (x *ContactImportScopedUpdateOne) SetCreated(v int) *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.SetCreated(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_SetCreated = RoleStep
+
+// SetNillableCreated sets the "created" field if the given value is not nil.
+func (x *ContactImportScopedUpdateOne) SetNillableCreated(v *int) *ContactImportScopedUpdateOne {
+	if v != nil {
+		x.SetCreated(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_SetNillableCreated = RoleStep
+
+// AddCreated adds value to the "created" field.
+func (x *ContactImportScopedUpdateOne) AddCreated(v int) *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.AddCreated(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_AddCreated = RoleStep
+
+// SetUpdated sets the "updated" field.
+func (x *ContactImportScopedUpdateOne) SetUpdated(v int) *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.SetUpdated(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_SetUpdated = RoleStep
+
+// SetNillableUpdated sets the "updated" field if the given value is not nil.
+func (x *ContactImportScopedUpdateOne) SetNillableUpdated(v *int) *ContactImportScopedUpdateOne {
+	if v != nil {
+		x.SetUpdated(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_SetNillableUpdated = RoleStep
+
+// AddUpdated adds value to the "updated" field.
+func (x *ContactImportScopedUpdateOne) AddUpdated(v int) *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.AddUpdated(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_AddUpdated = RoleStep
+
+// SetRefused sets the "refused" field.
+func (x *ContactImportScopedUpdateOne) SetRefused(v int) *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.SetRefused(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_SetRefused = RoleStep
+
+// SetNillableRefused sets the "refused" field if the given value is not nil.
+func (x *ContactImportScopedUpdateOne) SetNillableRefused(v *int) *ContactImportScopedUpdateOne {
+	if v != nil {
+		x.SetRefused(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_SetNillableRefused = RoleStep
+
+// AddRefused adds value to the "refused" field.
+func (x *ContactImportScopedUpdateOne) AddRefused(v int) *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.AddRefused(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_AddRefused = RoleStep
+
+// SetDropped sets the "dropped" field.
+func (x *ContactImportScopedUpdateOne) SetDropped(v int) *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.SetDropped(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_SetDropped = RoleStep
+
+// SetNillableDropped sets the "dropped" field if the given value is not nil.
+func (x *ContactImportScopedUpdateOne) SetNillableDropped(v *int) *ContactImportScopedUpdateOne {
+	if v != nil {
+		x.SetDropped(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_SetNillableDropped = RoleStep
+
+// AddDropped adds value to the "dropped" field.
+func (x *ContactImportScopedUpdateOne) AddDropped(v int) *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.AddDropped(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_AddDropped = RoleStep
+
+// SetOptedOut sets the "opted_out" field.
+func (x *ContactImportScopedUpdateOne) SetOptedOut(v int) *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.SetOptedOut(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_SetOptedOut = RoleStep
+
+// SetNillableOptedOut sets the "opted_out" field if the given value is not nil.
+func (x *ContactImportScopedUpdateOne) SetNillableOptedOut(v *int) *ContactImportScopedUpdateOne {
+	if v != nil {
+		x.SetOptedOut(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_SetNillableOptedOut = RoleStep
+
+// AddOptedOut adds value to the "opted_out" field.
+func (x *ContactImportScopedUpdateOne) AddOptedOut(v int) *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.AddOptedOut(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_AddOptedOut = RoleStep
+
+// SetSuppressed sets the "suppressed" field.
+func (x *ContactImportScopedUpdateOne) SetSuppressed(v int) *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.SetSuppressed(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_SetSuppressed = RoleStep
+
+// SetNillableSuppressed sets the "suppressed" field if the given value is not nil.
+func (x *ContactImportScopedUpdateOne) SetNillableSuppressed(v *int) *ContactImportScopedUpdateOne {
+	if v != nil {
+		x.SetSuppressed(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_SetNillableSuppressed = RoleStep
+
+// AddSuppressed adds value to the "suppressed" field.
+func (x *ContactImportScopedUpdateOne) AddSuppressed(v int) *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.AddSuppressed(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_AddSuppressed = RoleStep
+
+// SetStartedAt sets the "started_at" field.
+func (x *ContactImportScopedUpdateOne) SetStartedAt(v time.Time) *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.SetStartedAt(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_SetStartedAt = RoleStep
+
+// SetNillableStartedAt sets the "started_at" field if the given value is not nil.
+func (x *ContactImportScopedUpdateOne) SetNillableStartedAt(v *time.Time) *ContactImportScopedUpdateOne {
+	if v != nil {
+		x.SetStartedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_SetNillableStartedAt = RoleStep
+
+// ClearStartedAt clears the value of the "started_at" field.
+func (x *ContactImportScopedUpdateOne) ClearStartedAt() *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.ClearStartedAt() })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_ClearStartedAt = RoleStep
+
+// SetEndedAt sets the "ended_at" field.
+func (x *ContactImportScopedUpdateOne) SetEndedAt(v time.Time) *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.SetEndedAt(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_SetEndedAt = RoleStep
+
+// SetNillableEndedAt sets the "ended_at" field if the given value is not nil.
+func (x *ContactImportScopedUpdateOne) SetNillableEndedAt(v *time.Time) *ContactImportScopedUpdateOne {
+	if v != nil {
+		x.SetEndedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_SetNillableEndedAt = RoleStep
+
+// ClearEndedAt clears the value of the "ended_at" field.
+func (x *ContactImportScopedUpdateOne) ClearEndedAt() *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.ClearEndedAt() })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_ClearEndedAt = RoleStep
+
+// SetCancelRequestedAt sets the "cancel_requested_at" field.
+func (x *ContactImportScopedUpdateOne) SetCancelRequestedAt(v time.Time) *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.SetCancelRequestedAt(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_SetCancelRequestedAt = RoleStep
+
+const SetsState_ContactImportScopedUpdateOne_SetCancelRequestedAt = "CancelRequestedAt"
+
+// SetNillableCancelRequestedAt sets the "cancel_requested_at" field if the given value is not nil.
+func (x *ContactImportScopedUpdateOne) SetNillableCancelRequestedAt(v *time.Time) *ContactImportScopedUpdateOne {
+	if v != nil {
+		x.SetCancelRequestedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_SetNillableCancelRequestedAt = RoleStep
+
+const SetsState_ContactImportScopedUpdateOne_SetNillableCancelRequestedAt = "CancelRequestedAt"
+
+// ClearCancelRequestedAt clears the value of the "cancel_requested_at" field.
+func (x *ContactImportScopedUpdateOne) ClearCancelRequestedAt() *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.ClearCancelRequestedAt() })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_ClearCancelRequestedAt = RoleStep
+
+const ClearsState_ContactImportScopedUpdateOne_ClearCancelRequestedAt = "CancelRequestedAt"
+
+// SetReportExpiresAt sets the "report_expires_at" field.
+func (x *ContactImportScopedUpdateOne) SetReportExpiresAt(v time.Time) *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.SetReportExpiresAt(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_SetReportExpiresAt = RoleStep
+
+// SetNillableReportExpiresAt sets the "report_expires_at" field if the given value is not nil.
+func (x *ContactImportScopedUpdateOne) SetNillableReportExpiresAt(v *time.Time) *ContactImportScopedUpdateOne {
+	if v != nil {
+		x.SetReportExpiresAt(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_SetNillableReportExpiresAt = RoleStep
+
+// ClearReportExpiresAt clears the value of the "report_expires_at" field.
+func (x *ContactImportScopedUpdateOne) ClearReportExpiresAt() *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.ClearReportExpiresAt() })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_ClearReportExpiresAt = RoleStep
+
+// SetMembership sets the "membership" edge to the Membership entity.
+func (x *ContactImportScopedUpdateOne) SetMembership(v *Membership) *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.SetMembership(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_SetMembership = RoleStep
+
+// ClearMembership clears the "membership" edge to the Membership entity.
+func (x *ContactImportScopedUpdateOne) ClearMembership() *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.ClearMembership() })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_ClearMembership = RoleStep
+
+// AddChunkIDs adds the "chunks" edge to the ContactImportChunk entity by IDs.
+func (x *ContactImportScopedUpdateOne) AddChunkIDs(ids ...int64) *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.AddChunkIDs(ids...) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_AddChunkIDs = RoleStep
+
+// AddChunks adds the "chunks" edges to the ContactImportChunk entity.
+func (x *ContactImportScopedUpdateOne) AddChunks(v ...*ContactImportChunk) *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.AddChunks(v...) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_AddChunks = RoleStep
+
+// ClearChunks clears the "chunks" edges to the ContactImportChunk entity.
+func (x *ContactImportScopedUpdateOne) ClearChunks() *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.ClearChunks() })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_ClearChunks = RoleStep
+
+// RemoveChunkIDs removes the "chunks" edge to ContactImportChunk entities by IDs.
+func (x *ContactImportScopedUpdateOne) RemoveChunkIDs(ids ...int64) *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.RemoveChunkIDs(ids...) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_RemoveChunkIDs = RoleStep
+
+// RemoveChunks removes "chunks" edges to ContactImportChunk entities.
+func (x *ContactImportScopedUpdateOne) RemoveChunks(v ...*ContactImportChunk) *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.RemoveChunks(v...) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_RemoveChunks = RoleStep
+
+// AddReportRowIDs adds the "report_rows" edge to the ContactImportReportRow entity by IDs.
+func (x *ContactImportScopedUpdateOne) AddReportRowIDs(ids ...int64) *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.AddReportRowIDs(ids...) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_AddReportRowIDs = RoleStep
+
+// AddReportRows adds the "report_rows" edges to the ContactImportReportRow entity.
+func (x *ContactImportScopedUpdateOne) AddReportRows(v ...*ContactImportReportRow) *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.AddReportRows(v...) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_AddReportRows = RoleStep
+
+// ClearReportRows clears the "report_rows" edges to the ContactImportReportRow entity.
+func (x *ContactImportScopedUpdateOne) ClearReportRows() *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.ClearReportRows() })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_ClearReportRows = RoleStep
+
+// RemoveReportRowIDs removes the "report_rows" edge to ContactImportReportRow entities by IDs.
+func (x *ContactImportScopedUpdateOne) RemoveReportRowIDs(ids ...int64) *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.RemoveReportRowIDs(ids...) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_RemoveReportRowIDs = RoleStep
+
+// RemoveReportRows removes "report_rows" edges to ContactImportReportRow entities.
+func (x *ContactImportScopedUpdateOne) RemoveReportRows(v ...*ContactImportReportRow) *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.RemoveReportRows(v...) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_RemoveReportRows = RoleStep
+
+// Save verifies the references against the Workspace, then updates the ContactImport.
+func (x *ContactImportScopedUpdateOne) Save(ctx context.Context) (*ContactImport, error) {
+	return x.save(ctx, "update", skipUnchanged)
+}
+
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *ContactImportScopedUpdateOne) build(ctx context.Context, s *Scoped) (*ContactImportUpdateOne, error) {
+	b := s.c.ContactImport.UpdateOneID(x.id).Where(s.inContactImport(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkContactImport(ctx, b.Mutation()))
+}
+
+// save is Save under a verb, doing with an unchanged row what unchanged says.
+func (x *ContactImportScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*ContactImport, error) {
+	where := x.s.inContactImport(x.where...)
+	var updated *ContactImport
+	err := x.s.writeContactImport(ctx, verb, append([]predicate.ContactImport{contactimport.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		updated, err = b.Save(ctx)
+		return nil, err
+	})
+	return written(updated, err)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *ContactImportScopedUpdateOne) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_ContactImportScopedUpdateOne       = TypeScopedUpdate
+	EntityOf_ContactImportScopedUpdateOne     = "ContactImport"
+	RoleOf_ContactImportScopedUpdateOne_Where = RoleStep
+	RoleOf_ContactImportScopedUpdateOne_Save  = RoleStep
+	RoleOf_ContactImportScopedUpdateOne_Exec  = RoleStep
+)
+
+// ContactImportScopedUpdate is a conditional bulk update of one Workspace: it keeps its predicates and
+// what its setters and modifiers set, and builds the ent update on the client the update runs on.
+type ContactImportScopedUpdate struct {
+	s     *Scoped
+	where []predicate.ContactImport
+	set   []func(*ContactImportUpdate)
+	// modErr is set when a Modify modifier tried to assign workspace_id.
+	modErr error
+}
+
+// Update updates the ContactImport entities of the Workspace that match the predicates.
+func (t *ContactImportScoped) Update() *ContactImportScopedUpdate {
+	return &ContactImportScopedUpdate{s: t.s}
+}
+
+// Where appends predicates the rows must match.
+func (x *ContactImportScopedUpdate) Where(ps ...predicate.ContactImport) *ContactImportScopedUpdate {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+// Modify adds a statement modifier for computed assignments the typed setters cannot
+// express (SET col = LEAST(col + ..., ...)). A modifier gets assignment-only access
+// (ScopedAssign), so it cannot widen the Workspace predicate; an assignment to
+// workspace_id is refused: each modifier is probed against a scratch statement here, and
+// Save fails with ErrWorkspaceAssign.
+func (x *ContactImportScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *ContactImportScopedUpdate {
+	for _, m := range modifiers {
+		probe := &ScopedAssign{u: sql.Update(contactimport.Table)}
+		m(probe)
+		if probe.workspace {
+			x.modErr = ErrWorkspaceAssign
+		}
+		x.set = append(x.set, func(b *ContactImportUpdate) {
+			b.Modify(func(u *sql.UpdateBuilder) { m(&ScopedAssign{u: u}) })
+		})
+	}
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *ContactImportScopedUpdate) SetUpdatedAt(v time.Time) *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_SetUpdatedAt = RoleStep
+
+// SetMembershipID sets the "membership_id" field.
+func (x *ContactImportScopedUpdate) SetMembershipID(v int64) *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.SetMembershipID(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_SetMembershipID = RoleStep
+
+// SetNillableMembershipID sets the "membership_id" field if the given value is not nil.
+func (x *ContactImportScopedUpdate) SetNillableMembershipID(v *int64) *ContactImportScopedUpdate {
+	if v != nil {
+		x.SetMembershipID(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_SetNillableMembershipID = RoleStep
+
+// ClearMembershipID clears the value of the "membership_id" field.
+func (x *ContactImportScopedUpdate) ClearMembershipID() *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.ClearMembershipID() })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_ClearMembershipID = RoleStep
+
+// SetState sets the "state" field.
+func (x *ContactImportScopedUpdate) SetState(v contactimport.State) *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.SetState(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_SetState = RoleStep
+
+const SetsState_ContactImportScopedUpdate_SetState = "State"
+
+// SetNillableState sets the "state" field if the given value is not nil.
+func (x *ContactImportScopedUpdate) SetNillableState(v *contactimport.State) *ContactImportScopedUpdate {
+	if v != nil {
+		x.SetState(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_SetNillableState = RoleStep
+
+const SetsState_ContactImportScopedUpdate_SetNillableState = "State"
+
+// SetMapping sets the "mapping" field.
+func (x *ContactImportScopedUpdate) SetMapping(v csvimport.Mapping) *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.SetMapping(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_SetMapping = RoleStep
+
+// SetNillableMapping sets the "mapping" field if the given value is not nil.
+func (x *ContactImportScopedUpdate) SetNillableMapping(v *csvimport.Mapping) *ContactImportScopedUpdate {
+	if v != nil {
+		x.SetMapping(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_SetNillableMapping = RoleStep
+
+// ClearMapping clears the value of the "mapping" field.
+func (x *ContactImportScopedUpdate) ClearMapping() *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.ClearMapping() })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_ClearMapping = RoleStep
+
+// SetOnlyAddNew sets the "only_add_new" field.
+func (x *ContactImportScopedUpdate) SetOnlyAddNew(v bool) *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.SetOnlyAddNew(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_SetOnlyAddNew = RoleStep
+
+// SetNillableOnlyAddNew sets the "only_add_new" field if the given value is not nil.
+func (x *ContactImportScopedUpdate) SetNillableOnlyAddNew(v *bool) *ContactImportScopedUpdate {
+	if v != nil {
+		x.SetOnlyAddNew(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_SetNillableOnlyAddNew = RoleStep
+
+// SetAsNewSignUps sets the "as_new_sign_ups" field.
+func (x *ContactImportScopedUpdate) SetAsNewSignUps(v bool) *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.SetAsNewSignUps(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_SetAsNewSignUps = RoleStep
+
+// SetNillableAsNewSignUps sets the "as_new_sign_ups" field if the given value is not nil.
+func (x *ContactImportScopedUpdate) SetNillableAsNewSignUps(v *bool) *ContactImportScopedUpdate {
+	if v != nil {
+		x.SetAsNewSignUps(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_SetNillableAsNewSignUps = RoleStep
+
+// SetCheckpointRow sets the "checkpoint_row" field.
+func (x *ContactImportScopedUpdate) SetCheckpointRow(v int) *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.SetCheckpointRow(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_SetCheckpointRow = RoleStep
+
+// SetNillableCheckpointRow sets the "checkpoint_row" field if the given value is not nil.
+func (x *ContactImportScopedUpdate) SetNillableCheckpointRow(v *int) *ContactImportScopedUpdate {
+	if v != nil {
+		x.SetCheckpointRow(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_SetNillableCheckpointRow = RoleStep
+
+// AddCheckpointRow adds value to the "checkpoint_row" field.
+func (x *ContactImportScopedUpdate) AddCheckpointRow(v int) *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.AddCheckpointRow(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_AddCheckpointRow = RoleStep
+
+// SetCheckpointChunk sets the "checkpoint_chunk" field.
+func (x *ContactImportScopedUpdate) SetCheckpointChunk(v int) *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.SetCheckpointChunk(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_SetCheckpointChunk = RoleStep
+
+// SetNillableCheckpointChunk sets the "checkpoint_chunk" field if the given value is not nil.
+func (x *ContactImportScopedUpdate) SetNillableCheckpointChunk(v *int) *ContactImportScopedUpdate {
+	if v != nil {
+		x.SetCheckpointChunk(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_SetNillableCheckpointChunk = RoleStep
+
+// AddCheckpointChunk adds value to the "checkpoint_chunk" field.
+func (x *ContactImportScopedUpdate) AddCheckpointChunk(v int) *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.AddCheckpointChunk(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_AddCheckpointChunk = RoleStep
+
+// SetCheckpointOffset sets the "checkpoint_offset" field.
+func (x *ContactImportScopedUpdate) SetCheckpointOffset(v int64) *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.SetCheckpointOffset(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_SetCheckpointOffset = RoleStep
+
+// SetNillableCheckpointOffset sets the "checkpoint_offset" field if the given value is not nil.
+func (x *ContactImportScopedUpdate) SetNillableCheckpointOffset(v *int64) *ContactImportScopedUpdate {
+	if v != nil {
+		x.SetCheckpointOffset(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_SetNillableCheckpointOffset = RoleStep
+
+// AddCheckpointOffset adds value to the "checkpoint_offset" field.
+func (x *ContactImportScopedUpdate) AddCheckpointOffset(v int64) *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.AddCheckpointOffset(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_AddCheckpointOffset = RoleStep
+
+// SetProcessed sets the "processed" field.
+func (x *ContactImportScopedUpdate) SetProcessed(v int) *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.SetProcessed(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_SetProcessed = RoleStep
+
+// SetNillableProcessed sets the "processed" field if the given value is not nil.
+func (x *ContactImportScopedUpdate) SetNillableProcessed(v *int) *ContactImportScopedUpdate {
+	if v != nil {
+		x.SetProcessed(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_SetNillableProcessed = RoleStep
+
+// AddProcessed adds value to the "processed" field.
+func (x *ContactImportScopedUpdate) AddProcessed(v int) *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.AddProcessed(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_AddProcessed = RoleStep
+
+// SetCreated sets the "created" field.
+func (x *ContactImportScopedUpdate) SetCreated(v int) *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.SetCreated(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_SetCreated = RoleStep
+
+// SetNillableCreated sets the "created" field if the given value is not nil.
+func (x *ContactImportScopedUpdate) SetNillableCreated(v *int) *ContactImportScopedUpdate {
+	if v != nil {
+		x.SetCreated(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_SetNillableCreated = RoleStep
+
+// AddCreated adds value to the "created" field.
+func (x *ContactImportScopedUpdate) AddCreated(v int) *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.AddCreated(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_AddCreated = RoleStep
+
+// SetUpdated sets the "updated" field.
+func (x *ContactImportScopedUpdate) SetUpdated(v int) *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.SetUpdated(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_SetUpdated = RoleStep
+
+// SetNillableUpdated sets the "updated" field if the given value is not nil.
+func (x *ContactImportScopedUpdate) SetNillableUpdated(v *int) *ContactImportScopedUpdate {
+	if v != nil {
+		x.SetUpdated(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_SetNillableUpdated = RoleStep
+
+// AddUpdated adds value to the "updated" field.
+func (x *ContactImportScopedUpdate) AddUpdated(v int) *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.AddUpdated(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_AddUpdated = RoleStep
+
+// SetRefused sets the "refused" field.
+func (x *ContactImportScopedUpdate) SetRefused(v int) *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.SetRefused(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_SetRefused = RoleStep
+
+// SetNillableRefused sets the "refused" field if the given value is not nil.
+func (x *ContactImportScopedUpdate) SetNillableRefused(v *int) *ContactImportScopedUpdate {
+	if v != nil {
+		x.SetRefused(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_SetNillableRefused = RoleStep
+
+// AddRefused adds value to the "refused" field.
+func (x *ContactImportScopedUpdate) AddRefused(v int) *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.AddRefused(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_AddRefused = RoleStep
+
+// SetDropped sets the "dropped" field.
+func (x *ContactImportScopedUpdate) SetDropped(v int) *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.SetDropped(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_SetDropped = RoleStep
+
+// SetNillableDropped sets the "dropped" field if the given value is not nil.
+func (x *ContactImportScopedUpdate) SetNillableDropped(v *int) *ContactImportScopedUpdate {
+	if v != nil {
+		x.SetDropped(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_SetNillableDropped = RoleStep
+
+// AddDropped adds value to the "dropped" field.
+func (x *ContactImportScopedUpdate) AddDropped(v int) *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.AddDropped(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_AddDropped = RoleStep
+
+// SetOptedOut sets the "opted_out" field.
+func (x *ContactImportScopedUpdate) SetOptedOut(v int) *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.SetOptedOut(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_SetOptedOut = RoleStep
+
+// SetNillableOptedOut sets the "opted_out" field if the given value is not nil.
+func (x *ContactImportScopedUpdate) SetNillableOptedOut(v *int) *ContactImportScopedUpdate {
+	if v != nil {
+		x.SetOptedOut(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_SetNillableOptedOut = RoleStep
+
+// AddOptedOut adds value to the "opted_out" field.
+func (x *ContactImportScopedUpdate) AddOptedOut(v int) *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.AddOptedOut(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_AddOptedOut = RoleStep
+
+// SetSuppressed sets the "suppressed" field.
+func (x *ContactImportScopedUpdate) SetSuppressed(v int) *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.SetSuppressed(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_SetSuppressed = RoleStep
+
+// SetNillableSuppressed sets the "suppressed" field if the given value is not nil.
+func (x *ContactImportScopedUpdate) SetNillableSuppressed(v *int) *ContactImportScopedUpdate {
+	if v != nil {
+		x.SetSuppressed(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_SetNillableSuppressed = RoleStep
+
+// AddSuppressed adds value to the "suppressed" field.
+func (x *ContactImportScopedUpdate) AddSuppressed(v int) *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.AddSuppressed(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_AddSuppressed = RoleStep
+
+// SetStartedAt sets the "started_at" field.
+func (x *ContactImportScopedUpdate) SetStartedAt(v time.Time) *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.SetStartedAt(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_SetStartedAt = RoleStep
+
+// SetNillableStartedAt sets the "started_at" field if the given value is not nil.
+func (x *ContactImportScopedUpdate) SetNillableStartedAt(v *time.Time) *ContactImportScopedUpdate {
+	if v != nil {
+		x.SetStartedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_SetNillableStartedAt = RoleStep
+
+// ClearStartedAt clears the value of the "started_at" field.
+func (x *ContactImportScopedUpdate) ClearStartedAt() *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.ClearStartedAt() })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_ClearStartedAt = RoleStep
+
+// SetEndedAt sets the "ended_at" field.
+func (x *ContactImportScopedUpdate) SetEndedAt(v time.Time) *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.SetEndedAt(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_SetEndedAt = RoleStep
+
+// SetNillableEndedAt sets the "ended_at" field if the given value is not nil.
+func (x *ContactImportScopedUpdate) SetNillableEndedAt(v *time.Time) *ContactImportScopedUpdate {
+	if v != nil {
+		x.SetEndedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_SetNillableEndedAt = RoleStep
+
+// ClearEndedAt clears the value of the "ended_at" field.
+func (x *ContactImportScopedUpdate) ClearEndedAt() *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.ClearEndedAt() })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_ClearEndedAt = RoleStep
+
+// SetCancelRequestedAt sets the "cancel_requested_at" field.
+func (x *ContactImportScopedUpdate) SetCancelRequestedAt(v time.Time) *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.SetCancelRequestedAt(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_SetCancelRequestedAt = RoleStep
+
+const SetsState_ContactImportScopedUpdate_SetCancelRequestedAt = "CancelRequestedAt"
+
+// SetNillableCancelRequestedAt sets the "cancel_requested_at" field if the given value is not nil.
+func (x *ContactImportScopedUpdate) SetNillableCancelRequestedAt(v *time.Time) *ContactImportScopedUpdate {
+	if v != nil {
+		x.SetCancelRequestedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_SetNillableCancelRequestedAt = RoleStep
+
+const SetsState_ContactImportScopedUpdate_SetNillableCancelRequestedAt = "CancelRequestedAt"
+
+// ClearCancelRequestedAt clears the value of the "cancel_requested_at" field.
+func (x *ContactImportScopedUpdate) ClearCancelRequestedAt() *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.ClearCancelRequestedAt() })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_ClearCancelRequestedAt = RoleStep
+
+const ClearsState_ContactImportScopedUpdate_ClearCancelRequestedAt = "CancelRequestedAt"
+
+// SetReportExpiresAt sets the "report_expires_at" field.
+func (x *ContactImportScopedUpdate) SetReportExpiresAt(v time.Time) *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.SetReportExpiresAt(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_SetReportExpiresAt = RoleStep
+
+// SetNillableReportExpiresAt sets the "report_expires_at" field if the given value is not nil.
+func (x *ContactImportScopedUpdate) SetNillableReportExpiresAt(v *time.Time) *ContactImportScopedUpdate {
+	if v != nil {
+		x.SetReportExpiresAt(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_SetNillableReportExpiresAt = RoleStep
+
+// ClearReportExpiresAt clears the value of the "report_expires_at" field.
+func (x *ContactImportScopedUpdate) ClearReportExpiresAt() *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.ClearReportExpiresAt() })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_ClearReportExpiresAt = RoleStep
+
+// SetMembership sets the "membership" edge to the Membership entity.
+func (x *ContactImportScopedUpdate) SetMembership(v *Membership) *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.SetMembership(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_SetMembership = RoleStep
+
+// ClearMembership clears the "membership" edge to the Membership entity.
+func (x *ContactImportScopedUpdate) ClearMembership() *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.ClearMembership() })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_ClearMembership = RoleStep
+
+// AddChunkIDs adds the "chunks" edge to the ContactImportChunk entity by IDs.
+func (x *ContactImportScopedUpdate) AddChunkIDs(ids ...int64) *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.AddChunkIDs(ids...) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_AddChunkIDs = RoleStep
+
+// AddChunks adds the "chunks" edges to the ContactImportChunk entity.
+func (x *ContactImportScopedUpdate) AddChunks(v ...*ContactImportChunk) *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.AddChunks(v...) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_AddChunks = RoleStep
+
+// ClearChunks clears the "chunks" edges to the ContactImportChunk entity.
+func (x *ContactImportScopedUpdate) ClearChunks() *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.ClearChunks() })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_ClearChunks = RoleStep
+
+// RemoveChunkIDs removes the "chunks" edge to ContactImportChunk entities by IDs.
+func (x *ContactImportScopedUpdate) RemoveChunkIDs(ids ...int64) *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.RemoveChunkIDs(ids...) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_RemoveChunkIDs = RoleStep
+
+// RemoveChunks removes "chunks" edges to ContactImportChunk entities.
+func (x *ContactImportScopedUpdate) RemoveChunks(v ...*ContactImportChunk) *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.RemoveChunks(v...) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_RemoveChunks = RoleStep
+
+// AddReportRowIDs adds the "report_rows" edge to the ContactImportReportRow entity by IDs.
+func (x *ContactImportScopedUpdate) AddReportRowIDs(ids ...int64) *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.AddReportRowIDs(ids...) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_AddReportRowIDs = RoleStep
+
+// AddReportRows adds the "report_rows" edges to the ContactImportReportRow entity.
+func (x *ContactImportScopedUpdate) AddReportRows(v ...*ContactImportReportRow) *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.AddReportRows(v...) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_AddReportRows = RoleStep
+
+// ClearReportRows clears the "report_rows" edges to the ContactImportReportRow entity.
+func (x *ContactImportScopedUpdate) ClearReportRows() *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.ClearReportRows() })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_ClearReportRows = RoleStep
+
+// RemoveReportRowIDs removes the "report_rows" edge to ContactImportReportRow entities by IDs.
+func (x *ContactImportScopedUpdate) RemoveReportRowIDs(ids ...int64) *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.RemoveReportRowIDs(ids...) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_RemoveReportRowIDs = RoleStep
+
+// RemoveReportRows removes "report_rows" edges to ContactImportReportRow entities.
+func (x *ContactImportScopedUpdate) RemoveReportRows(v ...*ContactImportReportRow) *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.RemoveReportRows(v...) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_RemoveReportRows = RoleStep
+
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *ContactImportScopedUpdate) build(ctx context.Context, s *Scoped) (*ContactImportUpdate, error) {
+	b := s.c.ContactImport.Update().Where(s.inContactImport(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkContactImport(ctx, b.Mutation()))
+}
+
+// Save verifies the references against the Workspace, then updates the rows and
+// returns how many changed.
+func (x *ContactImportScopedUpdate) Save(ctx context.Context) (int, error) {
+	if x.modErr != nil {
+		return 0, x.modErr
+	}
+	where := x.s.inContactImport(x.where...)
+	var n int
+	err := x.s.writeContactImport(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		n, err = b.Save(ctx)
+		return nil, err
+	})
+	return written(n, err)
+}
+
+// Exec is like Save, discarding the count.
+func (x *ContactImportScopedUpdate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_ContactImportScopedUpdate        = TypeScopedUpdate
+	EntityOf_ContactImportScopedUpdate      = "ContactImport"
+	RoleOf_ContactImportScopedUpdate_Where  = RoleStep
+	RoleOf_ContactImportScopedUpdate_Modify = RoleStep
+	RoleOf_ContactImportScopedUpdate_Save   = RoleStep
+	RoleOf_ContactImportScopedUpdate_Exec   = RoleStep
+)
+
+// ContactImportChunkScoped reaches ContactImportChunk entities of one Workspace.
+type ContactImportChunkScoped struct{ s *Scoped }
+
+// ContactImportChunk returns the ContactImportChunk entities of the Workspace.
+func (s *Scoped) ContactImportChunk() *ContactImportChunkScoped {
+	return &ContactImportChunkScoped{s: s}
+}
+
+const (
+	TypeOf_ContactImportChunkScoped             = TypeWrapper
+	EntityOf_ContactImportChunkScoped           = "ContactImportChunk"
+	RoleOf_Scoped_ContactImportChunk            = RoleNone
+	RoleOf_ContactImportChunkScoped_Query       = RoleRead
+	RoleOf_ContactImportChunkScoped_Get         = RoleRead
+	RoleOf_ContactImportChunkScoped_DeleteOneID = RoleStart
+	RoleOf_ContactImportChunkScoped_UpdateOneID = RoleStart
+	RoleOf_ContactImportChunkScoped_Delete      = RoleStart
+	RoleOf_ContactImportChunkScoped_Create      = RoleStart
+	RoleOf_ContactImportChunkScoped_CreateBulk  = RoleStart
+	RoleOf_ContactImportChunkScoped_Update      = RoleStart
+)
+
+// inContactImportChunk confines predicates of ContactImportChunk rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inContactImportChunk(ps ...predicate.ContactImportChunk) []predicate.ContactImportChunk {
+	return append([]predicate.ContactImportChunk{contactimportchunk.WorkspaceID(s.ws)}, ps...)
+}
+
+// Query returns a ContactImportChunk query already confined to the Workspace.
+func (t *ContactImportChunkScoped) Query() *ContactImportChunkQuery {
+	return t.s.c.ContactImportChunk.Query().Where(t.s.inContactImportChunk()...)
+}
+
+// Get returns the ContactImportChunk with the id; a row of another Workspace is not found.
+func (t *ContactImportChunkScoped) Get(ctx context.Context, id int64) (*ContactImportChunk, error) {
+	return t.Query().Where(contactimportchunk.ID(id)).Only(ctx)
+}
+
+// writeContactImportChunk runs a write of ContactImportChunk rows: run builds it on the client of the scope it is
+// given and executes it, and reaches no other client. The
+// entity is not audited, so run gets the scope itself.
+func (s *Scoped) writeContactImportChunk(ctx context.Context, verb string, where []predicate.ContactImportChunk, unchanged unchangedRows, run func(s *Scoped) ([]int64, error)) error {
+	_, _, _ = verb, where, unchanged
+	_, err := run(s)
+	return err
+}
+
+// checkContactImportChunk verifies every reference the mutations set against the Workspace of s, one query per
+// reference for all of them.
+func (s *Scoped) checkContactImportChunk(ctx context.Context, ms ...*ContactImportChunkMutation) error {
+	{
+		var ids []int64
+		for _, m := range ms {
+			ids = append(ids, m.ContactImportIDs()...)
+		}
+		if err := s.verifyContactImport(ctx, ids); err != nil {
+			return fmt.Errorf("contact_import: %w", err)
+		}
+	}
+	return nil
+}
+
+// ContactImportChunkScopedDeleteOne deletes one ContactImportChunk: it keeps the row's id and its fences, and builds the
+// ent delete on the client the delete runs on.
+type ContactImportChunkScopedDeleteOne struct {
+	s     *Scoped
+	id    int64
+	where []predicate.ContactImportChunk
+}
+
+// DeleteOneID deletes the ContactImportChunk with the id; a row of another Workspace is not found.
+func (t *ContactImportChunkScoped) DeleteOneID(id int64) *ContactImportChunkScopedDeleteOne {
+	return &ContactImportChunkScopedDeleteOne{s: t.s, id: id}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *ContactImportChunkScopedDeleteOne) Where(ps ...predicate.ContactImportChunk) *ContactImportChunkScopedDeleteOne {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+const (
+	TypeOf_ContactImportChunkScopedDeleteOne       = TypeScopedDelete
+	EntityOf_ContactImportChunkScopedDeleteOne     = "ContactImportChunk"
+	RoleOf_ContactImportChunkScopedDeleteOne_Where = RoleStep
+	RoleOf_ContactImportChunkScopedDeleteOne_Exec  = RoleStep
+)
+
+// Exec deletes the row; a missing row is a NotFoundError.
+func (x *ContactImportChunkScopedDeleteOne) Exec(ctx context.Context) error {
+	where := x.s.inContactImportChunk(x.where...)
+	return x.s.writeContactImportChunk(ctx, "delete", append([]predicate.ContactImportChunk{contactimportchunk.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
+		return nil, s.c.ContactImportChunk.DeleteOneID(x.id).Where(where...).Exec(ctx)
+	})
+}
+
+// ContactImportChunkScopedDelete deletes the ContactImportChunk rows of one Workspace that match its predicates, which it
+// keeps until the delete is built on the client it runs on.
+type ContactImportChunkScopedDelete struct {
+	s     *Scoped
+	where []predicate.ContactImportChunk
+}
+
+// Delete deletes the ContactImportChunk entities of the Workspace that match the predicates.
+func (t *ContactImportChunkScoped) Delete() *ContactImportChunkScopedDelete {
+	return &ContactImportChunkScopedDelete{s: t.s}
+}
+
+// Where appends predicates the rows must match.
+func (x *ContactImportChunkScopedDelete) Where(ps ...predicate.ContactImportChunk) *ContactImportChunkScopedDelete {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+const (
+	TypeOf_ContactImportChunkScopedDelete       = TypeScopedDelete
+	EntityOf_ContactImportChunkScopedDelete     = "ContactImportChunk"
+	RoleOf_ContactImportChunkScopedDelete_Where = RoleStep
+	RoleOf_ContactImportChunkScopedDelete_Exec  = RoleStep
+)
+
+// Exec deletes the rows and returns how many were deleted.
+func (x *ContactImportChunkScopedDelete) Exec(ctx context.Context) (int, error) {
+	where := x.s.inContactImportChunk(x.where...)
+	var n int
+	err := x.s.writeContactImportChunk(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		var err error
+		n, err = s.c.ContactImportChunk.Delete().Where(where...).Exec(ctx)
+		return nil, err
+	})
+	return written(n, err)
+}
+
+// ---------------------------------------------------------------- create
+
+// ContactImportChunkScopedCreate creates a ContactImportChunk of one Workspace. It has no way to name a Workspace: it
+// keeps what its setters set and builds the ent create, in its Workspace, on the client the create
+// runs on.
+type ContactImportChunkScopedCreate struct {
+	s   *Scoped
+	set []func(*ContactImportChunkCreate)
+}
+
+// Create starts a ContactImportChunk in the Workspace.
+func (t *ContactImportChunkScoped) Create() *ContactImportChunkScopedCreate {
+	return &ContactImportChunkScopedCreate{s: t.s}
+}
+
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *ContactImportChunkScopedCreate) raw(s *Scoped) *ContactImportChunkCreate {
+	b := s.c.ContactImportChunk.Create().SetWorkspaceID(s.ws)
+	for _, set := range x.set {
+		set(b)
+	}
+	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *ContactImportChunkScopedCreate) build(ctx context.Context, s *Scoped) (*ContactImportChunkCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkContactImportChunk(ctx, b.Mutation()))
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (x *ContactImportChunkScopedCreate) SetCreatedAt(v time.Time) *ContactImportChunkScopedCreate {
+	x.set = append(x.set, func(b *ContactImportChunkCreate) { b.SetCreatedAt(v) })
+	return x
+}
+
+const RoleOf_ContactImportChunkScopedCreate_SetCreatedAt = RoleStep
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (x *ContactImportChunkScopedCreate) SetNillableCreatedAt(v *time.Time) *ContactImportChunkScopedCreate {
+	if v != nil {
+		x.SetCreatedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportChunkScopedCreate_SetNillableCreatedAt = RoleStep
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *ContactImportChunkScopedCreate) SetUpdatedAt(v time.Time) *ContactImportChunkScopedCreate {
+	x.set = append(x.set, func(b *ContactImportChunkCreate) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_ContactImportChunkScopedCreate_SetUpdatedAt = RoleStep
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (x *ContactImportChunkScopedCreate) SetNillableUpdatedAt(v *time.Time) *ContactImportChunkScopedCreate {
+	if v != nil {
+		x.SetUpdatedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportChunkScopedCreate_SetNillableUpdatedAt = RoleStep
+
+// SetContactImportID sets the "contact_import_id" field.
+func (x *ContactImportChunkScopedCreate) SetContactImportID(v int64) *ContactImportChunkScopedCreate {
+	x.set = append(x.set, func(b *ContactImportChunkCreate) { b.SetContactImportID(v) })
+	return x
+}
+
+const RoleOf_ContactImportChunkScopedCreate_SetContactImportID = RoleStep
+
+// SetSeq sets the "seq" field.
+func (x *ContactImportChunkScopedCreate) SetSeq(v int) *ContactImportChunkScopedCreate {
+	x.set = append(x.set, func(b *ContactImportChunkCreate) { b.SetSeq(v) })
+	return x
+}
+
+const RoleOf_ContactImportChunkScopedCreate_SetSeq = RoleStep
+
+// SetData sets the "data" field.
+func (x *ContactImportChunkScopedCreate) SetData(v []byte) *ContactImportChunkScopedCreate {
+	x.set = append(x.set, func(b *ContactImportChunkCreate) { b.SetData(v) })
+	return x
+}
+
+const RoleOf_ContactImportChunkScopedCreate_SetData = RoleStep
+
+// SetContactImport sets the "contact_import" edge to the ContactImport entity.
+func (x *ContactImportChunkScopedCreate) SetContactImport(v *ContactImport) *ContactImportChunkScopedCreate {
+	x.set = append(x.set, func(b *ContactImportChunkCreate) { b.SetContactImport(v) })
+	return x
+}
+
+const RoleOf_ContactImportChunkScopedCreate_SetContactImport = RoleStep
+
+const (
+	TypeOf_ContactImportChunkScopedCreate                        = TypeScopedCreate
+	EntityOf_ContactImportChunkScopedCreate                      = "ContactImportChunk"
+	RoleOf_ContactImportChunkScopedCreate_Save                   = RoleStep
+	RoleOf_ContactImportChunkScopedCreate_Exec                   = RoleStep
+	RoleOf_ContactImportChunkScopedCreate_OnConflictColumns      = RoleStart
+	RoleOf_ContactImportChunkScopedCreate_OnConflictColumnsWhere = RoleStart
+)
+
+// Save verifies the references against the Workspace, then creates the ContactImportChunk.
+func (x *ContactImportChunkScopedCreate) Save(ctx context.Context) (*ContactImportChunk, error) {
+	var created *ContactImportChunk
+	err := x.s.writeContactImportChunk(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if created, err = b.Save(ctx); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+	return written(created, err)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *ContactImportChunkScopedCreate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- create bulk
+
+// ContactImportChunkScopedCreateBulk creates several ContactImportChunk entities of one Workspace at once.
+type ContactImportChunkScopedCreateBulk struct {
+	s  *Scoped
+	xs []*ContactImportChunkScopedCreate
+}
+
+// CreateBulk batches creates started on this Workspace.
+func (t *ContactImportChunkScoped) CreateBulk(xs ...*ContactImportChunkScopedCreate) *ContactImportChunkScopedCreateBulk {
+	return &ContactImportChunkScopedCreateBulk{s: t.s, xs: xs}
+}
+
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *ContactImportChunkScopedCreateBulk) refuseForeign() error {
+	for _, x := range b.xs {
+		if x.s.ws != b.s.ws {
+			return fmt.Errorf("ContactImportChunk: builder of another scope: %w", ErrNotInWorkspace)
+		}
+	}
+	return nil
+}
+
+// build makes the ent bulk create on the client of s, every create of it in the Workspace, and
+// verifies the references of all of them, one query per reference rather than one per row.
+func (b *ContactImportChunkScopedCreateBulk) build(ctx context.Context, s *Scoped) (*ContactImportChunkCreateBulk, error) {
+	builders := make([]*ContactImportChunkCreate, len(b.xs))
+	ms := make([]*ContactImportChunkMutation, len(b.xs))
+	for i, x := range b.xs {
+		builders[i] = x.raw(s)
+		ms[i] = builders[i].Mutation()
+	}
+	if err := s.checkContactImportChunk(ctx, ms...); err != nil {
+		return nil, err
+	}
+	return s.c.ContactImportChunk.CreateBulk(builders...), nil
+}
+
+// Save verifies every builder's references, then creates the ContactImportChunk entities.
+func (b *ContactImportChunkScopedCreateBulk) Save(ctx context.Context) ([]*ContactImportChunk, error) {
+	if err := b.refuseForeign(); err != nil {
+		return nil, err
+	}
+	var created []*ContactImportChunk
+	err := b.s.writeContactImportChunk(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		raw, err := b.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if created, err = raw.Save(ctx); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+	return written(created, err)
+}
+
+// Exec is like Save, discarding the entities.
+func (b *ContactImportChunkScopedCreateBulk) Exec(ctx context.Context) error {
+	_, err := b.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_ContactImportChunkScopedCreateBulk                   = TypeScopedCreate
+	EntityOf_ContactImportChunkScopedCreateBulk                 = "ContactImportChunk"
+	RoleOf_ContactImportChunkScopedCreateBulk_Save              = RoleStep
+	RoleOf_ContactImportChunkScopedCreateBulk_Exec              = RoleStep
+	RoleOf_ContactImportChunkScopedCreateBulk_OnConflictColumns = RoleStart
+)
+
+// ---------------------------------------------------------------- upsert
+
+// ContactImportChunkScopedUpsert is the "ON CONFLICT ... DO UPDATE" setter. It cannot move a row to
+// another Workspace or point a reference at a value that was not verified on create.
+type ContactImportChunkScopedUpsert struct{ u *sql.UpdateSet }
+
+const (
+	TypeOf_ContactImportChunkScopedUpsert   = TypeScopedUpsert
+	EntityOf_ContactImportChunkScopedUpsert = "ContactImportChunk"
+)
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *ContactImportChunkScopedUpsert) SetUpdatedAt(v time.Time) *ContactImportChunkScopedUpsert {
+	u.u.Set(contactimportchunk.FieldUpdatedAt, v)
+	return u
+}
+
+const RoleOf_ContactImportChunkScopedUpsert_SetUpdatedAt = RoleStep
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *ContactImportChunkScopedUpsert) UpdateUpdatedAt() *ContactImportChunkScopedUpsert {
+	u.u.SetExcluded(contactimportchunk.FieldUpdatedAt)
+	return u
+}
+
+const RoleOf_ContactImportChunkScopedUpsert_UpdateUpdatedAt = RoleStep
+
+// conflictOptions confines the DO UPDATE part to rows of the Workspace.
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *ContactImportChunkScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
+		sql.ConflictColumns(columns...),
+		sql.UpdateWhere(sql.EQ(contactimportchunk.FieldWorkspaceID, t.s.ws)),
+	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
+}
+
+// ContactImportChunkScopedUpsertOne is the "upsert" of one ContactImportChunk: the create it was started on, which a setter
+// called later still changes, and what to do on a conflict.
+type ContactImportChunkScopedUpsertOne struct {
+	x        *ContactImportChunkScopedCreate
+	conflict []sql.ConflictOption
+	set      []func(*ContactImportChunkUpsertOne)
+	// doNothing: the conflict action is DO NOTHING (the only upsert an audited entity allows).
+	doNothing bool
+}
+
+const (
+	TypeOf_ContactImportChunkScopedUpsertOne                 = TypeScopedUpsert
+	EntityOf_ContactImportChunkScopedUpsertOne               = "ContactImportChunk"
+	RoleOf_ContactImportChunkScopedUpsertOne_UpdateNewValues = RoleStep
+	RoleOf_ContactImportChunkScopedUpsertOne_Ignore          = RoleStep
+	RoleOf_ContactImportChunkScopedUpsertOne_DoNothing       = RoleStep
+	RoleOf_ContactImportChunkScopedUpsertOne_Update          = RoleStep
+	RoleOf_ContactImportChunkScopedUpsertOne_Exec            = RoleStep
+	RoleOf_ContactImportChunkScopedUpsertOne_ID              = RoleStep
+)
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (x *ContactImportChunkScopedCreate) OnConflictColumns(columns ...string) *ContactImportChunkScopedUpsertOne {
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *ContactImportChunkScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *ContactImportChunkScopedUpsertOne {
+	return &ContactImportChunkScopedUpsertOne{x: x, conflict: (&ContactImportChunkScoped{s: x.s}).conflictOptions(columns, target)}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *ContactImportChunkScopedUpsertOne) UpdateNewValues() *ContactImportChunkScopedUpsertOne {
+	u.set = append(u.set, func(r *ContactImportChunkUpsertOne) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *ContactImportChunkScopedUpsertOne) Ignore() *ContactImportChunkScopedUpsertOne {
+	u.set = append(u.set, func(r *ContactImportChunkUpsertOne) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *ContactImportChunkScopedUpsertOne) DoNothing() *ContactImportChunkScopedUpsertOne {
+	u.set = append(u.set, func(r *ContactImportChunkUpsertOne) { r.DoNothing() })
+	u.doNothing = true
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *ContactImportChunkScopedUpsertOne) Update(set func(*ContactImportChunkScopedUpsert)) *ContactImportChunkScopedUpsertOne {
+	u.set = append(u.set, func(r *ContactImportChunkUpsertOne) {
+		r.Update(func(s *ContactImportChunkUpsert) { set(&ContactImportChunkScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// build makes the ent upsert on the client of s and verifies the create's references.
+func (u *ContactImportChunkScopedUpsertOne) build(ctx context.Context, s *Scoped) (*ContactImportChunkUpsertOne, error) {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
+		return nil, err
+	}
+	r := b.OnConflict(u.conflict...)
+	for _, set := range u.set {
+		set(r)
+	}
+	return r, nil
+}
+
+// Exec verifies the references, then executes the upsert.
+func (u *ContactImportChunkScopedUpsertOne) Exec(ctx context.Context) error {
+	_, err := u.ID(ctx)
+	return err
+}
+
+// ID is like Exec, returning the inserted or updated id.
+func (u *ContactImportChunkScopedUpsertOne) ID(ctx context.Context) (int64, error) {
+	var id int64
+	err := u.x.s.writeContactImportChunk(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		r, err := u.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if id, err = r.ID(ctx); err != nil {
+			return nil, err
+		}
+		return []int64{id}, nil
+	})
+	return written(id, err)
+}
+
+// ContactImportChunkScopedUpsertBulk is the "upsert" of several ContactImportChunk entities.
+type ContactImportChunkScopedUpsertBulk struct {
+	b       *ContactImportChunkScopedCreateBulk
+	t       *ContactImportChunkScoped
+	columns []string
+	set     []func(*ContactImportChunkUpsertBulk)
+}
+
+const (
+	TypeOf_ContactImportChunkScopedUpsertBulk                 = TypeScopedUpsert
+	EntityOf_ContactImportChunkScopedUpsertBulk               = "ContactImportChunk"
+	RoleOf_ContactImportChunkScopedUpsertBulk_UpdateNewValues = RoleStep
+	RoleOf_ContactImportChunkScopedUpsertBulk_Ignore          = RoleStep
+	RoleOf_ContactImportChunkScopedUpsertBulk_DoNothing       = RoleStep
+	RoleOf_ContactImportChunkScopedUpsertBulk_Update          = RoleStep
+	RoleOf_ContactImportChunkScopedUpsertBulk_Exec            = RoleStep
+)
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (b *ContactImportChunkScopedCreateBulk) OnConflictColumns(columns ...string) *ContactImportChunkScopedUpsertBulk {
+	return &ContactImportChunkScopedUpsertBulk{b: b, t: &ContactImportChunkScoped{s: b.s}, columns: columns}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *ContactImportChunkScopedUpsertBulk) UpdateNewValues() *ContactImportChunkScopedUpsertBulk {
+	u.set = append(u.set, func(r *ContactImportChunkUpsertBulk) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *ContactImportChunkScopedUpsertBulk) Ignore() *ContactImportChunkScopedUpsertBulk {
+	u.set = append(u.set, func(r *ContactImportChunkUpsertBulk) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *ContactImportChunkScopedUpsertBulk) DoNothing() *ContactImportChunkScopedUpsertBulk {
+	u.set = append(u.set, func(r *ContactImportChunkUpsertBulk) { r.DoNothing() })
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *ContactImportChunkScopedUpsertBulk) Update(set func(*ContactImportChunkScopedUpsert)) *ContactImportChunkScopedUpsertBulk {
+	u.set = append(u.set, func(r *ContactImportChunkUpsertBulk) {
+		r.Update(func(s *ContactImportChunkUpsert) { set(&ContactImportChunkScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// Exec verifies every builder's references, then executes the upsert.
+func (u *ContactImportChunkScopedUpsertBulk) Exec(ctx context.Context) error {
+	if err := u.b.refuseForeign(); err != nil {
+		return err
+	}
+	return u.b.s.writeContactImportChunk(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		raw, err := u.b.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
+		for _, set := range u.set {
+			set(r)
+		}
+		return nil, r.Exec(ctx)
+	})
+}
+
+// ---------------------------------------------------------------- update
+
+// ContactImportChunkScopedUpdateOne updates one ContactImportChunk. It has no way to move the row to another Workspace: it
+// keeps the row's id, its fences and what its setters set, and builds the ent update on the client
+// the update runs on.
+type ContactImportChunkScopedUpdateOne struct {
+	s     *Scoped
+	id    int64
+	where []predicate.ContactImportChunk
+	set   []func(*ContactImportChunkUpdateOne)
+}
+
+// UpdateOneID updates the ContactImportChunk with the id; a row of another Workspace is not found.
+func (t *ContactImportChunkScoped) UpdateOneID(id int64) *ContactImportChunkScopedUpdateOne {
+	return &ContactImportChunkScopedUpdateOne{s: t.s, id: id}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *ContactImportChunkScopedUpdateOne) Where(ps ...predicate.ContactImportChunk) *ContactImportChunkScopedUpdateOne {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *ContactImportChunkScopedUpdateOne) SetUpdatedAt(v time.Time) *ContactImportChunkScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportChunkUpdateOne) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_ContactImportChunkScopedUpdateOne_SetUpdatedAt = RoleStep
+
+// Save verifies the references against the Workspace, then updates the ContactImportChunk.
+func (x *ContactImportChunkScopedUpdateOne) Save(ctx context.Context) (*ContactImportChunk, error) {
+	return x.save(ctx, "update", skipUnchanged)
+}
+
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *ContactImportChunkScopedUpdateOne) build(ctx context.Context, s *Scoped) (*ContactImportChunkUpdateOne, error) {
+	b := s.c.ContactImportChunk.UpdateOneID(x.id).Where(s.inContactImportChunk(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkContactImportChunk(ctx, b.Mutation()))
+}
+
+// save is Save under a verb, doing with an unchanged row what unchanged says.
+func (x *ContactImportChunkScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*ContactImportChunk, error) {
+	where := x.s.inContactImportChunk(x.where...)
+	var updated *ContactImportChunk
+	err := x.s.writeContactImportChunk(ctx, verb, append([]predicate.ContactImportChunk{contactimportchunk.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		updated, err = b.Save(ctx)
+		return nil, err
+	})
+	return written(updated, err)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *ContactImportChunkScopedUpdateOne) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_ContactImportChunkScopedUpdateOne       = TypeScopedUpdate
+	EntityOf_ContactImportChunkScopedUpdateOne     = "ContactImportChunk"
+	RoleOf_ContactImportChunkScopedUpdateOne_Where = RoleStep
+	RoleOf_ContactImportChunkScopedUpdateOne_Save  = RoleStep
+	RoleOf_ContactImportChunkScopedUpdateOne_Exec  = RoleStep
+)
+
+// ContactImportChunkScopedUpdate is a conditional bulk update of one Workspace: it keeps its predicates and
+// what its setters and modifiers set, and builds the ent update on the client the update runs on.
+type ContactImportChunkScopedUpdate struct {
+	s     *Scoped
+	where []predicate.ContactImportChunk
+	set   []func(*ContactImportChunkUpdate)
+	// modErr is set when a Modify modifier tried to assign workspace_id.
+	modErr error
+}
+
+// Update updates the ContactImportChunk entities of the Workspace that match the predicates.
+func (t *ContactImportChunkScoped) Update() *ContactImportChunkScopedUpdate {
+	return &ContactImportChunkScopedUpdate{s: t.s}
+}
+
+// Where appends predicates the rows must match.
+func (x *ContactImportChunkScopedUpdate) Where(ps ...predicate.ContactImportChunk) *ContactImportChunkScopedUpdate {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+// Modify adds a statement modifier for computed assignments the typed setters cannot
+// express (SET col = LEAST(col + ..., ...)). A modifier gets assignment-only access
+// (ScopedAssign), so it cannot widen the Workspace predicate; an assignment to
+// workspace_id is refused: each modifier is probed against a scratch statement here, and
+// Save fails with ErrWorkspaceAssign.
+func (x *ContactImportChunkScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *ContactImportChunkScopedUpdate {
+	for _, m := range modifiers {
+		probe := &ScopedAssign{u: sql.Update(contactimportchunk.Table)}
+		m(probe)
+		if probe.workspace {
+			x.modErr = ErrWorkspaceAssign
+		}
+		x.set = append(x.set, func(b *ContactImportChunkUpdate) {
+			b.Modify(func(u *sql.UpdateBuilder) { m(&ScopedAssign{u: u}) })
+		})
+	}
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *ContactImportChunkScopedUpdate) SetUpdatedAt(v time.Time) *ContactImportChunkScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportChunkUpdate) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_ContactImportChunkScopedUpdate_SetUpdatedAt = RoleStep
+
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *ContactImportChunkScopedUpdate) build(ctx context.Context, s *Scoped) (*ContactImportChunkUpdate, error) {
+	b := s.c.ContactImportChunk.Update().Where(s.inContactImportChunk(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkContactImportChunk(ctx, b.Mutation()))
+}
+
+// Save verifies the references against the Workspace, then updates the rows and
+// returns how many changed.
+func (x *ContactImportChunkScopedUpdate) Save(ctx context.Context) (int, error) {
+	if x.modErr != nil {
+		return 0, x.modErr
+	}
+	where := x.s.inContactImportChunk(x.where...)
+	var n int
+	err := x.s.writeContactImportChunk(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		n, err = b.Save(ctx)
+		return nil, err
+	})
+	return written(n, err)
+}
+
+// Exec is like Save, discarding the count.
+func (x *ContactImportChunkScopedUpdate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_ContactImportChunkScopedUpdate        = TypeScopedUpdate
+	EntityOf_ContactImportChunkScopedUpdate      = "ContactImportChunk"
+	RoleOf_ContactImportChunkScopedUpdate_Where  = RoleStep
+	RoleOf_ContactImportChunkScopedUpdate_Modify = RoleStep
+	RoleOf_ContactImportChunkScopedUpdate_Save   = RoleStep
+	RoleOf_ContactImportChunkScopedUpdate_Exec   = RoleStep
+)
+
+// ContactImportReportRowScoped reaches ContactImportReportRow entities of one Workspace.
+type ContactImportReportRowScoped struct{ s *Scoped }
+
+// ContactImportReportRow returns the ContactImportReportRow entities of the Workspace.
+func (s *Scoped) ContactImportReportRow() *ContactImportReportRowScoped {
+	return &ContactImportReportRowScoped{s: s}
+}
+
+const (
+	TypeOf_ContactImportReportRowScoped             = TypeWrapper
+	EntityOf_ContactImportReportRowScoped           = "ContactImportReportRow"
+	RoleOf_Scoped_ContactImportReportRow            = RoleNone
+	RoleOf_ContactImportReportRowScoped_Query       = RoleRead
+	RoleOf_ContactImportReportRowScoped_Get         = RoleRead
+	RoleOf_ContactImportReportRowScoped_DeleteOneID = RoleStart
+	RoleOf_ContactImportReportRowScoped_UpdateOneID = RoleStart
+	RoleOf_ContactImportReportRowScoped_Delete      = RoleStart
+	RoleOf_ContactImportReportRowScoped_Create      = RoleStart
+	RoleOf_ContactImportReportRowScoped_CreateBulk  = RoleStart
+	RoleOf_ContactImportReportRowScoped_Update      = RoleStart
+)
+
+// inContactImportReportRow confines predicates of ContactImportReportRow rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inContactImportReportRow(ps ...predicate.ContactImportReportRow) []predicate.ContactImportReportRow {
+	return append([]predicate.ContactImportReportRow{contactimportreportrow.WorkspaceID(s.ws)}, ps...)
+}
+
+// Query returns a ContactImportReportRow query already confined to the Workspace.
+func (t *ContactImportReportRowScoped) Query() *ContactImportReportRowQuery {
+	return t.s.c.ContactImportReportRow.Query().Where(t.s.inContactImportReportRow()...)
+}
+
+// Get returns the ContactImportReportRow with the id; a row of another Workspace is not found.
+func (t *ContactImportReportRowScoped) Get(ctx context.Context, id int64) (*ContactImportReportRow, error) {
+	return t.Query().Where(contactimportreportrow.ID(id)).Only(ctx)
+}
+
+// writeContactImportReportRow runs a write of ContactImportReportRow rows: run builds it on the client of the scope it is
+// given and executes it, and reaches no other client. The
+// entity is not audited, so run gets the scope itself.
+func (s *Scoped) writeContactImportReportRow(ctx context.Context, verb string, where []predicate.ContactImportReportRow, unchanged unchangedRows, run func(s *Scoped) ([]int64, error)) error {
+	_, _, _ = verb, where, unchanged
+	_, err := run(s)
+	return err
+}
+
+// checkContactImportReportRow verifies every reference the mutations set against the Workspace of s, one query per
+// reference for all of them.
+func (s *Scoped) checkContactImportReportRow(ctx context.Context, ms ...*ContactImportReportRowMutation) error {
+	{
+		var ids []int64
+		for _, m := range ms {
+			ids = append(ids, m.ContactImportIDs()...)
+		}
+		if err := s.verifyContactImport(ctx, ids); err != nil {
+			return fmt.Errorf("contact_import: %w", err)
+		}
+	}
+	return nil
+}
+
+// ContactImportReportRowScopedDeleteOne deletes one ContactImportReportRow: it keeps the row's id and its fences, and builds the
+// ent delete on the client the delete runs on.
+type ContactImportReportRowScopedDeleteOne struct {
+	s     *Scoped
+	id    int64
+	where []predicate.ContactImportReportRow
+}
+
+// DeleteOneID deletes the ContactImportReportRow with the id; a row of another Workspace is not found.
+func (t *ContactImportReportRowScoped) DeleteOneID(id int64) *ContactImportReportRowScopedDeleteOne {
+	return &ContactImportReportRowScopedDeleteOne{s: t.s, id: id}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *ContactImportReportRowScopedDeleteOne) Where(ps ...predicate.ContactImportReportRow) *ContactImportReportRowScopedDeleteOne {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+const (
+	TypeOf_ContactImportReportRowScopedDeleteOne       = TypeScopedDelete
+	EntityOf_ContactImportReportRowScopedDeleteOne     = "ContactImportReportRow"
+	RoleOf_ContactImportReportRowScopedDeleteOne_Where = RoleStep
+	RoleOf_ContactImportReportRowScopedDeleteOne_Exec  = RoleStep
+)
+
+// Exec deletes the row; a missing row is a NotFoundError.
+func (x *ContactImportReportRowScopedDeleteOne) Exec(ctx context.Context) error {
+	where := x.s.inContactImportReportRow(x.where...)
+	return x.s.writeContactImportReportRow(ctx, "delete", append([]predicate.ContactImportReportRow{contactimportreportrow.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
+		return nil, s.c.ContactImportReportRow.DeleteOneID(x.id).Where(where...).Exec(ctx)
+	})
+}
+
+// ContactImportReportRowScopedDelete deletes the ContactImportReportRow rows of one Workspace that match its predicates, which it
+// keeps until the delete is built on the client it runs on.
+type ContactImportReportRowScopedDelete struct {
+	s     *Scoped
+	where []predicate.ContactImportReportRow
+}
+
+// Delete deletes the ContactImportReportRow entities of the Workspace that match the predicates.
+func (t *ContactImportReportRowScoped) Delete() *ContactImportReportRowScopedDelete {
+	return &ContactImportReportRowScopedDelete{s: t.s}
+}
+
+// Where appends predicates the rows must match.
+func (x *ContactImportReportRowScopedDelete) Where(ps ...predicate.ContactImportReportRow) *ContactImportReportRowScopedDelete {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+const (
+	TypeOf_ContactImportReportRowScopedDelete       = TypeScopedDelete
+	EntityOf_ContactImportReportRowScopedDelete     = "ContactImportReportRow"
+	RoleOf_ContactImportReportRowScopedDelete_Where = RoleStep
+	RoleOf_ContactImportReportRowScopedDelete_Exec  = RoleStep
+)
+
+// Exec deletes the rows and returns how many were deleted.
+func (x *ContactImportReportRowScopedDelete) Exec(ctx context.Context) (int, error) {
+	where := x.s.inContactImportReportRow(x.where...)
+	var n int
+	err := x.s.writeContactImportReportRow(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		var err error
+		n, err = s.c.ContactImportReportRow.Delete().Where(where...).Exec(ctx)
+		return nil, err
+	})
+	return written(n, err)
+}
+
+// ---------------------------------------------------------------- create
+
+// ContactImportReportRowScopedCreate creates a ContactImportReportRow of one Workspace. It has no way to name a Workspace: it
+// keeps what its setters set and builds the ent create, in its Workspace, on the client the create
+// runs on.
+type ContactImportReportRowScopedCreate struct {
+	s   *Scoped
+	set []func(*ContactImportReportRowCreate)
+}
+
+// Create starts a ContactImportReportRow in the Workspace.
+func (t *ContactImportReportRowScoped) Create() *ContactImportReportRowScopedCreate {
+	return &ContactImportReportRowScopedCreate{s: t.s}
+}
+
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *ContactImportReportRowScopedCreate) raw(s *Scoped) *ContactImportReportRowCreate {
+	b := s.c.ContactImportReportRow.Create().SetWorkspaceID(s.ws)
+	for _, set := range x.set {
+		set(b)
+	}
+	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *ContactImportReportRowScopedCreate) build(ctx context.Context, s *Scoped) (*ContactImportReportRowCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkContactImportReportRow(ctx, b.Mutation()))
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (x *ContactImportReportRowScopedCreate) SetCreatedAt(v time.Time) *ContactImportReportRowScopedCreate {
+	x.set = append(x.set, func(b *ContactImportReportRowCreate) { b.SetCreatedAt(v) })
+	return x
+}
+
+const RoleOf_ContactImportReportRowScopedCreate_SetCreatedAt = RoleStep
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (x *ContactImportReportRowScopedCreate) SetNillableCreatedAt(v *time.Time) *ContactImportReportRowScopedCreate {
+	if v != nil {
+		x.SetCreatedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportReportRowScopedCreate_SetNillableCreatedAt = RoleStep
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *ContactImportReportRowScopedCreate) SetUpdatedAt(v time.Time) *ContactImportReportRowScopedCreate {
+	x.set = append(x.set, func(b *ContactImportReportRowCreate) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_ContactImportReportRowScopedCreate_SetUpdatedAt = RoleStep
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (x *ContactImportReportRowScopedCreate) SetNillableUpdatedAt(v *time.Time) *ContactImportReportRowScopedCreate {
+	if v != nil {
+		x.SetUpdatedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportReportRowScopedCreate_SetNillableUpdatedAt = RoleStep
+
+// SetContactImportID sets the "contact_import_id" field.
+func (x *ContactImportReportRowScopedCreate) SetContactImportID(v int64) *ContactImportReportRowScopedCreate {
+	x.set = append(x.set, func(b *ContactImportReportRowCreate) { b.SetContactImportID(v) })
+	return x
+}
+
+const RoleOf_ContactImportReportRowScopedCreate_SetContactImportID = RoleStep
+
+// SetRow sets the "row" field.
+func (x *ContactImportReportRowScopedCreate) SetRow(v int) *ContactImportReportRowScopedCreate {
+	x.set = append(x.set, func(b *ContactImportReportRowCreate) { b.SetRow(v) })
+	return x
+}
+
+const RoleOf_ContactImportReportRowScopedCreate_SetRow = RoleStep
+
+// SetCells sets the "cells" field.
+func (x *ContactImportReportRowScopedCreate) SetCells(v []string) *ContactImportReportRowScopedCreate {
+	x.set = append(x.set, func(b *ContactImportReportRowCreate) { b.SetCells(v) })
+	return x
+}
+
+const RoleOf_ContactImportReportRowScopedCreate_SetCells = RoleStep
+
+// SetIssues sets the "issues" field.
+func (x *ContactImportReportRowScopedCreate) SetIssues(v []csvimport.Issue) *ContactImportReportRowScopedCreate {
+	x.set = append(x.set, func(b *ContactImportReportRowCreate) { b.SetIssues(v) })
+	return x
+}
+
+const RoleOf_ContactImportReportRowScopedCreate_SetIssues = RoleStep
+
+// SetContactImport sets the "contact_import" edge to the ContactImport entity.
+func (x *ContactImportReportRowScopedCreate) SetContactImport(v *ContactImport) *ContactImportReportRowScopedCreate {
+	x.set = append(x.set, func(b *ContactImportReportRowCreate) { b.SetContactImport(v) })
+	return x
+}
+
+const RoleOf_ContactImportReportRowScopedCreate_SetContactImport = RoleStep
+
+const (
+	TypeOf_ContactImportReportRowScopedCreate                        = TypeScopedCreate
+	EntityOf_ContactImportReportRowScopedCreate                      = "ContactImportReportRow"
+	RoleOf_ContactImportReportRowScopedCreate_Save                   = RoleStep
+	RoleOf_ContactImportReportRowScopedCreate_Exec                   = RoleStep
+	RoleOf_ContactImportReportRowScopedCreate_OnConflictColumns      = RoleStart
+	RoleOf_ContactImportReportRowScopedCreate_OnConflictColumnsWhere = RoleStart
+)
+
+// Save verifies the references against the Workspace, then creates the ContactImportReportRow.
+func (x *ContactImportReportRowScopedCreate) Save(ctx context.Context) (*ContactImportReportRow, error) {
+	var created *ContactImportReportRow
+	err := x.s.writeContactImportReportRow(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if created, err = b.Save(ctx); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+	return written(created, err)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *ContactImportReportRowScopedCreate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- create bulk
+
+// ContactImportReportRowScopedCreateBulk creates several ContactImportReportRow entities of one Workspace at once.
+type ContactImportReportRowScopedCreateBulk struct {
+	s  *Scoped
+	xs []*ContactImportReportRowScopedCreate
+}
+
+// CreateBulk batches creates started on this Workspace.
+func (t *ContactImportReportRowScoped) CreateBulk(xs ...*ContactImportReportRowScopedCreate) *ContactImportReportRowScopedCreateBulk {
+	return &ContactImportReportRowScopedCreateBulk{s: t.s, xs: xs}
+}
+
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *ContactImportReportRowScopedCreateBulk) refuseForeign() error {
+	for _, x := range b.xs {
+		if x.s.ws != b.s.ws {
+			return fmt.Errorf("ContactImportReportRow: builder of another scope: %w", ErrNotInWorkspace)
+		}
+	}
+	return nil
+}
+
+// build makes the ent bulk create on the client of s, every create of it in the Workspace, and
+// verifies the references of all of them, one query per reference rather than one per row.
+func (b *ContactImportReportRowScopedCreateBulk) build(ctx context.Context, s *Scoped) (*ContactImportReportRowCreateBulk, error) {
+	builders := make([]*ContactImportReportRowCreate, len(b.xs))
+	ms := make([]*ContactImportReportRowMutation, len(b.xs))
+	for i, x := range b.xs {
+		builders[i] = x.raw(s)
+		ms[i] = builders[i].Mutation()
+	}
+	if err := s.checkContactImportReportRow(ctx, ms...); err != nil {
+		return nil, err
+	}
+	return s.c.ContactImportReportRow.CreateBulk(builders...), nil
+}
+
+// Save verifies every builder's references, then creates the ContactImportReportRow entities.
+func (b *ContactImportReportRowScopedCreateBulk) Save(ctx context.Context) ([]*ContactImportReportRow, error) {
+	if err := b.refuseForeign(); err != nil {
+		return nil, err
+	}
+	var created []*ContactImportReportRow
+	err := b.s.writeContactImportReportRow(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		raw, err := b.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if created, err = raw.Save(ctx); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+	return written(created, err)
+}
+
+// Exec is like Save, discarding the entities.
+func (b *ContactImportReportRowScopedCreateBulk) Exec(ctx context.Context) error {
+	_, err := b.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_ContactImportReportRowScopedCreateBulk                   = TypeScopedCreate
+	EntityOf_ContactImportReportRowScopedCreateBulk                 = "ContactImportReportRow"
+	RoleOf_ContactImportReportRowScopedCreateBulk_Save              = RoleStep
+	RoleOf_ContactImportReportRowScopedCreateBulk_Exec              = RoleStep
+	RoleOf_ContactImportReportRowScopedCreateBulk_OnConflictColumns = RoleStart
+)
+
+// ---------------------------------------------------------------- upsert
+
+// ContactImportReportRowScopedUpsert is the "ON CONFLICT ... DO UPDATE" setter. It cannot move a row to
+// another Workspace or point a reference at a value that was not verified on create.
+type ContactImportReportRowScopedUpsert struct{ u *sql.UpdateSet }
+
+const (
+	TypeOf_ContactImportReportRowScopedUpsert   = TypeScopedUpsert
+	EntityOf_ContactImportReportRowScopedUpsert = "ContactImportReportRow"
+)
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *ContactImportReportRowScopedUpsert) SetUpdatedAt(v time.Time) *ContactImportReportRowScopedUpsert {
+	u.u.Set(contactimportreportrow.FieldUpdatedAt, v)
+	return u
+}
+
+const RoleOf_ContactImportReportRowScopedUpsert_SetUpdatedAt = RoleStep
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *ContactImportReportRowScopedUpsert) UpdateUpdatedAt() *ContactImportReportRowScopedUpsert {
+	u.u.SetExcluded(contactimportreportrow.FieldUpdatedAt)
+	return u
+}
+
+const RoleOf_ContactImportReportRowScopedUpsert_UpdateUpdatedAt = RoleStep
+
+// conflictOptions confines the DO UPDATE part to rows of the Workspace.
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *ContactImportReportRowScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
+		sql.ConflictColumns(columns...),
+		sql.UpdateWhere(sql.EQ(contactimportreportrow.FieldWorkspaceID, t.s.ws)),
+	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
+}
+
+// ContactImportReportRowScopedUpsertOne is the "upsert" of one ContactImportReportRow: the create it was started on, which a setter
+// called later still changes, and what to do on a conflict.
+type ContactImportReportRowScopedUpsertOne struct {
+	x        *ContactImportReportRowScopedCreate
+	conflict []sql.ConflictOption
+	set      []func(*ContactImportReportRowUpsertOne)
+	// doNothing: the conflict action is DO NOTHING (the only upsert an audited entity allows).
+	doNothing bool
+}
+
+const (
+	TypeOf_ContactImportReportRowScopedUpsertOne                 = TypeScopedUpsert
+	EntityOf_ContactImportReportRowScopedUpsertOne               = "ContactImportReportRow"
+	RoleOf_ContactImportReportRowScopedUpsertOne_UpdateNewValues = RoleStep
+	RoleOf_ContactImportReportRowScopedUpsertOne_Ignore          = RoleStep
+	RoleOf_ContactImportReportRowScopedUpsertOne_DoNothing       = RoleStep
+	RoleOf_ContactImportReportRowScopedUpsertOne_Update          = RoleStep
+	RoleOf_ContactImportReportRowScopedUpsertOne_Exec            = RoleStep
+	RoleOf_ContactImportReportRowScopedUpsertOne_ID              = RoleStep
+)
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (x *ContactImportReportRowScopedCreate) OnConflictColumns(columns ...string) *ContactImportReportRowScopedUpsertOne {
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *ContactImportReportRowScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *ContactImportReportRowScopedUpsertOne {
+	return &ContactImportReportRowScopedUpsertOne{x: x, conflict: (&ContactImportReportRowScoped{s: x.s}).conflictOptions(columns, target)}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *ContactImportReportRowScopedUpsertOne) UpdateNewValues() *ContactImportReportRowScopedUpsertOne {
+	u.set = append(u.set, func(r *ContactImportReportRowUpsertOne) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *ContactImportReportRowScopedUpsertOne) Ignore() *ContactImportReportRowScopedUpsertOne {
+	u.set = append(u.set, func(r *ContactImportReportRowUpsertOne) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *ContactImportReportRowScopedUpsertOne) DoNothing() *ContactImportReportRowScopedUpsertOne {
+	u.set = append(u.set, func(r *ContactImportReportRowUpsertOne) { r.DoNothing() })
+	u.doNothing = true
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *ContactImportReportRowScopedUpsertOne) Update(set func(*ContactImportReportRowScopedUpsert)) *ContactImportReportRowScopedUpsertOne {
+	u.set = append(u.set, func(r *ContactImportReportRowUpsertOne) {
+		r.Update(func(s *ContactImportReportRowUpsert) { set(&ContactImportReportRowScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// build makes the ent upsert on the client of s and verifies the create's references.
+func (u *ContactImportReportRowScopedUpsertOne) build(ctx context.Context, s *Scoped) (*ContactImportReportRowUpsertOne, error) {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
+		return nil, err
+	}
+	r := b.OnConflict(u.conflict...)
+	for _, set := range u.set {
+		set(r)
+	}
+	return r, nil
+}
+
+// Exec verifies the references, then executes the upsert.
+func (u *ContactImportReportRowScopedUpsertOne) Exec(ctx context.Context) error {
+	_, err := u.ID(ctx)
+	return err
+}
+
+// ID is like Exec, returning the inserted or updated id.
+func (u *ContactImportReportRowScopedUpsertOne) ID(ctx context.Context) (int64, error) {
+	var id int64
+	err := u.x.s.writeContactImportReportRow(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		r, err := u.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if id, err = r.ID(ctx); err != nil {
+			return nil, err
+		}
+		return []int64{id}, nil
+	})
+	return written(id, err)
+}
+
+// ContactImportReportRowScopedUpsertBulk is the "upsert" of several ContactImportReportRow entities.
+type ContactImportReportRowScopedUpsertBulk struct {
+	b       *ContactImportReportRowScopedCreateBulk
+	t       *ContactImportReportRowScoped
+	columns []string
+	set     []func(*ContactImportReportRowUpsertBulk)
+}
+
+const (
+	TypeOf_ContactImportReportRowScopedUpsertBulk                 = TypeScopedUpsert
+	EntityOf_ContactImportReportRowScopedUpsertBulk               = "ContactImportReportRow"
+	RoleOf_ContactImportReportRowScopedUpsertBulk_UpdateNewValues = RoleStep
+	RoleOf_ContactImportReportRowScopedUpsertBulk_Ignore          = RoleStep
+	RoleOf_ContactImportReportRowScopedUpsertBulk_DoNothing       = RoleStep
+	RoleOf_ContactImportReportRowScopedUpsertBulk_Update          = RoleStep
+	RoleOf_ContactImportReportRowScopedUpsertBulk_Exec            = RoleStep
+)
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (b *ContactImportReportRowScopedCreateBulk) OnConflictColumns(columns ...string) *ContactImportReportRowScopedUpsertBulk {
+	return &ContactImportReportRowScopedUpsertBulk{b: b, t: &ContactImportReportRowScoped{s: b.s}, columns: columns}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *ContactImportReportRowScopedUpsertBulk) UpdateNewValues() *ContactImportReportRowScopedUpsertBulk {
+	u.set = append(u.set, func(r *ContactImportReportRowUpsertBulk) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *ContactImportReportRowScopedUpsertBulk) Ignore() *ContactImportReportRowScopedUpsertBulk {
+	u.set = append(u.set, func(r *ContactImportReportRowUpsertBulk) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *ContactImportReportRowScopedUpsertBulk) DoNothing() *ContactImportReportRowScopedUpsertBulk {
+	u.set = append(u.set, func(r *ContactImportReportRowUpsertBulk) { r.DoNothing() })
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *ContactImportReportRowScopedUpsertBulk) Update(set func(*ContactImportReportRowScopedUpsert)) *ContactImportReportRowScopedUpsertBulk {
+	u.set = append(u.set, func(r *ContactImportReportRowUpsertBulk) {
+		r.Update(func(s *ContactImportReportRowUpsert) { set(&ContactImportReportRowScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// Exec verifies every builder's references, then executes the upsert.
+func (u *ContactImportReportRowScopedUpsertBulk) Exec(ctx context.Context) error {
+	if err := u.b.refuseForeign(); err != nil {
+		return err
+	}
+	return u.b.s.writeContactImportReportRow(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		raw, err := u.b.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
+		for _, set := range u.set {
+			set(r)
+		}
+		return nil, r.Exec(ctx)
+	})
+}
+
+// ---------------------------------------------------------------- update
+
+// ContactImportReportRowScopedUpdateOne updates one ContactImportReportRow. It has no way to move the row to another Workspace: it
+// keeps the row's id, its fences and what its setters set, and builds the ent update on the client
+// the update runs on.
+type ContactImportReportRowScopedUpdateOne struct {
+	s     *Scoped
+	id    int64
+	where []predicate.ContactImportReportRow
+	set   []func(*ContactImportReportRowUpdateOne)
+}
+
+// UpdateOneID updates the ContactImportReportRow with the id; a row of another Workspace is not found.
+func (t *ContactImportReportRowScoped) UpdateOneID(id int64) *ContactImportReportRowScopedUpdateOne {
+	return &ContactImportReportRowScopedUpdateOne{s: t.s, id: id}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *ContactImportReportRowScopedUpdateOne) Where(ps ...predicate.ContactImportReportRow) *ContactImportReportRowScopedUpdateOne {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *ContactImportReportRowScopedUpdateOne) SetUpdatedAt(v time.Time) *ContactImportReportRowScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportReportRowUpdateOne) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_ContactImportReportRowScopedUpdateOne_SetUpdatedAt = RoleStep
+
+// Save verifies the references against the Workspace, then updates the ContactImportReportRow.
+func (x *ContactImportReportRowScopedUpdateOne) Save(ctx context.Context) (*ContactImportReportRow, error) {
+	return x.save(ctx, "update", skipUnchanged)
+}
+
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *ContactImportReportRowScopedUpdateOne) build(ctx context.Context, s *Scoped) (*ContactImportReportRowUpdateOne, error) {
+	b := s.c.ContactImportReportRow.UpdateOneID(x.id).Where(s.inContactImportReportRow(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkContactImportReportRow(ctx, b.Mutation()))
+}
+
+// save is Save under a verb, doing with an unchanged row what unchanged says.
+func (x *ContactImportReportRowScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*ContactImportReportRow, error) {
+	where := x.s.inContactImportReportRow(x.where...)
+	var updated *ContactImportReportRow
+	err := x.s.writeContactImportReportRow(ctx, verb, append([]predicate.ContactImportReportRow{contactimportreportrow.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		updated, err = b.Save(ctx)
+		return nil, err
+	})
+	return written(updated, err)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *ContactImportReportRowScopedUpdateOne) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_ContactImportReportRowScopedUpdateOne       = TypeScopedUpdate
+	EntityOf_ContactImportReportRowScopedUpdateOne     = "ContactImportReportRow"
+	RoleOf_ContactImportReportRowScopedUpdateOne_Where = RoleStep
+	RoleOf_ContactImportReportRowScopedUpdateOne_Save  = RoleStep
+	RoleOf_ContactImportReportRowScopedUpdateOne_Exec  = RoleStep
+)
+
+// ContactImportReportRowScopedUpdate is a conditional bulk update of one Workspace: it keeps its predicates and
+// what its setters and modifiers set, and builds the ent update on the client the update runs on.
+type ContactImportReportRowScopedUpdate struct {
+	s     *Scoped
+	where []predicate.ContactImportReportRow
+	set   []func(*ContactImportReportRowUpdate)
+	// modErr is set when a Modify modifier tried to assign workspace_id.
+	modErr error
+}
+
+// Update updates the ContactImportReportRow entities of the Workspace that match the predicates.
+func (t *ContactImportReportRowScoped) Update() *ContactImportReportRowScopedUpdate {
+	return &ContactImportReportRowScopedUpdate{s: t.s}
+}
+
+// Where appends predicates the rows must match.
+func (x *ContactImportReportRowScopedUpdate) Where(ps ...predicate.ContactImportReportRow) *ContactImportReportRowScopedUpdate {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+// Modify adds a statement modifier for computed assignments the typed setters cannot
+// express (SET col = LEAST(col + ..., ...)). A modifier gets assignment-only access
+// (ScopedAssign), so it cannot widen the Workspace predicate; an assignment to
+// workspace_id is refused: each modifier is probed against a scratch statement here, and
+// Save fails with ErrWorkspaceAssign.
+func (x *ContactImportReportRowScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *ContactImportReportRowScopedUpdate {
+	for _, m := range modifiers {
+		probe := &ScopedAssign{u: sql.Update(contactimportreportrow.Table)}
+		m(probe)
+		if probe.workspace {
+			x.modErr = ErrWorkspaceAssign
+		}
+		x.set = append(x.set, func(b *ContactImportReportRowUpdate) {
+			b.Modify(func(u *sql.UpdateBuilder) { m(&ScopedAssign{u: u}) })
+		})
+	}
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *ContactImportReportRowScopedUpdate) SetUpdatedAt(v time.Time) *ContactImportReportRowScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportReportRowUpdate) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_ContactImportReportRowScopedUpdate_SetUpdatedAt = RoleStep
+
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *ContactImportReportRowScopedUpdate) build(ctx context.Context, s *Scoped) (*ContactImportReportRowUpdate, error) {
+	b := s.c.ContactImportReportRow.Update().Where(s.inContactImportReportRow(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkContactImportReportRow(ctx, b.Mutation()))
+}
+
+// Save verifies the references against the Workspace, then updates the rows and
+// returns how many changed.
+func (x *ContactImportReportRowScopedUpdate) Save(ctx context.Context) (int, error) {
+	if x.modErr != nil {
+		return 0, x.modErr
+	}
+	where := x.s.inContactImportReportRow(x.where...)
+	var n int
+	err := x.s.writeContactImportReportRow(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		n, err = b.Save(ctx)
+		return nil, err
+	})
+	return written(n, err)
+}
+
+// Exec is like Save, discarding the count.
+func (x *ContactImportReportRowScopedUpdate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_ContactImportReportRowScopedUpdate        = TypeScopedUpdate
+	EntityOf_ContactImportReportRowScopedUpdate      = "ContactImportReportRow"
+	RoleOf_ContactImportReportRowScopedUpdate_Where  = RoleStep
+	RoleOf_ContactImportReportRowScopedUpdate_Modify = RoleStep
+	RoleOf_ContactImportReportRowScopedUpdate_Save   = RoleStep
+	RoleOf_ContactImportReportRowScopedUpdate_Exec   = RoleStep
+)
+
 // ContactTagScoped reaches ContactTag entities of one Workspace.
 type ContactTagScoped struct{ s *Scoped }
 
@@ -46667,6 +50825,15 @@ func (s *Scoped) checkMembership(ctx context.Context, ms ...*MembershipMutation)
 			return fmt.Errorf("oauth_codes: %w", err)
 		}
 	}
+	{
+		var ids []int64
+		for _, m := range ms {
+			ids = append(ids, m.ContactImportsIDs()...)
+		}
+		if err := s.verifyContactImport(ctx, ids); err != nil {
+			return fmt.Errorf("contact_imports: %w", err)
+		}
+	}
 	return nil
 }
 
@@ -46889,6 +51056,22 @@ func (x *MembershipScopedCreate) AddOauthCodes(v ...*OAuthCode) *MembershipScope
 }
 
 const RoleOf_MembershipScopedCreate_AddOauthCodes = RoleStep
+
+// AddContactImportIDs adds the "contact_imports" edge to the ContactImport entity by IDs.
+func (x *MembershipScopedCreate) AddContactImportIDs(ids ...int64) *MembershipScopedCreate {
+	x.set = append(x.set, func(b *MembershipCreate) { b.AddContactImportIDs(ids...) })
+	return x
+}
+
+const RoleOf_MembershipScopedCreate_AddContactImportIDs = RoleStep
+
+// AddContactImports adds the "contact_imports" edges to the ContactImport entity.
+func (x *MembershipScopedCreate) AddContactImports(v ...*ContactImport) *MembershipScopedCreate {
+	x.set = append(x.set, func(b *MembershipCreate) { b.AddContactImports(v...) })
+	return x
+}
+
+const RoleOf_MembershipScopedCreate_AddContactImports = RoleStep
 
 const (
 	TypeOf_MembershipScopedCreate                        = TypeScopedCreate
@@ -47474,6 +51657,46 @@ func (x *MembershipScopedUpdateOne) RemoveOauthCodes(v ...*OAuthCode) *Membershi
 
 const RoleOf_MembershipScopedUpdateOne_RemoveOauthCodes = RoleStep
 
+// AddContactImportIDs adds the "contact_imports" edge to the ContactImport entity by IDs.
+func (x *MembershipScopedUpdateOne) AddContactImportIDs(ids ...int64) *MembershipScopedUpdateOne {
+	x.set = append(x.set, func(b *MembershipUpdateOne) { b.AddContactImportIDs(ids...) })
+	return x
+}
+
+const RoleOf_MembershipScopedUpdateOne_AddContactImportIDs = RoleStep
+
+// AddContactImports adds the "contact_imports" edges to the ContactImport entity.
+func (x *MembershipScopedUpdateOne) AddContactImports(v ...*ContactImport) *MembershipScopedUpdateOne {
+	x.set = append(x.set, func(b *MembershipUpdateOne) { b.AddContactImports(v...) })
+	return x
+}
+
+const RoleOf_MembershipScopedUpdateOne_AddContactImports = RoleStep
+
+// ClearContactImports clears the "contact_imports" edges to the ContactImport entity.
+func (x *MembershipScopedUpdateOne) ClearContactImports() *MembershipScopedUpdateOne {
+	x.set = append(x.set, func(b *MembershipUpdateOne) { b.ClearContactImports() })
+	return x
+}
+
+const RoleOf_MembershipScopedUpdateOne_ClearContactImports = RoleStep
+
+// RemoveContactImportIDs removes the "contact_imports" edge to ContactImport entities by IDs.
+func (x *MembershipScopedUpdateOne) RemoveContactImportIDs(ids ...int64) *MembershipScopedUpdateOne {
+	x.set = append(x.set, func(b *MembershipUpdateOne) { b.RemoveContactImportIDs(ids...) })
+	return x
+}
+
+const RoleOf_MembershipScopedUpdateOne_RemoveContactImportIDs = RoleStep
+
+// RemoveContactImports removes "contact_imports" edges to ContactImport entities.
+func (x *MembershipScopedUpdateOne) RemoveContactImports(v ...*ContactImport) *MembershipScopedUpdateOne {
+	x.set = append(x.set, func(b *MembershipUpdateOne) { b.RemoveContactImports(v...) })
+	return x
+}
+
+const RoleOf_MembershipScopedUpdateOne_RemoveContactImports = RoleStep
+
 // Save verifies the references against the Workspace, then updates the Membership.
 func (x *MembershipScopedUpdateOne) Save(ctx context.Context) (*Membership, error) {
 	return x.save(ctx, "update", skipUnchanged)
@@ -47740,6 +51963,46 @@ func (x *MembershipScopedUpdate) RemoveOauthCodes(v ...*OAuthCode) *MembershipSc
 }
 
 const RoleOf_MembershipScopedUpdate_RemoveOauthCodes = RoleStep
+
+// AddContactImportIDs adds the "contact_imports" edge to the ContactImport entity by IDs.
+func (x *MembershipScopedUpdate) AddContactImportIDs(ids ...int64) *MembershipScopedUpdate {
+	x.set = append(x.set, func(b *MembershipUpdate) { b.AddContactImportIDs(ids...) })
+	return x
+}
+
+const RoleOf_MembershipScopedUpdate_AddContactImportIDs = RoleStep
+
+// AddContactImports adds the "contact_imports" edges to the ContactImport entity.
+func (x *MembershipScopedUpdate) AddContactImports(v ...*ContactImport) *MembershipScopedUpdate {
+	x.set = append(x.set, func(b *MembershipUpdate) { b.AddContactImports(v...) })
+	return x
+}
+
+const RoleOf_MembershipScopedUpdate_AddContactImports = RoleStep
+
+// ClearContactImports clears the "contact_imports" edges to the ContactImport entity.
+func (x *MembershipScopedUpdate) ClearContactImports() *MembershipScopedUpdate {
+	x.set = append(x.set, func(b *MembershipUpdate) { b.ClearContactImports() })
+	return x
+}
+
+const RoleOf_MembershipScopedUpdate_ClearContactImports = RoleStep
+
+// RemoveContactImportIDs removes the "contact_imports" edge to ContactImport entities by IDs.
+func (x *MembershipScopedUpdate) RemoveContactImportIDs(ids ...int64) *MembershipScopedUpdate {
+	x.set = append(x.set, func(b *MembershipUpdate) { b.RemoveContactImportIDs(ids...) })
+	return x
+}
+
+const RoleOf_MembershipScopedUpdate_RemoveContactImportIDs = RoleStep
+
+// RemoveContactImports removes "contact_imports" edges to ContactImport entities.
+func (x *MembershipScopedUpdate) RemoveContactImports(v ...*ContactImport) *MembershipScopedUpdate {
+	x.set = append(x.set, func(b *MembershipUpdate) { b.RemoveContactImports(v...) })
+	return x
+}
+
+const RoleOf_MembershipScopedUpdate_RemoveContactImports = RoleStep
 
 // build makes the ent update on the client of s and verifies the references it sets.
 func (x *MembershipScopedUpdate) build(ctx context.Context, s *Scoped) (*MembershipUpdate, error) {

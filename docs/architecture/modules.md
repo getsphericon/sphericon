@@ -115,8 +115,9 @@ An identity module imports no module of another context: not `providerlimit`, no
 Contacts, above it, is one component (`domain-contacts`, the glob of
 `internal/domain/contacts`): `contacts`, `segments`, `tags`, `condition`, `confirmations`,
 `unsubscribes`, `channelstop`, `suppressions`, `eligibility`, `visitors`, `orders` and
-`eventrecording` (the Event recording, which has no table: the bus stores the Events) and `contactsexport`
-(the CSV export of a Segment's Contacts, which has no table, ADR 0138), with the Contact
+`eventrecording` (the Event recording, which has no table: the bus stores the Events), `contactsexport`
+(the CSV export of a Segment's Contacts, which has no table, ADR 0138) and `contactimports` (the CSV
+import of Contacts, its file and its report, ADR 0138), with the Contact
 row lock (`contactlock`) and the order of Consent observations (`consentstamps`, ADR 0154), which
 `unsubscribes` and `confirmations` ask before they change a consent state; the Email case of every stored address is the kernel's
 (`internal/kernel/emailcase`), which each owner of an address applies. None of them holds the raw

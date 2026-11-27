@@ -8659,6 +8659,1831 @@ func (s *ContactExportVisitor) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
 }
 
+// A core attribute a column of an import writes, by the contract's name (ADR 0072).
+// Ref: #/components/schemas/ContactImportAttribute
+type ContactImportAttribute string
+
+const (
+	ContactImportAttributeFirstName ContactImportAttribute = "firstName"
+	ContactImportAttributeLastName  ContactImportAttribute = "lastName"
+	ContactImportAttributeTimeZone  ContactImportAttribute = "timeZone"
+	ContactImportAttributeCountry   ContactImportAttribute = "country"
+	ContactImportAttributeLocale    ContactImportAttribute = "locale"
+	ContactImportAttributeCity      ContactImportAttribute = "city"
+	ContactImportAttributeAvatar    ContactImportAttribute = "avatar"
+	ContactImportAttributeBirthday  ContactImportAttribute = "birthday"
+)
+
+// AllValues returns all ContactImportAttribute values.
+func (ContactImportAttribute) AllValues() []ContactImportAttribute {
+	return []ContactImportAttribute{
+		ContactImportAttributeFirstName,
+		ContactImportAttributeLastName,
+		ContactImportAttributeTimeZone,
+		ContactImportAttributeCountry,
+		ContactImportAttributeLocale,
+		ContactImportAttributeCity,
+		ContactImportAttributeAvatar,
+		ContactImportAttributeBirthday,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ContactImportAttribute) MarshalText() ([]byte, error) {
+	switch s {
+	case ContactImportAttributeFirstName:
+		return []byte(s), nil
+	case ContactImportAttributeLastName:
+		return []byte(s), nil
+	case ContactImportAttributeTimeZone:
+		return []byte(s), nil
+	case ContactImportAttributeCountry:
+		return []byte(s), nil
+	case ContactImportAttributeLocale:
+		return []byte(s), nil
+	case ContactImportAttributeCity:
+		return []byte(s), nil
+	case ContactImportAttributeAvatar:
+		return []byte(s), nil
+	case ContactImportAttributeBirthday:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ContactImportAttribute) UnmarshalText(data []byte) error {
+	switch ContactImportAttribute(data) {
+	case ContactImportAttributeFirstName:
+		*s = ContactImportAttributeFirstName
+		return nil
+	case ContactImportAttributeLastName:
+		*s = ContactImportAttributeLastName
+		return nil
+	case ContactImportAttributeTimeZone:
+		*s = ContactImportAttributeTimeZone
+		return nil
+	case ContactImportAttributeCountry:
+		*s = ContactImportAttributeCountry
+		return nil
+	case ContactImportAttributeLocale:
+		*s = ContactImportAttributeLocale
+		return nil
+	case ContactImportAttributeCity:
+		*s = ContactImportAttributeCity
+		return nil
+	case ContactImportAttributeAvatar:
+		*s = ContactImportAttributeAvatar
+		return nil
+	case ContactImportAttributeBirthday:
+		*s = ContactImportAttributeBirthday
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A column whose cells write a core attribute.
+// Ref: #/components/schemas/ContactImportAttributeColumn
+type ContactImportAttributeColumn struct {
+	Kind ContactImportAttributeColumnKind `json:"kind"`
+	// The attribute the cells write.
+	Attribute ContactImportAttribute `json:"attribute"`
+	// How the cells write a date: required for `birthday`, null for any other attribute.
+	DateFormat NilContactImportDateFormat `json:"dateFormat"`
+}
+
+// GetKind returns the value of Kind.
+func (s *ContactImportAttributeColumn) GetKind() ContactImportAttributeColumnKind {
+	return s.Kind
+}
+
+// GetAttribute returns the value of Attribute.
+func (s *ContactImportAttributeColumn) GetAttribute() ContactImportAttribute {
+	return s.Attribute
+}
+
+// GetDateFormat returns the value of DateFormat.
+func (s *ContactImportAttributeColumn) GetDateFormat() NilContactImportDateFormat {
+	return s.DateFormat
+}
+
+// SetKind sets the value of Kind.
+func (s *ContactImportAttributeColumn) SetKind(val ContactImportAttributeColumnKind) {
+	s.Kind = val
+}
+
+// SetAttribute sets the value of Attribute.
+func (s *ContactImportAttributeColumn) SetAttribute(val ContactImportAttribute) {
+	s.Attribute = val
+}
+
+// SetDateFormat sets the value of DateFormat.
+func (s *ContactImportAttributeColumn) SetDateFormat(val NilContactImportDateFormat) {
+	s.DateFormat = val
+}
+
+// A column whose cells write a core attribute.
+// Ref: #/components/schemas/ContactImportAttributeColumnInput
+type ContactImportAttributeColumnInput struct {
+	Kind ContactImportAttributeColumnInputKind `json:"kind"`
+	// The attribute the cells write.
+	Attribute ContactImportAttribute `json:"attribute"`
+	// How the cells write a date: required for `birthday`, null for any other attribute.
+	DateFormat NilContactImportDateFormat `json:"dateFormat"`
+}
+
+// GetKind returns the value of Kind.
+func (s *ContactImportAttributeColumnInput) GetKind() ContactImportAttributeColumnInputKind {
+	return s.Kind
+}
+
+// GetAttribute returns the value of Attribute.
+func (s *ContactImportAttributeColumnInput) GetAttribute() ContactImportAttribute {
+	return s.Attribute
+}
+
+// GetDateFormat returns the value of DateFormat.
+func (s *ContactImportAttributeColumnInput) GetDateFormat() NilContactImportDateFormat {
+	return s.DateFormat
+}
+
+// SetKind sets the value of Kind.
+func (s *ContactImportAttributeColumnInput) SetKind(val ContactImportAttributeColumnInputKind) {
+	s.Kind = val
+}
+
+// SetAttribute sets the value of Attribute.
+func (s *ContactImportAttributeColumnInput) SetAttribute(val ContactImportAttribute) {
+	s.Attribute = val
+}
+
+// SetDateFormat sets the value of DateFormat.
+func (s *ContactImportAttributeColumnInput) SetDateFormat(val NilContactImportDateFormat) {
+	s.DateFormat = val
+}
+
+type ContactImportAttributeColumnInputKind string
+
+const (
+	ContactImportAttributeColumnInputKindAttribute ContactImportAttributeColumnInputKind = "attribute"
+)
+
+// AllValues returns all ContactImportAttributeColumnInputKind values.
+func (ContactImportAttributeColumnInputKind) AllValues() []ContactImportAttributeColumnInputKind {
+	return []ContactImportAttributeColumnInputKind{
+		ContactImportAttributeColumnInputKindAttribute,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ContactImportAttributeColumnInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case ContactImportAttributeColumnInputKindAttribute:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ContactImportAttributeColumnInputKind) UnmarshalText(data []byte) error {
+	switch ContactImportAttributeColumnInputKind(data) {
+	case ContactImportAttributeColumnInputKindAttribute:
+		*s = ContactImportAttributeColumnInputKindAttribute
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type ContactImportAttributeColumnKind string
+
+const (
+	ContactImportAttributeColumnKindAttribute ContactImportAttributeColumnKind = "attribute"
+)
+
+// AllValues returns all ContactImportAttributeColumnKind values.
+func (ContactImportAttributeColumnKind) AllValues() []ContactImportAttributeColumnKind {
+	return []ContactImportAttributeColumnKind{
+		ContactImportAttributeColumnKindAttribute,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ContactImportAttributeColumnKind) MarshalText() ([]byte, error) {
+	switch s {
+	case ContactImportAttributeColumnKindAttribute:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ContactImportAttributeColumnKind) UnmarshalText(data []byte) error {
+	switch ContactImportAttributeColumnKind(data) {
+	case ContactImportAttributeColumnKindAttribute:
+		*s = ContactImportAttributeColumnKindAttribute
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// What a column of the file is, by `kind`.
+// Ref: #/components/schemas/ContactImportColumn
+type ContactImportColumn struct {
+	OneOf ContactImportColumnSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *ContactImportColumn) GetOneOf() ContactImportColumnSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *ContactImportColumn) SetOneOf(val ContactImportColumnSum) {
+	s.OneOf = val
+}
+
+// What a column of the file is, by `kind`, as a request writes it.
+// Ref: #/components/schemas/ContactImportColumnInput
+type ContactImportColumnInput struct {
+	OneOf ContactImportColumnInputSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *ContactImportColumnInput) GetOneOf() ContactImportColumnInputSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *ContactImportColumnInput) SetOneOf(val ContactImportColumnInputSum) {
+	s.OneOf = val
+}
+
+// ContactImportColumnInputSum represents sum type.
+type ContactImportColumnInputSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type                                ContactImportColumnInputSumType
+	ContactImportKeyColumnInput         ContactImportKeyColumnInput
+	ContactImportAttributeColumnInput   ContactImportAttributeColumnInput
+	ContactImportCustomFieldColumnInput ContactImportCustomFieldColumnInput
+	ContactImportTagsColumnInput        ContactImportTagsColumnInput
+	ContactImportIgnoreColumnInput      ContactImportIgnoreColumnInput
+}
+
+// ContactImportColumnInputSumType is oneOf type of ContactImportColumnInputSum.
+type ContactImportColumnInputSumType string
+
+// Possible values for ContactImportColumnInputSumType.
+const (
+	ContactImportKeyColumnInputContactImportColumnInputSum         ContactImportColumnInputSumType = "key"
+	ContactImportAttributeColumnInputContactImportColumnInputSum   ContactImportColumnInputSumType = "attribute"
+	ContactImportCustomFieldColumnInputContactImportColumnInputSum ContactImportColumnInputSumType = "customField"
+	ContactImportTagsColumnInputContactImportColumnInputSum        ContactImportColumnInputSumType = "tags"
+	ContactImportIgnoreColumnInputContactImportColumnInputSum      ContactImportColumnInputSumType = "ignore"
+)
+
+// IsContactImportKeyColumnInput reports whether ContactImportColumnInputSum is ContactImportKeyColumnInput.
+func (s ContactImportColumnInputSum) IsContactImportKeyColumnInput() bool {
+	return s.Type == ContactImportKeyColumnInputContactImportColumnInputSum
+}
+
+// IsContactImportAttributeColumnInput reports whether ContactImportColumnInputSum is ContactImportAttributeColumnInput.
+func (s ContactImportColumnInputSum) IsContactImportAttributeColumnInput() bool {
+	return s.Type == ContactImportAttributeColumnInputContactImportColumnInputSum
+}
+
+// IsContactImportCustomFieldColumnInput reports whether ContactImportColumnInputSum is ContactImportCustomFieldColumnInput.
+func (s ContactImportColumnInputSum) IsContactImportCustomFieldColumnInput() bool {
+	return s.Type == ContactImportCustomFieldColumnInputContactImportColumnInputSum
+}
+
+// IsContactImportTagsColumnInput reports whether ContactImportColumnInputSum is ContactImportTagsColumnInput.
+func (s ContactImportColumnInputSum) IsContactImportTagsColumnInput() bool {
+	return s.Type == ContactImportTagsColumnInputContactImportColumnInputSum
+}
+
+// IsContactImportIgnoreColumnInput reports whether ContactImportColumnInputSum is ContactImportIgnoreColumnInput.
+func (s ContactImportColumnInputSum) IsContactImportIgnoreColumnInput() bool {
+	return s.Type == ContactImportIgnoreColumnInputContactImportColumnInputSum
+}
+
+// SetContactImportKeyColumnInput sets ContactImportColumnInputSum to ContactImportKeyColumnInput.
+func (s *ContactImportColumnInputSum) SetContactImportKeyColumnInput(v ContactImportKeyColumnInput) {
+	s.Type = ContactImportKeyColumnInputContactImportColumnInputSum
+	s.ContactImportKeyColumnInput = v
+}
+
+// GetContactImportKeyColumnInput returns ContactImportKeyColumnInput and true boolean if ContactImportColumnInputSum is ContactImportKeyColumnInput.
+func (s ContactImportColumnInputSum) GetContactImportKeyColumnInput() (v ContactImportKeyColumnInput, ok bool) {
+	if !s.IsContactImportKeyColumnInput() {
+		return v, false
+	}
+	return s.ContactImportKeyColumnInput, true
+}
+
+// NewContactImportKeyColumnInputContactImportColumnInputSum returns new ContactImportColumnInputSum from ContactImportKeyColumnInput.
+func NewContactImportKeyColumnInputContactImportColumnInputSum(v ContactImportKeyColumnInput) ContactImportColumnInputSum {
+	var s ContactImportColumnInputSum
+	s.SetContactImportKeyColumnInput(v)
+	return s
+}
+
+// SetContactImportAttributeColumnInput sets ContactImportColumnInputSum to ContactImportAttributeColumnInput.
+func (s *ContactImportColumnInputSum) SetContactImportAttributeColumnInput(v ContactImportAttributeColumnInput) {
+	s.Type = ContactImportAttributeColumnInputContactImportColumnInputSum
+	s.ContactImportAttributeColumnInput = v
+}
+
+// GetContactImportAttributeColumnInput returns ContactImportAttributeColumnInput and true boolean if ContactImportColumnInputSum is ContactImportAttributeColumnInput.
+func (s ContactImportColumnInputSum) GetContactImportAttributeColumnInput() (v ContactImportAttributeColumnInput, ok bool) {
+	if !s.IsContactImportAttributeColumnInput() {
+		return v, false
+	}
+	return s.ContactImportAttributeColumnInput, true
+}
+
+// NewContactImportAttributeColumnInputContactImportColumnInputSum returns new ContactImportColumnInputSum from ContactImportAttributeColumnInput.
+func NewContactImportAttributeColumnInputContactImportColumnInputSum(v ContactImportAttributeColumnInput) ContactImportColumnInputSum {
+	var s ContactImportColumnInputSum
+	s.SetContactImportAttributeColumnInput(v)
+	return s
+}
+
+// SetContactImportCustomFieldColumnInput sets ContactImportColumnInputSum to ContactImportCustomFieldColumnInput.
+func (s *ContactImportColumnInputSum) SetContactImportCustomFieldColumnInput(v ContactImportCustomFieldColumnInput) {
+	s.Type = ContactImportCustomFieldColumnInputContactImportColumnInputSum
+	s.ContactImportCustomFieldColumnInput = v
+}
+
+// GetContactImportCustomFieldColumnInput returns ContactImportCustomFieldColumnInput and true boolean if ContactImportColumnInputSum is ContactImportCustomFieldColumnInput.
+func (s ContactImportColumnInputSum) GetContactImportCustomFieldColumnInput() (v ContactImportCustomFieldColumnInput, ok bool) {
+	if !s.IsContactImportCustomFieldColumnInput() {
+		return v, false
+	}
+	return s.ContactImportCustomFieldColumnInput, true
+}
+
+// NewContactImportCustomFieldColumnInputContactImportColumnInputSum returns new ContactImportColumnInputSum from ContactImportCustomFieldColumnInput.
+func NewContactImportCustomFieldColumnInputContactImportColumnInputSum(v ContactImportCustomFieldColumnInput) ContactImportColumnInputSum {
+	var s ContactImportColumnInputSum
+	s.SetContactImportCustomFieldColumnInput(v)
+	return s
+}
+
+// SetContactImportTagsColumnInput sets ContactImportColumnInputSum to ContactImportTagsColumnInput.
+func (s *ContactImportColumnInputSum) SetContactImportTagsColumnInput(v ContactImportTagsColumnInput) {
+	s.Type = ContactImportTagsColumnInputContactImportColumnInputSum
+	s.ContactImportTagsColumnInput = v
+}
+
+// GetContactImportTagsColumnInput returns ContactImportTagsColumnInput and true boolean if ContactImportColumnInputSum is ContactImportTagsColumnInput.
+func (s ContactImportColumnInputSum) GetContactImportTagsColumnInput() (v ContactImportTagsColumnInput, ok bool) {
+	if !s.IsContactImportTagsColumnInput() {
+		return v, false
+	}
+	return s.ContactImportTagsColumnInput, true
+}
+
+// NewContactImportTagsColumnInputContactImportColumnInputSum returns new ContactImportColumnInputSum from ContactImportTagsColumnInput.
+func NewContactImportTagsColumnInputContactImportColumnInputSum(v ContactImportTagsColumnInput) ContactImportColumnInputSum {
+	var s ContactImportColumnInputSum
+	s.SetContactImportTagsColumnInput(v)
+	return s
+}
+
+// SetContactImportIgnoreColumnInput sets ContactImportColumnInputSum to ContactImportIgnoreColumnInput.
+func (s *ContactImportColumnInputSum) SetContactImportIgnoreColumnInput(v ContactImportIgnoreColumnInput) {
+	s.Type = ContactImportIgnoreColumnInputContactImportColumnInputSum
+	s.ContactImportIgnoreColumnInput = v
+}
+
+// GetContactImportIgnoreColumnInput returns ContactImportIgnoreColumnInput and true boolean if ContactImportColumnInputSum is ContactImportIgnoreColumnInput.
+func (s ContactImportColumnInputSum) GetContactImportIgnoreColumnInput() (v ContactImportIgnoreColumnInput, ok bool) {
+	if !s.IsContactImportIgnoreColumnInput() {
+		return v, false
+	}
+	return s.ContactImportIgnoreColumnInput, true
+}
+
+// NewContactImportIgnoreColumnInputContactImportColumnInputSum returns new ContactImportColumnInputSum from ContactImportIgnoreColumnInput.
+func NewContactImportIgnoreColumnInputContactImportColumnInputSum(v ContactImportIgnoreColumnInput) ContactImportColumnInputSum {
+	var s ContactImportColumnInputSum
+	s.SetContactImportIgnoreColumnInput(v)
+	return s
+}
+
+// ContactImportColumnSum represents sum type.
+type ContactImportColumnSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type                           ContactImportColumnSumType
+	ContactImportKeyColumn         ContactImportKeyColumn
+	ContactImportAttributeColumn   ContactImportAttributeColumn
+	ContactImportCustomFieldColumn ContactImportCustomFieldColumn
+	ContactImportTagsColumn        ContactImportTagsColumn
+	ContactImportIgnoreColumn      ContactImportIgnoreColumn
+}
+
+// ContactImportColumnSumType is oneOf type of ContactImportColumnSum.
+type ContactImportColumnSumType string
+
+// Possible values for ContactImportColumnSumType.
+const (
+	ContactImportKeyColumnContactImportColumnSum         ContactImportColumnSumType = "key"
+	ContactImportAttributeColumnContactImportColumnSum   ContactImportColumnSumType = "attribute"
+	ContactImportCustomFieldColumnContactImportColumnSum ContactImportColumnSumType = "customField"
+	ContactImportTagsColumnContactImportColumnSum        ContactImportColumnSumType = "tags"
+	ContactImportIgnoreColumnContactImportColumnSum      ContactImportColumnSumType = "ignore"
+)
+
+// IsContactImportKeyColumn reports whether ContactImportColumnSum is ContactImportKeyColumn.
+func (s ContactImportColumnSum) IsContactImportKeyColumn() bool {
+	return s.Type == ContactImportKeyColumnContactImportColumnSum
+}
+
+// IsContactImportAttributeColumn reports whether ContactImportColumnSum is ContactImportAttributeColumn.
+func (s ContactImportColumnSum) IsContactImportAttributeColumn() bool {
+	return s.Type == ContactImportAttributeColumnContactImportColumnSum
+}
+
+// IsContactImportCustomFieldColumn reports whether ContactImportColumnSum is ContactImportCustomFieldColumn.
+func (s ContactImportColumnSum) IsContactImportCustomFieldColumn() bool {
+	return s.Type == ContactImportCustomFieldColumnContactImportColumnSum
+}
+
+// IsContactImportTagsColumn reports whether ContactImportColumnSum is ContactImportTagsColumn.
+func (s ContactImportColumnSum) IsContactImportTagsColumn() bool {
+	return s.Type == ContactImportTagsColumnContactImportColumnSum
+}
+
+// IsContactImportIgnoreColumn reports whether ContactImportColumnSum is ContactImportIgnoreColumn.
+func (s ContactImportColumnSum) IsContactImportIgnoreColumn() bool {
+	return s.Type == ContactImportIgnoreColumnContactImportColumnSum
+}
+
+// SetContactImportKeyColumn sets ContactImportColumnSum to ContactImportKeyColumn.
+func (s *ContactImportColumnSum) SetContactImportKeyColumn(v ContactImportKeyColumn) {
+	s.Type = ContactImportKeyColumnContactImportColumnSum
+	s.ContactImportKeyColumn = v
+}
+
+// GetContactImportKeyColumn returns ContactImportKeyColumn and true boolean if ContactImportColumnSum is ContactImportKeyColumn.
+func (s ContactImportColumnSum) GetContactImportKeyColumn() (v ContactImportKeyColumn, ok bool) {
+	if !s.IsContactImportKeyColumn() {
+		return v, false
+	}
+	return s.ContactImportKeyColumn, true
+}
+
+// NewContactImportKeyColumnContactImportColumnSum returns new ContactImportColumnSum from ContactImportKeyColumn.
+func NewContactImportKeyColumnContactImportColumnSum(v ContactImportKeyColumn) ContactImportColumnSum {
+	var s ContactImportColumnSum
+	s.SetContactImportKeyColumn(v)
+	return s
+}
+
+// SetContactImportAttributeColumn sets ContactImportColumnSum to ContactImportAttributeColumn.
+func (s *ContactImportColumnSum) SetContactImportAttributeColumn(v ContactImportAttributeColumn) {
+	s.Type = ContactImportAttributeColumnContactImportColumnSum
+	s.ContactImportAttributeColumn = v
+}
+
+// GetContactImportAttributeColumn returns ContactImportAttributeColumn and true boolean if ContactImportColumnSum is ContactImportAttributeColumn.
+func (s ContactImportColumnSum) GetContactImportAttributeColumn() (v ContactImportAttributeColumn, ok bool) {
+	if !s.IsContactImportAttributeColumn() {
+		return v, false
+	}
+	return s.ContactImportAttributeColumn, true
+}
+
+// NewContactImportAttributeColumnContactImportColumnSum returns new ContactImportColumnSum from ContactImportAttributeColumn.
+func NewContactImportAttributeColumnContactImportColumnSum(v ContactImportAttributeColumn) ContactImportColumnSum {
+	var s ContactImportColumnSum
+	s.SetContactImportAttributeColumn(v)
+	return s
+}
+
+// SetContactImportCustomFieldColumn sets ContactImportColumnSum to ContactImportCustomFieldColumn.
+func (s *ContactImportColumnSum) SetContactImportCustomFieldColumn(v ContactImportCustomFieldColumn) {
+	s.Type = ContactImportCustomFieldColumnContactImportColumnSum
+	s.ContactImportCustomFieldColumn = v
+}
+
+// GetContactImportCustomFieldColumn returns ContactImportCustomFieldColumn and true boolean if ContactImportColumnSum is ContactImportCustomFieldColumn.
+func (s ContactImportColumnSum) GetContactImportCustomFieldColumn() (v ContactImportCustomFieldColumn, ok bool) {
+	if !s.IsContactImportCustomFieldColumn() {
+		return v, false
+	}
+	return s.ContactImportCustomFieldColumn, true
+}
+
+// NewContactImportCustomFieldColumnContactImportColumnSum returns new ContactImportColumnSum from ContactImportCustomFieldColumn.
+func NewContactImportCustomFieldColumnContactImportColumnSum(v ContactImportCustomFieldColumn) ContactImportColumnSum {
+	var s ContactImportColumnSum
+	s.SetContactImportCustomFieldColumn(v)
+	return s
+}
+
+// SetContactImportTagsColumn sets ContactImportColumnSum to ContactImportTagsColumn.
+func (s *ContactImportColumnSum) SetContactImportTagsColumn(v ContactImportTagsColumn) {
+	s.Type = ContactImportTagsColumnContactImportColumnSum
+	s.ContactImportTagsColumn = v
+}
+
+// GetContactImportTagsColumn returns ContactImportTagsColumn and true boolean if ContactImportColumnSum is ContactImportTagsColumn.
+func (s ContactImportColumnSum) GetContactImportTagsColumn() (v ContactImportTagsColumn, ok bool) {
+	if !s.IsContactImportTagsColumn() {
+		return v, false
+	}
+	return s.ContactImportTagsColumn, true
+}
+
+// NewContactImportTagsColumnContactImportColumnSum returns new ContactImportColumnSum from ContactImportTagsColumn.
+func NewContactImportTagsColumnContactImportColumnSum(v ContactImportTagsColumn) ContactImportColumnSum {
+	var s ContactImportColumnSum
+	s.SetContactImportTagsColumn(v)
+	return s
+}
+
+// SetContactImportIgnoreColumn sets ContactImportColumnSum to ContactImportIgnoreColumn.
+func (s *ContactImportColumnSum) SetContactImportIgnoreColumn(v ContactImportIgnoreColumn) {
+	s.Type = ContactImportIgnoreColumnContactImportColumnSum
+	s.ContactImportIgnoreColumn = v
+}
+
+// GetContactImportIgnoreColumn returns ContactImportIgnoreColumn and true boolean if ContactImportColumnSum is ContactImportIgnoreColumn.
+func (s ContactImportColumnSum) GetContactImportIgnoreColumn() (v ContactImportIgnoreColumn, ok bool) {
+	if !s.IsContactImportIgnoreColumn() {
+		return v, false
+	}
+	return s.ContactImportIgnoreColumn, true
+}
+
+// NewContactImportIgnoreColumnContactImportColumnSum returns new ContactImportColumnSum from ContactImportIgnoreColumn.
+func NewContactImportIgnoreColumnContactImportColumnSum(v ContactImportIgnoreColumn) ContactImportColumnSum {
+	var s ContactImportColumnSum
+	s.SetContactImportIgnoreColumn(v)
+	return s
+}
+
+// What an import's run has written so far.
+// Ref: #/components/schemas/ContactImportCounts
+type ContactImportCounts struct {
+	// Rows read so far.
+	Processed int32 `json:"processed"`
+	// Contacts created.
+	Created int32 `json:"created"`
+	// Contacts the rows updated, or left as they were with only new ones added.
+	Updated int32 `json:"updated"`
+	// Rows refused: no alias key, a cell count other than the header's, or a row the Contact intake
+	// refused.
+	Refused int32 `json:"refused"`
+	// Values dropped from rows that were written, because their column could not read them.
+	Dropped int32 `json:"dropped"`
+}
+
+// GetProcessed returns the value of Processed.
+func (s *ContactImportCounts) GetProcessed() int32 {
+	return s.Processed
+}
+
+// GetCreated returns the value of Created.
+func (s *ContactImportCounts) GetCreated() int32 {
+	return s.Created
+}
+
+// GetUpdated returns the value of Updated.
+func (s *ContactImportCounts) GetUpdated() int32 {
+	return s.Updated
+}
+
+// GetRefused returns the value of Refused.
+func (s *ContactImportCounts) GetRefused() int32 {
+	return s.Refused
+}
+
+// GetDropped returns the value of Dropped.
+func (s *ContactImportCounts) GetDropped() int32 {
+	return s.Dropped
+}
+
+// SetProcessed sets the value of Processed.
+func (s *ContactImportCounts) SetProcessed(val int32) {
+	s.Processed = val
+}
+
+// SetCreated sets the value of Created.
+func (s *ContactImportCounts) SetCreated(val int32) {
+	s.Created = val
+}
+
+// SetUpdated sets the value of Updated.
+func (s *ContactImportCounts) SetUpdated(val int32) {
+	s.Updated = val
+}
+
+// SetRefused sets the value of Refused.
+func (s *ContactImportCounts) SetRefused(val int32) {
+	s.Refused = val
+}
+
+// SetDropped sets the value of Dropped.
+func (s *ContactImportCounts) SetDropped(val int32) {
+	s.Dropped = val
+}
+
+// A column whose cells write a Custom field the Workspace has, by its key.
+// Ref: #/components/schemas/ContactImportCustomFieldColumn
+type ContactImportCustomFieldColumn struct {
+	Kind ContactImportCustomFieldColumnKind `json:"kind"`
+	// The Custom field's key.
+	Key string `json:"key"`
+	// How the cells write a date: required for a `datetime` field, null for any other type.
+	DateFormat NilContactImportDateFormat `json:"dateFormat"`
+}
+
+// GetKind returns the value of Kind.
+func (s *ContactImportCustomFieldColumn) GetKind() ContactImportCustomFieldColumnKind {
+	return s.Kind
+}
+
+// GetKey returns the value of Key.
+func (s *ContactImportCustomFieldColumn) GetKey() string {
+	return s.Key
+}
+
+// GetDateFormat returns the value of DateFormat.
+func (s *ContactImportCustomFieldColumn) GetDateFormat() NilContactImportDateFormat {
+	return s.DateFormat
+}
+
+// SetKind sets the value of Kind.
+func (s *ContactImportCustomFieldColumn) SetKind(val ContactImportCustomFieldColumnKind) {
+	s.Kind = val
+}
+
+// SetKey sets the value of Key.
+func (s *ContactImportCustomFieldColumn) SetKey(val string) {
+	s.Key = val
+}
+
+// SetDateFormat sets the value of DateFormat.
+func (s *ContactImportCustomFieldColumn) SetDateFormat(val NilContactImportDateFormat) {
+	s.DateFormat = val
+}
+
+// A column whose cells write a Custom field the Workspace has, by its key.
+// Ref: #/components/schemas/ContactImportCustomFieldColumnInput
+type ContactImportCustomFieldColumnInput struct {
+	Kind ContactImportCustomFieldColumnInputKind `json:"kind"`
+	// The Custom field's key.
+	Key string `json:"key"`
+	// How the cells write a date: required for a `datetime` field, null for any other type.
+	DateFormat NilContactImportDateFormat `json:"dateFormat"`
+}
+
+// GetKind returns the value of Kind.
+func (s *ContactImportCustomFieldColumnInput) GetKind() ContactImportCustomFieldColumnInputKind {
+	return s.Kind
+}
+
+// GetKey returns the value of Key.
+func (s *ContactImportCustomFieldColumnInput) GetKey() string {
+	return s.Key
+}
+
+// GetDateFormat returns the value of DateFormat.
+func (s *ContactImportCustomFieldColumnInput) GetDateFormat() NilContactImportDateFormat {
+	return s.DateFormat
+}
+
+// SetKind sets the value of Kind.
+func (s *ContactImportCustomFieldColumnInput) SetKind(val ContactImportCustomFieldColumnInputKind) {
+	s.Kind = val
+}
+
+// SetKey sets the value of Key.
+func (s *ContactImportCustomFieldColumnInput) SetKey(val string) {
+	s.Key = val
+}
+
+// SetDateFormat sets the value of DateFormat.
+func (s *ContactImportCustomFieldColumnInput) SetDateFormat(val NilContactImportDateFormat) {
+	s.DateFormat = val
+}
+
+type ContactImportCustomFieldColumnInputKind string
+
+const (
+	ContactImportCustomFieldColumnInputKindCustomField ContactImportCustomFieldColumnInputKind = "customField"
+)
+
+// AllValues returns all ContactImportCustomFieldColumnInputKind values.
+func (ContactImportCustomFieldColumnInputKind) AllValues() []ContactImportCustomFieldColumnInputKind {
+	return []ContactImportCustomFieldColumnInputKind{
+		ContactImportCustomFieldColumnInputKindCustomField,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ContactImportCustomFieldColumnInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case ContactImportCustomFieldColumnInputKindCustomField:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ContactImportCustomFieldColumnInputKind) UnmarshalText(data []byte) error {
+	switch ContactImportCustomFieldColumnInputKind(data) {
+	case ContactImportCustomFieldColumnInputKindCustomField:
+		*s = ContactImportCustomFieldColumnInputKindCustomField
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type ContactImportCustomFieldColumnKind string
+
+const (
+	ContactImportCustomFieldColumnKindCustomField ContactImportCustomFieldColumnKind = "customField"
+)
+
+// AllValues returns all ContactImportCustomFieldColumnKind values.
+func (ContactImportCustomFieldColumnKind) AllValues() []ContactImportCustomFieldColumnKind {
+	return []ContactImportCustomFieldColumnKind{
+		ContactImportCustomFieldColumnKindCustomField,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ContactImportCustomFieldColumnKind) MarshalText() ([]byte, error) {
+	switch s {
+	case ContactImportCustomFieldColumnKindCustomField:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ContactImportCustomFieldColumnKind) UnmarshalText(data []byte) error {
+	switch ContactImportCustomFieldColumnKind(data) {
+	case ContactImportCustomFieldColumnKindCustomField:
+		*s = ContactImportCustomFieldColumnKindCustomField
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// How a column writes its dates, which the Member chooses (ADR 0138): a date by the order of its day,
+// month and year and their separator, or `rfc3339` for a date and time with its offset. A date without
+// an offset is read in the Workspace time zone.
+// Ref: #/components/schemas/ContactImportDateFormat
+type ContactImportDateFormat string
+
+const (
+	ContactImportDateFormatYyyyMinusMmMinusDd ContactImportDateFormat = "yyyy-mm-dd"
+	ContactImportDateFormatDdSlashMmSlashYyyy ContactImportDateFormat = "dd/mm/yyyy"
+	ContactImportDateFormatDdDotMmDotYyyy     ContactImportDateFormat = "dd.mm.yyyy"
+	ContactImportDateFormatDdMinusMmMinusYyyy ContactImportDateFormat = "dd-mm-yyyy"
+	ContactImportDateFormatMmSlashDdSlashYyyy ContactImportDateFormat = "mm/dd/yyyy"
+	ContactImportDateFormatMmDotDdDotYyyy     ContactImportDateFormat = "mm.dd.yyyy"
+	ContactImportDateFormatMmMinusDdMinusYyyy ContactImportDateFormat = "mm-dd-yyyy"
+	ContactImportDateFormatRfc3339            ContactImportDateFormat = "rfc3339"
+)
+
+// AllValues returns all ContactImportDateFormat values.
+func (ContactImportDateFormat) AllValues() []ContactImportDateFormat {
+	return []ContactImportDateFormat{
+		ContactImportDateFormatYyyyMinusMmMinusDd,
+		ContactImportDateFormatDdSlashMmSlashYyyy,
+		ContactImportDateFormatDdDotMmDotYyyy,
+		ContactImportDateFormatDdMinusMmMinusYyyy,
+		ContactImportDateFormatMmSlashDdSlashYyyy,
+		ContactImportDateFormatMmDotDdDotYyyy,
+		ContactImportDateFormatMmMinusDdMinusYyyy,
+		ContactImportDateFormatRfc3339,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ContactImportDateFormat) MarshalText() ([]byte, error) {
+	switch s {
+	case ContactImportDateFormatYyyyMinusMmMinusDd:
+		return []byte(s), nil
+	case ContactImportDateFormatDdSlashMmSlashYyyy:
+		return []byte(s), nil
+	case ContactImportDateFormatDdDotMmDotYyyy:
+		return []byte(s), nil
+	case ContactImportDateFormatDdMinusMmMinusYyyy:
+		return []byte(s), nil
+	case ContactImportDateFormatMmSlashDdSlashYyyy:
+		return []byte(s), nil
+	case ContactImportDateFormatMmDotDdDotYyyy:
+		return []byte(s), nil
+	case ContactImportDateFormatMmMinusDdMinusYyyy:
+		return []byte(s), nil
+	case ContactImportDateFormatRfc3339:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ContactImportDateFormat) UnmarshalText(data []byte) error {
+	switch ContactImportDateFormat(data) {
+	case ContactImportDateFormatYyyyMinusMmMinusDd:
+		*s = ContactImportDateFormatYyyyMinusMmMinusDd
+		return nil
+	case ContactImportDateFormatDdSlashMmSlashYyyy:
+		*s = ContactImportDateFormatDdSlashMmSlashYyyy
+		return nil
+	case ContactImportDateFormatDdDotMmDotYyyy:
+		*s = ContactImportDateFormatDdDotMmDotYyyy
+		return nil
+	case ContactImportDateFormatDdMinusMmMinusYyyy:
+		*s = ContactImportDateFormatDdMinusMmMinusYyyy
+		return nil
+	case ContactImportDateFormatMmSlashDdSlashYyyy:
+		*s = ContactImportDateFormatMmSlashDdSlashYyyy
+		return nil
+	case ContactImportDateFormatMmDotDdDotYyyy:
+		*s = ContactImportDateFormatMmDotDdDotYyyy
+		return nil
+	case ContactImportDateFormatMmMinusDdMinusYyyy:
+		*s = ContactImportDateFormatMmMinusDdMinusYyyy
+		return nil
+	case ContactImportDateFormatRfc3339:
+		*s = ContactImportDateFormatRfc3339
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// The character a file's numbers write their decimals after.
+// Ref: #/components/schemas/ContactImportDecimalSeparator
+type ContactImportDecimalSeparator string
+
+const (
+	ContactImportDecimalSeparator_Dot ContactImportDecimalSeparator = "."
+	ContactImportDecimalSeparator_    ContactImportDecimalSeparator = ","
+)
+
+// AllValues returns all ContactImportDecimalSeparator values.
+func (ContactImportDecimalSeparator) AllValues() []ContactImportDecimalSeparator {
+	return []ContactImportDecimalSeparator{
+		ContactImportDecimalSeparator_Dot,
+		ContactImportDecimalSeparator_,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ContactImportDecimalSeparator) MarshalText() ([]byte, error) {
+	switch s {
+	case ContactImportDecimalSeparator_Dot:
+		return []byte(s), nil
+	case ContactImportDecimalSeparator_:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ContactImportDecimalSeparator) UnmarshalText(data []byte) error {
+	switch ContactImportDecimalSeparator(data) {
+	case ContactImportDecimalSeparator_Dot:
+		*s = ContactImportDecimalSeparator_Dot
+		return nil
+	case ContactImportDecimalSeparator_:
+		*s = ContactImportDecimalSeparator_
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// The character a file's cells are separated by, detected at upload.
+// Ref: #/components/schemas/ContactImportDelimiter
+type ContactImportDelimiter string
+
+const (
+	ContactImportDelimiterComma     ContactImportDelimiter = "comma"
+	ContactImportDelimiterSemicolon ContactImportDelimiter = "semicolon"
+	ContactImportDelimiterTab       ContactImportDelimiter = "tab"
+)
+
+// AllValues returns all ContactImportDelimiter values.
+func (ContactImportDelimiter) AllValues() []ContactImportDelimiter {
+	return []ContactImportDelimiter{
+		ContactImportDelimiterComma,
+		ContactImportDelimiterSemicolon,
+		ContactImportDelimiterTab,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ContactImportDelimiter) MarshalText() ([]byte, error) {
+	switch s {
+	case ContactImportDelimiterComma:
+		return []byte(s), nil
+	case ContactImportDelimiterSemicolon:
+		return []byte(s), nil
+	case ContactImportDelimiterTab:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ContactImportDelimiter) UnmarshalText(data []byte) error {
+	switch ContactImportDelimiter(data) {
+	case ContactImportDelimiterComma:
+		*s = ContactImportDelimiterComma
+		return nil
+	case ContactImportDelimiterSemicolon:
+		*s = ContactImportDelimiterSemicolon
+		return nil
+	case ContactImportDelimiterTab:
+		*s = ContactImportDelimiterTab
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A column the import does not read.
+// Ref: #/components/schemas/ContactImportIgnoreColumn
+type ContactImportIgnoreColumn struct {
+	Kind ContactImportIgnoreColumnKind `json:"kind"`
+}
+
+// GetKind returns the value of Kind.
+func (s *ContactImportIgnoreColumn) GetKind() ContactImportIgnoreColumnKind {
+	return s.Kind
+}
+
+// SetKind sets the value of Kind.
+func (s *ContactImportIgnoreColumn) SetKind(val ContactImportIgnoreColumnKind) {
+	s.Kind = val
+}
+
+// A column the import does not read.
+// Ref: #/components/schemas/ContactImportIgnoreColumnInput
+type ContactImportIgnoreColumnInput struct {
+	Kind ContactImportIgnoreColumnInputKind `json:"kind"`
+}
+
+// GetKind returns the value of Kind.
+func (s *ContactImportIgnoreColumnInput) GetKind() ContactImportIgnoreColumnInputKind {
+	return s.Kind
+}
+
+// SetKind sets the value of Kind.
+func (s *ContactImportIgnoreColumnInput) SetKind(val ContactImportIgnoreColumnInputKind) {
+	s.Kind = val
+}
+
+type ContactImportIgnoreColumnInputKind string
+
+const (
+	ContactImportIgnoreColumnInputKindIgnore ContactImportIgnoreColumnInputKind = "ignore"
+)
+
+// AllValues returns all ContactImportIgnoreColumnInputKind values.
+func (ContactImportIgnoreColumnInputKind) AllValues() []ContactImportIgnoreColumnInputKind {
+	return []ContactImportIgnoreColumnInputKind{
+		ContactImportIgnoreColumnInputKindIgnore,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ContactImportIgnoreColumnInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case ContactImportIgnoreColumnInputKindIgnore:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ContactImportIgnoreColumnInputKind) UnmarshalText(data []byte) error {
+	switch ContactImportIgnoreColumnInputKind(data) {
+	case ContactImportIgnoreColumnInputKindIgnore:
+		*s = ContactImportIgnoreColumnInputKindIgnore
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type ContactImportIgnoreColumnKind string
+
+const (
+	ContactImportIgnoreColumnKindIgnore ContactImportIgnoreColumnKind = "ignore"
+)
+
+// AllValues returns all ContactImportIgnoreColumnKind values.
+func (ContactImportIgnoreColumnKind) AllValues() []ContactImportIgnoreColumnKind {
+	return []ContactImportIgnoreColumnKind{
+		ContactImportIgnoreColumnKindIgnore,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ContactImportIgnoreColumnKind) MarshalText() ([]byte, error) {
+	switch s {
+	case ContactImportIgnoreColumnKindIgnore:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ContactImportIgnoreColumnKind) UnmarshalText(data []byte) error {
+	switch ContactImportIgnoreColumnKind(data) {
+	case ContactImportIgnoreColumnKindIgnore:
+		*s = ContactImportIgnoreColumnKindIgnore
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A value or a row of an import that is not written, or a row written with a warning, and why.
+// Ref: #/components/schemas/ContactImportIssue
+type ContactImportIssue struct {
+	// The column, counted from 0; null for an issue of the whole row.
+	Column NilInt32                 `json:"column"`
+	Reason ContactImportIssueReason `json:"reason"`
+	// Why, in words.
+	Message string `json:"message"`
+}
+
+// GetColumn returns the value of Column.
+func (s *ContactImportIssue) GetColumn() NilInt32 {
+	return s.Column
+}
+
+// GetReason returns the value of Reason.
+func (s *ContactImportIssue) GetReason() ContactImportIssueReason {
+	return s.Reason
+}
+
+// GetMessage returns the value of Message.
+func (s *ContactImportIssue) GetMessage() string {
+	return s.Message
+}
+
+// SetColumn sets the value of Column.
+func (s *ContactImportIssue) SetColumn(val NilInt32) {
+	s.Column = val
+}
+
+// SetReason sets the value of Reason.
+func (s *ContactImportIssue) SetReason(val ContactImportIssueReason) {
+	s.Reason = val
+}
+
+// SetMessage sets the value of Message.
+func (s *ContactImportIssue) SetMessage(val string) {
+	s.Message = val
+}
+
+// Why a value or a row of an import is not written.
+// Ref: #/components/schemas/ContactImportIssueReason
+type ContactImportIssueReason string
+
+const (
+	ContactImportIssueReasonNoKey               ContactImportIssueReason = "noKey"
+	ContactImportIssueReasonCellCount           ContactImportIssueReason = "cellCount"
+	ContactImportIssueReasonRefused             ContactImportIssueReason = "refused"
+	ContactImportIssueReasonTooLong             ContactImportIssueReason = "tooLong"
+	ContactImportIssueReasonNotNumber           ContactImportIssueReason = "notNumber"
+	ContactImportIssueReasonNotBoolean          ContactImportIssueReason = "notBoolean"
+	ContactImportIssueReasonNotDate             ContactImportIssueReason = "notDate"
+	ContactImportIssueReasonNotPhone            ContactImportIssueReason = "notPhone"
+	ContactImportIssueReasonNotEmail            ContactImportIssueReason = "notEmail"
+	ContactImportIssueReasonNotTimeZone         ContactImportIssueReason = "notTimeZone"
+	ContactImportIssueReasonNotCountry          ContactImportIssueReason = "notCountry"
+	ContactImportIssueReasonNotLocale           ContactImportIssueReason = "notLocale"
+	ContactImportIssueReasonNotImageUrl         ContactImportIssueReason = "notImageUrl"
+	ContactImportIssueReasonNotTag              ContactImportIssueReason = "notTag"
+	ContactImportIssueReasonKeysNameTwoContacts ContactImportIssueReason = "keysNameTwoContacts"
+)
+
+// AllValues returns all ContactImportIssueReason values.
+func (ContactImportIssueReason) AllValues() []ContactImportIssueReason {
+	return []ContactImportIssueReason{
+		ContactImportIssueReasonNoKey,
+		ContactImportIssueReasonCellCount,
+		ContactImportIssueReasonRefused,
+		ContactImportIssueReasonTooLong,
+		ContactImportIssueReasonNotNumber,
+		ContactImportIssueReasonNotBoolean,
+		ContactImportIssueReasonNotDate,
+		ContactImportIssueReasonNotPhone,
+		ContactImportIssueReasonNotEmail,
+		ContactImportIssueReasonNotTimeZone,
+		ContactImportIssueReasonNotCountry,
+		ContactImportIssueReasonNotLocale,
+		ContactImportIssueReasonNotImageUrl,
+		ContactImportIssueReasonNotTag,
+		ContactImportIssueReasonKeysNameTwoContacts,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ContactImportIssueReason) MarshalText() ([]byte, error) {
+	switch s {
+	case ContactImportIssueReasonNoKey:
+		return []byte(s), nil
+	case ContactImportIssueReasonCellCount:
+		return []byte(s), nil
+	case ContactImportIssueReasonRefused:
+		return []byte(s), nil
+	case ContactImportIssueReasonTooLong:
+		return []byte(s), nil
+	case ContactImportIssueReasonNotNumber:
+		return []byte(s), nil
+	case ContactImportIssueReasonNotBoolean:
+		return []byte(s), nil
+	case ContactImportIssueReasonNotDate:
+		return []byte(s), nil
+	case ContactImportIssueReasonNotPhone:
+		return []byte(s), nil
+	case ContactImportIssueReasonNotEmail:
+		return []byte(s), nil
+	case ContactImportIssueReasonNotTimeZone:
+		return []byte(s), nil
+	case ContactImportIssueReasonNotCountry:
+		return []byte(s), nil
+	case ContactImportIssueReasonNotLocale:
+		return []byte(s), nil
+	case ContactImportIssueReasonNotImageUrl:
+		return []byte(s), nil
+	case ContactImportIssueReasonNotTag:
+		return []byte(s), nil
+	case ContactImportIssueReasonKeysNameTwoContacts:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ContactImportIssueReason) UnmarshalText(data []byte) error {
+	switch ContactImportIssueReason(data) {
+	case ContactImportIssueReasonNoKey:
+		*s = ContactImportIssueReasonNoKey
+		return nil
+	case ContactImportIssueReasonCellCount:
+		*s = ContactImportIssueReasonCellCount
+		return nil
+	case ContactImportIssueReasonRefused:
+		*s = ContactImportIssueReasonRefused
+		return nil
+	case ContactImportIssueReasonTooLong:
+		*s = ContactImportIssueReasonTooLong
+		return nil
+	case ContactImportIssueReasonNotNumber:
+		*s = ContactImportIssueReasonNotNumber
+		return nil
+	case ContactImportIssueReasonNotBoolean:
+		*s = ContactImportIssueReasonNotBoolean
+		return nil
+	case ContactImportIssueReasonNotDate:
+		*s = ContactImportIssueReasonNotDate
+		return nil
+	case ContactImportIssueReasonNotPhone:
+		*s = ContactImportIssueReasonNotPhone
+		return nil
+	case ContactImportIssueReasonNotEmail:
+		*s = ContactImportIssueReasonNotEmail
+		return nil
+	case ContactImportIssueReasonNotTimeZone:
+		*s = ContactImportIssueReasonNotTimeZone
+		return nil
+	case ContactImportIssueReasonNotCountry:
+		*s = ContactImportIssueReasonNotCountry
+		return nil
+	case ContactImportIssueReasonNotLocale:
+		*s = ContactImportIssueReasonNotLocale
+		return nil
+	case ContactImportIssueReasonNotImageUrl:
+		*s = ContactImportIssueReasonNotImageUrl
+		return nil
+	case ContactImportIssueReasonNotTag:
+		*s = ContactImportIssueReasonNotTag
+		return nil
+	case ContactImportIssueReasonKeysNameTwoContacts:
+		*s = ContactImportIssueReasonKeysNameTwoContacts
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// An alias key a column of an import fills, by the contract's name (ADR 0002).
+// Ref: #/components/schemas/ContactImportKey
+type ContactImportKey string
+
+const (
+	ContactImportKeySubjectId ContactImportKey = "subjectId"
+	ContactImportKeyEmail     ContactImportKey = "email"
+	ContactImportKeyPhone     ContactImportKey = "phone"
+)
+
+// AllValues returns all ContactImportKey values.
+func (ContactImportKey) AllValues() []ContactImportKey {
+	return []ContactImportKey{
+		ContactImportKeySubjectId,
+		ContactImportKeyEmail,
+		ContactImportKeyPhone,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ContactImportKey) MarshalText() ([]byte, error) {
+	switch s {
+	case ContactImportKeySubjectId:
+		return []byte(s), nil
+	case ContactImportKeyEmail:
+		return []byte(s), nil
+	case ContactImportKeyPhone:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ContactImportKey) UnmarshalText(data []byte) error {
+	switch ContactImportKey(data) {
+	case ContactImportKeySubjectId:
+		*s = ContactImportKeySubjectId
+		return nil
+	case ContactImportKeyEmail:
+		*s = ContactImportKeyEmail
+		return nil
+	case ContactImportKeyPhone:
+		*s = ContactImportKeyPhone
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A column whose cells fill an alias key.
+// Ref: #/components/schemas/ContactImportKeyColumn
+type ContactImportKeyColumn struct {
+	Kind ContactImportKeyColumnKind `json:"kind"`
+	// The alias key the cells fill.
+	Key ContactImportKey `json:"key"`
+}
+
+// GetKind returns the value of Kind.
+func (s *ContactImportKeyColumn) GetKind() ContactImportKeyColumnKind {
+	return s.Kind
+}
+
+// GetKey returns the value of Key.
+func (s *ContactImportKeyColumn) GetKey() ContactImportKey {
+	return s.Key
+}
+
+// SetKind sets the value of Kind.
+func (s *ContactImportKeyColumn) SetKind(val ContactImportKeyColumnKind) {
+	s.Kind = val
+}
+
+// SetKey sets the value of Key.
+func (s *ContactImportKeyColumn) SetKey(val ContactImportKey) {
+	s.Key = val
+}
+
+// A column whose cells fill an alias key.
+// Ref: #/components/schemas/ContactImportKeyColumnInput
+type ContactImportKeyColumnInput struct {
+	Kind ContactImportKeyColumnInputKind `json:"kind"`
+	// The alias key the cells fill.
+	Key ContactImportKey `json:"key"`
+}
+
+// GetKind returns the value of Kind.
+func (s *ContactImportKeyColumnInput) GetKind() ContactImportKeyColumnInputKind {
+	return s.Kind
+}
+
+// GetKey returns the value of Key.
+func (s *ContactImportKeyColumnInput) GetKey() ContactImportKey {
+	return s.Key
+}
+
+// SetKind sets the value of Kind.
+func (s *ContactImportKeyColumnInput) SetKind(val ContactImportKeyColumnInputKind) {
+	s.Kind = val
+}
+
+// SetKey sets the value of Key.
+func (s *ContactImportKeyColumnInput) SetKey(val ContactImportKey) {
+	s.Key = val
+}
+
+type ContactImportKeyColumnInputKind string
+
+const (
+	ContactImportKeyColumnInputKindKey ContactImportKeyColumnInputKind = "key"
+)
+
+// AllValues returns all ContactImportKeyColumnInputKind values.
+func (ContactImportKeyColumnInputKind) AllValues() []ContactImportKeyColumnInputKind {
+	return []ContactImportKeyColumnInputKind{
+		ContactImportKeyColumnInputKindKey,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ContactImportKeyColumnInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case ContactImportKeyColumnInputKindKey:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ContactImportKeyColumnInputKind) UnmarshalText(data []byte) error {
+	switch ContactImportKeyColumnInputKind(data) {
+	case ContactImportKeyColumnInputKindKey:
+		*s = ContactImportKeyColumnInputKindKey
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type ContactImportKeyColumnKind string
+
+const (
+	ContactImportKeyColumnKindKey ContactImportKeyColumnKind = "key"
+)
+
+// AllValues returns all ContactImportKeyColumnKind values.
+func (ContactImportKeyColumnKind) AllValues() []ContactImportKeyColumnKind {
+	return []ContactImportKeyColumnKind{
+		ContactImportKeyColumnKindKey,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ContactImportKeyColumnKind) MarshalText() ([]byte, error) {
+	switch s {
+	case ContactImportKeyColumnKindKey:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ContactImportKeyColumnKind) UnmarshalText(data []byte) error {
+	switch ContactImportKeyColumnKind(data) {
+	case ContactImportKeyColumnKindKey:
+		*s = ContactImportKeyColumnKindKey
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// How an import reads its file: what each column is, and the choices that hold for every row.
+// Ref: #/components/schemas/ContactImportMapping
+type ContactImportMapping struct {
+	// One per column of the file, in the file's order.
+	Columns []ContactImportColumn `json:"columns"`
+	// The character the file's numbers write their decimals after.
+	DecimalSeparator ContactImportDecimalSeparator `json:"decimalSeparator"`
+	// The country a phone written without its country code is read in, when its row names no country; null
+	// for none.
+	DefaultCountry NilCountryCode `json:"defaultCountry"`
+	// A Tag given to every row, created on first use; null for none.
+	Tag NilName `json:"tag"`
+	// Leave a Contact the Workspace has as it is, writing only new ones.
+	OnlyAddNew bool `json:"onlyAddNew"`
+}
+
+// GetColumns returns the value of Columns.
+func (s *ContactImportMapping) GetColumns() []ContactImportColumn {
+	return s.Columns
+}
+
+// GetDecimalSeparator returns the value of DecimalSeparator.
+func (s *ContactImportMapping) GetDecimalSeparator() ContactImportDecimalSeparator {
+	return s.DecimalSeparator
+}
+
+// GetDefaultCountry returns the value of DefaultCountry.
+func (s *ContactImportMapping) GetDefaultCountry() NilCountryCode {
+	return s.DefaultCountry
+}
+
+// GetTag returns the value of Tag.
+func (s *ContactImportMapping) GetTag() NilName {
+	return s.Tag
+}
+
+// GetOnlyAddNew returns the value of OnlyAddNew.
+func (s *ContactImportMapping) GetOnlyAddNew() bool {
+	return s.OnlyAddNew
+}
+
+// SetColumns sets the value of Columns.
+func (s *ContactImportMapping) SetColumns(val []ContactImportColumn) {
+	s.Columns = val
+}
+
+// SetDecimalSeparator sets the value of DecimalSeparator.
+func (s *ContactImportMapping) SetDecimalSeparator(val ContactImportDecimalSeparator) {
+	s.DecimalSeparator = val
+}
+
+// SetDefaultCountry sets the value of DefaultCountry.
+func (s *ContactImportMapping) SetDefaultCountry(val NilCountryCode) {
+	s.DefaultCountry = val
+}
+
+// SetTag sets the value of Tag.
+func (s *ContactImportMapping) SetTag(val NilName) {
+	s.Tag = val
+}
+
+// SetOnlyAddNew sets the value of OnlyAddNew.
+func (s *ContactImportMapping) SetOnlyAddNew(val bool) {
+	s.OnlyAddNew = val
+}
+
+// How an import reads its file, as a request writes it.
+// Ref: #/components/schemas/ContactImportMappingInput
+type ContactImportMappingInput struct {
+	// One per column of the file, in the file's order: as many as the file has.
+	Columns []ContactImportColumnInput `json:"columns"`
+	// The character the file's numbers write their decimals after.
+	DecimalSeparator ContactImportDecimalSeparator `json:"decimalSeparator"`
+	// The country a phone written without its country code is read in, when its row names no country; null
+	// for none.
+	DefaultCountry NilCountryCode `json:"defaultCountry"`
+	// A Tag given to every row, created on first use; null for none.
+	Tag NilName `json:"tag"`
+	// Leave a Contact the Workspace has as it is, writing only new ones.
+	OnlyAddNew bool `json:"onlyAddNew"`
+}
+
+// GetColumns returns the value of Columns.
+func (s *ContactImportMappingInput) GetColumns() []ContactImportColumnInput {
+	return s.Columns
+}
+
+// GetDecimalSeparator returns the value of DecimalSeparator.
+func (s *ContactImportMappingInput) GetDecimalSeparator() ContactImportDecimalSeparator {
+	return s.DecimalSeparator
+}
+
+// GetDefaultCountry returns the value of DefaultCountry.
+func (s *ContactImportMappingInput) GetDefaultCountry() NilCountryCode {
+	return s.DefaultCountry
+}
+
+// GetTag returns the value of Tag.
+func (s *ContactImportMappingInput) GetTag() NilName {
+	return s.Tag
+}
+
+// GetOnlyAddNew returns the value of OnlyAddNew.
+func (s *ContactImportMappingInput) GetOnlyAddNew() bool {
+	return s.OnlyAddNew
+}
+
+// SetColumns sets the value of Columns.
+func (s *ContactImportMappingInput) SetColumns(val []ContactImportColumnInput) {
+	s.Columns = val
+}
+
+// SetDecimalSeparator sets the value of DecimalSeparator.
+func (s *ContactImportMappingInput) SetDecimalSeparator(val ContactImportDecimalSeparator) {
+	s.DecimalSeparator = val
+}
+
+// SetDefaultCountry sets the value of DefaultCountry.
+func (s *ContactImportMappingInput) SetDefaultCountry(val NilCountryCode) {
+	s.DefaultCountry = val
+}
+
+// SetTag sets the value of Tag.
+func (s *ContactImportMappingInput) SetTag(val NilName) {
+	s.Tag = val
+}
+
+// SetOnlyAddNew sets the value of OnlyAddNew.
+func (s *ContactImportMappingInput) SetOnlyAddNew(val bool) {
+	s.OnlyAddNew = val
+}
+
+// A row of the file as the import would write it.
+// Ref: #/components/schemas/ContactImportPreviewRow
+type ContactImportPreviewRow struct {
+	// The row's number below the header, from 1.
+	Row int32 `json:"row"`
+	// The row's cells as the file writes them.
+	Cells []string `json:"cells"`
+	// Why the row would be refused; null when it would be written.
+	Refusal NilContactImportIssue `json:"refusal"`
+	// The values the row would drop.
+	Dropped  []ContactImportIssue   `json:"dropped"`
+	Warnings []ContactImportWarning `json:"warnings"`
+}
+
+// GetRow returns the value of Row.
+func (s *ContactImportPreviewRow) GetRow() int32 {
+	return s.Row
+}
+
+// GetCells returns the value of Cells.
+func (s *ContactImportPreviewRow) GetCells() []string {
+	return s.Cells
+}
+
+// GetRefusal returns the value of Refusal.
+func (s *ContactImportPreviewRow) GetRefusal() NilContactImportIssue {
+	return s.Refusal
+}
+
+// GetDropped returns the value of Dropped.
+func (s *ContactImportPreviewRow) GetDropped() []ContactImportIssue {
+	return s.Dropped
+}
+
+// GetWarnings returns the value of Warnings.
+func (s *ContactImportPreviewRow) GetWarnings() []ContactImportWarning {
+	return s.Warnings
+}
+
+// SetRow sets the value of Row.
+func (s *ContactImportPreviewRow) SetRow(val int32) {
+	s.Row = val
+}
+
+// SetCells sets the value of Cells.
+func (s *ContactImportPreviewRow) SetCells(val []string) {
+	s.Cells = val
+}
+
+// SetRefusal sets the value of Refusal.
+func (s *ContactImportPreviewRow) SetRefusal(val NilContactImportIssue) {
+	s.Refusal = val
+}
+
+// SetDropped sets the value of Dropped.
+func (s *ContactImportPreviewRow) SetDropped(val []ContactImportIssue) {
+	s.Dropped = val
+}
+
+// SetWarnings sets the value of Warnings.
+func (s *ContactImportPreviewRow) SetWarnings(val []ContactImportWarning) {
+	s.Warnings = val
+}
+
+// Where an import stands: `uploaded` until a mapping is saved, `ready` to run, `running` while its job
+// writes the rows, then `done`; `cancelled` and `failed` end it early, keeping what it wrote.
+// Ref: #/components/schemas/ContactImportState
+type ContactImportState string
+
+const (
+	ContactImportStateUploaded  ContactImportState = "uploaded"
+	ContactImportStateReady     ContactImportState = "ready"
+	ContactImportStateRunning   ContactImportState = "running"
+	ContactImportStateCancelled ContactImportState = "cancelled"
+	ContactImportStateFailed    ContactImportState = "failed"
+	ContactImportStateDone      ContactImportState = "done"
+)
+
+// AllValues returns all ContactImportState values.
+func (ContactImportState) AllValues() []ContactImportState {
+	return []ContactImportState{
+		ContactImportStateUploaded,
+		ContactImportStateReady,
+		ContactImportStateRunning,
+		ContactImportStateCancelled,
+		ContactImportStateFailed,
+		ContactImportStateDone,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ContactImportState) MarshalText() ([]byte, error) {
+	switch s {
+	case ContactImportStateUploaded:
+		return []byte(s), nil
+	case ContactImportStateReady:
+		return []byte(s), nil
+	case ContactImportStateRunning:
+		return []byte(s), nil
+	case ContactImportStateCancelled:
+		return []byte(s), nil
+	case ContactImportStateFailed:
+		return []byte(s), nil
+	case ContactImportStateDone:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ContactImportState) UnmarshalText(data []byte) error {
+	switch ContactImportState(data) {
+	case ContactImportStateUploaded:
+		*s = ContactImportStateUploaded
+		return nil
+	case ContactImportStateReady:
+		*s = ContactImportStateReady
+		return nil
+	case ContactImportStateRunning:
+		*s = ContactImportStateRunning
+		return nil
+	case ContactImportStateCancelled:
+		*s = ContactImportStateCancelled
+		return nil
+	case ContactImportStateFailed:
+		*s = ContactImportStateFailed
+		return nil
+	case ContactImportStateDone:
+		*s = ContactImportStateDone
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A column whose cells name the Tags a row adds, separated by commas; a Tag holding a comma is quoted.
+// Ref: #/components/schemas/ContactImportTagsColumn
+type ContactImportTagsColumn struct {
+	Kind ContactImportTagsColumnKind `json:"kind"`
+}
+
+// GetKind returns the value of Kind.
+func (s *ContactImportTagsColumn) GetKind() ContactImportTagsColumnKind {
+	return s.Kind
+}
+
+// SetKind sets the value of Kind.
+func (s *ContactImportTagsColumn) SetKind(val ContactImportTagsColumnKind) {
+	s.Kind = val
+}
+
+// A column whose cells name the Tags a row adds, separated by commas; a Tag holding a comma is quoted.
+// Ref: #/components/schemas/ContactImportTagsColumnInput
+type ContactImportTagsColumnInput struct {
+	Kind ContactImportTagsColumnInputKind `json:"kind"`
+}
+
+// GetKind returns the value of Kind.
+func (s *ContactImportTagsColumnInput) GetKind() ContactImportTagsColumnInputKind {
+	return s.Kind
+}
+
+// SetKind sets the value of Kind.
+func (s *ContactImportTagsColumnInput) SetKind(val ContactImportTagsColumnInputKind) {
+	s.Kind = val
+}
+
+type ContactImportTagsColumnInputKind string
+
+const (
+	ContactImportTagsColumnInputKindTags ContactImportTagsColumnInputKind = "tags"
+)
+
+// AllValues returns all ContactImportTagsColumnInputKind values.
+func (ContactImportTagsColumnInputKind) AllValues() []ContactImportTagsColumnInputKind {
+	return []ContactImportTagsColumnInputKind{
+		ContactImportTagsColumnInputKindTags,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ContactImportTagsColumnInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case ContactImportTagsColumnInputKindTags:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ContactImportTagsColumnInputKind) UnmarshalText(data []byte) error {
+	switch ContactImportTagsColumnInputKind(data) {
+	case ContactImportTagsColumnInputKindTags:
+		*s = ContactImportTagsColumnInputKindTags
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type ContactImportTagsColumnKind string
+
+const (
+	ContactImportTagsColumnKindTags ContactImportTagsColumnKind = "tags"
+)
+
+// AllValues returns all ContactImportTagsColumnKind values.
+func (ContactImportTagsColumnKind) AllValues() []ContactImportTagsColumnKind {
+	return []ContactImportTagsColumnKind{
+		ContactImportTagsColumnKindTags,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ContactImportTagsColumnKind) MarshalText() ([]byte, error) {
+	switch s {
+	case ContactImportTagsColumnKindTags:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ContactImportTagsColumnKind) UnmarshalText(data []byte) error {
+	switch ContactImportTagsColumnKind(data) {
+	case ContactImportTagsColumnKindTags:
+		*s = ContactImportTagsColumnKindTags
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A trait of a previewed row worth a look; the row is written all the same. `disposable_email` and
+// `role_email` are ADR 0117's verdicts on its address.
+// Ref: #/components/schemas/ContactImportWarning
+type ContactImportWarning string
+
+const (
+	ContactImportWarningDisposableEmail ContactImportWarning = "disposable_email"
+	ContactImportWarningRoleEmail       ContactImportWarning = "role_email"
+)
+
+// AllValues returns all ContactImportWarning values.
+func (ContactImportWarning) AllValues() []ContactImportWarning {
+	return []ContactImportWarning{
+		ContactImportWarningDisposableEmail,
+		ContactImportWarningRoleEmail,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ContactImportWarning) MarshalText() ([]byte, error) {
+	switch s {
+	case ContactImportWarningDisposableEmail:
+		return []byte(s), nil
+	case ContactImportWarningRoleEmail:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ContactImportWarning) UnmarshalText(data []byte) error {
+	switch ContactImportWarning(data) {
+	case ContactImportWarningDisposableEmail:
+		*s = ContactImportWarningDisposableEmail
+		return nil
+	case ContactImportWarningRoleEmail:
+		*s = ContactImportWarningRoleEmail
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 type CountryCode string
 
 // Request body for creating an automation (always created inactive).
@@ -10418,6 +12243,35 @@ func (s *DnsRecordType) UnmarshalText(data []byte) error {
 	default:
 		return errors.Errorf("invalid value: %q", data)
 	}
+}
+
+// A link a browser follows once, in the session that asked for it, within a minute.
+// Ref: #/components/schemas/DownloadLink
+type DownloadLink struct {
+	// Where the browser goes to download: a path of this Instance.
+	URL string `json:"url"`
+	// When the link stops working.
+	ExpiresAt Timestamp `json:"expiresAt"`
+}
+
+// GetURL returns the value of URL.
+func (s *DownloadLink) GetURL() string {
+	return s.URL
+}
+
+// GetExpiresAt returns the value of ExpiresAt.
+func (s *DownloadLink) GetExpiresAt() Timestamp {
+	return s.ExpiresAt
+}
+
+// SetURL sets the value of URL.
+func (s *DownloadLink) SetURL(val string) {
+	s.URL = val
+}
+
+// SetExpiresAt sets the value of ExpiresAt.
+func (s *DownloadLink) SetExpiresAt(val Timestamp) {
+	s.ExpiresAt = val
 }
 
 // Request body for rendering an HTTP step's body for a Contact.
@@ -15564,6 +17418,96 @@ func (o NilAutomationVersion) Or(d AutomationVersion) AutomationVersion {
 	return d
 }
 
+// NewNilContactImportDateFormat returns new NilContactImportDateFormat with value set to v.
+func NewNilContactImportDateFormat(v ContactImportDateFormat) NilContactImportDateFormat {
+	return NilContactImportDateFormat{
+		Value: v,
+	}
+}
+
+// NilContactImportDateFormat is nullable ContactImportDateFormat.
+type NilContactImportDateFormat struct {
+	Value ContactImportDateFormat
+	Null  bool
+}
+
+// SetTo sets value to v.
+func (o *NilContactImportDateFormat) SetTo(v ContactImportDateFormat) {
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o NilContactImportDateFormat) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *NilContactImportDateFormat) SetToNull() {
+	o.Null = true
+	var v ContactImportDateFormat
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o NilContactImportDateFormat) Get() (v ContactImportDateFormat, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o NilContactImportDateFormat) Or(d ContactImportDateFormat) ContactImportDateFormat {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewNilContactImportIssue returns new NilContactImportIssue with value set to v.
+func NewNilContactImportIssue(v ContactImportIssue) NilContactImportIssue {
+	return NilContactImportIssue{
+		Value: v,
+	}
+}
+
+// NilContactImportIssue is nullable ContactImportIssue.
+type NilContactImportIssue struct {
+	Value ContactImportIssue
+	Null  bool
+}
+
+// SetTo sets value to v.
+func (o *NilContactImportIssue) SetTo(v ContactImportIssue) {
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o NilContactImportIssue) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *NilContactImportIssue) SetToNull() {
+	o.Null = true
+	var v ContactImportIssue
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o NilContactImportIssue) Get() (v ContactImportIssue, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o NilContactImportIssue) Or(d ContactImportIssue) ContactImportIssue {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewNilCountryCode returns new NilCountryCode with value set to v.
 func NewNilCountryCode(v CountryCode) NilCountryCode {
 	return NilCountryCode{
@@ -16053,6 +17997,51 @@ func (o NilInt64) Get() (v int64, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o NilInt64) Or(d int64) int64 {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewNilName returns new NilName with value set to v.
+func NewNilName(v Name) NilName {
+	return NilName{
+		Value: v,
+	}
+}
+
+// NilName is nullable Name.
+type NilName struct {
+	Value Name
+	Null  bool
+}
+
+// SetTo sets value to v.
+func (o *NilName) SetTo(v Name) {
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o NilName) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *NilName) SetToNull() {
+	o.Null = true
+	var v Name
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o NilName) Get() (v Name, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o NilName) Or(d Name) Name {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -22111,6 +24100,7 @@ const (
 	PermissionSendingDomainsManage  Permission = "sending_domains:manage"
 	PermissionContactsErase         Permission = "contacts:erase"
 	PermissionContactsExport        Permission = "contacts:export"
+	PermissionContactsImport        Permission = "contacts:import"
 	PermissionCustomFieldsManage    Permission = "custom_fields:manage"
 	PermissionSuppressionsManage    Permission = "suppressions:manage"
 	PermissionSecondFactorManage    Permission = "second_factor:manage"
@@ -22139,6 +24129,7 @@ func (Permission) AllValues() []Permission {
 		PermissionSendingDomainsManage,
 		PermissionContactsErase,
 		PermissionContactsExport,
+		PermissionContactsImport,
 		PermissionCustomFieldsManage,
 		PermissionSuppressionsManage,
 		PermissionSecondFactorManage,
@@ -22176,6 +24167,8 @@ func (s Permission) MarshalText() ([]byte, error) {
 	case PermissionContactsErase:
 		return []byte(s), nil
 	case PermissionContactsExport:
+		return []byte(s), nil
+	case PermissionContactsImport:
 		return []byte(s), nil
 	case PermissionCustomFieldsManage:
 		return []byte(s), nil
@@ -22239,6 +24232,9 @@ func (s *Permission) UnmarshalText(data []byte) error {
 		return nil
 	case PermissionContactsExport:
 		*s = PermissionContactsExport
+		return nil
+	case PermissionContactsImport:
+		*s = PermissionContactsImport
 		return nil
 	case PermissionCustomFieldsManage:
 		*s = PermissionCustomFieldsManage
@@ -31834,6 +33830,276 @@ func (s *SiteContactHoldings) SetSuppressions(val int32) {
 // SetCapturedMessages sets the value of CapturedMessages.
 func (s *SiteContactHoldings) SetCapturedMessages(val int32) {
 	s.CapturedMessages = val
+}
+
+// A CSV import of Contacts (ADR 0138): its file's facts, its mapping and how far its run is.
+// Ref: #/components/schemas/SiteContactImport
+type SiteContactImport struct {
+	// Unique identifier.
+	ID    EntityId           `json:"id"`
+	State ContactImportState `json:"state"`
+	// The character the file's cells are separated by.
+	Delimiter ContactImportDelimiter `json:"delimiter"`
+	// The file's header, a name per column; a blank name stays blank.
+	Header []string `json:"header"`
+	// The file's rows below its header.
+	Rows int32 `json:"rows"`
+	// Rows whose number of cells differs from the header's, which the import refuses.
+	MalformedRows int32 `json:"malformedRows"`
+	// The saved mapping, or before one is saved the proposal read from the header and the first rows: a
+	// header that names a key, a core attribute or a Custom field is mapped to it, a date column gets the
+	// format its sample reads in when only one fits.
+	Mapping ContactImportMapping `json:"mapping"`
+	Counts  ContactImportCounts  `json:"counts"`
+	// Rows of the refused rows' report, refused rows and rows with dropped values: 0 when there is nothing
+	// to download.
+	ReportRows int32 `json:"reportRows"`
+	// Upload timestamp.
+	CreatedAt Timestamp `json:"createdAt"`
+	// When the run began; null before it.
+	StartedAt NilTimestamp `json:"startedAt"`
+	// When the run ended; null before it.
+	EndedAt NilTimestamp `json:"endedAt"`
+}
+
+// GetID returns the value of ID.
+func (s *SiteContactImport) GetID() EntityId {
+	return s.ID
+}
+
+// GetState returns the value of State.
+func (s *SiteContactImport) GetState() ContactImportState {
+	return s.State
+}
+
+// GetDelimiter returns the value of Delimiter.
+func (s *SiteContactImport) GetDelimiter() ContactImportDelimiter {
+	return s.Delimiter
+}
+
+// GetHeader returns the value of Header.
+func (s *SiteContactImport) GetHeader() []string {
+	return s.Header
+}
+
+// GetRows returns the value of Rows.
+func (s *SiteContactImport) GetRows() int32 {
+	return s.Rows
+}
+
+// GetMalformedRows returns the value of MalformedRows.
+func (s *SiteContactImport) GetMalformedRows() int32 {
+	return s.MalformedRows
+}
+
+// GetMapping returns the value of Mapping.
+func (s *SiteContactImport) GetMapping() ContactImportMapping {
+	return s.Mapping
+}
+
+// GetCounts returns the value of Counts.
+func (s *SiteContactImport) GetCounts() ContactImportCounts {
+	return s.Counts
+}
+
+// GetReportRows returns the value of ReportRows.
+func (s *SiteContactImport) GetReportRows() int32 {
+	return s.ReportRows
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *SiteContactImport) GetCreatedAt() Timestamp {
+	return s.CreatedAt
+}
+
+// GetStartedAt returns the value of StartedAt.
+func (s *SiteContactImport) GetStartedAt() NilTimestamp {
+	return s.StartedAt
+}
+
+// GetEndedAt returns the value of EndedAt.
+func (s *SiteContactImport) GetEndedAt() NilTimestamp {
+	return s.EndedAt
+}
+
+// SetID sets the value of ID.
+func (s *SiteContactImport) SetID(val EntityId) {
+	s.ID = val
+}
+
+// SetState sets the value of State.
+func (s *SiteContactImport) SetState(val ContactImportState) {
+	s.State = val
+}
+
+// SetDelimiter sets the value of Delimiter.
+func (s *SiteContactImport) SetDelimiter(val ContactImportDelimiter) {
+	s.Delimiter = val
+}
+
+// SetHeader sets the value of Header.
+func (s *SiteContactImport) SetHeader(val []string) {
+	s.Header = val
+}
+
+// SetRows sets the value of Rows.
+func (s *SiteContactImport) SetRows(val int32) {
+	s.Rows = val
+}
+
+// SetMalformedRows sets the value of MalformedRows.
+func (s *SiteContactImport) SetMalformedRows(val int32) {
+	s.MalformedRows = val
+}
+
+// SetMapping sets the value of Mapping.
+func (s *SiteContactImport) SetMapping(val ContactImportMapping) {
+	s.Mapping = val
+}
+
+// SetCounts sets the value of Counts.
+func (s *SiteContactImport) SetCounts(val ContactImportCounts) {
+	s.Counts = val
+}
+
+// SetReportRows sets the value of ReportRows.
+func (s *SiteContactImport) SetReportRows(val int32) {
+	s.ReportRows = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *SiteContactImport) SetCreatedAt(val Timestamp) {
+	s.CreatedAt = val
+}
+
+// SetStartedAt sets the value of StartedAt.
+func (s *SiteContactImport) SetStartedAt(val NilTimestamp) {
+	s.StartedAt = val
+}
+
+// SetEndedAt sets the value of EndedAt.
+func (s *SiteContactImport) SetEndedAt(val NilTimestamp) {
+	s.EndedAt = val
+}
+
+// What an import would do with its saved mapping (ADR 0138): its first rows, and counts over the whole
+// file.
+// Ref: #/components/schemas/SiteContactImportPreview
+type SiteContactImportPreview struct {
+	// The first rows of the file.
+	Rows []ContactImportPreviewRow `json:"rows"`
+	// Rows of the file below its header.
+	TotalRows int32 `json:"totalRows"`
+	// Rows that name no alias key, which the import refuses.
+	RowsWithoutKey int32 `json:"rowsWithoutKey"`
+	// Rows whose number of cells differs from the header's, which the import refuses.
+	MalformedRows int32 `json:"malformedRows"`
+	// Distinct Tags the rows would add, the Tag for every row included.
+	DistinctTags int32 `json:"distinctTags"`
+}
+
+// GetRows returns the value of Rows.
+func (s *SiteContactImportPreview) GetRows() []ContactImportPreviewRow {
+	return s.Rows
+}
+
+// GetTotalRows returns the value of TotalRows.
+func (s *SiteContactImportPreview) GetTotalRows() int32 {
+	return s.TotalRows
+}
+
+// GetRowsWithoutKey returns the value of RowsWithoutKey.
+func (s *SiteContactImportPreview) GetRowsWithoutKey() int32 {
+	return s.RowsWithoutKey
+}
+
+// GetMalformedRows returns the value of MalformedRows.
+func (s *SiteContactImportPreview) GetMalformedRows() int32 {
+	return s.MalformedRows
+}
+
+// GetDistinctTags returns the value of DistinctTags.
+func (s *SiteContactImportPreview) GetDistinctTags() int32 {
+	return s.DistinctTags
+}
+
+// SetRows sets the value of Rows.
+func (s *SiteContactImportPreview) SetRows(val []ContactImportPreviewRow) {
+	s.Rows = val
+}
+
+// SetTotalRows sets the value of TotalRows.
+func (s *SiteContactImportPreview) SetTotalRows(val int32) {
+	s.TotalRows = val
+}
+
+// SetRowsWithoutKey sets the value of RowsWithoutKey.
+func (s *SiteContactImportPreview) SetRowsWithoutKey(val int32) {
+	s.RowsWithoutKey = val
+}
+
+// SetMalformedRows sets the value of MalformedRows.
+func (s *SiteContactImportPreview) SetMalformedRows(val int32) {
+	s.MalformedRows = val
+}
+
+// SetDistinctTags sets the value of DistinctTags.
+func (s *SiteContactImportPreview) SetDistinctTags(val int32) {
+	s.DistinctTags = val
+}
+
+type SiteContactImportsReportOK struct {
+	Data io.Reader
+}
+
+// Read reads data from the Data reader.
+//
+// Kept to satisfy the io.Reader interface.
+func (s SiteContactImportsReportOK) Read(p []byte) (n int, err error) {
+	if s.Data == nil {
+		return 0, io.EOF
+	}
+	return s.Data.Read(p)
+}
+
+// SiteContactImportsReportOKHeaders wraps SiteContactImportsReportOK with response headers.
+type SiteContactImportsReportOKHeaders struct {
+	ContentDisposition string
+	Response           SiteContactImportsReportOK
+}
+
+// GetContentDisposition returns the value of ContentDisposition.
+func (s *SiteContactImportsReportOKHeaders) GetContentDisposition() string {
+	return s.ContentDisposition
+}
+
+// GetResponse returns the value of Response.
+func (s *SiteContactImportsReportOKHeaders) GetResponse() SiteContactImportsReportOK {
+	return s.Response
+}
+
+// SetContentDisposition sets the value of ContentDisposition.
+func (s *SiteContactImportsReportOKHeaders) SetContentDisposition(val string) {
+	s.ContentDisposition = val
+}
+
+// SetResponse sets the value of Response.
+func (s *SiteContactImportsReportOKHeaders) SetResponse(val SiteContactImportsReportOK) {
+	s.Response = val
+}
+
+type SiteContactImportsUploadReq struct {
+	Data io.Reader
+}
+
+// Read reads data from the Data reader.
+//
+// Kept to satisfy the io.Reader interface.
+func (s SiteContactImportsUploadReq) Read(p []byte) (n int, err error) {
+	if s.Data == nil {
+		return 0, io.EOF
+	}
+	return s.Data.Read(p)
 }
 
 // Contact resource used by the site UI.

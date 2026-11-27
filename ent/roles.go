@@ -1497,6 +1497,207 @@ const (
 	RoleOf_ContactDateCreateBulk_OnConflictColumns = RoleStart
 )
 
+// The types ent generates for ContactImport.
+const (
+	TypeOf_ContactImport             = TypeEntity
+	TypeOf_ContactImports            = TypeOther
+	TypeOf_ContactImportEdges        = TypeOther
+	EntityOf_ContactImportEdges      = "ContactImport"
+	TypeOf_ContactImportMutation     = TypeOther
+	TypeOf_ContactImportClient       = TypeClient
+	TypeOf_ContactImportQuery        = TypeQuery
+	TypeOf_ContactImportSelect       = TypeQuery
+	TypeOf_ContactImportGroupBy      = TypeQuery
+	TypeOf_ContactImportCreate       = TypeCreate
+	TypeOf_ContactImportCreateBulk   = TypeCreate
+	TypeOf_ContactImportUpdate       = TypeUpdate
+	TypeOf_ContactImportUpdateOne    = TypeUpdate
+	TypeOf_ContactImportDelete       = TypeDelete
+	TypeOf_ContactImportDeleteOne    = TypeDelete
+	TypeOf_ContactImportUpsert       = TypeUpsert
+	TypeOf_ContactImportUpsertOne    = TypeUpsert
+	TypeOf_ContactImportUpsertBulk   = TypeUpsert
+	EntityOf_ContactImports          = "ContactImport"
+	EntityOf_ContactImport           = "ContactImport"
+	EntityOf_ContactImportMutation   = "ContactImport"
+	EntityOf_ContactImportClient     = "ContactImport"
+	EntityOf_ContactImportQuery      = "ContactImport"
+	EntityOf_ContactImportSelect     = "ContactImport"
+	EntityOf_ContactImportGroupBy    = "ContactImport"
+	EntityOf_ContactImportCreate     = "ContactImport"
+	EntityOf_ContactImportCreateBulk = "ContactImport"
+	EntityOf_ContactImportUpdate     = "ContactImport"
+	EntityOf_ContactImportUpdateOne  = "ContactImport"
+	EntityOf_ContactImportDelete     = "ContactImport"
+	EntityOf_ContactImportDeleteOne  = "ContactImport"
+	EntityOf_ContactImportUpsert     = "ContactImport"
+	EntityOf_ContactImportUpsertOne  = "ContactImport"
+	EntityOf_ContactImportUpsertBulk = "ContactImport"
+)
+
+// The reads and the writes ent's methods for ContactImport start.
+const (
+	RoleOf_ContactImportClient_Create                = RoleStart
+	RoleOf_ContactImportClient_CreateBulk            = RoleStart
+	RoleOf_ContactImportClient_MapCreateBulk         = RoleStart
+	RoleOf_ContactImportClient_Update                = RoleStart
+	RoleOf_ContactImportClient_UpdateOne             = RoleStart
+	RoleOf_ContactImportClient_Delete                = RoleStart
+	RoleOf_ContactImportClient_Query                 = RoleRead
+	RoleOf_ContactImportClient_UpdateOneID           = RoleStart
+	RoleOf_ContactImportClient_DeleteOne             = RoleStart
+	RoleOf_ContactImportClient_DeleteOneID           = RoleStart
+	RoleOf_ContactImportClient_Get                   = RoleRead
+	RoleOf_ContactImportClient_GetX                  = RoleRead
+	RoleOf_ContactImportClient_QueryWorkspace        = RoleRead
+	RoleOf_ContactImport_QueryWorkspace              = RoleRead
+	RoleOf_ContactImportQuery_QueryWorkspace         = RoleRead
+	RoleOf_ContactImportClient_QueryMembership       = RoleRead
+	RoleOf_ContactImport_QueryMembership             = RoleRead
+	RoleOf_ContactImportQuery_QueryMembership        = RoleRead
+	RoleOf_ContactImportClient_QueryChunks           = RoleRead
+	RoleOf_ContactImport_QueryChunks                 = RoleRead
+	RoleOf_ContactImportQuery_QueryChunks            = RoleRead
+	RoleOf_ContactImportClient_QueryReportRows       = RoleRead
+	RoleOf_ContactImport_QueryReportRows             = RoleRead
+	RoleOf_ContactImportQuery_QueryReportRows        = RoleRead
+	RoleOf_ContactImport_Update                      = RoleStart
+	RoleOf_ContactImportCreate_OnConflict            = RoleStart
+	RoleOf_ContactImportCreate_OnConflictColumns     = RoleStart
+	RoleOf_ContactImportCreateBulk_OnConflict        = RoleStart
+	RoleOf_ContactImportCreateBulk_OnConflictColumns = RoleStart
+)
+
+// The types ent generates for ContactImportChunk.
+const (
+	TypeOf_ContactImportChunk             = TypeEntity
+	TypeOf_ContactImportChunks            = TypeOther
+	TypeOf_ContactImportChunkEdges        = TypeOther
+	EntityOf_ContactImportChunkEdges      = "ContactImportChunk"
+	TypeOf_ContactImportChunkMutation     = TypeOther
+	TypeOf_ContactImportChunkClient       = TypeClient
+	TypeOf_ContactImportChunkQuery        = TypeQuery
+	TypeOf_ContactImportChunkSelect       = TypeQuery
+	TypeOf_ContactImportChunkGroupBy      = TypeQuery
+	TypeOf_ContactImportChunkCreate       = TypeCreate
+	TypeOf_ContactImportChunkCreateBulk   = TypeCreate
+	TypeOf_ContactImportChunkUpdate       = TypeUpdate
+	TypeOf_ContactImportChunkUpdateOne    = TypeUpdate
+	TypeOf_ContactImportChunkDelete       = TypeDelete
+	TypeOf_ContactImportChunkDeleteOne    = TypeDelete
+	TypeOf_ContactImportChunkUpsert       = TypeUpsert
+	TypeOf_ContactImportChunkUpsertOne    = TypeUpsert
+	TypeOf_ContactImportChunkUpsertBulk   = TypeUpsert
+	EntityOf_ContactImportChunks          = "ContactImportChunk"
+	EntityOf_ContactImportChunk           = "ContactImportChunk"
+	EntityOf_ContactImportChunkMutation   = "ContactImportChunk"
+	EntityOf_ContactImportChunkClient     = "ContactImportChunk"
+	EntityOf_ContactImportChunkQuery      = "ContactImportChunk"
+	EntityOf_ContactImportChunkSelect     = "ContactImportChunk"
+	EntityOf_ContactImportChunkGroupBy    = "ContactImportChunk"
+	EntityOf_ContactImportChunkCreate     = "ContactImportChunk"
+	EntityOf_ContactImportChunkCreateBulk = "ContactImportChunk"
+	EntityOf_ContactImportChunkUpdate     = "ContactImportChunk"
+	EntityOf_ContactImportChunkUpdateOne  = "ContactImportChunk"
+	EntityOf_ContactImportChunkDelete     = "ContactImportChunk"
+	EntityOf_ContactImportChunkDeleteOne  = "ContactImportChunk"
+	EntityOf_ContactImportChunkUpsert     = "ContactImportChunk"
+	EntityOf_ContactImportChunkUpsertOne  = "ContactImportChunk"
+	EntityOf_ContactImportChunkUpsertBulk = "ContactImportChunk"
+)
+
+// The reads and the writes ent's methods for ContactImportChunk start.
+const (
+	RoleOf_ContactImportChunkClient_Create                = RoleStart
+	RoleOf_ContactImportChunkClient_CreateBulk            = RoleStart
+	RoleOf_ContactImportChunkClient_MapCreateBulk         = RoleStart
+	RoleOf_ContactImportChunkClient_Update                = RoleStart
+	RoleOf_ContactImportChunkClient_UpdateOne             = RoleStart
+	RoleOf_ContactImportChunkClient_Delete                = RoleStart
+	RoleOf_ContactImportChunkClient_Query                 = RoleRead
+	RoleOf_ContactImportChunkClient_UpdateOneID           = RoleStart
+	RoleOf_ContactImportChunkClient_DeleteOne             = RoleStart
+	RoleOf_ContactImportChunkClient_DeleteOneID           = RoleStart
+	RoleOf_ContactImportChunkClient_Get                   = RoleRead
+	RoleOf_ContactImportChunkClient_GetX                  = RoleRead
+	RoleOf_ContactImportChunkClient_QueryWorkspace        = RoleRead
+	RoleOf_ContactImportChunk_QueryWorkspace              = RoleRead
+	RoleOf_ContactImportChunkQuery_QueryWorkspace         = RoleRead
+	RoleOf_ContactImportChunkClient_QueryContactImport    = RoleRead
+	RoleOf_ContactImportChunk_QueryContactImport          = RoleRead
+	RoleOf_ContactImportChunkQuery_QueryContactImport     = RoleRead
+	RoleOf_ContactImportChunk_Update                      = RoleStart
+	RoleOf_ContactImportChunkCreate_OnConflict            = RoleStart
+	RoleOf_ContactImportChunkCreate_OnConflictColumns     = RoleStart
+	RoleOf_ContactImportChunkCreateBulk_OnConflict        = RoleStart
+	RoleOf_ContactImportChunkCreateBulk_OnConflictColumns = RoleStart
+)
+
+// The types ent generates for ContactImportReportRow.
+const (
+	TypeOf_ContactImportReportRow             = TypeEntity
+	TypeOf_ContactImportReportRows            = TypeOther
+	TypeOf_ContactImportReportRowEdges        = TypeOther
+	EntityOf_ContactImportReportRowEdges      = "ContactImportReportRow"
+	TypeOf_ContactImportReportRowMutation     = TypeOther
+	TypeOf_ContactImportReportRowClient       = TypeClient
+	TypeOf_ContactImportReportRowQuery        = TypeQuery
+	TypeOf_ContactImportReportRowSelect       = TypeQuery
+	TypeOf_ContactImportReportRowGroupBy      = TypeQuery
+	TypeOf_ContactImportReportRowCreate       = TypeCreate
+	TypeOf_ContactImportReportRowCreateBulk   = TypeCreate
+	TypeOf_ContactImportReportRowUpdate       = TypeUpdate
+	TypeOf_ContactImportReportRowUpdateOne    = TypeUpdate
+	TypeOf_ContactImportReportRowDelete       = TypeDelete
+	TypeOf_ContactImportReportRowDeleteOne    = TypeDelete
+	TypeOf_ContactImportReportRowUpsert       = TypeUpsert
+	TypeOf_ContactImportReportRowUpsertOne    = TypeUpsert
+	TypeOf_ContactImportReportRowUpsertBulk   = TypeUpsert
+	EntityOf_ContactImportReportRows          = "ContactImportReportRow"
+	EntityOf_ContactImportReportRow           = "ContactImportReportRow"
+	EntityOf_ContactImportReportRowMutation   = "ContactImportReportRow"
+	EntityOf_ContactImportReportRowClient     = "ContactImportReportRow"
+	EntityOf_ContactImportReportRowQuery      = "ContactImportReportRow"
+	EntityOf_ContactImportReportRowSelect     = "ContactImportReportRow"
+	EntityOf_ContactImportReportRowGroupBy    = "ContactImportReportRow"
+	EntityOf_ContactImportReportRowCreate     = "ContactImportReportRow"
+	EntityOf_ContactImportReportRowCreateBulk = "ContactImportReportRow"
+	EntityOf_ContactImportReportRowUpdate     = "ContactImportReportRow"
+	EntityOf_ContactImportReportRowUpdateOne  = "ContactImportReportRow"
+	EntityOf_ContactImportReportRowDelete     = "ContactImportReportRow"
+	EntityOf_ContactImportReportRowDeleteOne  = "ContactImportReportRow"
+	EntityOf_ContactImportReportRowUpsert     = "ContactImportReportRow"
+	EntityOf_ContactImportReportRowUpsertOne  = "ContactImportReportRow"
+	EntityOf_ContactImportReportRowUpsertBulk = "ContactImportReportRow"
+)
+
+// The reads and the writes ent's methods for ContactImportReportRow start.
+const (
+	RoleOf_ContactImportReportRowClient_Create                = RoleStart
+	RoleOf_ContactImportReportRowClient_CreateBulk            = RoleStart
+	RoleOf_ContactImportReportRowClient_MapCreateBulk         = RoleStart
+	RoleOf_ContactImportReportRowClient_Update                = RoleStart
+	RoleOf_ContactImportReportRowClient_UpdateOne             = RoleStart
+	RoleOf_ContactImportReportRowClient_Delete                = RoleStart
+	RoleOf_ContactImportReportRowClient_Query                 = RoleRead
+	RoleOf_ContactImportReportRowClient_UpdateOneID           = RoleStart
+	RoleOf_ContactImportReportRowClient_DeleteOne             = RoleStart
+	RoleOf_ContactImportReportRowClient_DeleteOneID           = RoleStart
+	RoleOf_ContactImportReportRowClient_Get                   = RoleRead
+	RoleOf_ContactImportReportRowClient_GetX                  = RoleRead
+	RoleOf_ContactImportReportRowClient_QueryWorkspace        = RoleRead
+	RoleOf_ContactImportReportRow_QueryWorkspace              = RoleRead
+	RoleOf_ContactImportReportRowQuery_QueryWorkspace         = RoleRead
+	RoleOf_ContactImportReportRowClient_QueryContactImport    = RoleRead
+	RoleOf_ContactImportReportRow_QueryContactImport          = RoleRead
+	RoleOf_ContactImportReportRowQuery_QueryContactImport     = RoleRead
+	RoleOf_ContactImportReportRow_Update                      = RoleStart
+	RoleOf_ContactImportReportRowCreate_OnConflict            = RoleStart
+	RoleOf_ContactImportReportRowCreate_OnConflictColumns     = RoleStart
+	RoleOf_ContactImportReportRowCreateBulk_OnConflict        = RoleStart
+	RoleOf_ContactImportReportRowCreateBulk_OnConflictColumns = RoleStart
+)
+
 // The types ent generates for ContactTag.
 const (
 	TypeOf_ContactTag             = TypeEntity
@@ -3015,6 +3216,9 @@ const (
 	RoleOf_MembershipClient_QueryOauthCodes       = RoleRead
 	RoleOf_Membership_QueryOauthCodes             = RoleRead
 	RoleOf_MembershipQuery_QueryOauthCodes        = RoleRead
+	RoleOf_MembershipClient_QueryContactImports   = RoleRead
+	RoleOf_Membership_QueryContactImports         = RoleRead
+	RoleOf_MembershipQuery_QueryContactImports    = RoleRead
 	RoleOf_Membership_Update                      = RoleStart
 	RoleOf_MembershipCreate_OnConflict            = RoleStart
 	RoleOf_MembershipCreate_OnConflictColumns     = RoleStart
@@ -5756,6 +5960,15 @@ const (
 	RoleOf_WorkspaceClient_QueryFrequencyCounts             = RoleRead
 	RoleOf_Workspace_QueryFrequencyCounts                   = RoleRead
 	RoleOf_WorkspaceQuery_QueryFrequencyCounts              = RoleRead
+	RoleOf_WorkspaceClient_QueryContactImports              = RoleRead
+	RoleOf_Workspace_QueryContactImports                    = RoleRead
+	RoleOf_WorkspaceQuery_QueryContactImports               = RoleRead
+	RoleOf_WorkspaceClient_QueryContactImportChunks         = RoleRead
+	RoleOf_Workspace_QueryContactImportChunks               = RoleRead
+	RoleOf_WorkspaceQuery_QueryContactImportChunks          = RoleRead
+	RoleOf_WorkspaceClient_QueryContactImportReportRows     = RoleRead
+	RoleOf_Workspace_QueryContactImportReportRows           = RoleRead
+	RoleOf_WorkspaceQuery_QueryContactImportReportRows      = RoleRead
 	RoleOf_WorkspaceClient_QuerySendingWindows              = RoleRead
 	RoleOf_Workspace_QuerySendingWindows                    = RoleRead
 	RoleOf_WorkspaceQuery_QuerySendingWindows               = RoleRead

@@ -1,0 +1,15 @@
+# The file of Globex's upload, still kept (ADR 0138), and a leftover chunk of Acme's ended import.
+- id: 1
+  contact_import_id: 2
+  seq: 0
+  data: 'email'
+  workspace_id: 2
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 2
+  contact_import_id: 1
+  seq: 0
+  data: 'email,first_name'
+  workspace_id: 1
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 3}}'

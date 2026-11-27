@@ -58,6 +58,7 @@ var permissionMatrix = []guarded{
 	{siteapi.PermissionSendingDomainsManage, http.MethodPost, acmePath("/sending-domains/" + testhelper.ID(999999) + "/verify"), "", noRecord, noRecord, refused},
 	{siteapi.PermissionContactsErase, http.MethodGet, acmePath("/contacts/lookup?email=nobody@example.com"), "", ok, ok, refused},
 	{siteapi.PermissionContactsExport, http.MethodPost, acmePath("/contacts/export?id=" + testhelper.ID(999999)), "", noRecord, noRecord, refused},
+	{siteapi.PermissionContactsImport, http.MethodGet, acmePath("/contact-imports/" + testhelper.ID(999999)), "", noRecord, noRecord, refused},
 	{siteapi.PermissionCustomFieldsManage, http.MethodPut, acmePath("/custom-fields/" + testhelper.ID(999999)), `{"revision":1,"name":"x"}`, noRecord, noRecord, refused},
 	{siteapi.PermissionSuppressionsManage, http.MethodDelete, acmePath("/suppressions/" + testhelper.ID(999999)), "", noRecord, noRecord, refused},
 	{siteapi.PermissionSecondFactorManage, http.MethodPost, acmePath("/memberships/" + testhelper.ID(999999) + "/reset-second-factor"), "", noRecord, noRecord, refused},
