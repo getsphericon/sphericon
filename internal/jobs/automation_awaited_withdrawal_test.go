@@ -47,7 +47,7 @@ func publishedAwaiting(t *testing.T, env *testhelper.TestEnv, trigger, name, act
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := testhelper.Module[*automations.Module](env)
 	wait := automationstep.Step{ID: automationstep.NewID(), Payload: automationstep.WaitForEvent{
-		Name: name, TimeoutSeconds: 3600, Awaits: automationstep.AwaitedEvent{Actions: []string{action}},
+		Name: name, TimeoutSeconds: 3600, Awaits: automationstep.AwaitedEvent{Matchers: []eventmatcher.Matcher{{Action: action}}},
 		Arrived: plainPath(automationstep.NewID()), TimedOut: plainPath(automationstep.NewID()),
 	}}
 	steps := lo.Flatten([][]automationstep.Step{before, {wait, {ID: automationstep.NewID(), Payload: automationstep.Wait{Seconds: 3600}}}, after})
