@@ -162,7 +162,7 @@ func TestMCPWritesAWaitUntilOnADateAndRefusesAFieldThatIsNoDatetime(t *testing.T
 func TestMCPWritesAndReadsBackAWaitForEvent(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.MCPClient(t, env.ScopedBearer(t, apitokens.ScopeAutomationsRead, apitokens.ScopeAutomationsWrite))
-	awaits := map[string]any{"kind": "event", "actions": []any{"order.created"}}
+	awaits := map[string]any{"kind": "event", "matchers": []any{map[string]any{"action": "order.created"}}}
 	thanks := map[string]any{"type": "apply_tag", "tag": "buyer"}
 	created := call(t, s, "automations_create", map[string]any{"name": "Agent's purchase wait", "trigger": map[string]any{"kind": "event", "action": "signup"},
 		"steps": map[string]any{"steps": []any{map[string]any{

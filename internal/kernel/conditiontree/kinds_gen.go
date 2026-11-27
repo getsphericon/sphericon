@@ -63,6 +63,20 @@ var BranchKinds = []Kind{
 	KindStepMessage,
 }
 
+// WaitForEventKinds is every Kind a Wait for event's Condition admits.
+var WaitForEventKinds = []Kind{
+	KindGroup,
+	KindAttribute,
+	KindBirthday,
+	KindTag,
+	KindTelegram,
+	KindSms,
+	KindEngagementTracking,
+	KindCustomField,
+	KindEvent,
+	KindProperty,
+}
+
 // EventFilterKinds is every Kind an Event filter admits.
 var EventFilterKinds = []Kind{
 	KindGroup,
@@ -131,5 +145,10 @@ var RuleSources = []Source{
 
 // BranchSources is every Source a Branch path's property leaf reads.
 var BranchSources = []Source{
+	SourceTrigger,
+}
+
+// WaitForEventSources is every Source a Wait for event's property leaf reads.
+var WaitForEventSources = []Source{
 	SourceTrigger,
 }

@@ -41,7 +41,7 @@ func waitingForAPurchase(t *testing.T, env *testhelper.TestEnv) (automationID, r
 	m := testhelper.Module[*automations.Module](env)
 	steps := automationstep.Root(
 		automationstep.New(automationstep.WaitForEvent{
-			Name: "purchase", TimeoutSeconds: 3600, Awaits: automationstep.AwaitedEvent{Actions: []string{"order.created"}},
+			Name: "purchase", TimeoutSeconds: 3600, Awaits: automationstep.AwaitedEvent{Matchers: []eventmatcher.Matcher{{Action: "order.created"}}},
 			Arrived: automationstep.Root(), TimedOut: automationstep.Root(),
 		}),
 		automationstep.New(automationstep.Wait{Seconds: 3600}),
