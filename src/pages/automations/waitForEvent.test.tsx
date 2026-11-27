@@ -321,6 +321,7 @@ test('switching to an open or click adds the unknown path and picks a send Step 
   await panel.getByText('An open or click').click()
   await expect.element(screen.getByRole('button', { name: /^Unknown/ })).toBeVisible()
   await panel.getByLabelText('Message', { exact: true }).first().click()
+  await expect.element(screen.getByRole('option', { name: '1. Send email: Welcome' })).toBeVisible()
   await expect.element(screen.getByRole('option', { name: /SMS/ })).not.toBeInTheDocument()
   await expect.element(screen.getByRole('option', { name: /Later/ })).not.toBeInTheDocument()
   await screen.getByRole('option', { name: '1. Send email: Welcome' }).click()
@@ -354,6 +355,31 @@ test('switching back to an Event with Steps in the unknown path asks first, nami
     )
     .toBeVisible()
   await screen.getByRole('button', { name: 'Remove', exact: true }).click()
+  await panelOf(screen).getByRole('combobox', { name: 'Event' }).fill('order.created')
+  await save(screen)
+
+  await expect.poll(saved).toEqual([
+    [
+      WELCOME,
+      {
+        id: stepId(20),
+        type: 'wait_for_event',
+        name: 'opened',
+        timeoutSeconds: 86_400,
+        awaits: { kind: 'event', matchers: [{ action: 'order.created' }] },
+        arrived: { id: stepId(21), steps: [] },
+        timedOut: { id: stepId(22), steps: [] },
+      },
+    ],
+  ])
+})
+
+// One stored without its unknown path switches to an Event as well: no path goes with it.
+test('a wait for an open stored without its unknown path switches to an Event', async () => {
+  const { screen, saved } = await editing([WELCOME, opened(null)])
+
+  await nodeButton(screen, 'Wait for event').click()
+  await panelOf(screen).getByText('An event', { exact: true }).click()
   await panelOf(screen).getByRole('combobox', { name: 'Event' }).fill('order.created')
   await save(screen)
 

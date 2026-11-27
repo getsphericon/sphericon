@@ -93,7 +93,8 @@ function StepBody({
   if (step.kind === 'wait_for_event') {
     return (
       <WaitForEventForm
-        key={key}
+        // It opens anew when what it awaits is switched: the switch is the flow's edit, not its form's.
+        key={`${key}:${step.draft.form}`}
         root={root}
         step={step}
         storedName={forks.storedName(step.id)}
