@@ -1145,11 +1145,13 @@ type Invoker interface {
 	SiteSecondFactorStartEnrollment(ctx context.Context, request *SiteSecondFactorStartInput) (*SiteSecondFactorEnrollment, error)
 	// SiteSegmentContactsList invokes SiteSegmentContacts_list operation.
 	//
-	// List the contacts a segment matches right now, evaluated live, ascending by id. A stored condition
-	// that no longer fits the contact schema is a 422.
+	// List the contacts a segment matches right now, evaluated live, ascending by id, read by a cursor on
+	// the contact id: a contact that joins while the pages are read neither shifts a page nor comes twice.
+	// A stored condition that no longer fits the contact schema is a 422; a cursor no page handed out is a
+	// 400.
 	//
 	// GET /workspaces/{workspaceId}/segments/{segmentId}/contacts
-	SiteSegmentContactsList(ctx context.Context, params SiteSegmentContactsListParams) (*SiteSegmentContactsListOK, error)
+	SiteSegmentContactsList(ctx context.Context, params SiteSegmentContactsListParams) (*SiteSegmentContactList, error)
 	// SiteSegmentsArchive invokes SiteSegments_archive operation.
 	//
 	// Archive a resource: it leaves the list and new work, keeps its history, and can be restored. Refused
@@ -23224,16 +23226,18 @@ func (c *Client) sendSiteSecondFactorStartEnrollment(ctx context.Context, reques
 
 // SiteSegmentContactsList invokes SiteSegmentContacts_list operation.
 //
-// List the contacts a segment matches right now, evaluated live, ascending by id. A stored condition
-// that no longer fits the contact schema is a 422.
+// List the contacts a segment matches right now, evaluated live, ascending by id, read by a cursor on
+// the contact id: a contact that joins while the pages are read neither shifts a page nor comes twice.
+// A stored condition that no longer fits the contact schema is a 422; a cursor no page handed out is a
+// 400.
 //
 // GET /workspaces/{workspaceId}/segments/{segmentId}/contacts
-func (c *Client) SiteSegmentContactsList(ctx context.Context, params SiteSegmentContactsListParams) (*SiteSegmentContactsListOK, error) {
+func (c *Client) SiteSegmentContactsList(ctx context.Context, params SiteSegmentContactsListParams) (*SiteSegmentContactList, error) {
 	res, err := c.sendSiteSegmentContactsList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteSegmentContactsList(ctx context.Context, params SiteSegmentContactsListParams) (res *SiteSegmentContactsListOK, err error) {
+func (c *Client) sendSiteSegmentContactsList(ctx context.Context, params SiteSegmentContactsListParams) (res *SiteSegmentContactList, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteSegmentContacts_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -23321,16 +23325,16 @@ func (c *Client) sendSiteSegmentContactsList(ctx context.Context, params SiteSeg
 	stage = "EncodeQueryParams"
 	q := uri.NewQueryEncoder()
 	{
-		// Encode "page" parameter.
+		// Encode "cursor" parameter.
 		cfg := uri.QueryParameterEncodingConfig{
-			Name:    "page",
+			Name:    "cursor",
 			Style:   uri.QueryStyleForm,
 			Explode: false,
 		}
 
 		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
-			if val, ok := params.Page.Get(); ok {
-				return e.EncodeValue(conv.Int32ToString(val))
+			if val, ok := params.Cursor.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
 			}
 			return nil
 		}); err != nil {
@@ -23338,15 +23342,15 @@ func (c *Client) sendSiteSegmentContactsList(ctx context.Context, params SiteSeg
 		}
 	}
 	{
-		// Encode "pageSize" parameter.
+		// Encode "limit" parameter.
 		cfg := uri.QueryParameterEncodingConfig{
-			Name:    "pageSize",
+			Name:    "limit",
 			Style:   uri.QueryStyleForm,
 			Explode: false,
 		}
 
 		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
-			if val, ok := params.PageSize.Get(); ok {
+			if val, ok := params.Limit.Get(); ok {
 				return e.EncodeValue(conv.Int32ToString(val))
 			}
 			return nil

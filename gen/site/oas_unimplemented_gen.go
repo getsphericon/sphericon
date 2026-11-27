@@ -1575,11 +1575,13 @@ func (UnimplementedHandler) SiteSecondFactorStartEnrollment(ctx context.Context,
 
 // SiteSegmentContactsList implements SiteSegmentContacts_list operation.
 //
-// List the contacts a segment matches right now, evaluated live, ascending by id. A stored condition
-// that no longer fits the contact schema is a 422.
+// List the contacts a segment matches right now, evaluated live, ascending by id, read by a cursor on
+// the contact id: a contact that joins while the pages are read neither shifts a page nor comes twice.
+// A stored condition that no longer fits the contact schema is a 422; a cursor no page handed out is a
+// 400.
 //
 // GET /workspaces/{workspaceId}/segments/{segmentId}/contacts
-func (UnimplementedHandler) SiteSegmentContactsList(ctx context.Context, params SiteSegmentContactsListParams) (r *SiteSegmentContactsListOK, _ error) {
+func (UnimplementedHandler) SiteSegmentContactsList(ctx context.Context, params SiteSegmentContactsListParams) (r *SiteSegmentContactList, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

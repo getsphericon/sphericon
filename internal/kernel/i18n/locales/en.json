@@ -219,6 +219,7 @@
   "errors.segment_not_found": "segment not found",
   "errors.segment_archived": "the segment is archived: unarchive it to change it",
   "errors.segment_revision_changed": "the segment changed since it was opened",
+  "errors.segment_cursor_invalid": "the cursor is not one a page of the segment's contacts returned",
   "errors.automation_exit_event_invalid": "invalid exit event",
   "errors.automation_goal_event_invalid": "invalid goal event",
   "errors.automation_integration_not_found": "integration not found",

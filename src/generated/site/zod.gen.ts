@@ -4413,6 +4413,14 @@ export const zSiteCreatePersonalTokenResponse = z.object({
 });
 
 /**
+ * A page of the contacts a segment matches
+ */
+export const zSiteSegmentContactList = z.object({
+  items: z.array(zSiteContactResource),
+  nextCursor: z.string().nullable().exactOptional()
+});
+
+/**
  * The Workspace's Setup checklist: its steps are read now, never ticked by hand, and the read
  * that first finds every step done stamps the Workspace, which keeps it complete for good
  */
@@ -8532,20 +8540,14 @@ export const zSiteSegmentContactsListPath = z.object({
 });
 
 export const zSiteSegmentContactsListQuery = z.object({
-  page: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
-  pageSize: z.int().gte(1).lte(100).optional().default(25)
+  cursor: z.string().exactOptional(),
+  limit: z.int().gte(1).lte(100).optional().default(25)
 });
 
 /**
- * Paginated response
+ * The request has succeeded.
  */
-export const zSiteSegmentContactsListResponse = z.object({
-  items: z.array(zSiteContactResource),
-  page: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  totalItems: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  totalPages: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
-});
+export const zSiteSegmentContactsListResponse = zSiteSegmentContactList;
 
 export const zSiteSendingDomainsListPath = z.object({
   workspaceId: zWorkspaceId

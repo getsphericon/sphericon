@@ -329,6 +329,7 @@ var (
 	ErrorsSecondFactorResetSelf                           = ID{key: "errors.second_factor_reset_self"}
 	ErrorsSegmentArchived                                 = ID{key: "errors.segment_archived"}
 	ErrorsSegmentConditionInvalid                         = ID{key: "errors.segment_condition_invalid"}
+	ErrorsSegmentCursorInvalid                            = ID{key: "errors.segment_cursor_invalid"}
 	ErrorsSegmentInvalid                                  = ID{key: "errors.segment_invalid"}
 	ErrorsSegmentNotFound                                 = ID{key: "errors.segment_not_found"}
 	ErrorsSegmentRevisionChanged                          = ID{key: "errors.segment_revision_changed"}

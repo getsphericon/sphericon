@@ -15176,7 +15176,7 @@ func (s *SiteSaveBrandKitInput) Validate() error {
 	return nil
 }
 
-func (s *SiteSegmentContactsListOK) Validate() error {
+func (s *SiteSegmentContactList) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
 	}

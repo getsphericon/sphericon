@@ -8671,6 +8671,17 @@ export type SiteSecondFactorStatus = {
 };
 
 /**
+ * A page of the contacts a segment matches
+ */
+export type SiteSegmentContactList = {
+  items: Array<SiteContactResource>;
+  /**
+   * Pass as `cursor` for the next page; absent on the last page
+   */
+  nextCursor?: string | null;
+};
+
+/**
  * Segment resource used by the site UI
  */
 export type SiteSegmentResource = {
@@ -19247,13 +19258,13 @@ export type SiteSegmentContactsListData = {
   };
   query?: {
     /**
-     * Page number (1-based)
+     * Cursor from a previous page
      */
-    page?: number;
+    cursor?: string;
     /**
      * Page size
      */
-    pageSize?: number;
+    limit?: number;
   };
   url: '/workspaces/{workspaceId}/segments/{segmentId}/contacts';
 };
@@ -19274,30 +19285,9 @@ export type SiteSegmentContactsListError = SiteSegmentContactsListErrors[keyof S
 
 export type SiteSegmentContactsListResponses = {
   /**
-   * Paginated response
+   * The request has succeeded.
    */
-  200: {
-    /**
-     * List of items
-     */
-    items: Array<SiteContactResource>;
-    /**
-     * Page number (1-based)
-     */
-    page: number;
-    /**
-     * Page size
-     */
-    pageSize: number;
-    /**
-     * Total number of elements
-     */
-    totalItems: number;
-    /**
-     * Total number of pages
-     */
-    totalPages: number;
-  };
+  200: SiteSegmentContactList;
 };
 
 export type SiteSegmentContactsListResponse = SiteSegmentContactsListResponses[keyof SiteSegmentContactsListResponses];

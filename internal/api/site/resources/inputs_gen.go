@@ -983,6 +983,17 @@ func (c *InputsImpl) SecondFactorRequire(source *site.RevisionInput) workspacevi
 	}
 	return workspaceviewSetSecondFactorRequirementInput
 }
+func (c *InputsImpl) SegmentContactsPage(source site.SiteSegmentContactsListParams) (segments.ContactsInput, error) {
+	var segmentsContactsInput segments.ContactsInput
+	segmentsContactsInput.SegmentID = segmentIDPtrIn(source.SegmentId)
+	xint64, err := segmentCursorIn(source.Cursor)
+	if err != nil {
+		return segmentsContactsInput, err
+	}
+	segmentsContactsInput.After = xint64
+	segmentsContactsInput.Limit = limitIn(source.Limit)
+	return segmentsContactsInput, nil
+}
 func (c *InputsImpl) SegmentCreate(source *site.CreateSegmentInput) (segments.CreateInput, error) {
 	var segmentsCreateInput segments.CreateInput
 	if source != nil {
