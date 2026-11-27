@@ -301,8 +301,8 @@ var Bounds = []Bound{
 		Spec: site, Schema: "WaitForEventName", Owners: []string{automationVersion},
 	},
 	{
-		Name: "AwaitedActions", Doc: "are the Event actions a Wait for event waits for (ADR 0124).",
-		Spec: site, Schema: "AwaitedEventInput", Property: "actions", Owners: []string{automationVersion},
+		Name: "AwaitedMatchers", Doc: "are the Event matchers a Wait for event waits for (ADR 0124, ADR 0180).",
+		Spec: site, Schema: "AwaitedEventInput", Property: "matchers", Owners: []string{automationVersion},
 	},
 	{
 		Name: "ConditionWithinDays", Doc: "is how many days back a condition looks: an Event count's window or a moment's within the last days.",

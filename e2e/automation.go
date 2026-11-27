@@ -320,7 +320,7 @@ func (w *Workspace) PublishWaitForEventAutomation(a WaitForEventAutomation) exte
 		Name:           "awaited",
 		TimeoutSeconds: narrow.Int32(int64(a.Timeout / time.Second)),
 		Awaits: externalapi.WaitForEventAwaitsInput{OneOf: externalapi.NewAwaitedEventInputWaitForEventAwaitsInputSum(
-			externalapi.AwaitedEventInput{Kind: externalapi.AwaitedEventInputKindEvent, Actions: []string{a.Awaited}},
+			externalapi.AwaitedEventInput{Kind: externalapi.AwaitedEventInputKindEvent, Matchers: []externalapi.EventMatcherInput{{Action: a.Awaited}}},
 		)},
 		Arrived:  externalapi.AutomationPathInput{Steps: []externalapi.AutomationStepInput{email(a.ArrivedSubject)}},
 		TimedOut: externalapi.AutomationPathInput{Steps: []externalapi.AutomationStepInput{email(a.TimedOutSubject)}},

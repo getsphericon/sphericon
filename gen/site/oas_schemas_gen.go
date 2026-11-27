@@ -3879,12 +3879,16 @@ func (s *AutomationWaitUntilFigures) SetBeyondBound(val int32) {
 	s.BeyondBound = val
 }
 
-// A Wait for event waits for an Event of one of the actions it names (ADR 0124).
+// A Wait for event waits for an Event one of its Event matchers matches, on the Contact its Condition,
+// if any, holds for (ADR 0124, ADR 0180).
 // Ref: #/components/schemas/AwaitedEvent
 type AwaitedEvent struct {
 	Kind AwaitedEventKind `json:"kind"`
-	// The Event actions it waits for, each at most once.
-	Actions []string `json:"actions"`
+	// The Event matchers it waits for: an Event of a matcher's action whose properties pass its filter.
+	Matchers []EventMatcher `json:"matchers"`
+	// The tests the Contact and the Event the Enrollment began with must pass when the Event is handled;
+	// absent, every matching Event arrives.
+	Condition OptWaitForEventCondition `json:"condition"`
 }
 
 // GetKind returns the value of Kind.
@@ -3892,9 +3896,14 @@ func (s *AwaitedEvent) GetKind() AwaitedEventKind {
 	return s.Kind
 }
 
-// GetActions returns the value of Actions.
-func (s *AwaitedEvent) GetActions() []string {
-	return s.Actions
+// GetMatchers returns the value of Matchers.
+func (s *AwaitedEvent) GetMatchers() []EventMatcher {
+	return s.Matchers
+}
+
+// GetCondition returns the value of Condition.
+func (s *AwaitedEvent) GetCondition() OptWaitForEventCondition {
+	return s.Condition
 }
 
 // SetKind sets the value of Kind.
@@ -3902,19 +3911,29 @@ func (s *AwaitedEvent) SetKind(val AwaitedEventKind) {
 	s.Kind = val
 }
 
-// SetActions sets the value of Actions.
-func (s *AwaitedEvent) SetActions(val []string) {
-	s.Actions = val
+// SetMatchers sets the value of Matchers.
+func (s *AwaitedEvent) SetMatchers(val []EventMatcher) {
+	s.Matchers = val
 }
 
-// A Wait for event waits for an Event of one of the actions it names, as a request writes it.
+// SetCondition sets the value of Condition.
+func (s *AwaitedEvent) SetCondition(val OptWaitForEventCondition) {
+	s.Condition = val
+}
+
+// A Wait for event waits for an Event one of its Event matchers matches, as a request writes it.
 // Ref: #/components/schemas/AwaitedEventInput
 type AwaitedEventInput struct {
 	Kind AwaitedEventInputKind `json:"kind"`
-	// The Event actions it waits for, at least one, each at most once. An action an exit or the goal of
-	// the version matches with no filter refuses the save, naming the Step: that Event would end the
-	// enrollment, never take `arrived`.
-	Actions []string `json:"actions"`
+	// The Event matchers it waits for, at least one, none twice: an Event of a matcher's action whose
+	// properties pass its filter. A matcher on an action an exit or the goal of the version matches with
+	// no filter refuses the save, naming the Step: that Event would end the enrollment, never take
+	// `arrived`.
+	Matchers []EventMatcherInput `json:"matchers"`
+	// The tests the Contact and the Event the Enrollment began with must pass when the Event is handled,
+	// read on the Contact's live data; false and unknown leave the Enrollment waiting. Omitted, every
+	// matching Event arrives.
+	Condition OptWaitForEventConditionInput `json:"condition"`
 }
 
 // GetKind returns the value of Kind.
@@ -3922,9 +3941,14 @@ func (s *AwaitedEventInput) GetKind() AwaitedEventInputKind {
 	return s.Kind
 }
 
-// GetActions returns the value of Actions.
-func (s *AwaitedEventInput) GetActions() []string {
-	return s.Actions
+// GetMatchers returns the value of Matchers.
+func (s *AwaitedEventInput) GetMatchers() []EventMatcherInput {
+	return s.Matchers
+}
+
+// GetCondition returns the value of Condition.
+func (s *AwaitedEventInput) GetCondition() OptWaitForEventConditionInput {
+	return s.Condition
 }
 
 // SetKind sets the value of Kind.
@@ -3932,9 +3956,14 @@ func (s *AwaitedEventInput) SetKind(val AwaitedEventInputKind) {
 	s.Kind = val
 }
 
-// SetActions sets the value of Actions.
-func (s *AwaitedEventInput) SetActions(val []string) {
-	s.Actions = val
+// SetMatchers sets the value of Matchers.
+func (s *AwaitedEventInput) SetMatchers(val []EventMatcherInput) {
+	s.Matchers = val
+}
+
+// SetCondition sets the value of Condition.
+func (s *AwaitedEventInput) SetCondition(val OptWaitForEventConditionInput) {
+	s.Condition = val
 }
 
 type AwaitedEventInputKind string
@@ -12619,9 +12648,10 @@ func (s *EventLeafKind) UnmarshalText(data []byte) error {
 	}
 }
 
-// An Event matcher that ends an enrollment (ADR 0133): an action, and an optional filter on that
-// Event's own properties, so `order.closed` where `status` is `cancelled` exits and the same action
-// where `status` is `paid` reaches the goal. The Event that began the enrollment never ends it.
+// An Event matcher that ends an enrollment or that a Wait for event awaits (ADR 0133): an action, and
+// an optional filter on that Event's own properties, so `order.closed` where `status` is `cancelled`
+// exits and the same action where `status` is `paid` reaches the goal. The Event that began the
+// enrollment never ends it.
 // Ref: #/components/schemas/EventMatcher
 type EventMatcher struct {
 	// The Event action (e.g. "plan_downgraded", "contact.tagged"). Any customer action; of the email
@@ -12654,7 +12684,8 @@ func (s *EventMatcher) SetFilter(val OptEventFilter) {
 	s.Filter = val
 }
 
-// An Event matcher that ends an enrollment (ADR 0133), as a request writes it.
+// An Event matcher that ends an enrollment or that a Wait for event awaits (ADR 0133), as a request
+// writes it.
 // Ref: #/components/schemas/EventMatcherInput
 type EventMatcherInput struct {
 	// The Event action (e.g. "plan_downgraded", "contact.tagged"). Any customer action; of the email
@@ -20535,6 +20566,98 @@ func (o OptUserName) Get() (v UserName, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptUserName) Or(d UserName) UserName {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptWaitForEventCondition returns new OptWaitForEventCondition with value set to v.
+func NewOptWaitForEventCondition(v WaitForEventCondition) OptWaitForEventCondition {
+	return OptWaitForEventCondition{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptWaitForEventCondition is optional WaitForEventCondition.
+type OptWaitForEventCondition struct {
+	Value WaitForEventCondition
+	Set   bool
+}
+
+// IsSet returns true if OptWaitForEventCondition was set.
+func (o OptWaitForEventCondition) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptWaitForEventCondition) Reset() {
+	var v WaitForEventCondition
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptWaitForEventCondition) SetTo(v WaitForEventCondition) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptWaitForEventCondition) Get() (v WaitForEventCondition, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptWaitForEventCondition) Or(d WaitForEventCondition) WaitForEventCondition {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptWaitForEventConditionInput returns new OptWaitForEventConditionInput with value set to v.
+func NewOptWaitForEventConditionInput(v WaitForEventConditionInput) OptWaitForEventConditionInput {
+	return OptWaitForEventConditionInput{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptWaitForEventConditionInput is optional WaitForEventConditionInput.
+type OptWaitForEventConditionInput struct {
+	Value WaitForEventConditionInput
+	Set   bool
+}
+
+// IsSet returns true if OptWaitForEventConditionInput was set.
+func (o OptWaitForEventConditionInput) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptWaitForEventConditionInput) Reset() {
+	var v WaitForEventConditionInput
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptWaitForEventConditionInput) SetTo(v WaitForEventConditionInput) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptWaitForEventConditionInput) Get() (v WaitForEventConditionInput, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptWaitForEventConditionInput) Or(d WaitForEventConditionInput) WaitForEventConditionInput {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -44947,14 +45070,1105 @@ func NewAwaitedEventWaitForEventAwaitsSum(v AwaitedEvent) WaitForEventAwaitsSum 
 	return s
 }
 
+// A Wait for event's Condition (ADR 0124, ADR 0180): the tree of tests the Contact, on its live data
+// when the awaited Event is handled, and the Event the Enrollment began with match. An Event its
+// matcher matches arrives only when the Condition holds; false and unknown leave the Enrollment
+// waiting.
+// Ref: #/components/schemas/WaitForEventCondition
+type WaitForEventCondition struct {
+	Kind WaitForEventConditionKind `json:"kind"`
+	// How the entries combine.
+	Combinator ConditionCombinator `json:"combinator"`
+	// Negate the whole group.
+	Not OptBool `json:"not"`
+	// The group's tests and nested groups.
+	Entries []WaitForEventConditionNode `json:"entries"`
+}
+
+// GetKind returns the value of Kind.
+func (s *WaitForEventCondition) GetKind() WaitForEventConditionKind {
+	return s.Kind
+}
+
+// GetCombinator returns the value of Combinator.
+func (s *WaitForEventCondition) GetCombinator() ConditionCombinator {
+	return s.Combinator
+}
+
+// GetNot returns the value of Not.
+func (s *WaitForEventCondition) GetNot() OptBool {
+	return s.Not
+}
+
+// GetEntries returns the value of Entries.
+func (s *WaitForEventCondition) GetEntries() []WaitForEventConditionNode {
+	return s.Entries
+}
+
+// SetKind sets the value of Kind.
+func (s *WaitForEventCondition) SetKind(val WaitForEventConditionKind) {
+	s.Kind = val
+}
+
+// SetCombinator sets the value of Combinator.
+func (s *WaitForEventCondition) SetCombinator(val ConditionCombinator) {
+	s.Combinator = val
+}
+
+// SetNot sets the value of Not.
+func (s *WaitForEventCondition) SetNot(val OptBool) {
+	s.Not = val
+}
+
+// SetEntries sets the value of Entries.
+func (s *WaitForEventCondition) SetEntries(val []WaitForEventConditionNode) {
+	s.Entries = val
+}
+
+// A Wait for event's Condition (ADR 0124, ADR 0180): the tree of tests the Contact, on its live data
+// when the awaited Event is handled, and the Event the Enrollment began with match. An Event its
+// matcher matches arrives only when the Condition holds; false and unknown leave the Enrollment
+// waiting.
+// Ref: #/components/schemas/WaitForEventConditionInput
+type WaitForEventConditionInput struct {
+	Kind WaitForEventConditionInputKind `json:"kind"`
+	// How the entries combine.
+	Combinator ConditionCombinator `json:"combinator"`
+	// Negate the whole group.
+	Not OptBool `json:"not"`
+	// The group's tests and nested groups.
+	Entries []WaitForEventConditionNodeInput `json:"entries"`
+}
+
+// GetKind returns the value of Kind.
+func (s *WaitForEventConditionInput) GetKind() WaitForEventConditionInputKind {
+	return s.Kind
+}
+
+// GetCombinator returns the value of Combinator.
+func (s *WaitForEventConditionInput) GetCombinator() ConditionCombinator {
+	return s.Combinator
+}
+
+// GetNot returns the value of Not.
+func (s *WaitForEventConditionInput) GetNot() OptBool {
+	return s.Not
+}
+
+// GetEntries returns the value of Entries.
+func (s *WaitForEventConditionInput) GetEntries() []WaitForEventConditionNodeInput {
+	return s.Entries
+}
+
+// SetKind sets the value of Kind.
+func (s *WaitForEventConditionInput) SetKind(val WaitForEventConditionInputKind) {
+	s.Kind = val
+}
+
+// SetCombinator sets the value of Combinator.
+func (s *WaitForEventConditionInput) SetCombinator(val ConditionCombinator) {
+	s.Combinator = val
+}
+
+// SetNot sets the value of Not.
+func (s *WaitForEventConditionInput) SetNot(val OptBool) {
+	s.Not = val
+}
+
+// SetEntries sets the value of Entries.
+func (s *WaitForEventConditionInput) SetEntries(val []WaitForEventConditionNodeInput) {
+	s.Entries = val
+}
+
+type WaitForEventConditionInputKind string
+
+const (
+	WaitForEventConditionInputKindGroup WaitForEventConditionInputKind = "group"
+)
+
+// AllValues returns all WaitForEventConditionInputKind values.
+func (WaitForEventConditionInputKind) AllValues() []WaitForEventConditionInputKind {
+	return []WaitForEventConditionInputKind{
+		WaitForEventConditionInputKindGroup,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s WaitForEventConditionInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case WaitForEventConditionInputKindGroup:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *WaitForEventConditionInputKind) UnmarshalText(data []byte) error {
+	switch WaitForEventConditionInputKind(data) {
+	case WaitForEventConditionInputKindGroup:
+		*s = WaitForEventConditionInputKindGroup
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type WaitForEventConditionKind string
+
+const (
+	WaitForEventConditionKindGroup WaitForEventConditionKind = "group"
+)
+
+// AllValues returns all WaitForEventConditionKind values.
+func (WaitForEventConditionKind) AllValues() []WaitForEventConditionKind {
+	return []WaitForEventConditionKind{
+		WaitForEventConditionKindGroup,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s WaitForEventConditionKind) MarshalText() ([]byte, error) {
+	switch s {
+	case WaitForEventConditionKindGroup:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *WaitForEventConditionKind) UnmarshalText(data []byte) error {
+	switch WaitForEventConditionKind(data) {
+	case WaitForEventConditionKindGroup:
+		*s = WaitForEventConditionKindGroup
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// An entry of a Wait for event's Condition, by `kind`: a Rule's, and the property test reading the
+// Event the Enrollment began with. The test of the Enrollment's own message is a Branch's only: a Wait
+// for event on an open or click waits for one.
+// Ref: #/components/schemas/WaitForEventConditionNode
+type WaitForEventConditionNode struct {
+	OneOf WaitForEventConditionNodeSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *WaitForEventConditionNode) GetOneOf() WaitForEventConditionNodeSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *WaitForEventConditionNode) SetOneOf(val WaitForEventConditionNodeSum) {
+	s.OneOf = val
+}
+
+// An entry of a Wait for event's Condition, by `kind`: a Rule's, and the property test reading the
+// Event the Enrollment began with. The test of the Enrollment's own message is a Branch's only: a Wait
+// for event on an open or click waits for one.
+// Ref: #/components/schemas/WaitForEventConditionNodeInput
+type WaitForEventConditionNodeInput struct {
+	OneOf WaitForEventConditionNodeInputSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *WaitForEventConditionNodeInput) GetOneOf() WaitForEventConditionNodeInputSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *WaitForEventConditionNodeInput) SetOneOf(val WaitForEventConditionNodeInputSum) {
+	s.OneOf = val
+}
+
+// WaitForEventConditionNodeInputSum represents sum type.
+type WaitForEventConditionNodeInputSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type                          WaitForEventConditionNodeInputSumType
+	WaitForEventConditionInput    WaitForEventConditionInput
+	AttributeLeafInput            AttributeLeafInput
+	BirthdayLeafInput             BirthdayLeafInput
+	TagLeafInput                  TagLeafInput
+	TelegramLeafInput             TelegramLeafInput
+	SmsLeafInput                  SmsLeafInput
+	EngagementTrackingLeafInput   EngagementTrackingLeafInput
+	CustomFieldLeafInput          CustomFieldLeafInput
+	EventLeafInput                EventLeafInput
+	WaitForEventPropertyLeafInput WaitForEventPropertyLeafInput
+}
+
+// WaitForEventConditionNodeInputSumType is oneOf type of WaitForEventConditionNodeInputSum.
+type WaitForEventConditionNodeInputSumType string
+
+// Possible values for WaitForEventConditionNodeInputSumType.
+const (
+	WaitForEventConditionInputWaitForEventConditionNodeInputSum    WaitForEventConditionNodeInputSumType = "group"
+	AttributeLeafInputWaitForEventConditionNodeInputSum            WaitForEventConditionNodeInputSumType = "attribute"
+	BirthdayLeafInputWaitForEventConditionNodeInputSum             WaitForEventConditionNodeInputSumType = "birthday"
+	TagLeafInputWaitForEventConditionNodeInputSum                  WaitForEventConditionNodeInputSumType = "tag"
+	TelegramLeafInputWaitForEventConditionNodeInputSum             WaitForEventConditionNodeInputSumType = "telegram"
+	SmsLeafInputWaitForEventConditionNodeInputSum                  WaitForEventConditionNodeInputSumType = "sms"
+	EngagementTrackingLeafInputWaitForEventConditionNodeInputSum   WaitForEventConditionNodeInputSumType = "engagementTracking"
+	CustomFieldLeafInputWaitForEventConditionNodeInputSum          WaitForEventConditionNodeInputSumType = "customField"
+	EventLeafInputWaitForEventConditionNodeInputSum                WaitForEventConditionNodeInputSumType = "event"
+	WaitForEventPropertyLeafInputWaitForEventConditionNodeInputSum WaitForEventConditionNodeInputSumType = "property"
+)
+
+// IsWaitForEventConditionInput reports whether WaitForEventConditionNodeInputSum is WaitForEventConditionInput.
+func (s WaitForEventConditionNodeInputSum) IsWaitForEventConditionInput() bool {
+	return s.Type == WaitForEventConditionInputWaitForEventConditionNodeInputSum
+}
+
+// IsAttributeLeafInput reports whether WaitForEventConditionNodeInputSum is AttributeLeafInput.
+func (s WaitForEventConditionNodeInputSum) IsAttributeLeafInput() bool {
+	return s.Type == AttributeLeafInputWaitForEventConditionNodeInputSum
+}
+
+// IsBirthdayLeafInput reports whether WaitForEventConditionNodeInputSum is BirthdayLeafInput.
+func (s WaitForEventConditionNodeInputSum) IsBirthdayLeafInput() bool {
+	return s.Type == BirthdayLeafInputWaitForEventConditionNodeInputSum
+}
+
+// IsTagLeafInput reports whether WaitForEventConditionNodeInputSum is TagLeafInput.
+func (s WaitForEventConditionNodeInputSum) IsTagLeafInput() bool {
+	return s.Type == TagLeafInputWaitForEventConditionNodeInputSum
+}
+
+// IsTelegramLeafInput reports whether WaitForEventConditionNodeInputSum is TelegramLeafInput.
+func (s WaitForEventConditionNodeInputSum) IsTelegramLeafInput() bool {
+	return s.Type == TelegramLeafInputWaitForEventConditionNodeInputSum
+}
+
+// IsSmsLeafInput reports whether WaitForEventConditionNodeInputSum is SmsLeafInput.
+func (s WaitForEventConditionNodeInputSum) IsSmsLeafInput() bool {
+	return s.Type == SmsLeafInputWaitForEventConditionNodeInputSum
+}
+
+// IsEngagementTrackingLeafInput reports whether WaitForEventConditionNodeInputSum is EngagementTrackingLeafInput.
+func (s WaitForEventConditionNodeInputSum) IsEngagementTrackingLeafInput() bool {
+	return s.Type == EngagementTrackingLeafInputWaitForEventConditionNodeInputSum
+}
+
+// IsCustomFieldLeafInput reports whether WaitForEventConditionNodeInputSum is CustomFieldLeafInput.
+func (s WaitForEventConditionNodeInputSum) IsCustomFieldLeafInput() bool {
+	return s.Type == CustomFieldLeafInputWaitForEventConditionNodeInputSum
+}
+
+// IsEventLeafInput reports whether WaitForEventConditionNodeInputSum is EventLeafInput.
+func (s WaitForEventConditionNodeInputSum) IsEventLeafInput() bool {
+	return s.Type == EventLeafInputWaitForEventConditionNodeInputSum
+}
+
+// IsWaitForEventPropertyLeafInput reports whether WaitForEventConditionNodeInputSum is WaitForEventPropertyLeafInput.
+func (s WaitForEventConditionNodeInputSum) IsWaitForEventPropertyLeafInput() bool {
+	return s.Type == WaitForEventPropertyLeafInputWaitForEventConditionNodeInputSum
+}
+
+// SetWaitForEventConditionInput sets WaitForEventConditionNodeInputSum to WaitForEventConditionInput.
+func (s *WaitForEventConditionNodeInputSum) SetWaitForEventConditionInput(v WaitForEventConditionInput) {
+	s.Type = WaitForEventConditionInputWaitForEventConditionNodeInputSum
+	s.WaitForEventConditionInput = v
+}
+
+// GetWaitForEventConditionInput returns WaitForEventConditionInput and true boolean if WaitForEventConditionNodeInputSum is WaitForEventConditionInput.
+func (s WaitForEventConditionNodeInputSum) GetWaitForEventConditionInput() (v WaitForEventConditionInput, ok bool) {
+	if !s.IsWaitForEventConditionInput() {
+		return v, false
+	}
+	return s.WaitForEventConditionInput, true
+}
+
+// NewWaitForEventConditionInputWaitForEventConditionNodeInputSum returns new WaitForEventConditionNodeInputSum from WaitForEventConditionInput.
+func NewWaitForEventConditionInputWaitForEventConditionNodeInputSum(v WaitForEventConditionInput) WaitForEventConditionNodeInputSum {
+	var s WaitForEventConditionNodeInputSum
+	s.SetWaitForEventConditionInput(v)
+	return s
+}
+
+// SetAttributeLeafInput sets WaitForEventConditionNodeInputSum to AttributeLeafInput.
+func (s *WaitForEventConditionNodeInputSum) SetAttributeLeafInput(v AttributeLeafInput) {
+	s.Type = AttributeLeafInputWaitForEventConditionNodeInputSum
+	s.AttributeLeafInput = v
+}
+
+// GetAttributeLeafInput returns AttributeLeafInput and true boolean if WaitForEventConditionNodeInputSum is AttributeLeafInput.
+func (s WaitForEventConditionNodeInputSum) GetAttributeLeafInput() (v AttributeLeafInput, ok bool) {
+	if !s.IsAttributeLeafInput() {
+		return v, false
+	}
+	return s.AttributeLeafInput, true
+}
+
+// NewAttributeLeafInputWaitForEventConditionNodeInputSum returns new WaitForEventConditionNodeInputSum from AttributeLeafInput.
+func NewAttributeLeafInputWaitForEventConditionNodeInputSum(v AttributeLeafInput) WaitForEventConditionNodeInputSum {
+	var s WaitForEventConditionNodeInputSum
+	s.SetAttributeLeafInput(v)
+	return s
+}
+
+// SetBirthdayLeafInput sets WaitForEventConditionNodeInputSum to BirthdayLeafInput.
+func (s *WaitForEventConditionNodeInputSum) SetBirthdayLeafInput(v BirthdayLeafInput) {
+	s.Type = BirthdayLeafInputWaitForEventConditionNodeInputSum
+	s.BirthdayLeafInput = v
+}
+
+// GetBirthdayLeafInput returns BirthdayLeafInput and true boolean if WaitForEventConditionNodeInputSum is BirthdayLeafInput.
+func (s WaitForEventConditionNodeInputSum) GetBirthdayLeafInput() (v BirthdayLeafInput, ok bool) {
+	if !s.IsBirthdayLeafInput() {
+		return v, false
+	}
+	return s.BirthdayLeafInput, true
+}
+
+// NewBirthdayLeafInputWaitForEventConditionNodeInputSum returns new WaitForEventConditionNodeInputSum from BirthdayLeafInput.
+func NewBirthdayLeafInputWaitForEventConditionNodeInputSum(v BirthdayLeafInput) WaitForEventConditionNodeInputSum {
+	var s WaitForEventConditionNodeInputSum
+	s.SetBirthdayLeafInput(v)
+	return s
+}
+
+// SetTagLeafInput sets WaitForEventConditionNodeInputSum to TagLeafInput.
+func (s *WaitForEventConditionNodeInputSum) SetTagLeafInput(v TagLeafInput) {
+	s.Type = TagLeafInputWaitForEventConditionNodeInputSum
+	s.TagLeafInput = v
+}
+
+// GetTagLeafInput returns TagLeafInput and true boolean if WaitForEventConditionNodeInputSum is TagLeafInput.
+func (s WaitForEventConditionNodeInputSum) GetTagLeafInput() (v TagLeafInput, ok bool) {
+	if !s.IsTagLeafInput() {
+		return v, false
+	}
+	return s.TagLeafInput, true
+}
+
+// NewTagLeafInputWaitForEventConditionNodeInputSum returns new WaitForEventConditionNodeInputSum from TagLeafInput.
+func NewTagLeafInputWaitForEventConditionNodeInputSum(v TagLeafInput) WaitForEventConditionNodeInputSum {
+	var s WaitForEventConditionNodeInputSum
+	s.SetTagLeafInput(v)
+	return s
+}
+
+// SetTelegramLeafInput sets WaitForEventConditionNodeInputSum to TelegramLeafInput.
+func (s *WaitForEventConditionNodeInputSum) SetTelegramLeafInput(v TelegramLeafInput) {
+	s.Type = TelegramLeafInputWaitForEventConditionNodeInputSum
+	s.TelegramLeafInput = v
+}
+
+// GetTelegramLeafInput returns TelegramLeafInput and true boolean if WaitForEventConditionNodeInputSum is TelegramLeafInput.
+func (s WaitForEventConditionNodeInputSum) GetTelegramLeafInput() (v TelegramLeafInput, ok bool) {
+	if !s.IsTelegramLeafInput() {
+		return v, false
+	}
+	return s.TelegramLeafInput, true
+}
+
+// NewTelegramLeafInputWaitForEventConditionNodeInputSum returns new WaitForEventConditionNodeInputSum from TelegramLeafInput.
+func NewTelegramLeafInputWaitForEventConditionNodeInputSum(v TelegramLeafInput) WaitForEventConditionNodeInputSum {
+	var s WaitForEventConditionNodeInputSum
+	s.SetTelegramLeafInput(v)
+	return s
+}
+
+// SetSmsLeafInput sets WaitForEventConditionNodeInputSum to SmsLeafInput.
+func (s *WaitForEventConditionNodeInputSum) SetSmsLeafInput(v SmsLeafInput) {
+	s.Type = SmsLeafInputWaitForEventConditionNodeInputSum
+	s.SmsLeafInput = v
+}
+
+// GetSmsLeafInput returns SmsLeafInput and true boolean if WaitForEventConditionNodeInputSum is SmsLeafInput.
+func (s WaitForEventConditionNodeInputSum) GetSmsLeafInput() (v SmsLeafInput, ok bool) {
+	if !s.IsSmsLeafInput() {
+		return v, false
+	}
+	return s.SmsLeafInput, true
+}
+
+// NewSmsLeafInputWaitForEventConditionNodeInputSum returns new WaitForEventConditionNodeInputSum from SmsLeafInput.
+func NewSmsLeafInputWaitForEventConditionNodeInputSum(v SmsLeafInput) WaitForEventConditionNodeInputSum {
+	var s WaitForEventConditionNodeInputSum
+	s.SetSmsLeafInput(v)
+	return s
+}
+
+// SetEngagementTrackingLeafInput sets WaitForEventConditionNodeInputSum to EngagementTrackingLeafInput.
+func (s *WaitForEventConditionNodeInputSum) SetEngagementTrackingLeafInput(v EngagementTrackingLeafInput) {
+	s.Type = EngagementTrackingLeafInputWaitForEventConditionNodeInputSum
+	s.EngagementTrackingLeafInput = v
+}
+
+// GetEngagementTrackingLeafInput returns EngagementTrackingLeafInput and true boolean if WaitForEventConditionNodeInputSum is EngagementTrackingLeafInput.
+func (s WaitForEventConditionNodeInputSum) GetEngagementTrackingLeafInput() (v EngagementTrackingLeafInput, ok bool) {
+	if !s.IsEngagementTrackingLeafInput() {
+		return v, false
+	}
+	return s.EngagementTrackingLeafInput, true
+}
+
+// NewEngagementTrackingLeafInputWaitForEventConditionNodeInputSum returns new WaitForEventConditionNodeInputSum from EngagementTrackingLeafInput.
+func NewEngagementTrackingLeafInputWaitForEventConditionNodeInputSum(v EngagementTrackingLeafInput) WaitForEventConditionNodeInputSum {
+	var s WaitForEventConditionNodeInputSum
+	s.SetEngagementTrackingLeafInput(v)
+	return s
+}
+
+// SetCustomFieldLeafInput sets WaitForEventConditionNodeInputSum to CustomFieldLeafInput.
+func (s *WaitForEventConditionNodeInputSum) SetCustomFieldLeafInput(v CustomFieldLeafInput) {
+	s.Type = CustomFieldLeafInputWaitForEventConditionNodeInputSum
+	s.CustomFieldLeafInput = v
+}
+
+// GetCustomFieldLeafInput returns CustomFieldLeafInput and true boolean if WaitForEventConditionNodeInputSum is CustomFieldLeafInput.
+func (s WaitForEventConditionNodeInputSum) GetCustomFieldLeafInput() (v CustomFieldLeafInput, ok bool) {
+	if !s.IsCustomFieldLeafInput() {
+		return v, false
+	}
+	return s.CustomFieldLeafInput, true
+}
+
+// NewCustomFieldLeafInputWaitForEventConditionNodeInputSum returns new WaitForEventConditionNodeInputSum from CustomFieldLeafInput.
+func NewCustomFieldLeafInputWaitForEventConditionNodeInputSum(v CustomFieldLeafInput) WaitForEventConditionNodeInputSum {
+	var s WaitForEventConditionNodeInputSum
+	s.SetCustomFieldLeafInput(v)
+	return s
+}
+
+// SetEventLeafInput sets WaitForEventConditionNodeInputSum to EventLeafInput.
+func (s *WaitForEventConditionNodeInputSum) SetEventLeafInput(v EventLeafInput) {
+	s.Type = EventLeafInputWaitForEventConditionNodeInputSum
+	s.EventLeafInput = v
+}
+
+// GetEventLeafInput returns EventLeafInput and true boolean if WaitForEventConditionNodeInputSum is EventLeafInput.
+func (s WaitForEventConditionNodeInputSum) GetEventLeafInput() (v EventLeafInput, ok bool) {
+	if !s.IsEventLeafInput() {
+		return v, false
+	}
+	return s.EventLeafInput, true
+}
+
+// NewEventLeafInputWaitForEventConditionNodeInputSum returns new WaitForEventConditionNodeInputSum from EventLeafInput.
+func NewEventLeafInputWaitForEventConditionNodeInputSum(v EventLeafInput) WaitForEventConditionNodeInputSum {
+	var s WaitForEventConditionNodeInputSum
+	s.SetEventLeafInput(v)
+	return s
+}
+
+// SetWaitForEventPropertyLeafInput sets WaitForEventConditionNodeInputSum to WaitForEventPropertyLeafInput.
+func (s *WaitForEventConditionNodeInputSum) SetWaitForEventPropertyLeafInput(v WaitForEventPropertyLeafInput) {
+	s.Type = WaitForEventPropertyLeafInputWaitForEventConditionNodeInputSum
+	s.WaitForEventPropertyLeafInput = v
+}
+
+// GetWaitForEventPropertyLeafInput returns WaitForEventPropertyLeafInput and true boolean if WaitForEventConditionNodeInputSum is WaitForEventPropertyLeafInput.
+func (s WaitForEventConditionNodeInputSum) GetWaitForEventPropertyLeafInput() (v WaitForEventPropertyLeafInput, ok bool) {
+	if !s.IsWaitForEventPropertyLeafInput() {
+		return v, false
+	}
+	return s.WaitForEventPropertyLeafInput, true
+}
+
+// NewWaitForEventPropertyLeafInputWaitForEventConditionNodeInputSum returns new WaitForEventConditionNodeInputSum from WaitForEventPropertyLeafInput.
+func NewWaitForEventPropertyLeafInputWaitForEventConditionNodeInputSum(v WaitForEventPropertyLeafInput) WaitForEventConditionNodeInputSum {
+	var s WaitForEventConditionNodeInputSum
+	s.SetWaitForEventPropertyLeafInput(v)
+	return s
+}
+
+// WaitForEventConditionNodeSum represents sum type.
+type WaitForEventConditionNodeSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type                     WaitForEventConditionNodeSumType
+	WaitForEventCondition    WaitForEventCondition
+	AttributeLeaf            AttributeLeaf
+	BirthdayLeaf             BirthdayLeaf
+	TagLeaf                  TagLeaf
+	TelegramLeaf             TelegramLeaf
+	SmsLeaf                  SmsLeaf
+	EngagementTrackingLeaf   EngagementTrackingLeaf
+	CustomFieldLeaf          CustomFieldLeaf
+	EventLeaf                EventLeaf
+	WaitForEventPropertyLeaf WaitForEventPropertyLeaf
+}
+
+// WaitForEventConditionNodeSumType is oneOf type of WaitForEventConditionNodeSum.
+type WaitForEventConditionNodeSumType string
+
+// Possible values for WaitForEventConditionNodeSumType.
+const (
+	WaitForEventConditionWaitForEventConditionNodeSum    WaitForEventConditionNodeSumType = "group"
+	AttributeLeafWaitForEventConditionNodeSum            WaitForEventConditionNodeSumType = "attribute"
+	BirthdayLeafWaitForEventConditionNodeSum             WaitForEventConditionNodeSumType = "birthday"
+	TagLeafWaitForEventConditionNodeSum                  WaitForEventConditionNodeSumType = "tag"
+	TelegramLeafWaitForEventConditionNodeSum             WaitForEventConditionNodeSumType = "telegram"
+	SmsLeafWaitForEventConditionNodeSum                  WaitForEventConditionNodeSumType = "sms"
+	EngagementTrackingLeafWaitForEventConditionNodeSum   WaitForEventConditionNodeSumType = "engagementTracking"
+	CustomFieldLeafWaitForEventConditionNodeSum          WaitForEventConditionNodeSumType = "customField"
+	EventLeafWaitForEventConditionNodeSum                WaitForEventConditionNodeSumType = "event"
+	WaitForEventPropertyLeafWaitForEventConditionNodeSum WaitForEventConditionNodeSumType = "property"
+)
+
+// IsWaitForEventCondition reports whether WaitForEventConditionNodeSum is WaitForEventCondition.
+func (s WaitForEventConditionNodeSum) IsWaitForEventCondition() bool {
+	return s.Type == WaitForEventConditionWaitForEventConditionNodeSum
+}
+
+// IsAttributeLeaf reports whether WaitForEventConditionNodeSum is AttributeLeaf.
+func (s WaitForEventConditionNodeSum) IsAttributeLeaf() bool {
+	return s.Type == AttributeLeafWaitForEventConditionNodeSum
+}
+
+// IsBirthdayLeaf reports whether WaitForEventConditionNodeSum is BirthdayLeaf.
+func (s WaitForEventConditionNodeSum) IsBirthdayLeaf() bool {
+	return s.Type == BirthdayLeafWaitForEventConditionNodeSum
+}
+
+// IsTagLeaf reports whether WaitForEventConditionNodeSum is TagLeaf.
+func (s WaitForEventConditionNodeSum) IsTagLeaf() bool {
+	return s.Type == TagLeafWaitForEventConditionNodeSum
+}
+
+// IsTelegramLeaf reports whether WaitForEventConditionNodeSum is TelegramLeaf.
+func (s WaitForEventConditionNodeSum) IsTelegramLeaf() bool {
+	return s.Type == TelegramLeafWaitForEventConditionNodeSum
+}
+
+// IsSmsLeaf reports whether WaitForEventConditionNodeSum is SmsLeaf.
+func (s WaitForEventConditionNodeSum) IsSmsLeaf() bool {
+	return s.Type == SmsLeafWaitForEventConditionNodeSum
+}
+
+// IsEngagementTrackingLeaf reports whether WaitForEventConditionNodeSum is EngagementTrackingLeaf.
+func (s WaitForEventConditionNodeSum) IsEngagementTrackingLeaf() bool {
+	return s.Type == EngagementTrackingLeafWaitForEventConditionNodeSum
+}
+
+// IsCustomFieldLeaf reports whether WaitForEventConditionNodeSum is CustomFieldLeaf.
+func (s WaitForEventConditionNodeSum) IsCustomFieldLeaf() bool {
+	return s.Type == CustomFieldLeafWaitForEventConditionNodeSum
+}
+
+// IsEventLeaf reports whether WaitForEventConditionNodeSum is EventLeaf.
+func (s WaitForEventConditionNodeSum) IsEventLeaf() bool {
+	return s.Type == EventLeafWaitForEventConditionNodeSum
+}
+
+// IsWaitForEventPropertyLeaf reports whether WaitForEventConditionNodeSum is WaitForEventPropertyLeaf.
+func (s WaitForEventConditionNodeSum) IsWaitForEventPropertyLeaf() bool {
+	return s.Type == WaitForEventPropertyLeafWaitForEventConditionNodeSum
+}
+
+// SetWaitForEventCondition sets WaitForEventConditionNodeSum to WaitForEventCondition.
+func (s *WaitForEventConditionNodeSum) SetWaitForEventCondition(v WaitForEventCondition) {
+	s.Type = WaitForEventConditionWaitForEventConditionNodeSum
+	s.WaitForEventCondition = v
+}
+
+// GetWaitForEventCondition returns WaitForEventCondition and true boolean if WaitForEventConditionNodeSum is WaitForEventCondition.
+func (s WaitForEventConditionNodeSum) GetWaitForEventCondition() (v WaitForEventCondition, ok bool) {
+	if !s.IsWaitForEventCondition() {
+		return v, false
+	}
+	return s.WaitForEventCondition, true
+}
+
+// NewWaitForEventConditionWaitForEventConditionNodeSum returns new WaitForEventConditionNodeSum from WaitForEventCondition.
+func NewWaitForEventConditionWaitForEventConditionNodeSum(v WaitForEventCondition) WaitForEventConditionNodeSum {
+	var s WaitForEventConditionNodeSum
+	s.SetWaitForEventCondition(v)
+	return s
+}
+
+// SetAttributeLeaf sets WaitForEventConditionNodeSum to AttributeLeaf.
+func (s *WaitForEventConditionNodeSum) SetAttributeLeaf(v AttributeLeaf) {
+	s.Type = AttributeLeafWaitForEventConditionNodeSum
+	s.AttributeLeaf = v
+}
+
+// GetAttributeLeaf returns AttributeLeaf and true boolean if WaitForEventConditionNodeSum is AttributeLeaf.
+func (s WaitForEventConditionNodeSum) GetAttributeLeaf() (v AttributeLeaf, ok bool) {
+	if !s.IsAttributeLeaf() {
+		return v, false
+	}
+	return s.AttributeLeaf, true
+}
+
+// NewAttributeLeafWaitForEventConditionNodeSum returns new WaitForEventConditionNodeSum from AttributeLeaf.
+func NewAttributeLeafWaitForEventConditionNodeSum(v AttributeLeaf) WaitForEventConditionNodeSum {
+	var s WaitForEventConditionNodeSum
+	s.SetAttributeLeaf(v)
+	return s
+}
+
+// SetBirthdayLeaf sets WaitForEventConditionNodeSum to BirthdayLeaf.
+func (s *WaitForEventConditionNodeSum) SetBirthdayLeaf(v BirthdayLeaf) {
+	s.Type = BirthdayLeafWaitForEventConditionNodeSum
+	s.BirthdayLeaf = v
+}
+
+// GetBirthdayLeaf returns BirthdayLeaf and true boolean if WaitForEventConditionNodeSum is BirthdayLeaf.
+func (s WaitForEventConditionNodeSum) GetBirthdayLeaf() (v BirthdayLeaf, ok bool) {
+	if !s.IsBirthdayLeaf() {
+		return v, false
+	}
+	return s.BirthdayLeaf, true
+}
+
+// NewBirthdayLeafWaitForEventConditionNodeSum returns new WaitForEventConditionNodeSum from BirthdayLeaf.
+func NewBirthdayLeafWaitForEventConditionNodeSum(v BirthdayLeaf) WaitForEventConditionNodeSum {
+	var s WaitForEventConditionNodeSum
+	s.SetBirthdayLeaf(v)
+	return s
+}
+
+// SetTagLeaf sets WaitForEventConditionNodeSum to TagLeaf.
+func (s *WaitForEventConditionNodeSum) SetTagLeaf(v TagLeaf) {
+	s.Type = TagLeafWaitForEventConditionNodeSum
+	s.TagLeaf = v
+}
+
+// GetTagLeaf returns TagLeaf and true boolean if WaitForEventConditionNodeSum is TagLeaf.
+func (s WaitForEventConditionNodeSum) GetTagLeaf() (v TagLeaf, ok bool) {
+	if !s.IsTagLeaf() {
+		return v, false
+	}
+	return s.TagLeaf, true
+}
+
+// NewTagLeafWaitForEventConditionNodeSum returns new WaitForEventConditionNodeSum from TagLeaf.
+func NewTagLeafWaitForEventConditionNodeSum(v TagLeaf) WaitForEventConditionNodeSum {
+	var s WaitForEventConditionNodeSum
+	s.SetTagLeaf(v)
+	return s
+}
+
+// SetTelegramLeaf sets WaitForEventConditionNodeSum to TelegramLeaf.
+func (s *WaitForEventConditionNodeSum) SetTelegramLeaf(v TelegramLeaf) {
+	s.Type = TelegramLeafWaitForEventConditionNodeSum
+	s.TelegramLeaf = v
+}
+
+// GetTelegramLeaf returns TelegramLeaf and true boolean if WaitForEventConditionNodeSum is TelegramLeaf.
+func (s WaitForEventConditionNodeSum) GetTelegramLeaf() (v TelegramLeaf, ok bool) {
+	if !s.IsTelegramLeaf() {
+		return v, false
+	}
+	return s.TelegramLeaf, true
+}
+
+// NewTelegramLeafWaitForEventConditionNodeSum returns new WaitForEventConditionNodeSum from TelegramLeaf.
+func NewTelegramLeafWaitForEventConditionNodeSum(v TelegramLeaf) WaitForEventConditionNodeSum {
+	var s WaitForEventConditionNodeSum
+	s.SetTelegramLeaf(v)
+	return s
+}
+
+// SetSmsLeaf sets WaitForEventConditionNodeSum to SmsLeaf.
+func (s *WaitForEventConditionNodeSum) SetSmsLeaf(v SmsLeaf) {
+	s.Type = SmsLeafWaitForEventConditionNodeSum
+	s.SmsLeaf = v
+}
+
+// GetSmsLeaf returns SmsLeaf and true boolean if WaitForEventConditionNodeSum is SmsLeaf.
+func (s WaitForEventConditionNodeSum) GetSmsLeaf() (v SmsLeaf, ok bool) {
+	if !s.IsSmsLeaf() {
+		return v, false
+	}
+	return s.SmsLeaf, true
+}
+
+// NewSmsLeafWaitForEventConditionNodeSum returns new WaitForEventConditionNodeSum from SmsLeaf.
+func NewSmsLeafWaitForEventConditionNodeSum(v SmsLeaf) WaitForEventConditionNodeSum {
+	var s WaitForEventConditionNodeSum
+	s.SetSmsLeaf(v)
+	return s
+}
+
+// SetEngagementTrackingLeaf sets WaitForEventConditionNodeSum to EngagementTrackingLeaf.
+func (s *WaitForEventConditionNodeSum) SetEngagementTrackingLeaf(v EngagementTrackingLeaf) {
+	s.Type = EngagementTrackingLeafWaitForEventConditionNodeSum
+	s.EngagementTrackingLeaf = v
+}
+
+// GetEngagementTrackingLeaf returns EngagementTrackingLeaf and true boolean if WaitForEventConditionNodeSum is EngagementTrackingLeaf.
+func (s WaitForEventConditionNodeSum) GetEngagementTrackingLeaf() (v EngagementTrackingLeaf, ok bool) {
+	if !s.IsEngagementTrackingLeaf() {
+		return v, false
+	}
+	return s.EngagementTrackingLeaf, true
+}
+
+// NewEngagementTrackingLeafWaitForEventConditionNodeSum returns new WaitForEventConditionNodeSum from EngagementTrackingLeaf.
+func NewEngagementTrackingLeafWaitForEventConditionNodeSum(v EngagementTrackingLeaf) WaitForEventConditionNodeSum {
+	var s WaitForEventConditionNodeSum
+	s.SetEngagementTrackingLeaf(v)
+	return s
+}
+
+// SetCustomFieldLeaf sets WaitForEventConditionNodeSum to CustomFieldLeaf.
+func (s *WaitForEventConditionNodeSum) SetCustomFieldLeaf(v CustomFieldLeaf) {
+	s.Type = CustomFieldLeafWaitForEventConditionNodeSum
+	s.CustomFieldLeaf = v
+}
+
+// GetCustomFieldLeaf returns CustomFieldLeaf and true boolean if WaitForEventConditionNodeSum is CustomFieldLeaf.
+func (s WaitForEventConditionNodeSum) GetCustomFieldLeaf() (v CustomFieldLeaf, ok bool) {
+	if !s.IsCustomFieldLeaf() {
+		return v, false
+	}
+	return s.CustomFieldLeaf, true
+}
+
+// NewCustomFieldLeafWaitForEventConditionNodeSum returns new WaitForEventConditionNodeSum from CustomFieldLeaf.
+func NewCustomFieldLeafWaitForEventConditionNodeSum(v CustomFieldLeaf) WaitForEventConditionNodeSum {
+	var s WaitForEventConditionNodeSum
+	s.SetCustomFieldLeaf(v)
+	return s
+}
+
+// SetEventLeaf sets WaitForEventConditionNodeSum to EventLeaf.
+func (s *WaitForEventConditionNodeSum) SetEventLeaf(v EventLeaf) {
+	s.Type = EventLeafWaitForEventConditionNodeSum
+	s.EventLeaf = v
+}
+
+// GetEventLeaf returns EventLeaf and true boolean if WaitForEventConditionNodeSum is EventLeaf.
+func (s WaitForEventConditionNodeSum) GetEventLeaf() (v EventLeaf, ok bool) {
+	if !s.IsEventLeaf() {
+		return v, false
+	}
+	return s.EventLeaf, true
+}
+
+// NewEventLeafWaitForEventConditionNodeSum returns new WaitForEventConditionNodeSum from EventLeaf.
+func NewEventLeafWaitForEventConditionNodeSum(v EventLeaf) WaitForEventConditionNodeSum {
+	var s WaitForEventConditionNodeSum
+	s.SetEventLeaf(v)
+	return s
+}
+
+// SetWaitForEventPropertyLeaf sets WaitForEventConditionNodeSum to WaitForEventPropertyLeaf.
+func (s *WaitForEventConditionNodeSum) SetWaitForEventPropertyLeaf(v WaitForEventPropertyLeaf) {
+	s.Type = WaitForEventPropertyLeafWaitForEventConditionNodeSum
+	s.WaitForEventPropertyLeaf = v
+}
+
+// GetWaitForEventPropertyLeaf returns WaitForEventPropertyLeaf and true boolean if WaitForEventConditionNodeSum is WaitForEventPropertyLeaf.
+func (s WaitForEventConditionNodeSum) GetWaitForEventPropertyLeaf() (v WaitForEventPropertyLeaf, ok bool) {
+	if !s.IsWaitForEventPropertyLeaf() {
+		return v, false
+	}
+	return s.WaitForEventPropertyLeaf, true
+}
+
+// NewWaitForEventPropertyLeafWaitForEventConditionNodeSum returns new WaitForEventConditionNodeSum from WaitForEventPropertyLeaf.
+func NewWaitForEventPropertyLeafWaitForEventConditionNodeSum(v WaitForEventPropertyLeaf) WaitForEventConditionNodeSum {
+	var s WaitForEventConditionNodeSum
+	s.SetWaitForEventPropertyLeaf(v)
+	return s
+}
+
 type WaitForEventName string
 
+// A test of one property of an Event: whose it is in `of`, its key in a field of its own, so a key
+// holding a dot is one key.
+// Ref: #/components/schemas/WaitForEventPropertyLeaf
+type WaitForEventPropertyLeaf struct {
+	Kind WaitForEventPropertyLeafKind `json:"kind"`
+	// Whose property it is.
+	Of WaitForEventPropertySource `json:"of"`
+	// The property's key.
+	Key string `json:"key"`
+	// What it asks of the property's value.
+	Test PropertyTest `json:"test"`
+}
+
+// GetKind returns the value of Kind.
+func (s *WaitForEventPropertyLeaf) GetKind() WaitForEventPropertyLeafKind {
+	return s.Kind
+}
+
+// GetOf returns the value of Of.
+func (s *WaitForEventPropertyLeaf) GetOf() WaitForEventPropertySource {
+	return s.Of
+}
+
+// GetKey returns the value of Key.
+func (s *WaitForEventPropertyLeaf) GetKey() string {
+	return s.Key
+}
+
+// GetTest returns the value of Test.
+func (s *WaitForEventPropertyLeaf) GetTest() PropertyTest {
+	return s.Test
+}
+
+// SetKind sets the value of Kind.
+func (s *WaitForEventPropertyLeaf) SetKind(val WaitForEventPropertyLeafKind) {
+	s.Kind = val
+}
+
+// SetOf sets the value of Of.
+func (s *WaitForEventPropertyLeaf) SetOf(val WaitForEventPropertySource) {
+	s.Of = val
+}
+
+// SetKey sets the value of Key.
+func (s *WaitForEventPropertyLeaf) SetKey(val string) {
+	s.Key = val
+}
+
+// SetTest sets the value of Test.
+func (s *WaitForEventPropertyLeaf) SetTest(val PropertyTest) {
+	s.Test = val
+}
+
+// A test of one property of an Event: whose it is in `of`, its key in a field of its own, so a key
+// holding a dot is one key.
+// Ref: #/components/schemas/WaitForEventPropertyLeafInput
+type WaitForEventPropertyLeafInput struct {
+	Kind WaitForEventPropertyLeafInputKind `json:"kind"`
+	// Whose property it is.
+	Of WaitForEventPropertySourceInput `json:"of"`
+	// The property's key.
+	Key string `json:"key"`
+	// What it asks of the property's value.
+	Test PropertyTestInput `json:"test"`
+}
+
+// GetKind returns the value of Kind.
+func (s *WaitForEventPropertyLeafInput) GetKind() WaitForEventPropertyLeafInputKind {
+	return s.Kind
+}
+
+// GetOf returns the value of Of.
+func (s *WaitForEventPropertyLeafInput) GetOf() WaitForEventPropertySourceInput {
+	return s.Of
+}
+
+// GetKey returns the value of Key.
+func (s *WaitForEventPropertyLeafInput) GetKey() string {
+	return s.Key
+}
+
+// GetTest returns the value of Test.
+func (s *WaitForEventPropertyLeafInput) GetTest() PropertyTestInput {
+	return s.Test
+}
+
+// SetKind sets the value of Kind.
+func (s *WaitForEventPropertyLeafInput) SetKind(val WaitForEventPropertyLeafInputKind) {
+	s.Kind = val
+}
+
+// SetOf sets the value of Of.
+func (s *WaitForEventPropertyLeafInput) SetOf(val WaitForEventPropertySourceInput) {
+	s.Of = val
+}
+
+// SetKey sets the value of Key.
+func (s *WaitForEventPropertyLeafInput) SetKey(val string) {
+	s.Key = val
+}
+
+// SetTest sets the value of Test.
+func (s *WaitForEventPropertyLeafInput) SetTest(val PropertyTestInput) {
+	s.Test = val
+}
+
+type WaitForEventPropertyLeafInputKind string
+
+const (
+	WaitForEventPropertyLeafInputKindProperty WaitForEventPropertyLeafInputKind = "property"
+)
+
+// AllValues returns all WaitForEventPropertyLeafInputKind values.
+func (WaitForEventPropertyLeafInputKind) AllValues() []WaitForEventPropertyLeafInputKind {
+	return []WaitForEventPropertyLeafInputKind{
+		WaitForEventPropertyLeafInputKindProperty,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s WaitForEventPropertyLeafInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case WaitForEventPropertyLeafInputKindProperty:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *WaitForEventPropertyLeafInputKind) UnmarshalText(data []byte) error {
+	switch WaitForEventPropertyLeafInputKind(data) {
+	case WaitForEventPropertyLeafInputKindProperty:
+		*s = WaitForEventPropertyLeafInputKindProperty
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type WaitForEventPropertyLeafKind string
+
+const (
+	WaitForEventPropertyLeafKindProperty WaitForEventPropertyLeafKind = "property"
+)
+
+// AllValues returns all WaitForEventPropertyLeafKind values.
+func (WaitForEventPropertyLeafKind) AllValues() []WaitForEventPropertyLeafKind {
+	return []WaitForEventPropertyLeafKind{
+		WaitForEventPropertyLeafKindProperty,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s WaitForEventPropertyLeafKind) MarshalText() ([]byte, error) {
+	switch s {
+	case WaitForEventPropertyLeafKindProperty:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *WaitForEventPropertyLeafKind) UnmarshalText(data []byte) error {
+	switch WaitForEventPropertyLeafKind(data) {
+	case WaitForEventPropertyLeafKindProperty:
+		*s = WaitForEventPropertyLeafKindProperty
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Whose properties a Wait for event's property test reads, by `kind`: the Event the Enrollment began
+// with. The Event the Wait for event awaits is tested by its matcher's filter.
+// Ref: #/components/schemas/WaitForEventPropertySource
+type WaitForEventPropertySource struct {
+	OneOf WaitForEventPropertySourceSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *WaitForEventPropertySource) GetOneOf() WaitForEventPropertySourceSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *WaitForEventPropertySource) SetOneOf(val WaitForEventPropertySourceSum) {
+	s.OneOf = val
+}
+
+// Whose properties a Wait for event's property test reads, by `kind`: the Event the Enrollment began
+// with. The Event the Wait for event awaits is tested by its matcher's filter.
+// Ref: #/components/schemas/WaitForEventPropertySourceInput
+type WaitForEventPropertySourceInput struct {
+	OneOf WaitForEventPropertySourceInputSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *WaitForEventPropertySourceInput) GetOneOf() WaitForEventPropertySourceInputSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *WaitForEventPropertySourceInput) SetOneOf(val WaitForEventPropertySourceInputSum) {
+	s.OneOf = val
+}
+
+// WaitForEventPropertySourceInputSum represents sum type.
+type WaitForEventPropertySourceInputSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type               WaitForEventPropertySourceInputSumType
+	TriggerSourceInput TriggerSourceInput
+}
+
+// WaitForEventPropertySourceInputSumType is oneOf type of WaitForEventPropertySourceInputSum.
+type WaitForEventPropertySourceInputSumType string
+
+// Possible values for WaitForEventPropertySourceInputSumType.
+const (
+	TriggerSourceInputWaitForEventPropertySourceInputSum WaitForEventPropertySourceInputSumType = "trigger"
+)
+
+// IsTriggerSourceInput reports whether WaitForEventPropertySourceInputSum is TriggerSourceInput.
+func (s WaitForEventPropertySourceInputSum) IsTriggerSourceInput() bool {
+	return s.Type == TriggerSourceInputWaitForEventPropertySourceInputSum
+}
+
+// SetTriggerSourceInput sets WaitForEventPropertySourceInputSum to TriggerSourceInput.
+func (s *WaitForEventPropertySourceInputSum) SetTriggerSourceInput(v TriggerSourceInput) {
+	s.Type = TriggerSourceInputWaitForEventPropertySourceInputSum
+	s.TriggerSourceInput = v
+}
+
+// GetTriggerSourceInput returns TriggerSourceInput and true boolean if WaitForEventPropertySourceInputSum is TriggerSourceInput.
+func (s WaitForEventPropertySourceInputSum) GetTriggerSourceInput() (v TriggerSourceInput, ok bool) {
+	if !s.IsTriggerSourceInput() {
+		return v, false
+	}
+	return s.TriggerSourceInput, true
+}
+
+// NewTriggerSourceInputWaitForEventPropertySourceInputSum returns new WaitForEventPropertySourceInputSum from TriggerSourceInput.
+func NewTriggerSourceInputWaitForEventPropertySourceInputSum(v TriggerSourceInput) WaitForEventPropertySourceInputSum {
+	var s WaitForEventPropertySourceInputSum
+	s.SetTriggerSourceInput(v)
+	return s
+}
+
+// WaitForEventPropertySourceSum represents sum type.
+type WaitForEventPropertySourceSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type          WaitForEventPropertySourceSumType
+	TriggerSource TriggerSource
+}
+
+// WaitForEventPropertySourceSumType is oneOf type of WaitForEventPropertySourceSum.
+type WaitForEventPropertySourceSumType string
+
+// Possible values for WaitForEventPropertySourceSumType.
+const (
+	TriggerSourceWaitForEventPropertySourceSum WaitForEventPropertySourceSumType = "trigger"
+)
+
+// IsTriggerSource reports whether WaitForEventPropertySourceSum is TriggerSource.
+func (s WaitForEventPropertySourceSum) IsTriggerSource() bool {
+	return s.Type == TriggerSourceWaitForEventPropertySourceSum
+}
+
+// SetTriggerSource sets WaitForEventPropertySourceSum to TriggerSource.
+func (s *WaitForEventPropertySourceSum) SetTriggerSource(v TriggerSource) {
+	s.Type = TriggerSourceWaitForEventPropertySourceSum
+	s.TriggerSource = v
+}
+
+// GetTriggerSource returns TriggerSource and true boolean if WaitForEventPropertySourceSum is TriggerSource.
+func (s WaitForEventPropertySourceSum) GetTriggerSource() (v TriggerSource, ok bool) {
+	if !s.IsTriggerSource() {
+		return v, false
+	}
+	return s.TriggerSource, true
+}
+
+// NewTriggerSourceWaitForEventPropertySourceSum returns new WaitForEventPropertySourceSum from TriggerSource.
+func NewTriggerSourceWaitForEventPropertySourceSum(v TriggerSource) WaitForEventPropertySourceSum {
+	var s WaitForEventPropertySourceSum
+	s.SetTriggerSource(v)
+	return s
+}
+
 // A Step that holds the Enrollment until what it awaits arrives or its timeout passes (ADR 0124), then
-// takes `arrived` or `timedOut`; the paths rejoin at the Step after it. An Event counts when it is the
-// Contact's, occurred at or after the moment the Enrollment reached the Step and no later than the
-// timeout, and is neither a machine open or click, loaded history nor the Event that began the
-// Enrollment. One that occurred within the window but was recorded late is taken at the timeout. An
-// Event an exit or the goal matches ends the Enrollment instead.
+// takes `arrived` or `timedOut`; the paths rejoin at the Step after it. An Event counts when one of
+// its matchers matches it, its Condition, if any, holds for the Contact, and it is the Contact's,
+// occurred at or after the moment the Enrollment reached the Step and no later than the timeout, and
+// is neither a machine open or click, loaded history nor the Event that began the Enrollment. One that
+// occurred within the window but was recorded late is taken at the timeout. An Event an exit or the
+// goal matches ends the Enrollment instead.
 // Ref: #/components/schemas/WaitForEventStep
 type WaitForEventStep struct {
 	// The Step's id.

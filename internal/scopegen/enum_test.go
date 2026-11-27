@@ -95,6 +95,8 @@ func TestGenerateConditionKindsListsWhatEachUnionAdmitsInItsOrder(t *testing.T) 
 	  "discriminator":{"propertyName":"kind","mapping":{"property":"#/components/schemas/RulePropertyLeaf","tag":"#/components/schemas/TagLeaf","group":"#/components/schemas/RuleCondition"}}},
 	 "BranchConditionNode":{"oneOf":[{"$ref":"#/components/schemas/BranchCondition"},{"$ref":"#/components/schemas/TagLeaf"},{"$ref":"#/components/schemas/BranchPropertyLeaf"}],
 	  "discriminator":{"propertyName":"kind","mapping":{"property":"#/components/schemas/BranchPropertyLeaf","tag":"#/components/schemas/TagLeaf","group":"#/components/schemas/BranchCondition"}}},
+	 "WaitForEventConditionNode":{"oneOf":[{"$ref":"#/components/schemas/WaitForEventCondition"},{"$ref":"#/components/schemas/WaitForEventPropertyLeaf"}],
+	  "discriminator":{"propertyName":"kind","mapping":{"property":"#/components/schemas/WaitForEventPropertyLeaf","group":"#/components/schemas/WaitForEventCondition"}}},
 	 "EventFilterNode":{"oneOf":[{"$ref":"#/components/schemas/EventFilter"},{"$ref":"#/components/schemas/EventPropertyLeaf"}],
 	  "discriminator":{"propertyName":"kind","mapping":{"property":"#/components/schemas/EventPropertyLeaf","group":"#/components/schemas/EventFilter"}}},
 	 "AttributeTest":{"oneOf":[{"$ref":"#/components/schemas/TextTest"}],"discriminator":{"propertyName":"kind","mapping":{"text":"#/components/schemas/TextTest"}}},
@@ -104,7 +106,8 @@ func TestGenerateConditionKindsListsWhatEachUnionAdmitsInItsOrder(t *testing.T) 
 	 "PropertyTest":{"oneOf":[{"$ref":"#/components/schemas/TextTest"}],"discriminator":{"propertyName":"kind","mapping":{"text":"#/components/schemas/TextTest"}}},
 	 "EngagementTrackingTest":{"oneOf":[{"$ref":"#/components/schemas/PresenceTest"}],"discriminator":{"propertyName":"kind","mapping":{"presence":"#/components/schemas/PresenceTest"}}},
 	 "RulePropertySource":{"oneOf":[{"$ref":"#/components/schemas/TriggerSource"}],"discriminator":{"propertyName":"kind","mapping":{"trigger":"#/components/schemas/TriggerSource"}}},
-	 "BranchPropertySource":{"oneOf":[{"$ref":"#/components/schemas/TriggerSource"}],"discriminator":{"propertyName":"kind","mapping":{"trigger":"#/components/schemas/TriggerSource"}}}}}}`))
+	 "BranchPropertySource":{"oneOf":[{"$ref":"#/components/schemas/TriggerSource"}],"discriminator":{"propertyName":"kind","mapping":{"trigger":"#/components/schemas/TriggerSource"}}},
+	 "WaitForEventPropertySource":{"oneOf":[{"$ref":"#/components/schemas/TriggerSource"}],"discriminator":{"propertyName":"kind","mapping":{"trigger":"#/components/schemas/TriggerSource"}}}}}}`))
 	require.NoError(t, err)
 
 	out := string(src)
@@ -120,6 +123,8 @@ func TestGenerateConditionKindsListsWhatEachUnionAdmitsInItsOrder(t *testing.T) 
 	require.Regexp(t, `var RuleSources = \[\]Source\{\s+SourceTrigger,\s+\}`, out)
 	require.Regexp(t, `var BranchKinds = \[\]Kind\{\s+KindGroup,\s+KindTag,\s+KindProperty,\s+\}`, out)
 	require.Regexp(t, `var BranchSources = \[\]Source\{\s+SourceTrigger,\s+\}`, out)
+	require.Regexp(t, `var WaitForEventKinds = \[\]Kind\{\s+KindGroup,\s+KindProperty,\s+\}`, out)
+	require.Regexp(t, `var WaitForEventSources = \[\]Source\{\s+SourceTrigger,\s+\}`, out)
 }
 
 func TestGenerateConditionKindsRefusesAUnionMemberWithoutAValue(t *testing.T) {

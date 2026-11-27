@@ -37,6 +37,14 @@ type waiting struct {
 // first Step waits an hour for an Event of the actions, ended by the version's goal (nil for none).
 func waitFor(t *testing.T, trigger string, actions []string, goal *eventmatcher.Matcher) waiting {
 	t.Helper()
+	matchers := lo.Map(actions, func(action string, _ int) eventmatcher.Matcher { return eventmatcher.Matcher{Action: action} })
+	return awaiting(t, trigger, automationstep.AwaitedEvent{Matchers: matchers}, goal)
+}
+
+// awaiting is waitFor of a Wait for event that awaits what awaited says: its matchers and its
+// Condition.
+func awaiting(t *testing.T, trigger string, awaited automationstep.AwaitedEvent, goal *eventmatcher.Matcher) waiting {
+	t.Helper()
 	clock := testhelper.NewClock(time.Now().UTC().Truncate(time.Second))
 	env := testhelper.Setup(t, testhelper.WithClock(clock.Now))
 	ctx := t.Context()
@@ -44,7 +52,7 @@ func waitFor(t *testing.T, trigger string, actions []string, goal *eventmatcher.
 	m := testhelper.Module[*automations.Module](env)
 	wait := automationstep.WaitForEvent{
 		Name: "purchase", TimeoutSeconds: int(waitTimeout / time.Second),
-		Awaits:   automationstep.AwaitedEvent{Actions: actions},
+		Awaits:   awaited,
 		Arrived:  automationstep.Root(automationstep.New(automationstep.ApplyTag{Tag: "buyer"})),
 		TimedOut: automationstep.Root(automationstep.New(automationstep.ApplyTag{Tag: "reminded"})),
 	}
@@ -181,19 +189,23 @@ func TestEventsThatDoNotCountLeaveTheEnrollmentWaiting(t *testing.T) {
 		record           func(t *testing.T, w waiting, contact *ent.Contact)
 	}{
 		"occurred before it reached the step": {"trial.started", "order.created", func(t *testing.T, w waiting, contact *ent.Contact) {
+			t.Helper()
 			// It reached the Step a minute ago.
 			handStored(t, w.env, contact.ID, "order.created", collected(contact.ID, "order.created", w.clock.Now().Add(-2*time.Minute), nil))
 		}},
 		"its own triggering event": {"order.created", "order.created", func(t *testing.T, w waiting, contact *ent.Contact) {
+			t.Helper()
 			handLast(t, w.env, contact.ID, "order.created")
 		}},
 		"a machine open": {"trial.started", systemevent.EmailOpened, func(t *testing.T, w waiting, contact *ent.Contact) {
+			t.Helper()
 			handStored(t, w.env, contact.ID, systemevent.EmailOpened, &events.EmailEngagement{
 				Action: systemevent.EmailOpened, WorkspaceID: fixtures.AcmeID, ContactID: contact.ID, Email: lo.FromPtr(contact.Email),
 				OutboundMessageID: fixtures.OutboundMessageTrackingSampleID, Machine: true,
 			})
 		}},
 		"loaded history": {"trial.started", "order.created", func(t *testing.T, w waiting, contact *ent.Contact) {
+			t.Helper()
 			history := collected(contact.ID, "order.created", w.clock.Now(), nil)
 			history.Backfill = true
 			handStored(t, w.env, contact.ID, "order.created", history)

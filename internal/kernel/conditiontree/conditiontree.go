@@ -1,8 +1,8 @@
 // Package conditiontree is a Condition as it is stored (ADR 0169): the root Group of the tree of
 // tests on a Contact, the type of the document the Condition columns hold. Each place a Condition
 // is used has a type of its own over the same document, since each admits its own leaves (ADR
-// 0181): a Segment's (Segment), a Rule's (Rule), a Branch path's (Branch) and an Event matcher's
-// filter (EventFilter).
+// 0181): a Segment's (Segment), a Rule's (Rule), a Branch path's (Branch), a Wait for event's
+// (WaitForEvent) and an Event matcher's filter (EventFilter).
 // internal/domain/contacts/condition decodes the tree of each place and compiles a Segment's and a
 // Rule's to a Contact predicate, a filter to an SQL/JSON path (ADR 0180). Its vocabulary (the kinds of entry, test
 // and source each place and leaf admits, the operators, the attributes) is generated from the
@@ -31,13 +31,18 @@ type Rule struct{ Group }
 // the Event the Enrollment began with.
 type Branch struct{ Group }
 
+// WaitForEvent is the Condition of a Wait for event (ADR 0124, ADR 0180): a Branch path's leaves
+// but the test of the Enrollment's own message, its property tests reading the Event the
+// Enrollment began with. The Event it awaits is tested by its matcher's filter.
+type WaitForEvent struct{ Group }
+
 // EventFilter is an Event matcher's filter (ADR 0133, ADR 0180): property tests of the one Event
 // it is about, which name no subject, under groups.
 type EventFilter struct{ Group }
 
 // Place is the type of a Condition of one place.
 type Place interface {
-	Segment | Rule | Branch | EventFilter
+	Segment | Rule | Branch | WaitForEvent | EventFilter
 }
 
 // Empty is the Condition with no tests, which matches every Contact.

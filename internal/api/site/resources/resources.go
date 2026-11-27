@@ -1401,11 +1401,35 @@ func waitForEventName(name string) siteapi.WaitForEventName { return siteapi.Wai
 func waitForEventAwaits(a automationstep.Awaits) (siteapi.WaitForEventAwaits, error) {
 	switch a := a.(type) {
 	case automationstep.AwaitedEvent:
-		ev := siteapi.AwaitedEvent{Kind: siteapi.AwaitedEventKindEvent, Actions: append([]string{}, a.Actions...)}
+		ev, err := awaitedEvent(a)
+		if err != nil {
+			return siteapi.WaitForEventAwaits{}, err
+		}
 		return siteapi.WaitForEventAwaits{OneOf: siteapi.NewAwaitedEventWaitForEventAwaitsSum(ev)}, nil
 	case nil:
 	}
 	return siteapi.WaitForEventAwaits{}, errors.New("a wait for event that awaits nothing")
+}
+
+// awaitedEvent maps a Wait for event's Event matchers and its Condition into the typed DTO, each
+// checked as a stored Condition is (convert.Document).
+func awaitedEvent(a automationstep.AwaitedEvent) (siteapi.AwaitedEvent, error) {
+	ev := siteapi.AwaitedEvent{Kind: siteapi.AwaitedEventKindEvent, Matchers: make([]siteapi.EventMatcher, len(a.Matchers))}
+	for i, m := range a.Matchers {
+		matcher, err := eventMatcher(m)
+		if err != nil {
+			return siteapi.AwaitedEvent{}, err
+		}
+		ev.Matchers[i] = matcher
+	}
+	if a.Condition != nil {
+		cond, err := convert.Document[siteapi.WaitForEventCondition](*a.Condition)
+		if err != nil {
+			return siteapi.AwaitedEvent{}, err
+		}
+		ev.Condition = siteapi.NewOptWaitForEventCondition(cond)
+	}
+	return ev, nil
 }
 
 func optEditorDocument(doc json.RawMessage) siteapi.OptEditorDocument {

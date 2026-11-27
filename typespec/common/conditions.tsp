@@ -420,6 +420,20 @@ union BranchPropertySourceInput {
   trigger: TriggerSourceInput,
 }
 
+/** Whose properties a Wait for event's property test reads, by `kind`: the Event the Enrollment
+ * began with. The Event the Wait for event awaits is tested by its matcher's filter. */
+@discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
+union WaitForEventPropertySource {
+  trigger: TriggerSource,
+}
+
+/** Whose properties a Wait for event's property test reads, by `kind`: the Event the Enrollment
+ * began with. The Event the Wait for event awaits is tested by its matcher's filter. */
+@discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
+union WaitForEventPropertySourceInput {
+  trigger: TriggerSourceInput,
+}
+
 /** A test of one property of an Event: whose it is in `of`, its key in a field of its own, so a
  * key holding a dot is one key */
 model PropertyLeafOf<Of, Test> {
@@ -473,6 +487,14 @@ model BranchPropertyLeafInput is PropertyLeafOf<
 >;
 model RulePropertyLeafInput is PropertyLeafOf<
   RulePropertySourceInput,
+  PropertyTestInput
+>;
+model WaitForEventPropertyLeaf is PropertyLeafOf<
+  WaitForEventPropertySource,
+  PropertyTest
+>;
+model WaitForEventPropertyLeafInput is PropertyLeafOf<
+  WaitForEventPropertySourceInput,
   PropertyTestInput
 >;
 model FilterPropertyLeaf is FilterPropertyLeafOf<PropertyTest>;
@@ -613,6 +635,52 @@ model BranchCondition is ConditionOf<BranchConditionNode>;
  * reaches the Branch, the Event the Enrollment began with and the messages the Enrollment was sent
  * match */
 model BranchConditionInput is ConditionOf<BranchConditionNodeInput>;
+
+/** An entry of a Wait for event's Condition, by `kind`: a Rule's, and the property test reading
+ * the Event the Enrollment began with. The test of the Enrollment's own message is a Branch's
+ * only: a Wait for event on an open or click waits for one. */
+@discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
+union WaitForEventConditionNode {
+  group: WaitForEventCondition,
+  attribute: AttributeLeaf,
+  birthday: BirthdayLeaf,
+  tag: TagLeaf,
+  telegram: TelegramLeaf,
+  sms: SmsLeaf,
+  engagementTracking: EngagementTrackingLeaf,
+  customField: CustomFieldLeaf,
+  event: EventLeaf,
+  property: WaitForEventPropertyLeaf,
+}
+
+/** An entry of a Wait for event's Condition, by `kind`: a Rule's, and the property test reading
+ * the Event the Enrollment began with. The test of the Enrollment's own message is a Branch's
+ * only: a Wait for event on an open or click waits for one. */
+@discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
+union WaitForEventConditionNodeInput {
+  group: WaitForEventConditionInput,
+  attribute: AttributeLeafInput,
+  birthday: BirthdayLeafInput,
+  tag: TagLeafInput,
+  telegram: TelegramLeafInput,
+  sms: SmsLeafInput,
+  engagementTracking: EngagementTrackingLeafInput,
+  customField: CustomFieldLeafInput,
+  event: EventLeafInput,
+  property: WaitForEventPropertyLeafInput,
+}
+
+/** A Wait for event's Condition (ADR 0124, ADR 0180): the tree of tests the Contact, on its live
+ * data when the awaited Event is handled, and the Event the Enrollment began with match. An Event
+ * its matcher matches arrives only when the Condition holds; false and unknown leave the
+ * Enrollment waiting. */
+model WaitForEventCondition is ConditionOf<WaitForEventConditionNode>;
+
+/** A Wait for event's Condition (ADR 0124, ADR 0180): the tree of tests the Contact, on its live
+ * data when the awaited Event is handled, and the Event the Enrollment began with match. An Event
+ * its matcher matches arrives only when the Condition holds; false and unknown leave the
+ * Enrollment waiting. */
+model WaitForEventConditionInput is ConditionOf<WaitForEventConditionNodeInput>;
 
 /** An entry of an Event filter, by `kind`: a test of a property of the one Event the filter is
  * about, of what sent the message a message's System event is about, or a nested group. A test of

@@ -30,11 +30,12 @@ var (
 	segmentPlace = place{kinds: conditiontree.SegmentKinds}
 	rulePlace    = place{kinds: conditiontree.RuleKinds, sources: conditiontree.RuleSources}
 	branchPlace  = place{kinds: conditiontree.BranchKinds, sources: conditiontree.BranchSources}
+	waitPlace    = place{kinds: conditiontree.WaitForEventKinds, sources: conditiontree.WaitForEventSources}
 	// everyPlace admits the leaves of every place: the readers of what a stored Condition names
 	// (decodeSkipping, NamedSenders) read a tree whatever place holds it.
 	everyPlace = place{
-		kinds:   lo.Union(conditiontree.SegmentKinds, conditiontree.RuleKinds, conditiontree.BranchKinds),
-		sources: lo.Union(conditiontree.RuleSources, conditiontree.BranchSources),
+		kinds:   lo.Union(conditiontree.SegmentKinds, conditiontree.RuleKinds, conditiontree.BranchKinds, conditiontree.WaitForEventKinds),
+		sources: lo.Union(conditiontree.RuleSources, conditiontree.BranchSources, conditiontree.WaitForEventSources),
 	}
 )
 

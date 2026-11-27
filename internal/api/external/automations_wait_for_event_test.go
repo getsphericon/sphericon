@@ -24,11 +24,21 @@ const (
 	otherWaitID    = "7d2a4b3c-9e5f-4a6b-8c7d-2e3f4a5b6c05"
 )
 
+// orderOver100 is the Event matcher of an order.created whose total is over 100, as a client writes
+// it.
+const orderOver100 = `{"action":"order.created","filter":{"kind":"group","combinator":"and","entries":[` +
+	`{"kind":"property","key":"total","test":{"kind":"number","operator":"gt","value":100}}]}}`
+
+// vipOrProCondition is a Wait for event's Condition: the Contact has the Tag vip, or began the
+// Enrollment on a pro plan.
+const vipOrProCondition = `{"kind":"group","combinator":"or","entries":[{"kind":"tag","name":"vip","operator":"has"},` +
+	`{"kind":"property","of":{"kind":"trigger"},"key":"plan","test":{"kind":"text","operator":"eq","value":"pro"}}]}`
+
 // purchaseWait is a Wait for event named name, with the id given, that waits three days for an
 // order or a booked call, as a client writes it.
 func purchaseWait(id, name string) string {
 	return `{"id":"` + id + `","type":"wait_for_event","name":"` + name + `","timeoutSeconds":259200,` +
-		`"awaits":{"kind":"event","actions":["order.created","call.booked"]},"arrived":{"steps":[]},"timedOut":{"steps":[]}}`
+		`"awaits":{"kind":"event","matchers":[{"action":"order.created"},{"action":"call.booked"}]},"arrived":{"steps":[]},"timedOut":{"steps":[]}}`
 }
 
 // saveWaitForEvent creates an Automation whose root path holds the Wait for events written as
@@ -59,13 +69,13 @@ func editSteps(t *testing.T, c *externalapi.Client, a *externalapi.AutomationRes
 }
 
 // A Wait for event round-trips through /api as {type: "wait_for_event", name, timeoutSeconds,
-// awaits: {kind, actions}, arrived, timedOut}, its paths with their ids and Steps, at the root and in
-// a Split's path.
+// awaits: {kind, matchers, condition}, arrived, timedOut}, its matchers with their filters, its paths
+// with their ids and Steps, at the root and in a Split's path.
 func TestExternalAutomationKeepsAWaitForEvent(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, stepAuthorScopes...)
 	written := `{"id":"` + waitForEventID + `","type":"wait_for_event","name":"purchase","timeoutSeconds":259200,` +
-		`"awaits":{"kind":"event","actions":["order.created","call.booked"]},` +
+		`"awaits":{"kind":"event","matchers":[` + orderOver100 + `,{"action":"call.booked"}],"condition":` + vipOrProCondition + `},` +
 		`"arrived":{"id":"` + arrivedPathID + `","steps":[{"id":"` + thankedID + `","type":"apply_tag","tag":"thanked"}]},` +
 		`"timedOut":{"id":"` + timedOutPathID + `","steps":[]}}`
 	nested := `{"type":"split","paths":[{"weight":50,"steps":[` + purchaseWait(otherWaitID, "booking") + `]},{"weight":50,"steps":[]}]}`
@@ -146,7 +156,7 @@ func TestExternalAutomationKeepsAWaitForEventsNameAcrossEdits(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = editSteps(t, c, a, `{"id":"`+waitForEventID+`","type":"wait_for_event","name":"purchase","timeoutSeconds":60,`+
-		`"awaits":{"kind":"event","actions":["order.created"]},"arrived":{"steps":[]},"timedOut":{"steps":[]}}`)
+		`"awaits":{"kind":"event","matchers":[{"action":"order.created"}]},"arrived":{"steps":[]},"timedOut":{"steps":[]}}`)
 
 	require.NoError(t, err)
 }
@@ -157,7 +167,7 @@ func TestExternalAutomationRefusesAWaitForEventWithAZeroTimeout(t *testing.T) {
 	c := env.ExternalScoped(t, stepAuthorScopes...)
 
 	_, err := saveWaitForEvent(t, c, nil, `{"id":"`+waitForEventID+`","type":"wait_for_event","name":"purchase","timeoutSeconds":0,`+
-		`"awaits":{"kind":"event","actions":["order.created"]},"arrived":{"steps":[]},"timedOut":{"steps":[]}}`)
+		`"awaits":{"kind":"event","matchers":[{"action":"order.created"}]},"arrived":{"steps":[]},"timedOut":{"steps":[]}}`)
 
 	detail := refusedNaming(t, err, waitForEventID, "wait_for_event")
 	assert.Contains(t, detail, "timeout")
@@ -165,7 +175,8 @@ func TestExternalAutomationRefusesAWaitForEventWithAZeroTimeout(t *testing.T) {
 
 // What the contract does not admit in a Wait for event is refused with a 400 naming its path: a
 // missing timeout, a name not of lower-case letters, digits and underscores starting with a letter,
-// no awaited action, and a field it does not hold.
+// no awaited matcher, a field it does not hold, and a test of the Enrollment's own message in its
+// Condition, which is a Branch's alone (ADR 0181).
 func TestExternalAutomationRefusesAWaitForEventOutsideTheContract(t *testing.T) {
 	for _, tc := range []struct {
 		name string
@@ -174,8 +185,12 @@ func TestExternalAutomationRefusesAWaitForEventOutsideTheContract(t *testing.T) 
 	}{
 		{"a missing timeout", func(step map[string]any) { delete(step, "timeoutSeconds") }, "steps.steps.0"},
 		{"a name of the wrong form", func(step map[string]any) { step["name"] = "1st Purchase" }, "steps.steps.0.name"},
-		{"no awaited action", func(step map[string]any) { step["awaits"].(map[string]any)["actions"] = []any{} }, "steps.steps.0.awaits.actions"},
+		{"no awaited matcher", func(step map[string]any) { step["awaits"].(map[string]any)["matchers"] = []any{} }, "steps.steps.0.awaits.matchers"},
 		{"an unknown field", func(step map[string]any) { step["seconds"] = 3 }, "steps.steps.0.seconds"},
+		{"a test of the enrollment's own message", func(step map[string]any) {
+			step["awaits"].(map[string]any)["condition"] = testhelper.NestedCondition(t,
+				`{"kind":"stepMessage","step":"`+thankedID+`","engagement":"opened"}`)
+		}, "steps.steps.0.awaits.condition.entries.1.entries.1"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			env := testhelper.Setup(t)
@@ -187,6 +202,29 @@ func TestExternalAutomationRefusesAWaitForEventOutsideTheContract(t *testing.T) 
 
 			refused := testhelper.ExternalRefusal(t, err, http.StatusBadRequest)
 			assert.Equal(t, []string{tc.path}, slices.Collect(maps.Keys(refused.Errors.Or(nil))))
+		})
+	}
+}
+
+// What a Wait for event awaits is checked against the Workspace at save (422), naming the Step: a
+// matcher's filter naming a Tag the Workspace does not have, and a Condition testing a Custom field
+// it does not have.
+func TestExternalAutomationRefusesAWaitForEventNamingWhatTheWorkspaceLacks(t *testing.T) {
+	for name, tc := range map[string]struct{ awaits, named string }{
+		"a filter's tag": {`{"kind":"event","matchers":[{"action":"contact.tagged","filter":{"kind":"group","combinator":"and","entries":[` +
+			`{"kind":"property","key":"tag","test":{"kind":"text","operator":"eq","value":"no-such-tag"}}]}}]}`, "no-such-tag"},
+		"a condition's custom field": {`{"kind":"event","matchers":[{"action":"order.created"}],"condition":{"kind":"group","combinator":"and","entries":[` +
+			`{"kind":"customField","key":"no_such_field","test":{"kind":"presence","operator":"set"}}]}}`, "no_such_field"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			env := testhelper.Setup(t)
+			c := env.ExternalScoped(t, stepAuthorScopes...)
+
+			_, err := saveWaitForEvent(t, c, nil, `{"id":"`+waitForEventID+`","type":"wait_for_event","name":"purchase","timeoutSeconds":60,`+
+				`"awaits":`+tc.awaits+`,"arrived":{"steps":[]},"timedOut":{"steps":[]}}`)
+
+			detail := refusedNaming(t, err, waitForEventID, "wait_for_event")
+			assert.Contains(t, detail, tc.named)
 		})
 	}
 }
