@@ -1315,7 +1315,6 @@ export default interface Resources {
       "customFieldsGroup": "Custom fields",
       "dateFormat": "Date format",
       "dateFormatColumn": "Date format of {{column}}",
-      "dateFormatRequired": "Choose the format this column writes its dates in.",
       "dateTime": "Date and time (RFC 3339)",
       "decimalSeparator": "Decimal separator",
       "defaultCountry": "Default country",
@@ -1332,6 +1331,7 @@ export default interface Resources {
         "subjectId": "Subject ID"
       },
       "keysGroup": "Keys",
+      "leaveMessage": "The mapping you changed has not been saved.",
       "loadError": "Could not load the import",
       "malformedRows": "{{count}} row has another number of cells than the header and will be refused." | "{{count}} rows have another number of cells than the header and will be refused.",
       "mappingTitle": "Map the columns",

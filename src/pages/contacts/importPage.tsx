@@ -18,6 +18,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
+import { LeaveDialog } from '../../components/LeaveDialog.tsx'
 import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { PageSkeleton } from '../../components/Skeletons.tsx'
 import {
@@ -151,6 +152,8 @@ function MappingForm({ workspaceId, imp }: { workspaceId: string; imp: SiteConta
   }))
   const [values, setValues] = useState<MappingValues>(() => valuesOf(imp.mapping))
   const [previewed, setPreviewed] = useState(false)
+  // Edits not saved yet, which leaving the page would lose.
+  const [dirty, setDirty] = useState(false)
   const path = { workspaceId, importId: imp.id }
   const refresh = () =>
     void queryClient.invalidateQueries({ queryKey: siteContactImportsGetQueryKey({ path }) })
@@ -158,6 +161,7 @@ function MappingForm({ workspaceId, imp }: { workspaceId: string; imp: SiteConta
     ...siteContactImportsSaveMappingMutation(),
     onSuccess: () => {
       setPreviewed(true)
+      setDirty(false)
       void queryClient.invalidateQueries({ queryKey: siteContactImportsPreviewQueryKey({ path }) })
     },
   })
@@ -194,18 +198,22 @@ function MappingForm({ workspaceId, imp }: { workspaceId: string; imp: SiteConta
       t(($) => $.contactImports.dateTime),
     ),
   }))
-  const setColumn = (at: number, patch: Partial<MappingValues['columns'][number]>) =>
+  const setColumn = (at: number, patch: Partial<MappingValues['columns'][number]>) => {
+    setDirty(true)
     setValues((prev) => ({
       ...prev,
       columns: prev.columns.map((choice, i) => (i === at ? { ...choice, ...patch } : choice)),
     }))
+  }
   const edit = (patch: Partial<MappingValues>) => {
+    setDirty(true)
     setValues((prev) => ({ ...prev, ...patch }))
     setPreviewed(false)
   }
 
   return (
     <Stack>
+      <LeaveDialog dirty={dirty} message={t(($) => $.contactImports.leaveMessage)} />
       <Title order={3}>{t(($) => $.contactImports.mappingTitle)}</Title>
       <Table striped>
         <Table.Thead>
@@ -241,11 +249,6 @@ function MappingForm({ workspaceId, imp }: { workspaceId: string; imp: SiteConta
                       placeholder={t(($) => $.contactImports.chooseDateFormat)}
                       data={dateFormats}
                       value={choice.dateFormat}
-                      error={
-                        choice.dateFormat === null
-                          ? t(($) => $.contactImports.dateFormatRequired)
-                          : undefined
-                      }
                       onChange={(format) => {
                         setColumn(at, {
                           dateFormat: zContactImportDateFormat.nullable().parse(format),

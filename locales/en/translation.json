@@ -1329,7 +1329,6 @@
     "customFieldsGroup": "Custom fields",
     "dateFormat": "Date format",
     "dateFormatColumn": "Date format of {{column}}",
-    "dateFormatRequired": "Choose the format this column writes its dates in.",
     "dateTime": "Date and time (RFC 3339)",
     "decimalSeparator": "Decimal separator",
     "defaultCountry": "Default country",
@@ -1346,6 +1345,7 @@
       "subjectId": "Subject ID"
     },
     "keysGroup": "Keys",
+    "leaveMessage": "The mapping you changed has not been saved.",
     "loadError": "Could not load the import",
     "malformedRows_one": "{{count}} row has another number of cells than the header and will be refused.",
     "malformedRows_other": "{{count}} rows have another number of cells than the header and will be refused.",
