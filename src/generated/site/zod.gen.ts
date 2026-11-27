@@ -1286,7 +1286,8 @@ export const zContactImportMapping = z.object({
   decimalSeparator: zContactImportDecimalSeparator,
   defaultCountry: zCountryCode.nullable(),
   tag: zName.nullable(),
-  onlyAddNew: z.boolean()
+  onlyAddNew: z.boolean(),
+  asNewSignUps: z.boolean()
 });
 
 /**
@@ -1297,7 +1298,8 @@ export const zContactImportMappingInput = z.strictObject({
   decimalSeparator: zContactImportDecimalSeparator,
   defaultCountry: zCountryCode.nullable(),
   tag: zName.nullable(),
-  onlyAddNew: z.boolean()
+  onlyAddNew: z.boolean(),
+  asNewSignUps: z.boolean()
 });
 
 /**

@@ -22,7 +22,7 @@ export interface FieldOption {
 }
 
 // A column as the mapping form holds it: what it writes and, for a date, its format.
-export interface ColumnChoice {
+interface ColumnChoice {
   target: Target
   dateFormat: ContactImportDateFormat | null
 }
@@ -55,7 +55,7 @@ export function targets(fields: readonly FieldOption[]): {
 }
 
 // The target a column of a mapping writes.
-export function targetOf(column: ContactImportColumn): Target {
+function targetOf(column: ContactImportColumn): Target {
   if (column.kind === 'key') {
     return `key:${column.key}`
   }
@@ -88,14 +88,12 @@ export function valuesOf(mapping: ContactImportMapping): MappingValues {
     defaultCountry: mapping.defaultCountry,
     tag: mapping.tag ?? '',
     onlyAddNew: mapping.onlyAddNew,
+    asNewSignUps: mapping.asNewSignUps,
   }
 }
 
 // The column a request saves for a choice; a date format is sent with a date column only.
-export function columnOf(
-  choice: ColumnChoice,
-  fields: readonly FieldOption[],
-): ContactImportColumnInput {
+function columnOf(choice: ColumnChoice, fields: readonly FieldOption[]): ContactImportColumnInput {
   const dateFormat = writesDate(choice.target, fields) ? choice.dateFormat : null
   const at = choice.target.indexOf(':')
   const kind = at < 0 ? choice.target : choice.target.slice(0, at)
@@ -123,6 +121,7 @@ export function mappingInputOf(
     defaultCountry: values.defaultCountry,
     tag: values.tag.trim() === '' ? null : values.tag.trim(),
     onlyAddNew: values.onlyAddNew,
+    asNewSignUps: values.asNewSignUps,
   }
 }
 

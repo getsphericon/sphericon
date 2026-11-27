@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -20,8 +21,10 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	apiauth "github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contactimports"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -250,6 +253,53 @@ func TestAContactImportThatOnlyAddsNewLeavesAnExistingContactUnchanged(t *testin
 	assert.NotContains(t, lo.Map(alice.Edges.Tags, func(tg *ent.Tag, _ int) string { return tg.Name }), "from-the-file")
 	require.NotNil(t, neo)
 	assert.Equal(t, "Neo", lo.FromPtr(neo.FirstName))
+}
+
+// "Treat them as new sign-ups" is kept on the import and on its contact.import Audit entry, and
+// makes the run's Events live: they still name the job on their envelope, but are not history, so
+// they reach the consumers that start what a sign-up starts. Left unticked, they are the import's
+// history, stored but handed to no consumer.
+func TestAContactImportOfNewSignUpsPublishesLiveEvents(t *testing.T) {
+	for name, tc := range map[string]struct {
+		asNewSignUps bool
+		// live is how many of the run's contact.created Events reach the consumers.
+		live int
+	}{
+		"ticked":   {asNewSignUps: true, live: 1},
+		"unticked": {asNewSignUps: false, live: 0},
+	} {
+		t.Run(name, func(t *testing.T) {
+			env := testhelper.Setup(t)
+			ctx := t.Context()
+			owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
+			imp := uploaded(t, owner, "email\nsigned-up@example.com\n")
+			in := mappingInput(t, imp)
+			in.AsNewSignUps = tc.asNewSignUps
+			params := siteapi.SiteContactImportsRunParams{WorkspaceId: fixtures.AcmePublicID, ImportId: imp.ID}
+
+			saved, err := saveMapping(t, owner, imp, in)
+			require.NoError(t, err)
+			_, err = owner.SiteContactImportsRun(ctx, params)
+			require.NoError(t, err)
+			// Only the run: the jobs its live Events queue are their consumers' to test.
+			env.PerformEnqueuedJobs(t, contactimports.RunArgs{})
+			signedUp := contactByEmail(t, env, "signed-up@example.com")
+			stored := lo.Filter(env.StoredEvents(t, systemevent.ContactCreated), func(e *ent.Event, _ int) bool {
+				return lo.FromPtr(e.ContactID) == signedUp.ID
+			})
+			queued := lo.Map(env.QueuedEnvelopes(t, systemevent.ContactCreated), func(e events.Envelope, _ int) events.Cause { return e.Cause })
+			imports := lo.Filter(testhelper.Queued[*events.AuditEntry](t, env, events.NameAuditEntry), func(e *events.AuditEntry, _ int) bool {
+				return e.Action == events.ActionContactImport
+			})
+
+			assert.Equal(t, tc.asNewSignUps, saved.Mapping.AsNewSignUps, "the import keeps the choice")
+			require.Len(t, stored, 1)
+			assert.Equal(t, !tc.asNewSignUps, events.WasHistory(stored[0]))
+			assert.Equal(t, slices.Repeat([]events.Cause{events.ImportAsNew(int64(imp.ID))}, tc.live), queued, "a live Event still names the job")
+			require.Len(t, imports, 1)
+			assert.Equal(t, tc.asNewSignUps, imports[0].Diff["as_new_sign_ups"], "the Audit entry keeps the choice")
+		})
+	}
 }
 
 // readReport is the CSV a report download streams, its byte order mark dropped.
