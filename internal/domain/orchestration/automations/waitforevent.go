@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"entgo.io/ent/dialect/sql"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationsteprecord"
@@ -282,7 +284,7 @@ func satisfying(w awaitWindow) []predicate.Event {
 		where = append(where, event.Or(event.SourceIDIsNil(), event.SourceIDNEQ(w.begunOn)))
 	}
 	if len(w.declined) > 0 {
-		where = append(where, event.IDNotIn(w.declined...))
+		where = append(where, notDeclined(w.declined))
 	}
 	if w.key != nil && w.keyValue != nil {
 		where = append(where, ofKey(*w.key, *w.keyValue))
@@ -454,4 +456,15 @@ func decline(ctx context.Context, s *ent.Scoped, runID int64, step automationste
 		Where(automationsteprecord.RunID(runID), automationsteprecord.StepID(step), automationsteprecord.LeftAtIsNil()).
 		AppendDeclinedEventIds([]int64{eventID}).
 		Exec(ctx)
+}
+
+// notDeclined is the predicate that a stored Event is none of the declined, bound as one array
+// parameter: a wait may decline more Events than a statement takes parameters, one per id.
+func notDeclined(declined []int64) predicate.Event {
+	return func(s *sql.Selector) {
+		// raw sql: ent binds a list as one parameter per item; an array is one parameter.
+		s.Where(sql.P(func(b *sql.Builder) {
+			b.WriteString("NOT (").WriteString(s.C(event.FieldID)).WriteString(" = ANY(").Arg(declined).WriteString("::bigint[]))")
+		}))
+	}
 }

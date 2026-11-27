@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/automationsteprecord"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
@@ -246,4 +247,29 @@ func TestAWaitForEventsFilterNamingAnUnknownBroadcastIsRefusedNamingTheStep(t *t
 
 	require.ErrorIs(t, err, automations.ErrUnknownSender)
 	require.ErrorContains(t, err, "step "+string(purchaseID)+" (wait_for_event): an awaited event: the filter: ")
+}
+
+// The Events a wait's wake declined are one parameter of the timeout's lookup however many there
+// are: a Step record that declined more Events than a statement takes parameters still times out,
+// and still arrives on an Event recorded late that it never declined.
+func TestTheTimeoutReadsAnyNumberOfDeclinedEvents(t *testing.T) {
+	w := awaiting(t, "trial.started", automationstep.AwaitedEvent{
+		Matchers: []eventmatcher.Matcher{{Action: "order.completed"}}, Condition: waitCondition(t, `{"kind":"tag","name":"vip","operator":"doesNotHave"}`),
+	}, nil)
+	contact, runID := w.enroll(t, "trial.started")
+	deadline := w.clock.Now().Add(waitTimeout)
+	// More declined Events than the 65,535 parameters a statement takes, none of them recorded.
+	declined := lo.RangeFrom(int64(1_000_000_000), 70_000)
+	err := w.env.DB.Scoped(fixtures.AcmeID).AutomationStepRecord().Update().
+		Where(automationsteprecord.RunID(runID), automationsteprecord.StepID(w.wait)).
+		SetDeclinedEventIds(declined).
+		Exec(t.Context())
+	require.NoError(t, err)
+
+	w.clock.Set(deadline.Add(5 * time.Minute))
+	// Recorded within the window, its trigger job not yet run.
+	require.NoError(t, w.env.Publisher().Publish(t.Context(), collected(contact.ID, "order.completed", deadline.Add(-time.Minute), nil)))
+	w.timeout(t, runID)
+
+	assert.Equal(t, w.arrived, w.standsOn(t, runID))
 }
