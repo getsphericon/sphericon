@@ -2,16 +2,26 @@ import { useTranslation } from 'react-i18next'
 import type * as z from 'zod'
 
 import { allSteps, isFork } from './definition.ts'
-import type { DateDraft, Flow, FlowStep, TimeOfDayDraft, WaitForEventDraft } from './definition.ts'
+import type {
+  DateDraft,
+  Flow,
+  FlowPath,
+  FlowStep,
+  TimeOfDayDraft,
+  WaitForEventDraft,
+} from './definition.ts'
 import { TRIGGER_NODE_ID } from './flowLayout.ts'
 import { forkError } from './forkRules.ts'
 import type { ForkError } from './forkRules.ts'
+import { messageStepsOf } from './messageSteps.ts'
 import { namesDate, timeOfDaySchema, useDateSchema, useDatetimeFields } from './momentRules.ts'
+import { useStepInfo } from './stepKinds.ts'
 import { useWaitForEventSchema } from './waitForEventRules.ts'
 
 // What is wrong with a node of the canvas: the Trigger's date, a fork's paths, a Wait until's
-// moment or what a Wait for event awaits. A Save checks every node and sends nothing while one is wrong; the node shows its error
-// once it was checked (on blur or on Save), and its panel shows each under its field.
+// moment or what a Wait for event awaits, a send Step it names among them, which must come before
+// it. A Save checks every node and sends nothing while one is wrong; the node shows its error once
+// it was checked (on blur or on Save), and its panel shows each under its field.
 export interface NodeError {
   id: string
   message: string
@@ -24,6 +34,7 @@ export function useNodeErrors(flow: Flow): (flow: Flow) => NodeError[] {
   const { t } = useTranslation()
   const dateSchema = useDateSchema(useDatetimeFields(namesDate(flow)))
   const waitForEventSchema = useWaitForEventSchema()
+  const infoOf = useStepInfo()
   const labels: Record<keyof DateDraft | keyof TimeOfDayDraft, string> = {
     field: t(($) => $.automations.date.fieldLabel),
     recurrence: t(($) => $.automations.date.recurrenceLabel),
@@ -33,9 +44,10 @@ export function useNodeErrors(flow: Flow): (flow: Flow) => NodeError[] {
     weekdays: t(($) => $.automations.weekdaysLabel),
   }
 
-  const waitForEventLabels: Record<'name' | 'timeoutSeconds', string> = {
+  const waitForEventLabels: Record<'name' | 'timeoutSeconds' | 'messageStep', string> = {
     name: t(($) => $.automations.waitForEvent.nameLabel),
     timeoutSeconds: t(($) => $.automations.waitForEvent.timeoutLabel),
+    messageStep: t(($) => $.automations.waitForEvent.messageStepLabel),
   }
 
   // The first thing wrong with a draft: a part left blank by its label, else the rule's own words.
@@ -75,9 +87,10 @@ export function useNodeErrors(flow: Flow): (flow: Flow) => NodeError[] {
     draft: T,
   ): string | null => draftError(schema, draft, labels)
 
-  const stepError = (step: FlowStep): string | null => {
+  const stepError = (root: FlowPath, step: FlowStep): string | null => {
     if (step.kind === 'wait_for_event') {
-      return draftError(waitForEventSchema, step.draft, waitForEventLabels)
+      const schema = waitForEventSchema(messageStepsOf(infoOf, root, step.id))
+      return draftError(schema, step.draft, waitForEventLabels)
     }
     if (isFork(step)) {
       const error = forkError(step)
@@ -97,7 +110,7 @@ export function useNodeErrors(flow: Flow): (flow: Flow) => NodeError[] {
     return [
       ...(triggerError === null ? [] : [{ id: TRIGGER_NODE_ID, message: triggerError }]),
       ...allSteps(current.path).flatMap((step) => {
-        const message = stepError(step)
+        const message = stepError(current.path, step)
         return message === null ? [] : [{ id: step.id, message }]
       }),
     ]

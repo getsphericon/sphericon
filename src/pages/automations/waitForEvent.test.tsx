@@ -5,6 +5,7 @@ import { page } from 'vitest/browser'
 import {
   handleSiteAutomationReportsGet,
   handleSiteAutomationsGet,
+  handleSiteAutomationsPublish,
   handleSiteAutomationsUpdate,
   handleSiteContactsList,
   handleSiteCustomFieldsList,
@@ -30,14 +31,16 @@ import {
   testId,
   workspace,
 } from '../../test/payloads.ts'
+import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
 import { AutomationEditPage } from './edit.tsx'
 
-// The canvas edits a Wait for event on an Event (ADR 0124): a fork with its `arrived` and
-// `timedOut` paths, whose panel holds its name (ADR 0136), timeout, awaited Events (ADR 0180) and
-// Condition.
+// The canvas edits a Wait for event (ADR 0124): a fork with its `arrived` and `timedOut` paths, and
+// its unknown path when it waits for an open or click of a message, whose panel holds its name (ADR
+// 0136), timeout and what it awaits: Events (ADR 0180) with a Condition, or the message of a send
+// Step before it.
 
 const EDIT_ROUTE = routeMount(automationsEditRoute, {
   workspaceId: 'TestWs01',
@@ -283,4 +286,101 @@ test('an edit made while saving stays unsaved after the save, with the Steps put
       },
     ],
   ])
+})
+
+const WELCOME: AutomationStep = {
+  id: stepId(30),
+  type: 'email',
+  subject: 'Welcome',
+  body: '<p></p>',
+}
+const NUDGE: AutomationStep = { id: stepId(31), type: 'sms', text: 'Hi', linkTracking: false }
+const LATER: AutomationStep = { id: stepId(32), type: 'email', subject: 'Later', body: '<p></p>' }
+
+// A stored Wait for event on an open of the welcome email, its unknown path holding the Steps.
+function opened(unknown: AutomationStep[] | null = []): AutomationStep {
+  return {
+    id: stepId(20),
+    type: 'wait_for_event',
+    name: 'opened',
+    timeoutSeconds: 86_400,
+    awaits: { kind: 'message', step: WELCOME.id, engagement: 'opened' },
+    arrived: { id: stepId(21), steps: [] },
+    timedOut: { id: stepId(22), steps: [] },
+    ...(unknown === null ? {} : { unknown: { id: stepId(23), steps: unknown } }),
+  }
+}
+
+// The send Step picker offers the send Steps an Enrollment may have passed when it reaches the wait
+// (ADR 0122): never one inside the wait's own paths or one after it.
+test('switching to an open or click adds the unknown path and picks a send Step before the wait', async () => {
+  const { screen, saved } = await editing([WELCOME, purchase([NUDGE]), LATER])
+
+  await nodeButton(screen, 'Wait for event').click()
+  const panel = panelOf(screen)
+  await panel.getByText('An open or click').click()
+  await expect.element(screen.getByRole('button', { name: /^Unknown/ })).toBeVisible()
+  await panel.getByLabelText('Message', { exact: true }).first().click()
+  await expect.element(screen.getByRole('option', { name: /SMS/ })).not.toBeInTheDocument()
+  await expect.element(screen.getByRole('option', { name: /Later/ })).not.toBeInTheDocument()
+  await screen.getByRole('option', { name: '1. Send email: Welcome' }).click()
+  await panel.getByText('Clicked').click()
+  await save(screen)
+
+  const stored = purchase([NUDGE])
+  await expect.poll(saved).toEqual([
+    [
+      WELCOME,
+      {
+        ...stored,
+        awaits: { kind: 'message', step: WELCOME.id, engagement: 'clicked' },
+        unknown: { id: anyId, steps: [] },
+      },
+      LATER,
+    ],
+  ])
+})
+
+test('switching back to an Event with Steps in the unknown path asks first, naming how many go', async () => {
+  const { screen, saved } = await editing([WELCOME, opened([WAIT, TAG])])
+
+  await nodeButton(screen, 'Wait for event').click()
+  await panelOf(screen).getByText('An event', { exact: true }).click()
+  await expect
+    .element(
+      screen.getByText(
+        'An event is never unknown, so this wait needs no unknown path. Removing it also removes the 2 steps it holds.',
+      ),
+    )
+    .toBeVisible()
+  await screen.getByRole('button', { name: 'Remove', exact: true }).click()
+  await panelOf(screen).getByRole('combobox', { name: 'Event' }).fill('order.created')
+  await save(screen)
+
+  await expect.poll(saved).toEqual([
+    [
+      WELCOME,
+      {
+        id: stepId(20),
+        type: 'wait_for_event',
+        name: 'opened',
+        timeoutSeconds: 86_400,
+        awaits: { kind: 'event', matchers: [{ action: 'order.created' }] },
+        arrived: { id: stepId(21), steps: [] },
+        timedOut: { id: stepId(22), steps: [] },
+      },
+    ],
+  ])
+})
+
+// A save keeps a wait for an open stored without its unknown path; Publish refuses it, and the
+// editor shows the refusal.
+test("Publish's refusal of a wait for an open without its unknown path shows in the editor", async () => {
+  const refusal = `step ${stepId(20)} (wait_for_event): a wait for an open or a click needs an unknown path, taken when the app cannot know whether one happened`
+  const { screen } = await editing([WELCOME, opened(null)])
+  worker.use(handleSiteAutomationsPublish(() => problem(422, { detail: refusal })))
+
+  await screen.getByRole('button', { name: 'Publish' }).click()
+
+  await expect.element(screen.getByText(refusal)).toBeVisible()
 })

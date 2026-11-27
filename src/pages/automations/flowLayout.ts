@@ -28,8 +28,8 @@ const PATH_GAP = 32
 type TriggerNode = Node<Record<string, never>, 'trigger'>
 export type StepNode = Node<{ step: FlowStep }, 'step'>
 // What heads a fork's path: a Branch's listed path by its place in the order (1 is tested first),
-// `otherwise`, the unknown path, a Split's path by its weight, or a Wait for event's `arrived` or
-// `timedOut`.
+// `otherwise`, the unknown path, a Split's path by its weight, or a Wait for event's `arrived`,
+// `timedOut` or unknown path.
 export type PathRole =
   | { kind: 'condition'; index: number }
   | { kind: 'otherwise' }
@@ -64,6 +64,7 @@ function pathRoles(step: ForkStep): { path: FlowPath; role: PathRole }[] {
     return [
       { path: step.arrived, role: { kind: 'arrived' } },
       { path: step.timedOut, role: { kind: 'timedOut' } },
+      ...(step.unknown ? [{ path: step.unknown, role: { kind: 'unknown' } as const }] : []),
     ]
   }
   if (step.kind === 'split') {

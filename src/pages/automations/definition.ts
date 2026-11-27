@@ -17,7 +17,9 @@ import type {
   EventFilterInput,
   EventMatcher,
   EventMatcherInput,
+  MessageEngagement,
   TelegramButton,
+  WaitForEventAwaitsInput,
   WaitForEventConditionInput,
   WaitForEventStep as WaitForEventStepRead,
   WaitUntilMoment,
@@ -29,6 +31,7 @@ import {
   zDateOccurrenceInput,
   zEntryPolicy,
   zEventFilterInput,
+  zWaitForEventAwaitsInput,
   zWaitForEventConditionInput,
   zWaitUntilTimeOfDayInput,
 } from '../../generated/site/zod.gen.ts'
@@ -137,23 +140,40 @@ export interface SplitStep {
 // A fork whose listed paths a person adds, removes and gives a Condition or a weight.
 export type ListedFork = BranchStep | SplitStep
 
+// What a Wait for event awaits (ADR 0124): an Event, or an open or click of a message.
+export type AwaitedForm = WaitForEventAwaitsInput['kind']
+
+// The forms of what a Wait for event awaits, in the contract's order.
+export const AWAITED_FORMS: AwaitedForm[] = zWaitForEventAwaitsInput.options.map(
+  (option) => option.shape.kind.value,
+)
+
 // What a Wait for event's panel edits (ADR 0124): its name, fixed once the Step is saved (ADR 0136);
-// its timeout in seconds ('' while blank); the Event matchers it awaits (ADR 0180), each as an exit's
-// draft; and its Condition's text ('' for none, else its JSON, complete or still being typed).
+// its timeout in seconds ('' while blank); the form of what it awaits, and the draft of each form:
+// switching keeps the other's. The Event form's are the Event matchers it awaits (ADR 0180), each as
+// an exit's draft, and its Condition's text ('' for none, else its JSON, complete or still being
+// typed); the open or click form's are the send Step whose message it awaits ('' while none is
+// picked) and whether it awaits an open or a click.
 export interface WaitForEventDraft {
   name: string
   timeoutSeconds: number | ''
+  form: AwaitedForm
   matchers: EndingDraft[]
   conditionText: string
+  messageStep: string
+  engagement: MessageEngagement
 }
 
-// A Wait for event on an Event: what its panel edits, and its two paths, `arrived` and `timedOut`.
+// A Wait for event: what its panel edits, its `arrived` and `timedOut` paths, and its unknown path,
+// which only the open or click form has, and which a version stored without it may lack (Publish
+// refuses that).
 export interface WaitForEventStep {
   id: string
   kind: 'wait_for_event'
   draft: WaitForEventDraft
   arrived: FlowPath
   timedOut: FlowPath
+  unknown: FlowPath | null
 }
 
 // A Step whose paths rejoin after it.
@@ -292,24 +312,43 @@ function flowStepOf(step: AutomationStep): FlowStep {
   }
 }
 
-// A stored Wait for event on an Event as the editor holds it: what its panel edits, and its two
-// paths. The editor does not edit one on an open or click of a message yet: it is kept.
-function waitForEventOf(step: WaitForEventStepRead): WaitForEventStep | KeptStep {
-  if (step.awaits.kind !== 'event') {
-    return { id: step.id, kind: 'kept', step }
+// The draft of each form of what a new Wait for event awaits: an Event, a row of which it asks for,
+// and no send Step picked yet, awaiting an open.
+export function newAwaitedDrafts(): Pick<
+  WaitForEventDraft,
+  'matchers' | 'conditionText' | 'messageStep' | 'engagement'
+> {
+  return {
+    matchers: [{ action: '', filterText: '' }],
+    conditionText: '',
+    messageStep: '',
+    engagement: 'opened',
   }
-  const { condition, matchers } = step.awaits
+}
+
+// A stored Wait for event as the editor holds it: what its panel edits, its own form's draft and
+// the other form's new, and its paths.
+function waitForEventOf(step: WaitForEventStepRead): WaitForEventStep {
+  const { awaits } = step
+  const drafts = newAwaitedDrafts()
   return {
     id: step.id,
     kind: 'wait_for_event',
     draft: {
       name: step.name,
       timeoutSeconds: step.timeoutSeconds,
-      matchers: matchers.map((matcher) => endingDraft(matcher)),
-      conditionText: condition ? filterText(condition) : '',
+      form: awaits.kind,
+      ...drafts,
+      ...(awaits.kind === 'event'
+        ? {
+            matchers: awaits.matchers.map((matcher) => endingDraft(matcher)),
+            conditionText: awaits.condition ? filterText(awaits.condition) : '',
+          }
+        : { messageStep: awaits.step, engagement: awaits.engagement }),
     },
     arrived: flowPathOf(step.arrived),
     timedOut: flowPathOf(step.timedOut),
+    unknown: step.unknown ? flowPathOf(step.unknown) : null,
   }
 }
 
@@ -415,14 +454,14 @@ export function isFork(step: FlowStep): step is ForkStep {
 }
 
 // forkPaths are the paths of a fork, in the order the canvas draws them: a Branch's listed paths,
-// `otherwise`, then the unknown path; a Split's paths; a Wait for event's `arrived`, then
-// `timedOut`. Any other Step has none.
+// `otherwise`, then the unknown path; a Split's paths; a Wait for event's `arrived`, `timedOut`,
+// then the unknown path. Any other Step has none.
 export function forkPaths(step: FlowStep): FlowPath[] {
   if (step.kind === 'branch') {
     return [...step.paths, step.otherwise, ...(step.unknown ? [step.unknown] : [])]
   }
   if (step.kind === 'wait_for_event') {
-    return [step.arrived, step.timedOut]
+    return [step.arrived, step.timedOut, ...(step.unknown ? [step.unknown] : [])]
   }
   return step.kind === 'split' ? step.paths : []
 }
@@ -738,21 +777,41 @@ export function awaitedMatchersOf(
   return drafts.flatMap((draft) => endingRead(draft))
 }
 
-// The Wait for event a draft saves; null while it is not one to save: its timeout blank, no
-// matcher, a filter or its Condition still being typed, or a path not one to save.
+// What a Wait for event's draft awaits, by its form; null while it is not one to save: no matcher,
+// a filter or its Condition still being typed, or no send Step picked.
+function awaitsOf(draft: WaitForEventDraft): WaitForEventAwaitsInput | null {
+  if (draft.form === 'message') {
+    return draft.messageStep === ''
+      ? null
+      : { kind: 'message', step: draft.messageStep, engagement: draft.engagement }
+  }
+  const read = awaitedMatchersOf(draft.matchers)
+  const condition = waitForEventConditionOf(draft.conditionText)
+  if (read.length === 0 || read.some((matcher) => matcher.incomplete) || condition === null) {
+    return null
+  }
+  return {
+    kind: 'event',
+    matchers: read.map(({ matcher }) => matcher),
+    ...(condition === undefined ? {} : { condition }),
+  }
+}
+
+// The Wait for event a draft saves, its unknown path with it when it has one; null while it is not
+// one to save: its timeout blank, what it awaits not one to save (awaitsOf), or a path not one to
+// save.
 function waitForEventInput(step: WaitForEventStep): AutomationStepInput | null {
-  const { name, timeoutSeconds, matchers, conditionText } = step.draft
-  const read = awaitedMatchersOf(matchers)
-  const condition = waitForEventConditionOf(conditionText)
+  const { name, timeoutSeconds } = step.draft
+  const awaits = awaitsOf(step.draft)
   const arrived = pathInput(step.arrived)
   const timedOut = pathInput(step.timedOut)
+  const unknown = step.unknown === null ? undefined : pathInput(step.unknown)
   if (
     timeoutSeconds === '' ||
-    read.length === 0 ||
-    read.some((matcher) => matcher.incomplete) ||
-    condition === null ||
+    awaits === null ||
     arrived === null ||
-    timedOut === null
+    timedOut === null ||
+    unknown === null
   ) {
     return null
   }
@@ -761,13 +820,10 @@ function waitForEventInput(step: WaitForEventStep): AutomationStepInput | null {
     type: 'wait_for_event',
     name,
     timeoutSeconds,
-    awaits: {
-      kind: 'event',
-      matchers: read.map(({ matcher }) => matcher),
-      ...(condition === undefined ? {} : { condition }),
-    },
+    awaits,
     arrived,
     timedOut,
+    ...(unknown === undefined ? {} : { unknown }),
   }
 }
 
