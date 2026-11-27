@@ -85,7 +85,7 @@ export function targets(fields: readonly FieldOption[]): {
 }
 
 // The target a column of a mapping writes.
-export function targetOf(column: ContactImportColumn): Target {
+function targetOf(column: ContactImportColumn): Target {
   if (column.kind === 'key') {
     return `key:${column.key}`
   }
@@ -129,10 +129,7 @@ export function valuesOf(mapping: ContactImportMapping): MappingValues {
 }
 
 // The column a request saves for a choice; a date format is sent with a date column only.
-export function columnOf(
-  choice: ColumnChoice,
-  fields: readonly FieldOption[],
-): ContactImportColumnInput {
+function columnOf(choice: ColumnChoice, fields: readonly FieldOption[]): ContactImportColumnInput {
   const dateFormat = choiceWritesDate(choice, fields) ? choice.dateFormat : null
   const at = choice.target.indexOf(':')
   const kind = at < 0 ? choice.target : choice.target.slice(0, at)
