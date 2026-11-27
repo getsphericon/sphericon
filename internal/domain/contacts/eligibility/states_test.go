@@ -123,6 +123,40 @@ func TestChannelStateTellsWhenTheOptOutOccurred(t *testing.T) {
 		states[fixtures.TyrellMatrixCleanID].Email.OptOuts)
 }
 
+// The time of a Confirmation is when the consent was given (ADR 0154), which its consent stamp
+// keeps on email and, by the number's hash, on sms.
+func TestChannelStateTellsWhenTheConfirmationWasGiven(t *testing.T) {
+	env := testhelper.Setup(t)
+	s := env.DB.Scoped(fixtures.TyrellID)
+	given := time.Date(2025, 3, 1, 9, 30, 0, 0, time.UTC)
+	for _, k := range []consentstamps.Key{
+		{Channel: channels.Email, Destination: fixtures.TyrellMatrixConfirmedEmail, Source: eligibility.SourceEverything},
+		{Channel: channels.SMS, Destination: fixtures.TyrellMatrixConfirmedPhone, Source: eligibility.SourceEverything},
+	} {
+		_, err := consentstamps.New().Admit(t.Context(), s, consentstamps.Observation{Key: k, Fact: consentstamps.Confirmation, Occurred: consentstamps.At(given)})
+		require.NoError(t, err)
+	}
+
+	confirmed := statesOf(t, env, fixtures.TyrellID)[fixtures.TyrellMatrixConfirmedID]
+
+	assert.Equal(t, &eligibility.ConfirmationFact{Provenance: confirmation.ProvenanceDoubleOptIn, At: given}, confirmed.Email.Confirmation)
+	assert.Equal(t, &eligibility.ConfirmationFact{Provenance: confirmation.ProvenanceImported, At: given}, confirmed.SMS.Confirmation)
+}
+
+// A Contact whose first Binding stopped Broadcasts and whose second may receive reads as the
+// second: an Audience keeps it for that one.
+func TestChannelStateOnTelegramIsTheBindingThatFaresBest(t *testing.T) {
+	env := testhelper.Setup(t)
+	err := env.DB.Scoped(fixtures.LacunaID).Unsubscribe().UpdateOneID(fixtures.UnsubscribeLacunaStoppedID).
+		SetDestination("77401").Exec(t.Context())
+	require.NoError(t, err)
+
+	states := statesOf(t, env, fixtures.LacunaID)
+
+	assert.Equal(t, eligibility.ChannelState{Destination: "77402", State: eligibility.StateMayReceive},
+		states[fixtures.ContactLacunaTwoChatsID].Telegram)
+}
+
 // On Telegram a Contact is reached at its Bindings: one with two chats that may both receive reads
 // as its first Binding, one whose only chat stopped Broadcasts as opted out, one without a Binding
 // as no Destination.

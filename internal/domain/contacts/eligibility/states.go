@@ -50,7 +50,8 @@ type SuppressionFact struct {
 	At     time.Time
 }
 
-// ConfirmationFact is the Confirmation a Destination holds: how it was obtained and when.
+// ConfirmationFact is the Confirmation a Destination holds: how it was obtained and when it was
+// given (ADR 0154), which its consent stamp keeps, else when it was recorded.
 type ConfirmationFact struct {
 	Provenance confirmation.Provenance
 	At         time.Time
@@ -231,7 +232,8 @@ type facts struct {
 	optOuts       map[destKey][]*ent.Unsubscribe
 	suppressions  map[destKey][]*ent.Suppression
 	confirmations map[destKey][]*ent.Confirmation
-	// stamps are the opt-outs' consent stamps, by their stored key and Sending source.
+	// stamps are the consent stamps of the opt-outs and the Confirmations, by their stored key and
+	// Sending source.
 	stamps map[destKey]map[string]*ent.ConsentStamp
 }
 
@@ -315,7 +317,12 @@ func (f facts) state(channel channels.Channel, r stateRow) ChannelState {
 			out.Suppression = &SuppressionFact{Reason: sup.Reason, At: sup.CreatedAt.UTC()}
 		}
 		if c := lo.FirstOr(f.confirmations[k], nil); c != nil && out.Confirmation == nil {
-			out.Confirmation = &ConfirmationFact{Provenance: c.Provenance, At: c.CreatedAt.UTC()}
+			at := c.CreatedAt
+			// A Confirmation's stamp is kept on the `everything` source (consentstamps.Confirmation).
+			if st := stamps[SourceEverything]; st != nil && st.ConfirmationOccurredAt != nil {
+				at = *st.ConfirmationOccurredAt
+			}
+			out.Confirmation = &ConfirmationFact{Provenance: c.Provenance, At: at.UTC()}
 		}
 	}
 	slices.SortFunc(out.OptOuts, func(a, b OptOut) int { return cmp.Compare(a.Scope, b.Scope) })
