@@ -21,7 +21,8 @@ const (
 	// Machine: software made the Event (a mail scanner's open or click, ADR 0053), and an Event
 	// like that never triggers a Rule.
 	Machine DryRunOutcome = "machine"
-	// Backfill: the Event was loaded as history, and history never triggers a Rule.
+	// Backfill: the Event is history (a Backfill or an import's, events.IsHistory), and history never
+	// triggers a Rule.
 	Backfill DryRunOutcome = "backfill"
 	// NoContact: the Event is about no Contact, so a Rule never reacts to it.
 	NoContact DryRunOutcome = "no_contact"
@@ -63,7 +64,7 @@ func (m *Module) DryRun(ctx context.Context, s *ent.Scoped, ruleID, eventID int6
 	if err != nil {
 		return DryRun{}, err
 	}
-	if stored.Backfill {
+	if events.WasHistory(stored) {
 		return DryRun{Outcome: Backfill}, nil
 	}
 	if stored.Machine {

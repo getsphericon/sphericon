@@ -82,10 +82,7 @@ func TestAnEventThatTriggersNothingQueuesNoAutomationOrRuleJob(t *testing.T) {
 		"machine open":  machine,
 		"machine click": machineClick,
 		"no Contact":    &events.CollectedEvent{WorkspaceID: fixtures.AcmeID, SubjectID: "visitor:x", Action: "page_view"},
-		"history": &events.CollectedEvent{
-			WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID, SubjectID: "alice", Action: "purchase", Backfill: true,
-		},
-		"audit entry": &events.AuditEntry{WorkspaceID: fixtures.AcmeID, Actor: events.Actor{Kind: events.ActorUser}, Action: "membership.update", TargetType: membership.Label},
+		"audit entry":   &events.AuditEntry{WorkspaceID: fixtures.AcmeID, Actor: events.Actor{Kind: events.ActorUser}, Action: "membership.update", TargetType: membership.Label},
 	} {
 		t.Run(name, func(t *testing.T) {
 			env := testhelper.Setup(t)
@@ -99,6 +96,19 @@ func TestAnEventThatTriggersNothingQueuesNoAutomationOrRuleJob(t *testing.T) {
 			assert.Empty(t, ruleJobs)
 		})
 	}
+
+	t.Run("history", func(t *testing.T) {
+		env := testhelper.Setup(t)
+		history := &events.CollectedEvent{WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID, SubjectID: "alice", Action: "purchase"}
+
+		publishIn(events.WithCause(t.Context(), events.Backfill()), t, env, history)
+
+		automationJobs := env.JobsOf(t, jobkind.EvaluateTrigger.Kind)
+		ruleJobs := env.JobsOf(t, jobkind.RuleEvaluate.Kind)
+
+		assert.Empty(t, automationJobs)
+		assert.Empty(t, ruleJobs)
+	})
 
 	t.Run("an Action's own event", func(t *testing.T) {
 		env := testhelper.Setup(t)

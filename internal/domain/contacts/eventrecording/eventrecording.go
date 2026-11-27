@@ -129,7 +129,6 @@ func (m *Module) Record(ctx context.Context, s *ent.Scoped, inputs []Input) erro
 				OccurredAt:  in.OccurredAt,
 				Properties:  in.Properties,
 				DedupID:     dedupID,
-				Backfill:    in.Backfill,
 			}
 			if in.Email != nil {
 				collected.Email = *in.Email
@@ -137,7 +136,7 @@ func (m *Module) Record(ctx context.Context, s *ent.Scoped, inputs []Input) erro
 			if in.Phone != nil {
 				collected.Phone = *in.Phone
 			}
-			if err := pub.Publish(ctx, collected); err != nil {
+			if err := pub.Publish(causedBy(ctx, in), collected); err != nil {
 				return err
 			}
 		}
@@ -156,4 +155,13 @@ func (m *Module) RecordEach(ctx context.Context, s *ent.Scoped, inputs []Input) 
 	return batch.Each(inputs, func(in Input) (struct{}, error) {
 		return struct{}{}, m.Record(ctx, s, []Input{in})
 	}), nil
+}
+
+// causedBy is ctx for publishing the Event of in: a Backfill's is history (events.Backfill), and a
+// live one keeps whatever cause ctx carries.
+func causedBy(ctx context.Context, in Input) context.Context {
+	if in.Backfill {
+		return events.WithCause(ctx, events.Backfill())
+	}
+	return ctx
 }

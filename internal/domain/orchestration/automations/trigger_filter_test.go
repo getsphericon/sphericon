@@ -1,6 +1,7 @@
 package automations_test
 
 import (
+	"context"
 	"encoding/json"
 	"testing"
 	"time"
@@ -46,7 +47,13 @@ func liveOn(t *testing.T, env *testhelper.TestEnv, trigger eventmatcher.Matcher)
 // to the Automations as its trigger job does.
 func handStored(t *testing.T, env *testhelper.TestEnv, contactID int64, action string, ev events.DomainEvent) {
 	t.Helper()
-	require.NoError(t, env.Publisher().Publish(t.Context(), ev))
+	handStoredIn(t.Context(), t, env, contactID, action, ev)
+}
+
+// handStoredIn is handStored with ev published in ctx (events.WithCause, a history mark).
+func handStoredIn(ctx context.Context, t *testing.T, env *testhelper.TestEnv, contactID int64, action string, ev events.DomainEvent) {
+	t.Helper()
+	require.NoError(t, env.Publisher().Publish(ctx, ev))
 	stored := env.StoredEvents(t, action)
 	require.NotEmpty(t, stored)
 	last := stored[len(stored)-1]

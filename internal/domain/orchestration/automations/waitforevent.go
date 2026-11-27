@@ -276,7 +276,7 @@ func satisfying(w awaitWindow) []predicate.Event {
 		w.matched,
 		event.OccurredAtGTE(w.reached),
 		event.OccurredAtLTE(w.deadline),
-		event.Backfill(false),
+		events.Live(),
 		event.SendLocked(false),
 		events.HumanOnly(),
 	}

@@ -36,7 +36,7 @@ func storeEvent(ctx context.Context, client *ent.Client, env Envelope, ev Domain
 		SetAction(p.Action).
 		SetProperties(p.Properties).
 		SetOccurredAt(env.OccurredAt).
-		SetBackfill(IsBackfill(ev)).
+		SetBackfill(IsHistory(env)).
 		SetSendLocked(env.SendLocked).
 		SetMachine(p.Machine).
 		SetCaptured(p.Captured).

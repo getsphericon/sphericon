@@ -141,19 +141,19 @@ func TestAnEventPublishedByAnEventJobIsCausedByTheHandledEvent(t *testing.T) {
 }
 
 // orderEvent is a collected order Event of Alice in Acme.
-func orderEvent(action string, props map[string]any, backfill bool) *events.CollectedEvent {
+func orderEvent(action string, props map[string]any) *events.CollectedEvent {
 	return &events.CollectedEvent{
 		WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID, SubjectID: "alice", Action: action,
-		Properties: props, Backfill: backfill,
+		Properties: props,
 	}
 }
 
 // An order Event inserts one orders job, loaded history included; any other event inserts none.
 func TestAnOrderEventQueuesOneOrdersJob(t *testing.T) {
 	env := testhelper.Setup(t)
-	publishEvent(t, env, orderEvent(orders.ActionCompleted, map[string]any{"order_id": "Q-1", "total": 20.0, "currency": "USD"}, false))
-	publishEvent(t, env, orderEvent(orders.ActionRefunded, map[string]any{"order_id": "Q-0", "total": 5.0}, true))
-	publishEvent(t, env, orderEvent("page_view", nil, false))
+	publishEvent(t, env, orderEvent(orders.ActionCompleted, map[string]any{"order_id": "Q-1", "total": 20.0, "currency": "USD"}))
+	publishIn(events.WithCause(t.Context(), events.Backfill()), t, env, orderEvent(orders.ActionRefunded, map[string]any{"order_id": "Q-0", "total": 5.0}))
+	publishEvent(t, env, orderEvent("page_view", nil))
 	publishEvent(t, env, notice(systemevent.EmailBounced, systemevent.BounceKindHard, "order-less@example.com"))
 
 	orderJobs := env.EventJobs(t, jobs.OrderEventArgs{}.Kind())
@@ -193,8 +193,8 @@ func TestOrderJobsWorkedConcurrentlyLeaveTheOrderAsWorkedInTurn(t *testing.T) {
 	inserter, err := jobs.NewInserter(sqlDB)
 	require.NoError(t, err)
 	for _, ev := range []*events.CollectedEvent{
-		orderEvent(orders.ActionCompleted, map[string]any{"order_id": "C-1", "total": 100.0, "currency": "USD"}, false),
-		orderEvent(orders.ActionRefunded, map[string]any{"order_id": "C-1", "total": 10.0, "refund_id": "R-1"}, false),
+		orderEvent(orders.ActionCompleted, map[string]any{"order_id": "C-1", "total": 100.0, "currency": "USD"}),
+		orderEvent(orders.ActionRefunded, map[string]any{"order_id": "C-1", "total": 10.0, "refund_id": "R-1"}),
 	} {
 		require.NoError(t, bus.WithinTx(ctx, func(_ *ent.Client, pub events.Publisher) error { return pub.Publish(ctx, ev) }))
 	}

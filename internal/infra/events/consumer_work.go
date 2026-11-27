@@ -75,16 +75,16 @@ type optInWebhook interface {
 	webhookData() (json.RawMessage, error)
 }
 
-// ReachesWebhooks reports whether ev may leave the platform through a Webhook endpoint: a live
-// Event (loaded history is recorded, never delivered), or an event an endpoint opts into
-// (optInWebhook). An event of the Instance and a change told only to a Workspace's people leave
-// through none.
-func ReachesWebhooks(ev DomainEvent) bool {
+// ReachesWebhooks reports whether ev, published as env, may leave the platform through a Webhook
+// endpoint: a live Event (history is recorded, never delivered: IsHistory), or an event an
+// endpoint opts into (optInWebhook). An event of the Instance and a change told only to a
+// Workspace's people leave through none.
+func ReachesWebhooks(env Envelope, ev DomainEvent) bool {
 	if _, optIn := ev.(optInWebhook); optIn {
 		return true
 	}
 	_, projected := ev.(Projected)
-	return projected && !IsBackfill(ev)
+	return projected && !IsHistory(env)
 }
 
 // webhookBody is the public body of a webhook delivery (webhookPayload).

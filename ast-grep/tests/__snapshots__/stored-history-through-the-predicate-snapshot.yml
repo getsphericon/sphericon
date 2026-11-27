@@ -1,0 +1,52 @@
+id: stored-history-through-the-predicate
+snapshots:
+  "func columns() []string { return []string{event.FieldBackfill} }\n":
+    labels:
+      - source: event.FieldBackfill
+        style: primary
+        start: 42
+        end: 61
+      - source: FieldBackfill
+        style: secondary
+        start: 48
+        end: 61
+  "func history(s *ent.Scoped) *ent.EventQuery {\n\treturn s.Event().Query().Where(event.BackfillNEQ(false))\n}\n":
+    labels:
+      - source: event.BackfillNEQ
+        style: primary
+        start: 78
+        end: 95
+      - source: BackfillNEQ
+        style: secondary
+        start: 84
+        end: 95
+  "func live(s *ent.Scoped) *ent.EventQuery {\n\treturn s.Event().Query().Where(event.Backfill(false))\n}\n":
+    labels:
+      - source: event.Backfill
+        style: primary
+        start: 75
+        end: 89
+      - source: Backfill
+        style: secondary
+        start: 81
+        end: 89
+  "func mark(c *ent.EventCreate) *ent.EventCreate { return c.SetBackfill(true) }\n":
+    labels:
+      - source: c.SetBackfill
+        style: primary
+        start: 56
+        end: 69
+      - source: SetBackfill
+        style: secondary
+        start: 58
+        end: 69
+  "func outcome(stored *ent.Event) bool { return stored.Backfill }\n":
+    labels:
+      - source: stored.Backfill
+        style: primary
+        start: 46
+        end: 61
+      - source: Backfill
+        style: secondary
+        start: 53
+        end: 61

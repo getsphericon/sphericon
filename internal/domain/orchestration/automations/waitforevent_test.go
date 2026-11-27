@@ -244,9 +244,13 @@ func TestEventsThatDoNotCountLeaveTheEnrollmentWaiting(t *testing.T) {
 		}},
 		"loaded history": {"trial.started", "order.created", func(t *testing.T, w waiting, contact *ent.Contact) {
 			t.Helper()
-			history := collected(contact.ID, "order.created", w.clock.Now(), nil)
-			history.Backfill = true
-			handStored(t, w.env, contact.ID, "order.created", history)
+			history := events.WithCause(t.Context(), events.Backfill())
+			handStoredIn(history, t, w.env, contact.ID, "order.created", collected(contact.ID, "order.created", w.clock.Now(), nil))
+		}},
+		"brought by an import": {"trial.started", "order.created", func(t *testing.T, w waiting, contact *ent.Contact) {
+			t.Helper()
+			imported := events.WithCause(t.Context(), events.Import(7))
+			handStoredIn(imported, t, w.env, contact.ID, "order.created", collected(contact.ID, "order.created", w.clock.Now(), nil))
 		}},
 		"written through a connection without mcp:send": {"trial.started", "order.created", func(t *testing.T, w waiting, contact *ent.Contact) {
 			t.Helper()
