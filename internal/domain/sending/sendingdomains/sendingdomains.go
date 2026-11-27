@@ -7,8 +7,9 @@
 // 409), or ErrNotFound for an unknown id. The DKIM private key never leaves the module:
 // callers see the public record only, through Records.
 //
-// Verification stays a live DKIM check, with the DMARC lookup next to it (ADR 0010, ADR 0012):
-// Verify and Recheck look the records up and store their outcome; nothing else stores one, so
+// Verification stays a live DKIM check, with the DMARC lookup and the read of each email
+// Integration's envelope next to it (ADR 0010, ADR 0012, ADR 0184): Verify and Recheck look the
+// records up and store their outcome; nothing else stores one, so
 // nothing in either API can set a domain verified. Deleting one is the use case
 // internal/usecase/sendingdomaindeletion, which checks its Live use first (ADR 0102).
 //
@@ -67,15 +68,18 @@ type Module struct {
 	cipher *secrets.Cipher
 	// dns resolves the DNS records a check reads.
 	dns *DNS
+	// integrations are the Workspace's email Integrations, whose envelopes a check reads.
+	integrations Integrations
 	// now is the Instance clock a check and a lost verification are stamped by.
 	now func() time.Time
 }
 
 // New builds the module over the raw client, which reads across Workspaces: bus opens the transactions its writes run in (a check's DKIM outcome is
 // stored and its loss published in one, which tells the Owners, ADR 0105), lookup resolves the
-// DNS records a check reads, and now is the Instance clock.
-func New(client *ent.Client, bus *events.Bus, cipher *secrets.Cipher, lookup domainname.TXTLookup, now func() time.Time) *Module {
-	return &Module{client: client, bus: bus, cipher: cipher, dns: NewDNS(lookup), now: now}
+// DNS records a check reads, integrations are the Workspace's email Integrations whose envelopes
+// a check reads (ADR 0184), and now is the Instance clock.
+func New(client *ent.Client, bus *events.Bus, cipher *secrets.Cipher, lookup domainname.TXTLookup, integrations Integrations, now func() time.Time) *Module {
+	return &Module{client: client, bus: bus, cipher: cipher, dns: NewDNS(lookup), integrations: integrations, now: now}
 }
 
 // CreateInput is a new Sending domain. An empty Selector means DefaultSelector.
@@ -190,22 +194,19 @@ type Record struct {
 	Value string
 }
 
-// DNSRecords are the records a Sending domain needs: DKIM gates sending, SPF and DMARC
-// are advisory.
+// DNSRecords are the records a Sending domain needs: DKIM gates sending, DMARC is advisory. SPF is
+// no record of the domain's: it is checked on each email Integration's envelope (Envelopes, ADR 0184).
 type DNSRecords struct {
 	DKIM  Record
-	SPF   Record
 	DMARC Record
 }
 
 // Records derives the DNS records for a stored domain. The public key only.
 func (m *Module) Records(d *ent.SendingDomain) DNSRecords {
 	dkimHost, dkimValue := DKIMRecord(d.DkimSelector, d.Domain, d.DkimPublicKey)
-	spfHost, spfValue := SPFRecord(d.Domain)
 	dmarcHost, dmarcValue := DMARCRecord(d.Domain)
 	rec := DNSRecords{
 		DKIM:  Record{Host: dkimHost, Value: dkimValue},
-		SPF:   Record{Host: spfHost, Value: spfValue},
 		DMARC: Record{Host: dmarcHost, Value: dmarcValue},
 	}
 	return rec

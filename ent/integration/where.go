@@ -980,6 +980,29 @@ func HasStartTokensWith(preds ...predicate.StartToken) predicate.Integration {
 	})
 }
 
+// HasEnvelopes applies the HasEdge predicate on the "envelopes" edge.
+func HasEnvelopes() predicate.Integration {
+	return predicate.Integration(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, EnvelopesTable, EnvelopesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasEnvelopesWith applies the HasEdge predicate on the "envelopes" edge with a given conditions (other predicates).
+func HasEnvelopesWith(preds ...predicate.SendingDomainEnvelope) predicate.Integration {
+	return predicate.Integration(func(s *sql.Selector) {
+		step := newEnvelopesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Integration) predicate.Integration {
 	return predicate.Integration(sql.AndPredicates(predicates...))

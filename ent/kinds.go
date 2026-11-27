@@ -85,6 +85,7 @@ var Kinds = map[string]Kind{
 	"Segment":                    {Table: "segments", Kind: schema.Kind{WorkspaceOwned: true, Archivable: true, Revised: true}},
 	"SendCapLimiter":             {Table: "send_cap_limiters", Kind: schema.Kind{WorkspaceOwned: true, Singleton: true}},
 	"SendingDomain":              {Table: "sending_domains", Kind: schema.Kind{WorkspaceOwned: true, Discardable: true}},
+	"SendingDomainEnvelope":      {Table: "sending_domain_envelopes", Kind: schema.Kind{WorkspaceOwned: true}},
 	"SendingWindow":              {Table: "sending_windows", Kind: schema.Kind{WorkspaceOwned: true}},
 	"ServiceCredential":          {Table: "service_credentials", Kind: schema.Kind{}},
 	"SignupItem":                 {Table: "signup_items", Kind: schema.Kind{Discardable: true}},

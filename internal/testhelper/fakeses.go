@@ -16,15 +16,18 @@ import (
 )
 
 // FakeSES stands in for the SES account behind every "ses" Integration the server
-// builds in a test: its send quota and whether it has an Integration's configuration set are
-// whatever the test scripts (by default none is reported, the set exists and every lookup
+// builds in a test: its send quota, whether it has an Integration's configuration set and the
+// custom MAIL FROM of each Sending domain's identity are whatever the test scripts (by default
+// none is reported, the set exists, no identity has a custom MAIL FROM and every lookup
 // succeeds), so no test ever reaches the real SES API.
 type FakeSES struct {
-	mu         sync.Mutex
-	quota      messaging.Quota
-	err        error
-	setMissing bool
-	setErr     error
+	mu          sync.Mutex
+	quota       messaging.Quota
+	err         error
+	setMissing  bool
+	setErr      error
+	mailFrom    map[string]messaging.MailFrom
+	mailFromErr error
 }
 
 // SetQuota makes the next GetSendQuota calls report quota (and succeed).
@@ -77,6 +80,32 @@ func (f *FakeSES) ConfigurationSetMissing(context.Context) (bool, error) {
 	return f.setMissing, f.setErr
 }
 
+// SetMailFrom makes the next GetEmailIdentity calls for domain answer mailFrom (the zero MailFrom
+// is no custom MAIL FROM), and every read succeed.
+func (f *FakeSES) SetMailFrom(domain string, mailFrom messaging.MailFrom) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.mailFrom == nil {
+		f.mailFrom = map[string]messaging.MailFrom{}
+	}
+	f.mailFrom[domain], f.mailFromErr = mailFrom, nil
+}
+
+// SetMailFromErr makes the next GetEmailIdentity calls fail with err (nil clears it): a missing
+// ses:GetEmailIdentity permission, or a read that timed out.
+func (f *FakeSES) SetMailFromErr(err error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.mailFromErr = err
+}
+
+// MailFrom answers the scripted MAIL FROM of domain, or the scripted error.
+func (f *FakeSES) MailFrom(_ context.Context, domain string) (messaging.MailFrom, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.mailFrom[domain], f.mailFromErr
+}
+
 // Catalog is a catalog whose "ses" provider builds the fake itself, so discovery
 // reaches it through the stored, encrypted Integration config exactly as it reaches
 // the real sender; "smtp" builds a sender that cannot report a quota.
@@ -99,8 +128,8 @@ func (plainSender) Send(context.Context, messaging.EmailMessage) (messaging.Rece
 	return messaging.Receipt{}, nil
 }
 
-// quotaSender is the real SES sender with its quota and configuration set lookups answered by
-// the fake.
+// quotaSender is the real SES sender with its quota, configuration set and MAIL FROM lookups
+// answered by the fake.
 type quotaSender struct {
 	messaging.EmailSender
 
@@ -113,6 +142,10 @@ func (s quotaSender) SendQuota(ctx context.Context) (messaging.Quota, error) {
 
 func (s quotaSender) ConfigurationSetMissing(ctx context.Context) (bool, error) {
 	return s.fake.ConfigurationSetMissing(ctx)
+}
+
+func (s quotaSender) MailFrom(ctx context.Context, domain string) (messaging.MailFrom, error) {
+	return s.fake.MailFrom(ctx, domain)
 }
 
 // catalogWith is the built-in catalog with SES's quota lookup answered by fake, and Telegram's

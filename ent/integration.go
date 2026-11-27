@@ -74,9 +74,11 @@ type IntegrationEdges struct {
 	Bindings []*Binding `json:"bindings,omitempty"`
 	// StartTokens holds the value of the start_tokens edge.
 	StartTokens []*StartToken `json:"start_tokens,omitempty"`
+	// Envelopes holds the value of the envelopes edge.
+	Envelopes []*SendingDomainEnvelope `json:"envelopes,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [6]bool
+	loadedTypes [7]bool
 }
 
 // WorkspaceOrErr returns the Workspace value or an error if the edge
@@ -137,6 +139,15 @@ func (e IntegrationEdges) StartTokensOrErr() ([]*StartToken, error) {
 		return e.StartTokens, nil
 	}
 	return nil, &NotLoadedError{edge: "start_tokens"}
+}
+
+// EnvelopesOrErr returns the Envelopes value or an error if the edge
+// was not loaded in eager-loading.
+func (e IntegrationEdges) EnvelopesOrErr() ([]*SendingDomainEnvelope, error) {
+	if e.loadedTypes[6] {
+		return e.Envelopes, nil
+	}
+	return nil, &NotLoadedError{edge: "envelopes"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -314,6 +325,11 @@ func (_m *Integration) QueryBindings() *BindingQuery {
 // QueryStartTokens queries the "start_tokens" edge of the Integration entity.
 func (_m *Integration) QueryStartTokens() *StartTokenQuery {
 	return NewIntegrationClient(_m.config).QueryStartTokens(_m)
+}
+
+// QueryEnvelopes queries the "envelopes" edge of the Integration entity.
+func (_m *Integration) QueryEnvelopes() *SendingDomainEnvelopeQuery {
+	return NewIntegrationClient(_m.config).QueryEnvelopes(_m)
 }
 
 // Update returns a builder for updating this Integration.

@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
+	"github.com/getsphericon/sphericon/ent/sendingdomainenvelope"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
@@ -174,6 +175,21 @@ func (_c *SendingDomainCreate) SetID(v int64) *SendingDomainCreate {
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_c *SendingDomainCreate) SetWorkspace(v *Workspace) *SendingDomainCreate {
 	return _c.SetWorkspaceID(v.ID)
+}
+
+// AddEnvelopeIDs adds the "envelopes" edge to the SendingDomainEnvelope entity by IDs.
+func (_c *SendingDomainCreate) AddEnvelopeIDs(ids ...int64) *SendingDomainCreate {
+	_c.mutation.AddEnvelopeIDs(ids...)
+	return _c
+}
+
+// AddEnvelopes adds the "envelopes" edges to the SendingDomainEnvelope entity.
+func (_c *SendingDomainCreate) AddEnvelopes(v ...*SendingDomainEnvelope) *SendingDomainCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddEnvelopeIDs(ids...)
 }
 
 // Mutation returns the SendingDomainMutation object of the builder.
@@ -358,6 +374,22 @@ func (_c *SendingDomainCreate) createSpec() (*SendingDomain, *sqlgraph.CreateSpe
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.WorkspaceID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.EnvelopesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   sendingdomain.EnvelopesTable,
+			Columns: []string{sendingdomain.EnvelopesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sendingdomainenvelope.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

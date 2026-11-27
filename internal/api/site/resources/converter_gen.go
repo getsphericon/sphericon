@@ -2646,6 +2646,25 @@ func (c *ConverterImpl) SendCapToResource(source providerlimit.SendCapStatus) si
 	siteapiSendCap.SentLast24h = count(source.Sent24h)
 	return siteapiSendCap
 }
+func (c *ConverterImpl) SendingDomainEnvelopeToResource(source sendingdomains.Envelope) site.SendingDomainEnvelope {
+	var siteapiSendingDomainEnvelope site.SendingDomainEnvelope
+	siteapiSendingDomainEnvelope.IntegrationId = site.EntityId(source.IntegrationID)
+	siteapiSendingDomainEnvelope.IntegrationName = source.IntegrationName
+	siteapiSendingDomainEnvelope.Provider = c.IntegrationProviderToResource(source.Provider)
+	siteapiSendingDomainEnvelope.State = site.SendingDomainEnvelopeState(source.State)
+	siteapiSendingDomainEnvelope.MailFrom = envelopeMailFrom(source.MailFrom)
+	siteapiSendingDomainEnvelope.PermissionNeeded = envelopePermission(source.PermissionNeeded)
+	siteapiSendingDomainEnvelope.CheckedAt = envelopeCheckedAt(source.CheckedAt)
+	return siteapiSendingDomainEnvelope
+}
+func (c *ConverterImpl) SendingDomainEnvelopesToResource(source []sendingdomains.Envelope) []site.SendingDomainEnvelope {
+	var siteapiSendingDomainEnvelopeList []site.SendingDomainEnvelope
+	siteapiSendingDomainEnvelopeList = make([]site.SendingDomainEnvelope, len(source))
+	for i := 0; i < len(source); i++ {
+		siteapiSendingDomainEnvelopeList[i] = c.SendingDomainEnvelopeToResource(source[i])
+	}
+	return siteapiSendingDomainEnvelopeList
+}
 func (c *ConverterImpl) SendingDomainToResource(source *ent.SendingDomain) site.SendingDomainResource {
 	var siteapiSendingDomainResource site.SendingDomainResource
 	if source != nil {
@@ -2654,7 +2673,7 @@ func (c *ConverterImpl) SendingDomainToResource(source *ent.SendingDomain) site.
 		siteapiSendingDomainResource.DkimSelector = (*source).DkimSelector
 		siteapiSendingDomainResource.Verified = sendingDomainVerified((*source))
 		// siteapiSendingDomainResource.DkimRecord: ignore
-		// siteapiSendingDomainResource.SpfRecord: ignore
+		// siteapiSendingDomainResource.Envelopes: ignore
 		// siteapiSendingDomainResource.DmarcRecord: ignore
 		siteapiSendingDomainResource.DmarcCheckedAt = optNilTimestamp((*source).DmarcCheckedAt)
 		siteapiSendingDomainResource.DmarcFoundAt = optNilTimestamp((*source).DmarcFoundAt)

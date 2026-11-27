@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/integrationproviderstate"
 	"github.com/getsphericon/sphericon/ent/providerlimiter"
+	"github.com/getsphericon/sphericon/ent/sendingdomainenvelope"
 	"github.com/getsphericon/sphericon/ent/starttoken"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
@@ -298,6 +299,21 @@ func (_c *IntegrationCreate) AddStartTokens(v ...*StartToken) *IntegrationCreate
 		ids[i] = v[i].ID
 	}
 	return _c.AddStartTokenIDs(ids...)
+}
+
+// AddEnvelopeIDs adds the "envelopes" edge to the SendingDomainEnvelope entity by IDs.
+func (_c *IntegrationCreate) AddEnvelopeIDs(ids ...int64) *IntegrationCreate {
+	_c.mutation.AddEnvelopeIDs(ids...)
+	return _c
+}
+
+// AddEnvelopes adds the "envelopes" edges to the SendingDomainEnvelope entity.
+func (_c *IntegrationCreate) AddEnvelopes(v ...*SendingDomainEnvelope) *IntegrationCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddEnvelopeIDs(ids...)
 }
 
 // Mutation returns the IntegrationMutation object of the builder.
@@ -618,6 +634,22 @@ func (_c *IntegrationCreate) createSpec() (*Integration, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(starttoken.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.EnvelopesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   integration.EnvelopesTable,
+			Columns: []string{integration.EnvelopesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sendingdomainenvelope.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

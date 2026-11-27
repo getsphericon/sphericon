@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/integrationproviderstate"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/providerlimiter"
+	"github.com/getsphericon/sphericon/ent/sendingdomainenvelope"
 	"github.com/getsphericon/sphericon/ent/starttoken"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
@@ -36,6 +37,7 @@ type IntegrationQuery struct {
 	withCapturedMessages *CapturedMessageQuery
 	withBindings         *BindingQuery
 	withStartTokens      *StartTokenQuery
+	withEnvelopes        *SendingDomainEnvelopeQuery
 	modifiers            []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -198,6 +200,28 @@ func (_q *IntegrationQuery) QueryStartTokens() *StartTokenQuery {
 			sqlgraph.From(integration.Table, integration.FieldID, selector),
 			sqlgraph.To(starttoken.Table, starttoken.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, integration.StartTokensTable, integration.StartTokensColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryEnvelopes chains the current query on the "envelopes" edge.
+func (_q *IntegrationQuery) QueryEnvelopes() *SendingDomainEnvelopeQuery {
+	query := (&SendingDomainEnvelopeClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(integration.Table, integration.FieldID, selector),
+			sqlgraph.To(sendingdomainenvelope.Table, sendingdomainenvelope.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, integration.EnvelopesTable, integration.EnvelopesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -403,6 +427,7 @@ func (_q *IntegrationQuery) Clone() *IntegrationQuery {
 		withCapturedMessages: _q.withCapturedMessages.Clone(),
 		withBindings:         _q.withBindings.Clone(),
 		withStartTokens:      _q.withStartTokens.Clone(),
+		withEnvelopes:        _q.withEnvelopes.Clone(),
 		// clone intermediate query.
 		sql:       _q.sql.Clone(),
 		path:      _q.path,
@@ -473,6 +498,17 @@ func (_q *IntegrationQuery) WithStartTokens(opts ...func(*StartTokenQuery)) *Int
 		opt(query)
 	}
 	_q.withStartTokens = query
+	return _q
+}
+
+// WithEnvelopes tells the query-builder to eager-load the nodes that are connected to
+// the "envelopes" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *IntegrationQuery) WithEnvelopes(opts ...func(*SendingDomainEnvelopeQuery)) *IntegrationQuery {
+	query := (&SendingDomainEnvelopeClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withEnvelopes = query
 	return _q
 }
 
@@ -554,13 +590,14 @@ func (_q *IntegrationQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*
 	var (
 		nodes       = []*Integration{}
 		_spec       = _q.querySpec()
-		loadedTypes = [6]bool{
+		loadedTypes = [7]bool{
 			_q.withWorkspace != nil,
 			_q.withProviderLimiter != nil,
 			_q.withProviderState != nil,
 			_q.withCapturedMessages != nil,
 			_q.withBindings != nil,
 			_q.withStartTokens != nil,
+			_q.withEnvelopes != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -622,6 +659,13 @@ func (_q *IntegrationQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*
 		if err := _q.loadStartTokens(ctx, query, nodes,
 			func(n *Integration) { n.Edges.StartTokens = []*StartToken{} },
 			func(n *Integration, e *StartToken) { n.Edges.StartTokens = append(n.Edges.StartTokens, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withEnvelopes; query != nil {
+		if err := _q.loadEnvelopes(ctx, query, nodes,
+			func(n *Integration) { n.Edges.Envelopes = []*SendingDomainEnvelope{} },
+			func(n *Integration, e *SendingDomainEnvelope) { n.Edges.Envelopes = append(n.Edges.Envelopes, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -786,6 +830,36 @@ func (_q *IntegrationQuery) loadStartTokens(ctx context.Context, query *StartTok
 	}
 	query.Where(predicate.StartToken(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(integration.StartTokensColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.IntegrationID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "integration_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *IntegrationQuery) loadEnvelopes(ctx context.Context, query *SendingDomainEnvelopeQuery, nodes []*Integration, init func(*Integration), assign func(*Integration, *SendingDomainEnvelope)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Integration)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(sendingdomainenvelope.FieldIntegrationID)
+	}
+	query.Where(predicate.SendingDomainEnvelope(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(integration.EnvelopesColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

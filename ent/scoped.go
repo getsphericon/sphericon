@@ -60,6 +60,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendcaplimiter"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
+	"github.com/getsphericon/sphericon/ent/sendingdomainenvelope"
 	"github.com/getsphericon/sphericon/ent/sendingwindow"
 	"github.com/getsphericon/sphericon/ent/starttoken"
 	"github.com/getsphericon/sphericon/ent/suppression"
@@ -907,6 +908,22 @@ func (s *Scoped) verifySendingDomain(ctx context.Context, ids []int64) error {
 	}
 	if n != len(ids) {
 		return fmt.Errorf("SendingDomain: %w", ErrNotInWorkspace)
+	}
+	return nil
+}
+
+// verifySendingDomainEnvelope fails with ErrNotInWorkspace unless every id is a SendingDomainEnvelope of the Workspace.
+func (s *Scoped) verifySendingDomainEnvelope(ctx context.Context, ids []int64) error {
+	ids = uniqueIDs(ids)
+	if len(ids) == 0 {
+		return nil
+	}
+	n, err := s.c.SendingDomainEnvelope.Query().Where(s.inSendingDomainEnvelope(sendingdomainenvelope.IDIn(ids...))...).Count(ctx)
+	if err != nil {
+		return err
+	}
+	if n != len(ids) {
+		return fmt.Errorf("SendingDomainEnvelope: %w", ErrNotInWorkspace)
 	}
 	return nil
 }
@@ -39899,6 +39916,15 @@ func (s *Scoped) checkIntegration(ctx context.Context, ms ...*IntegrationMutatio
 			return fmt.Errorf("start_tokens: %w", err)
 		}
 	}
+	{
+		var ids []int64
+		for _, m := range ms {
+			ids = append(ids, m.EnvelopesIDs()...)
+		}
+		if err := s.verifySendingDomainEnvelope(ctx, ids); err != nil {
+			return fmt.Errorf("envelopes: %w", err)
+		}
+	}
 	return nil
 }
 
@@ -40335,6 +40361,22 @@ func (x *IntegrationScopedCreate) AddStartTokens(v ...*StartToken) *IntegrationS
 }
 
 const RoleOf_IntegrationScopedCreate_AddStartTokens = RoleStep
+
+// AddEnvelopeIDs adds the "envelopes" edge to the SendingDomainEnvelope entity by IDs.
+func (x *IntegrationScopedCreate) AddEnvelopeIDs(ids ...int64) *IntegrationScopedCreate {
+	x.set = append(x.set, func(b *IntegrationCreate) { b.AddEnvelopeIDs(ids...) })
+	return x
+}
+
+const RoleOf_IntegrationScopedCreate_AddEnvelopeIDs = RoleStep
+
+// AddEnvelopes adds the "envelopes" edges to the SendingDomainEnvelope entity.
+func (x *IntegrationScopedCreate) AddEnvelopes(v ...*SendingDomainEnvelope) *IntegrationScopedCreate {
+	x.set = append(x.set, func(b *IntegrationCreate) { b.AddEnvelopes(v...) })
+	return x
+}
+
+const RoleOf_IntegrationScopedCreate_AddEnvelopes = RoleStep
 
 const (
 	TypeOf_IntegrationScopedCreate                        = TypeScopedCreate
@@ -41521,6 +41563,46 @@ func (x *IntegrationScopedUpdateOne) RemoveStartTokens(v ...*StartToken) *Integr
 
 const RoleOf_IntegrationScopedUpdateOne_RemoveStartTokens = RoleStep
 
+// AddEnvelopeIDs adds the "envelopes" edge to the SendingDomainEnvelope entity by IDs.
+func (x *IntegrationScopedUpdateOne) AddEnvelopeIDs(ids ...int64) *IntegrationScopedUpdateOne {
+	x.set = append(x.set, func(b *IntegrationUpdateOne) { b.AddEnvelopeIDs(ids...) })
+	return x
+}
+
+const RoleOf_IntegrationScopedUpdateOne_AddEnvelopeIDs = RoleStep
+
+// AddEnvelopes adds the "envelopes" edges to the SendingDomainEnvelope entity.
+func (x *IntegrationScopedUpdateOne) AddEnvelopes(v ...*SendingDomainEnvelope) *IntegrationScopedUpdateOne {
+	x.set = append(x.set, func(b *IntegrationUpdateOne) { b.AddEnvelopes(v...) })
+	return x
+}
+
+const RoleOf_IntegrationScopedUpdateOne_AddEnvelopes = RoleStep
+
+// ClearEnvelopes clears the "envelopes" edges to the SendingDomainEnvelope entity.
+func (x *IntegrationScopedUpdateOne) ClearEnvelopes() *IntegrationScopedUpdateOne {
+	x.set = append(x.set, func(b *IntegrationUpdateOne) { b.ClearEnvelopes() })
+	return x
+}
+
+const RoleOf_IntegrationScopedUpdateOne_ClearEnvelopes = RoleStep
+
+// RemoveEnvelopeIDs removes the "envelopes" edge to SendingDomainEnvelope entities by IDs.
+func (x *IntegrationScopedUpdateOne) RemoveEnvelopeIDs(ids ...int64) *IntegrationScopedUpdateOne {
+	x.set = append(x.set, func(b *IntegrationUpdateOne) { b.RemoveEnvelopeIDs(ids...) })
+	return x
+}
+
+const RoleOf_IntegrationScopedUpdateOne_RemoveEnvelopeIDs = RoleStep
+
+// RemoveEnvelopes removes "envelopes" edges to SendingDomainEnvelope entities.
+func (x *IntegrationScopedUpdateOne) RemoveEnvelopes(v ...*SendingDomainEnvelope) *IntegrationScopedUpdateOne {
+	x.set = append(x.set, func(b *IntegrationUpdateOne) { b.RemoveEnvelopes(v...) })
+	return x
+}
+
+const RoleOf_IntegrationScopedUpdateOne_RemoveEnvelopes = RoleStep
+
 // Save verifies the references against the Workspace, then updates the Integration.
 func (x *IntegrationScopedUpdateOne) Save(ctx context.Context) (*Integration, error) {
 	return x.save(ctx, "update", skipUnchanged)
@@ -42086,6 +42168,46 @@ func (x *IntegrationScopedUpdate) RemoveStartTokens(v ...*StartToken) *Integrati
 }
 
 const RoleOf_IntegrationScopedUpdate_RemoveStartTokens = RoleStep
+
+// AddEnvelopeIDs adds the "envelopes" edge to the SendingDomainEnvelope entity by IDs.
+func (x *IntegrationScopedUpdate) AddEnvelopeIDs(ids ...int64) *IntegrationScopedUpdate {
+	x.set = append(x.set, func(b *IntegrationUpdate) { b.AddEnvelopeIDs(ids...) })
+	return x
+}
+
+const RoleOf_IntegrationScopedUpdate_AddEnvelopeIDs = RoleStep
+
+// AddEnvelopes adds the "envelopes" edges to the SendingDomainEnvelope entity.
+func (x *IntegrationScopedUpdate) AddEnvelopes(v ...*SendingDomainEnvelope) *IntegrationScopedUpdate {
+	x.set = append(x.set, func(b *IntegrationUpdate) { b.AddEnvelopes(v...) })
+	return x
+}
+
+const RoleOf_IntegrationScopedUpdate_AddEnvelopes = RoleStep
+
+// ClearEnvelopes clears the "envelopes" edges to the SendingDomainEnvelope entity.
+func (x *IntegrationScopedUpdate) ClearEnvelopes() *IntegrationScopedUpdate {
+	x.set = append(x.set, func(b *IntegrationUpdate) { b.ClearEnvelopes() })
+	return x
+}
+
+const RoleOf_IntegrationScopedUpdate_ClearEnvelopes = RoleStep
+
+// RemoveEnvelopeIDs removes the "envelopes" edge to SendingDomainEnvelope entities by IDs.
+func (x *IntegrationScopedUpdate) RemoveEnvelopeIDs(ids ...int64) *IntegrationScopedUpdate {
+	x.set = append(x.set, func(b *IntegrationUpdate) { b.RemoveEnvelopeIDs(ids...) })
+	return x
+}
+
+const RoleOf_IntegrationScopedUpdate_RemoveEnvelopeIDs = RoleStep
+
+// RemoveEnvelopes removes "envelopes" edges to SendingDomainEnvelope entities.
+func (x *IntegrationScopedUpdate) RemoveEnvelopes(v ...*SendingDomainEnvelope) *IntegrationScopedUpdate {
+	x.set = append(x.set, func(b *IntegrationUpdate) { b.RemoveEnvelopes(v...) })
+	return x
+}
+
+const RoleOf_IntegrationScopedUpdate_RemoveEnvelopes = RoleStep
 
 // build makes the ent update on the client of s and verifies the references it sets.
 func (x *IntegrationScopedUpdate) build(ctx context.Context, s *Scoped) (*IntegrationUpdate, error) {
@@ -62781,6 +62903,15 @@ func (s *Scoped) writeSendingDomain(ctx context.Context, verb string, where []pr
 // checkSendingDomain verifies every reference the mutations set against the Workspace of s, one query per
 // reference for all of them.
 func (s *Scoped) checkSendingDomain(ctx context.Context, ms ...*SendingDomainMutation) error {
+	{
+		var ids []int64
+		for _, m := range ms {
+			ids = append(ids, m.EnvelopesIDs()...)
+		}
+		if err := s.verifySendingDomainEnvelope(ctx, ids); err != nil {
+			return fmt.Errorf("envelopes: %w", err)
+		}
+	}
 	return nil
 }
 
@@ -63072,6 +63203,22 @@ func (x *SendingDomainScopedCreate) SetNillableDmarcFoundAt(v *time.Time) *Sendi
 }
 
 const RoleOf_SendingDomainScopedCreate_SetNillableDmarcFoundAt = RoleStep
+
+// AddEnvelopeIDs adds the "envelopes" edge to the SendingDomainEnvelope entity by IDs.
+func (x *SendingDomainScopedCreate) AddEnvelopeIDs(ids ...int64) *SendingDomainScopedCreate {
+	x.set = append(x.set, func(b *SendingDomainCreate) { b.AddEnvelopeIDs(ids...) })
+	return x
+}
+
+const RoleOf_SendingDomainScopedCreate_AddEnvelopeIDs = RoleStep
+
+// AddEnvelopes adds the "envelopes" edges to the SendingDomainEnvelope entity.
+func (x *SendingDomainScopedCreate) AddEnvelopes(v ...*SendingDomainEnvelope) *SendingDomainScopedCreate {
+	x.set = append(x.set, func(b *SendingDomainCreate) { b.AddEnvelopes(v...) })
+	return x
+}
+
+const RoleOf_SendingDomainScopedCreate_AddEnvelopes = RoleStep
 
 const (
 	TypeOf_SendingDomainScopedCreate                        = TypeScopedCreate
@@ -63893,6 +64040,46 @@ func (x *SendingDomainScopedUpdateOne) ClearDmarcFoundAt() *SendingDomainScopedU
 
 const RoleOf_SendingDomainScopedUpdateOne_ClearDmarcFoundAt = RoleStep
 
+// AddEnvelopeIDs adds the "envelopes" edge to the SendingDomainEnvelope entity by IDs.
+func (x *SendingDomainScopedUpdateOne) AddEnvelopeIDs(ids ...int64) *SendingDomainScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingDomainUpdateOne) { b.AddEnvelopeIDs(ids...) })
+	return x
+}
+
+const RoleOf_SendingDomainScopedUpdateOne_AddEnvelopeIDs = RoleStep
+
+// AddEnvelopes adds the "envelopes" edges to the SendingDomainEnvelope entity.
+func (x *SendingDomainScopedUpdateOne) AddEnvelopes(v ...*SendingDomainEnvelope) *SendingDomainScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingDomainUpdateOne) { b.AddEnvelopes(v...) })
+	return x
+}
+
+const RoleOf_SendingDomainScopedUpdateOne_AddEnvelopes = RoleStep
+
+// ClearEnvelopes clears the "envelopes" edges to the SendingDomainEnvelope entity.
+func (x *SendingDomainScopedUpdateOne) ClearEnvelopes() *SendingDomainScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingDomainUpdateOne) { b.ClearEnvelopes() })
+	return x
+}
+
+const RoleOf_SendingDomainScopedUpdateOne_ClearEnvelopes = RoleStep
+
+// RemoveEnvelopeIDs removes the "envelopes" edge to SendingDomainEnvelope entities by IDs.
+func (x *SendingDomainScopedUpdateOne) RemoveEnvelopeIDs(ids ...int64) *SendingDomainScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingDomainUpdateOne) { b.RemoveEnvelopeIDs(ids...) })
+	return x
+}
+
+const RoleOf_SendingDomainScopedUpdateOne_RemoveEnvelopeIDs = RoleStep
+
+// RemoveEnvelopes removes "envelopes" edges to SendingDomainEnvelope entities.
+func (x *SendingDomainScopedUpdateOne) RemoveEnvelopes(v ...*SendingDomainEnvelope) *SendingDomainScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingDomainUpdateOne) { b.RemoveEnvelopes(v...) })
+	return x
+}
+
+const RoleOf_SendingDomainScopedUpdateOne_RemoveEnvelopes = RoleStep
+
 // Save verifies the references against the Workspace, then updates the SendingDomain.
 func (x *SendingDomainScopedUpdateOne) Save(ctx context.Context) (*SendingDomain, error) {
 	return x.save(ctx, "update", skipUnchanged)
@@ -64230,6 +64417,46 @@ func (x *SendingDomainScopedUpdate) ClearDmarcFoundAt() *SendingDomainScopedUpda
 
 const RoleOf_SendingDomainScopedUpdate_ClearDmarcFoundAt = RoleStep
 
+// AddEnvelopeIDs adds the "envelopes" edge to the SendingDomainEnvelope entity by IDs.
+func (x *SendingDomainScopedUpdate) AddEnvelopeIDs(ids ...int64) *SendingDomainScopedUpdate {
+	x.set = append(x.set, func(b *SendingDomainUpdate) { b.AddEnvelopeIDs(ids...) })
+	return x
+}
+
+const RoleOf_SendingDomainScopedUpdate_AddEnvelopeIDs = RoleStep
+
+// AddEnvelopes adds the "envelopes" edges to the SendingDomainEnvelope entity.
+func (x *SendingDomainScopedUpdate) AddEnvelopes(v ...*SendingDomainEnvelope) *SendingDomainScopedUpdate {
+	x.set = append(x.set, func(b *SendingDomainUpdate) { b.AddEnvelopes(v...) })
+	return x
+}
+
+const RoleOf_SendingDomainScopedUpdate_AddEnvelopes = RoleStep
+
+// ClearEnvelopes clears the "envelopes" edges to the SendingDomainEnvelope entity.
+func (x *SendingDomainScopedUpdate) ClearEnvelopes() *SendingDomainScopedUpdate {
+	x.set = append(x.set, func(b *SendingDomainUpdate) { b.ClearEnvelopes() })
+	return x
+}
+
+const RoleOf_SendingDomainScopedUpdate_ClearEnvelopes = RoleStep
+
+// RemoveEnvelopeIDs removes the "envelopes" edge to SendingDomainEnvelope entities by IDs.
+func (x *SendingDomainScopedUpdate) RemoveEnvelopeIDs(ids ...int64) *SendingDomainScopedUpdate {
+	x.set = append(x.set, func(b *SendingDomainUpdate) { b.RemoveEnvelopeIDs(ids...) })
+	return x
+}
+
+const RoleOf_SendingDomainScopedUpdate_RemoveEnvelopeIDs = RoleStep
+
+// RemoveEnvelopes removes "envelopes" edges to SendingDomainEnvelope entities.
+func (x *SendingDomainScopedUpdate) RemoveEnvelopes(v ...*SendingDomainEnvelope) *SendingDomainScopedUpdate {
+	x.set = append(x.set, func(b *SendingDomainUpdate) { b.RemoveEnvelopes(v...) })
+	return x
+}
+
+const RoleOf_SendingDomainScopedUpdate_RemoveEnvelopes = RoleStep
+
 // build makes the ent update on the client of s and verifies the references it sets.
 func (x *SendingDomainScopedUpdate) build(ctx context.Context, s *Scoped) (*SendingDomainUpdate, error) {
 	b := s.c.SendingDomain.Update().Where(s.inSendingDomain(x.where...)...)
@@ -64271,6 +64498,1119 @@ const (
 	RoleOf_SendingDomainScopedUpdate_Modify = RoleStep
 	RoleOf_SendingDomainScopedUpdate_Save   = RoleStep
 	RoleOf_SendingDomainScopedUpdate_Exec   = RoleStep
+)
+
+// SendingDomainEnvelopeScoped reaches SendingDomainEnvelope entities of one Workspace.
+type SendingDomainEnvelopeScoped struct{ s *Scoped }
+
+// SendingDomainEnvelope returns the SendingDomainEnvelope entities of the Workspace.
+func (s *Scoped) SendingDomainEnvelope() *SendingDomainEnvelopeScoped {
+	return &SendingDomainEnvelopeScoped{s: s}
+}
+
+const (
+	TypeOf_SendingDomainEnvelopeScoped             = TypeWrapper
+	EntityOf_SendingDomainEnvelopeScoped           = "SendingDomainEnvelope"
+	RoleOf_Scoped_SendingDomainEnvelope            = RoleNone
+	RoleOf_SendingDomainEnvelopeScoped_Query       = RoleRead
+	RoleOf_SendingDomainEnvelopeScoped_Get         = RoleRead
+	RoleOf_SendingDomainEnvelopeScoped_DeleteOneID = RoleStart
+	RoleOf_SendingDomainEnvelopeScoped_UpdateOneID = RoleStart
+	RoleOf_SendingDomainEnvelopeScoped_Delete      = RoleStart
+	RoleOf_SendingDomainEnvelopeScoped_Create      = RoleStart
+	RoleOf_SendingDomainEnvelopeScoped_CreateBulk  = RoleStart
+	RoleOf_SendingDomainEnvelopeScoped_Update      = RoleStart
+)
+
+// inSendingDomainEnvelope confines predicates of SendingDomainEnvelope rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inSendingDomainEnvelope(ps ...predicate.SendingDomainEnvelope) []predicate.SendingDomainEnvelope {
+	return append([]predicate.SendingDomainEnvelope{sendingdomainenvelope.WorkspaceID(s.ws)}, ps...)
+}
+
+// Query returns a SendingDomainEnvelope query already confined to the Workspace.
+func (t *SendingDomainEnvelopeScoped) Query() *SendingDomainEnvelopeQuery {
+	return t.s.c.SendingDomainEnvelope.Query().Where(t.s.inSendingDomainEnvelope()...)
+}
+
+// Get returns the SendingDomainEnvelope with the id; a row of another Workspace is not found.
+func (t *SendingDomainEnvelopeScoped) Get(ctx context.Context, id int64) (*SendingDomainEnvelope, error) {
+	return t.Query().Where(sendingdomainenvelope.ID(id)).Only(ctx)
+}
+
+// writeSendingDomainEnvelope runs a write of SendingDomainEnvelope rows: run builds it on the client of the scope it is
+// given and executes it, and reaches no other client. The
+// entity is not audited, so run gets the scope itself.
+func (s *Scoped) writeSendingDomainEnvelope(ctx context.Context, verb string, where []predicate.SendingDomainEnvelope, unchanged unchangedRows, run func(s *Scoped) ([]int64, error)) error {
+	_, _, _ = verb, where, unchanged
+	_, err := run(s)
+	return err
+}
+
+// checkSendingDomainEnvelope verifies every reference the mutations set against the Workspace of s, one query per
+// reference for all of them.
+func (s *Scoped) checkSendingDomainEnvelope(ctx context.Context, ms ...*SendingDomainEnvelopeMutation) error {
+	{
+		var ids []int64
+		for _, m := range ms {
+			ids = append(ids, m.SendingDomainIDs()...)
+		}
+		if err := s.verifySendingDomain(ctx, ids); err != nil {
+			return fmt.Errorf("sending_domain: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, m := range ms {
+			ids = append(ids, m.IntegrationIDs()...)
+		}
+		if err := s.verifyIntegration(ctx, ids); err != nil {
+			return fmt.Errorf("integration: %w", err)
+		}
+	}
+	return nil
+}
+
+// SendingDomainEnvelopeScopedDeleteOne deletes one SendingDomainEnvelope: it keeps the row's id and its fences, and builds the
+// ent delete on the client the delete runs on.
+type SendingDomainEnvelopeScopedDeleteOne struct {
+	s     *Scoped
+	id    int64
+	where []predicate.SendingDomainEnvelope
+}
+
+// DeleteOneID deletes the SendingDomainEnvelope with the id; a row of another Workspace is not found.
+func (t *SendingDomainEnvelopeScoped) DeleteOneID(id int64) *SendingDomainEnvelopeScopedDeleteOne {
+	return &SendingDomainEnvelopeScopedDeleteOne{s: t.s, id: id}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *SendingDomainEnvelopeScopedDeleteOne) Where(ps ...predicate.SendingDomainEnvelope) *SendingDomainEnvelopeScopedDeleteOne {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+const (
+	TypeOf_SendingDomainEnvelopeScopedDeleteOne       = TypeScopedDelete
+	EntityOf_SendingDomainEnvelopeScopedDeleteOne     = "SendingDomainEnvelope"
+	RoleOf_SendingDomainEnvelopeScopedDeleteOne_Where = RoleStep
+	RoleOf_SendingDomainEnvelopeScopedDeleteOne_Exec  = RoleStep
+)
+
+// Exec deletes the row; a missing row is a NotFoundError.
+func (x *SendingDomainEnvelopeScopedDeleteOne) Exec(ctx context.Context) error {
+	where := x.s.inSendingDomainEnvelope(x.where...)
+	return x.s.writeSendingDomainEnvelope(ctx, "delete", append([]predicate.SendingDomainEnvelope{sendingdomainenvelope.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
+		return nil, s.c.SendingDomainEnvelope.DeleteOneID(x.id).Where(where...).Exec(ctx)
+	})
+}
+
+// SendingDomainEnvelopeScopedDelete deletes the SendingDomainEnvelope rows of one Workspace that match its predicates, which it
+// keeps until the delete is built on the client it runs on.
+type SendingDomainEnvelopeScopedDelete struct {
+	s     *Scoped
+	where []predicate.SendingDomainEnvelope
+}
+
+// Delete deletes the SendingDomainEnvelope entities of the Workspace that match the predicates.
+func (t *SendingDomainEnvelopeScoped) Delete() *SendingDomainEnvelopeScopedDelete {
+	return &SendingDomainEnvelopeScopedDelete{s: t.s}
+}
+
+// Where appends predicates the rows must match.
+func (x *SendingDomainEnvelopeScopedDelete) Where(ps ...predicate.SendingDomainEnvelope) *SendingDomainEnvelopeScopedDelete {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+const (
+	TypeOf_SendingDomainEnvelopeScopedDelete       = TypeScopedDelete
+	EntityOf_SendingDomainEnvelopeScopedDelete     = "SendingDomainEnvelope"
+	RoleOf_SendingDomainEnvelopeScopedDelete_Where = RoleStep
+	RoleOf_SendingDomainEnvelopeScopedDelete_Exec  = RoleStep
+)
+
+// Exec deletes the rows and returns how many were deleted.
+func (x *SendingDomainEnvelopeScopedDelete) Exec(ctx context.Context) (int, error) {
+	where := x.s.inSendingDomainEnvelope(x.where...)
+	var n int
+	err := x.s.writeSendingDomainEnvelope(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		var err error
+		n, err = s.c.SendingDomainEnvelope.Delete().Where(where...).Exec(ctx)
+		return nil, err
+	})
+	return written(n, err)
+}
+
+// ---------------------------------------------------------------- create
+
+// SendingDomainEnvelopeScopedCreate creates a SendingDomainEnvelope of one Workspace. It has no way to name a Workspace: it
+// keeps what its setters set and builds the ent create, in its Workspace, on the client the create
+// runs on.
+type SendingDomainEnvelopeScopedCreate struct {
+	s   *Scoped
+	set []func(*SendingDomainEnvelopeCreate)
+}
+
+// Create starts a SendingDomainEnvelope in the Workspace.
+func (t *SendingDomainEnvelopeScoped) Create() *SendingDomainEnvelopeScopedCreate {
+	return &SendingDomainEnvelopeScopedCreate{s: t.s}
+}
+
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *SendingDomainEnvelopeScopedCreate) raw(s *Scoped) *SendingDomainEnvelopeCreate {
+	b := s.c.SendingDomainEnvelope.Create().SetWorkspaceID(s.ws)
+	for _, set := range x.set {
+		set(b)
+	}
+	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *SendingDomainEnvelopeScopedCreate) build(ctx context.Context, s *Scoped) (*SendingDomainEnvelopeCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkSendingDomainEnvelope(ctx, b.Mutation()))
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (x *SendingDomainEnvelopeScopedCreate) SetCreatedAt(v time.Time) *SendingDomainEnvelopeScopedCreate {
+	x.set = append(x.set, func(b *SendingDomainEnvelopeCreate) { b.SetCreatedAt(v) })
+	return x
+}
+
+const RoleOf_SendingDomainEnvelopeScopedCreate_SetCreatedAt = RoleStep
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (x *SendingDomainEnvelopeScopedCreate) SetNillableCreatedAt(v *time.Time) *SendingDomainEnvelopeScopedCreate {
+	if v != nil {
+		x.SetCreatedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingDomainEnvelopeScopedCreate_SetNillableCreatedAt = RoleStep
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *SendingDomainEnvelopeScopedCreate) SetUpdatedAt(v time.Time) *SendingDomainEnvelopeScopedCreate {
+	x.set = append(x.set, func(b *SendingDomainEnvelopeCreate) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_SendingDomainEnvelopeScopedCreate_SetUpdatedAt = RoleStep
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (x *SendingDomainEnvelopeScopedCreate) SetNillableUpdatedAt(v *time.Time) *SendingDomainEnvelopeScopedCreate {
+	if v != nil {
+		x.SetUpdatedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingDomainEnvelopeScopedCreate_SetNillableUpdatedAt = RoleStep
+
+// SetSendingDomainID sets the "sending_domain_id" field.
+func (x *SendingDomainEnvelopeScopedCreate) SetSendingDomainID(v int64) *SendingDomainEnvelopeScopedCreate {
+	x.set = append(x.set, func(b *SendingDomainEnvelopeCreate) { b.SetSendingDomainID(v) })
+	return x
+}
+
+const RoleOf_SendingDomainEnvelopeScopedCreate_SetSendingDomainID = RoleStep
+
+// SetIntegrationID sets the "integration_id" field.
+func (x *SendingDomainEnvelopeScopedCreate) SetIntegrationID(v int64) *SendingDomainEnvelopeScopedCreate {
+	x.set = append(x.set, func(b *SendingDomainEnvelopeCreate) { b.SetIntegrationID(v) })
+	return x
+}
+
+const RoleOf_SendingDomainEnvelopeScopedCreate_SetIntegrationID = RoleStep
+
+// SetState sets the "state" field.
+func (x *SendingDomainEnvelopeScopedCreate) SetState(v sendingdomainenvelope.State) *SendingDomainEnvelopeScopedCreate {
+	x.set = append(x.set, func(b *SendingDomainEnvelopeCreate) { b.SetState(v) })
+	return x
+}
+
+const RoleOf_SendingDomainEnvelopeScopedCreate_SetState = RoleStep
+
+// SetMailFromDomain sets the "mail_from_domain" field.
+func (x *SendingDomainEnvelopeScopedCreate) SetMailFromDomain(v string) *SendingDomainEnvelopeScopedCreate {
+	x.set = append(x.set, func(b *SendingDomainEnvelopeCreate) { b.SetMailFromDomain(v) })
+	return x
+}
+
+const RoleOf_SendingDomainEnvelopeScopedCreate_SetMailFromDomain = RoleStep
+
+// SetNillableMailFromDomain sets the "mail_from_domain" field if the given value is not nil.
+func (x *SendingDomainEnvelopeScopedCreate) SetNillableMailFromDomain(v *string) *SendingDomainEnvelopeScopedCreate {
+	if v != nil {
+		x.SetMailFromDomain(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingDomainEnvelopeScopedCreate_SetNillableMailFromDomain = RoleStep
+
+// SetMailFromStatus sets the "mail_from_status" field.
+func (x *SendingDomainEnvelopeScopedCreate) SetMailFromStatus(v providers.MailFromStatus) *SendingDomainEnvelopeScopedCreate {
+	x.set = append(x.set, func(b *SendingDomainEnvelopeCreate) { b.SetMailFromStatus(v) })
+	return x
+}
+
+const RoleOf_SendingDomainEnvelopeScopedCreate_SetMailFromStatus = RoleStep
+
+// SetNillableMailFromStatus sets the "mail_from_status" field if the given value is not nil.
+func (x *SendingDomainEnvelopeScopedCreate) SetNillableMailFromStatus(v *providers.MailFromStatus) *SendingDomainEnvelopeScopedCreate {
+	if v != nil {
+		x.SetMailFromStatus(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingDomainEnvelopeScopedCreate_SetNillableMailFromStatus = RoleStep
+
+// SetMailFromOnMxFailure sets the "mail_from_on_mx_failure" field.
+func (x *SendingDomainEnvelopeScopedCreate) SetMailFromOnMxFailure(v providers.MXFailureBehavior) *SendingDomainEnvelopeScopedCreate {
+	x.set = append(x.set, func(b *SendingDomainEnvelopeCreate) { b.SetMailFromOnMxFailure(v) })
+	return x
+}
+
+const RoleOf_SendingDomainEnvelopeScopedCreate_SetMailFromOnMxFailure = RoleStep
+
+// SetNillableMailFromOnMxFailure sets the "mail_from_on_mx_failure" field if the given value is not nil.
+func (x *SendingDomainEnvelopeScopedCreate) SetNillableMailFromOnMxFailure(v *providers.MXFailureBehavior) *SendingDomainEnvelopeScopedCreate {
+	if v != nil {
+		x.SetMailFromOnMxFailure(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingDomainEnvelopeScopedCreate_SetNillableMailFromOnMxFailure = RoleStep
+
+// SetCheckedAt sets the "checked_at" field.
+func (x *SendingDomainEnvelopeScopedCreate) SetCheckedAt(v time.Time) *SendingDomainEnvelopeScopedCreate {
+	x.set = append(x.set, func(b *SendingDomainEnvelopeCreate) { b.SetCheckedAt(v) })
+	return x
+}
+
+const RoleOf_SendingDomainEnvelopeScopedCreate_SetCheckedAt = RoleStep
+
+// SetSendingDomain sets the "sending_domain" edge to the SendingDomain entity.
+func (x *SendingDomainEnvelopeScopedCreate) SetSendingDomain(v *SendingDomain) *SendingDomainEnvelopeScopedCreate {
+	x.set = append(x.set, func(b *SendingDomainEnvelopeCreate) { b.SetSendingDomain(v) })
+	return x
+}
+
+const RoleOf_SendingDomainEnvelopeScopedCreate_SetSendingDomain = RoleStep
+
+// SetIntegration sets the "integration" edge to the Integration entity.
+func (x *SendingDomainEnvelopeScopedCreate) SetIntegration(v *Integration) *SendingDomainEnvelopeScopedCreate {
+	x.set = append(x.set, func(b *SendingDomainEnvelopeCreate) { b.SetIntegration(v) })
+	return x
+}
+
+const RoleOf_SendingDomainEnvelopeScopedCreate_SetIntegration = RoleStep
+
+const (
+	TypeOf_SendingDomainEnvelopeScopedCreate                        = TypeScopedCreate
+	EntityOf_SendingDomainEnvelopeScopedCreate                      = "SendingDomainEnvelope"
+	RoleOf_SendingDomainEnvelopeScopedCreate_Save                   = RoleStep
+	RoleOf_SendingDomainEnvelopeScopedCreate_Exec                   = RoleStep
+	RoleOf_SendingDomainEnvelopeScopedCreate_OnConflictColumns      = RoleStart
+	RoleOf_SendingDomainEnvelopeScopedCreate_OnConflictColumnsWhere = RoleStart
+)
+
+// Save verifies the references against the Workspace, then creates the SendingDomainEnvelope.
+func (x *SendingDomainEnvelopeScopedCreate) Save(ctx context.Context) (*SendingDomainEnvelope, error) {
+	var created *SendingDomainEnvelope
+	err := x.s.writeSendingDomainEnvelope(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if created, err = b.Save(ctx); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+	return written(created, err)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *SendingDomainEnvelopeScopedCreate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- create bulk
+
+// SendingDomainEnvelopeScopedCreateBulk creates several SendingDomainEnvelope entities of one Workspace at once.
+type SendingDomainEnvelopeScopedCreateBulk struct {
+	s  *Scoped
+	xs []*SendingDomainEnvelopeScopedCreate
+}
+
+// CreateBulk batches creates started on this Workspace.
+func (t *SendingDomainEnvelopeScoped) CreateBulk(xs ...*SendingDomainEnvelopeScopedCreate) *SendingDomainEnvelopeScopedCreateBulk {
+	return &SendingDomainEnvelopeScopedCreateBulk{s: t.s, xs: xs}
+}
+
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *SendingDomainEnvelopeScopedCreateBulk) refuseForeign() error {
+	for _, x := range b.xs {
+		if x.s.ws != b.s.ws {
+			return fmt.Errorf("SendingDomainEnvelope: builder of another scope: %w", ErrNotInWorkspace)
+		}
+	}
+	return nil
+}
+
+// build makes the ent bulk create on the client of s, every create of it in the Workspace, and
+// verifies the references of all of them, one query per reference rather than one per row.
+func (b *SendingDomainEnvelopeScopedCreateBulk) build(ctx context.Context, s *Scoped) (*SendingDomainEnvelopeCreateBulk, error) {
+	builders := make([]*SendingDomainEnvelopeCreate, len(b.xs))
+	ms := make([]*SendingDomainEnvelopeMutation, len(b.xs))
+	for i, x := range b.xs {
+		builders[i] = x.raw(s)
+		ms[i] = builders[i].Mutation()
+	}
+	if err := s.checkSendingDomainEnvelope(ctx, ms...); err != nil {
+		return nil, err
+	}
+	return s.c.SendingDomainEnvelope.CreateBulk(builders...), nil
+}
+
+// Save verifies every builder's references, then creates the SendingDomainEnvelope entities.
+func (b *SendingDomainEnvelopeScopedCreateBulk) Save(ctx context.Context) ([]*SendingDomainEnvelope, error) {
+	if err := b.refuseForeign(); err != nil {
+		return nil, err
+	}
+	var created []*SendingDomainEnvelope
+	err := b.s.writeSendingDomainEnvelope(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		raw, err := b.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if created, err = raw.Save(ctx); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+	return written(created, err)
+}
+
+// Exec is like Save, discarding the entities.
+func (b *SendingDomainEnvelopeScopedCreateBulk) Exec(ctx context.Context) error {
+	_, err := b.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_SendingDomainEnvelopeScopedCreateBulk                   = TypeScopedCreate
+	EntityOf_SendingDomainEnvelopeScopedCreateBulk                 = "SendingDomainEnvelope"
+	RoleOf_SendingDomainEnvelopeScopedCreateBulk_Save              = RoleStep
+	RoleOf_SendingDomainEnvelopeScopedCreateBulk_Exec              = RoleStep
+	RoleOf_SendingDomainEnvelopeScopedCreateBulk_OnConflictColumns = RoleStart
+)
+
+// ---------------------------------------------------------------- upsert
+
+// SendingDomainEnvelopeScopedUpsert is the "ON CONFLICT ... DO UPDATE" setter. It cannot move a row to
+// another Workspace or point a reference at a value that was not verified on create.
+type SendingDomainEnvelopeScopedUpsert struct{ u *sql.UpdateSet }
+
+const (
+	TypeOf_SendingDomainEnvelopeScopedUpsert   = TypeScopedUpsert
+	EntityOf_SendingDomainEnvelopeScopedUpsert = "SendingDomainEnvelope"
+)
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *SendingDomainEnvelopeScopedUpsert) SetUpdatedAt(v time.Time) *SendingDomainEnvelopeScopedUpsert {
+	u.u.Set(sendingdomainenvelope.FieldUpdatedAt, v)
+	return u
+}
+
+const RoleOf_SendingDomainEnvelopeScopedUpsert_SetUpdatedAt = RoleStep
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *SendingDomainEnvelopeScopedUpsert) UpdateUpdatedAt() *SendingDomainEnvelopeScopedUpsert {
+	u.u.SetExcluded(sendingdomainenvelope.FieldUpdatedAt)
+	return u
+}
+
+const RoleOf_SendingDomainEnvelopeScopedUpsert_UpdateUpdatedAt = RoleStep
+
+// SetState sets the "state" field.
+func (u *SendingDomainEnvelopeScopedUpsert) SetState(v sendingdomainenvelope.State) *SendingDomainEnvelopeScopedUpsert {
+	u.u.Set(sendingdomainenvelope.FieldState, v)
+	return u
+}
+
+const RoleOf_SendingDomainEnvelopeScopedUpsert_SetState = RoleStep
+
+// UpdateState sets the "state" field to the value that was provided on create.
+func (u *SendingDomainEnvelopeScopedUpsert) UpdateState() *SendingDomainEnvelopeScopedUpsert {
+	u.u.SetExcluded(sendingdomainenvelope.FieldState)
+	return u
+}
+
+const RoleOf_SendingDomainEnvelopeScopedUpsert_UpdateState = RoleStep
+
+// SetMailFromDomain sets the "mail_from_domain" field.
+func (u *SendingDomainEnvelopeScopedUpsert) SetMailFromDomain(v string) *SendingDomainEnvelopeScopedUpsert {
+	u.u.Set(sendingdomainenvelope.FieldMailFromDomain, v)
+	return u
+}
+
+const RoleOf_SendingDomainEnvelopeScopedUpsert_SetMailFromDomain = RoleStep
+
+// UpdateMailFromDomain sets the "mail_from_domain" field to the value that was provided on create.
+func (u *SendingDomainEnvelopeScopedUpsert) UpdateMailFromDomain() *SendingDomainEnvelopeScopedUpsert {
+	u.u.SetExcluded(sendingdomainenvelope.FieldMailFromDomain)
+	return u
+}
+
+const RoleOf_SendingDomainEnvelopeScopedUpsert_UpdateMailFromDomain = RoleStep
+
+// ClearMailFromDomain clears the value of the "mail_from_domain" field.
+func (u *SendingDomainEnvelopeScopedUpsert) ClearMailFromDomain() *SendingDomainEnvelopeScopedUpsert {
+	u.u.SetNull(sendingdomainenvelope.FieldMailFromDomain)
+	return u
+}
+
+const RoleOf_SendingDomainEnvelopeScopedUpsert_ClearMailFromDomain = RoleStep
+
+// SetMailFromStatus sets the "mail_from_status" field.
+func (u *SendingDomainEnvelopeScopedUpsert) SetMailFromStatus(v providers.MailFromStatus) *SendingDomainEnvelopeScopedUpsert {
+	u.u.Set(sendingdomainenvelope.FieldMailFromStatus, v)
+	return u
+}
+
+const RoleOf_SendingDomainEnvelopeScopedUpsert_SetMailFromStatus = RoleStep
+
+// UpdateMailFromStatus sets the "mail_from_status" field to the value that was provided on create.
+func (u *SendingDomainEnvelopeScopedUpsert) UpdateMailFromStatus() *SendingDomainEnvelopeScopedUpsert {
+	u.u.SetExcluded(sendingdomainenvelope.FieldMailFromStatus)
+	return u
+}
+
+const RoleOf_SendingDomainEnvelopeScopedUpsert_UpdateMailFromStatus = RoleStep
+
+// ClearMailFromStatus clears the value of the "mail_from_status" field.
+func (u *SendingDomainEnvelopeScopedUpsert) ClearMailFromStatus() *SendingDomainEnvelopeScopedUpsert {
+	u.u.SetNull(sendingdomainenvelope.FieldMailFromStatus)
+	return u
+}
+
+const RoleOf_SendingDomainEnvelopeScopedUpsert_ClearMailFromStatus = RoleStep
+
+// SetMailFromOnMxFailure sets the "mail_from_on_mx_failure" field.
+func (u *SendingDomainEnvelopeScopedUpsert) SetMailFromOnMxFailure(v providers.MXFailureBehavior) *SendingDomainEnvelopeScopedUpsert {
+	u.u.Set(sendingdomainenvelope.FieldMailFromOnMxFailure, v)
+	return u
+}
+
+const RoleOf_SendingDomainEnvelopeScopedUpsert_SetMailFromOnMxFailure = RoleStep
+
+// UpdateMailFromOnMxFailure sets the "mail_from_on_mx_failure" field to the value that was provided on create.
+func (u *SendingDomainEnvelopeScopedUpsert) UpdateMailFromOnMxFailure() *SendingDomainEnvelopeScopedUpsert {
+	u.u.SetExcluded(sendingdomainenvelope.FieldMailFromOnMxFailure)
+	return u
+}
+
+const RoleOf_SendingDomainEnvelopeScopedUpsert_UpdateMailFromOnMxFailure = RoleStep
+
+// ClearMailFromOnMxFailure clears the value of the "mail_from_on_mx_failure" field.
+func (u *SendingDomainEnvelopeScopedUpsert) ClearMailFromOnMxFailure() *SendingDomainEnvelopeScopedUpsert {
+	u.u.SetNull(sendingdomainenvelope.FieldMailFromOnMxFailure)
+	return u
+}
+
+const RoleOf_SendingDomainEnvelopeScopedUpsert_ClearMailFromOnMxFailure = RoleStep
+
+// SetCheckedAt sets the "checked_at" field.
+func (u *SendingDomainEnvelopeScopedUpsert) SetCheckedAt(v time.Time) *SendingDomainEnvelopeScopedUpsert {
+	u.u.Set(sendingdomainenvelope.FieldCheckedAt, v)
+	return u
+}
+
+const RoleOf_SendingDomainEnvelopeScopedUpsert_SetCheckedAt = RoleStep
+
+// UpdateCheckedAt sets the "checked_at" field to the value that was provided on create.
+func (u *SendingDomainEnvelopeScopedUpsert) UpdateCheckedAt() *SendingDomainEnvelopeScopedUpsert {
+	u.u.SetExcluded(sendingdomainenvelope.FieldCheckedAt)
+	return u
+}
+
+const RoleOf_SendingDomainEnvelopeScopedUpsert_UpdateCheckedAt = RoleStep
+
+// conflictOptions confines the DO UPDATE part to rows of the Workspace.
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *SendingDomainEnvelopeScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
+		sql.ConflictColumns(columns...),
+		sql.UpdateWhere(sql.EQ(sendingdomainenvelope.FieldWorkspaceID, t.s.ws)),
+	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
+}
+
+// SendingDomainEnvelopeScopedUpsertOne is the "upsert" of one SendingDomainEnvelope: the create it was started on, which a setter
+// called later still changes, and what to do on a conflict.
+type SendingDomainEnvelopeScopedUpsertOne struct {
+	x        *SendingDomainEnvelopeScopedCreate
+	conflict []sql.ConflictOption
+	set      []func(*SendingDomainEnvelopeUpsertOne)
+	// doNothing: the conflict action is DO NOTHING (the only upsert an audited entity allows).
+	doNothing bool
+}
+
+const (
+	TypeOf_SendingDomainEnvelopeScopedUpsertOne                 = TypeScopedUpsert
+	EntityOf_SendingDomainEnvelopeScopedUpsertOne               = "SendingDomainEnvelope"
+	RoleOf_SendingDomainEnvelopeScopedUpsertOne_UpdateNewValues = RoleStep
+	RoleOf_SendingDomainEnvelopeScopedUpsertOne_Ignore          = RoleStep
+	RoleOf_SendingDomainEnvelopeScopedUpsertOne_DoNothing       = RoleStep
+	RoleOf_SendingDomainEnvelopeScopedUpsertOne_Update          = RoleStep
+	RoleOf_SendingDomainEnvelopeScopedUpsertOne_Exec            = RoleStep
+	RoleOf_SendingDomainEnvelopeScopedUpsertOne_ID              = RoleStep
+)
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (x *SendingDomainEnvelopeScopedCreate) OnConflictColumns(columns ...string) *SendingDomainEnvelopeScopedUpsertOne {
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *SendingDomainEnvelopeScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *SendingDomainEnvelopeScopedUpsertOne {
+	return &SendingDomainEnvelopeScopedUpsertOne{x: x, conflict: (&SendingDomainEnvelopeScoped{s: x.s}).conflictOptions(columns, target)}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *SendingDomainEnvelopeScopedUpsertOne) UpdateNewValues() *SendingDomainEnvelopeScopedUpsertOne {
+	u.set = append(u.set, func(r *SendingDomainEnvelopeUpsertOne) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *SendingDomainEnvelopeScopedUpsertOne) Ignore() *SendingDomainEnvelopeScopedUpsertOne {
+	u.set = append(u.set, func(r *SendingDomainEnvelopeUpsertOne) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *SendingDomainEnvelopeScopedUpsertOne) DoNothing() *SendingDomainEnvelopeScopedUpsertOne {
+	u.set = append(u.set, func(r *SendingDomainEnvelopeUpsertOne) { r.DoNothing() })
+	u.doNothing = true
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *SendingDomainEnvelopeScopedUpsertOne) Update(set func(*SendingDomainEnvelopeScopedUpsert)) *SendingDomainEnvelopeScopedUpsertOne {
+	u.set = append(u.set, func(r *SendingDomainEnvelopeUpsertOne) {
+		r.Update(func(s *SendingDomainEnvelopeUpsert) { set(&SendingDomainEnvelopeScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// build makes the ent upsert on the client of s and verifies the create's references.
+func (u *SendingDomainEnvelopeScopedUpsertOne) build(ctx context.Context, s *Scoped) (*SendingDomainEnvelopeUpsertOne, error) {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
+		return nil, err
+	}
+	r := b.OnConflict(u.conflict...)
+	for _, set := range u.set {
+		set(r)
+	}
+	return r, nil
+}
+
+// Exec verifies the references, then executes the upsert.
+func (u *SendingDomainEnvelopeScopedUpsertOne) Exec(ctx context.Context) error {
+	_, err := u.ID(ctx)
+	return err
+}
+
+// ID is like Exec, returning the inserted or updated id.
+func (u *SendingDomainEnvelopeScopedUpsertOne) ID(ctx context.Context) (int64, error) {
+	var id int64
+	err := u.x.s.writeSendingDomainEnvelope(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		r, err := u.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if id, err = r.ID(ctx); err != nil {
+			return nil, err
+		}
+		return []int64{id}, nil
+	})
+	return written(id, err)
+}
+
+// SendingDomainEnvelopeScopedUpsertBulk is the "upsert" of several SendingDomainEnvelope entities.
+type SendingDomainEnvelopeScopedUpsertBulk struct {
+	b       *SendingDomainEnvelopeScopedCreateBulk
+	t       *SendingDomainEnvelopeScoped
+	columns []string
+	set     []func(*SendingDomainEnvelopeUpsertBulk)
+}
+
+const (
+	TypeOf_SendingDomainEnvelopeScopedUpsertBulk                 = TypeScopedUpsert
+	EntityOf_SendingDomainEnvelopeScopedUpsertBulk               = "SendingDomainEnvelope"
+	RoleOf_SendingDomainEnvelopeScopedUpsertBulk_UpdateNewValues = RoleStep
+	RoleOf_SendingDomainEnvelopeScopedUpsertBulk_Ignore          = RoleStep
+	RoleOf_SendingDomainEnvelopeScopedUpsertBulk_DoNothing       = RoleStep
+	RoleOf_SendingDomainEnvelopeScopedUpsertBulk_Update          = RoleStep
+	RoleOf_SendingDomainEnvelopeScopedUpsertBulk_Exec            = RoleStep
+)
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (b *SendingDomainEnvelopeScopedCreateBulk) OnConflictColumns(columns ...string) *SendingDomainEnvelopeScopedUpsertBulk {
+	return &SendingDomainEnvelopeScopedUpsertBulk{b: b, t: &SendingDomainEnvelopeScoped{s: b.s}, columns: columns}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *SendingDomainEnvelopeScopedUpsertBulk) UpdateNewValues() *SendingDomainEnvelopeScopedUpsertBulk {
+	u.set = append(u.set, func(r *SendingDomainEnvelopeUpsertBulk) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *SendingDomainEnvelopeScopedUpsertBulk) Ignore() *SendingDomainEnvelopeScopedUpsertBulk {
+	u.set = append(u.set, func(r *SendingDomainEnvelopeUpsertBulk) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *SendingDomainEnvelopeScopedUpsertBulk) DoNothing() *SendingDomainEnvelopeScopedUpsertBulk {
+	u.set = append(u.set, func(r *SendingDomainEnvelopeUpsertBulk) { r.DoNothing() })
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *SendingDomainEnvelopeScopedUpsertBulk) Update(set func(*SendingDomainEnvelopeScopedUpsert)) *SendingDomainEnvelopeScopedUpsertBulk {
+	u.set = append(u.set, func(r *SendingDomainEnvelopeUpsertBulk) {
+		r.Update(func(s *SendingDomainEnvelopeUpsert) { set(&SendingDomainEnvelopeScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// Exec verifies every builder's references, then executes the upsert.
+func (u *SendingDomainEnvelopeScopedUpsertBulk) Exec(ctx context.Context) error {
+	if err := u.b.refuseForeign(); err != nil {
+		return err
+	}
+	return u.b.s.writeSendingDomainEnvelope(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		raw, err := u.b.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
+		for _, set := range u.set {
+			set(r)
+		}
+		return nil, r.Exec(ctx)
+	})
+}
+
+// ---------------------------------------------------------------- update
+
+// SendingDomainEnvelopeScopedUpdateOne updates one SendingDomainEnvelope. It has no way to move the row to another Workspace: it
+// keeps the row's id, its fences and what its setters set, and builds the ent update on the client
+// the update runs on.
+type SendingDomainEnvelopeScopedUpdateOne struct {
+	s     *Scoped
+	id    int64
+	where []predicate.SendingDomainEnvelope
+	set   []func(*SendingDomainEnvelopeUpdateOne)
+}
+
+// UpdateOneID updates the SendingDomainEnvelope with the id; a row of another Workspace is not found.
+func (t *SendingDomainEnvelopeScoped) UpdateOneID(id int64) *SendingDomainEnvelopeScopedUpdateOne {
+	return &SendingDomainEnvelopeScopedUpdateOne{s: t.s, id: id}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *SendingDomainEnvelopeScopedUpdateOne) Where(ps ...predicate.SendingDomainEnvelope) *SendingDomainEnvelopeScopedUpdateOne {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *SendingDomainEnvelopeScopedUpdateOne) SetUpdatedAt(v time.Time) *SendingDomainEnvelopeScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingDomainEnvelopeUpdateOne) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_SendingDomainEnvelopeScopedUpdateOne_SetUpdatedAt = RoleStep
+
+// SetState sets the "state" field.
+func (x *SendingDomainEnvelopeScopedUpdateOne) SetState(v sendingdomainenvelope.State) *SendingDomainEnvelopeScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingDomainEnvelopeUpdateOne) { b.SetState(v) })
+	return x
+}
+
+const RoleOf_SendingDomainEnvelopeScopedUpdateOne_SetState = RoleStep
+
+// SetNillableState sets the "state" field if the given value is not nil.
+func (x *SendingDomainEnvelopeScopedUpdateOne) SetNillableState(v *sendingdomainenvelope.State) *SendingDomainEnvelopeScopedUpdateOne {
+	if v != nil {
+		x.SetState(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingDomainEnvelopeScopedUpdateOne_SetNillableState = RoleStep
+
+// SetMailFromDomain sets the "mail_from_domain" field.
+func (x *SendingDomainEnvelopeScopedUpdateOne) SetMailFromDomain(v string) *SendingDomainEnvelopeScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingDomainEnvelopeUpdateOne) { b.SetMailFromDomain(v) })
+	return x
+}
+
+const RoleOf_SendingDomainEnvelopeScopedUpdateOne_SetMailFromDomain = RoleStep
+
+// SetNillableMailFromDomain sets the "mail_from_domain" field if the given value is not nil.
+func (x *SendingDomainEnvelopeScopedUpdateOne) SetNillableMailFromDomain(v *string) *SendingDomainEnvelopeScopedUpdateOne {
+	if v != nil {
+		x.SetMailFromDomain(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingDomainEnvelopeScopedUpdateOne_SetNillableMailFromDomain = RoleStep
+
+// ClearMailFromDomain clears the value of the "mail_from_domain" field.
+func (x *SendingDomainEnvelopeScopedUpdateOne) ClearMailFromDomain() *SendingDomainEnvelopeScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingDomainEnvelopeUpdateOne) { b.ClearMailFromDomain() })
+	return x
+}
+
+const RoleOf_SendingDomainEnvelopeScopedUpdateOne_ClearMailFromDomain = RoleStep
+
+// SetMailFromStatus sets the "mail_from_status" field.
+func (x *SendingDomainEnvelopeScopedUpdateOne) SetMailFromStatus(v providers.MailFromStatus) *SendingDomainEnvelopeScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingDomainEnvelopeUpdateOne) { b.SetMailFromStatus(v) })
+	return x
+}
+
+const RoleOf_SendingDomainEnvelopeScopedUpdateOne_SetMailFromStatus = RoleStep
+
+// SetNillableMailFromStatus sets the "mail_from_status" field if the given value is not nil.
+func (x *SendingDomainEnvelopeScopedUpdateOne) SetNillableMailFromStatus(v *providers.MailFromStatus) *SendingDomainEnvelopeScopedUpdateOne {
+	if v != nil {
+		x.SetMailFromStatus(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingDomainEnvelopeScopedUpdateOne_SetNillableMailFromStatus = RoleStep
+
+// ClearMailFromStatus clears the value of the "mail_from_status" field.
+func (x *SendingDomainEnvelopeScopedUpdateOne) ClearMailFromStatus() *SendingDomainEnvelopeScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingDomainEnvelopeUpdateOne) { b.ClearMailFromStatus() })
+	return x
+}
+
+const RoleOf_SendingDomainEnvelopeScopedUpdateOne_ClearMailFromStatus = RoleStep
+
+// SetMailFromOnMxFailure sets the "mail_from_on_mx_failure" field.
+func (x *SendingDomainEnvelopeScopedUpdateOne) SetMailFromOnMxFailure(v providers.MXFailureBehavior) *SendingDomainEnvelopeScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingDomainEnvelopeUpdateOne) { b.SetMailFromOnMxFailure(v) })
+	return x
+}
+
+const RoleOf_SendingDomainEnvelopeScopedUpdateOne_SetMailFromOnMxFailure = RoleStep
+
+// SetNillableMailFromOnMxFailure sets the "mail_from_on_mx_failure" field if the given value is not nil.
+func (x *SendingDomainEnvelopeScopedUpdateOne) SetNillableMailFromOnMxFailure(v *providers.MXFailureBehavior) *SendingDomainEnvelopeScopedUpdateOne {
+	if v != nil {
+		x.SetMailFromOnMxFailure(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingDomainEnvelopeScopedUpdateOne_SetNillableMailFromOnMxFailure = RoleStep
+
+// ClearMailFromOnMxFailure clears the value of the "mail_from_on_mx_failure" field.
+func (x *SendingDomainEnvelopeScopedUpdateOne) ClearMailFromOnMxFailure() *SendingDomainEnvelopeScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingDomainEnvelopeUpdateOne) { b.ClearMailFromOnMxFailure() })
+	return x
+}
+
+const RoleOf_SendingDomainEnvelopeScopedUpdateOne_ClearMailFromOnMxFailure = RoleStep
+
+// SetCheckedAt sets the "checked_at" field.
+func (x *SendingDomainEnvelopeScopedUpdateOne) SetCheckedAt(v time.Time) *SendingDomainEnvelopeScopedUpdateOne {
+	x.set = append(x.set, func(b *SendingDomainEnvelopeUpdateOne) { b.SetCheckedAt(v) })
+	return x
+}
+
+const RoleOf_SendingDomainEnvelopeScopedUpdateOne_SetCheckedAt = RoleStep
+
+// SetNillableCheckedAt sets the "checked_at" field if the given value is not nil.
+func (x *SendingDomainEnvelopeScopedUpdateOne) SetNillableCheckedAt(v *time.Time) *SendingDomainEnvelopeScopedUpdateOne {
+	if v != nil {
+		x.SetCheckedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingDomainEnvelopeScopedUpdateOne_SetNillableCheckedAt = RoleStep
+
+// Save verifies the references against the Workspace, then updates the SendingDomainEnvelope.
+func (x *SendingDomainEnvelopeScopedUpdateOne) Save(ctx context.Context) (*SendingDomainEnvelope, error) {
+	return x.save(ctx, "update", skipUnchanged)
+}
+
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *SendingDomainEnvelopeScopedUpdateOne) build(ctx context.Context, s *Scoped) (*SendingDomainEnvelopeUpdateOne, error) {
+	b := s.c.SendingDomainEnvelope.UpdateOneID(x.id).Where(s.inSendingDomainEnvelope(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkSendingDomainEnvelope(ctx, b.Mutation()))
+}
+
+// save is Save under a verb, doing with an unchanged row what unchanged says.
+func (x *SendingDomainEnvelopeScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*SendingDomainEnvelope, error) {
+	where := x.s.inSendingDomainEnvelope(x.where...)
+	var updated *SendingDomainEnvelope
+	err := x.s.writeSendingDomainEnvelope(ctx, verb, append([]predicate.SendingDomainEnvelope{sendingdomainenvelope.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		updated, err = b.Save(ctx)
+		return nil, err
+	})
+	return written(updated, err)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *SendingDomainEnvelopeScopedUpdateOne) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_SendingDomainEnvelopeScopedUpdateOne       = TypeScopedUpdate
+	EntityOf_SendingDomainEnvelopeScopedUpdateOne     = "SendingDomainEnvelope"
+	RoleOf_SendingDomainEnvelopeScopedUpdateOne_Where = RoleStep
+	RoleOf_SendingDomainEnvelopeScopedUpdateOne_Save  = RoleStep
+	RoleOf_SendingDomainEnvelopeScopedUpdateOne_Exec  = RoleStep
+)
+
+// SendingDomainEnvelopeScopedUpdate is a conditional bulk update of one Workspace: it keeps its predicates and
+// what its setters and modifiers set, and builds the ent update on the client the update runs on.
+type SendingDomainEnvelopeScopedUpdate struct {
+	s     *Scoped
+	where []predicate.SendingDomainEnvelope
+	set   []func(*SendingDomainEnvelopeUpdate)
+	// modErr is set when a Modify modifier tried to assign workspace_id.
+	modErr error
+}
+
+// Update updates the SendingDomainEnvelope entities of the Workspace that match the predicates.
+func (t *SendingDomainEnvelopeScoped) Update() *SendingDomainEnvelopeScopedUpdate {
+	return &SendingDomainEnvelopeScopedUpdate{s: t.s}
+}
+
+// Where appends predicates the rows must match.
+func (x *SendingDomainEnvelopeScopedUpdate) Where(ps ...predicate.SendingDomainEnvelope) *SendingDomainEnvelopeScopedUpdate {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+// Modify adds a statement modifier for computed assignments the typed setters cannot
+// express (SET col = LEAST(col + ..., ...)). A modifier gets assignment-only access
+// (ScopedAssign), so it cannot widen the Workspace predicate; an assignment to
+// workspace_id is refused: each modifier is probed against a scratch statement here, and
+// Save fails with ErrWorkspaceAssign.
+func (x *SendingDomainEnvelopeScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *SendingDomainEnvelopeScopedUpdate {
+	for _, m := range modifiers {
+		probe := &ScopedAssign{u: sql.Update(sendingdomainenvelope.Table)}
+		m(probe)
+		if probe.workspace {
+			x.modErr = ErrWorkspaceAssign
+		}
+		x.set = append(x.set, func(b *SendingDomainEnvelopeUpdate) {
+			b.Modify(func(u *sql.UpdateBuilder) { m(&ScopedAssign{u: u}) })
+		})
+	}
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *SendingDomainEnvelopeScopedUpdate) SetUpdatedAt(v time.Time) *SendingDomainEnvelopeScopedUpdate {
+	x.set = append(x.set, func(b *SendingDomainEnvelopeUpdate) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_SendingDomainEnvelopeScopedUpdate_SetUpdatedAt = RoleStep
+
+// SetState sets the "state" field.
+func (x *SendingDomainEnvelopeScopedUpdate) SetState(v sendingdomainenvelope.State) *SendingDomainEnvelopeScopedUpdate {
+	x.set = append(x.set, func(b *SendingDomainEnvelopeUpdate) { b.SetState(v) })
+	return x
+}
+
+const RoleOf_SendingDomainEnvelopeScopedUpdate_SetState = RoleStep
+
+// SetNillableState sets the "state" field if the given value is not nil.
+func (x *SendingDomainEnvelopeScopedUpdate) SetNillableState(v *sendingdomainenvelope.State) *SendingDomainEnvelopeScopedUpdate {
+	if v != nil {
+		x.SetState(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingDomainEnvelopeScopedUpdate_SetNillableState = RoleStep
+
+// SetMailFromDomain sets the "mail_from_domain" field.
+func (x *SendingDomainEnvelopeScopedUpdate) SetMailFromDomain(v string) *SendingDomainEnvelopeScopedUpdate {
+	x.set = append(x.set, func(b *SendingDomainEnvelopeUpdate) { b.SetMailFromDomain(v) })
+	return x
+}
+
+const RoleOf_SendingDomainEnvelopeScopedUpdate_SetMailFromDomain = RoleStep
+
+// SetNillableMailFromDomain sets the "mail_from_domain" field if the given value is not nil.
+func (x *SendingDomainEnvelopeScopedUpdate) SetNillableMailFromDomain(v *string) *SendingDomainEnvelopeScopedUpdate {
+	if v != nil {
+		x.SetMailFromDomain(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingDomainEnvelopeScopedUpdate_SetNillableMailFromDomain = RoleStep
+
+// ClearMailFromDomain clears the value of the "mail_from_domain" field.
+func (x *SendingDomainEnvelopeScopedUpdate) ClearMailFromDomain() *SendingDomainEnvelopeScopedUpdate {
+	x.set = append(x.set, func(b *SendingDomainEnvelopeUpdate) { b.ClearMailFromDomain() })
+	return x
+}
+
+const RoleOf_SendingDomainEnvelopeScopedUpdate_ClearMailFromDomain = RoleStep
+
+// SetMailFromStatus sets the "mail_from_status" field.
+func (x *SendingDomainEnvelopeScopedUpdate) SetMailFromStatus(v providers.MailFromStatus) *SendingDomainEnvelopeScopedUpdate {
+	x.set = append(x.set, func(b *SendingDomainEnvelopeUpdate) { b.SetMailFromStatus(v) })
+	return x
+}
+
+const RoleOf_SendingDomainEnvelopeScopedUpdate_SetMailFromStatus = RoleStep
+
+// SetNillableMailFromStatus sets the "mail_from_status" field if the given value is not nil.
+func (x *SendingDomainEnvelopeScopedUpdate) SetNillableMailFromStatus(v *providers.MailFromStatus) *SendingDomainEnvelopeScopedUpdate {
+	if v != nil {
+		x.SetMailFromStatus(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingDomainEnvelopeScopedUpdate_SetNillableMailFromStatus = RoleStep
+
+// ClearMailFromStatus clears the value of the "mail_from_status" field.
+func (x *SendingDomainEnvelopeScopedUpdate) ClearMailFromStatus() *SendingDomainEnvelopeScopedUpdate {
+	x.set = append(x.set, func(b *SendingDomainEnvelopeUpdate) { b.ClearMailFromStatus() })
+	return x
+}
+
+const RoleOf_SendingDomainEnvelopeScopedUpdate_ClearMailFromStatus = RoleStep
+
+// SetMailFromOnMxFailure sets the "mail_from_on_mx_failure" field.
+func (x *SendingDomainEnvelopeScopedUpdate) SetMailFromOnMxFailure(v providers.MXFailureBehavior) *SendingDomainEnvelopeScopedUpdate {
+	x.set = append(x.set, func(b *SendingDomainEnvelopeUpdate) { b.SetMailFromOnMxFailure(v) })
+	return x
+}
+
+const RoleOf_SendingDomainEnvelopeScopedUpdate_SetMailFromOnMxFailure = RoleStep
+
+// SetNillableMailFromOnMxFailure sets the "mail_from_on_mx_failure" field if the given value is not nil.
+func (x *SendingDomainEnvelopeScopedUpdate) SetNillableMailFromOnMxFailure(v *providers.MXFailureBehavior) *SendingDomainEnvelopeScopedUpdate {
+	if v != nil {
+		x.SetMailFromOnMxFailure(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingDomainEnvelopeScopedUpdate_SetNillableMailFromOnMxFailure = RoleStep
+
+// ClearMailFromOnMxFailure clears the value of the "mail_from_on_mx_failure" field.
+func (x *SendingDomainEnvelopeScopedUpdate) ClearMailFromOnMxFailure() *SendingDomainEnvelopeScopedUpdate {
+	x.set = append(x.set, func(b *SendingDomainEnvelopeUpdate) { b.ClearMailFromOnMxFailure() })
+	return x
+}
+
+const RoleOf_SendingDomainEnvelopeScopedUpdate_ClearMailFromOnMxFailure = RoleStep
+
+// SetCheckedAt sets the "checked_at" field.
+func (x *SendingDomainEnvelopeScopedUpdate) SetCheckedAt(v time.Time) *SendingDomainEnvelopeScopedUpdate {
+	x.set = append(x.set, func(b *SendingDomainEnvelopeUpdate) { b.SetCheckedAt(v) })
+	return x
+}
+
+const RoleOf_SendingDomainEnvelopeScopedUpdate_SetCheckedAt = RoleStep
+
+// SetNillableCheckedAt sets the "checked_at" field if the given value is not nil.
+func (x *SendingDomainEnvelopeScopedUpdate) SetNillableCheckedAt(v *time.Time) *SendingDomainEnvelopeScopedUpdate {
+	if v != nil {
+		x.SetCheckedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_SendingDomainEnvelopeScopedUpdate_SetNillableCheckedAt = RoleStep
+
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *SendingDomainEnvelopeScopedUpdate) build(ctx context.Context, s *Scoped) (*SendingDomainEnvelopeUpdate, error) {
+	b := s.c.SendingDomainEnvelope.Update().Where(s.inSendingDomainEnvelope(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkSendingDomainEnvelope(ctx, b.Mutation()))
+}
+
+// Save verifies the references against the Workspace, then updates the rows and
+// returns how many changed.
+func (x *SendingDomainEnvelopeScopedUpdate) Save(ctx context.Context) (int, error) {
+	if x.modErr != nil {
+		return 0, x.modErr
+	}
+	where := x.s.inSendingDomainEnvelope(x.where...)
+	var n int
+	err := x.s.writeSendingDomainEnvelope(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		n, err = b.Save(ctx)
+		return nil, err
+	})
+	return written(n, err)
+}
+
+// Exec is like Save, discarding the count.
+func (x *SendingDomainEnvelopeScopedUpdate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_SendingDomainEnvelopeScopedUpdate        = TypeScopedUpdate
+	EntityOf_SendingDomainEnvelopeScopedUpdate      = "SendingDomainEnvelope"
+	RoleOf_SendingDomainEnvelopeScopedUpdate_Where  = RoleStep
+	RoleOf_SendingDomainEnvelopeScopedUpdate_Modify = RoleStep
+	RoleOf_SendingDomainEnvelopeScopedUpdate_Save   = RoleStep
+	RoleOf_SendingDomainEnvelopeScopedUpdate_Exec   = RoleStep
 )
 
 // SendingWindowScoped reaches SendingWindow entities of one Workspace.

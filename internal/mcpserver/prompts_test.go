@@ -157,3 +157,24 @@ func TestMCPSetUpSendingDomainPromptKeepsMarketingAndTransactionalApart(t *testi
 	assert.Contains(t, body, "you verify both", "both subdomains are verified")
 	assert.Contains(t, body, "default email Integration", "the prompt says where Transactional mail takes its sender")
 }
+
+// The set-up prompt reads each email Integration's envelope, where SPF is checked, and suggests no
+// SPF record on the Sending domain: the domain has none of its own (ADR 0184). The custom MAIL FROM
+// is set at SES by the human, never by the agent.
+func TestMCPSetUpSendingDomainPromptReadsTheEnvelopesAndSuggestsNoSPFRecord(t *testing.T) {
+	env := testhelper.Setup(t)
+	s := env.MCPClient(t, env.ScopedBearer(t, apitokens.ScopeContactsRead))
+
+	body := promptText(t, s, "set-up-sending-domain")
+
+	assert.Contains(t, body, "`envelopes`", "the prompt names the envelopes")
+	for _, state := range []string{"provider_default", "custom", "unknown", "set_at_provider"} {
+		assert.Containsf(t, body, "`"+state+"`", "the prompt explains the %s envelope", state)
+	}
+	records := regexp.MustCompile("it carries the ([^`]*)").FindStringSubmatch(body)
+	require.NotNil(t, records, "the prompt says which records the domain carries")
+	assert.NotContains(t, records[1], "SPF", "the domain carries no SPF record")
+	assert.NotContains(t, body, "v=spf1", "no SPF value is suggested")
+	assert.NotRegexp(t, `SPF (and|or) DMARC`, body, "SPF is not a record of the domain beside DMARC")
+	assert.Regexp(t, `custom MAIL FROM[^.]*the human sets`, body, "the human sets the custom MAIL FROM at SES")
+}

@@ -7232,6 +7232,21 @@ func (s LocaleTag) Validate() error {
 	return nil
 }
 
+func (s MailFromStatus) Validate() error {
+	switch s {
+	case "pending":
+		return nil
+	case "success":
+		return nil
+	case "failed":
+		return nil
+	case "temporary_failure":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s MaxPerDay) Validate() error {
 	alias := (int32)(s)
 	if err := (validate.Int{
@@ -7429,6 +7444,17 @@ func (s MomentTestInputKind) Validate() error {
 func (s MomentTestKind) Validate() error {
 	switch s {
 	case "moment":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s MxFailureBehavior) Validate() error {
+	switch s {
+	case "fall_back":
+		return nil
+	case "reject":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
@@ -9764,6 +9790,107 @@ func (s SendScope) Validate() error {
 	}
 }
 
+func (s *SendingDomainEnvelope) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Provider.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "provider",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.State.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "state",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.MailFrom.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "mailFrom",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s SendingDomainEnvelopeState) Validate() error {
+	switch s {
+	case "provider_default":
+		return nil
+	case "custom":
+		return nil
+	case "unknown":
+		return nil
+	case "set_at_provider":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *SendingDomainMailFrom) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Status.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "status",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.OnMxFailure.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "onMxFailure",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
 func (s *SendingDomainResource) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -9782,13 +9909,30 @@ func (s *SendingDomainResource) Validate() error {
 		})
 	}
 	if err := func() error {
-		if err := s.SpfRecord.Validate(); err != nil {
-			return err
+		if s.Envelopes == nil {
+			return errors.New("nil is invalid value")
+		}
+		var failures []validate.FieldError
+		for i, elem := range s.Envelopes {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
 		}
 		return nil
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
-			Name:  "spfRecord",
+			Name:  "envelopes",
 			Error: err,
 		})
 	}

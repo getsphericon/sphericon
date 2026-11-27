@@ -1789,6 +1789,25 @@ func (c *ConverterImpl) SendCapToResource(source providerlimit.SendCapStatus) ex
 	externalapiSendCap.SentLast24h = count(source.Sent24h)
 	return externalapiSendCap
 }
+func (c *ConverterImpl) SendingDomainEnvelopeToResource(source sendingdomains.Envelope) external.SendingDomainEnvelope {
+	var externalapiSendingDomainEnvelope external.SendingDomainEnvelope
+	externalapiSendingDomainEnvelope.IntegrationId = external.EntityId(source.IntegrationID)
+	externalapiSendingDomainEnvelope.IntegrationName = source.IntegrationName
+	externalapiSendingDomainEnvelope.Provider = c.IntegrationProviderToResource(source.Provider)
+	externalapiSendingDomainEnvelope.State = external.SendingDomainEnvelopeState(source.State)
+	externalapiSendingDomainEnvelope.MailFrom = envelopeMailFrom(source.MailFrom)
+	externalapiSendingDomainEnvelope.PermissionNeeded = envelopePermission(source.PermissionNeeded)
+	externalapiSendingDomainEnvelope.CheckedAt = envelopeCheckedAt(source.CheckedAt)
+	return externalapiSendingDomainEnvelope
+}
+func (c *ConverterImpl) SendingDomainEnvelopesToResource(source []sendingdomains.Envelope) []external.SendingDomainEnvelope {
+	var externalapiSendingDomainEnvelopeList []external.SendingDomainEnvelope
+	externalapiSendingDomainEnvelopeList = make([]external.SendingDomainEnvelope, len(source))
+	for i := 0; i < len(source); i++ {
+		externalapiSendingDomainEnvelopeList[i] = c.SendingDomainEnvelopeToResource(source[i])
+	}
+	return externalapiSendingDomainEnvelopeList
+}
 func (c *ConverterImpl) SendingDomainRatesListPage(source pagination.Page[reputation.DomainRates], context int32) *external.SendingDomainRatesListOK {
 	var externalapiSendingDomainRatesListOK external.SendingDomainRatesListOK
 	externalapiSendingDomainRatesListOK.Items = make([]external.SendingDomainRatesResource, len(source.Items))
@@ -1830,7 +1849,7 @@ func (c *ConverterImpl) SendingDomainToResource(source *ent.SendingDomain) exter
 		externalapiSendingDomainResource.DkimSelector = (*source).DkimSelector
 		externalapiSendingDomainResource.Verified = sendingDomainVerified((*source))
 		// externalapiSendingDomainResource.DkimRecord: ignore
-		// externalapiSendingDomainResource.SpfRecord: ignore
+		// externalapiSendingDomainResource.Envelopes: ignore
 		// externalapiSendingDomainResource.DmarcRecord: ignore
 		externalapiSendingDomainResource.DmarcCheckedAt = optNilTimestamp((*source).DmarcCheckedAt)
 		externalapiSendingDomainResource.DmarcFoundAt = optNilTimestamp((*source).DmarcFoundAt)

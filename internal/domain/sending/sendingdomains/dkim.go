@@ -80,13 +80,6 @@ func DKIMRecord(selector, domain, pubTXT string) (host, value string) {
 	return fmt.Sprintf("%s._domainkey.%s", selector, domain), pubTXT
 }
 
-// SPFRecord returns the suggested SPF TXT for the domain. Advisory only — native
-// DKIM signing deliberately abstracts the sending IPs, so SPF does not gate
-// (ADR 0010). host is the domain apex.
-func SPFRecord(domain string) (host, value string) {
-	return domain, "v=spf1 include:amazonses.com ~all"
-}
-
 // DMARCRecord returns the suggested _dmarc TXT. Advisory bulk-readiness signal
 // (ADR 0012): Gmail/Yahoo require at least p=none for bulk senders, but sphericon
 // never mandates the stricter policies, which live on the organizational domain.

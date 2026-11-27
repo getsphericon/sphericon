@@ -7,7 +7,10 @@ import {
   handleSiteSendingDomainsList,
   handleSiteSendingDomainsVerify,
 } from '../../generated/site/msw.gen.ts'
-import type { SendingDomainResource } from '../../generated/site/types.gen.ts'
+import type {
+  SendingDomainEnvelope,
+  SendingDomainResource,
+} from '../../generated/site/types.gen.ts'
 import { page, testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
@@ -23,8 +26,8 @@ function domain(over: Partial<SendingDomainResource> = {}): SendingDomainResourc
     dkimSelector: 'om1',
     verified: false,
     dkimRecord: { type: 'TXT', host: 'om1._domainkey.mail.acme.com', value: 'v=DKIM1; p=KEY' },
-    spfRecord: { type: 'TXT', host: 'mail.acme.com', value: 'v=spf1 include:x -all' },
     dmarcRecord: { type: 'TXT', host: '_dmarc.mail.acme.com', value: 'v=DMARC1; p=none' },
+    envelopes: [],
     createdAt: '2026-01-01T00:00:00Z',
     updatedAt: '2026-01-01T00:00:00Z',
     ...over,
@@ -290,4 +293,77 @@ test('verifies a domain from its records modal and offers the agent prompt', asy
   await screen.getByRole('button', { name: 'Verify now' }).click()
 
   await expect.poll(() => verified).toBe(true)
+})
+
+function envelope(over: Partial<SendingDomainEnvelope> = {}): SendingDomainEnvelope {
+  return {
+    integrationId: testId(11),
+    integrationName: 'Amazon SES',
+    provider: 'ses',
+    state: 'provider_default',
+    mailFrom: null,
+    permissionNeeded: null,
+    checkedAt: '2026-02-01T00:00:00Z',
+    ...over,
+  }
+}
+
+test('shows the envelope of each email integration, where SPF is checked, and no SPF record', async () => {
+  worker.use(
+    list([
+      domain({
+        envelopes: [
+          envelope({
+            integrationId: testId(11),
+            integrationName: 'Relay',
+            provider: 'smtp',
+            state: 'set_at_provider',
+            checkedAt: null,
+          }),
+          envelope({ integrationId: testId(12), integrationName: 'SES default' }),
+          envelope({
+            integrationId: testId(13),
+            integrationName: 'SES custom',
+            state: 'custom',
+            mailFrom: { domain: 'bounce.mail.acme.com', status: 'failed', onMxFailure: 'reject' },
+          }),
+          envelope({
+            integrationId: testId(14),
+            integrationName: 'SES locked',
+            state: 'unknown',
+            permissionNeeded: 'ses:GetEmailIdentity',
+          }),
+        ],
+      }),
+    ]),
+  )
+  const { screen } = await renderWithRouter(
+    <SendingDomainsSection workspaceId={WORKSPACE_ID} canEdit />,
+  )
+
+  await screen.getByText('mail.acme.com').click()
+
+  await expect.element(screen.getByText('Relay', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText(/Set at the SMTP provider/)).toBeInTheDocument()
+  await expect.element(screen.getByText(/sends with its own MAIL FROM domain/)).toBeInTheDocument()
+  await expect
+    .element(screen.getByText('Custom MAIL FROM: bounce.mail.acme.com'))
+    .toBeInTheDocument()
+  await expect.element(screen.getByText('Failed', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText(/SES rejects the send/)).toBeInTheDocument()
+  await expect.element(screen.getByText(/need ses:GetEmailIdentity/)).toBeInTheDocument()
+  await expect.element(screen.getByText(/v=spf1/)).not.toBeInTheDocument()
+})
+
+test("says no email integration sends the domain's mail when there is none", async () => {
+  worker.use(list([domain()]))
+  const { screen } = await renderWithRouter(
+    <SendingDomainsSection workspaceId={WORKSPACE_ID} canEdit />,
+  )
+
+  await screen.getByText('mail.acme.com').click()
+
+  await expect
+    .element(screen.getByText("No email integration sends this domain's mail yet."))
+    .toBeInTheDocument()
 })

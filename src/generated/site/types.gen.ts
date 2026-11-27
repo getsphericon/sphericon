@@ -3895,6 +3895,21 @@ export type LocalTime = string;
 export type LocaleTag = string;
 
 /**
+ * SES's status of a custom MAIL FROM domain: whether it found the domain's MX record
+ */
+export const MailFromStatus = {
+  PENDING: 'pending',
+  SUCCESS: 'success',
+  FAILED: 'failed',
+  TEMPORARY_FAILURE: 'temporary_failure'
+} as const;
+
+/**
+ * SES's status of a custom MAIL FROM domain: whether it found the domain's MX record
+ */
+export type MailFromStatus = typeof MailFromStatus[keyof typeof MailFromStatus];
+
+/**
  * A rolling 24-hour limit the caller may set: a Provider limit's daily value or a Send cap
  */
 export type MaxPerDay = number;
@@ -3996,6 +4011,16 @@ export type MomentTestInput = {
    */
   at: Timestamp;
 };
+
+/**
+ * What SES does with a send while the custom MAIL FROM domain's MX record fails
+ */
+export const MxFailureBehavior = { FALL_BACK: 'fall_back', REJECT: 'reject' } as const;
+
+/**
+ * What SES does with a send while the custom MAIL FROM domain's MX record fails
+ */
+export type MxFailureBehavior = typeof MxFailureBehavior[keyof typeof MxFailureBehavior];
 
 /**
  * What a person calls a named row (a Tag, a Segment, a Rule, an Automation, a Template, a
@@ -5089,6 +5114,77 @@ export const SendScope = {
 export type SendScope = typeof SendScope[keyof typeof SendScope];
 
 /**
+ * The envelope one email Integration of the Workspace sends the Sending domain's mail with
+ * (ADR 0184), read with the domain's checks. The app reads it; a custom MAIL FROM is set at SES by
+ * the person, never by the app.
+ */
+export type SendingDomainEnvelope = {
+  /**
+   * The email Integration
+   */
+  integrationId: EntityId;
+  /**
+   * The Integration's name
+   */
+  integrationName: string;
+  /**
+   * Its provider
+   */
+  provider: IntegrationProvider;
+  /**
+   * Where the envelope is set
+   */
+  state: SendingDomainEnvelopeState;
+  /**
+   * The custom MAIL FROM; null unless `state` is `custom`
+   */
+  mailFrom: SendingDomainMailFrom | null;
+  /**
+   * The permission the Integration's credentials need to read the identity at SES; null unless `state` is `unknown`
+   */
+  permissionNeeded: string | null;
+  /**
+   * When the envelope was last read; null for an SMTP relay and before the first read
+   */
+  checkedAt: Timestamp | null;
+};
+
+/**
+ * Where an email Integration's envelope domain (MAIL FROM, Return-Path) is set for a Sending
+ * domain, and so where SPF is checked for its mail (ADR 0184).
+ */
+export const SendingDomainEnvelopeState = {
+  PROVIDER_DEFAULT: 'provider_default',
+  CUSTOM: 'custom',
+  UNKNOWN: 'unknown',
+  SET_AT_PROVIDER: 'set_at_provider'
+} as const;
+
+/**
+ * Where an email Integration's envelope domain (MAIL FROM, Return-Path) is set for a Sending
+ * domain, and so where SPF is checked for its mail (ADR 0184).
+ */
+export type SendingDomainEnvelopeState = typeof SendingDomainEnvelopeState[keyof typeof SendingDomainEnvelopeState];
+
+/**
+ * The custom MAIL FROM domain set at SES on the Sending domain's identity
+ */
+export type SendingDomainMailFrom = {
+  /**
+   * The custom MAIL FROM domain, e.g. "bounce.mail.acme.com"
+   */
+  domain: string;
+  /**
+   * SES's status of it
+   */
+  status: MailFromStatus;
+  /**
+   * What SES does with a send while its MX record fails
+   */
+  onMxFailure: MxFailureBehavior;
+};
+
+/**
  * Sending domain (ADR 0010). sphericon generates the DKIM keypair; the caller publishes the
  * DKIM TXT record. The private key is never returned. `verified` is re-checked in the
  * background: the domain loses it (`verificationLostAt`) if the DNS record disappears.
@@ -5115,9 +5211,11 @@ export type SendingDomainResource = {
    */
   dkimRecord: DnsRecord;
   /**
-   * The suggested SPF TXT record (advisory: does not gate sending)
+   * The envelope of each email Integration of the Workspace, the Test inbox excepted, in the order
+   * of their ids (ADR 0184). SPF is checked on the envelope, not on the Sending domain, so the
+   * domain has no SPF record of its own; it never gates sending.
    */
-  spfRecord: DnsRecord;
+  envelopes: Array<SendingDomainEnvelope>;
   /**
    * The suggested DMARC TXT record (advisory bulk-readiness signal)
    */

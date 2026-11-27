@@ -4,6 +4,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
+	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
 
@@ -85,6 +86,14 @@ func (SendingDomain) Fields() []ent.Field {
 			Annotations(Attribute(reasonFoundRun)).
 			Optional().
 			Nillable(),
+	}
+}
+
+func (SendingDomain) Edges() []ent.Edge {
+	return []ent.Edge{
+		// The envelopes its checks read at each Integration (ADR 0184) die with it.
+		edge.To("envelopes", SendingDomainEnvelope.Type).
+			Annotations(entsql.OnDelete(entsql.Cascade)),
 	}
 }
 

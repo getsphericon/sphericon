@@ -15,6 +15,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/dnstest"
+	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/devdns"
@@ -26,7 +27,7 @@ import (
 
 // domains is the module over the test's database, its checks resolving through lookup.
 func domains(env *testhelper.TestEnv, lookup domainname.TXTLookup) *sendingdomains.Module {
-	return sendingdomains.New(env.DB, env.Bus, nil, lookup, time.Now)
+	return sendingdomains.New(env.DB, env.Bus, nil, lookup, testhelper.Module[*integrations.Module](env), time.Now)
 }
 
 // acme is the scope of the Workspace the checked fixture domains belong to.
@@ -41,7 +42,7 @@ func TestDue_neverCheckedFirstAndArchivedSkipped(t *testing.T) {
 
 	// Fixtures: the verified domain has last_checked_at set; the unverified one is never
 	// checked (NULL). NULLS FIRST must surface it ahead.
-	due, err := sendingdomains.New(env.DB, env.Bus, nil, nil, time.Now).Due(t.Context(), 100)
+	due, err := sendingdomains.New(env.DB, env.Bus, nil, nil, testhelper.Module[*integrations.Module](env), time.Now).Due(t.Context(), 100)
 	require.NoError(t, err)
 	ids := lo.Map(due, func(d *ent.SendingDomain, _ int) int64 { return d.ID })
 	require.Contains(t, ids, int64(fixtures.SendingDomainUnverifiedID))
@@ -169,7 +170,7 @@ func TestVerify_aFailingNoticeNeverFailsTheCheck(t *testing.T) {
 func TestRecheck_withoutASystemSenderStillFlips(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithoutSystemSender())
 	ctx := t.Context()
-	m := sendingdomains.New(env.DB, env.Bus, nil, dnstest.Resolver(t, nil).LookupTXT, time.Now)
+	m := sendingdomains.New(env.DB, env.Bus, nil, dnstest.Resolver(t, nil).LookupTXT, testhelper.Module[*integrations.Module](env), time.Now)
 
 	err := m.Recheck(ctx, acme(env), fixtures.SendingDomainVerifiedID)
 

@@ -679,13 +679,22 @@ type Converter interface {
 	// goverter:map . Enabled | webhookEnabled
 	WebhookToResource(source *ent.WebhookEndpoint) externalapi.WebhookResource
 
-	// The DNS records are derived by the sendingdomains module, which the mapper cannot
-	// see: the handler attaches them. The private key is never exposed.
+	// The DNS records are derived by the sendingdomains module and the envelopes read by its
+	// checks, which the mapper cannot see: the handler attaches them. The private key is never
+	// exposed.
 	// goverter:ignore DkimRecord
-	// goverter:ignore SpfRecord
 	// goverter:ignore DmarcRecord
+	// goverter:ignore Envelopes
 	// goverter:map . Verified | sendingDomainVerified
 	SendingDomainToResource(source *ent.SendingDomain) externalapi.SendingDomainResource
+	// goverter:useEmptyOnNil:slice
+	SendingDomainEnvelopesToResource(source []sendingdomains.Envelope) []externalapi.SendingDomainEnvelope
+	// The state and the provider carry the same values on both sides: a cast, not an enum mapping.
+	// goverter:enum no
+	// goverter:map MailFrom | envelopeMailFrom
+	// goverter:map PermissionNeeded | envelopePermission
+	// goverter:map CheckedAt | envelopeCheckedAt
+	SendingDomainEnvelopeToResource(source sendingdomains.Envelope) externalapi.SendingDomainEnvelope
 	// goverter:map . Type | dnsRecordType
 	DnsRecordToResource(source sendingdomains.Record) externalapi.DnsRecord
 
@@ -1463,3 +1472,28 @@ func nilFrequencyCapPeriodMinutes(v *int) externalapi.NilFrequencyCapPeriodMinut
 }
 
 func minuteOfDay(v int) externalapi.MinuteOfDay { return externalapi.MinuteOfDay(narrow.Int32(v)) }
+
+// envelopeMailFrom is an envelope's custom MAIL FROM, null for any other envelope.
+func envelopeMailFrom(v *messaging.MailFrom) externalapi.NilSendingDomainMailFrom {
+	if v == nil {
+		return externalapi.NilSendingDomainMailFrom{Null: true}
+	}
+	return externalapi.NewNilSendingDomainMailFrom(externalapi.SendingDomainMailFrom{
+		Domain:      v.Domain,
+		Status:      externalapi.MailFromStatus(v.Status),
+		OnMxFailure: externalapi.MxFailureBehavior(v.OnMXFailure),
+	})
+}
+
+// envelopePermission is the permission an unknown envelope needs, null for any other envelope.
+func envelopePermission(v string) externalapi.NilString {
+	if v == "" {
+		return externalapi.NilString{Null: true}
+	}
+	return externalapi.NewNilString(v)
+}
+
+// envelopeCheckedAt is when an envelope was read, null when it never was.
+func envelopeCheckedAt(v *time.Time) externalapi.NilTimestamp {
+	return convert.Nil[externalapi.NilTimestamp]((*externalapi.Timestamp)(v))
+}

@@ -52,6 +52,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendcaplimiter"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
+	"github.com/getsphericon/sphericon/ent/sendingdomainenvelope"
 	"github.com/getsphericon/sphericon/ent/sendingwindow"
 	"github.com/getsphericon/sphericon/ent/starttoken"
 	"github.com/getsphericon/sphericon/ent/suppression"
@@ -2037,6 +2038,12 @@ func ScopedEntities() []*ScopedEntity {
 						return s.Integration().UpdateOneID(id).AddStartTokenIDs(target).Exec(ctx)
 					},
 				},
+				{
+					Name: "envelopes", Target: "SendingDomainEnvelope",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.Integration().UpdateOneID(id).AddEnvelopeIDs(target).Exec(ctx)
+					},
+				},
 			},
 		},
 		{
@@ -3072,6 +3079,64 @@ func ScopedEntities() []*ScopedEntity {
 				if src.DmarcFoundAt != nil {
 					b.SetDmarcFoundAt(*src.DmarcFoundAt)
 				}
+				created, err := b.Save(ctx)
+				if err != nil {
+					return 0, err
+				}
+				return created.WorkspaceID, nil
+			},
+			Refs: []ScopedRef{
+				{
+					Name: "envelopes", Target: "SendingDomainEnvelope",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.SendingDomain().UpdateOneID(id).AddEnvelopeIDs(target).Exec(ctx)
+					},
+				},
+			},
+		},
+		{
+			Kind:         Kinds["SendingDomainEnvelope"],
+			Name:         "SendingDomainEnvelope",
+			Wrapper:      reflect.TypeFor[*SendingDomainEnvelopeScoped](),
+			AuditActions: []string{},
+			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
+				return c.SendingDomainEnvelope.Query().Where(sendingdomainenvelope.WorkspaceID(ws)).Order(Asc(sendingdomainenvelope.FieldID)).IDs(ctx)
+			},
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.SendingDomainEnvelope().Get(ctx, id)
+			},
+			Touch: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.SendingDomainEnvelope().UpdateOneID(id).Exec(ctx)
+			},
+			BulkTouch: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.SendingDomainEnvelope().Update().Where(sendingdomainenvelope.ID(id)).Save(ctx)
+			},
+			Delete: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.SendingDomainEnvelope().DeleteOneID(id).Exec(ctx)
+			},
+			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.SendingDomainEnvelope().Delete().Where(sendingdomainenvelope.ID(id)).Exec(ctx)
+			},
+			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
+				src, err := s.c.SendingDomainEnvelope.Get(ctx, id)
+				if err != nil {
+					return 0, err
+				}
+				_ = remap
+				b := s.SendingDomainEnvelope().Create()
+				b.SetSendingDomainID(remap("SendingDomain", src.SendingDomainID))
+				b.SetIntegrationID(remap("Integration", src.IntegrationID))
+				b.SetState(src.State)
+				if src.MailFromDomain != nil {
+					b.SetMailFromDomain(*src.MailFromDomain)
+				}
+				if src.MailFromStatus != nil {
+					b.SetMailFromStatus(*src.MailFromStatus)
+				}
+				if src.MailFromOnMxFailure != nil {
+					b.SetMailFromOnMxFailure(*src.MailFromOnMxFailure)
+				}
+				b.SetCheckedAt(src.CheckedAt)
 				created, err := b.Save(ctx)
 				if err != nil {
 					return 0, err

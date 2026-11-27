@@ -27327,6 +27327,50 @@ func (s *LocaleTag) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes MailFromStatus as json.
+func (s MailFromStatus) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes MailFromStatus from json.
+func (s *MailFromStatus) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode MailFromStatus to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch MailFromStatus(v) {
+	case MailFromStatusPending:
+		*s = MailFromStatusPending
+	case MailFromStatusSuccess:
+		*s = MailFromStatusSuccess
+	case MailFromStatusFailed:
+		*s = MailFromStatusFailed
+	case MailFromStatusTemporaryFailure:
+		*s = MailFromStatusTemporaryFailure
+	default:
+		*s = MailFromStatus(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s MailFromStatus) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *MailFromStatus) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes MaxPerDay as json.
 func (s MaxPerDay) Encode(e *jx.Encoder) {
 	unwrapped := int32(s)
@@ -28015,6 +28059,46 @@ func (s MomentTestKind) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *MomentTestKind) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes MxFailureBehavior as json.
+func (s MxFailureBehavior) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes MxFailureBehavior from json.
+func (s *MxFailureBehavior) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode MxFailureBehavior to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch MxFailureBehavior(v) {
+	case MxFailureBehaviorFallBack:
+		*s = MxFailureBehaviorFallBack
+	case MxFailureBehaviorReject:
+		*s = MxFailureBehaviorReject
+	default:
+		*s = MxFailureBehavior(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s MxFailureBehavior) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *MxFailureBehavior) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -28767,6 +28851,50 @@ func (s NilRuleVersion) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *NilRuleVersion) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SendingDomainMailFrom as json.
+func (o NilSendingDomainMailFrom) Encode(e *jx.Encoder) {
+	if o.Null {
+		e.Null()
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes SendingDomainMailFrom from json.
+func (o *NilSendingDomainMailFrom) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode NilSendingDomainMailFrom to nil")
+	}
+	if d.Next() == jx.Null {
+		if err := d.Null(); err != nil {
+			return err
+		}
+
+		var v SendingDomainMailFrom
+		o.Value = v
+		o.Null = true
+		return nil
+	}
+	o.Null = false
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s NilSendingDomainMailFrom) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *NilSendingDomainMailFrom) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -40570,6 +40698,362 @@ func (s *SendScope) UnmarshalJSON(data []byte) error {
 }
 
 // Encode implements json.Marshaler.
+func (s *SendingDomainEnvelope) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SendingDomainEnvelope) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("integrationId")
+		s.IntegrationId.Encode(e)
+	}
+	{
+		e.FieldStart("integrationName")
+		e.Str(s.IntegrationName)
+	}
+	{
+		e.FieldStart("provider")
+		s.Provider.Encode(e)
+	}
+	{
+		e.FieldStart("state")
+		s.State.Encode(e)
+	}
+	{
+		e.FieldStart("mailFrom")
+		s.MailFrom.Encode(e)
+	}
+	{
+		e.FieldStart("permissionNeeded")
+		s.PermissionNeeded.Encode(e)
+	}
+	{
+		e.FieldStart("checkedAt")
+		s.CheckedAt.Encode(e)
+	}
+}
+
+var jsonFieldsNameOfSendingDomainEnvelope = [7]string{
+	0: "integrationId",
+	1: "integrationName",
+	2: "provider",
+	3: "state",
+	4: "mailFrom",
+	5: "permissionNeeded",
+	6: "checkedAt",
+}
+
+// Decode decodes SendingDomainEnvelope from json.
+func (s *SendingDomainEnvelope) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SendingDomainEnvelope to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "integrationId":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.IntegrationId.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"integrationId\"")
+			}
+		case "integrationName":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.IntegrationName = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"integrationName\"")
+			}
+		case "provider":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				if err := s.Provider.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"provider\"")
+			}
+		case "state":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				if err := s.State.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"state\"")
+			}
+		case "mailFrom":
+			requiredBitSet[0] |= 1 << 4
+			if err := func() error {
+				if err := s.MailFrom.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"mailFrom\"")
+			}
+		case "permissionNeeded":
+			requiredBitSet[0] |= 1 << 5
+			if err := func() error {
+				if err := s.PermissionNeeded.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"permissionNeeded\"")
+			}
+		case "checkedAt":
+			requiredBitSet[0] |= 1 << 6
+			if err := func() error {
+				if err := s.CheckedAt.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"checkedAt\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SendingDomainEnvelope")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b01111111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSendingDomainEnvelope) {
+					name = jsonFieldsNameOfSendingDomainEnvelope[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SendingDomainEnvelope) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SendingDomainEnvelope) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SendingDomainEnvelopeState as json.
+func (s SendingDomainEnvelopeState) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes SendingDomainEnvelopeState from json.
+func (s *SendingDomainEnvelopeState) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SendingDomainEnvelopeState to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch SendingDomainEnvelopeState(v) {
+	case SendingDomainEnvelopeStateProviderDefault:
+		*s = SendingDomainEnvelopeStateProviderDefault
+	case SendingDomainEnvelopeStateCustom:
+		*s = SendingDomainEnvelopeStateCustom
+	case SendingDomainEnvelopeStateUnknown:
+		*s = SendingDomainEnvelopeStateUnknown
+	case SendingDomainEnvelopeStateSetAtProvider:
+		*s = SendingDomainEnvelopeStateSetAtProvider
+	default:
+		*s = SendingDomainEnvelopeState(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s SendingDomainEnvelopeState) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SendingDomainEnvelopeState) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *SendingDomainMailFrom) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SendingDomainMailFrom) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("domain")
+		e.Str(s.Domain)
+	}
+	{
+		e.FieldStart("status")
+		s.Status.Encode(e)
+	}
+	{
+		e.FieldStart("onMxFailure")
+		s.OnMxFailure.Encode(e)
+	}
+}
+
+var jsonFieldsNameOfSendingDomainMailFrom = [3]string{
+	0: "domain",
+	1: "status",
+	2: "onMxFailure",
+}
+
+// Decode decodes SendingDomainMailFrom from json.
+func (s *SendingDomainMailFrom) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SendingDomainMailFrom to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "domain":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := d.Str()
+				s.Domain = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"domain\"")
+			}
+		case "status":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Status.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"status\"")
+			}
+		case "onMxFailure":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				if err := s.OnMxFailure.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"onMxFailure\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SendingDomainMailFrom")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSendingDomainMailFrom) {
+					name = jsonFieldsNameOfSendingDomainMailFrom[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SendingDomainMailFrom) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SendingDomainMailFrom) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
 func (s *SendingDomainResource) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
@@ -40599,8 +41083,12 @@ func (s *SendingDomainResource) encodeFields(e *jx.Encoder) {
 		s.DkimRecord.Encode(e)
 	}
 	{
-		e.FieldStart("spfRecord")
-		s.SpfRecord.Encode(e)
+		e.FieldStart("envelopes")
+		e.ArrStart()
+		for _, elem := range s.Envelopes {
+			elem.Encode(e)
+		}
+		e.ArrEnd()
 	}
 	{
 		e.FieldStart("dmarcRecord")
@@ -40658,7 +41146,7 @@ var jsonFieldsNameOfSendingDomainResource = [15]string{
 	2:  "dkimSelector",
 	3:  "verified",
 	4:  "dkimRecord",
-	5:  "spfRecord",
+	5:  "envelopes",
 	6:  "dmarcRecord",
 	7:  "dmarcCheckedAt",
 	8:  "dmarcFoundAt",
@@ -40735,15 +41223,23 @@ func (s *SendingDomainResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"dkimRecord\"")
 			}
-		case "spfRecord":
+		case "envelopes":
 			requiredBitSet[0] |= 1 << 5
 			if err := func() error {
-				if err := s.SpfRecord.Decode(d); err != nil {
+				s.Envelopes = make([]SendingDomainEnvelope, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem SendingDomainEnvelope
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.Envelopes = append(s.Envelopes, elem)
+					return nil
+				}); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"spfRecord\"")
+				return errors.Wrap(err, "decode field \"envelopes\"")
 			}
 		case "dmarcRecord":
 			requiredBitSet[0] |= 1 << 6

@@ -699,13 +699,22 @@ type Converter interface {
 	// goverter:useEmptyOnNil:slice
 	JoinDomainsToResources(source []*ent.JoinDomain) []siteapi.SiteJoinDomainResource
 
-	// The DNS records are derived by the sendingdomains module, which the mapper cannot
-	// see: the handler attaches them. The private key is never exposed.
+	// The DNS records are derived by the sendingdomains module and the envelopes read by its
+	// checks, which the mapper cannot see: the handler attaches them. The private key is never
+	// exposed.
 	// goverter:ignore DkimRecord
-	// goverter:ignore SpfRecord
 	// goverter:ignore DmarcRecord
+	// goverter:ignore Envelopes
 	// goverter:map . Verified | sendingDomainVerified
 	SendingDomainToResource(source *ent.SendingDomain) siteapi.SendingDomainResource
+	// goverter:useEmptyOnNil:slice
+	SendingDomainEnvelopesToResource(source []sendingdomains.Envelope) []siteapi.SendingDomainEnvelope
+	// The state and the provider carry the same values on both sides: a cast, not an enum mapping.
+	// goverter:enum no
+	// goverter:map MailFrom | envelopeMailFrom
+	// goverter:map PermissionNeeded | envelopePermission
+	// goverter:map CheckedAt | envelopeCheckedAt
+	SendingDomainEnvelopeToResource(source sendingdomains.Envelope) siteapi.SendingDomainEnvelope
 	// goverter:map . Type | dnsRecordType
 	DnsRecordToResource(source sendingdomains.Record) siteapi.DnsRecord
 
@@ -1854,4 +1863,29 @@ func revision(v int64) siteapi.Revision {
 // ownershipRecordType is the type of a Tracking domain's ownership record (ADR 0173).
 func ownershipRecordType(trackingdomains.OwnershipRecord) siteapi.DnsRecordType {
 	return siteapi.DnsRecordTypeTXT
+}
+
+// envelopeMailFrom is an envelope's custom MAIL FROM, null for any other envelope.
+func envelopeMailFrom(v *messaging.MailFrom) siteapi.NilSendingDomainMailFrom {
+	if v == nil {
+		return siteapi.NilSendingDomainMailFrom{Null: true}
+	}
+	return siteapi.NewNilSendingDomainMailFrom(siteapi.SendingDomainMailFrom{
+		Domain:      v.Domain,
+		Status:      siteapi.MailFromStatus(v.Status),
+		OnMxFailure: siteapi.MxFailureBehavior(v.OnMXFailure),
+	})
+}
+
+// envelopePermission is the permission an unknown envelope needs, null for any other envelope.
+func envelopePermission(v string) siteapi.NilString {
+	if v == "" {
+		return siteapi.NilString{Null: true}
+	}
+	return siteapi.NewNilString(v)
+}
+
+// envelopeCheckedAt is when an envelope was read, null when it never was.
+func envelopeCheckedAt(v *time.Time) siteapi.NilTimestamp {
+	return convert.Nil[siteapi.NilTimestamp]((*siteapi.Timestamp)(v))
 }
