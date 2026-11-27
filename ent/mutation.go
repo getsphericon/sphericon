@@ -11004,32 +11004,34 @@ func (m *AutomationSkippedEntryMutation) ResetEdge(name string) error {
 // AutomationStepRecordMutation represents an operation that mutates the AutomationStepRecord nodes in the graph.
 type AutomationStepRecordMutation struct {
 	config
-	op                  Op
-	typ                 string
-	id                  *int64
-	created_at          *time.Time
-	updated_at          *time.Time
-	step_id             *automationstep.ID
-	reached_at          *time.Time
-	left_at             *time.Time
-	outcome             *automationsteprecord.Outcome
-	skip_reason         *skipreason.Reason
-	path_id             *automationstep.ID
-	path_outcomes       *map[automationstep.ID]conditiontree.Truth
-	due_at              *time.Time
-	went_on             *automationstep.WentOn
-	awaited_event_id    *int64
-	addawaited_event_id *int64
-	awaited_action      *string
-	awaited_properties  *map[string]interface{}
-	clearedFields       map[string]struct{}
-	workspace           *int64
-	clearedworkspace    bool
-	run                 *int64
-	clearedrun          bool
-	done                bool
-	oldValue            func(context.Context) (*AutomationStepRecord, error)
-	predicates          []predicate.AutomationStepRecord
+	op                       Op
+	typ                      string
+	id                       *int64
+	created_at               *time.Time
+	updated_at               *time.Time
+	step_id                  *automationstep.ID
+	reached_at               *time.Time
+	left_at                  *time.Time
+	outcome                  *automationsteprecord.Outcome
+	skip_reason              *skipreason.Reason
+	path_id                  *automationstep.ID
+	path_outcomes            *map[automationstep.ID]conditiontree.Truth
+	due_at                   *time.Time
+	went_on                  *automationstep.WentOn
+	awaited_event_id         *int64
+	addawaited_event_id      *int64
+	awaited_action           *string
+	awaited_properties       *map[string]interface{}
+	declined_event_ids       *[]int64
+	appenddeclined_event_ids []int64
+	clearedFields            map[string]struct{}
+	workspace                *int64
+	clearedworkspace         bool
+	run                      *int64
+	clearedrun               bool
+	done                     bool
+	oldValue                 func(context.Context) (*AutomationStepRecord, error)
+	predicates               []predicate.AutomationStepRecord
 }
 
 var _ ent.Mutation = (*AutomationStepRecordMutation)(nil)
@@ -11863,6 +11865,71 @@ func (m *AutomationStepRecordMutation) ResetAwaitedProperties() {
 	delete(m.clearedFields, automationsteprecord.FieldAwaitedProperties)
 }
 
+// SetDeclinedEventIds sets the "declined_event_ids" field.
+func (m *AutomationStepRecordMutation) SetDeclinedEventIds(i []int64) {
+	m.declined_event_ids = &i
+	m.appenddeclined_event_ids = nil
+}
+
+// DeclinedEventIds returns the value of the "declined_event_ids" field in the mutation.
+func (m *AutomationStepRecordMutation) DeclinedEventIds() (r []int64, exists bool) {
+	v := m.declined_event_ids
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDeclinedEventIds returns the old "declined_event_ids" field's value of the AutomationStepRecord entity.
+// If the AutomationStepRecord object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationStepRecordMutation) OldDeclinedEventIds(ctx context.Context) (v []int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDeclinedEventIds is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDeclinedEventIds requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDeclinedEventIds: %w", err)
+	}
+	return oldValue.DeclinedEventIds, nil
+}
+
+// AppendDeclinedEventIds adds i to the "declined_event_ids" field.
+func (m *AutomationStepRecordMutation) AppendDeclinedEventIds(i []int64) {
+	m.appenddeclined_event_ids = append(m.appenddeclined_event_ids, i...)
+}
+
+// AppendedDeclinedEventIds returns the list of values that were appended to the "declined_event_ids" field in this mutation.
+func (m *AutomationStepRecordMutation) AppendedDeclinedEventIds() ([]int64, bool) {
+	if len(m.appenddeclined_event_ids) == 0 {
+		return nil, false
+	}
+	return m.appenddeclined_event_ids, true
+}
+
+// ClearDeclinedEventIds clears the value of the "declined_event_ids" field.
+func (m *AutomationStepRecordMutation) ClearDeclinedEventIds() {
+	m.declined_event_ids = nil
+	m.appenddeclined_event_ids = nil
+	m.clearedFields[automationsteprecord.FieldDeclinedEventIds] = struct{}{}
+}
+
+// DeclinedEventIdsCleared returns if the "declined_event_ids" field was cleared in this mutation.
+func (m *AutomationStepRecordMutation) DeclinedEventIdsCleared() bool {
+	_, ok := m.clearedFields[automationsteprecord.FieldDeclinedEventIds]
+	return ok
+}
+
+// ResetDeclinedEventIds resets all changes to the "declined_event_ids" field.
+func (m *AutomationStepRecordMutation) ResetDeclinedEventIds() {
+	m.declined_event_ids = nil
+	m.appenddeclined_event_ids = nil
+	delete(m.clearedFields, automationsteprecord.FieldDeclinedEventIds)
+}
+
 // ClearWorkspace clears the "workspace" edge to the Workspace entity.
 func (m *AutomationStepRecordMutation) ClearWorkspace() {
 	m.clearedworkspace = true
@@ -11951,7 +12018,7 @@ func (m *AutomationStepRecordMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *AutomationStepRecordMutation) Fields() []string {
-	fields := make([]string, 0, 16)
+	fields := make([]string, 0, 17)
 	if m.created_at != nil {
 		fields = append(fields, automationsteprecord.FieldCreatedAt)
 	}
@@ -12000,6 +12067,9 @@ func (m *AutomationStepRecordMutation) Fields() []string {
 	if m.awaited_properties != nil {
 		fields = append(fields, automationsteprecord.FieldAwaitedProperties)
 	}
+	if m.declined_event_ids != nil {
+		fields = append(fields, automationsteprecord.FieldDeclinedEventIds)
+	}
 	return fields
 }
 
@@ -12040,6 +12110,8 @@ func (m *AutomationStepRecordMutation) Field(name string) (ent.Value, bool) {
 		return m.AwaitedAction()
 	case automationsteprecord.FieldAwaitedProperties:
 		return m.AwaitedProperties()
+	case automationsteprecord.FieldDeclinedEventIds:
+		return m.DeclinedEventIds()
 	}
 	return nil, false
 }
@@ -12081,6 +12153,8 @@ func (m *AutomationStepRecordMutation) OldField(ctx context.Context, name string
 		return m.OldAwaitedAction(ctx)
 	case automationsteprecord.FieldAwaitedProperties:
 		return m.OldAwaitedProperties(ctx)
+	case automationsteprecord.FieldDeclinedEventIds:
+		return m.OldDeclinedEventIds(ctx)
 	}
 	return nil, fmt.Errorf("unknown AutomationStepRecord field %s", name)
 }
@@ -12202,6 +12276,13 @@ func (m *AutomationStepRecordMutation) SetField(name string, value ent.Value) er
 		}
 		m.SetAwaitedProperties(v)
 		return nil
+	case automationsteprecord.FieldDeclinedEventIds:
+		v, ok := value.([]int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDeclinedEventIds(v)
+		return nil
 	}
 	return fmt.Errorf("unknown AutomationStepRecord field %s", name)
 }
@@ -12277,6 +12358,9 @@ func (m *AutomationStepRecordMutation) ClearedFields() []string {
 	if m.FieldCleared(automationsteprecord.FieldAwaitedProperties) {
 		fields = append(fields, automationsteprecord.FieldAwaitedProperties)
 	}
+	if m.FieldCleared(automationsteprecord.FieldDeclinedEventIds) {
+		fields = append(fields, automationsteprecord.FieldDeclinedEventIds)
+	}
 	return fields
 }
 
@@ -12320,6 +12404,9 @@ func (m *AutomationStepRecordMutation) ClearField(name string) error {
 		return nil
 	case automationsteprecord.FieldAwaitedProperties:
 		m.ClearAwaitedProperties()
+		return nil
+	case automationsteprecord.FieldDeclinedEventIds:
+		m.ClearDeclinedEventIds()
 		return nil
 	}
 	return fmt.Errorf("unknown AutomationStepRecord nullable field %s", name)
@@ -12376,6 +12463,9 @@ func (m *AutomationStepRecordMutation) ResetField(name string) error {
 		return nil
 	case automationsteprecord.FieldAwaitedProperties:
 		m.ResetAwaitedProperties()
+		return nil
+	case automationsteprecord.FieldDeclinedEventIds:
+		m.ResetDeclinedEventIds()
 		return nil
 	}
 	return fmt.Errorf("unknown AutomationStepRecord field %s", name)

@@ -282,13 +282,15 @@ func (m *StepExecution) conditionHolds(ctx context.Context, s *ent.Scoped, run *
 // awaitWindow is what an Event must be to satisfy a Wait for event an Enrollment stands on: the
 // Contact's, matched by one of the awaited matchers (matched), occurred from when the Enrollment
 // reached the Step through its deadline, not the Event the Enrollment began on (begunOn, "" for
-// none), and, when the Enrollment is one of a keyed version, carrying none of the key or its value
-// (key and keyValue, nil when unkeyed).
+// none), none of the Events the wake found the Condition false for (declined), and, when the
+// Enrollment is one of a keyed version, carrying none of the key or its value (key and keyValue,
+// nil when unkeyed).
 type awaitWindow struct {
 	contactID         int64
 	matched           predicate.Event
 	reached, deadline time.Time
 	begunOn           string
+	declined          []int64
 	key, keyValue     *string
 }
 
@@ -297,8 +299,9 @@ type awaitWindow struct {
 // matched by one of the awaited matchers, occurred within the window, made by a person (a machine
 // open or click never counts, ADR 0053), live (loaded history never counts), not written through a
 // Connection without mcp:send (its mark, ADR 0132: it may not start a send), not the Event that
-// began the Enrollment and, for a keyed Enrollment, carrying none of the key or the Enrollment's
-// value (ADR 0165), as an exit or goal Event must.
+// began the Enrollment, not one the Condition was false for when it was handled and, for a keyed
+// Enrollment, carrying none of the key or the Enrollment's value (ADR 0165), as an exit or goal
+// Event must.
 func satisfying(w awaitWindow) []predicate.Event {
 	where := []predicate.Event{
 		event.ContactID(w.contactID),
@@ -312,6 +315,9 @@ func satisfying(w awaitWindow) []predicate.Event {
 	if w.begunOn != "" {
 		where = append(where, event.Or(event.SourceIDIsNil(), event.SourceIDNEQ(w.begunOn)))
 	}
+	if len(w.declined) > 0 {
+		where = append(where, event.IDNotIn(w.declined...))
+	}
 	if w.key != nil && w.keyValue != nil {
 		where = append(where, ofKey(*w.key, *w.keyValue))
 	}
@@ -320,8 +326,9 @@ func satisfying(w awaitWindow) []predicate.Event {
 
 // windowOf is the window of the Wait for event w that the Enrollment run, standing on it, waits in:
 // from its Step record's reached moment through its due moment, the deadline recorded when it
-// reached the Step; key is the Enrollment key of the version it runs (nil for none). False when the
-// Enrollment has no open record of the Step (it left it).
+// reached the Step, without the Events the record says the wake declined; key is the Enrollment key
+// of the version it runs (nil for none). False when the Enrollment has no open record of the Step
+// (it left it).
 func (m *StepExecution) windowOf(ctx context.Context, s *ent.Scoped, run *ent.AutomationRun, key *string, step automationstep.ID, w automationstep.WaitForEvent) (awaitWindow, bool, error) {
 	rec, err := s.AutomationStepRecord().Query().
 		Where(automationsteprecord.RunID(run.ID), automationsteprecord.StepID(step), automationsteprecord.LeftAtIsNil()).
@@ -345,7 +352,7 @@ func (m *StepExecution) windowOf(ctx context.Context, s *ent.Scoped, run *ent.Au
 	}
 	return awaitWindow{
 		contactID: run.ContactID, matched: matched, reached: rec.ReachedAt, deadline: *rec.DueAt, begunOn: begunOn,
-		key: key, keyValue: run.KeyValue,
+		declined: rec.DeclinedEventIds, key: key, keyValue: run.KeyValue,
 	}, true, nil
 }
 
@@ -365,7 +372,9 @@ func begunOnSource(ctx context.Context, s *ent.Scoped, m *StepExecution, run *en
 // job run early (a restart) queues itself for the deadline and moves nothing; at it, the Enrollment
 // takes `arrived` when a satisfying Event is already recorded, one that occurred within the window
 // but was recorded late included, keeping a copy of the first by occurrence (ADR 0136), and
-// `timed_out` otherwise. The move is the compare-and-set on the cursor, so a wake that committed
+// `timed_out` otherwise. The Condition is read when an Event is handled: an Event the wake handled
+// and found it false for is no candidate (declined), and the first other one is handled here, the
+// Condition read now, whatever an earlier Event's handling found. The move is the compare-and-set on the cursor, so a wake that committed
 // first leaves this job nothing to move.
 func (m *StepExecution) timeout(ctx context.Context, s *ent.Scoped, run *ent.AutomationRun, version *ent.AutomationVersion, at place, w automationstep.WaitForEvent) error {
 	if run.ResumeAt != nil && run.ResumeAt.After(m.now()) {
@@ -458,6 +467,9 @@ func (m *StepExecution) wake(ctx context.Context, s *ent.Scoped, contactID int64
 			continue
 		}
 		if !holds {
+			if err := decline(ctx, s, run.ID, st.ID, arrival.ID); err != nil {
+				return fmt.Errorf("wake enrollment %d: %w", run.ID, err)
+			}
 			continue
 		}
 		at := place{index: index, step: st.ID}
@@ -466,4 +478,14 @@ func (m *StepExecution) wake(ctx context.Context, s *ent.Scoped, contactID int64
 		}
 	}
 	return nil
+}
+
+// decline records on the Enrollment runID's open record of the Wait for event step that its wake
+// handled the Event eventID and found the Condition false (ADR 0124): the timeout then never takes
+// `arrived` on it. A record the Enrollment left meanwhile is left as it is.
+func decline(ctx context.Context, s *ent.Scoped, runID int64, step automationstep.ID, eventID int64) error {
+	return s.AutomationStepRecord().Update().
+		Where(automationsteprecord.RunID(runID), automationsteprecord.StepID(step), automationsteprecord.LeftAtIsNil()).
+		AppendDeclinedEventIds([]int64{eventID}).
+		Exec(ctx)
 }

@@ -49,6 +49,8 @@ const (
 	FieldAwaitedAction = "awaited_action"
 	// FieldAwaitedProperties holds the string denoting the awaited_properties field in the database.
 	FieldAwaitedProperties = "awaited_properties"
+	// FieldDeclinedEventIds holds the string denoting the declined_event_ids field in the database.
+	FieldDeclinedEventIds = "declined_event_ids"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
 	EdgeWorkspace = "workspace"
 	// EdgeRun holds the string denoting the run edge name in mutations.
@@ -90,6 +92,7 @@ var Columns = []string{
 	FieldAwaitedEventID,
 	FieldAwaitedAction,
 	FieldAwaitedProperties,
+	FieldDeclinedEventIds,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).

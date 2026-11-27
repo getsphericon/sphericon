@@ -55,6 +55,8 @@ type AutomationStepRecord struct {
 	AwaitedAction *string `json:"awaited_action,omitempty"`
 	// AwaitedProperties holds the value of the "awaited_properties" field.
 	AwaitedProperties map[string]interface{} `json:"awaited_properties,omitempty"`
+	// DeclinedEventIds holds the value of the "declined_event_ids" field.
+	DeclinedEventIds []int64 `json:"declined_event_ids,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the AutomationStepRecordQuery when eager-loading is set.
 	Edges        AutomationStepRecordEdges `json:"edges"`
@@ -99,7 +101,7 @@ func (*AutomationStepRecord) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case automationsteprecord.FieldPathOutcomes, automationsteprecord.FieldAwaitedProperties:
+		case automationsteprecord.FieldPathOutcomes, automationsteprecord.FieldAwaitedProperties, automationsteprecord.FieldDeclinedEventIds:
 			values[i] = new([]byte)
 		case automationsteprecord.FieldID, automationsteprecord.FieldWorkspaceID, automationsteprecord.FieldRunID, automationsteprecord.FieldAwaitedEventID:
 			values[i] = new(sql.NullInt64)
@@ -236,6 +238,14 @@ func (_m *AutomationStepRecord) assignValues(columns []string, values []any) err
 					return fmt.Errorf("unmarshal field awaited_properties: %w", err)
 				}
 			}
+		case automationsteprecord.FieldDeclinedEventIds:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field declined_event_ids", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.DeclinedEventIds); err != nil {
+					return fmt.Errorf("unmarshal field declined_event_ids: %w", err)
+				}
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -345,6 +355,9 @@ func (_m *AutomationStepRecord) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("awaited_properties=")
 	builder.WriteString(fmt.Sprintf("%v", _m.AwaitedProperties))
+	builder.WriteString(", ")
+	builder.WriteString("declined_event_ids=")
+	builder.WriteString(fmt.Sprintf("%v", _m.DeclinedEventIds))
 	builder.WriteByte(')')
 	return builder.String()
 }

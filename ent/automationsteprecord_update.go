@@ -10,6 +10,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/automationsteprecord"
 	"github.com/getsphericon/sphericon/ent/predicate"
@@ -204,6 +205,24 @@ func (_u *AutomationStepRecordUpdate) ClearAwaitedProperties() *AutomationStepRe
 	return _u
 }
 
+// SetDeclinedEventIds sets the "declined_event_ids" field.
+func (_u *AutomationStepRecordUpdate) SetDeclinedEventIds(v []int64) *AutomationStepRecordUpdate {
+	_u.mutation.SetDeclinedEventIds(v)
+	return _u
+}
+
+// AppendDeclinedEventIds appends value to the "declined_event_ids" field.
+func (_u *AutomationStepRecordUpdate) AppendDeclinedEventIds(v []int64) *AutomationStepRecordUpdate {
+	_u.mutation.AppendDeclinedEventIds(v)
+	return _u
+}
+
+// ClearDeclinedEventIds clears the value of the "declined_event_ids" field.
+func (_u *AutomationStepRecordUpdate) ClearDeclinedEventIds() *AutomationStepRecordUpdate {
+	_u.mutation.ClearDeclinedEventIds()
+	return _u
+}
+
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_u *AutomationStepRecordUpdate) SetWorkspace(v *Workspace) *AutomationStepRecordUpdate {
 	return _u.SetWorkspaceID(v.ID)
@@ -354,6 +373,17 @@ func (_u *AutomationStepRecordUpdate) sqlSave(ctx context.Context) (_node int, e
 	}
 	if _u.mutation.AwaitedPropertiesCleared() {
 		_spec.ClearField(automationsteprecord.FieldAwaitedProperties, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.DeclinedEventIds(); ok {
+		_spec.SetField(automationsteprecord.FieldDeclinedEventIds, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedDeclinedEventIds(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, automationsteprecord.FieldDeclinedEventIds, value)
+		})
+	}
+	if _u.mutation.DeclinedEventIdsCleared() {
+		_spec.ClearField(automationsteprecord.FieldDeclinedEventIds, field.TypeJSON)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -577,6 +607,24 @@ func (_u *AutomationStepRecordUpdateOne) ClearAwaitedProperties() *AutomationSte
 	return _u
 }
 
+// SetDeclinedEventIds sets the "declined_event_ids" field.
+func (_u *AutomationStepRecordUpdateOne) SetDeclinedEventIds(v []int64) *AutomationStepRecordUpdateOne {
+	_u.mutation.SetDeclinedEventIds(v)
+	return _u
+}
+
+// AppendDeclinedEventIds appends value to the "declined_event_ids" field.
+func (_u *AutomationStepRecordUpdateOne) AppendDeclinedEventIds(v []int64) *AutomationStepRecordUpdateOne {
+	_u.mutation.AppendDeclinedEventIds(v)
+	return _u
+}
+
+// ClearDeclinedEventIds clears the value of the "declined_event_ids" field.
+func (_u *AutomationStepRecordUpdateOne) ClearDeclinedEventIds() *AutomationStepRecordUpdateOne {
+	_u.mutation.ClearDeclinedEventIds()
+	return _u
+}
+
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_u *AutomationStepRecordUpdateOne) SetWorkspace(v *Workspace) *AutomationStepRecordUpdateOne {
 	return _u.SetWorkspaceID(v.ID)
@@ -757,6 +805,17 @@ func (_u *AutomationStepRecordUpdateOne) sqlSave(ctx context.Context) (_node *Au
 	}
 	if _u.mutation.AwaitedPropertiesCleared() {
 		_spec.ClearField(automationsteprecord.FieldAwaitedProperties, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.DeclinedEventIds(); ok {
+		_spec.SetField(automationsteprecord.FieldDeclinedEventIds, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedDeclinedEventIds(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, automationsteprecord.FieldDeclinedEventIds, value)
+		})
+	}
+	if _u.mutation.DeclinedEventIdsCleared() {
+		_spec.ClearField(automationsteprecord.FieldDeclinedEventIds, field.TypeJSON)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{

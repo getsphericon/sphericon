@@ -203,6 +203,12 @@ func (_c *AutomationStepRecordCreate) SetAwaitedProperties(v map[string]interfac
 	return _c
 }
 
+// SetDeclinedEventIds sets the "declined_event_ids" field.
+func (_c *AutomationStepRecordCreate) SetDeclinedEventIds(v []int64) *AutomationStepRecordCreate {
+	_c.mutation.SetDeclinedEventIds(v)
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *AutomationStepRecordCreate) SetID(v int64) *AutomationStepRecordCreate {
 	_c.mutation.SetID(v)
@@ -393,6 +399,10 @@ func (_c *AutomationStepRecordCreate) createSpec() (*AutomationStepRecord, *sqlg
 	if value, ok := _c.mutation.AwaitedProperties(); ok {
 		_spec.SetField(automationsteprecord.FieldAwaitedProperties, field.TypeJSON, value)
 		_node.AwaitedProperties = value
+	}
+	if value, ok := _c.mutation.DeclinedEventIds(); ok {
+		_spec.SetField(automationsteprecord.FieldDeclinedEventIds, field.TypeJSON, value)
+		_node.DeclinedEventIds = value
 	}
 	if nodes := _c.mutation.WorkspaceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -651,6 +661,24 @@ func (u *AutomationStepRecordUpsert) UpdateAwaitedProperties() *AutomationStepRe
 // ClearAwaitedProperties clears the value of the "awaited_properties" field.
 func (u *AutomationStepRecordUpsert) ClearAwaitedProperties() *AutomationStepRecordUpsert {
 	u.SetNull(automationsteprecord.FieldAwaitedProperties)
+	return u
+}
+
+// SetDeclinedEventIds sets the "declined_event_ids" field.
+func (u *AutomationStepRecordUpsert) SetDeclinedEventIds(v []int64) *AutomationStepRecordUpsert {
+	u.Set(automationsteprecord.FieldDeclinedEventIds, v)
+	return u
+}
+
+// UpdateDeclinedEventIds sets the "declined_event_ids" field to the value that was provided on create.
+func (u *AutomationStepRecordUpsert) UpdateDeclinedEventIds() *AutomationStepRecordUpsert {
+	u.SetExcluded(automationsteprecord.FieldDeclinedEventIds)
+	return u
+}
+
+// ClearDeclinedEventIds clears the value of the "declined_event_ids" field.
+func (u *AutomationStepRecordUpsert) ClearDeclinedEventIds() *AutomationStepRecordUpsert {
+	u.SetNull(automationsteprecord.FieldDeclinedEventIds)
 	return u
 }
 
@@ -920,6 +948,27 @@ func (u *AutomationStepRecordUpsertOne) UpdateAwaitedProperties() *AutomationSte
 func (u *AutomationStepRecordUpsertOne) ClearAwaitedProperties() *AutomationStepRecordUpsertOne {
 	return u.Update(func(s *AutomationStepRecordUpsert) {
 		s.ClearAwaitedProperties()
+	})
+}
+
+// SetDeclinedEventIds sets the "declined_event_ids" field.
+func (u *AutomationStepRecordUpsertOne) SetDeclinedEventIds(v []int64) *AutomationStepRecordUpsertOne {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.SetDeclinedEventIds(v)
+	})
+}
+
+// UpdateDeclinedEventIds sets the "declined_event_ids" field to the value that was provided on create.
+func (u *AutomationStepRecordUpsertOne) UpdateDeclinedEventIds() *AutomationStepRecordUpsertOne {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.UpdateDeclinedEventIds()
+	})
+}
+
+// ClearDeclinedEventIds clears the value of the "declined_event_ids" field.
+func (u *AutomationStepRecordUpsertOne) ClearDeclinedEventIds() *AutomationStepRecordUpsertOne {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.ClearDeclinedEventIds()
 	})
 }
 
@@ -1355,6 +1404,27 @@ func (u *AutomationStepRecordUpsertBulk) UpdateAwaitedProperties() *AutomationSt
 func (u *AutomationStepRecordUpsertBulk) ClearAwaitedProperties() *AutomationStepRecordUpsertBulk {
 	return u.Update(func(s *AutomationStepRecordUpsert) {
 		s.ClearAwaitedProperties()
+	})
+}
+
+// SetDeclinedEventIds sets the "declined_event_ids" field.
+func (u *AutomationStepRecordUpsertBulk) SetDeclinedEventIds(v []int64) *AutomationStepRecordUpsertBulk {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.SetDeclinedEventIds(v)
+	})
+}
+
+// UpdateDeclinedEventIds sets the "declined_event_ids" field to the value that was provided on create.
+func (u *AutomationStepRecordUpsertBulk) UpdateDeclinedEventIds() *AutomationStepRecordUpsertBulk {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.UpdateDeclinedEventIds()
+	})
+}
+
+// ClearDeclinedEventIds clears the value of the "declined_event_ids" field.
+func (u *AutomationStepRecordUpsertBulk) ClearDeclinedEventIds() *AutomationStepRecordUpsertBulk {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.ClearDeclinedEventIds()
 	})
 }
 

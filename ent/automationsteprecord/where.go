@@ -807,6 +807,16 @@ func AwaitedPropertiesNotNil() predicate.AutomationStepRecord {
 	return predicate.AutomationStepRecord(sql.FieldNotNull(FieldAwaitedProperties))
 }
 
+// DeclinedEventIdsIsNil applies the IsNil predicate on the "declined_event_ids" field.
+func DeclinedEventIdsIsNil() predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldIsNull(FieldDeclinedEventIds))
+}
+
+// DeclinedEventIdsNotNil applies the NotNil predicate on the "declined_event_ids" field.
+func DeclinedEventIdsNotNil() predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldNotNull(FieldDeclinedEventIds))
+}
+
 // HasWorkspace applies the HasEdge predicate on the "workspace" edge.
 func HasWorkspace() predicate.AutomationStepRecord {
 	return predicate.AutomationStepRecord(func(s *sql.Selector) {

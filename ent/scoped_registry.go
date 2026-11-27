@@ -657,6 +657,9 @@ func ScopedEntities() []*ScopedEntity {
 				if !reflect.ValueOf(src.AwaitedProperties).IsZero() {
 					b.SetAwaitedProperties(src.AwaitedProperties)
 				}
+				if !reflect.ValueOf(src.DeclinedEventIds).IsZero() {
+					b.SetDeclinedEventIds(src.DeclinedEventIds)
+				}
 				created, err := b.Save(ctx)
 				if err != nil {
 					return 0, err

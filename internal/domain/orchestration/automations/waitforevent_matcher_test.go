@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
@@ -177,6 +178,51 @@ func TestTheTimeoutSkipsAnEventThatFailsTheFilterOrTheCondition(t *testing.T) {
 			require.NoError(t, w.env.Publisher().Publish(t.Context(), order))
 			w.timeout(t, runID)
 
+			assert.Equal(t, c.takes(w), w.standsOn(t, runID))
+		})
+	}
+}
+
+// The Condition is read when the awaited Event is handled (ADR 0124): an order handled while it
+// failed leaves the Contact waiting, and the timeout does not take `arrived` on it once the
+// Contact's data makes the Condition hold. An order the timeout handles first is read then, and
+// takes `arrived`.
+func TestTheTimeoutTakesNoEventWhoseConditionFailedWhenItWasHandled(t *testing.T) {
+	for name, c := range map[string]struct {
+		recordLate func(t *testing.T, w waiting, contact *ent.Contact, deadline time.Time)
+		takes      func(w waiting) automationstep.ID
+	}{
+		"only the order handled while it failed": {
+			func(*testing.T, waiting, *ent.Contact, time.Time) {},
+			func(w waiting) automationstep.ID { return w.timedOut },
+		},
+		"an order recorded late besides": {
+			func(t *testing.T, w waiting, contact *ent.Contact, deadline time.Time) {
+				t.Helper()
+				// Recorded within the window, its trigger job not yet run.
+				late := collected(contact.ID, "order.completed", deadline.Add(-time.Minute), map[string]any{"total": 20})
+				require.NoError(t, w.env.Publisher().Publish(t.Context(), late))
+			},
+			func(w waiting) automationstep.ID { return w.arrived },
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			w := awaiting(t, "trial.started", automationstep.AwaitedEvent{
+				Matchers: []eventmatcher.Matcher{{Action: "order.completed"}}, Condition: waitCondition(t, `{"kind":"tag","name":"vip","operator":"has"}`),
+			}, nil)
+			contact, runID := w.enroll(t, "trial.started")
+			deadline := w.clock.Now().Add(waitTimeout)
+
+			w.clock.Advance(time.Minute)
+			w.order(t, contact, 10)
+			handled := w.standsOn(t, runID)
+			_, err := testhelper.Module[*contacts.Module](w.env).ApplyTag(t.Context(), w.env.DB.Scoped(fixtures.AcmeID), contact.ID, "vip")
+			require.NoError(t, err)
+			w.clock.Set(deadline.Add(5 * time.Minute))
+			c.recordLate(t, w, contact, deadline)
+			w.timeout(t, runID)
+
+			assert.Equal(t, w.wait, handled, "the order handled while the Condition failed leaves the Contact waiting")
 			assert.Equal(t, c.takes(w), w.standsOn(t, runID))
 		})
 	}

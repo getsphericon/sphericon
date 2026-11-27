@@ -11474,6 +11474,14 @@ func (x *AutomationStepRecordScopedCreate) SetAwaitedProperties(v map[string]int
 
 const RoleOf_AutomationStepRecordScopedCreate_SetAwaitedProperties = RoleStep
 
+// SetDeclinedEventIds sets the "declined_event_ids" field.
+func (x *AutomationStepRecordScopedCreate) SetDeclinedEventIds(v []int64) *AutomationStepRecordScopedCreate {
+	x.set = append(x.set, func(b *AutomationStepRecordCreate) { b.SetDeclinedEventIds(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedCreate_SetDeclinedEventIds = RoleStep
+
 // SetRun sets the "run" edge to the AutomationRun entity.
 func (x *AutomationStepRecordScopedCreate) SetRun(v *AutomationRun) *AutomationStepRecordScopedCreate {
 	x.set = append(x.set, func(b *AutomationStepRecordCreate) { b.SetRun(v) })
@@ -11822,6 +11830,30 @@ func (u *AutomationStepRecordScopedUpsert) ClearAwaitedProperties() *AutomationS
 }
 
 const RoleOf_AutomationStepRecordScopedUpsert_ClearAwaitedProperties = RoleStep
+
+// SetDeclinedEventIds sets the "declined_event_ids" field.
+func (u *AutomationStepRecordScopedUpsert) SetDeclinedEventIds(v []int64) *AutomationStepRecordScopedUpsert {
+	u.u.Set(automationsteprecord.FieldDeclinedEventIds, v)
+	return u
+}
+
+const RoleOf_AutomationStepRecordScopedUpsert_SetDeclinedEventIds = RoleStep
+
+// UpdateDeclinedEventIds sets the "declined_event_ids" field to the value that was provided on create.
+func (u *AutomationStepRecordScopedUpsert) UpdateDeclinedEventIds() *AutomationStepRecordScopedUpsert {
+	u.u.SetExcluded(automationsteprecord.FieldDeclinedEventIds)
+	return u
+}
+
+const RoleOf_AutomationStepRecordScopedUpsert_UpdateDeclinedEventIds = RoleStep
+
+// ClearDeclinedEventIds clears the value of the "declined_event_ids" field.
+func (u *AutomationStepRecordScopedUpsert) ClearDeclinedEventIds() *AutomationStepRecordScopedUpsert {
+	u.u.SetNull(automationsteprecord.FieldDeclinedEventIds)
+	return u
+}
+
+const RoleOf_AutomationStepRecordScopedUpsert_ClearDeclinedEventIds = RoleStep
 
 // conflictOptions confines the DO UPDATE part to rows of the Workspace.
 // target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
@@ -12238,6 +12270,30 @@ func (x *AutomationStepRecordScopedUpdateOne) ClearAwaitedProperties() *Automati
 
 const RoleOf_AutomationStepRecordScopedUpdateOne_ClearAwaitedProperties = RoleStep
 
+// SetDeclinedEventIds sets the "declined_event_ids" field.
+func (x *AutomationStepRecordScopedUpdateOne) SetDeclinedEventIds(v []int64) *AutomationStepRecordScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdateOne) { b.SetDeclinedEventIds(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdateOne_SetDeclinedEventIds = RoleStep
+
+// AppendDeclinedEventIds appends value to the "declined_event_ids" field.
+func (x *AutomationStepRecordScopedUpdateOne) AppendDeclinedEventIds(v []int64) *AutomationStepRecordScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdateOne) { b.AppendDeclinedEventIds(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdateOne_AppendDeclinedEventIds = RoleStep
+
+// ClearDeclinedEventIds clears the value of the "declined_event_ids" field.
+func (x *AutomationStepRecordScopedUpdateOne) ClearDeclinedEventIds() *AutomationStepRecordScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdateOne) { b.ClearDeclinedEventIds() })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdateOne_ClearDeclinedEventIds = RoleStep
+
 // Save verifies the references against the Workspace, then updates the AutomationStepRecord.
 func (x *AutomationStepRecordScopedUpdateOne) Save(ctx context.Context) (*AutomationStepRecord, error) {
 	return x.save(ctx, "update", skipUnchanged)
@@ -12536,6 +12592,30 @@ func (x *AutomationStepRecordScopedUpdate) ClearAwaitedProperties() *AutomationS
 }
 
 const RoleOf_AutomationStepRecordScopedUpdate_ClearAwaitedProperties = RoleStep
+
+// SetDeclinedEventIds sets the "declined_event_ids" field.
+func (x *AutomationStepRecordScopedUpdate) SetDeclinedEventIds(v []int64) *AutomationStepRecordScopedUpdate {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdate) { b.SetDeclinedEventIds(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdate_SetDeclinedEventIds = RoleStep
+
+// AppendDeclinedEventIds appends value to the "declined_event_ids" field.
+func (x *AutomationStepRecordScopedUpdate) AppendDeclinedEventIds(v []int64) *AutomationStepRecordScopedUpdate {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdate) { b.AppendDeclinedEventIds(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdate_AppendDeclinedEventIds = RoleStep
+
+// ClearDeclinedEventIds clears the value of the "declined_event_ids" field.
+func (x *AutomationStepRecordScopedUpdate) ClearDeclinedEventIds() *AutomationStepRecordScopedUpdate {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdate) { b.ClearDeclinedEventIds() })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdate_ClearDeclinedEventIds = RoleStep
 
 // build makes the ent update on the client of s and verifies the references it sets.
 func (x *AutomationStepRecordScopedUpdate) build(ctx context.Context, s *Scoped) (*AutomationStepRecordUpdate, error) {

@@ -136,6 +136,14 @@ func (AutomationStepRecord) Fields() []ent.Field {
 			Nillable(),
 		field.JSON("awaited_properties", map[string]any{}).
 			Optional(),
+		// At a Wait for event on an Event with a Condition, the Events its wake handled while the
+		// Enrollment waited and found the Condition false for, by id (ADR 0124): the Condition is
+		// read when an Event is handled, so the timeout never takes `arrived` on one of them,
+		// whatever the Contact's data became since. Null while there is none, and for any other Step.
+		// A list with no key: a record of what the wake decided, read only while the Enrollment
+		// waits, and an Event deleted since is no candidate of the timeout anyway.
+		field.JSON("declined_event_ids", []int64{}).
+			Optional(),
 	}
 }
 
