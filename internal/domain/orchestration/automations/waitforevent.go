@@ -31,7 +31,9 @@ import (
 // contract, in the kernel's form); and it awaits at least one action, each one an Event may start
 // or end an Automation on (eventProblem), and none twice. Whether its name is its own across the
 // Automation is checkWaitNames' and checkWaitNamesHeld's, and whether an exit or goal ends the
-// Enrollment on what it awaits is checkAwaitedEndings'.
+// Enrollment on what it awaits is checkAwaitedEndings'. One on an Event takes no unknown path, which
+// it could never take; whether the message one on an open or a click names can come before it is
+// checkStepMessages', and its unknown path is Publish's (checkUnknownPaths).
 func validateWaitForEvent(st *automationstep.Step, w automationstep.WaitForEvent) error {
 	if w.TimeoutSeconds <= 0 {
 		return refuse(st, "a wait for event needs a timeout greater than zero")
@@ -46,6 +48,9 @@ func validateWaitForEvent(st *automationstep.Step, w automationstep.WaitForEvent
 	}
 	switch a := w.Awaits.(type) {
 	case automationstep.AwaitedEvent:
+		if w.Unknown != nil {
+			return refuse(st, "a wait for an event is never unknown, so it takes no unknown path")
+		}
 		err := validation.MinItems(fieldname.Actions, len(a.Actions), bounds.AwaitedActionsMinItems)
 		if bound, ok := boundRefusal(err); ok {
 			return &stepRefusalError{step: st.ID, bound: bound, boundAt: fieldname.Awaits + "." + bound.Field()}
