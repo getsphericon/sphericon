@@ -293,18 +293,18 @@ func TestTheKeptEventIsClearedWhenTheEnrollmentEnds(t *testing.T) {
 		end  func(t *testing.T, f awaitedFlow, c *ent.Contact, runID int64)
 		ends automationrun.Status
 	}{
-		"exited": {func(t *testing.T, f awaitedFlow, c *ent.Contact, _ int64) {
+		"an exit event": {func(t *testing.T, f awaitedFlow, c *ent.Contact, _ int64) {
 			handStored(t, f.env, c.ID, cancelled, collected(c.ID, cancelled, f.clock.Now(), nil))
 		}, automationrun.StatusExited},
-		"goal reached": {func(t *testing.T, f awaitedFlow, c *ent.Contact, _ int64) {
+		"the goal event": {func(t *testing.T, f awaitedFlow, c *ent.Contact, _ int64) {
 			handStored(t, f.env, c.ID, upgraded, collected(c.ID, upgraded, f.clock.Now(), nil))
 		}, automationrun.StatusGoalReached},
-		"failed": {func(t *testing.T, f awaitedFlow, _ *ent.Contact, runID int64) {
+		"a refused call": {func(t *testing.T, f awaitedFlow, _ *ent.Contact, runID int64) {
 			f.clock.Advance(2 * time.Hour)
 			f.run(t)
 			f.callHook(t, runID, http.StatusNotFound)
 		}, automationrun.StatusFailed},
-		"completed": {func(t *testing.T, f awaitedFlow, _ *ent.Contact, runID int64) {
+		"the last step done": {func(t *testing.T, f awaitedFlow, _ *ent.Contact, runID int64) {
 			f.clock.Advance(2 * time.Hour)
 			f.run(t)
 			f.callHook(t, runID, http.StatusOK)

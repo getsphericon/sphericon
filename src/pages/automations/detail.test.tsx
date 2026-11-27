@@ -87,6 +87,7 @@ test('shows the automation and the contacts enrolled in it', async () => {
             contactId: testId(42),
             status: 'completed',
             ordinal: 1,
+            awaited: [],
             ...TIMESTAMPS,
           },
           {
@@ -95,6 +96,7 @@ test('shows the automation and the contacts enrolled in it', async () => {
             contactId: testId(43),
             status: 'active',
             ordinal: 1,
+            awaited: [],
             currentStepId: stepId(2),
             resumeAt: WAIT_DUE,
             ...TIMESTAMPS,
