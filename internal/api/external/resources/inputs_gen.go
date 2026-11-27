@@ -544,6 +544,7 @@ func (c *InputsImpl) PathStepInputSum(source external.PathStepInputSum) external
 	externalapiAutomationStepInputSum.EndStepInput = source.EndStepInput
 	externalapiAutomationStepInputSum.BranchStepInput = source.BranchStepInput
 	externalapiAutomationStepInputSum.SplitStepInput = source.SplitStepInput
+	externalapiAutomationStepInputSum.WaitForEventStepInput = source.WaitForEventStepInput
 	return externalapiAutomationStepInputSum
 }
 func (c *InputsImpl) PathStepInputType(source external.PathStepInputSumType) external.AutomationStepInputSumType {
@@ -567,6 +568,8 @@ func (c *InputsImpl) PathStepInputType(source external.PathStepInputSumType) ext
 		externalapiAutomationStepInputSumType = external.SplitStepInputAutomationStepInputSum
 	case external.TelegramStepInputPathStepInputSum:
 		externalapiAutomationStepInputSumType = external.TelegramStepInputAutomationStepInputSum
+	case external.WaitForEventStepInputPathStepInputSum:
+		externalapiAutomationStepInputSumType = external.WaitForEventStepInputAutomationStepInputSum
 	case external.WaitStepInputPathStepInputSum:
 		externalapiAutomationStepInputSumType = external.WaitStepInputAutomationStepInputSum
 	case external.WaitUntilStepInputPathStepInputSum:
@@ -733,6 +736,7 @@ func (c *InputsImpl) SplitPathStepInputSum(source external.SplitPathStepInputSum
 	externalapiAutomationStepInputSum.EndStepInput = source.EndStepInput
 	externalapiAutomationStepInputSum.BranchStepInput = source.BranchStepInput
 	externalapiAutomationStepInputSum.SplitStepInput = source.SplitStepInput
+	externalapiAutomationStepInputSum.WaitForEventStepInput = source.WaitForEventStepInput
 	return externalapiAutomationStepInputSum
 }
 func (c *InputsImpl) SplitPathStepInputType(source external.SplitPathStepInputSumType) external.AutomationStepInputSumType {
@@ -756,6 +760,8 @@ func (c *InputsImpl) SplitPathStepInputType(source external.SplitPathStepInputSu
 		externalapiAutomationStepInputSumType = external.SplitStepInputAutomationStepInputSum
 	case external.TelegramStepInputSplitPathStepInputSum:
 		externalapiAutomationStepInputSumType = external.TelegramStepInputAutomationStepInputSum
+	case external.WaitForEventStepInputSplitPathStepInputSum:
+		externalapiAutomationStepInputSumType = external.WaitForEventStepInputAutomationStepInputSum
 	case external.WaitStepInputSplitPathStepInputSum:
 		externalapiAutomationStepInputSumType = external.WaitStepInputAutomationStepInputSum
 	case external.WaitUntilStepInputSplitPathStepInputSum:

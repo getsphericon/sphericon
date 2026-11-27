@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -290,4 +291,67 @@ func (w *Workspace) PublishBranchAutomation(a BranchAutomation) {
 	published, err := w.api.AutomationsPublish(ctx, &externalapi.RevisionInput{Revision: created.Revision}, externalapi.AutomationsPublishParams{ID: created.ID})
 	got := ok[externalapi.AutomationResource](w.t, "publish branch automation", published, err)
 	require.Equal(w.t, externalapi.AutomationStatusActive, got.Status)
+}
+
+// WaitForEventAutomation is what a scenario chooses about an Automation that waits for an Event
+// after it enrolls a Contact (ADR 0124): a Wait for event on Awaited for Timeout, whose arrived path
+// sends ArrivedSubject and whose timed out path sends TimedOutSubject, then an email after it,
+// AfterSubject, that both paths' Contacts receive.
+type WaitForEventAutomation struct {
+	TriggerEvent    string
+	Awaited         string
+	Timeout         time.Duration
+	ArrivedSubject  string
+	TimedOutSubject string
+	AfterSubject    string
+}
+
+// PublishWaitForEventAutomation creates the Automation with its Wait for event through the public
+// API and publishes it. It returns its id.
+func (w *Workspace) PublishWaitForEventAutomation(a WaitForEventAutomation) externalapi.EntityId {
+	w.t.Helper()
+	ctx := w.t.Context()
+	email := func(subject string) externalapi.AutomationStepInput {
+		return emailStep(externalapi.EmailStepInput{Subject: subject, Body: externalapi.NewOptString(HTML(subject))})
+	}
+	wait := externalapi.WaitForEventStepInput{
+		Type:           externalapi.WaitForEventStepInputTypeWaitForEvent,
+		Name:           "awaited",
+		TimeoutSeconds: int32(a.Timeout / time.Second),
+		Awaits: externalapi.WaitForEventAwaitsInput{OneOf: externalapi.NewAwaitedEventInputWaitForEventAwaitsInputSum(
+			externalapi.AwaitedEventInput{Kind: externalapi.AwaitedEventInputKindEvent, Actions: []string{a.Awaited}},
+		)},
+		Arrived:  externalapi.AutomationPathInput{Steps: []externalapi.AutomationStepInput{email(a.ArrivedSubject)}},
+		TimedOut: externalapi.AutomationPathInput{Steps: []externalapi.AutomationStepInput{email(a.TimedOutSubject)}},
+	}
+	res, err := w.api.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
+		Name:    externalapi.Name("e2e wait for event automation " + uniq()),
+		Trigger: eventTrigger(a.TriggerEvent),
+		Steps: rootPath(
+			externalapi.AutomationStepInput{OneOf: externalapi.NewWaitForEventStepInputAutomationStepInputSum(wait)},
+			email(a.AfterSubject),
+		),
+	})
+	created := ok[externalapi.AutomationResource](w.t, "create wait for event automation", res, err)
+	published, err := w.api.AutomationsPublish(ctx, &externalapi.RevisionInput{Revision: created.Revision}, externalapi.AutomationsPublishParams{ID: created.ID})
+	got := ok[externalapi.AutomationResource](w.t, "publish wait for event automation", published, err)
+	require.Equal(w.t, externalapi.AutomationStatusActive, got.Status)
+	return got.ID
+}
+
+// WaitingEnrollments is how many active Enrollments of the Automation stand on a Step that holds
+// them until a moment (a wait, or a Wait for event until its timeout), read through the public API.
+func (w *Workspace) WaitingEnrollments(automationID externalapi.EntityId) int {
+	w.t.Helper()
+	listed, err := w.api.EnrollmentsList(w.t.Context(), externalapi.EnrollmentsListParams{
+		AutomationId: automationID, Status: externalapi.NewOptEnrollmentStatus(externalapi.EnrollmentStatusActive),
+	})
+	require.NoError(w.t, err, "list enrollments")
+	waiting := 0
+	for i := range listed.Items {
+		if listed.Items[i].ResumeAt.Set {
+			waiting++
+		}
+	}
+	return waiting
 }

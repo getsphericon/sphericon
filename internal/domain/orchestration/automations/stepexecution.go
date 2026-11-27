@@ -120,8 +120,9 @@ type EnrollOnRuleInput struct {
 
 // OnEvent is what an Event of the Contact does to the Automations (#751): it first ends the
 // Contact's active Enrollments whose version has an exit or goal event matching it
-// (endOnEvent, in a transaction of its own, which it needs for the Contact's lock),
-// then enrolls the Contact into every active Automation whose live version's Trigger is the action
+// (endOnEvent, in a transaction of its own, which it needs for the Contact's lock), then wakes the
+// Contact's active Enrollments standing on a Wait for event it satisfies, down `arrived` (wake, ADR
+// 0124), then enrolls the Contact into every active Automation whose live version's Trigger is the action
 // (ADR 0065), one transaction per Automation (enrollOnTrigger), again after an earlier Enrollment
 // ended when the version's Entry policy is `again` (ADR 0127). Each entry runs the entry checks,
 // which skip one whose Event's chain already passed through the Automation (Event.Chain, `cycle`):
@@ -131,8 +132,8 @@ type EnrollOnRuleInput struct {
 // when it occurred, which
 // an Event without one does not say, so it is refused. Every Enrollment it makes copies the stored
 // Event's action and properties, read once (originOf, #752). An Event a write through a Connection
-// without mcp:send published (Event.SendLocked) ends Enrollments as any other, and enrolls no one:
-// it starts nothing that sends (ADR 0132), and the lifecycle Events of the endings it makes
+// without mcp:send published (Event.SendLocked) ends Enrollments as any other, and wakes and enrolls
+// no one: it starts nothing that sends (ADR 0132), and the lifecycle Events of the endings it makes
 // (automation.exited, automation.goal_reached) carry its mark, so they start nothing either.
 func (m *StepExecution) OnEvent(ctx context.Context, s *ent.Scoped, in OnEventInput) error {
 	contactID, ev := in.ContactID, in.Event
@@ -147,6 +148,10 @@ func (m *StepExecution) OnEvent(ctx context.Context, s *ent.Scoped, in OnEventIn
 		return m.endOnEvent(ctx, ts, pub, contactID, ev)
 	})
 	if err != nil || ev.SendLocked {
+		return err
+	}
+	// An Event that ended an Enrollment ended it first: it wakes only those still active.
+	if err := m.wake(ctx, s, contactID, ev); err != nil {
 		return err
 	}
 	triggered, err := triggeredBy(ctx, s, ev)
@@ -310,6 +315,9 @@ func (m *StepExecution) Step(ctx context.Context, s *ent.Scoped, runID int64, st
 
 	case automationstep.Branch:
 		return m.branch(ctx, s, run, at, p)
+
+	case automationstep.WaitForEvent:
+		return m.timeout(ctx, s, run, at, p)
 
 	case automationstep.Split:
 		// The draw holds no random state (ADR 0124): the same Enrollment always lands on the same

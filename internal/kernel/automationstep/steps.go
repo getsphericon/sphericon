@@ -38,6 +38,8 @@ const (
 	KindEnd       Kind = "end"
 	KindBranch    Kind = "branch"
 	KindSplit     Kind = "split"
+	// KindWaitForEvent holds an Enrollment until an awaited Event or its timeout (ADR 0124).
+	KindWaitForEvent Kind = "wait_for_event"
 )
 
 // Channel is the Channel a send step of the kind sends on (ADR 0081: the step's kind fixes its
@@ -88,7 +90,7 @@ type Step struct {
 func New(p Payload) Step { return Step{Payload: p} }
 
 // Payload is what a Step does, one type per kind: Email, Telegram, SMS, Wait, WaitUntil, ApplyTag,
-// RemoveTag, HTTP, End, Branch and Split.
+// RemoveTag, HTTP, End, Branch, Split and WaitForEvent.
 type Payload interface {
 	Kind() Kind
 	// Stored is the payload as a version stores it: tag names, a Telegram step's image and
@@ -382,17 +384,18 @@ func (Split) Kind() Kind     { return KindSplit }
 
 // decoders read the fields of each kind's payload, refusing any field the kind does not hold.
 var decoders = map[Kind]func([]byte) (Payload, error){
-	KindEmail:     decodeAs[Email],
-	KindTelegram:  decodeAs[Telegram],
-	KindSMS:       decodeAs[SMS],
-	KindWait:      decodeAs[Wait],
-	KindWaitUntil: decodeAs[WaitUntil],
-	KindApplyTag:  decodeAs[ApplyTag],
-	KindRemoveTag: decodeAs[RemoveTag],
-	KindHTTP:      decodeAs[HTTP],
-	KindEnd:       decodeAs[End],
-	KindBranch:    decodeAs[Branch],
-	KindSplit:     decodeAs[Split],
+	KindEmail:        decodeAs[Email],
+	KindTelegram:     decodeAs[Telegram],
+	KindSMS:          decodeAs[SMS],
+	KindWait:         decodeAs[Wait],
+	KindWaitUntil:    decodeAs[WaitUntil],
+	KindApplyTag:     decodeAs[ApplyTag],
+	KindRemoveTag:    decodeAs[RemoveTag],
+	KindHTTP:         decodeAs[HTTP],
+	KindEnd:          decodeAs[End],
+	KindBranch:       decodeAs[Branch],
+	KindSplit:        decodeAs[Split],
+	KindWaitForEvent: decodeAs[WaitForEvent],
 }
 
 func decodeAs[P Payload](b []byte) (Payload, error) {

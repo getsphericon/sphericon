@@ -796,7 +796,9 @@ export type AutomationStep = ({
   type: 'branch';
 } & BranchStep) | ({
   type: 'split';
-} & SplitStep);
+} & SplitStep) | ({
+  type: 'wait_for_event';
+} & WaitForEventStep);
 
 /**
  * The messages of one send Step, over every version that had it
@@ -857,7 +859,9 @@ export type AutomationStepInput = ({
   type: 'branch';
 } & BranchStepInput) | ({
   type: 'split';
-} & SplitStepInput);
+} & SplitStepInput) | ({
+  type: 'wait_for_event';
+} & WaitForEventStepInput);
 
 /**
  * What enrolls a Contact in an automation, by `kind`: an Event matcher or a date
@@ -963,6 +967,30 @@ export type AutomationWaitUntilFigures = {
    * future
    */
   beyondBound: number;
+};
+
+/**
+ * A Wait for event waits for an Event of one of the actions it names (ADR 0124)
+ */
+export type AwaitedEvent = {
+  kind: 'event';
+  /**
+   * The Event actions it waits for, each at most once
+   */
+  actions: Array<string>;
+};
+
+/**
+ * A Wait for event waits for an Event of one of the actions it names, as a request writes it
+ */
+export type AwaitedEventInput = {
+  kind: 'event';
+  /**
+   * The Event actions it waits for, at least one, each at most once. An action an exit or the
+   * goal of the version matches with no filter refuses the save, naming the Step: that Event would
+   * end the enrollment, never take `arrived`.
+   */
+  actions: Array<string>;
 };
 
 /**
@@ -5197,7 +5225,9 @@ export type PathStep = ({
   type: 'branch';
 } & BranchStep) | ({
   type: 'split';
-} & SplitStep);
+} & SplitStep) | ({
+  type: 'wait_for_event';
+} & WaitForEventStep);
 
 /**
  * One Step of a Branch's listed path, by `type`, as a request writes it: the arms of AutomationStepInput
@@ -5224,7 +5254,9 @@ export type PathStepInput = ({
   type: 'branch';
 } & BranchStepInput) | ({
   type: 'split';
-} & SplitStepInput);
+} & SplitStepInput) | ({
+  type: 'wait_for_event';
+} & WaitForEventStepInput);
 
 /**
  * A named action in a Workspace that a Role allows (ADR 0061, GLOSSARY "Permission"),
@@ -7065,7 +7097,9 @@ export type SplitPathStep = ({
   type: 'branch';
 } & BranchStep) | ({
   type: 'split';
-} & SplitStep);
+} & SplitStep) | ({
+  type: 'wait_for_event';
+} & WaitForEventStep);
 
 /**
  * One Step of a Split's path, by `type`, as a request writes it: the arms of AutomationStepInput
@@ -7092,7 +7126,9 @@ export type SplitPathStepInput = ({
   type: 'branch';
 } & BranchStepInput) | ({
   type: 'split';
-} & SplitStepInput);
+} & SplitStepInput) | ({
+  type: 'wait_for_event';
+} & WaitForEventStepInput);
 
 /**
  * A Step that sends each Enrollment down one of its paths by weight (ADR 0124): a hash of the
@@ -8316,6 +8352,92 @@ export type UsedByKind = typeof UsedByKind[keyof typeof UsedByKind];
 export const Versions = { '1_0_0': '1.0.0' } as const;
 
 export type Versions = typeof Versions[keyof typeof Versions];
+
+/**
+ * What a Wait for event waits for, by `kind`
+ */
+export type WaitForEventAwaits = AwaitedEvent;
+
+/**
+ * What a Wait for event waits for, by `kind`, as a request writes it
+ */
+export type WaitForEventAwaitsInput = AwaitedEventInput;
+
+/**
+ * The name of a Wait for event (ADR 0136): lower-case letters, digits and underscores, starting
+ * with a letter. It belongs to one Step id across every version of its Automation.
+ */
+export type WaitForEventName = string;
+
+/**
+ * A Step that holds the Enrollment until what it awaits arrives or its timeout passes (ADR
+ * 0124), then takes `arrived` or `timedOut`; the paths rejoin at the Step after it. An Event counts
+ * when it is the Contact's, occurred at or after the moment the Enrollment reached the Step and no
+ * later than the timeout, and is neither a machine open or click, loaded history nor the Event that
+ * began the Enrollment. One that occurred within the window but was recorded late is taken at the
+ * timeout. An Event an exit or the goal matches ends the Enrollment instead.
+ */
+export type WaitForEventStep = {
+  /**
+   * The Step's id
+   */
+  id: StepId;
+  type: 'wait_for_event';
+  /**
+   * The Step's name, fixed when it is created
+   */
+  name: WaitForEventName;
+  /**
+   * How long the Step waits, in seconds from the moment the Enrollment reaches it
+   */
+  timeoutSeconds: number;
+  /**
+   * What the Step waits for
+   */
+  awaits: WaitForEventAwaits;
+  /**
+   * The path taken when what the Step awaits arrives in time
+   */
+  arrived: AutomationPath;
+  /**
+   * The path taken when the timeout passes first
+   */
+  timedOut: AutomationPath;
+};
+
+/**
+ * A Wait for event, as a request writes it
+ */
+export type WaitForEventStepInput = {
+  /**
+   * The Step's id; omitted, the Step is given one. A Step saved before keeps its name: send its
+   * id back, since a save that gives a name another Step id of the Automation holds, in any
+   * version, is refused, naming the Step.
+   */
+  id?: StepId;
+  type: 'wait_for_event';
+  /**
+   * The Step's name, fixed when it is created: a save that renames the Step, or gives two Wait for
+   * event Steps of the Automation the same name, is refused, naming the Step
+   */
+  name: WaitForEventName;
+  /**
+   * How long the Step waits, in seconds, as a wait's delay is; zero or less is refused
+   */
+  timeoutSeconds: number;
+  /**
+   * What the Step waits for
+   */
+  awaits: WaitForEventAwaitsInput;
+  /**
+   * The path taken when what the Step awaits arrives in time
+   */
+  arrived: AutomationPathInput;
+  /**
+   * The path taken when the timeout passes first
+   */
+  timedOut: AutomationPathInput;
+};
 
 /**
  * A Step that waits before the next one

@@ -183,6 +183,12 @@ func stepSum(c Converter, v automations.StepView) (externalapi.AutomationStepSum
 			return externalapi.AutomationStepSum{}, err
 		}
 		return externalapi.NewSplitStepAutomationStepSum(sp), nil
+	case automations.WaitForEventView:
+		w, err := c.WaitForEventStepToResource(v)
+		if err != nil {
+			return externalapi.AutomationStepSum{}, err
+		}
+		return externalapi.NewWaitForEventStepAutomationStepSum(w), nil
 	default:
 		return externalapi.AutomationStepSum{}, fmt.Errorf("the step view %T has no arm", v)
 	}
@@ -248,6 +254,24 @@ func branchStepType(automationstep.Kind) externalapi.BranchStepType {
 }
 func splitStepType(automationstep.Kind) externalapi.SplitStepType {
 	return externalapi.SplitStepTypeSplit
+}
+func waitForEventStepType(automationstep.Kind) externalapi.WaitForEventStepType {
+	return externalapi.WaitForEventStepTypeWaitForEvent
+}
+func waitForEventName(name string) externalapi.WaitForEventName {
+	return externalapi.WaitForEventName(name)
+}
+
+// waitForEventAwaits is the arm of what a Wait for event waits for: a oneOf is beyond goverter, so
+// only the switch is written here. One with no arm fails the response.
+func waitForEventAwaits(a automationstep.Awaits) (externalapi.WaitForEventAwaits, error) {
+	switch a := a.(type) {
+	case automationstep.AwaitedEvent:
+		ev := externalapi.AwaitedEvent{Kind: externalapi.AwaitedEventKindEvent, Actions: append([]string{}, a.Actions...)}
+		return externalapi.WaitForEventAwaits{OneOf: externalapi.NewAwaitedEventWaitForEventAwaitsSum(ev)}, nil
+	case nil:
+	}
+	return externalapi.WaitForEventAwaits{}, errors.New("a wait for event that awaits nothing")
 }
 
 func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {
@@ -337,6 +361,9 @@ func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {
 // goverter:extend endStepType
 // goverter:extend branchStepType
 // goverter:extend splitStepType
+// goverter:extend waitForEventStepType
+// goverter:extend waitForEventName
+// goverter:extend waitForEventAwaits
 // goverter:extend splitPathStepViews
 // goverter:extend pathStepViews
 // goverter:extend optAutomationPath
@@ -494,6 +521,7 @@ type Converter interface {
 	// goverter:enum:transform value
 	SplitPathStepType(source externalapi.AutomationStepSumType) externalapi.SplitPathStepSumType
 	SplitStepToResource(source automations.SplitView) (externalapi.SplitStep, error)
+	WaitForEventStepToResource(source automations.WaitForEventView) (externalapi.WaitForEventStep, error)
 	SplitPathToResource(source automations.SplitPathView) (externalapi.SplitPath, error)
 	// goverter:ignore Value
 	AutomationHttpHeaderToResource(source automations.HeaderName) externalapi.AutomationHttpHeader

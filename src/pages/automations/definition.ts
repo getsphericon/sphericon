@@ -258,6 +258,8 @@ function flowStepOf(step: AutomationStep): FlowStep {
         kind: 'split',
         paths: step.paths.map((path) => ({ ...flowPathOf(path), weight: path.weight })),
       }
+    // The editor does not edit a Wait for event yet (ADR 0124): the version holding one is kept.
+    case 'wait_for_event':
     default:
       return { id, kind: 'kept', step }
   }

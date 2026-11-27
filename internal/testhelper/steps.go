@@ -54,6 +54,8 @@ func SiteStep(st any) siteapi.AutomationStepInput {
 		return siteapi.AutomationStepInput{OneOf: siteapi.NewBranchStepInputAutomationStepInputSum(v)}
 	case siteapi.SplitStepInput:
 		return siteapi.AutomationStepInput{OneOf: siteapi.NewSplitStepInputAutomationStepInputSum(v)}
+	case siteapi.WaitForEventStepInput:
+		return siteapi.AutomationStepInput{OneOf: siteapi.NewWaitForEventStepInputAutomationStepInputSum(v)}
 	default:
 		panic(fmt.Sprintf("testhelper: %T is not a site Step", st))
 	}
@@ -100,6 +102,8 @@ func ExternalStep(st any) externalapi.AutomationStepInput {
 		return externalapi.AutomationStepInput{OneOf: externalapi.NewBranchStepInputAutomationStepInputSum(v)}
 	case externalapi.SplitStepInput:
 		return externalapi.AutomationStepInput{OneOf: externalapi.NewSplitStepInputAutomationStepInputSum(v)}
+	case externalapi.WaitForEventStepInput:
+		return externalapi.AutomationStepInput{OneOf: externalapi.NewWaitForEventStepInputAutomationStepInputSum(v)}
 	default:
 		panic(fmt.Sprintf("testhelper: %T is not an external Step", st))
 	}
@@ -205,6 +209,23 @@ func ExternalWaitUntil(tb testing.TB, doc string) externalapi.WaitUntilStepInput
 func SiteWaitUntil(tb testing.TB, doc string) siteapi.WaitUntilStepInput {
 	tb.Helper()
 	var w siteapi.WaitUntilStepInput
+	require.NoError(tb, w.UnmarshalJSON([]byte(doc)))
+	return w
+}
+
+// ExternalWaitForEvent is a Wait for event of the external API as its JSON writes it, so a test
+// reads as the Step it saves.
+func ExternalWaitForEvent(tb testing.TB, doc string) externalapi.WaitForEventStepInput {
+	tb.Helper()
+	var w externalapi.WaitForEventStepInput
+	require.NoError(tb, w.UnmarshalJSON([]byte(doc)))
+	return w
+}
+
+// SiteWaitForEvent is ExternalWaitForEvent for the site API.
+func SiteWaitForEvent(tb testing.TB, doc string) siteapi.WaitForEventStepInput {
+	tb.Helper()
+	var w siteapi.WaitForEventStepInput
 	require.NoError(tb, w.UnmarshalJSON([]byte(doc)))
 	return w
 }

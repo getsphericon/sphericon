@@ -29,7 +29,8 @@ var _ = db.Declare(
 )
 
 // arrive is what the Step st decides for an Enrollment that reaches it at now, computed once, then
-// kept on its Step record (ADR 0124, ADR 0126): a wait's delay after now, and a Wait until's moment
+// kept on its Step record (ADR 0124, ADR 0126): a wait's delay after now, a Wait for event's
+// deadline, its timeout after now, and a Wait until's moment
 // for its Contact, in the Contact's zone or else the Workspace's, or why it goes on at once
 // (automationstep.Reach), which contact reads only for a Wait until. Any other Step decides
 // nothing (nil) and runs at once.
@@ -37,6 +38,9 @@ func arrive(st *automationstep.Step, now time.Time, contact func() (automationst
 	switch p := st.Payload.(type) {
 	case automationstep.Wait:
 		return automationstep.WaitsUntil{At: now.Add(time.Duration(p.Seconds) * time.Second)}, nil
+	case automationstep.WaitForEvent:
+		// Its deadline, kept as its due moment: the job that runs then takes the timeout.
+		return automationstep.WaitsUntil{At: now.Add(time.Duration(p.TimeoutSeconds) * time.Second)}, nil
 	case automationstep.WaitUntil:
 		c, err := contact()
 		if err != nil {

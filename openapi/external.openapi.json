@@ -6851,6 +6851,9 @@
           },
           {
             "$ref": "#/components/schemas/SplitStep"
+          },
+          {
+            "$ref": "#/components/schemas/WaitForEventStep"
           }
         ],
         "discriminator": {
@@ -6866,7 +6869,8 @@
             "http": "#/components/schemas/HttpStep",
             "end": "#/components/schemas/EndStep",
             "branch": "#/components/schemas/BranchStep",
-            "split": "#/components/schemas/SplitStep"
+            "split": "#/components/schemas/SplitStep",
+            "wait_for_event": "#/components/schemas/WaitForEventStep"
           }
         },
         "description": "One Step of an automation, by `type`"
@@ -6957,6 +6961,9 @@
           },
           {
             "$ref": "#/components/schemas/SplitStepInput"
+          },
+          {
+            "$ref": "#/components/schemas/WaitForEventStepInput"
           }
         ],
         "discriminator": {
@@ -6972,7 +6979,8 @@
             "http": "#/components/schemas/HttpStepInput",
             "end": "#/components/schemas/EndStepInput",
             "branch": "#/components/schemas/BranchStepInput",
-            "split": "#/components/schemas/SplitStepInput"
+            "split": "#/components/schemas/SplitStepInput",
+            "wait_for_event": "#/components/schemas/WaitForEventStepInput"
           }
         },
         "description": "One Step of an automation, by `type`, as a request writes it. A field of another kind is refused."
@@ -7146,6 +7154,44 @@
           }
         },
         "description": "The enrollments that went on at once from one Wait until on a date instead of waiting, by why:\nread from what each kept when it reached the Step, counted on the moment it left it"
+      },
+      "AwaitedEvent": {
+        "type": "object",
+        "required": ["kind", "actions"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["event"]
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The Event actions it waits for, each at most once"
+          }
+        },
+        "description": "A Wait for event waits for an Event of one of the actions it names (ADR 0124)"
+      },
+      "AwaitedEventInput": {
+        "type": "object",
+        "required": ["kind", "actions"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["event"]
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "description": "The Event actions it waits for, at least one, each at most once. An action an exit or the\ngoal of the version matches with no filter refuses the save, naming the Step: that Event would\nend the enrollment, never take `arrived`."
+          }
+        },
+        "description": "A Wait for event waits for an Event of one of the actions it names, as a request writes it",
+        "additionalProperties": false
       },
       "BirthdayDateField": {
         "type": "object",
@@ -13429,6 +13475,9 @@
           },
           {
             "$ref": "#/components/schemas/SplitStep"
+          },
+          {
+            "$ref": "#/components/schemas/WaitForEventStep"
           }
         ],
         "discriminator": {
@@ -13444,6 +13493,7 @@
             "http": "#/components/schemas/HttpStep",
             "end": "#/components/schemas/EndStep",
             "split": "#/components/schemas/SplitStep",
+            "wait_for_event": "#/components/schemas/WaitForEventStep",
             "branch": "#/components/schemas/BranchStep"
           }
         },
@@ -13484,6 +13534,9 @@
           },
           {
             "$ref": "#/components/schemas/SplitStepInput"
+          },
+          {
+            "$ref": "#/components/schemas/WaitForEventStepInput"
           }
         ],
         "discriminator": {
@@ -13499,6 +13552,7 @@
             "http": "#/components/schemas/HttpStepInput",
             "end": "#/components/schemas/EndStepInput",
             "split": "#/components/schemas/SplitStepInput",
+            "wait_for_event": "#/components/schemas/WaitForEventStepInput",
             "branch": "#/components/schemas/BranchStepInput"
           }
         },
@@ -16136,6 +16190,9 @@
           },
           {
             "$ref": "#/components/schemas/SplitStep"
+          },
+          {
+            "$ref": "#/components/schemas/WaitForEventStep"
           }
         ],
         "discriminator": {
@@ -16150,6 +16207,7 @@
             "remove_tag": "#/components/schemas/RemoveTagStep",
             "http": "#/components/schemas/HttpStep",
             "end": "#/components/schemas/EndStep",
+            "wait_for_event": "#/components/schemas/WaitForEventStep",
             "split": "#/components/schemas/SplitStep",
             "branch": "#/components/schemas/BranchStep"
           }
@@ -16191,6 +16249,9 @@
           },
           {
             "$ref": "#/components/schemas/SplitStepInput"
+          },
+          {
+            "$ref": "#/components/schemas/WaitForEventStepInput"
           }
         ],
         "discriminator": {
@@ -16205,6 +16266,7 @@
             "remove_tag": "#/components/schemas/RemoveTagStepInput",
             "http": "#/components/schemas/HttpStepInput",
             "end": "#/components/schemas/EndStepInput",
+            "wait_for_event": "#/components/schemas/WaitForEventStepInput",
             "split": "#/components/schemas/SplitStepInput",
             "branch": "#/components/schemas/BranchStepInput"
           }
@@ -17885,6 +17947,155 @@
       "Versions": {
         "type": "string",
         "enum": ["1.0.0"]
+      },
+      "WaitForEventAwaits": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/AwaitedEvent"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "event": "#/components/schemas/AwaitedEvent"
+          }
+        },
+        "description": "What a Wait for event waits for, by `kind`"
+      },
+      "WaitForEventAwaitsInput": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/AwaitedEventInput"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "event": "#/components/schemas/AwaitedEventInput"
+          }
+        },
+        "description": "What a Wait for event waits for, by `kind`, as a request writes it"
+      },
+      "WaitForEventName": {
+        "type": "string",
+        "maxLength": 64,
+        "pattern": "^[a-z][a-z0-9_]*$",
+        "description": "The name of a Wait for event (ADR 0136): lower-case letters, digits and underscores, starting\nwith a letter. It belongs to one Step id across every version of its Automation."
+      },
+      "WaitForEventStep": {
+        "type": "object",
+        "required": ["id", "type", "name", "timeoutSeconds", "awaits", "arrived", "timedOut"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StepId"
+              }
+            ],
+            "description": "The Step's id"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["wait_for_event"]
+          },
+          "name": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WaitForEventName"
+              }
+            ],
+            "description": "The Step's name, fixed when it is created"
+          },
+          "timeoutSeconds": {
+            "type": "integer",
+            "format": "int32",
+            "description": "How long the Step waits, in seconds from the moment the Enrollment reaches it"
+          },
+          "awaits": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WaitForEventAwaits"
+              }
+            ],
+            "description": "What the Step waits for"
+          },
+          "arrived": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AutomationPath"
+              }
+            ],
+            "description": "The path taken when what the Step awaits arrives in time"
+          },
+          "timedOut": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AutomationPath"
+              }
+            ],
+            "description": "The path taken when the timeout passes first"
+          }
+        },
+        "description": "A Step that holds the Enrollment until what it awaits arrives or its timeout passes (ADR\n0124), then takes `arrived` or `timedOut`; the paths rejoin at the Step after it. An Event counts\nwhen it is the Contact's, occurred at or after the moment the Enrollment reached the Step and no\nlater than the timeout, and is neither a machine open or click, loaded history nor the Event that\nbegan the Enrollment. One that occurred within the window but was recorded late is taken at the\ntimeout. An Event an exit or the goal matches ends the Enrollment instead."
+      },
+      "WaitForEventStepInput": {
+        "type": "object",
+        "required": ["type", "name", "timeoutSeconds", "awaits", "arrived", "timedOut"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StepId"
+              }
+            ],
+            "description": "The Step's id; omitted, the Step is given one. A Step saved before keeps its name: send its\nid back, since a save that gives a name another Step id of the Automation holds, in any\nversion, is refused, naming the Step."
+          },
+          "type": {
+            "type": "string",
+            "enum": ["wait_for_event"]
+          },
+          "name": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WaitForEventName"
+              }
+            ],
+            "description": "The Step's name, fixed when it is created: a save that renames the Step, or gives two Wait for\nevent Steps of the Automation the same name, is refused, naming the Step"
+          },
+          "timeoutSeconds": {
+            "type": "integer",
+            "format": "int32",
+            "description": "How long the Step waits, in seconds, as a wait's delay is; zero or less is refused"
+          },
+          "awaits": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WaitForEventAwaitsInput"
+              }
+            ],
+            "description": "What the Step waits for"
+          },
+          "arrived": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AutomationPathInput"
+              }
+            ],
+            "description": "The path taken when what the Step awaits arrives in time"
+          },
+          "timedOut": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AutomationPathInput"
+              }
+            ],
+            "description": "The path taken when the timeout passes first"
+          }
+        },
+        "description": "A Wait for event, as a request writes it",
+        "additionalProperties": false
       },
       "WaitStep": {
         "type": "object",

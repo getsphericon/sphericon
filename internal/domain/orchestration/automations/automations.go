@@ -262,6 +262,10 @@ func validateStep(st *automationstep.Step, linkLength int) error {
 		if err := validateSplit(st, s); err != nil {
 			return err
 		}
+	case automationstep.WaitForEvent:
+		if err := validateWaitForEvent(st, s); err != nil {
+			return err
+		}
 	default:
 		return refuse(st, "the step has no known kind")
 	}
@@ -1093,7 +1097,20 @@ func (v versioned) Merge(ctx context.Context, l *ent.WorkspaceLocked, base *ent.
 		if err != nil {
 			return definition{}, placeStep(err, *e.steps)
 		}
+		if base != nil {
+			if err := checkWaitNamesHeld(ctx, ts, base.AutomationID, steps); err != nil {
+				return definition{}, placeStep(err, *e.steps)
+			}
+		}
 		def.steps = steps
+	}
+	if e.steps != nil || e.exits != nil || e.goal.Changes() {
+		if err := checkAwaitedEndings(def); err != nil {
+			if e.steps != nil {
+				return definition{}, placeStep(err, *e.steps)
+			}
+			return definition{}, err
+		}
 	}
 	return def, nil
 }
@@ -1110,6 +1127,9 @@ func (v versioned) mergeSteps(ctx context.Context, ts *ent.Scoped, steps, stored
 		return automationstep.Path{}, err
 	}
 	if err := checkEnds(steps); err != nil {
+		return automationstep.Path{}, err
+	}
+	if err := checkWaitNames(steps); err != nil {
 		return automationstep.Path{}, err
 	}
 	if err := checkStepMessages(steps); err != nil {

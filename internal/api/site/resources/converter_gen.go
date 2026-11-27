@@ -2036,6 +2036,7 @@ func (c *ConverterImpl) PathStepSum(source site.AutomationStepSum) site.PathStep
 	siteapiPathStepSum.EndStep = source.EndStep
 	siteapiPathStepSum.BranchStep = source.BranchStep
 	siteapiPathStepSum.SplitStep = source.SplitStep
+	siteapiPathStepSum.WaitForEventStep = source.WaitForEventStep
 	return siteapiPathStepSum
 }
 func (c *ConverterImpl) PathStepType(source site.AutomationStepSumType) site.PathStepSumType {
@@ -2059,6 +2060,8 @@ func (c *ConverterImpl) PathStepType(source site.AutomationStepSumType) site.Pat
 		siteapiPathStepSumType = site.SplitStepPathStepSum
 	case site.TelegramStepAutomationStepSum:
 		siteapiPathStepSumType = site.TelegramStepPathStepSum
+	case site.WaitForEventStepAutomationStepSum:
+		siteapiPathStepSumType = site.WaitForEventStepPathStepSum
 	case site.WaitStepAutomationStepSum:
 		siteapiPathStepSumType = site.WaitStepPathStepSum
 	case site.WaitUntilStepAutomationStepSum:
@@ -2917,6 +2920,7 @@ func (c *ConverterImpl) SplitPathStepSum(source site.AutomationStepSum) site.Spl
 	siteapiSplitPathStepSum.EndStep = source.EndStep
 	siteapiSplitPathStepSum.BranchStep = source.BranchStep
 	siteapiSplitPathStepSum.SplitStep = source.SplitStep
+	siteapiSplitPathStepSum.WaitForEventStep = source.WaitForEventStep
 	return siteapiSplitPathStepSum
 }
 func (c *ConverterImpl) SplitPathStepType(source site.AutomationStepSumType) site.SplitPathStepSumType {
@@ -2940,6 +2944,8 @@ func (c *ConverterImpl) SplitPathStepType(source site.AutomationStepSumType) sit
 		siteapiSplitPathStepSumType = site.SplitStepSplitPathStepSum
 	case site.TelegramStepAutomationStepSum:
 		siteapiSplitPathStepSumType = site.TelegramStepSplitPathStepSum
+	case site.WaitForEventStepAutomationStepSum:
+		siteapiSplitPathStepSumType = site.WaitForEventStepSplitPathStepSum
 	case site.WaitStepAutomationStepSum:
 		siteapiSplitPathStepSumType = site.WaitStepSplitPathStepSum
 	case site.WaitUntilStepAutomationStepSum:
@@ -3350,6 +3356,29 @@ func (c *ConverterImpl) VisitorToExport(source *ent.Visitor) site.ContactExportV
 		siteapiContactExportVisitor.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return siteapiContactExportVisitor
+}
+func (c *ConverterImpl) WaitForEventStepToResource(source automations.WaitForEventView) (site.WaitForEventStep, error) {
+	var siteapiWaitForEventStep site.WaitForEventStep
+	siteapiWaitForEventStep.ID = c.automationstepIDToSiteapiStepId(source.ID)
+	siteapiWaitForEventStep.Type = waitForEventStepType(source.Type)
+	siteapiWaitForEventStep.Name = waitForEventName(source.Name)
+	siteapiWaitForEventStep.TimeoutSeconds = count(source.TimeoutSeconds)
+	siteapiWaitForEventAwaits, err := waitForEventAwaits(source.Awaits)
+	if err != nil {
+		return siteapiWaitForEventStep, err
+	}
+	siteapiWaitForEventStep.Awaits = siteapiWaitForEventAwaits
+	siteapiAutomationPath, err := c.AutomationPathToResource(source.Arrived)
+	if err != nil {
+		return siteapiWaitForEventStep, err
+	}
+	siteapiWaitForEventStep.Arrived = siteapiAutomationPath
+	siteapiAutomationPath2, err := c.AutomationPathToResource(source.TimedOut)
+	if err != nil {
+		return siteapiWaitForEventStep, err
+	}
+	siteapiWaitForEventStep.TimedOut = siteapiAutomationPath2
+	return siteapiWaitForEventStep, nil
 }
 func (c *ConverterImpl) WaitStepToResource(source automations.WaitView) site.WaitStep {
 	var siteapiWaitStep site.WaitStep

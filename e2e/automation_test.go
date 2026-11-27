@@ -168,3 +168,31 @@ func TestABranchOnAnEventPropertySendsEachPathsMessageAndThenTheStepAfterIt(t *t
 	w.Inbox.RequireNone(Match{To: gold, Subject: "Have you seen gold?"})
 	w.Inbox.RequireNone(Match{To: silver, Subject: "Thanks for going gold"})
 }
+
+// A Wait for event on an order (ADR 0124): the Contact who orders within the window gets the
+// arrived path's thank-you, the one who does not gets the reminder at the timeout, and both paths
+// rejoin: each Contact then receives the email after the wait.
+func TestAWaitForAnOrderThanksTheBuyerRemindsTheOtherAndBothGoOn(t *testing.T) {
+	t.Parallel()
+	w := env.NewWorkspace(t).Ready()
+	buyer, idle := w.NewRecipient(), w.NewRecipient()
+	w.ImportContacts(buyer, idle)
+	automationID := w.PublishWaitForEventAutomation(WaitForEventAutomation{
+		TriggerEvent: "e2e.trial_started", Awaited: "e2e.order_created", Timeout: 10 * time.Second,
+		ArrivedSubject: "Thanks for your order", TimedOutSubject: "Still thinking it over?", AfterSubject: "How is it going?",
+	})
+
+	w.RecordEvent(buyer, "e2e.trial_started")
+	w.RecordEvent(idle, "e2e.trial_started")
+	// Only an order made once the Enrollment reached the wait counts: both stand on it first.
+	require.Eventually(t, func() bool { return w.WaitingEnrollments(automationID) == 2 }, EmailTimeout, 100*time.Millisecond,
+		"both Contacts never reached the wait")
+	w.RecordEvent(buyer, "e2e.order_created")
+
+	w.Inbox.Wait(Match{To: buyer, Subject: "Thanks for your order"})
+	w.Inbox.Wait(Match{To: idle, Subject: "Still thinking it over?"})
+	w.Inbox.Wait(Match{To: buyer, Subject: "How is it going?"})
+	w.Inbox.Wait(Match{To: idle, Subject: "How is it going?"})
+	w.Inbox.RequireNone(Match{To: buyer, Subject: "Still thinking it over?"})
+	w.Inbox.RequireNone(Match{To: idle, Subject: "Thanks for your order"})
+}

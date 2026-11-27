@@ -268,6 +268,22 @@ export const zAutomationSkippedCounts = z.object({
 export const zAutomationStatus = z.enum(['active', 'inactive']);
 
 /**
+ * A Wait for event waits for an Event of one of the actions it names (ADR 0124)
+ */
+export const zAwaitedEvent = z.object({
+  kind: z.enum(['event']),
+  actions: z.array(z.string())
+});
+
+/**
+ * A Wait for event waits for an Event of one of the actions it names, as a request writes it
+ */
+export const zAwaitedEventInput = z.strictObject({
+  kind: z.enum(['event']),
+  actions: z.array(z.string()).min(1)
+});
+
+/**
  * The Contact's date of birth, a date field every Contact has
  */
 export const zBirthdayDateField = z.object({
@@ -4858,6 +4874,22 @@ export const zSiteUpdateMeInput = z.strictObject({
 });
 
 /**
+ * What a Wait for event waits for, by `kind`
+ */
+export const zWaitForEventAwaits = zAwaitedEvent;
+
+/**
+ * What a Wait for event waits for, by `kind`, as a request writes it
+ */
+export const zWaitForEventAwaitsInput = zAwaitedEventInput;
+
+/**
+ * The name of a Wait for event (ADR 0136): lower-case letters, digits and underscores, starting
+ * with a letter. It belongs to one Step id across every version of its Automation.
+ */
+export const zWaitForEventName = z.string().max(64).regex(/^[a-z][a-z0-9_]*$/);
+
+/**
  * A Step that waits before the next one
  */
 export const zWaitStep = z.object({
@@ -5384,7 +5416,10 @@ export const zAutomationStep = z.union([
   }).and(z.lazy((): any => zBranchStep)),
   z.object({
     type: z.literal('split')
-  }).and(z.lazy((): any => zSplitStep))
+  }).and(z.lazy((): any => zSplitStep)),
+  z.object({
+    type: z.literal('wait_for_event')
+  }).and(z.lazy((): any => zWaitForEventStep))
 ]);
 
 /**
@@ -5423,7 +5458,10 @@ export const zAutomationStepInput = z.union([
   }).and(z.lazy((): any => zBranchStepInput)),
   z.object({
     type: z.literal('split')
-  }).and(z.lazy((): any => zSplitStepInput))
+  }).and(z.lazy((): any => zSplitStepInput)),
+  z.object({
+    type: z.literal('wait_for_event')
+  }).and(z.lazy((): any => zWaitForEventStepInput))
 ]);
 
 /**
@@ -5803,7 +5841,10 @@ export const zPathStep = z.union([
   }).and(zBranchStep),
   z.object({
     type: z.literal('split')
-  }).and(z.lazy((): any => zSplitStep))
+  }).and(z.lazy((): any => zSplitStep)),
+  z.object({
+    type: z.literal('wait_for_event')
+  }).and(z.lazy((): any => zWaitForEventStep))
 ]);
 
 /**
@@ -5842,7 +5883,10 @@ export const zPathStepInput = z.union([
   }).and(zBranchStepInput),
   z.object({
     type: z.literal('split')
-  }).and(z.lazy((): any => zSplitStepInput))
+  }).and(z.lazy((): any => zSplitStepInput)),
+  z.object({
+    type: z.literal('wait_for_event')
+  }).and(z.lazy((): any => zWaitForEventStepInput))
 ]);
 
 /**
@@ -6079,7 +6123,10 @@ export const zSplitPathStep = z.union([
   }).and(zBranchStep),
   z.object({
     type: z.literal('split')
-  }).and(z.lazy((): any => zSplitStep))
+  }).and(z.lazy((): any => zSplitStep)),
+  z.object({
+    type: z.literal('wait_for_event')
+  }).and(z.lazy((): any => zWaitForEventStep))
 ]);
 
 /**
@@ -6118,7 +6165,10 @@ export const zSplitPathStepInput = z.union([
   }).and(zBranchStepInput),
   z.object({
     type: z.literal('split')
-  }).and(z.lazy((): any => zSplitStepInput))
+  }).and(z.lazy((): any => zSplitStepInput)),
+  z.object({
+    type: z.literal('wait_for_event')
+  }).and(z.lazy((): any => zWaitForEventStepInput))
 ]);
 
 /**
@@ -6175,6 +6225,37 @@ export const zUpdateSegmentInput = z.strictObject({
   revision: zRevision,
   name: zName.exactOptional(),
   condition: zSegmentConditionInput.exactOptional()
+});
+
+/**
+ * A Step that holds the Enrollment until what it awaits arrives or its timeout passes (ADR
+ * 0124), then takes `arrived` or `timedOut`; the paths rejoin at the Step after it. An Event counts
+ * when it is the Contact's, occurred at or after the moment the Enrollment reached the Step and no
+ * later than the timeout, and is neither a machine open or click, loaded history nor the Event that
+ * began the Enrollment. One that occurred within the window but was recorded late is taken at the
+ * timeout. An Event an exit or the goal matches ends the Enrollment instead.
+ */
+export const zWaitForEventStep = z.object({
+  id: zStepId,
+  type: z.enum(['wait_for_event']),
+  name: zWaitForEventName,
+  timeoutSeconds: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  awaits: zWaitForEventAwaits,
+  arrived: zAutomationPath,
+  timedOut: zAutomationPath
+});
+
+/**
+ * A Wait for event, as a request writes it
+ */
+export const zWaitForEventStepInput = z.strictObject({
+  id: zStepId.exactOptional(),
+  type: z.enum(['wait_for_event']),
+  name: zWaitForEventName,
+  timeoutSeconds: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  awaits: zWaitForEventAwaitsInput,
+  arrived: zAutomationPathInput,
+  timedOut: zAutomationPathInput
 });
 
 /**

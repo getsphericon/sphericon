@@ -391,6 +391,19 @@ const (
 	SplitWeightMin = 1
 )
 
+// WaitForEventName is the name of a Wait for event, which later Steps read its kept Event by (ADR 0136).
+// From site WaitForEventName.
+const (
+	WaitForEventNameMaxLength = 64
+	WaitForEventNamePattern   = `^[a-z][a-z0-9_]*$`
+)
+
+// AwaitedActions are the Event actions a Wait for event waits for (ADR 0124).
+// From site AwaitedEventInput.actions.
+const (
+	AwaitedActionsMinItems = 1
+)
+
 // ConditionWithinDays is how many days back a condition looks: an Event count's window or a moment's within the last days.
 // From site EventLeafInput.withinDays, site WithinLastTestInput.days.
 const (
@@ -524,6 +537,9 @@ var Owners = map[string][]string{
 	"SplitPathsMinItems":                 {"AutomationVersion"},
 	"SplitPathsMaxItems":                 {"AutomationVersion"},
 	"SplitWeightMin":                     {"AutomationVersion"},
+	"WaitForEventNameMaxLength":          {"AutomationVersion"},
+	"WaitForEventNamePattern":            {"AutomationVersion"},
+	"AwaitedActionsMinItems":             {"AutomationVersion"},
 	"ConditionWithinDaysMin":             {"internal/domain/contacts/condition"},
 	"ConditionEventTimesMin":             {"internal/domain/contacts/condition"},
 	"SigningSecretPattern":               {"internal/infra/httpcall"},

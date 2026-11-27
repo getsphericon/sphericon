@@ -2827,18 +2827,19 @@ func (s *AutomationStepInput) SetOneOf(val AutomationStepInputSum) {
 // AutomationStepInputSum represents sum type.
 type AutomationStepInputSum struct {
 	// Type selects the active sum variant, switch on this field.
-	Type               AutomationStepInputSumType
-	EmailStepInput     EmailStepInput
-	TelegramStepInput  TelegramStepInput
-	SmsStepInput       SmsStepInput
-	WaitStepInput      WaitStepInput
-	WaitUntilStepInput WaitUntilStepInput
-	ApplyTagStepInput  ApplyTagStepInput
-	RemoveTagStepInput RemoveTagStepInput
-	HttpStepInput      HttpStepInput
-	EndStepInput       EndStepInput
-	BranchStepInput    BranchStepInput
-	SplitStepInput     SplitStepInput
+	Type                  AutomationStepInputSumType
+	EmailStepInput        EmailStepInput
+	TelegramStepInput     TelegramStepInput
+	SmsStepInput          SmsStepInput
+	WaitStepInput         WaitStepInput
+	WaitUntilStepInput    WaitUntilStepInput
+	ApplyTagStepInput     ApplyTagStepInput
+	RemoveTagStepInput    RemoveTagStepInput
+	HttpStepInput         HttpStepInput
+	EndStepInput          EndStepInput
+	BranchStepInput       BranchStepInput
+	SplitStepInput        SplitStepInput
+	WaitForEventStepInput WaitForEventStepInput
 }
 
 // AutomationStepInputSumType is oneOf type of AutomationStepInputSum.
@@ -2846,17 +2847,18 @@ type AutomationStepInputSumType string
 
 // Possible values for AutomationStepInputSumType.
 const (
-	EmailStepInputAutomationStepInputSum     AutomationStepInputSumType = "email"
-	TelegramStepInputAutomationStepInputSum  AutomationStepInputSumType = "telegram"
-	SmsStepInputAutomationStepInputSum       AutomationStepInputSumType = "sms"
-	WaitStepInputAutomationStepInputSum      AutomationStepInputSumType = "wait"
-	WaitUntilStepInputAutomationStepInputSum AutomationStepInputSumType = "wait_until"
-	ApplyTagStepInputAutomationStepInputSum  AutomationStepInputSumType = "apply_tag"
-	RemoveTagStepInputAutomationStepInputSum AutomationStepInputSumType = "remove_tag"
-	HttpStepInputAutomationStepInputSum      AutomationStepInputSumType = "http"
-	EndStepInputAutomationStepInputSum       AutomationStepInputSumType = "end"
-	BranchStepInputAutomationStepInputSum    AutomationStepInputSumType = "branch"
-	SplitStepInputAutomationStepInputSum     AutomationStepInputSumType = "split"
+	EmailStepInputAutomationStepInputSum        AutomationStepInputSumType = "email"
+	TelegramStepInputAutomationStepInputSum     AutomationStepInputSumType = "telegram"
+	SmsStepInputAutomationStepInputSum          AutomationStepInputSumType = "sms"
+	WaitStepInputAutomationStepInputSum         AutomationStepInputSumType = "wait"
+	WaitUntilStepInputAutomationStepInputSum    AutomationStepInputSumType = "wait_until"
+	ApplyTagStepInputAutomationStepInputSum     AutomationStepInputSumType = "apply_tag"
+	RemoveTagStepInputAutomationStepInputSum    AutomationStepInputSumType = "remove_tag"
+	HttpStepInputAutomationStepInputSum         AutomationStepInputSumType = "http"
+	EndStepInputAutomationStepInputSum          AutomationStepInputSumType = "end"
+	BranchStepInputAutomationStepInputSum       AutomationStepInputSumType = "branch"
+	SplitStepInputAutomationStepInputSum        AutomationStepInputSumType = "split"
+	WaitForEventStepInputAutomationStepInputSum AutomationStepInputSumType = "wait_for_event"
 )
 
 // IsEmailStepInput reports whether AutomationStepInputSum is EmailStepInput.
@@ -2912,6 +2914,11 @@ func (s AutomationStepInputSum) IsBranchStepInput() bool {
 // IsSplitStepInput reports whether AutomationStepInputSum is SplitStepInput.
 func (s AutomationStepInputSum) IsSplitStepInput() bool {
 	return s.Type == SplitStepInputAutomationStepInputSum
+}
+
+// IsWaitForEventStepInput reports whether AutomationStepInputSum is WaitForEventStepInput.
+func (s AutomationStepInputSum) IsWaitForEventStepInput() bool {
+	return s.Type == WaitForEventStepInputAutomationStepInputSum
 }
 
 // SetEmailStepInput sets AutomationStepInputSum to EmailStepInput.
@@ -3145,21 +3152,43 @@ func NewSplitStepInputAutomationStepInputSum(v SplitStepInput) AutomationStepInp
 	return s
 }
 
+// SetWaitForEventStepInput sets AutomationStepInputSum to WaitForEventStepInput.
+func (s *AutomationStepInputSum) SetWaitForEventStepInput(v WaitForEventStepInput) {
+	s.Type = WaitForEventStepInputAutomationStepInputSum
+	s.WaitForEventStepInput = v
+}
+
+// GetWaitForEventStepInput returns WaitForEventStepInput and true boolean if AutomationStepInputSum is WaitForEventStepInput.
+func (s AutomationStepInputSum) GetWaitForEventStepInput() (v WaitForEventStepInput, ok bool) {
+	if !s.IsWaitForEventStepInput() {
+		return v, false
+	}
+	return s.WaitForEventStepInput, true
+}
+
+// NewWaitForEventStepInputAutomationStepInputSum returns new AutomationStepInputSum from WaitForEventStepInput.
+func NewWaitForEventStepInputAutomationStepInputSum(v WaitForEventStepInput) AutomationStepInputSum {
+	var s AutomationStepInputSum
+	s.SetWaitForEventStepInput(v)
+	return s
+}
+
 // AutomationStepSum represents sum type.
 type AutomationStepSum struct {
 	// Type selects the active sum variant, switch on this field.
-	Type          AutomationStepSumType
-	EmailStep     EmailStep
-	TelegramStep  TelegramStep
-	SmsStep       SmsStep
-	WaitStep      WaitStep
-	WaitUntilStep WaitUntilStep
-	ApplyTagStep  ApplyTagStep
-	RemoveTagStep RemoveTagStep
-	HttpStep      HttpStep
-	EndStep       EndStep
-	BranchStep    BranchStep
-	SplitStep     SplitStep
+	Type             AutomationStepSumType
+	EmailStep        EmailStep
+	TelegramStep     TelegramStep
+	SmsStep          SmsStep
+	WaitStep         WaitStep
+	WaitUntilStep    WaitUntilStep
+	ApplyTagStep     ApplyTagStep
+	RemoveTagStep    RemoveTagStep
+	HttpStep         HttpStep
+	EndStep          EndStep
+	BranchStep       BranchStep
+	SplitStep        SplitStep
+	WaitForEventStep WaitForEventStep
 }
 
 // AutomationStepSumType is oneOf type of AutomationStepSum.
@@ -3167,17 +3196,18 @@ type AutomationStepSumType string
 
 // Possible values for AutomationStepSumType.
 const (
-	EmailStepAutomationStepSum     AutomationStepSumType = "email"
-	TelegramStepAutomationStepSum  AutomationStepSumType = "telegram"
-	SmsStepAutomationStepSum       AutomationStepSumType = "sms"
-	WaitStepAutomationStepSum      AutomationStepSumType = "wait"
-	WaitUntilStepAutomationStepSum AutomationStepSumType = "wait_until"
-	ApplyTagStepAutomationStepSum  AutomationStepSumType = "apply_tag"
-	RemoveTagStepAutomationStepSum AutomationStepSumType = "remove_tag"
-	HttpStepAutomationStepSum      AutomationStepSumType = "http"
-	EndStepAutomationStepSum       AutomationStepSumType = "end"
-	BranchStepAutomationStepSum    AutomationStepSumType = "branch"
-	SplitStepAutomationStepSum     AutomationStepSumType = "split"
+	EmailStepAutomationStepSum        AutomationStepSumType = "email"
+	TelegramStepAutomationStepSum     AutomationStepSumType = "telegram"
+	SmsStepAutomationStepSum          AutomationStepSumType = "sms"
+	WaitStepAutomationStepSum         AutomationStepSumType = "wait"
+	WaitUntilStepAutomationStepSum    AutomationStepSumType = "wait_until"
+	ApplyTagStepAutomationStepSum     AutomationStepSumType = "apply_tag"
+	RemoveTagStepAutomationStepSum    AutomationStepSumType = "remove_tag"
+	HttpStepAutomationStepSum         AutomationStepSumType = "http"
+	EndStepAutomationStepSum          AutomationStepSumType = "end"
+	BranchStepAutomationStepSum       AutomationStepSumType = "branch"
+	SplitStepAutomationStepSum        AutomationStepSumType = "split"
+	WaitForEventStepAutomationStepSum AutomationStepSumType = "wait_for_event"
 )
 
 // IsEmailStep reports whether AutomationStepSum is EmailStep.
@@ -3212,6 +3242,11 @@ func (s AutomationStepSum) IsBranchStep() bool { return s.Type == BranchStepAuto
 
 // IsSplitStep reports whether AutomationStepSum is SplitStep.
 func (s AutomationStepSum) IsSplitStep() bool { return s.Type == SplitStepAutomationStepSum }
+
+// IsWaitForEventStep reports whether AutomationStepSum is WaitForEventStep.
+func (s AutomationStepSum) IsWaitForEventStep() bool {
+	return s.Type == WaitForEventStepAutomationStepSum
+}
 
 // SetEmailStep sets AutomationStepSum to EmailStep.
 func (s *AutomationStepSum) SetEmailStep(v EmailStep) {
@@ -3441,6 +3476,27 @@ func (s AutomationStepSum) GetSplitStep() (v SplitStep, ok bool) {
 func NewSplitStepAutomationStepSum(v SplitStep) AutomationStepSum {
 	var s AutomationStepSum
 	s.SetSplitStep(v)
+	return s
+}
+
+// SetWaitForEventStep sets AutomationStepSum to WaitForEventStep.
+func (s *AutomationStepSum) SetWaitForEventStep(v WaitForEventStep) {
+	s.Type = WaitForEventStepAutomationStepSum
+	s.WaitForEventStep = v
+}
+
+// GetWaitForEventStep returns WaitForEventStep and true boolean if AutomationStepSum is WaitForEventStep.
+func (s AutomationStepSum) GetWaitForEventStep() (v WaitForEventStep, ok bool) {
+	if !s.IsWaitForEventStep() {
+		return v, false
+	}
+	return s.WaitForEventStep, true
+}
+
+// NewWaitForEventStepAutomationStepSum returns new AutomationStepSum from WaitForEventStep.
+func NewWaitForEventStepAutomationStepSum(v WaitForEventStep) AutomationStepSum {
+	var s AutomationStepSum
+	s.SetWaitForEventStep(v)
 	return s
 }
 
@@ -3821,6 +3877,132 @@ func (s *AutomationWaitUntilFigures) SetNoDate(val int32) {
 // SetBeyondBound sets the value of BeyondBound.
 func (s *AutomationWaitUntilFigures) SetBeyondBound(val int32) {
 	s.BeyondBound = val
+}
+
+// A Wait for event waits for an Event of one of the actions it names (ADR 0124).
+// Ref: #/components/schemas/AwaitedEvent
+type AwaitedEvent struct {
+	Kind AwaitedEventKind `json:"kind"`
+	// The Event actions it waits for, each at most once.
+	Actions []string `json:"actions"`
+}
+
+// GetKind returns the value of Kind.
+func (s *AwaitedEvent) GetKind() AwaitedEventKind {
+	return s.Kind
+}
+
+// GetActions returns the value of Actions.
+func (s *AwaitedEvent) GetActions() []string {
+	return s.Actions
+}
+
+// SetKind sets the value of Kind.
+func (s *AwaitedEvent) SetKind(val AwaitedEventKind) {
+	s.Kind = val
+}
+
+// SetActions sets the value of Actions.
+func (s *AwaitedEvent) SetActions(val []string) {
+	s.Actions = val
+}
+
+// A Wait for event waits for an Event of one of the actions it names, as a request writes it.
+// Ref: #/components/schemas/AwaitedEventInput
+type AwaitedEventInput struct {
+	Kind AwaitedEventInputKind `json:"kind"`
+	// The Event actions it waits for, at least one, each at most once. An action an exit or the goal of
+	// the version matches with no filter refuses the save, naming the Step: that Event would end the
+	// enrollment, never take `arrived`.
+	Actions []string `json:"actions"`
+}
+
+// GetKind returns the value of Kind.
+func (s *AwaitedEventInput) GetKind() AwaitedEventInputKind {
+	return s.Kind
+}
+
+// GetActions returns the value of Actions.
+func (s *AwaitedEventInput) GetActions() []string {
+	return s.Actions
+}
+
+// SetKind sets the value of Kind.
+func (s *AwaitedEventInput) SetKind(val AwaitedEventInputKind) {
+	s.Kind = val
+}
+
+// SetActions sets the value of Actions.
+func (s *AwaitedEventInput) SetActions(val []string) {
+	s.Actions = val
+}
+
+type AwaitedEventInputKind string
+
+const (
+	AwaitedEventInputKindEvent AwaitedEventInputKind = "event"
+)
+
+// AllValues returns all AwaitedEventInputKind values.
+func (AwaitedEventInputKind) AllValues() []AwaitedEventInputKind {
+	return []AwaitedEventInputKind{
+		AwaitedEventInputKindEvent,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s AwaitedEventInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case AwaitedEventInputKindEvent:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *AwaitedEventInputKind) UnmarshalText(data []byte) error {
+	switch AwaitedEventInputKind(data) {
+	case AwaitedEventInputKindEvent:
+		*s = AwaitedEventInputKindEvent
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type AwaitedEventKind string
+
+const (
+	AwaitedEventKindEvent AwaitedEventKind = "event"
+)
+
+// AllValues returns all AwaitedEventKind values.
+func (AwaitedEventKind) AllValues() []AwaitedEventKind {
+	return []AwaitedEventKind{
+		AwaitedEventKindEvent,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s AwaitedEventKind) MarshalText() ([]byte, error) {
+	switch s {
+	case AwaitedEventKindEvent:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *AwaitedEventKind) UnmarshalText(data []byte) error {
+	switch AwaitedEventKind(data) {
+	case AwaitedEventKindEvent:
+		*s = AwaitedEventKindEvent
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
 }
 
 // The Contact's date of birth, a date field every Contact has.
@@ -20533,18 +20715,19 @@ func (s *PathStepInput) SetOneOf(val PathStepInputSum) {
 // PathStepInputSum represents sum type.
 type PathStepInputSum struct {
 	// Type selects the active sum variant, switch on this field.
-	Type               PathStepInputSumType
-	EmailStepInput     EmailStepInput
-	TelegramStepInput  TelegramStepInput
-	SmsStepInput       SmsStepInput
-	WaitStepInput      WaitStepInput
-	WaitUntilStepInput WaitUntilStepInput
-	ApplyTagStepInput  ApplyTagStepInput
-	RemoveTagStepInput RemoveTagStepInput
-	HttpStepInput      HttpStepInput
-	EndStepInput       EndStepInput
-	BranchStepInput    BranchStepInput
-	SplitStepInput     SplitStepInput
+	Type                  PathStepInputSumType
+	EmailStepInput        EmailStepInput
+	TelegramStepInput     TelegramStepInput
+	SmsStepInput          SmsStepInput
+	WaitStepInput         WaitStepInput
+	WaitUntilStepInput    WaitUntilStepInput
+	ApplyTagStepInput     ApplyTagStepInput
+	RemoveTagStepInput    RemoveTagStepInput
+	HttpStepInput         HttpStepInput
+	EndStepInput          EndStepInput
+	BranchStepInput       BranchStepInput
+	SplitStepInput        SplitStepInput
+	WaitForEventStepInput WaitForEventStepInput
 }
 
 // PathStepInputSumType is oneOf type of PathStepInputSum.
@@ -20552,17 +20735,18 @@ type PathStepInputSumType string
 
 // Possible values for PathStepInputSumType.
 const (
-	EmailStepInputPathStepInputSum     PathStepInputSumType = "email"
-	TelegramStepInputPathStepInputSum  PathStepInputSumType = "telegram"
-	SmsStepInputPathStepInputSum       PathStepInputSumType = "sms"
-	WaitStepInputPathStepInputSum      PathStepInputSumType = "wait"
-	WaitUntilStepInputPathStepInputSum PathStepInputSumType = "wait_until"
-	ApplyTagStepInputPathStepInputSum  PathStepInputSumType = "apply_tag"
-	RemoveTagStepInputPathStepInputSum PathStepInputSumType = "remove_tag"
-	HttpStepInputPathStepInputSum      PathStepInputSumType = "http"
-	EndStepInputPathStepInputSum       PathStepInputSumType = "end"
-	BranchStepInputPathStepInputSum    PathStepInputSumType = "branch"
-	SplitStepInputPathStepInputSum     PathStepInputSumType = "split"
+	EmailStepInputPathStepInputSum        PathStepInputSumType = "email"
+	TelegramStepInputPathStepInputSum     PathStepInputSumType = "telegram"
+	SmsStepInputPathStepInputSum          PathStepInputSumType = "sms"
+	WaitStepInputPathStepInputSum         PathStepInputSumType = "wait"
+	WaitUntilStepInputPathStepInputSum    PathStepInputSumType = "wait_until"
+	ApplyTagStepInputPathStepInputSum     PathStepInputSumType = "apply_tag"
+	RemoveTagStepInputPathStepInputSum    PathStepInputSumType = "remove_tag"
+	HttpStepInputPathStepInputSum         PathStepInputSumType = "http"
+	EndStepInputPathStepInputSum          PathStepInputSumType = "end"
+	BranchStepInputPathStepInputSum       PathStepInputSumType = "branch"
+	SplitStepInputPathStepInputSum        PathStepInputSumType = "split"
+	WaitForEventStepInputPathStepInputSum PathStepInputSumType = "wait_for_event"
 )
 
 // IsEmailStepInput reports whether PathStepInputSum is EmailStepInput.
@@ -20605,6 +20789,11 @@ func (s PathStepInputSum) IsBranchStepInput() bool { return s.Type == BranchStep
 
 // IsSplitStepInput reports whether PathStepInputSum is SplitStepInput.
 func (s PathStepInputSum) IsSplitStepInput() bool { return s.Type == SplitStepInputPathStepInputSum }
+
+// IsWaitForEventStepInput reports whether PathStepInputSum is WaitForEventStepInput.
+func (s PathStepInputSum) IsWaitForEventStepInput() bool {
+	return s.Type == WaitForEventStepInputPathStepInputSum
+}
 
 // SetEmailStepInput sets PathStepInputSum to EmailStepInput.
 func (s *PathStepInputSum) SetEmailStepInput(v EmailStepInput) {
@@ -20837,21 +21026,43 @@ func NewSplitStepInputPathStepInputSum(v SplitStepInput) PathStepInputSum {
 	return s
 }
 
+// SetWaitForEventStepInput sets PathStepInputSum to WaitForEventStepInput.
+func (s *PathStepInputSum) SetWaitForEventStepInput(v WaitForEventStepInput) {
+	s.Type = WaitForEventStepInputPathStepInputSum
+	s.WaitForEventStepInput = v
+}
+
+// GetWaitForEventStepInput returns WaitForEventStepInput and true boolean if PathStepInputSum is WaitForEventStepInput.
+func (s PathStepInputSum) GetWaitForEventStepInput() (v WaitForEventStepInput, ok bool) {
+	if !s.IsWaitForEventStepInput() {
+		return v, false
+	}
+	return s.WaitForEventStepInput, true
+}
+
+// NewWaitForEventStepInputPathStepInputSum returns new PathStepInputSum from WaitForEventStepInput.
+func NewWaitForEventStepInputPathStepInputSum(v WaitForEventStepInput) PathStepInputSum {
+	var s PathStepInputSum
+	s.SetWaitForEventStepInput(v)
+	return s
+}
+
 // PathStepSum represents sum type.
 type PathStepSum struct {
 	// Type selects the active sum variant, switch on this field.
-	Type          PathStepSumType
-	EmailStep     EmailStep
-	TelegramStep  TelegramStep
-	SmsStep       SmsStep
-	WaitStep      WaitStep
-	WaitUntilStep WaitUntilStep
-	ApplyTagStep  ApplyTagStep
-	RemoveTagStep RemoveTagStep
-	HttpStep      HttpStep
-	EndStep       EndStep
-	BranchStep    BranchStep
-	SplitStep     SplitStep
+	Type             PathStepSumType
+	EmailStep        EmailStep
+	TelegramStep     TelegramStep
+	SmsStep          SmsStep
+	WaitStep         WaitStep
+	WaitUntilStep    WaitUntilStep
+	ApplyTagStep     ApplyTagStep
+	RemoveTagStep    RemoveTagStep
+	HttpStep         HttpStep
+	EndStep          EndStep
+	BranchStep       BranchStep
+	SplitStep        SplitStep
+	WaitForEventStep WaitForEventStep
 }
 
 // PathStepSumType is oneOf type of PathStepSum.
@@ -20859,17 +21070,18 @@ type PathStepSumType string
 
 // Possible values for PathStepSumType.
 const (
-	EmailStepPathStepSum     PathStepSumType = "email"
-	TelegramStepPathStepSum  PathStepSumType = "telegram"
-	SmsStepPathStepSum       PathStepSumType = "sms"
-	WaitStepPathStepSum      PathStepSumType = "wait"
-	WaitUntilStepPathStepSum PathStepSumType = "wait_until"
-	ApplyTagStepPathStepSum  PathStepSumType = "apply_tag"
-	RemoveTagStepPathStepSum PathStepSumType = "remove_tag"
-	HttpStepPathStepSum      PathStepSumType = "http"
-	EndStepPathStepSum       PathStepSumType = "end"
-	BranchStepPathStepSum    PathStepSumType = "branch"
-	SplitStepPathStepSum     PathStepSumType = "split"
+	EmailStepPathStepSum        PathStepSumType = "email"
+	TelegramStepPathStepSum     PathStepSumType = "telegram"
+	SmsStepPathStepSum          PathStepSumType = "sms"
+	WaitStepPathStepSum         PathStepSumType = "wait"
+	WaitUntilStepPathStepSum    PathStepSumType = "wait_until"
+	ApplyTagStepPathStepSum     PathStepSumType = "apply_tag"
+	RemoveTagStepPathStepSum    PathStepSumType = "remove_tag"
+	HttpStepPathStepSum         PathStepSumType = "http"
+	EndStepPathStepSum          PathStepSumType = "end"
+	BranchStepPathStepSum       PathStepSumType = "branch"
+	SplitStepPathStepSum        PathStepSumType = "split"
+	WaitForEventStepPathStepSum PathStepSumType = "wait_for_event"
 )
 
 // IsEmailStep reports whether PathStepSum is EmailStep.
@@ -20904,6 +21116,9 @@ func (s PathStepSum) IsBranchStep() bool { return s.Type == BranchStepPathStepSu
 
 // IsSplitStep reports whether PathStepSum is SplitStep.
 func (s PathStepSum) IsSplitStep() bool { return s.Type == SplitStepPathStepSum }
+
+// IsWaitForEventStep reports whether PathStepSum is WaitForEventStep.
+func (s PathStepSum) IsWaitForEventStep() bool { return s.Type == WaitForEventStepPathStepSum }
 
 // SetEmailStep sets PathStepSum to EmailStep.
 func (s *PathStepSum) SetEmailStep(v EmailStep) {
@@ -21133,6 +21348,27 @@ func (s PathStepSum) GetSplitStep() (v SplitStep, ok bool) {
 func NewSplitStepPathStepSum(v SplitStep) PathStepSum {
 	var s PathStepSum
 	s.SetSplitStep(v)
+	return s
+}
+
+// SetWaitForEventStep sets PathStepSum to WaitForEventStep.
+func (s *PathStepSum) SetWaitForEventStep(v WaitForEventStep) {
+	s.Type = WaitForEventStepPathStepSum
+	s.WaitForEventStep = v
+}
+
+// GetWaitForEventStep returns WaitForEventStep and true boolean if PathStepSum is WaitForEventStep.
+func (s PathStepSum) GetWaitForEventStep() (v WaitForEventStep, ok bool) {
+	if !s.IsWaitForEventStep() {
+		return v, false
+	}
+	return s.WaitForEventStep, true
+}
+
+// NewWaitForEventStepPathStepSum returns new PathStepSum from WaitForEventStep.
+func NewWaitForEventStepPathStepSum(v WaitForEventStep) PathStepSum {
+	var s PathStepSum
+	s.SetWaitForEventStep(v)
 	return s
 }
 
@@ -40933,18 +41169,19 @@ func (s *SplitPathStepInput) SetOneOf(val SplitPathStepInputSum) {
 // SplitPathStepInputSum represents sum type.
 type SplitPathStepInputSum struct {
 	// Type selects the active sum variant, switch on this field.
-	Type               SplitPathStepInputSumType
-	EmailStepInput     EmailStepInput
-	TelegramStepInput  TelegramStepInput
-	SmsStepInput       SmsStepInput
-	WaitStepInput      WaitStepInput
-	WaitUntilStepInput WaitUntilStepInput
-	ApplyTagStepInput  ApplyTagStepInput
-	RemoveTagStepInput RemoveTagStepInput
-	HttpStepInput      HttpStepInput
-	EndStepInput       EndStepInput
-	BranchStepInput    BranchStepInput
-	SplitStepInput     SplitStepInput
+	Type                  SplitPathStepInputSumType
+	EmailStepInput        EmailStepInput
+	TelegramStepInput     TelegramStepInput
+	SmsStepInput          SmsStepInput
+	WaitStepInput         WaitStepInput
+	WaitUntilStepInput    WaitUntilStepInput
+	ApplyTagStepInput     ApplyTagStepInput
+	RemoveTagStepInput    RemoveTagStepInput
+	HttpStepInput         HttpStepInput
+	EndStepInput          EndStepInput
+	BranchStepInput       BranchStepInput
+	SplitStepInput        SplitStepInput
+	WaitForEventStepInput WaitForEventStepInput
 }
 
 // SplitPathStepInputSumType is oneOf type of SplitPathStepInputSum.
@@ -40952,17 +41189,18 @@ type SplitPathStepInputSumType string
 
 // Possible values for SplitPathStepInputSumType.
 const (
-	EmailStepInputSplitPathStepInputSum     SplitPathStepInputSumType = "email"
-	TelegramStepInputSplitPathStepInputSum  SplitPathStepInputSumType = "telegram"
-	SmsStepInputSplitPathStepInputSum       SplitPathStepInputSumType = "sms"
-	WaitStepInputSplitPathStepInputSum      SplitPathStepInputSumType = "wait"
-	WaitUntilStepInputSplitPathStepInputSum SplitPathStepInputSumType = "wait_until"
-	ApplyTagStepInputSplitPathStepInputSum  SplitPathStepInputSumType = "apply_tag"
-	RemoveTagStepInputSplitPathStepInputSum SplitPathStepInputSumType = "remove_tag"
-	HttpStepInputSplitPathStepInputSum      SplitPathStepInputSumType = "http"
-	EndStepInputSplitPathStepInputSum       SplitPathStepInputSumType = "end"
-	BranchStepInputSplitPathStepInputSum    SplitPathStepInputSumType = "branch"
-	SplitStepInputSplitPathStepInputSum     SplitPathStepInputSumType = "split"
+	EmailStepInputSplitPathStepInputSum        SplitPathStepInputSumType = "email"
+	TelegramStepInputSplitPathStepInputSum     SplitPathStepInputSumType = "telegram"
+	SmsStepInputSplitPathStepInputSum          SplitPathStepInputSumType = "sms"
+	WaitStepInputSplitPathStepInputSum         SplitPathStepInputSumType = "wait"
+	WaitUntilStepInputSplitPathStepInputSum    SplitPathStepInputSumType = "wait_until"
+	ApplyTagStepInputSplitPathStepInputSum     SplitPathStepInputSumType = "apply_tag"
+	RemoveTagStepInputSplitPathStepInputSum    SplitPathStepInputSumType = "remove_tag"
+	HttpStepInputSplitPathStepInputSum         SplitPathStepInputSumType = "http"
+	EndStepInputSplitPathStepInputSum          SplitPathStepInputSumType = "end"
+	BranchStepInputSplitPathStepInputSum       SplitPathStepInputSumType = "branch"
+	SplitStepInputSplitPathStepInputSum        SplitPathStepInputSumType = "split"
+	WaitForEventStepInputSplitPathStepInputSum SplitPathStepInputSumType = "wait_for_event"
 )
 
 // IsEmailStepInput reports whether SplitPathStepInputSum is EmailStepInput.
@@ -41018,6 +41256,11 @@ func (s SplitPathStepInputSum) IsBranchStepInput() bool {
 // IsSplitStepInput reports whether SplitPathStepInputSum is SplitStepInput.
 func (s SplitPathStepInputSum) IsSplitStepInput() bool {
 	return s.Type == SplitStepInputSplitPathStepInputSum
+}
+
+// IsWaitForEventStepInput reports whether SplitPathStepInputSum is WaitForEventStepInput.
+func (s SplitPathStepInputSum) IsWaitForEventStepInput() bool {
+	return s.Type == WaitForEventStepInputSplitPathStepInputSum
 }
 
 // SetEmailStepInput sets SplitPathStepInputSum to EmailStepInput.
@@ -41251,21 +41494,43 @@ func NewSplitStepInputSplitPathStepInputSum(v SplitStepInput) SplitPathStepInput
 	return s
 }
 
+// SetWaitForEventStepInput sets SplitPathStepInputSum to WaitForEventStepInput.
+func (s *SplitPathStepInputSum) SetWaitForEventStepInput(v WaitForEventStepInput) {
+	s.Type = WaitForEventStepInputSplitPathStepInputSum
+	s.WaitForEventStepInput = v
+}
+
+// GetWaitForEventStepInput returns WaitForEventStepInput and true boolean if SplitPathStepInputSum is WaitForEventStepInput.
+func (s SplitPathStepInputSum) GetWaitForEventStepInput() (v WaitForEventStepInput, ok bool) {
+	if !s.IsWaitForEventStepInput() {
+		return v, false
+	}
+	return s.WaitForEventStepInput, true
+}
+
+// NewWaitForEventStepInputSplitPathStepInputSum returns new SplitPathStepInputSum from WaitForEventStepInput.
+func NewWaitForEventStepInputSplitPathStepInputSum(v WaitForEventStepInput) SplitPathStepInputSum {
+	var s SplitPathStepInputSum
+	s.SetWaitForEventStepInput(v)
+	return s
+}
+
 // SplitPathStepSum represents sum type.
 type SplitPathStepSum struct {
 	// Type selects the active sum variant, switch on this field.
-	Type          SplitPathStepSumType
-	EmailStep     EmailStep
-	TelegramStep  TelegramStep
-	SmsStep       SmsStep
-	WaitStep      WaitStep
-	WaitUntilStep WaitUntilStep
-	ApplyTagStep  ApplyTagStep
-	RemoveTagStep RemoveTagStep
-	HttpStep      HttpStep
-	EndStep       EndStep
-	BranchStep    BranchStep
-	SplitStep     SplitStep
+	Type             SplitPathStepSumType
+	EmailStep        EmailStep
+	TelegramStep     TelegramStep
+	SmsStep          SmsStep
+	WaitStep         WaitStep
+	WaitUntilStep    WaitUntilStep
+	ApplyTagStep     ApplyTagStep
+	RemoveTagStep    RemoveTagStep
+	HttpStep         HttpStep
+	EndStep          EndStep
+	BranchStep       BranchStep
+	SplitStep        SplitStep
+	WaitForEventStep WaitForEventStep
 }
 
 // SplitPathStepSumType is oneOf type of SplitPathStepSum.
@@ -41273,17 +41538,18 @@ type SplitPathStepSumType string
 
 // Possible values for SplitPathStepSumType.
 const (
-	EmailStepSplitPathStepSum     SplitPathStepSumType = "email"
-	TelegramStepSplitPathStepSum  SplitPathStepSumType = "telegram"
-	SmsStepSplitPathStepSum       SplitPathStepSumType = "sms"
-	WaitStepSplitPathStepSum      SplitPathStepSumType = "wait"
-	WaitUntilStepSplitPathStepSum SplitPathStepSumType = "wait_until"
-	ApplyTagStepSplitPathStepSum  SplitPathStepSumType = "apply_tag"
-	RemoveTagStepSplitPathStepSum SplitPathStepSumType = "remove_tag"
-	HttpStepSplitPathStepSum      SplitPathStepSumType = "http"
-	EndStepSplitPathStepSum       SplitPathStepSumType = "end"
-	BranchStepSplitPathStepSum    SplitPathStepSumType = "branch"
-	SplitStepSplitPathStepSum     SplitPathStepSumType = "split"
+	EmailStepSplitPathStepSum        SplitPathStepSumType = "email"
+	TelegramStepSplitPathStepSum     SplitPathStepSumType = "telegram"
+	SmsStepSplitPathStepSum          SplitPathStepSumType = "sms"
+	WaitStepSplitPathStepSum         SplitPathStepSumType = "wait"
+	WaitUntilStepSplitPathStepSum    SplitPathStepSumType = "wait_until"
+	ApplyTagStepSplitPathStepSum     SplitPathStepSumType = "apply_tag"
+	RemoveTagStepSplitPathStepSum    SplitPathStepSumType = "remove_tag"
+	HttpStepSplitPathStepSum         SplitPathStepSumType = "http"
+	EndStepSplitPathStepSum          SplitPathStepSumType = "end"
+	BranchStepSplitPathStepSum       SplitPathStepSumType = "branch"
+	SplitStepSplitPathStepSum        SplitPathStepSumType = "split"
+	WaitForEventStepSplitPathStepSum SplitPathStepSumType = "wait_for_event"
 )
 
 // IsEmailStep reports whether SplitPathStepSum is EmailStep.
@@ -41318,6 +41584,11 @@ func (s SplitPathStepSum) IsBranchStep() bool { return s.Type == BranchStepSplit
 
 // IsSplitStep reports whether SplitPathStepSum is SplitStep.
 func (s SplitPathStepSum) IsSplitStep() bool { return s.Type == SplitStepSplitPathStepSum }
+
+// IsWaitForEventStep reports whether SplitPathStepSum is WaitForEventStep.
+func (s SplitPathStepSum) IsWaitForEventStep() bool {
+	return s.Type == WaitForEventStepSplitPathStepSum
+}
 
 // SetEmailStep sets SplitPathStepSum to EmailStep.
 func (s *SplitPathStepSum) SetEmailStep(v EmailStep) {
@@ -41547,6 +41818,27 @@ func (s SplitPathStepSum) GetSplitStep() (v SplitStep, ok bool) {
 func NewSplitStepSplitPathStepSum(v SplitStep) SplitPathStepSum {
 	var s SplitPathStepSum
 	s.SetSplitStep(v)
+	return s
+}
+
+// SetWaitForEventStep sets SplitPathStepSum to WaitForEventStep.
+func (s *SplitPathStepSum) SetWaitForEventStep(v WaitForEventStep) {
+	s.Type = WaitForEventStepSplitPathStepSum
+	s.WaitForEventStep = v
+}
+
+// GetWaitForEventStep returns WaitForEventStep and true boolean if SplitPathStepSum is WaitForEventStep.
+func (s SplitPathStepSum) GetWaitForEventStep() (v WaitForEventStep, ok bool) {
+	if !s.IsWaitForEventStep() {
+		return v, false
+	}
+	return s.WaitForEventStep, true
+}
+
+// NewWaitForEventStepSplitPathStepSum returns new SplitPathStepSum from WaitForEventStep.
+func NewWaitForEventStepSplitPathStepSum(v WaitForEventStep) SplitPathStepSum {
+	var s SplitPathStepSum
+	s.SetWaitForEventStep(v)
 	return s
 }
 
@@ -44540,6 +44832,374 @@ func (s *UsedByKind) UnmarshalText(data []byte) error {
 }
 
 type UserName string
+
+// What a Wait for event waits for, by `kind`.
+// Ref: #/components/schemas/WaitForEventAwaits
+type WaitForEventAwaits struct {
+	OneOf WaitForEventAwaitsSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *WaitForEventAwaits) GetOneOf() WaitForEventAwaitsSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *WaitForEventAwaits) SetOneOf(val WaitForEventAwaitsSum) {
+	s.OneOf = val
+}
+
+// What a Wait for event waits for, by `kind`, as a request writes it.
+// Ref: #/components/schemas/WaitForEventAwaitsInput
+type WaitForEventAwaitsInput struct {
+	OneOf WaitForEventAwaitsInputSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *WaitForEventAwaitsInput) GetOneOf() WaitForEventAwaitsInputSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *WaitForEventAwaitsInput) SetOneOf(val WaitForEventAwaitsInputSum) {
+	s.OneOf = val
+}
+
+// WaitForEventAwaitsInputSum represents sum type.
+type WaitForEventAwaitsInputSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type              WaitForEventAwaitsInputSumType
+	AwaitedEventInput AwaitedEventInput
+}
+
+// WaitForEventAwaitsInputSumType is oneOf type of WaitForEventAwaitsInputSum.
+type WaitForEventAwaitsInputSumType string
+
+// Possible values for WaitForEventAwaitsInputSumType.
+const (
+	AwaitedEventInputWaitForEventAwaitsInputSum WaitForEventAwaitsInputSumType = "event"
+)
+
+// IsAwaitedEventInput reports whether WaitForEventAwaitsInputSum is AwaitedEventInput.
+func (s WaitForEventAwaitsInputSum) IsAwaitedEventInput() bool {
+	return s.Type == AwaitedEventInputWaitForEventAwaitsInputSum
+}
+
+// SetAwaitedEventInput sets WaitForEventAwaitsInputSum to AwaitedEventInput.
+func (s *WaitForEventAwaitsInputSum) SetAwaitedEventInput(v AwaitedEventInput) {
+	s.Type = AwaitedEventInputWaitForEventAwaitsInputSum
+	s.AwaitedEventInput = v
+}
+
+// GetAwaitedEventInput returns AwaitedEventInput and true boolean if WaitForEventAwaitsInputSum is AwaitedEventInput.
+func (s WaitForEventAwaitsInputSum) GetAwaitedEventInput() (v AwaitedEventInput, ok bool) {
+	if !s.IsAwaitedEventInput() {
+		return v, false
+	}
+	return s.AwaitedEventInput, true
+}
+
+// NewAwaitedEventInputWaitForEventAwaitsInputSum returns new WaitForEventAwaitsInputSum from AwaitedEventInput.
+func NewAwaitedEventInputWaitForEventAwaitsInputSum(v AwaitedEventInput) WaitForEventAwaitsInputSum {
+	var s WaitForEventAwaitsInputSum
+	s.SetAwaitedEventInput(v)
+	return s
+}
+
+// WaitForEventAwaitsSum represents sum type.
+type WaitForEventAwaitsSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type         WaitForEventAwaitsSumType
+	AwaitedEvent AwaitedEvent
+}
+
+// WaitForEventAwaitsSumType is oneOf type of WaitForEventAwaitsSum.
+type WaitForEventAwaitsSumType string
+
+// Possible values for WaitForEventAwaitsSumType.
+const (
+	AwaitedEventWaitForEventAwaitsSum WaitForEventAwaitsSumType = "event"
+)
+
+// IsAwaitedEvent reports whether WaitForEventAwaitsSum is AwaitedEvent.
+func (s WaitForEventAwaitsSum) IsAwaitedEvent() bool {
+	return s.Type == AwaitedEventWaitForEventAwaitsSum
+}
+
+// SetAwaitedEvent sets WaitForEventAwaitsSum to AwaitedEvent.
+func (s *WaitForEventAwaitsSum) SetAwaitedEvent(v AwaitedEvent) {
+	s.Type = AwaitedEventWaitForEventAwaitsSum
+	s.AwaitedEvent = v
+}
+
+// GetAwaitedEvent returns AwaitedEvent and true boolean if WaitForEventAwaitsSum is AwaitedEvent.
+func (s WaitForEventAwaitsSum) GetAwaitedEvent() (v AwaitedEvent, ok bool) {
+	if !s.IsAwaitedEvent() {
+		return v, false
+	}
+	return s.AwaitedEvent, true
+}
+
+// NewAwaitedEventWaitForEventAwaitsSum returns new WaitForEventAwaitsSum from AwaitedEvent.
+func NewAwaitedEventWaitForEventAwaitsSum(v AwaitedEvent) WaitForEventAwaitsSum {
+	var s WaitForEventAwaitsSum
+	s.SetAwaitedEvent(v)
+	return s
+}
+
+type WaitForEventName string
+
+// A Step that holds the Enrollment until what it awaits arrives or its timeout passes (ADR 0124), then
+// takes `arrived` or `timedOut`; the paths rejoin at the Step after it. An Event counts when it is the
+// Contact's, occurred at or after the moment the Enrollment reached the Step and no later than the
+// timeout, and is neither a machine open or click, loaded history nor the Event that began the
+// Enrollment. One that occurred within the window but was recorded late is taken at the timeout. An
+// Event an exit or the goal matches ends the Enrollment instead.
+// Ref: #/components/schemas/WaitForEventStep
+type WaitForEventStep struct {
+	// The Step's id.
+	ID   StepId               `json:"id"`
+	Type WaitForEventStepType `json:"type"`
+	// The Step's name, fixed when it is created.
+	Name WaitForEventName `json:"name"`
+	// How long the Step waits, in seconds from the moment the Enrollment reaches it.
+	TimeoutSeconds int32 `json:"timeoutSeconds"`
+	// What the Step waits for.
+	Awaits WaitForEventAwaits `json:"awaits"`
+	// The path taken when what the Step awaits arrives in time.
+	Arrived AutomationPath `json:"arrived"`
+	// The path taken when the timeout passes first.
+	TimedOut AutomationPath `json:"timedOut"`
+}
+
+// GetID returns the value of ID.
+func (s *WaitForEventStep) GetID() StepId {
+	return s.ID
+}
+
+// GetType returns the value of Type.
+func (s *WaitForEventStep) GetType() WaitForEventStepType {
+	return s.Type
+}
+
+// GetName returns the value of Name.
+func (s *WaitForEventStep) GetName() WaitForEventName {
+	return s.Name
+}
+
+// GetTimeoutSeconds returns the value of TimeoutSeconds.
+func (s *WaitForEventStep) GetTimeoutSeconds() int32 {
+	return s.TimeoutSeconds
+}
+
+// GetAwaits returns the value of Awaits.
+func (s *WaitForEventStep) GetAwaits() WaitForEventAwaits {
+	return s.Awaits
+}
+
+// GetArrived returns the value of Arrived.
+func (s *WaitForEventStep) GetArrived() AutomationPath {
+	return s.Arrived
+}
+
+// GetTimedOut returns the value of TimedOut.
+func (s *WaitForEventStep) GetTimedOut() AutomationPath {
+	return s.TimedOut
+}
+
+// SetID sets the value of ID.
+func (s *WaitForEventStep) SetID(val StepId) {
+	s.ID = val
+}
+
+// SetType sets the value of Type.
+func (s *WaitForEventStep) SetType(val WaitForEventStepType) {
+	s.Type = val
+}
+
+// SetName sets the value of Name.
+func (s *WaitForEventStep) SetName(val WaitForEventName) {
+	s.Name = val
+}
+
+// SetTimeoutSeconds sets the value of TimeoutSeconds.
+func (s *WaitForEventStep) SetTimeoutSeconds(val int32) {
+	s.TimeoutSeconds = val
+}
+
+// SetAwaits sets the value of Awaits.
+func (s *WaitForEventStep) SetAwaits(val WaitForEventAwaits) {
+	s.Awaits = val
+}
+
+// SetArrived sets the value of Arrived.
+func (s *WaitForEventStep) SetArrived(val AutomationPath) {
+	s.Arrived = val
+}
+
+// SetTimedOut sets the value of TimedOut.
+func (s *WaitForEventStep) SetTimedOut(val AutomationPath) {
+	s.TimedOut = val
+}
+
+// A Wait for event, as a request writes it.
+// Ref: #/components/schemas/WaitForEventStepInput
+type WaitForEventStepInput struct {
+	// The Step's id; omitted, the Step is given one. A Step saved before keeps its name: send its id back,
+	// since a save that gives a name another Step id of the Automation holds, in any version, is refused,
+	// naming the Step.
+	ID   OptStepId                 `json:"id"`
+	Type WaitForEventStepInputType `json:"type"`
+	// The Step's name, fixed when it is created: a save that renames the Step, or gives two Wait for event
+	// Steps of the Automation the same name, is refused, naming the Step.
+	Name WaitForEventName `json:"name"`
+	// How long the Step waits, in seconds, as a wait's delay is; zero or less is refused.
+	TimeoutSeconds int32 `json:"timeoutSeconds"`
+	// What the Step waits for.
+	Awaits WaitForEventAwaitsInput `json:"awaits"`
+	// The path taken when what the Step awaits arrives in time.
+	Arrived AutomationPathInput `json:"arrived"`
+	// The path taken when the timeout passes first.
+	TimedOut AutomationPathInput `json:"timedOut"`
+}
+
+// GetID returns the value of ID.
+func (s *WaitForEventStepInput) GetID() OptStepId {
+	return s.ID
+}
+
+// GetType returns the value of Type.
+func (s *WaitForEventStepInput) GetType() WaitForEventStepInputType {
+	return s.Type
+}
+
+// GetName returns the value of Name.
+func (s *WaitForEventStepInput) GetName() WaitForEventName {
+	return s.Name
+}
+
+// GetTimeoutSeconds returns the value of TimeoutSeconds.
+func (s *WaitForEventStepInput) GetTimeoutSeconds() int32 {
+	return s.TimeoutSeconds
+}
+
+// GetAwaits returns the value of Awaits.
+func (s *WaitForEventStepInput) GetAwaits() WaitForEventAwaitsInput {
+	return s.Awaits
+}
+
+// GetArrived returns the value of Arrived.
+func (s *WaitForEventStepInput) GetArrived() AutomationPathInput {
+	return s.Arrived
+}
+
+// GetTimedOut returns the value of TimedOut.
+func (s *WaitForEventStepInput) GetTimedOut() AutomationPathInput {
+	return s.TimedOut
+}
+
+// SetID sets the value of ID.
+func (s *WaitForEventStepInput) SetID(val OptStepId) {
+	s.ID = val
+}
+
+// SetType sets the value of Type.
+func (s *WaitForEventStepInput) SetType(val WaitForEventStepInputType) {
+	s.Type = val
+}
+
+// SetName sets the value of Name.
+func (s *WaitForEventStepInput) SetName(val WaitForEventName) {
+	s.Name = val
+}
+
+// SetTimeoutSeconds sets the value of TimeoutSeconds.
+func (s *WaitForEventStepInput) SetTimeoutSeconds(val int32) {
+	s.TimeoutSeconds = val
+}
+
+// SetAwaits sets the value of Awaits.
+func (s *WaitForEventStepInput) SetAwaits(val WaitForEventAwaitsInput) {
+	s.Awaits = val
+}
+
+// SetArrived sets the value of Arrived.
+func (s *WaitForEventStepInput) SetArrived(val AutomationPathInput) {
+	s.Arrived = val
+}
+
+// SetTimedOut sets the value of TimedOut.
+func (s *WaitForEventStepInput) SetTimedOut(val AutomationPathInput) {
+	s.TimedOut = val
+}
+
+type WaitForEventStepInputType string
+
+const (
+	WaitForEventStepInputTypeWaitForEvent WaitForEventStepInputType = "wait_for_event"
+)
+
+// AllValues returns all WaitForEventStepInputType values.
+func (WaitForEventStepInputType) AllValues() []WaitForEventStepInputType {
+	return []WaitForEventStepInputType{
+		WaitForEventStepInputTypeWaitForEvent,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s WaitForEventStepInputType) MarshalText() ([]byte, error) {
+	switch s {
+	case WaitForEventStepInputTypeWaitForEvent:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *WaitForEventStepInputType) UnmarshalText(data []byte) error {
+	switch WaitForEventStepInputType(data) {
+	case WaitForEventStepInputTypeWaitForEvent:
+		*s = WaitForEventStepInputTypeWaitForEvent
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type WaitForEventStepType string
+
+const (
+	WaitForEventStepTypeWaitForEvent WaitForEventStepType = "wait_for_event"
+)
+
+// AllValues returns all WaitForEventStepType values.
+func (WaitForEventStepType) AllValues() []WaitForEventStepType {
+	return []WaitForEventStepType{
+		WaitForEventStepTypeWaitForEvent,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s WaitForEventStepType) MarshalText() ([]byte, error) {
+	switch s {
+	case WaitForEventStepTypeWaitForEvent:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *WaitForEventStepType) UnmarshalText(data []byte) error {
+	switch WaitForEventStepType(data) {
+	case WaitForEventStepTypeWaitForEvent:
+		*s = WaitForEventStepTypeWaitForEvent
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
 
 // A Step that waits before the next one.
 // Ref: #/components/schemas/WaitStep

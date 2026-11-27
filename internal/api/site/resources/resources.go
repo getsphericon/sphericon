@@ -156,6 +156,9 @@ import (
 // goverter:extend endStepType
 // goverter:extend branchStepType
 // goverter:extend splitStepType
+// goverter:extend waitForEventStepType
+// goverter:extend waitForEventName
+// goverter:extend waitForEventAwaits
 // goverter:extend splitPathStepViews
 // goverter:extend pathStepViews
 // goverter:extend optAutomationPath
@@ -486,6 +489,7 @@ type Converter interface {
 	// goverter:enum:transform value
 	SplitPathStepType(source siteapi.AutomationStepSumType) siteapi.SplitPathStepSumType
 	SplitStepToResource(source automations.SplitView) (siteapi.SplitStep, error)
+	WaitForEventStepToResource(source automations.WaitForEventView) (siteapi.WaitForEventStep, error)
 	SplitPathToResource(source automations.SplitPathView) (siteapi.SplitPath, error)
 	// goverter:ignore Value
 	AutomationHttpHeaderToResource(source automations.HeaderName) siteapi.AutomationHttpHeader
@@ -1317,6 +1321,12 @@ func stepSum(c Converter, v automations.StepView) (siteapi.AutomationStepSum, er
 			return siteapi.AutomationStepSum{}, err
 		}
 		return siteapi.NewSplitStepAutomationStepSum(sp), nil
+	case automations.WaitForEventView:
+		w, err := c.WaitForEventStepToResource(v)
+		if err != nil {
+			return siteapi.AutomationStepSum{}, err
+		}
+		return siteapi.NewWaitForEventStepAutomationStepSum(w), nil
 	default:
 		return siteapi.AutomationStepSum{}, fmt.Errorf("the step view %T has no arm", v)
 	}
@@ -1380,6 +1390,22 @@ func branchStepType(automationstep.Kind) siteapi.BranchStepType {
 }
 func splitStepType(automationstep.Kind) siteapi.SplitStepType {
 	return siteapi.SplitStepTypeSplit
+}
+func waitForEventStepType(automationstep.Kind) siteapi.WaitForEventStepType {
+	return siteapi.WaitForEventStepTypeWaitForEvent
+}
+func waitForEventName(name string) siteapi.WaitForEventName { return siteapi.WaitForEventName(name) }
+
+// waitForEventAwaits is the arm of what a Wait for event waits for: a oneOf is beyond goverter, so
+// only the switch is written here. One with no arm fails the response.
+func waitForEventAwaits(a automationstep.Awaits) (siteapi.WaitForEventAwaits, error) {
+	switch a := a.(type) {
+	case automationstep.AwaitedEvent:
+		ev := siteapi.AwaitedEvent{Kind: siteapi.AwaitedEventKindEvent, Actions: append([]string{}, a.Actions...)}
+		return siteapi.WaitForEventAwaits{OneOf: siteapi.NewAwaitedEventWaitForEventAwaitsSum(ev)}, nil
+	case nil:
+	}
+	return siteapi.WaitForEventAwaits{}, errors.New("a wait for event that awaits nothing")
 }
 
 func optEditorDocument(doc json.RawMessage) siteapi.OptEditorDocument {

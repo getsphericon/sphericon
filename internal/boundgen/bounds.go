@@ -297,6 +297,14 @@ var Bounds = []Bound{
 		Spec: site, Schema: "SplitPathInput", Property: "weight", Owners: []string{automationVersion},
 	},
 	{
+		Name: "WaitForEventName", Doc: "is the name of a Wait for event, which later Steps read its kept Event by (ADR 0136).",
+		Spec: site, Schema: "WaitForEventName", Owners: []string{automationVersion},
+	},
+	{
+		Name: "AwaitedActions", Doc: "are the Event actions a Wait for event waits for (ADR 0124).",
+		Spec: site, Schema: "AwaitedEventInput", Property: "actions", Owners: []string{automationVersion},
+	},
+	{
 		Name: "ConditionWithinDays", Doc: "is how many days back a condition looks: an Event count's window or a moment's within the last days.",
 		Spec: site, Schema: "EventLeafInput", Property: "withinDays",
 		Owners: []string{"internal/domain/contacts/condition"},

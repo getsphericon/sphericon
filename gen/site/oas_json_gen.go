@@ -4740,6 +4740,38 @@ func (s AutomationStepInputSum) encodeFields(e *jx.Encoder) {
 				e.ArrEnd()
 			}
 		}
+	case WaitForEventStepInputAutomationStepInputSum:
+		e.FieldStart("type")
+		e.Str("wait_for_event")
+		{
+			s := s.WaitForEventStepInput
+			{
+				if s.ID.Set {
+					e.FieldStart("id")
+					s.ID.Encode(e)
+				}
+			}
+			{
+				e.FieldStart("name")
+				s.Name.Encode(e)
+			}
+			{
+				e.FieldStart("timeoutSeconds")
+				e.Int32(s.TimeoutSeconds)
+			}
+			{
+				e.FieldStart("awaits")
+				s.Awaits.Encode(e)
+			}
+			{
+				e.FieldStart("arrived")
+				s.Arrived.Encode(e)
+			}
+			{
+				e.FieldStart("timedOut")
+				s.TimedOut.Encode(e)
+			}
+		}
 	}
 }
 
@@ -4799,6 +4831,9 @@ func (s *AutomationStepInputSum) Decode(d *jx.Decoder) error {
 				case "split":
 					s.Type = SplitStepInputAutomationStepInputSum
 					found = true
+				case "wait_for_event":
+					s.Type = WaitForEventStepInputAutomationStepInputSum
+					found = true
 				default:
 					return errors.Errorf("unknown type %s", typ)
 				}
@@ -4855,6 +4890,10 @@ func (s *AutomationStepInputSum) Decode(d *jx.Decoder) error {
 		}
 	case SplitStepInputAutomationStepInputSum:
 		if err := s.SplitStepInput.Decode(d); err != nil {
+			return err
+		}
+	case WaitForEventStepInputAutomationStepInputSum:
+		if err := s.WaitForEventStepInput.Decode(d); err != nil {
 			return err
 		}
 	default:
@@ -5127,6 +5166,36 @@ func (s AutomationStepSum) encodeFields(e *jx.Encoder) {
 				e.ArrEnd()
 			}
 		}
+	case WaitForEventStepAutomationStepSum:
+		e.FieldStart("type")
+		e.Str("wait_for_event")
+		{
+			s := s.WaitForEventStep
+			{
+				e.FieldStart("id")
+				s.ID.Encode(e)
+			}
+			{
+				e.FieldStart("name")
+				s.Name.Encode(e)
+			}
+			{
+				e.FieldStart("timeoutSeconds")
+				e.Int32(s.TimeoutSeconds)
+			}
+			{
+				e.FieldStart("awaits")
+				s.Awaits.Encode(e)
+			}
+			{
+				e.FieldStart("arrived")
+				s.Arrived.Encode(e)
+			}
+			{
+				e.FieldStart("timedOut")
+				s.TimedOut.Encode(e)
+			}
+		}
 	}
 }
 
@@ -5186,6 +5255,9 @@ func (s *AutomationStepSum) Decode(d *jx.Decoder) error {
 				case "split":
 					s.Type = SplitStepAutomationStepSum
 					found = true
+				case "wait_for_event":
+					s.Type = WaitForEventStepAutomationStepSum
+					found = true
 				default:
 					return errors.Errorf("unknown type %s", typ)
 				}
@@ -5242,6 +5314,10 @@ func (s *AutomationStepSum) Decode(d *jx.Decoder) error {
 		}
 	case SplitStepAutomationStepSum:
 		if err := s.SplitStep.Decode(d); err != nil {
+			return err
+		}
+	case WaitForEventStepAutomationStepSum:
+		if err := s.WaitForEventStep.Decode(d); err != nil {
 			return err
 		}
 	default:
@@ -6160,6 +6236,328 @@ func (s *AutomationWaitUntilFigures) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *AutomationWaitUntilFigures) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *AwaitedEvent) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *AwaitedEvent) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("kind")
+		s.Kind.Encode(e)
+	}
+	{
+		e.FieldStart("actions")
+		e.ArrStart()
+		for _, elem := range s.Actions {
+			e.Str(elem)
+		}
+		e.ArrEnd()
+	}
+}
+
+var jsonFieldsNameOfAwaitedEvent = [2]string{
+	0: "kind",
+	1: "actions",
+}
+
+// Decode decodes AwaitedEvent from json.
+func (s *AwaitedEvent) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode AwaitedEvent to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "kind":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Kind.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"kind\"")
+			}
+		case "actions":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				s.Actions = make([]string, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem string
+					v, err := d.Str()
+					elem = string(v)
+					if err != nil {
+						return err
+					}
+					s.Actions = append(s.Actions, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"actions\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode AwaitedEvent")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000011,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfAwaitedEvent) {
+					name = jsonFieldsNameOfAwaitedEvent[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *AwaitedEvent) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *AwaitedEvent) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *AwaitedEventInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *AwaitedEventInput) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("kind")
+		s.Kind.Encode(e)
+	}
+	{
+		e.FieldStart("actions")
+		e.ArrStart()
+		for _, elem := range s.Actions {
+			e.Str(elem)
+		}
+		e.ArrEnd()
+	}
+}
+
+var jsonFieldsNameOfAwaitedEventInput = [2]string{
+	0: "kind",
+	1: "actions",
+}
+
+// Decode decodes AwaitedEventInput from json.
+func (s *AwaitedEventInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode AwaitedEventInput to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "kind":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Kind.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"kind\"")
+			}
+		case "actions":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				s.Actions = make([]string, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem string
+					v, err := d.Str()
+					elem = string(v)
+					if err != nil {
+						return err
+					}
+					s.Actions = append(s.Actions, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"actions\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode AwaitedEventInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000011,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfAwaitedEventInput) {
+					name = jsonFieldsNameOfAwaitedEventInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *AwaitedEventInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *AwaitedEventInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes AwaitedEventInputKind as json.
+func (s AwaitedEventInputKind) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes AwaitedEventInputKind from json.
+func (s *AwaitedEventInputKind) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode AwaitedEventInputKind to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch AwaitedEventInputKind(v) {
+	case AwaitedEventInputKindEvent:
+		*s = AwaitedEventInputKindEvent
+	default:
+		*s = AwaitedEventInputKind(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s AwaitedEventInputKind) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *AwaitedEventInputKind) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes AwaitedEventKind as json.
+func (s AwaitedEventKind) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes AwaitedEventKind from json.
+func (s *AwaitedEventKind) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode AwaitedEventKind to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch AwaitedEventKind(v) {
+	case AwaitedEventKindEvent:
+		*s = AwaitedEventKindEvent
+	default:
+		*s = AwaitedEventKind(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s AwaitedEventKind) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *AwaitedEventKind) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -31582,6 +31980,38 @@ func (s PathStepInputSum) encodeFields(e *jx.Encoder) {
 				e.ArrEnd()
 			}
 		}
+	case WaitForEventStepInputPathStepInputSum:
+		e.FieldStart("type")
+		e.Str("wait_for_event")
+		{
+			s := s.WaitForEventStepInput
+			{
+				if s.ID.Set {
+					e.FieldStart("id")
+					s.ID.Encode(e)
+				}
+			}
+			{
+				e.FieldStart("name")
+				s.Name.Encode(e)
+			}
+			{
+				e.FieldStart("timeoutSeconds")
+				e.Int32(s.TimeoutSeconds)
+			}
+			{
+				e.FieldStart("awaits")
+				s.Awaits.Encode(e)
+			}
+			{
+				e.FieldStart("arrived")
+				s.Arrived.Encode(e)
+			}
+			{
+				e.FieldStart("timedOut")
+				s.TimedOut.Encode(e)
+			}
+		}
 	}
 }
 
@@ -31641,6 +32071,9 @@ func (s *PathStepInputSum) Decode(d *jx.Decoder) error {
 				case "split":
 					s.Type = SplitStepInputPathStepInputSum
 					found = true
+				case "wait_for_event":
+					s.Type = WaitForEventStepInputPathStepInputSum
+					found = true
 				default:
 					return errors.Errorf("unknown type %s", typ)
 				}
@@ -31697,6 +32130,10 @@ func (s *PathStepInputSum) Decode(d *jx.Decoder) error {
 		}
 	case SplitStepInputPathStepInputSum:
 		if err := s.SplitStepInput.Decode(d); err != nil {
+			return err
+		}
+	case WaitForEventStepInputPathStepInputSum:
+		if err := s.WaitForEventStepInput.Decode(d); err != nil {
 			return err
 		}
 	default:
@@ -31969,6 +32406,36 @@ func (s PathStepSum) encodeFields(e *jx.Encoder) {
 				e.ArrEnd()
 			}
 		}
+	case WaitForEventStepPathStepSum:
+		e.FieldStart("type")
+		e.Str("wait_for_event")
+		{
+			s := s.WaitForEventStep
+			{
+				e.FieldStart("id")
+				s.ID.Encode(e)
+			}
+			{
+				e.FieldStart("name")
+				s.Name.Encode(e)
+			}
+			{
+				e.FieldStart("timeoutSeconds")
+				e.Int32(s.TimeoutSeconds)
+			}
+			{
+				e.FieldStart("awaits")
+				s.Awaits.Encode(e)
+			}
+			{
+				e.FieldStart("arrived")
+				s.Arrived.Encode(e)
+			}
+			{
+				e.FieldStart("timedOut")
+				s.TimedOut.Encode(e)
+			}
+		}
 	}
 }
 
@@ -32028,6 +32495,9 @@ func (s *PathStepSum) Decode(d *jx.Decoder) error {
 				case "split":
 					s.Type = SplitStepPathStepSum
 					found = true
+				case "wait_for_event":
+					s.Type = WaitForEventStepPathStepSum
+					found = true
 				default:
 					return errors.Errorf("unknown type %s", typ)
 				}
@@ -32084,6 +32554,10 @@ func (s *PathStepSum) Decode(d *jx.Decoder) error {
 		}
 	case SplitStepPathStepSum:
 		if err := s.SplitStep.Decode(d); err != nil {
+			return err
+		}
+	case WaitForEventStepPathStepSum:
+		if err := s.WaitForEventStep.Decode(d); err != nil {
 			return err
 		}
 	default:
@@ -74230,6 +74704,38 @@ func (s SplitPathStepInputSum) encodeFields(e *jx.Encoder) {
 				e.ArrEnd()
 			}
 		}
+	case WaitForEventStepInputSplitPathStepInputSum:
+		e.FieldStart("type")
+		e.Str("wait_for_event")
+		{
+			s := s.WaitForEventStepInput
+			{
+				if s.ID.Set {
+					e.FieldStart("id")
+					s.ID.Encode(e)
+				}
+			}
+			{
+				e.FieldStart("name")
+				s.Name.Encode(e)
+			}
+			{
+				e.FieldStart("timeoutSeconds")
+				e.Int32(s.TimeoutSeconds)
+			}
+			{
+				e.FieldStart("awaits")
+				s.Awaits.Encode(e)
+			}
+			{
+				e.FieldStart("arrived")
+				s.Arrived.Encode(e)
+			}
+			{
+				e.FieldStart("timedOut")
+				s.TimedOut.Encode(e)
+			}
+		}
 	}
 }
 
@@ -74289,6 +74795,9 @@ func (s *SplitPathStepInputSum) Decode(d *jx.Decoder) error {
 				case "split":
 					s.Type = SplitStepInputSplitPathStepInputSum
 					found = true
+				case "wait_for_event":
+					s.Type = WaitForEventStepInputSplitPathStepInputSum
+					found = true
 				default:
 					return errors.Errorf("unknown type %s", typ)
 				}
@@ -74345,6 +74854,10 @@ func (s *SplitPathStepInputSum) Decode(d *jx.Decoder) error {
 		}
 	case SplitStepInputSplitPathStepInputSum:
 		if err := s.SplitStepInput.Decode(d); err != nil {
+			return err
+		}
+	case WaitForEventStepInputSplitPathStepInputSum:
+		if err := s.WaitForEventStepInput.Decode(d); err != nil {
 			return err
 		}
 	default:
@@ -74617,6 +75130,36 @@ func (s SplitPathStepSum) encodeFields(e *jx.Encoder) {
 				e.ArrEnd()
 			}
 		}
+	case WaitForEventStepSplitPathStepSum:
+		e.FieldStart("type")
+		e.Str("wait_for_event")
+		{
+			s := s.WaitForEventStep
+			{
+				e.FieldStart("id")
+				s.ID.Encode(e)
+			}
+			{
+				e.FieldStart("name")
+				s.Name.Encode(e)
+			}
+			{
+				e.FieldStart("timeoutSeconds")
+				e.Int32(s.TimeoutSeconds)
+			}
+			{
+				e.FieldStart("awaits")
+				s.Awaits.Encode(e)
+			}
+			{
+				e.FieldStart("arrived")
+				s.Arrived.Encode(e)
+			}
+			{
+				e.FieldStart("timedOut")
+				s.TimedOut.Encode(e)
+			}
+		}
 	}
 }
 
@@ -74676,6 +75219,9 @@ func (s *SplitPathStepSum) Decode(d *jx.Decoder) error {
 				case "split":
 					s.Type = SplitStepSplitPathStepSum
 					found = true
+				case "wait_for_event":
+					s.Type = WaitForEventStepSplitPathStepSum
+					found = true
 				default:
 					return errors.Errorf("unknown type %s", typ)
 				}
@@ -74732,6 +75278,10 @@ func (s *SplitPathStepSum) Decode(d *jx.Decoder) error {
 		}
 	case SplitStepSplitPathStepSum:
 		if err := s.SplitStep.Decode(d); err != nil {
+			return err
+		}
+	case WaitForEventStepSplitPathStepSum:
+		if err := s.WaitForEventStep.Decode(d); err != nil {
 			return err
 		}
 	default:
@@ -81125,6 +81675,774 @@ func (s UserName) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *UserName) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *WaitForEventAwaits) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *WaitForEventAwaits) encodeFields(e *jx.Encoder) {
+	s.OneOf.encodeFields(e)
+}
+
+var jsonFieldsNameOfWaitForEventAwaits = [0]string{}
+
+// Decode decodes WaitForEventAwaits from json.
+func (s *WaitForEventAwaits) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode WaitForEventAwaits to nil")
+	}
+	if err := d.Capture(func(d *jx.Decoder) error {
+		return s.OneOf.Decode(d)
+	}); err != nil {
+		return errors.Wrap(err, "decode field OneOf")
+	}
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		default:
+			return d.Skip()
+		}
+	}); err != nil {
+		return errors.Wrap(err, "decode WaitForEventAwaits")
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *WaitForEventAwaits) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *WaitForEventAwaits) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *WaitForEventAwaitsInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *WaitForEventAwaitsInput) encodeFields(e *jx.Encoder) {
+	s.OneOf.encodeFields(e)
+}
+
+var jsonFieldsNameOfWaitForEventAwaitsInput = [0]string{}
+
+// Decode decodes WaitForEventAwaitsInput from json.
+func (s *WaitForEventAwaitsInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode WaitForEventAwaitsInput to nil")
+	}
+	if err := d.Capture(func(d *jx.Decoder) error {
+		return s.OneOf.Decode(d)
+	}); err != nil {
+		return errors.Wrap(err, "decode field OneOf")
+	}
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		default:
+			return d.Skip()
+		}
+	}); err != nil {
+		return errors.Wrap(err, "decode WaitForEventAwaitsInput")
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *WaitForEventAwaitsInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *WaitForEventAwaitsInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes WaitForEventAwaitsInputSum as json.
+func (s WaitForEventAwaitsInputSum) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+func (s WaitForEventAwaitsInputSum) encodeFields(e *jx.Encoder) {
+	switch s.Type {
+	case AwaitedEventInputWaitForEventAwaitsInputSum:
+		e.FieldStart("kind")
+		e.Str("event")
+		{
+			s := s.AwaitedEventInput
+			{
+				e.FieldStart("actions")
+				e.ArrStart()
+				for _, elem := range s.Actions {
+					e.Str(elem)
+				}
+				e.ArrEnd()
+			}
+		}
+	}
+}
+
+// Decode decodes WaitForEventAwaitsInputSum from json.
+func (s *WaitForEventAwaitsInputSum) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode WaitForEventAwaitsInputSum to nil")
+	}
+	// Sum type discriminator.
+	if typ := d.Next(); typ != jx.Object {
+		return errors.Errorf("unexpected json type %q", typ)
+	}
+
+	var found bool
+	if err := d.Capture(func(d *jx.Decoder) error {
+		return d.ObjBytes(func(d *jx.Decoder, key []byte) error {
+			if found {
+				return d.Skip()
+			}
+			switch string(key) {
+			case "kind":
+				typ, err := d.Str()
+				if err != nil {
+					return err
+				}
+				switch typ {
+				case "event":
+					s.Type = AwaitedEventInputWaitForEventAwaitsInputSum
+					found = true
+				default:
+					return errors.Errorf("unknown type %s", typ)
+				}
+				return nil
+			}
+			return d.Skip()
+		})
+	}); err != nil {
+		return errors.Wrap(err, "capture")
+	}
+	if !found {
+		return errors.New("unable to detect sum type variant")
+	}
+	switch s.Type {
+	case AwaitedEventInputWaitForEventAwaitsInputSum:
+		if err := s.AwaitedEventInput.Decode(d); err != nil {
+			return err
+		}
+	default:
+		return errors.Errorf("inferred invalid type: %s", s.Type)
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s WaitForEventAwaitsInputSum) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *WaitForEventAwaitsInputSum) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes WaitForEventAwaitsSum as json.
+func (s WaitForEventAwaitsSum) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+func (s WaitForEventAwaitsSum) encodeFields(e *jx.Encoder) {
+	switch s.Type {
+	case AwaitedEventWaitForEventAwaitsSum:
+		e.FieldStart("kind")
+		e.Str("event")
+		{
+			s := s.AwaitedEvent
+			{
+				e.FieldStart("actions")
+				e.ArrStart()
+				for _, elem := range s.Actions {
+					e.Str(elem)
+				}
+				e.ArrEnd()
+			}
+		}
+	}
+}
+
+// Decode decodes WaitForEventAwaitsSum from json.
+func (s *WaitForEventAwaitsSum) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode WaitForEventAwaitsSum to nil")
+	}
+	// Sum type discriminator.
+	if typ := d.Next(); typ != jx.Object {
+		return errors.Errorf("unexpected json type %q", typ)
+	}
+
+	var found bool
+	if err := d.Capture(func(d *jx.Decoder) error {
+		return d.ObjBytes(func(d *jx.Decoder, key []byte) error {
+			if found {
+				return d.Skip()
+			}
+			switch string(key) {
+			case "kind":
+				typ, err := d.Str()
+				if err != nil {
+					return err
+				}
+				switch typ {
+				case "event":
+					s.Type = AwaitedEventWaitForEventAwaitsSum
+					found = true
+				default:
+					return errors.Errorf("unknown type %s", typ)
+				}
+				return nil
+			}
+			return d.Skip()
+		})
+	}); err != nil {
+		return errors.Wrap(err, "capture")
+	}
+	if !found {
+		return errors.New("unable to detect sum type variant")
+	}
+	switch s.Type {
+	case AwaitedEventWaitForEventAwaitsSum:
+		if err := s.AwaitedEvent.Decode(d); err != nil {
+			return err
+		}
+	default:
+		return errors.Errorf("inferred invalid type: %s", s.Type)
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s WaitForEventAwaitsSum) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *WaitForEventAwaitsSum) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes WaitForEventName as json.
+func (s WaitForEventName) Encode(e *jx.Encoder) {
+	unwrapped := string(s)
+
+	e.Str(unwrapped)
+}
+
+// Decode decodes WaitForEventName from json.
+func (s *WaitForEventName) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode WaitForEventName to nil")
+	}
+	var unwrapped string
+	if err := func() error {
+		v, err := d.Str()
+		unwrapped = string(v)
+		if err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = WaitForEventName(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s WaitForEventName) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *WaitForEventName) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *WaitForEventStep) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *WaitForEventStep) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("id")
+		s.ID.Encode(e)
+	}
+	{
+		e.FieldStart("type")
+		s.Type.Encode(e)
+	}
+	{
+		e.FieldStart("name")
+		s.Name.Encode(e)
+	}
+	{
+		e.FieldStart("timeoutSeconds")
+		e.Int32(s.TimeoutSeconds)
+	}
+	{
+		e.FieldStart("awaits")
+		s.Awaits.Encode(e)
+	}
+	{
+		e.FieldStart("arrived")
+		s.Arrived.Encode(e)
+	}
+	{
+		e.FieldStart("timedOut")
+		s.TimedOut.Encode(e)
+	}
+}
+
+var jsonFieldsNameOfWaitForEventStep = [7]string{
+	0: "id",
+	1: "type",
+	2: "name",
+	3: "timeoutSeconds",
+	4: "awaits",
+	5: "arrived",
+	6: "timedOut",
+}
+
+// Decode decodes WaitForEventStep from json.
+func (s *WaitForEventStep) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode WaitForEventStep to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "id":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.ID.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"id\"")
+			}
+		case "type":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Type.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"type\"")
+			}
+		case "name":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				if err := s.Name.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"name\"")
+			}
+		case "timeoutSeconds":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				v, err := d.Int32()
+				s.TimeoutSeconds = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"timeoutSeconds\"")
+			}
+		case "awaits":
+			requiredBitSet[0] |= 1 << 4
+			if err := func() error {
+				if err := s.Awaits.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"awaits\"")
+			}
+		case "arrived":
+			requiredBitSet[0] |= 1 << 5
+			if err := func() error {
+				if err := s.Arrived.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"arrived\"")
+			}
+		case "timedOut":
+			requiredBitSet[0] |= 1 << 6
+			if err := func() error {
+				if err := s.TimedOut.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"timedOut\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode WaitForEventStep")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b01111111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfWaitForEventStep) {
+					name = jsonFieldsNameOfWaitForEventStep[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *WaitForEventStep) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *WaitForEventStep) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *WaitForEventStepInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *WaitForEventStepInput) encodeFields(e *jx.Encoder) {
+	{
+		if s.ID.Set {
+			e.FieldStart("id")
+			s.ID.Encode(e)
+		}
+	}
+	{
+		e.FieldStart("type")
+		s.Type.Encode(e)
+	}
+	{
+		e.FieldStart("name")
+		s.Name.Encode(e)
+	}
+	{
+		e.FieldStart("timeoutSeconds")
+		e.Int32(s.TimeoutSeconds)
+	}
+	{
+		e.FieldStart("awaits")
+		s.Awaits.Encode(e)
+	}
+	{
+		e.FieldStart("arrived")
+		s.Arrived.Encode(e)
+	}
+	{
+		e.FieldStart("timedOut")
+		s.TimedOut.Encode(e)
+	}
+}
+
+var jsonFieldsNameOfWaitForEventStepInput = [7]string{
+	0: "id",
+	1: "type",
+	2: "name",
+	3: "timeoutSeconds",
+	4: "awaits",
+	5: "arrived",
+	6: "timedOut",
+}
+
+// Decode decodes WaitForEventStepInput from json.
+func (s *WaitForEventStepInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode WaitForEventStepInput to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "id":
+			if err := func() error {
+				s.ID.Reset()
+				if err := s.ID.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"id\"")
+			}
+		case "type":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Type.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"type\"")
+			}
+		case "name":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				if err := s.Name.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"name\"")
+			}
+		case "timeoutSeconds":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				v, err := d.Int32()
+				s.TimeoutSeconds = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"timeoutSeconds\"")
+			}
+		case "awaits":
+			requiredBitSet[0] |= 1 << 4
+			if err := func() error {
+				if err := s.Awaits.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"awaits\"")
+			}
+		case "arrived":
+			requiredBitSet[0] |= 1 << 5
+			if err := func() error {
+				if err := s.Arrived.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"arrived\"")
+			}
+		case "timedOut":
+			requiredBitSet[0] |= 1 << 6
+			if err := func() error {
+				if err := s.TimedOut.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"timedOut\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode WaitForEventStepInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b01111110,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfWaitForEventStepInput) {
+					name = jsonFieldsNameOfWaitForEventStepInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *WaitForEventStepInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *WaitForEventStepInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes WaitForEventStepInputType as json.
+func (s WaitForEventStepInputType) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes WaitForEventStepInputType from json.
+func (s *WaitForEventStepInputType) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode WaitForEventStepInputType to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch WaitForEventStepInputType(v) {
+	case WaitForEventStepInputTypeWaitForEvent:
+		*s = WaitForEventStepInputTypeWaitForEvent
+	default:
+		*s = WaitForEventStepInputType(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s WaitForEventStepInputType) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *WaitForEventStepInputType) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes WaitForEventStepType as json.
+func (s WaitForEventStepType) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes WaitForEventStepType from json.
+func (s *WaitForEventStepType) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode WaitForEventStepType to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch WaitForEventStepType(v) {
+	case WaitForEventStepTypeWaitForEvent:
+		*s = WaitForEventStepTypeWaitForEvent
+	default:
+		*s = WaitForEventStepType(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s WaitForEventStepType) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *WaitForEventStepType) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

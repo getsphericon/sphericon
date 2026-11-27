@@ -146,6 +146,22 @@ var WaitUntilForms = Table{
 	}.Decls,
 }
 
+// AwaitsKinds is the kinds of what a Wait for event waits for, the discriminators of the
+// contract's WaitForEventAwaits union, which a stored Wait for event keeps under `kind` (ADR 0124).
+var AwaitsKinds = Table{
+	Spec:    siteSpec,
+	Out:     "internal/kernel/automationstep/awaits_gen.go",
+	Package: "automationstep",
+	Decls: Discriminators{
+		Doc:    []string{"AwaitsKind is what a Wait for event waits for: the `kind` it is stored and shown under."},
+		Type:   "AwaitsKind",
+		Prefix: "Awaits",
+		Unions: []Union{
+			{Schema: "WaitForEventAwaits", List: "AwaitsKinds", Doc: []string{"AwaitsKinds is every AwaitsKind, in the contract's order."}},
+		},
+	}.Decls,
+}
+
 // ConditionCombinators is how a condition Group joins its entries, from the
 // contract's ConditionCombinator enum.
 var ConditionCombinators = Table{

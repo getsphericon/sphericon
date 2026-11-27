@@ -741,6 +741,7 @@ func (c *InputsImpl) PathStepInputSum(source site.PathStepInputSum) site.Automat
 	siteapiAutomationStepInputSum.EndStepInput = source.EndStepInput
 	siteapiAutomationStepInputSum.BranchStepInput = source.BranchStepInput
 	siteapiAutomationStepInputSum.SplitStepInput = source.SplitStepInput
+	siteapiAutomationStepInputSum.WaitForEventStepInput = source.WaitForEventStepInput
 	return siteapiAutomationStepInputSum
 }
 func (c *InputsImpl) PathStepInputType(source site.PathStepInputSumType) site.AutomationStepInputSumType {
@@ -764,6 +765,8 @@ func (c *InputsImpl) PathStepInputType(source site.PathStepInputSumType) site.Au
 		siteapiAutomationStepInputSumType = site.SplitStepInputAutomationStepInputSum
 	case site.TelegramStepInputPathStepInputSum:
 		siteapiAutomationStepInputSumType = site.TelegramStepInputAutomationStepInputSum
+	case site.WaitForEventStepInputPathStepInputSum:
+		siteapiAutomationStepInputSumType = site.WaitForEventStepInputAutomationStepInputSum
 	case site.WaitStepInputPathStepInputSum:
 		siteapiAutomationStepInputSumType = site.WaitStepInputAutomationStepInputSum
 	case site.WaitUntilStepInputPathStepInputSum:
@@ -1230,6 +1233,7 @@ func (c *InputsImpl) SplitPathStepInputSum(source site.SplitPathStepInputSum) si
 	siteapiAutomationStepInputSum.EndStepInput = source.EndStepInput
 	siteapiAutomationStepInputSum.BranchStepInput = source.BranchStepInput
 	siteapiAutomationStepInputSum.SplitStepInput = source.SplitStepInput
+	siteapiAutomationStepInputSum.WaitForEventStepInput = source.WaitForEventStepInput
 	return siteapiAutomationStepInputSum
 }
 func (c *InputsImpl) SplitPathStepInputType(source site.SplitPathStepInputSumType) site.AutomationStepInputSumType {
@@ -1253,6 +1257,8 @@ func (c *InputsImpl) SplitPathStepInputType(source site.SplitPathStepInputSumTyp
 		siteapiAutomationStepInputSumType = site.SplitStepInputAutomationStepInputSum
 	case site.TelegramStepInputSplitPathStepInputSum:
 		siteapiAutomationStepInputSumType = site.TelegramStepInputAutomationStepInputSum
+	case site.WaitForEventStepInputSplitPathStepInputSum:
+		siteapiAutomationStepInputSumType = site.WaitForEventStepInputAutomationStepInputSum
 	case site.WaitStepInputSplitPathStepInputSum:
 		siteapiAutomationStepInputSumType = site.WaitStepInputAutomationStepInputSum
 	case site.WaitUntilStepInputSplitPathStepInputSum:

@@ -1427,6 +1427,7 @@ func (c *ConverterImpl) PathStepSum(source external.AutomationStepSum) external.
 	externalapiPathStepSum.EndStep = source.EndStep
 	externalapiPathStepSum.BranchStep = source.BranchStep
 	externalapiPathStepSum.SplitStep = source.SplitStep
+	externalapiPathStepSum.WaitForEventStep = source.WaitForEventStep
 	return externalapiPathStepSum
 }
 func (c *ConverterImpl) PathStepType(source external.AutomationStepSumType) external.PathStepSumType {
@@ -1450,6 +1451,8 @@ func (c *ConverterImpl) PathStepType(source external.AutomationStepSumType) exte
 		externalapiPathStepSumType = external.SplitStepPathStepSum
 	case external.TelegramStepAutomationStepSum:
 		externalapiPathStepSumType = external.TelegramStepPathStepSum
+	case external.WaitForEventStepAutomationStepSum:
+		externalapiPathStepSumType = external.WaitForEventStepPathStepSum
 	case external.WaitStepAutomationStepSum:
 		externalapiPathStepSumType = external.WaitStepPathStepSum
 	case external.WaitUntilStepAutomationStepSum:
@@ -2034,6 +2037,7 @@ func (c *ConverterImpl) SplitPathStepSum(source external.AutomationStepSum) exte
 	externalapiSplitPathStepSum.EndStep = source.EndStep
 	externalapiSplitPathStepSum.BranchStep = source.BranchStep
 	externalapiSplitPathStepSum.SplitStep = source.SplitStep
+	externalapiSplitPathStepSum.WaitForEventStep = source.WaitForEventStep
 	return externalapiSplitPathStepSum
 }
 func (c *ConverterImpl) SplitPathStepType(source external.AutomationStepSumType) external.SplitPathStepSumType {
@@ -2057,6 +2061,8 @@ func (c *ConverterImpl) SplitPathStepType(source external.AutomationStepSumType)
 		externalapiSplitPathStepSumType = external.SplitStepSplitPathStepSum
 	case external.TelegramStepAutomationStepSum:
 		externalapiSplitPathStepSumType = external.TelegramStepSplitPathStepSum
+	case external.WaitForEventStepAutomationStepSum:
+		externalapiSplitPathStepSumType = external.WaitForEventStepSplitPathStepSum
 	case external.WaitStepAutomationStepSum:
 		externalapiSplitPathStepSumType = external.WaitStepSplitPathStepSum
 	case external.WaitUntilStepAutomationStepSum:
@@ -2380,6 +2386,29 @@ func (c *ConverterImpl) VisitorToExport(source *ent.Visitor) external.ContactExp
 		externalapiContactExportVisitor.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return externalapiContactExportVisitor
+}
+func (c *ConverterImpl) WaitForEventStepToResource(source automations.WaitForEventView) (external.WaitForEventStep, error) {
+	var externalapiWaitForEventStep external.WaitForEventStep
+	externalapiWaitForEventStep.ID = c.automationstepIDToExternalapiStepId(source.ID)
+	externalapiWaitForEventStep.Type = waitForEventStepType(source.Type)
+	externalapiWaitForEventStep.Name = waitForEventName(source.Name)
+	externalapiWaitForEventStep.TimeoutSeconds = count(source.TimeoutSeconds)
+	externalapiWaitForEventAwaits, err := waitForEventAwaits(source.Awaits)
+	if err != nil {
+		return externalapiWaitForEventStep, err
+	}
+	externalapiWaitForEventStep.Awaits = externalapiWaitForEventAwaits
+	externalapiAutomationPath, err := c.AutomationPathToResource(source.Arrived)
+	if err != nil {
+		return externalapiWaitForEventStep, err
+	}
+	externalapiWaitForEventStep.Arrived = externalapiAutomationPath
+	externalapiAutomationPath2, err := c.AutomationPathToResource(source.TimedOut)
+	if err != nil {
+		return externalapiWaitForEventStep, err
+	}
+	externalapiWaitForEventStep.TimedOut = externalapiAutomationPath2
+	return externalapiWaitForEventStep, nil
 }
 func (c *ConverterImpl) WaitStepToResource(source automations.WaitView) external.WaitStep {
 	var externalapiWaitStep external.WaitStep

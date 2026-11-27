@@ -507,6 +507,8 @@ func automationStepIn(c Inputs, s *externalapi.AutomationStepInputSum) (automati
 		return branchStepIn(c, &s.BranchStepInput)
 	case externalapi.SplitStepInputAutomationStepInputSum:
 		return splitStepIn(c, &s.SplitStepInput)
+	case externalapi.WaitForEventStepInputAutomationStepInputSum:
+		return waitForEventStepIn(c, &s.WaitForEventStepInput)
 	default:
 		return automationstep.Step{}, nil // the save refuses a Step of no kind
 	}
@@ -568,6 +570,38 @@ func splitStepIn(c Inputs, in *externalapi.SplitStepInput) (automationstep.Step,
 		sp.Paths[i] = automationstep.SplitPath{ID: stepIDIn(p.ID), Weight: int(p.Weight), Steps: steps}
 	}
 	return automationstep.Step{ID: stepIDIn(in.ID), Payload: sp}, nil
+}
+
+// waitForEventStepIn maps a Wait for event: its name, its timeout, what it awaits and its two paths.
+// The save checks them.
+func waitForEventStepIn(c Inputs, in *externalapi.WaitForEventStepInput) (automationstep.Step, error) {
+	awaits, err := waitForEventAwaitsIn(in.Awaits)
+	if err != nil {
+		return automationstep.Step{}, err
+	}
+	arrived, err := c.AutomationPath(in.Arrived)
+	if err != nil {
+		return automationstep.Step{}, err
+	}
+	timedOut, err := c.AutomationPath(in.TimedOut)
+	if err != nil {
+		return automationstep.Step{}, err
+	}
+	w := automationstep.WaitForEvent{
+		Name: string(in.Name), TimeoutSeconds: int(in.TimeoutSeconds), Awaits: awaits, Arrived: arrived, TimedOut: timedOut,
+	}
+	return automationstep.Step{ID: stepIDIn(in.ID), Payload: w}, nil
+}
+
+// waitForEventAwaitsIn maps what a Wait for event waits for onto its kind's: a oneOf is beyond
+// goverter, so only the switch is written here.
+func waitForEventAwaitsIn(in externalapi.WaitForEventAwaitsInput) (automationstep.Awaits, error) {
+	switch in.OneOf.Type {
+	case externalapi.AwaitedEventInputWaitForEventAwaitsInputSum:
+		return automationstep.AwaitedEvent{Actions: in.OneOf.AwaitedEventInput.Actions}, nil
+	default:
+		return nil, fmt.Errorf("what a wait for event awaits has no kind %q", in.OneOf.Type)
+	}
 }
 
 // ruleActionsPtrIn is the Actions an update replaces: omitted (nil) keeps the stored ones.

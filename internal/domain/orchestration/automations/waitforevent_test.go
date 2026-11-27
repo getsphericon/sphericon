@@ -1,0 +1,294 @@
+package automations_test
+
+import (
+	"testing"
+	"time"
+
+	"github.com/samber/lo"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/automationsteprecord"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
+	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
+	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
+	"github.com/getsphericon/sphericon/internal/testhelper"
+)
+
+// waitTimeout is how long the Wait for event of these tests waits.
+const waitTimeout = time.Hour
+
+// waiting is a live Automation whose first Step is a Wait for event that tags `buyer` on arrived
+// and `reminded` on timed out, both paths rejoining on an hour's wait: the ids of the Automation, the
+// Wait for event and the first Step of each path, and its Contact's Enrollment once one is made.
+type waiting struct {
+	env                     *testhelper.TestEnv
+	clock                   *testhelper.Clock
+	automationID            int64
+	wait, arrived, timedOut automationstep.ID
+}
+
+// waitFor publishes, on an env whose clock the test moves, an Automation triggered on trigger whose
+// first Step waits an hour for an Event of the actions, ended by the version's goal (nil for none).
+func waitFor(t *testing.T, trigger string, actions []string, goal *eventmatcher.Matcher) waiting {
+	t.Helper()
+	clock := testhelper.NewClock(time.Now().UTC().Truncate(time.Second))
+	env := testhelper.Setup(t, testhelper.WithClock(clock.Now))
+	ctx := t.Context()
+	s := env.DB.Scoped(fixtures.AcmeID)
+	m := testhelper.Module[*automations.Module](env)
+	wait := automationstep.WaitForEvent{
+		Name: "purchase", TimeoutSeconds: int(waitTimeout / time.Second),
+		Awaits:   automationstep.AwaitedEvent{Actions: actions},
+		Arrived:  automationstep.Root(automationstep.New(automationstep.ApplyTag{Tag: "buyer"})),
+		TimedOut: automationstep.Root(automationstep.New(automationstep.ApplyTag{Tag: "reminded"})),
+	}
+	a, err := m.Create(ctx, s, automations.CreateInput{
+		Name: "Waits for a purchase", Trigger: automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: trigger}}, GoalEvent: goal,
+		Steps: steps(wait, automationstep.Wait{Seconds: 3600}),
+	})
+	require.NoError(t, err)
+	_, err = m.Publish(ctx, s, a.ID, testhelper.AutomationRevisionIn(ctx, t, s, a.ID))
+	require.NoError(t, err)
+	live, err := m.Get(ctx, s, a.ID)
+	require.NoError(t, err)
+	version, _ := automations.LiveAndDraft(live)
+	stored := version.Steps.Steps[0]
+	held := stored.Payload.(automationstep.WaitForEvent)
+	return waiting{env: env, clock: clock, automationID: a.ID, wait: stored.ID, arrived: held.Arrived.Steps[0].ID, timedOut: held.TimedOut.Steps[0].ID}
+}
+
+// enroll enrolls a free Contact on the Trigger's Event, occurred now, and returns it and its
+// Enrollment, standing on the Wait for event.
+func (w waiting) enroll(t *testing.T, trigger string) (*ent.Contact, int64) {
+	t.Helper()
+	c := enrollable(t, w.env.DB.Scoped(fixtures.AcmeID), 0)
+	handStored(t, w.env, c.ID, trigger, collected(c.ID, trigger, w.clock.Now(), nil))
+	runs := runsOf(t, w.env, w.automationID, c.ID)
+	require.Len(t, runs, 1)
+	return c, runs[0].ID
+}
+
+// timeout runs the Wait for event's job, as it runs at the clock's moment.
+func (w waiting) timeout(t *testing.T, runID int64) {
+	t.Helper()
+	require.NoError(t, testhelper.Module[*automations.StepExecution](w.env).Step(t.Context(), w.env.DB.Scoped(fixtures.AcmeID), runID, w.wait))
+}
+
+// standsOn is the Step the Enrollment stands on.
+func (w waiting) standsOn(t *testing.T, runID int64) automationstep.ID {
+	t.Helper()
+	run, err := w.env.DB.AutomationRun.Get(t.Context(), runID)
+	require.NoError(t, err)
+	return lo.FromPtr(run.CurrentStepID)
+}
+
+// waitRecords are the Enrollment's records of the Wait for event.
+func (w waiting) waitRecords(t *testing.T, runID int64) []*ent.AutomationStepRecord {
+	t.Helper()
+	records, err := testhelper.Module[*automations.Module](w.env).StepRecords(t.Context(), w.env.DB.Scoped(fixtures.AcmeID), w.automationID, runID)
+	require.NoError(t, err)
+	return lo.Filter(records, func(r *ent.AutomationStepRecord, _ int) bool { return r.StepID == w.wait })
+}
+
+// pathTaken is the path the Enrollment's one record of the Wait for event says it took.
+func (w waiting) pathTaken(t *testing.T, runID int64) automationstep.ID {
+	t.Helper()
+	records := w.waitRecords(t, runID)
+	require.Len(t, records, 1, "one record of the Wait for event")
+	return lo.FromPtr(records[0].PathID)
+}
+
+// heldPath is the id of the Wait for event's path the first Step of which is first.
+func (w waiting) pathOf(t *testing.T, first automationstep.ID) automationstep.ID {
+	t.Helper()
+	live, err := testhelper.Module[*automations.Module](w.env).Get(t.Context(), w.env.DB.Scoped(fixtures.AcmeID), w.automationID)
+	require.NoError(t, err)
+	version, _ := automations.LiveAndDraft(live)
+	held := version.Steps.Steps[0].Payload.(automationstep.WaitForEvent)
+	return lo.Ternary(held.Arrived.Steps[0].ID == first, held.Arrived.ID, held.TimedOut.ID)
+}
+
+// Reaching a Wait for event records its deadline, the reached moment plus the timeout, on the
+// Enrollment and in its Step record, and parks it there.
+func TestReachingAWaitForEventRecordsItsDeadline(t *testing.T) {
+	w := waitFor(t, "trial.started", []string{"order.created"}, nil)
+	reached := w.clock.Now()
+
+	_, runID := w.enroll(t, "trial.started")
+
+	run, err := w.env.DB.AutomationRun.Get(t.Context(), runID)
+	require.NoError(t, err)
+	records := w.waitRecords(t, runID)
+	require.Len(t, records, 1)
+	require.NotNil(t, run.ResumeAt)
+	assert.Equal(t, w.wait, lo.FromPtr(run.CurrentStepID))
+	assert.WithinDuration(t, reached.Add(waitTimeout), *run.ResumeAt, 0)
+	assert.Equal(t, run.ResumeAt, records[0].DueAt, "the Step record keeps the deadline")
+	assert.Nil(t, records[0].LeftAt)
+}
+
+// An awaited Event recorded during the wait takes `arrived` at once, and the deadline later
+// changes nothing: the timeout's job finds the Enrollment moved on.
+func TestAnAwaitedEventDuringTheWaitTakesArrivedAtOnce(t *testing.T) {
+	w := waitFor(t, "trial.started", []string{"order.created", "call.booked"}, nil)
+	c, runID := w.enroll(t, "trial.started")
+
+	w.clock.Advance(10 * time.Minute)
+	handStored(t, w.env, c.ID, "order.created", collected(c.ID, "order.created", w.clock.Now(), nil))
+	onArrival := w.standsOn(t, runID)
+	w.clock.Advance(waitTimeout)
+	w.timeout(t, runID)
+
+	assert.Equal(t, w.arrived, onArrival, "the arrived path's first Step")
+	assert.Equal(t, w.arrived, w.standsOn(t, runID), "the deadline moved nothing")
+	assert.Equal(t, w.pathOf(t, w.arrived), w.pathTaken(t, runID))
+	records := w.waitRecords(t, runID)
+	assert.Equal(t, automationsteprecord.OutcomePath, lo.FromPtr(records[0].Outcome))
+	assert.WithinDuration(t, w.clock.Now().Add(-waitTimeout), lo.FromPtr(records[0].LeftAt), 0, "it left when the Event arrived")
+}
+
+// With no awaited Event the Enrollment takes `timed_out` at the deadline. A restart that runs the
+// job before then neither moves the Enrollment nor computes its deadline again.
+func TestWithNoEventTheWaitTimesOutAtTheDeadlineAndNotBefore(t *testing.T) {
+	w := waitFor(t, "trial.started", []string{"order.created"}, nil)
+	_, runID := w.enroll(t, "trial.started")
+	deadline := w.clock.Now().Add(waitTimeout)
+
+	w.clock.Advance(waitTimeout / 2)
+	w.timeout(t, runID)
+	early, err := w.env.DB.AutomationRun.Get(t.Context(), runID)
+	require.NoError(t, err)
+	w.clock.Set(deadline)
+	w.timeout(t, runID)
+
+	assert.Equal(t, w.wait, lo.FromPtr(early.CurrentStepID), "a restart before the deadline moves nothing")
+	assert.WithinDuration(t, deadline, lo.FromPtr(early.ResumeAt), 0, "nor waits twice")
+	assert.Equal(t, w.timedOut, w.standsOn(t, runID))
+	assert.Equal(t, w.pathOf(t, w.timedOut), w.pathTaken(t, runID))
+}
+
+// An Event that occurred before the Enrollment reached the Step, the Enrollment's own triggering
+// Event, a machine open and loaded history each leave the Enrollment waiting, and it times out.
+func TestEventsThatDoNotCountLeaveTheEnrollmentWaiting(t *testing.T) {
+	for name, c := range map[string]struct {
+		trigger, awaited string
+		record           func(w waiting, contact *ent.Contact)
+	}{
+		"occurred before it reached the step": {"trial.started", "order.created", func(w waiting, contact *ent.Contact) {
+			// It reached the Step a minute ago.
+			handStored(t, w.env, contact.ID, "order.created", collected(contact.ID, "order.created", w.clock.Now().Add(-2*time.Minute), nil))
+		}},
+		"its own triggering event": {"order.created", "order.created", func(w waiting, contact *ent.Contact) {
+			handLast(t, w.env, contact.ID, "order.created")
+		}},
+		"a machine open": {"trial.started", systemevent.EmailOpened, func(w waiting, contact *ent.Contact) {
+			handStored(t, w.env, contact.ID, systemevent.EmailOpened, &events.EmailEngagement{
+				Action: systemevent.EmailOpened, WorkspaceID: fixtures.AcmeID, ContactID: contact.ID, Email: lo.FromPtr(contact.Email),
+				OutboundMessageID: fixtures.OutboundMessageTrackingSampleID, Machine: true,
+			})
+		}},
+		"loaded history": {"trial.started", "order.created", func(w waiting, contact *ent.Contact) {
+			history := collected(contact.ID, "order.created", w.clock.Now(), nil)
+			history.Backfill = true
+			handStored(t, w.env, contact.ID, "order.created", history)
+		}},
+	} {
+		t.Run(name, func(t *testing.T) {
+			w := waitFor(t, c.trigger, []string{c.awaited}, nil)
+			contact, runID := w.enroll(t, c.trigger)
+
+			w.clock.Advance(time.Minute)
+			c.record(w, contact)
+			afterTheEvent := w.standsOn(t, runID)
+			w.clock.Advance(waitTimeout)
+			w.timeout(t, runID)
+
+			assert.Equal(t, w.wait, afterTheEvent, "still waiting")
+			assert.Equal(t, w.pathOf(t, w.timedOut), w.pathTaken(t, runID), "the timeout does not count it either")
+		})
+	}
+}
+
+// An Event that occurred within the window but was recorded after the deadline, before the
+// timeout's job ran, is found by that job, which takes `arrived`. One that occurred after the
+// deadline is not.
+func TestTheTimeoutFindsAnEventThatOccurredInTheWindowButWasRecordedLate(t *testing.T) {
+	for name, c := range map[string]struct {
+		occurredBeforeDeadline time.Duration
+		takes                  func(w waiting) automationstep.ID
+	}{
+		"within the window":  {time.Minute, func(w waiting) automationstep.ID { return w.arrived }},
+		"after the deadline": {-time.Minute, func(w waiting) automationstep.ID { return w.timedOut }},
+	} {
+		t.Run(name, func(t *testing.T) {
+			w := waitFor(t, "trial.started", []string{"order.created"}, nil)
+			contact, runID := w.enroll(t, "trial.started")
+			deadline := w.clock.Now().Add(waitTimeout)
+
+			w.clock.Set(deadline.Add(5 * time.Minute))
+			// Recorded, its trigger job not yet run.
+			require.NoError(t, w.env.Publisher().Publish(t.Context(), collected(contact.ID, "order.created", deadline.Add(-c.occurredBeforeDeadline), nil)))
+			w.timeout(t, runID)
+
+			assert.Equal(t, c.takes(w), w.standsOn(t, runID))
+		})
+	}
+}
+
+// Arrival and the timeout race, and the first to commit wins: in either order the Enrollment ends
+// on one path, with one record of the Wait for event, and the other changes nothing. An Event
+// recorded after the Enrollment left changes nothing either.
+func TestArrivalAndTheTimeoutMoveTheEnrollmentOnce(t *testing.T) {
+	t.Run("arrival first", func(t *testing.T) {
+		w := waitFor(t, "trial.started", []string{"order.created"}, nil)
+		contact, runID := w.enroll(t, "trial.started")
+
+		w.clock.Advance(waitTimeout)
+		handStored(t, w.env, contact.ID, "order.created", collected(contact.ID, "order.created", w.clock.Now(), nil))
+		w.timeout(t, runID)
+
+		assert.Equal(t, w.arrived, w.standsOn(t, runID))
+		assert.Equal(t, w.pathOf(t, w.arrived), w.pathTaken(t, runID))
+	})
+	t.Run("timeout first", func(t *testing.T) {
+		w := waitFor(t, "trial.started", []string{"order.created"}, nil)
+		contact, runID := w.enroll(t, "trial.started")
+
+		w.clock.Advance(waitTimeout)
+		w.timeout(t, runID)
+		handStored(t, w.env, contact.ID, "order.created", collected(contact.ID, "order.created", w.clock.Now(), nil))
+		handLast(t, w.env, contact.ID, "order.created")
+
+		assert.Equal(t, w.timedOut, w.standsOn(t, runID))
+		assert.Equal(t, w.pathOf(t, w.timedOut), w.pathTaken(t, runID))
+	})
+}
+
+// An Event that matches both a filtered goal and the wait ends the Enrollment as goal_reached: the
+// declared outcome wins wherever the Contact stands. One its filter misses takes `arrived`.
+func TestAnEventMatchingAFilteredGoalAndTheWaitReachesTheGoal(t *testing.T) {
+	for name, c := range map[string]struct {
+		status string
+		ends   automationrun.Status
+	}{
+		"paid":    {"paid", automationrun.StatusGoalReached},
+		"pending": {"pending", automationrun.StatusActive},
+	} {
+		t.Run(name, func(t *testing.T) {
+			goal := &eventmatcher.Matcher{Action: "order.created", Filter: propertyEq(t, "status", "paid")}
+			w := waitFor(t, "trial.started", []string{"order.created"}, goal)
+			contact, runID := w.enroll(t, "trial.started")
+
+			w.clock.Advance(time.Minute)
+			handStored(t, w.env, contact.ID, "order.created", collected(contact.ID, "order.created", w.clock.Now(), map[string]any{"status": c.status}))
+
+			assert.Equal(t, c.ends, statusOf(t, w.env, runID))
+		})
+	}
+}

@@ -84,7 +84,8 @@ func TestMCPToolCarriesTheStepUnionInDefs(t *testing.T) {
 	assert.Equal(t, "#/$defs/AutomationStepInput", steps["items"].(map[string]any)["$ref"])
 	assert.Equal(t, "#/$defs/WaitStepInput", mapping["wait"])
 	assert.Equal(t, "#/$defs/WaitUntilStepInput", mapping["wait_until"])
-	assert.Len(t, mapping, 11, "every kind of Step")
+	assert.Len(t, mapping, 12, "every kind of Step")
+	assert.Equal(t, "#/$defs/WaitForEventStepInput", mapping["wait_for_event"])
 	assert.Equal(t, "#/$defs/EndStepInput", mapping["end"])
 	assert.Equal(t, "#/$defs/BranchStepInput", mapping["branch"])
 	assert.Equal(t, "#/$defs/SplitStepInput", mapping["split"])
@@ -154,4 +155,42 @@ func TestMCPWritesAWaitUntilOnADateAndRefusesAFieldThatIsNoDatetime(t *testing.T
 	assert.Equal(t, until, read.Draft.Steps.Steps[0]["until"])
 	assert.True(t, refused.IsError)
 	assert.Contains(t, text(t, refused), "not a datetime")
+}
+
+// An agent writes a Wait for event in the version tree and reads it back as it wrote it (ADR 0124),
+// with its paths, so it can show "wait up to three days for a purchase" before asking for a Publish.
+func TestMCPWritesAndReadsBackAWaitForEvent(t *testing.T) {
+	env := testhelper.Setup(t)
+	s := env.MCPClient(t, env.ScopedBearer(t, apitokens.ScopeAutomationsRead, apitokens.ScopeAutomationsWrite))
+	awaits := map[string]any{"kind": "event", "actions": []any{"order.created"}}
+	thanks := map[string]any{"type": "apply_tag", "tag": "buyer"}
+	created := call(t, s, "automations_create", map[string]any{"name": "Agent's purchase wait", "trigger": map[string]any{"kind": "event", "action": "signup"},
+		"steps": map[string]any{"steps": []any{map[string]any{
+			"type": "wait_for_event", "name": "purchase", "timeoutSeconds": 259200, "awaits": awaits,
+			"arrived": map[string]any{"steps": []any{thanks}}, "timedOut": map[string]any{"steps": []any{}},
+		}}}})
+	require.False(t, created.IsError, text(t, created))
+	var made struct {
+		ID string `json:"id"`
+	}
+	require.NoError(t, json.Unmarshal([]byte(text(t, created)), &made))
+
+	got := call(t, s, "automations_get", map[string]any{"id": made.ID})
+
+	require.False(t, got.IsError, text(t, got))
+	var read struct {
+		Draft struct {
+			Steps readSteps `json:"steps"`
+		} `json:"draft"`
+	}
+	require.NoError(t, json.Unmarshal([]byte(text(t, got)), &read))
+	require.Len(t, read.Draft.Steps.Steps, 1)
+	step := read.Draft.Steps.Steps[0]
+	assert.Equal(t, "wait_for_event", step["type"])
+	assert.Equal(t, "purchase", step["name"])
+	assert.Equal(t, awaits, step["awaits"])
+	arrived := step["arrived"].(map[string]any)
+	assert.NotEmpty(t, arrived["id"])
+	require.Len(t, arrived["steps"], 1)
+	assert.Equal(t, "buyer", arrived["steps"].([]any)[0].(map[string]any)["tag"])
 }
