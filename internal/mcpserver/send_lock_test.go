@@ -290,7 +290,7 @@ func waitingForAPurchase(t *testing.T, env *testhelper.TestEnv) (int64, automati
 		Name: "Waits for a purchase", Trigger: automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: "halcyon_trial"}},
 		Steps: new(automationstep.Root(automationstep.New(automationstep.WaitForEvent{
 			Name: "purchase", TimeoutSeconds: 3600,
-			Awaits:   automationstep.AwaitedEvent{Actions: []string{"halcyon_bought"}},
+			Awaits:   automationstep.AwaitedEvent{Matchers: []eventmatcher.Matcher{{Action: "halcyon_bought"}}},
 			Arrived:  automationstep.Root(automationstep.New(automationstep.ApplyTag{Tag: "buyer"})),
 			TimedOut: automationstep.Root(automationstep.New(automationstep.ApplyTag{Tag: "reminded"})),
 		}))),

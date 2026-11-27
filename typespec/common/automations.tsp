@@ -522,23 +522,35 @@ model SplitStepInput {
 @maxLength(64)
 scalar WaitForEventName extends string;
 
-/** A Wait for event waits for an Event of one of the actions it names (ADR 0124) */
+/** A Wait for event waits for an Event one of its Event matchers matches, on the Contact its
+ * Condition, if any, holds for (ADR 0124, ADR 0180) */
 model AwaitedEvent {
   kind: "event";
 
-  /** The Event actions it waits for, each at most once */
-  actions: string[];
+  /** The Event matchers it waits for: an Event of a matcher's action whose properties pass its
+   * filter */
+  matchers: EventMatcher[];
+
+  /** The tests the Contact and the Event the Enrollment began with must pass when the Event is
+   * handled; absent, every matching Event arrives */
+  condition?: WaitForEventCondition;
 }
 
-/** A Wait for event waits for an Event of one of the actions it names, as a request writes it */
+/** A Wait for event waits for an Event one of its Event matchers matches, as a request writes it */
 model AwaitedEventInput {
   kind: "event";
 
-  /** The Event actions it waits for, at least one, each at most once. An action an exit or the
-   * goal of the version matches with no filter refuses the save, naming the Step: that Event would
-   * end the enrollment, never take `arrived`. */
+  /** The Event matchers it waits for, at least one, none twice: an Event of a matcher's action whose
+   * properties pass its filter. A matcher on an action an exit or the goal of the version matches
+   * with no filter refuses the save, naming the Step: that Event would end the enrollment, never
+   * take `arrived`. */
   @minItems(1)
-  actions: string[];
+  matchers: EventMatcherInput[];
+
+  /** The tests the Contact and the Event the Enrollment began with must pass when the Event is
+   * handled, read on the Contact's live data; false and unknown leave the Enrollment waiting.
+   * Omitted, every matching Event arrives. */
+  condition?: WaitForEventConditionInput;
 }
 
 /** A Wait for event waits for an open or a click of the message a send Step sent to this
@@ -577,9 +589,10 @@ union WaitForEventAwaitsInput {
 
 /** A Step that holds the Enrollment until what it awaits arrives or its timeout passes (ADR
  * 0124), then takes `arrived` or `timedOut`, or `unknown` when it waits for an open or a click
- * that it cannot know of; the paths rejoin at the Step after it. An Event counts
- * when it is the Contact's, occurred at or after the moment the Enrollment reached the Step and no
- * later than the timeout, and is neither a machine open or click, loaded history nor the Event that
+ * that it cannot know of; the paths rejoin at the Step after it. An Event counts when one of its
+ * matchers matches it, its Condition, if any, holds for the Contact, and it is the Contact's,
+ * occurred at or after the moment the Enrollment reached the Step and no later than the timeout, and
+ * is neither a machine open or click, loaded history nor the Event that
  * began the Enrollment. One that occurred within the window but was recorded late is taken at the
  * timeout. An Event an exit or the goal matches ends the Enrollment instead. */
 model WaitForEventStep {
@@ -876,8 +889,8 @@ union AutomationTriggerInput {
   date: DateTriggerInput,
 }
 
-/** An Event matcher that ends an enrollment (ADR 0133): an action, and an optional filter on that
- * Event's own properties, so `order.closed` where `status` is `cancelled` exits and the same action
+/** An Event matcher that ends an enrollment or that a Wait for event awaits (ADR 0133): an action,
+ * and an optional filter on that Event's own properties, so `order.closed` where `status` is `cancelled` exits and the same action
  * where `status` is `paid` reaches the goal. The Event that began the enrollment never ends it. */
 model EventMatcher {
   /** The Event action (e.g. "plan_downgraded", "contact.tagged"). Any customer action; of the
@@ -892,7 +905,8 @@ model EventMatcher {
   filter?: EventFilter;
 }
 
-/** An Event matcher that ends an enrollment (ADR 0133), as a request writes it */
+/** An Event matcher that ends an enrollment or that a Wait for event awaits (ADR 0133), as a
+ * request writes it */
 model EventMatcherInput {
   /** The Event action (e.g. "plan_downgraded", "contact.tagged"). Any customer action; of the
    * email events only opened, clicked and unsubscribed. */

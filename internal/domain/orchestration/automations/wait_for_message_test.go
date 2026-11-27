@@ -114,7 +114,7 @@ func TestAWaitForAnEventTakesNoUnknownPath(t *testing.T) {
 	env := testhelper.Setup(t)
 	wait := waitingFor(emailID, conditiontree.MessageOpened)
 	w := wait.Payload.(automationstep.WaitForEvent)
-	w.Awaits = automationstep.AwaitedEvent{Actions: []string{"order.created"}}
+	w.Awaits = automationstep.AwaitedEvent{Matchers: []eventmatcher.Matcher{{Action: "order.created"}}}
 	wait.Payload = w
 
 	err := saveVersion(t, env, automationstep.Root(wait))

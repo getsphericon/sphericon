@@ -267,7 +267,10 @@ func waitForEventName(name string) externalapi.WaitForEventName {
 func waitForEventAwaits(a automationstep.Awaits) (externalapi.WaitForEventAwaits, error) {
 	switch a := a.(type) {
 	case automationstep.AwaitedEvent:
-		ev := externalapi.AwaitedEvent{Kind: externalapi.AwaitedEventKindEvent, Actions: append([]string{}, a.Actions...)}
+		ev, err := awaitedEvent(a)
+		if err != nil {
+			return externalapi.WaitForEventAwaits{}, err
+		}
 		return externalapi.WaitForEventAwaits{OneOf: externalapi.NewAwaitedEventWaitForEventAwaitsSum(ev)}, nil
 	case automationstep.AwaitedMessage:
 		m := externalapi.AwaitedMessage{Kind: externalapi.AwaitedMessageKindMessage, Step: externalapi.StepId(a.Step), Engagement: externalapi.MessageEngagement(a.Engagement)}
@@ -275,6 +278,27 @@ func waitForEventAwaits(a automationstep.Awaits) (externalapi.WaitForEventAwaits
 	case nil:
 	}
 	return externalapi.WaitForEventAwaits{}, errors.New("a wait for event that awaits nothing")
+}
+
+// awaitedEvent maps a Wait for event's Event matchers and its Condition into the typed DTO, each
+// checked as a stored Condition is (convert.Document).
+func awaitedEvent(a automationstep.AwaitedEvent) (externalapi.AwaitedEvent, error) {
+	ev := externalapi.AwaitedEvent{Kind: externalapi.AwaitedEventKindEvent, Matchers: make([]externalapi.EventMatcher, len(a.Matchers))}
+	for i, m := range a.Matchers {
+		matcher, err := eventMatcher(m)
+		if err != nil {
+			return externalapi.AwaitedEvent{}, err
+		}
+		ev.Matchers[i] = matcher
+	}
+	if a.Condition != nil {
+		cond, err := convert.Document[externalapi.WaitForEventCondition](*a.Condition)
+		if err != nil {
+			return externalapi.AwaitedEvent{}, err
+		}
+		ev.Condition = externalapi.NewOptWaitForEventCondition(cond)
+	}
+	return ev, nil
 }
 
 func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {

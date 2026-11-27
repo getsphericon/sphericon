@@ -268,22 +268,6 @@ export const zAutomationSkippedCounts = z.object({
 export const zAutomationStatus = z.enum(['active', 'inactive']);
 
 /**
- * A Wait for event waits for an Event of one of the actions it names (ADR 0124)
- */
-export const zAwaitedEvent = z.object({
-  kind: z.enum(['event']),
-  actions: z.array(z.string())
-});
-
-/**
- * A Wait for event waits for an Event of one of the actions it names, as a request writes it
- */
-export const zAwaitedEventInput = z.strictObject({
-  kind: z.enum(['event']),
-  actions: z.array(z.string()).min(1)
-});
-
-/**
  * The Contact's date of birth, a date field every Contact has
  */
 export const zBirthdayDateField = z.object({
@@ -4915,26 +4899,44 @@ export const zSiteUpdateMeInput = z.strictObject({
 });
 
 /**
- * What a Wait for event waits for, by `kind`
- */
-export const zWaitForEventAwaits = z.discriminatedUnion('kind', [
-  zAwaitedEvent.extend({ kind: z.literal('event') }),
-  zAwaitedMessage.extend({ kind: z.literal('message') })
-]);
-
-/**
- * What a Wait for event waits for, by `kind`, as a request writes it
- */
-export const zWaitForEventAwaitsInput = z.discriminatedUnion('kind', [
-  zAwaitedEventInput.extend({ kind: z.literal('event') }),
-  zAwaitedMessageInput.extend({ kind: z.literal('message') })
-]);
-
-/**
  * The name of a Wait for event (ADR 0136): lower-case letters, digits and underscores, starting
  * with a letter. It belongs to one Step id across every version of its Automation.
  */
 export const zWaitForEventName = z.string().max(64).regex(/^[a-z][a-z0-9_]*$/);
+
+/**
+ * Whose properties a Wait for event's property test reads, by `kind`: the Event the Enrollment
+ * began with. The Event the Wait for event awaits is tested by its matcher's filter.
+ */
+export const zWaitForEventPropertySource = zTriggerSource;
+
+/**
+ * A test of one property of an Event: whose it is in `of`, its key in a field of its own, so a
+ * key holding a dot is one key
+ */
+export const zWaitForEventPropertyLeaf = z.object({
+  kind: z.enum(['property']),
+  of: zWaitForEventPropertySource,
+  key: z.string(),
+  test: zPropertyTest
+});
+
+/**
+ * Whose properties a Wait for event's property test reads, by `kind`: the Event the Enrollment
+ * began with. The Event the Wait for event awaits is tested by its matcher's filter.
+ */
+export const zWaitForEventPropertySourceInput = zTriggerSourceInput;
+
+/**
+ * A test of one property of an Event: whose it is in `of`, its key in a field of its own, so a
+ * key holding a dot is one key
+ */
+export const zWaitForEventPropertyLeafInput = z.strictObject({
+  kind: z.enum(['property']),
+  of: zWaitForEventPropertySourceInput,
+  key: z.string(),
+  test: zPropertyTestInput
+});
 
 /**
  * A Step that waits before the next one
@@ -5548,6 +5550,25 @@ export const zAutomationVersion = z.object({
 });
 
 /**
+ * A Wait for event waits for an Event one of its Event matchers matches, on the Contact its
+ * Condition, if any, holds for (ADR 0124, ADR 0180)
+ */
+export const zAwaitedEvent = z.object({
+  kind: z.enum(['event']),
+  matchers: z.array(z.lazy((): any => zEventMatcher)),
+  condition: z.lazy((): any => zWaitForEventCondition).exactOptional()
+});
+
+/**
+ * A Wait for event waits for an Event one of its Event matchers matches, as a request writes it
+ */
+export const zAwaitedEventInput = z.strictObject({
+  kind: z.enum(['event']),
+  matchers: z.array(z.lazy((): any => zEventMatcherInput)).min(1),
+  condition: z.lazy((): any => zWaitForEventConditionInput).exactOptional()
+});
+
+/**
  * A Branch path's Condition: the tree of tests the Contact, on its live data when the Enrollment
  * reaches the Branch, the Event the Enrollment began with and the messages the Enrollment was sent
  * match
@@ -5810,8 +5831,8 @@ export const zEventLeafInput = z.strictObject({
 });
 
 /**
- * An Event matcher that ends an enrollment (ADR 0133): an action, and an optional filter on that
- * Event's own properties, so `order.closed` where `status` is `cancelled` exits and the same action
+ * An Event matcher that ends an enrollment or that a Wait for event awaits (ADR 0133): an action,
+ * and an optional filter on that Event's own properties, so `order.closed` where `status` is `cancelled` exits and the same action
  * where `status` is `paid` reaches the goal. The Event that began the enrollment never ends it.
  */
 export const zEventMatcher = z.object({
@@ -5820,7 +5841,8 @@ export const zEventMatcher = z.object({
 });
 
 /**
- * An Event matcher that ends an enrollment (ADR 0133), as a request writes it
+ * An Event matcher that ends an enrollment or that a Wait for event awaits (ADR 0133), as a
+ * request writes it
  */
 export const zEventMatcherInput = z.strictObject({
   action: z.string(),
@@ -6276,11 +6298,90 @@ export const zUpdateSegmentInput = z.strictObject({
 });
 
 /**
+ * What a Wait for event waits for, by `kind`
+ */
+export const zWaitForEventAwaits = z.discriminatedUnion('kind', [
+  zAwaitedEvent.extend({ kind: z.literal('event') }),
+  zAwaitedMessage.extend({ kind: z.literal('message') })
+]);
+
+/**
+ * What a Wait for event waits for, by `kind`, as a request writes it
+ */
+export const zWaitForEventAwaitsInput = z.discriminatedUnion('kind', [
+  zAwaitedEventInput.extend({ kind: z.literal('event') }),
+  zAwaitedMessageInput.extend({ kind: z.literal('message') })
+]);
+
+/**
+ * A Wait for event's Condition (ADR 0124, ADR 0180): the tree of tests the Contact, on its live
+ * data when the awaited Event is handled, and the Event the Enrollment began with match. An Event
+ * its matcher matches arrives only when the Condition holds; false and unknown leave the
+ * Enrollment waiting.
+ */
+export const zWaitForEventCondition = z.object({
+  kind: z.enum(['group']),
+  combinator: zConditionCombinator,
+  not: z.boolean().exactOptional(),
+  entries: z.array(z.lazy((): any => zWaitForEventConditionNode))
+});
+
+/**
+ * A Wait for event's Condition (ADR 0124, ADR 0180): the tree of tests the Contact, on its live
+ * data when the awaited Event is handled, and the Event the Enrollment began with match. An Event
+ * its matcher matches arrives only when the Condition holds; false and unknown leave the
+ * Enrollment waiting.
+ */
+export const zWaitForEventConditionInput = z.strictObject({
+  kind: z.enum(['group']),
+  combinator: zConditionCombinator,
+  not: z.boolean().exactOptional(),
+  entries: z.array(z.lazy((): any => zWaitForEventConditionNodeInput))
+});
+
+/**
+ * An entry of a Wait for event's Condition, by `kind`: a Rule's, and the property test reading
+ * the Event the Enrollment began with. The test of the Enrollment's own message is a Branch's
+ * only: a Wait for event on an open or click waits for one.
+ */
+export const zWaitForEventConditionNode = z.discriminatedUnion('kind', [
+  zWaitForEventCondition.extend({ kind: z.literal('group') }),
+  zAttributeLeaf.extend({ kind: z.literal('attribute') }),
+  zBirthdayLeaf.extend({ kind: z.literal('birthday') }),
+  zTagLeaf.extend({ kind: z.literal('tag') }),
+  zTelegramLeaf.extend({ kind: z.literal('telegram') }),
+  zSmsLeaf.extend({ kind: z.literal('sms') }),
+  zEngagementTrackingLeaf.extend({ kind: z.literal('engagementTracking') }),
+  zCustomFieldLeaf.extend({ kind: z.literal('customField') }),
+  zEventLeaf.extend({ kind: z.literal('event') }),
+  zWaitForEventPropertyLeaf.extend({ kind: z.literal('property') })
+]);
+
+/**
+ * An entry of a Wait for event's Condition, by `kind`: a Rule's, and the property test reading
+ * the Event the Enrollment began with. The test of the Enrollment's own message is a Branch's
+ * only: a Wait for event on an open or click waits for one.
+ */
+export const zWaitForEventConditionNodeInput = z.discriminatedUnion('kind', [
+  zWaitForEventConditionInput.extend({ kind: z.literal('group') }),
+  zAttributeLeafInput.extend({ kind: z.literal('attribute') }),
+  zBirthdayLeafInput.extend({ kind: z.literal('birthday') }),
+  zTagLeafInput.extend({ kind: z.literal('tag') }),
+  zTelegramLeafInput.extend({ kind: z.literal('telegram') }),
+  zSmsLeafInput.extend({ kind: z.literal('sms') }),
+  zEngagementTrackingLeafInput.extend({ kind: z.literal('engagementTracking') }),
+  zCustomFieldLeafInput.extend({ kind: z.literal('customField') }),
+  zEventLeafInput.extend({ kind: z.literal('event') }),
+  zWaitForEventPropertyLeafInput.extend({ kind: z.literal('property') })
+]);
+
+/**
  * A Step that holds the Enrollment until what it awaits arrives or its timeout passes (ADR
  * 0124), then takes `arrived` or `timedOut`, or `unknown` when it waits for an open or a click
- * that it cannot know of; the paths rejoin at the Step after it. An Event counts
- * when it is the Contact's, occurred at or after the moment the Enrollment reached the Step and no
- * later than the timeout, and is neither a machine open or click, loaded history nor the Event that
+ * that it cannot know of; the paths rejoin at the Step after it. An Event counts when one of its
+ * matchers matches it, its Condition, if any, holds for the Contact, and it is the Contact's,
+ * occurred at or after the moment the Enrollment reached the Step and no later than the timeout, and
+ * is neither a machine open or click, loaded history nor the Event that
  * began the Enrollment. One that occurred within the window but was recorded late is taken at the
  * timeout. An Event an exit or the goal matches ends the Enrollment instead.
  */

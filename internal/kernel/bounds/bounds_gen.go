@@ -398,10 +398,10 @@ const (
 	WaitForEventNamePattern   = `^[a-z][a-z0-9_]*$`
 )
 
-// AwaitedActions are the Event actions a Wait for event waits for (ADR 0124).
-// From site AwaitedEventInput.actions.
+// AwaitedMatchers are the Event matchers a Wait for event waits for (ADR 0124, ADR 0180).
+// From site AwaitedEventInput.matchers.
 const (
-	AwaitedActionsMinItems = 1
+	AwaitedMatchersMinItems = 1
 )
 
 // ConditionWithinDays is how many days back a condition looks: an Event count's window or a moment's within the last days.
@@ -539,7 +539,7 @@ var Owners = map[string][]string{
 	"SplitWeightMin":                     {"AutomationVersion"},
 	"WaitForEventNameMaxLength":          {"AutomationVersion"},
 	"WaitForEventNamePattern":            {"AutomationVersion"},
-	"AwaitedActionsMinItems":             {"AutomationVersion"},
+	"AwaitedMatchersMinItems":            {"AutomationVersion"},
 	"ConditionWithinDaysMin":             {"internal/domain/contacts/condition"},
 	"ConditionEventTimesMin":             {"internal/domain/contacts/condition"},
 	"SigningSecretPattern":               {"internal/infra/httpcall"},

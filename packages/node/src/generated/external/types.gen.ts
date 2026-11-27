@@ -970,27 +970,41 @@ export type AutomationWaitUntilFigures = {
 };
 
 /**
- * A Wait for event waits for an Event of one of the actions it names (ADR 0124)
+ * A Wait for event waits for an Event one of its Event matchers matches, on the Contact its
+ * Condition, if any, holds for (ADR 0124, ADR 0180)
  */
 export type AwaitedEvent = {
   kind: 'event';
   /**
-   * The Event actions it waits for, each at most once
+   * The Event matchers it waits for: an Event of a matcher's action whose properties pass its
+   * filter
    */
-  actions: Array<string>;
+  matchers: Array<EventMatcher>;
+  /**
+   * The tests the Contact and the Event the Enrollment began with must pass when the Event is
+   * handled; absent, every matching Event arrives
+   */
+  condition?: WaitForEventCondition;
 };
 
 /**
- * A Wait for event waits for an Event of one of the actions it names, as a request writes it
+ * A Wait for event waits for an Event one of its Event matchers matches, as a request writes it
  */
 export type AwaitedEventInput = {
   kind: 'event';
   /**
-   * The Event actions it waits for, at least one, each at most once. An action an exit or the
-   * goal of the version matches with no filter refuses the save, naming the Step: that Event would
-   * end the enrollment, never take `arrived`.
+   * The Event matchers it waits for, at least one, none twice: an Event of a matcher's action whose
+   * properties pass its filter. A matcher on an action an exit or the goal of the version matches
+   * with no filter refuses the save, naming the Step: that Event would end the enrollment, never
+   * take `arrived`.
    */
-  actions: Array<string>;
+  matchers: Array<EventMatcherInput>;
+  /**
+   * The tests the Contact and the Event the Enrollment began with must pass when the Event is
+   * handled, read on the Contact's live data; false and unknown leave the Enrollment waiting.
+   * Omitted, every matching Event arrives.
+   */
+  condition?: WaitForEventConditionInput;
 };
 
 /**
@@ -4096,8 +4110,8 @@ export type EventLeafInput = {
 };
 
 /**
- * An Event matcher that ends an enrollment (ADR 0133): an action, and an optional filter on that
- * Event's own properties, so `order.closed` where `status` is `cancelled` exits and the same action
+ * An Event matcher that ends an enrollment or that a Wait for event awaits (ADR 0133): an action,
+ * and an optional filter on that Event's own properties, so `order.closed` where `status` is `cancelled` exits and the same action
  * where `status` is `paid` reaches the goal. The Event that began the enrollment never ends it.
  */
 export type EventMatcher = {
@@ -4117,7 +4131,8 @@ export type EventMatcher = {
 };
 
 /**
- * An Event matcher that ends an enrollment (ADR 0133), as a request writes it
+ * An Event matcher that ends an enrollment or that a Wait for event awaits (ADR 0133), as a
+ * request writes it
  */
 export type EventMatcherInput = {
   /**
@@ -8438,17 +8453,168 @@ export type WaitForEventAwaitsInput = ({
 } & AwaitedMessageInput);
 
 /**
+ * A Wait for event's Condition (ADR 0124, ADR 0180): the tree of tests the Contact, on its live
+ * data when the awaited Event is handled, and the Event the Enrollment began with match. An Event
+ * its matcher matches arrives only when the Condition holds; false and unknown leave the
+ * Enrollment waiting.
+ */
+export type WaitForEventCondition = {
+  kind: 'group';
+  /**
+   * How the entries combine
+   */
+  combinator: ConditionCombinator;
+  /**
+   * Negate the whole group
+   */
+  not?: boolean;
+  /**
+   * The group's tests and nested groups
+   */
+  entries: Array<WaitForEventConditionNode>;
+};
+
+/**
+ * A Wait for event's Condition (ADR 0124, ADR 0180): the tree of tests the Contact, on its live
+ * data when the awaited Event is handled, and the Event the Enrollment began with match. An Event
+ * its matcher matches arrives only when the Condition holds; false and unknown leave the
+ * Enrollment waiting.
+ */
+export type WaitForEventConditionInput = {
+  kind: 'group';
+  /**
+   * How the entries combine
+   */
+  combinator: ConditionCombinator;
+  /**
+   * Negate the whole group
+   */
+  not?: boolean;
+  /**
+   * The group's tests and nested groups
+   */
+  entries: Array<WaitForEventConditionNodeInput>;
+};
+
+/**
+ * An entry of a Wait for event's Condition, by `kind`: a Rule's, and the property test reading
+ * the Event the Enrollment began with. The test of the Enrollment's own message is a Branch's
+ * only: a Wait for event on an open or click waits for one.
+ */
+export type WaitForEventConditionNode = ({
+  kind: 'group';
+} & WaitForEventCondition) | ({
+  kind: 'attribute';
+} & AttributeLeaf) | ({
+  kind: 'birthday';
+} & BirthdayLeaf) | ({
+  kind: 'tag';
+} & TagLeaf) | ({
+  kind: 'telegram';
+} & TelegramLeaf) | ({
+  kind: 'sms';
+} & SmsLeaf) | ({
+  kind: 'engagementTracking';
+} & EngagementTrackingLeaf) | ({
+  kind: 'customField';
+} & CustomFieldLeaf) | ({
+  kind: 'event';
+} & EventLeaf) | ({
+  kind: 'property';
+} & WaitForEventPropertyLeaf);
+
+/**
+ * An entry of a Wait for event's Condition, by `kind`: a Rule's, and the property test reading
+ * the Event the Enrollment began with. The test of the Enrollment's own message is a Branch's
+ * only: a Wait for event on an open or click waits for one.
+ */
+export type WaitForEventConditionNodeInput = ({
+  kind: 'group';
+} & WaitForEventConditionInput) | ({
+  kind: 'attribute';
+} & AttributeLeafInput) | ({
+  kind: 'birthday';
+} & BirthdayLeafInput) | ({
+  kind: 'tag';
+} & TagLeafInput) | ({
+  kind: 'telegram';
+} & TelegramLeafInput) | ({
+  kind: 'sms';
+} & SmsLeafInput) | ({
+  kind: 'engagementTracking';
+} & EngagementTrackingLeafInput) | ({
+  kind: 'customField';
+} & CustomFieldLeafInput) | ({
+  kind: 'event';
+} & EventLeafInput) | ({
+  kind: 'property';
+} & WaitForEventPropertyLeafInput);
+
+/**
  * The name of a Wait for event (ADR 0136): lower-case letters, digits and underscores, starting
  * with a letter. It belongs to one Step id across every version of its Automation.
  */
 export type WaitForEventName = string;
 
 /**
+ * A test of one property of an Event: whose it is in `of`, its key in a field of its own, so a
+ * key holding a dot is one key
+ */
+export type WaitForEventPropertyLeaf = {
+  kind: 'property';
+  /**
+   * Whose property it is
+   */
+  of: WaitForEventPropertySource;
+  /**
+   * The property's key
+   */
+  key: string;
+  /**
+   * What it asks of the property's value
+   */
+  test: PropertyTest;
+};
+
+/**
+ * A test of one property of an Event: whose it is in `of`, its key in a field of its own, so a
+ * key holding a dot is one key
+ */
+export type WaitForEventPropertyLeafInput = {
+  kind: 'property';
+  /**
+   * Whose property it is
+   */
+  of: WaitForEventPropertySourceInput;
+  /**
+   * The property's key
+   */
+  key: string;
+  /**
+   * What it asks of the property's value
+   */
+  test: PropertyTestInput;
+};
+
+/**
+ * Whose properties a Wait for event's property test reads, by `kind`: the Event the Enrollment
+ * began with. The Event the Wait for event awaits is tested by its matcher's filter.
+ */
+export type WaitForEventPropertySource = TriggerSource;
+
+/**
+ * Whose properties a Wait for event's property test reads, by `kind`: the Event the Enrollment
+ * began with. The Event the Wait for event awaits is tested by its matcher's filter.
+ */
+export type WaitForEventPropertySourceInput = TriggerSourceInput;
+
+/**
  * A Step that holds the Enrollment until what it awaits arrives or its timeout passes (ADR
  * 0124), then takes `arrived` or `timedOut`, or `unknown` when it waits for an open or a click
- * that it cannot know of; the paths rejoin at the Step after it. An Event counts
- * when it is the Contact's, occurred at or after the moment the Enrollment reached the Step and no
- * later than the timeout, and is neither a machine open or click, loaded history nor the Event that
+ * that it cannot know of; the paths rejoin at the Step after it. An Event counts when one of its
+ * matchers matches it, its Condition, if any, holds for the Contact, and it is the Contact's,
+ * occurred at or after the moment the Enrollment reached the Step and no later than the timeout, and
+ * is neither a machine open or click, loaded history nor the Event that
  * began the Enrollment. One that occurred within the window but was recorded late is taken at the
  * timeout. An Event an exit or the goal matches ends the Enrollment instead.
  */

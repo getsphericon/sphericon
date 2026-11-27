@@ -1108,13 +1108,13 @@ func (v versioned) Merge(ctx context.Context, l *ent.WorkspaceLocked, base *ent.
 	}
 	if e.exits != nil {
 		for _, exit := range def.exits {
-			if err := v.m.checkNamed(ctx, ts, exit, ErrInvalidExitEvent); err != nil {
+			if err := v.m.checkNamed(ctx, ts, exit, ErrInvalidExitEvent.With); err != nil {
 				return definition{}, err
 			}
 		}
 	}
 	if e.goal.Changes() && def.goal != nil {
-		if err := v.m.checkNamed(ctx, ts, *def.goal, ErrInvalidGoalEvent); err != nil {
+		if err := v.m.checkNamed(ctx, ts, *def.goal, ErrInvalidGoalEvent.With); err != nil {
 			return definition{}, err
 		}
 	}
@@ -1176,6 +1176,9 @@ func (v versioned) mergeSteps(ctx context.Context, ts *ent.Scoped, steps, stored
 	if err := v.m.checkBranches(ctx, ts, steps); err != nil {
 		return automationstep.Path{}, err
 	}
+	if err := v.m.checkWaits(ctx, ts, steps); err != nil {
+		return automationstep.Path{}, err
+	}
 	if err := v.m.checkDateFields(ctx, ts, steps); err != nil {
 		return automationstep.Path{}, err
 	}
@@ -1218,7 +1221,7 @@ func eventMatcherOf(v *ent.AutomationVersion) eventmatcher.Matcher {
 func (m *Module) checkTrigger(ctx context.Context, s *ent.Scoped, t Trigger) error {
 	switch t := t.(type) {
 	case EventTrigger:
-		return m.checkNamed(ctx, s, t.Matcher, ErrInvalidTrigger)
+		return m.checkNamed(ctx, s, t.Matcher, ErrInvalidTrigger.With)
 	case DateTrigger:
 		return m.checkDate(ctx, s, t.Date)
 	}
@@ -1475,13 +1478,13 @@ func checkIntegration(ctx context.Context, s *ent.Scoped, id *int64) error {
 	return nil
 }
 
-// checkNamed refuses, with refusal, an Event matcher whose filter names a Tag or Custom field the
+// checkNamed refuses, with the refusal it words, an Event matcher whose filter names a Tag or Custom field the
 // Workspace's catalogue lacks (condition.NamedDefinitions, ADR 0133): such a filter would never
 // match. A Tag is named as the Event carries it, by its stored name, so another spelling of it is
 // refused too. The catalogues are their owners' (tags, contacts). A filter that names a Broadcast
 // or an Automation the Workspace does not have, archived ones being its own (messagesenders), is
 // ErrUnknownSender (ADR 0153).
-func (m *Module) checkNamed(ctx context.Context, s *ent.Scoped, matcher eventmatcher.Matcher, refusal *validation.RefusalError) error {
+func (m *Module) checkNamed(ctx context.Context, s *ent.Scoped, matcher eventmatcher.Matcher, refusal func(why string) error) error {
 	if matcher.Filter == nil {
 		return nil
 	}
@@ -1499,7 +1502,7 @@ func (m *Module) checkNamed(ctx context.Context, s *ent.Scoped, matcher eventmat
 			return err
 		}
 		if !ok {
-			return refusal.With(fmt.Sprintf("the filter names the Tag %q, which the Workspace does not have", name))
+			return refusal(fmt.Sprintf("the filter names the Tag %q, which the Workspace does not have", name))
 		}
 	}
 	for _, key := range named.CustomFields {
@@ -1508,7 +1511,7 @@ func (m *Module) checkNamed(ctx context.Context, s *ent.Scoped, matcher eventmat
 			return err
 		}
 		if !ok {
-			return refusal.With(fmt.Sprintf("the filter names the Custom field %q, which the Workspace does not have", key))
+			return refusal(fmt.Sprintf("the filter names the Custom field %q, which the Workspace does not have", key))
 		}
 	}
 	return nil

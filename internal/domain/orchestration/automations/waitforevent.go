@@ -1,7 +1,10 @@
 package automations
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"slices"
 	"strings"
@@ -13,9 +16,13 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/bounds"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
@@ -28,8 +35,9 @@ import (
 
 // validateWaitForEvent checks a Wait for event on its own (ADR 0124, ADR 0136): its timeout is
 // greater than zero, as a wait's delay is whole seconds; its name has its form (a bound of the
-// contract, in the kernel's form); and it awaits at least one action, each one an Event may start
-// or end an Automation on (eventProblem), and none twice. Whether its name is its own across the
+// contract, in the kernel's form); and it awaits at least one Event matcher, each one a matcher an
+// Automation may start or end on (matcherProblem), and none twice. What the matchers' filters and
+// its Condition name in the Workspace is checkWaits'. Whether its name is its own across the
 // Automation is checkWaitNames' and checkWaitNamesHeld's, and whether an exit or goal ends the
 // Enrollment on what it awaits is checkAwaitedEndings'. One on an Event takes no unknown path, which
 // it could never take; whether the message one on an open or a click names can come before it is
@@ -51,24 +59,90 @@ func validateWaitForEvent(st *automationstep.Step, w automationstep.WaitForEvent
 		if w.Unknown != nil {
 			return refuse(st, "a wait for an event is never unknown, so it takes no unknown path")
 		}
-		err := validation.MinItems(fieldname.Actions, len(a.Actions), bounds.AwaitedActionsMinItems)
+		err := validation.MinItems(fieldname.Matchers, len(a.Matchers), bounds.AwaitedMatchersMinItems)
 		if bound, ok := boundRefusal(err); ok {
 			return &stepRefusalError{step: st.ID, bound: bound, boundAt: fieldname.Awaits + "." + bound.Field()}
 		}
-		seen := map[string]bool{}
-		for _, action := range a.Actions {
-			if problem := eventProblem(action); problem != "" {
+		var seen []eventmatcher.Matcher
+		for _, matcher := range a.Matchers {
+			if problem := matcherProblem(matcher); problem != "" {
 				return refuse(st, "an awaited event: "+problem)
 			}
-			trimmed := strings.TrimSpace(action)
-			if seen[trimmed] {
-				return refuse(st, fmt.Sprintf("it awaits %q twice", trimmed))
+			same, err := sameMatcherIn(seen, matcher)
+			if err != nil {
+				return err
 			}
-			seen[trimmed] = true
+			if same {
+				return refuse(st, fmt.Sprintf("it awaits %q with the same filter twice", strings.TrimSpace(matcher.Action)))
+			}
+			seen = append(seen, matcher)
 		}
 	case automationstep.AwaitedMessage:
 	case nil:
 		return refuse(st, "a wait for event needs what it waits for")
+	}
+	return nil
+}
+
+// sameMatcherIn reports whether one of seen is m: the same action, trimmed, and the same filter or
+// none. Two matchers of one action with different filters are two things to wait for.
+func sameMatcherIn(seen []eventmatcher.Matcher, m eventmatcher.Matcher) (bool, error) {
+	filter, err := json.Marshal(m.Filter)
+	if err != nil {
+		return false, err
+	}
+	for _, other := range seen {
+		if strings.TrimSpace(other.Action) != strings.TrimSpace(m.Action) {
+			continue
+		}
+		otherFilter, err := json.Marshal(other.Filter)
+		if err != nil {
+			return false, err
+		}
+		if bytes.Equal(otherFilter, filter) {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// checkWaits checks what each Wait for event of the tree awaits against the Workspace: a matcher's
+// filter names only the Tags, Custom fields, Broadcasts and Automations it has (checkNamed), and
+// its Condition is checked as a Branch path's is, bounded as a Rule's (condition.Module
+// .CheckWaitForEvent). A refusal names the Step; one of a Broadcast or Automation the Workspace
+// does not have is ErrUnknownSender (ADR 0153).
+func (m *Module) checkWaits(ctx context.Context, s *ent.Scoped, steps automationstep.Path) error {
+	for st, w := range automationstep.WaitsForEvents(steps) {
+		a, ok := w.Awaits.(automationstep.AwaitedEvent)
+		if !ok {
+			continue
+		}
+		for _, matcher := range a.Matchers {
+			refusal := func(why string) error { return refuse(st, "an awaited event: "+why) }
+			if err := m.checkNamed(ctx, s, matcher, refusal); err != nil {
+				return err
+			}
+		}
+		if a.Condition == nil {
+			continue
+		}
+		if size := a.Condition.Size(); size > rules.MaxConditionNodes {
+			return refuse(st, fmt.Sprintf("a condition has at most %d groups and tests, this one has %d", rules.MaxConditionNodes, size))
+		}
+		err := m.conditions.CheckWaitForEvent(ctx, s, *a.Condition)
+		if errors.Is(err, condition.ErrStorage) {
+			return err
+		}
+		if err != nil {
+			return refuse(st, "the condition: "+err.Error())
+		}
+		unknown, err := m.senders.Unknown(ctx, s, condition.NamedSenders(a.Condition.Group))
+		if err != nil {
+			return err
+		}
+		if unknown != nil {
+			return ErrUnknownSender.With(fmt.Sprintf("step %s (%s): the condition: %s", st.ID, st.Kind(), unknown.Missing()))
+		}
 	}
 	return nil
 }
@@ -142,25 +216,72 @@ func checkAwaitedEndings(def definition) error {
 	return nil
 }
 
-// awaitedActions are the Event actions the Wait for event waits for.
+// awaitedActions are the Event actions the Wait for event's matchers name.
 func awaitedActions(w automationstep.WaitForEvent) []string {
 	switch a := w.Awaits.(type) {
 	case automationstep.AwaitedEvent:
-		return a.Actions
+		return a.Actions()
 	case automationstep.AwaitedMessage, nil:
 		// An open or a click of a message is no action: it wakes by the message (wakeOnMessage).
 	}
 	return nil
 }
 
+// awaitedMatchers are the Event matchers the Wait for event waits for.
+func awaitedMatchers(w automationstep.WaitForEvent) []eventmatcher.Matcher {
+	switch a := w.Awaits.(type) {
+	case automationstep.AwaitedEvent:
+		return a.Matchers
+	case automationstep.AwaitedMessage, nil:
+	}
+	return nil
+}
+
+// awaitedCondition is the Wait for event's Condition, nil for none.
+func awaitedCondition(w automationstep.WaitForEvent) *conditiontree.WaitForEvent {
+	switch a := w.Awaits.(type) {
+	case automationstep.AwaitedEvent:
+		return a.Condition
+	case automationstep.AwaitedMessage, nil:
+	}
+	return nil
+}
+
+// anyMatcher is the predicate that a stored Event matches one of the matchers (matching): its
+// action and its properties passing the matcher's filter, which Postgres runs (ADR 0180).
+func anyMatcher(matchers []eventmatcher.Matcher) (predicate.Event, error) {
+	preds := make([]predicate.Event, len(matchers))
+	for i, m := range matchers {
+		p, err := matching(m)
+		if err != nil {
+			return nil, err
+		}
+		preds[i] = p
+	}
+	return event.Or(preds...), nil
+}
+
+// conditionHolds reports whether the Wait for event's Condition, if any, holds for the
+// Enrollment's Contact now, its property tests reading the Event the Enrollment began with: false
+// and unknown are no match (ADR 0124). A failure to read is condition.ErrStorage; any other error
+// is a Condition that no longer compiles (a Custom field it tests was retyped since), which fails
+// the Enrollment, as a Branch's does.
+func (m *StepExecution) conditionHolds(ctx context.Context, s *ent.Scoped, run *ent.AutomationRun, w automationstep.WaitForEvent) (bool, error) {
+	cond := awaitedCondition(w)
+	if cond == nil {
+		return true, nil
+	}
+	return m.conditions.Holds(ctx, s, condition.WaitForEventInput{ContactID: run.ContactID, Condition: *cond, Properties: run.EventProperties})
+}
+
 // awaitWindow is what an Event must be to satisfy a Wait for event an Enrollment stands on: the
-// Contact's, of an awaited action, occurred from when the Enrollment reached the Step through its
-// deadline, not the Event the Enrollment began on (begunOn, "" for none), and, when the Enrollment
-// is one of a keyed version, carrying none of the key or its value (key and keyValue, nil when
-// unkeyed).
+// Contact's, matched by one of the awaited matchers (matched), occurred from when the Enrollment
+// reached the Step through its deadline, not the Event the Enrollment began on (begunOn, "" for
+// none), and, when the Enrollment is one of a keyed version, carrying none of the key or its value
+// (key and keyValue, nil when unkeyed).
 type awaitWindow struct {
 	contactID         int64
-	actions           []string
+	matched           predicate.Event
 	reached, deadline time.Time
 	begunOn           string
 	key, keyValue     *string
@@ -168,15 +289,15 @@ type awaitWindow struct {
 
 // satisfying is the one predicate an Event stored for the Contact satisfies the window by (ADR
 // 0124), read by the wake on the Event just recorded and by the timeout on every Event recorded:
-// one of the awaited actions, occurred within the window, made by a person (a machine open or click
-// never counts, ADR 0053), live (loaded history never counts), not written through a Connection
-// without mcp:send (its mark, ADR 0132: it may not start a send), not the Event that began the
-// Enrollment and, for a keyed Enrollment, carrying none of the key or the Enrollment's value (ADR
-// 0165), as an exit or goal Event must.
+// matched by one of the awaited matchers, occurred within the window, made by a person (a machine
+// open or click never counts, ADR 0053), live (loaded history never counts), not written through a
+// Connection without mcp:send (its mark, ADR 0132: it may not start a send), not the Event that
+// began the Enrollment and, for a keyed Enrollment, carrying none of the key or the Enrollment's
+// value (ADR 0165), as an exit or goal Event must.
 func satisfying(w awaitWindow) []predicate.Event {
 	where := []predicate.Event{
 		event.ContactID(w.contactID),
-		event.ActionIn(w.actions...),
+		w.matched,
 		event.OccurredAtGTE(w.reached),
 		event.OccurredAtLTE(w.deadline),
 		event.Backfill(false),
@@ -213,8 +334,12 @@ func (m *StepExecution) windowOf(ctx context.Context, s *ent.Scoped, run *ent.Au
 	if err != nil {
 		return awaitWindow{}, false, err
 	}
+	matched, err := anyMatcher(awaitedMatchers(w))
+	if err != nil {
+		return awaitWindow{}, false, err
+	}
 	return awaitWindow{
-		contactID: run.ContactID, actions: awaitedActions(w), reached: rec.ReachedAt, deadline: *rec.DueAt, begunOn: begunOn,
+		contactID: run.ContactID, matched: matched, reached: rec.ReachedAt, deadline: *rec.DueAt, begunOn: begunOn,
 		key: key, keyValue: run.KeyValue,
 	}, true, nil
 }
@@ -251,7 +376,16 @@ func (m *StepExecution) timeout(ctx context.Context, s *ent.Scoped, run *ent.Aut
 	}
 	taken := pathTaken{id: w.TimedOut.ID}
 	if arrival != nil {
-		taken = pathTaken{id: w.Arrived.ID, kept: keptOf(arrival)}
+		holds, err := m.conditionHolds(ctx, s, run, w)
+		if errors.Is(err, condition.ErrStorage) {
+			return err
+		}
+		if err != nil {
+			return m.fail(ctx, s, run.ID, fmt.Errorf("wait for event step %s: %w", at.step, err))
+		}
+		if holds {
+			taken = pathTaken{id: w.Arrived.ID, kept: keptOf(arrival)}
+		}
 	}
 	return m.advance(ctx, s, run.ID, at, stepMove{path: &taken})
 }
@@ -305,6 +439,20 @@ func (m *StepExecution) wake(ctx context.Context, s *ent.Scoped, contactID int64
 			return fmt.Errorf("wake enrollment %d: %w", run.ID, err)
 		}
 		if arrival == nil {
+			continue
+		}
+		holds, err := m.conditionHolds(ctx, s, run, w)
+		if errors.Is(err, condition.ErrStorage) {
+			return fmt.Errorf("wake enrollment %d: %w", run.ID, err)
+		}
+		if err != nil {
+			// The Enrollment fails, as at a Branch; the Event goes on to wake and enroll the others.
+			if err := quiet(m.failIn(ctx, s, run.ID, failure{})); err != nil {
+				return err
+			}
+			continue
+		}
+		if !holds {
 			continue
 		}
 		at := place{index: index, step: st.ID}
