@@ -295,14 +295,17 @@ func (w *Workspace) PublishBranchAutomation(a BranchAutomation) {
 }
 
 // WaitForEventAutomation is what a scenario chooses about an Automation that waits for an Event
-// after it enrolls a Contact (ADR 0124): a Wait for event on Awaited for Timeout, whose arrived path
-// sends ArrivedSubject and whose timed out path sends TimedOutSubject, then an email after it,
-// AfterSubject, that both paths' Contacts receive.
+// after it enrolls a Contact (ADR 0124): a Wait for event named Name on Awaited for Timeout, whose
+// arrived path sends ArrivedSubject with the text ArrivedBody, which may print the awaited Event as
+// `{{ awaited.<Name>.properties.<key> }}` (ADR 0136), and whose timed out path sends
+// TimedOutSubject, then an email after it, AfterSubject, that both paths' Contacts receive.
 type WaitForEventAutomation struct {
 	TriggerEvent    string
+	Name            string
 	Awaited         string
 	Timeout         time.Duration
 	ArrivedSubject  string
+	ArrivedBody     string
 	TimedOutSubject string
 	AfterSubject    string
 }
@@ -312,17 +315,18 @@ type WaitForEventAutomation struct {
 func (w *Workspace) PublishWaitForEventAutomation(a WaitForEventAutomation) externalapi.EntityId {
 	w.t.Helper()
 	ctx := w.t.Context()
-	email := func(subject string) externalapi.AutomationStepInput {
-		return emailStep(externalapi.EmailStepInput{Subject: subject, Body: externalapi.NewOptString(HTML(subject))})
+	emailWith := func(subject, body string) externalapi.AutomationStepInput {
+		return emailStep(externalapi.EmailStepInput{Subject: subject, Body: externalapi.NewOptString(HTML(body))})
 	}
+	email := func(subject string) externalapi.AutomationStepInput { return emailWith(subject, subject) }
 	wait := externalapi.WaitForEventStepInput{
 		Type:           externalapi.WaitForEventStepInputTypeWaitForEvent,
-		Name:           "awaited",
+		Name:           externalapi.WaitForEventName(a.Name),
 		TimeoutSeconds: narrow.Int32(int64(a.Timeout / time.Second)),
 		Awaits: externalapi.WaitForEventAwaitsInput{OneOf: externalapi.NewAwaitedEventInputWaitForEventAwaitsInputSum(
 			externalapi.AwaitedEventInput{Kind: externalapi.AwaitedEventInputKindEvent, Matchers: []externalapi.EventMatcherInput{{Action: a.Awaited}}},
 		)},
-		Arrived:  externalapi.AutomationPathInput{Steps: []externalapi.AutomationStepInput{email(a.ArrivedSubject)}},
+		Arrived:  externalapi.AutomationPathInput{Steps: []externalapi.AutomationStepInput{emailWith(a.ArrivedSubject, a.ArrivedBody)}},
 		TimedOut: externalapi.AutomationPathInput{Steps: []externalapi.AutomationStepInput{email(a.TimedOutSubject)}},
 	}
 	res, err := w.api.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{

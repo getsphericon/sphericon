@@ -170,16 +170,18 @@ func TestABranchOnAnEventPropertySendsEachPathsMessageAndThenTheStepAfterIt(t *t
 }
 
 // A Wait for event on an order (ADR 0124): the Contact who orders within the window gets the
-// arrived path's thank-you, the one who does not gets the reminder at the timeout, and both paths
-// rejoin: each Contact then receives the email after the wait.
+// arrived path's thank-you, which prints the product of the order it arrived on (ADR 0136), the one
+// who does not gets the reminder at the timeout, and both paths rejoin: each Contact then receives
+// the email after the wait.
 func TestAWaitForAnOrderThanksTheBuyerRemindsTheOtherAndBothGoOn(t *testing.T) {
 	t.Parallel()
 	w := env.NewWorkspace(t).Ready()
 	buyer, idle := w.NewRecipient(), w.NewRecipient()
 	w.ImportContacts(buyer, idle)
 	automationID := w.PublishWaitForEventAutomation(WaitForEventAutomation{
-		TriggerEvent: "e2e.trial_started", Awaited: "e2e.order_created", Timeout: 10 * time.Second,
-		ArrivedSubject: "Thanks for your order", TimedOutSubject: "Still thinking it over?", AfterSubject: "How is it going?",
+		TriggerEvent: "e2e.trial_started", Name: "order", Awaited: "e2e.order_created", Timeout: 10 * time.Second,
+		ArrivedSubject: "Thanks for your order", ArrivedBody: "Enjoy your {{ awaited.order.properties.product }}.",
+		TimedOutSubject: "Still thinking it over?", AfterSubject: "How is it going?",
 	})
 
 	w.RecordEvent(buyer, "e2e.trial_started")
@@ -187,9 +189,10 @@ func TestAWaitForAnOrderThanksTheBuyerRemindsTheOtherAndBothGoOn(t *testing.T) {
 	// Only an order made once the Enrollment reached the wait counts: both stand on it first.
 	require.Eventually(t, func() bool { return w.WaitingEnrollments(automationID) == 2 }, EmailTimeout, 100*time.Millisecond,
 		"both Contacts never reached the wait")
-	w.RecordEvent(buyer, "e2e.order_created")
+	w.RecordEventWith(buyer, "e2e.order_created", map[string]string{"product": "reading lamp"})
 
-	w.Inbox.Wait(Match{To: buyer, Subject: "Thanks for your order"})
+	thanks := w.Inbox.Wait(Match{To: buyer, Subject: "Thanks for your order"})
+	assert.Contains(t, thanks.Text, "Enjoy your reading lamp.", "the thank-you prints the order's product")
 	w.Inbox.Wait(Match{To: idle, Subject: "Still thinking it over?"})
 	w.Inbox.Wait(Match{To: buyer, Subject: "How is it going?"})
 	w.Inbox.Wait(Match{To: idle, Subject: "How is it going?"})
