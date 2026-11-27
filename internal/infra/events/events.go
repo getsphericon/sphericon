@@ -563,9 +563,6 @@ type MarketingConfirmed struct {
 	Wording string `json:"wording,omitempty"`
 	Source  string `json:"source,omitempty"`
 	Brand   string `json:"brand,omitempty"`
-	// ObservedAt is when the consent was given (ADR 0154), which dates the Event: the time an
-	// import states, else when it was recorded.
-	ObservedAt time.Time `json:"observedAt,omitzero"`
 }
 
 func (*MarketingConfirmed) EventName() string  { return systemevent.MarketingConfirmed }
@@ -578,10 +575,7 @@ func (e *MarketingConfirmed) Project() Projection {
 	setNonZero(props, "wording", e.Wording)
 	setNonZero(props, "source", e.Source)
 	setNonZero(props, "brand", e.Brand)
-	return Projection{
-		Subject: e.Email, Action: systemevent.MarketingConfirmed, Email: e.Email, Properties: props, ContactID: e.ContactID,
-		OccurredAt: e.ObservedAt,
-	}
+	return Projection{Subject: e.Email, Action: systemevent.MarketingConfirmed, Email: e.Email, Properties: props, ContactID: e.ContactID}
 }
 
 // SmsConfirmed is emitted when a phone number's SMS Confirmation is recorded (ADR 0077): consent
@@ -600,9 +594,6 @@ type SmsConfirmed struct {
 	Wording string `json:"wording,omitempty"`
 	Source  string `json:"source,omitempty"`
 	Brand   string `json:"brand,omitempty"`
-	// ObservedAt is when the consent was given (ADR 0154), which dates the Event: the time an
-	// import states, the START's own, else when it was recorded.
-	ObservedAt time.Time `json:"observedAt,omitzero"`
 }
 
 func (*SmsConfirmed) EventName() string  { return systemevent.SmsConfirmed }
@@ -614,7 +605,7 @@ func (e *SmsConfirmed) Project() Projection {
 	setNonZero(props, "wording", e.Wording)
 	setNonZero(props, "source", e.Source)
 	setNonZero(props, "brand", e.Brand)
-	return Projection{Action: systemevent.SmsConfirmed, Phone: e.Phone, Properties: props, ContactID: e.ContactID, OccurredAt: e.ObservedAt}
+	return Projection{Action: systemevent.SmsConfirmed, Phone: e.Phone, Properties: props, ContactID: e.ContactID}
 }
 
 // CollectedEvent wraps a customer's own event ingested via the collect or external

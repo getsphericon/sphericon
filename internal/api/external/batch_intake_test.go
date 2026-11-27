@@ -215,34 +215,3 @@ func TestABatchItemWithAWronglyTypedCustomFieldFailsNamingTheField(t *testing.T)
 	}, statuses)
 	assert.Contains(t, out.Results[0].Error.Or(""), "courses_completed")
 }
-
-// An imported consent's proof is dated when the consent was given (ADR 0154): an item's email
-// consent and a recorded sms Confirmation that state an older time are in the Contact's history at
-// that time, and one stating a time in the future at now, as its consent stamp is.
-func TestAnImportedConsentsProofIsDatedWhenTheConsentWasGiven(t *testing.T) {
-	clock := testhelper.NewClock(time.Now().UTC().Truncate(time.Second))
-	env := testhelper.Setup(t, testhelper.WithClock(clock.Now))
-	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
-	given := clock.Now().Add(-30 * 24 * time.Hour)
-
-	upsertOne(t, c, &externalapi.UpsertContactInput{
-		Email: externalapi.NewOptNilEmailAddress(fixtures.ContactAliceEmail), EmailConsent: emailConsentAt(given),
-	})
-	upsertOne(t, c, &externalapi.UpsertContactInput{
-		Email: externalapi.NewOptNilEmailAddress(fixtures.ContactBobEmail), EmailConsent: emailConsentAt(clock.Now().Add(24 * time.Hour)),
-	})
-	texted := smsConsent(fixtures.ContactTexterPhone)
-	texted.OccurredAt = externalapi.NewOptNilTimestamp(externalapi.Timestamp(given))
-	_, err := c.ConfirmationsCreate(t.Context(), texted)
-	require.NoError(t, err)
-	alice := activity(t, env, fixtures.ContactAliceID, systemevent.MarketingConfirmed)
-	bob := activity(t, env, fixtures.ContactBobID, systemevent.MarketingConfirmed)
-	texter := activity(t, env, fixtures.ContactTexterID, systemevent.SmsConfirmed)
-
-	require.Len(t, alice, 1)
-	assert.Equal(t, given, time.Time(alice[0].OccurredAt).UTC())
-	require.Len(t, bob, 1)
-	assert.Equal(t, clock.Now(), time.Time(bob[0].OccurredAt).UTC(), "a time in the future is now")
-	require.Len(t, texter, 1)
-	assert.Equal(t, given, time.Time(texter[0].OccurredAt).UTC())
-}
