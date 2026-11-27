@@ -755,6 +755,19 @@ func (c *ConverterImpl) BroadcastStatsToResource(source broadcasts.Figures) site
 	siteapiSiteBroadcastStats.RecipientsTotal = count(source.Recipients)
 	siteapiSiteBroadcastStats.SentCount = count(source.Sent)
 	siteapiSiteBroadcastStats.SkippedCount = count(source.Skipped)
+	if source.SkippedByReason != nil {
+		siteapiSiteBroadcastStats.SkippedByReason = make([]site.SkippedReasonCount, len(source.SkippedByReason))
+		for i := 0; i < len(source.SkippedByReason); i++ {
+			siteapiSiteBroadcastStats.SkippedByReason[i] = c.skipreasonCountToSiteapiSkippedReasonCount(source.SkippedByReason[i])
+		}
+	}
+	if source.WaitingByCause != nil {
+		siteapiSiteBroadcastStats.WaitingByCause = make([]site.DeferralCauseCount, len(source.WaitingByCause))
+		for j := 0; j < len(source.WaitingByCause); j++ {
+			siteapiSiteBroadcastStats.WaitingByCause[j] = c.deferralcauseCountToSiteapiDeferralCauseCount(source.WaitingByCause[j])
+		}
+	}
+	siteapiSiteBroadcastStats.SingleZoneCount = nilInt32(source.SingleZone)
 	siteapiSiteBroadcastStats.FailedCount = count(source.Failed)
 	siteapiSiteBroadcastStats.PendingCount = count(source.Pending)
 	siteapiSiteBroadcastStats.CancelledCount = count(source.Cancelled)
@@ -1189,6 +1202,24 @@ func (c *ConverterImpl) DateTriggerToResource(source datetrigger.Date) site.Date
 	siteapiDateTrigger.LocalTime = site.LocalTime(source.LocalTime)
 	return siteapiDateTrigger
 }
+func (c *ConverterImpl) DeferralCauseToResource(source deferralcause.Cause) site.DeferralCause {
+	var siteapiDeferralCause site.DeferralCause
+	switch source {
+	case deferralcause.FrequencyCap:
+		siteapiDeferralCause = site.DeferralCauseFrequencyCap
+	case deferralcause.ProviderLimit:
+		siteapiDeferralCause = site.DeferralCauseProviderLimit
+	case deferralcause.SendCap:
+		siteapiDeferralCause = site.DeferralCauseSendCap
+	case deferralcause.SendingWindow:
+		siteapiDeferralCause = site.DeferralCauseSendingWindow
+	case deferralcause.SlowDown:
+		siteapiDeferralCause = site.DeferralCauseProvider
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiDeferralCause
+}
 func (c *ConverterImpl) DeletedWorkspaceToResource(source *ent.Workspace) site.SiteDeletedWorkspaceResource {
 	var siteapiSiteDeletedWorkspaceResource site.SiteDeletedWorkspaceResource
 	if source != nil {
@@ -1409,6 +1440,8 @@ func (c *ConverterImpl) EnrollmentToResource(source *ent.AutomationRun) site.Enr
 		siteapiEnrollmentResource.Occurrence = enrollmentOccurrence((*source).Occurrence)
 		siteapiEnrollmentResource.CurrentStepId = optStepID((*source).CurrentStepID)
 		siteapiEnrollmentResource.ResumeAt = optTimestamp((*source).ResumeAt)
+		siteapiEnrollmentResource.DeferredSince = optTimestamp((*source).DeferredSince)
+		siteapiEnrollmentResource.DeferralCause = optDeferralCause(c, (*source).DeferralCause)
 		siteapiEnrollmentResource.Failure = enrollmentFailure(c, (*source))
 		siteapiEnrollmentResource.CreatedAt = timestamp((*source).CreatedAt)
 		siteapiEnrollmentResource.UpdatedAt = timestamp((*source).UpdatedAt)
@@ -1492,6 +1525,28 @@ func (c *ConverterImpl) EventsToResources(source []*ent.Event) []site.SiteEventR
 		siteapiSiteEventResourceList[i] = c.EventToResource(source[i])
 	}
 	return siteapiSiteEventResourceList
+}
+func (c *ConverterImpl) FrequencyCapChannelToResource(source channels.Channel) site.FrequencyCapChannel {
+	var siteapiFrequencyCapChannel site.FrequencyCapChannel
+	switch source {
+	case channels.Email:
+		siteapiFrequencyCapChannel = site.FrequencyCapChannelEmail
+	case channels.SMS:
+		siteapiFrequencyCapChannel = site.FrequencyCapChannelSMS
+	case channels.Telegram:
+		siteapiFrequencyCapChannel = site.FrequencyCapChannelTelegram
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiFrequencyCapChannel
+}
+func (c *ConverterImpl) FrequencyCapToResource(source workspaces.FrequencyCap) site.FrequencyCap {
+	var siteapiFrequencyCap site.FrequencyCap
+	siteapiFrequencyCap.Channel = c.FrequencyCapChannelToResource(source.Channel)
+	siteapiFrequencyCap.Country = nilCountryCode(source.Country)
+	siteapiFrequencyCap.MaxMessages = nilFrequencyCapMaxMessages(source.MaxMessages)
+	siteapiFrequencyCap.PeriodMinutes = nilFrequencyCapPeriodMinutes(source.PeriodMinutes)
+	return siteapiFrequencyCap
 }
 func (c *ConverterImpl) HoldReasonToResource(source holdreason.Reason) site.HoldReason {
 	var siteapiHoldReason site.HoldReason
@@ -1935,6 +1990,12 @@ func (c *ConverterImpl) OutboundMessageToExport(source *ent.OutboundMessage) sit
 		siteapiContactExportOutboundMessage.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return siteapiContactExportOutboundMessage
+}
+func (c *ConverterImpl) OutsideWindowToResource(source broadcasts.OutsideWindow) site.SiteBroadcastOutsideWindowResult {
+	var siteapiSiteBroadcastOutsideWindowResult site.SiteBroadcastOutsideWindowResult
+	siteapiSiteBroadcastOutsideWindowResult.Held = count(source.Held)
+	siteapiSiteBroadcastOutsideWindowResult.ReachedAt = optTimestamp(source.ReachedAt)
+	return siteapiSiteBroadcastOutsideWindowResult
 }
 func (c *ConverterImpl) OwnershipRecordToResource(source trackingdomains.OwnershipRecord) site.DnsRecord {
 	var siteapiDnsRecord site.DnsRecord
@@ -2583,6 +2644,50 @@ func (c *ConverterImpl) SendingDomainsListPage(source pagination.Page[site.Sendi
 	siteapiSiteSendingDomainsListOK.TotalItems = count(source.TotalItems)
 	siteapiSiteSendingDomainsListOK.TotalPages = count(source.TotalPages)
 	return &siteapiSiteSendingDomainsListOK
+}
+func (c *ConverterImpl) SendingRulesToResource(source workspaces.SendingRules) site.SiteSendingRulesResource {
+	var siteapiSiteSendingRulesResource site.SiteSendingRulesResource
+	siteapiSiteSendingRulesResource.FrequencyCaps = make([]site.FrequencyCap, len(source.FrequencyCaps))
+	for i := 0; i < len(source.FrequencyCaps); i++ {
+		siteapiSiteSendingRulesResource.FrequencyCaps[i] = c.FrequencyCapToResource(source.FrequencyCaps[i])
+	}
+	siteapiSiteSendingRulesResource.SendingWindows = make([]site.SendingWindow, len(source.SendingWindows))
+	for j := 0; j < len(source.SendingWindows); j++ {
+		siteapiSiteSendingRulesResource.SendingWindows[j] = c.SendingWindowToResource(source.SendingWindows[j])
+	}
+	siteapiSiteSendingRulesResource.Revision = revision(source.Revision)
+	return siteapiSiteSendingRulesResource
+}
+func (c *ConverterImpl) SendingWindowChannelToResource(source channels.Channel) site.SendingWindowChannel {
+	var siteapiSendingWindowChannel site.SendingWindowChannel
+	switch source {
+	case channels.Email:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	case channels.SMS:
+		siteapiSendingWindowChannel = site.SendingWindowChannelSMS
+	case channels.Telegram:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiSendingWindowChannel
+}
+func (c *ConverterImpl) SendingWindowHoursToResource(source workspaces.OpenHours) site.SendingWindowHours {
+	var siteapiSendingWindowHours site.SendingWindowHours
+	siteapiSendingWindowHours.Day = c.WeekdayToResource(source.Day)
+	siteapiSendingWindowHours.OpensAt = minuteOfDay(source.OpensAt)
+	siteapiSendingWindowHours.ClosesAt = minuteOfDay(source.ClosesAt)
+	return siteapiSendingWindowHours
+}
+func (c *ConverterImpl) SendingWindowToResource(source workspaces.SendingWindow) site.SendingWindow {
+	var siteapiSendingWindow site.SendingWindow
+	siteapiSendingWindow.Channel = c.SendingWindowChannelToResource(source.Channel)
+	siteapiSendingWindow.Country = nilCountryCode(source.Country)
+	siteapiSendingWindow.Hours = make([]site.SendingWindowHours, len(source.Hours))
+	for i := 0; i < len(source.Hours); i++ {
+		siteapiSendingWindow.Hours[i] = c.SendingWindowHoursToResource(source.Hours[i])
+	}
+	return siteapiSendingWindow
 }
 func (c *ConverterImpl) SesConfigToResource(source integrations.RedactedSES) site.SesConfig {
 	var siteapiSesConfig site.SesConfig
@@ -3505,6 +3610,19 @@ func (c *ConverterImpl) automationsStepFiguresToSiteapiAutomationStepFigures(sou
 	siteapiAutomationStepFigures.StepId = site.StepId(source.StepID)
 	siteapiAutomationStepFigures.Sent = count(source.Sent)
 	siteapiAutomationStepFigures.Skipped = count(source.Skipped)
+	if source.SkippedByReason != nil {
+		siteapiAutomationStepFigures.SkippedByReason = make([]site.SkippedReasonCount, len(source.SkippedByReason))
+		for i := 0; i < len(source.SkippedByReason); i++ {
+			siteapiAutomationStepFigures.SkippedByReason[i] = c.skipreasonCountToSiteapiSkippedReasonCount(source.SkippedByReason[i])
+		}
+	}
+	if source.WaitingByCause != nil {
+		siteapiAutomationStepFigures.WaitingByCause = make([]site.DeferralCauseCount, len(source.WaitingByCause))
+		for j := 0; j < len(source.WaitingByCause); j++ {
+			siteapiAutomationStepFigures.WaitingByCause[j] = c.deferralcauseCountToSiteapiDeferralCauseCount(source.WaitingByCause[j])
+		}
+	}
+	siteapiAutomationStepFigures.SingleZone = count(source.SingleZone)
 	return siteapiAutomationStepFigures
 }
 func (c *ConverterImpl) automationsVersionStepFiguresToSiteapiAutomationVersionStepFigures(source automations.VersionStepFigures) site.AutomationVersionStepFigures {
@@ -3513,6 +3631,19 @@ func (c *ConverterImpl) automationsVersionStepFiguresToSiteapiAutomationVersionS
 	siteapiAutomationVersionStepFigures.StepId = site.StepId(source.StepID)
 	siteapiAutomationVersionStepFigures.Sent = count(source.Sent)
 	siteapiAutomationVersionStepFigures.Skipped = count(source.Skipped)
+	if source.SkippedByReason != nil {
+		siteapiAutomationVersionStepFigures.SkippedByReason = make([]site.SkippedReasonCount, len(source.SkippedByReason))
+		for i := 0; i < len(source.SkippedByReason); i++ {
+			siteapiAutomationVersionStepFigures.SkippedByReason[i] = c.skipreasonCountToSiteapiSkippedReasonCount(source.SkippedByReason[i])
+		}
+	}
+	if source.WaitingByCause != nil {
+		siteapiAutomationVersionStepFigures.WaitingByCause = make([]site.DeferralCauseCount, len(source.WaitingByCause))
+		for j := 0; j < len(source.WaitingByCause); j++ {
+			siteapiAutomationVersionStepFigures.WaitingByCause[j] = c.deferralcauseCountToSiteapiDeferralCauseCount(source.WaitingByCause[j])
+		}
+	}
+	siteapiAutomationVersionStepFigures.SingleZone = count(source.SingleZone)
 	return siteapiAutomationVersionStepFigures
 }
 func (c *ConverterImpl) automationsWaitUntilFiguresToSiteapiAutomationWaitUntilFigures(source automations.WaitUntilFigures) site.AutomationWaitUntilFigures {
@@ -3525,6 +3656,12 @@ func (c *ConverterImpl) automationsWaitUntilFiguresToSiteapiAutomationWaitUntilF
 }
 func (c *ConverterImpl) automationstepIDToSiteapiStepId(source automationstep.ID) site.StepId {
 	return site.StepId(source)
+}
+func (c *ConverterImpl) deferralcauseCountToSiteapiDeferralCauseCount(source deferralcause.Count) site.DeferralCauseCount {
+	var siteapiDeferralCauseCount site.DeferralCauseCount
+	siteapiDeferralCauseCount.Cause = c.DeferralCauseToResource(source.Cause)
+	siteapiDeferralCauseCount.Count = count(source.Count)
+	return siteapiDeferralCauseCount
 }
 func (c *ConverterImpl) linkclickClicksToSiteapiLinkClicks(source linkclick.Clicks) site.LinkClicks {
 	var siteapiLinkClicks site.LinkClicks
@@ -3582,6 +3719,12 @@ func (c *ConverterImpl) setupchecklistStepsToSiteapiSiteSetupSteps(source setupc
 	siteapiSiteSetupSteps.Contact = c.SetupStepStatusToResource(source.Contact)
 	siteapiSiteSetupSteps.SentEmail = c.SetupStepStatusToResource(source.SentEmail)
 	return siteapiSiteSetupSteps
+}
+func (c *ConverterImpl) skipreasonCountToSiteapiSkippedReasonCount(source skipreason.Count) site.SkippedReasonCount {
+	var siteapiSkippedReasonCount site.SkippedReasonCount
+	siteapiSkippedReasonCount.Reason = c.SkippedReasonToResource(source.Reason)
+	siteapiSkippedReasonCount.Count = count(source.Count)
+	return siteapiSkippedReasonCount
 }
 func (c *ConverterImpl) workspacesConfirmationEmailDefaultsToSiteapiSiteConfirmationEmailDefaults(source workspaces.ConfirmationEmailDefaults) site.SiteConfirmationEmailDefaults {
 	var siteapiSiteConfirmationEmailDefaults site.SiteConfirmationEmailDefaults

@@ -275,9 +275,6 @@ func (m *StepExecution) Step(ctx context.Context, s *ent.Scoped, runID int64, st
 	if err != nil {
 		return fmt.Errorf("load version %d of run %d: %w", run.VersionID, run.ID, err)
 	}
-	if run.ResumeAt != nil && run.ResumeAt.After(m.now()) {
-		return m.requeue(ctx, s, run.ID, step, *run.ResumeAt)
-	}
 	// The tree is indexed once, as it is decoded: where each Step stands and what follows it.
 	index := automationstep.NewIndex(version.Steps)
 	st, ok := index.Step(step)
@@ -288,6 +285,9 @@ func (m *StepExecution) Step(ctx context.Context, s *ent.Scoped, runID int64, st
 
 	switch p := st.Payload.(type) {
 	case automationstep.Wait, automationstep.WaitUntil:
+		if run.ResumeAt != nil && run.ResumeAt.After(m.now()) {
+			return m.requeue(ctx, s, run.ID, step, *run.ResumeAt)
+		}
 		// Its due moment, recorded when the Enrollment reached it, has come; or a Wait until had
 		// none to wait for, which its record says why, and goes on at once.
 		return m.advance(ctx, s, run.ID, at, stepMove{})
@@ -446,7 +446,8 @@ func (m *StepExecution) tag(ctx context.Context, s *ent.Scoped, run *ent.Automat
 // Integration the step names (ADR 0081). Outbound send owns eligibility, the unsubscribe and the
 // send record; send only turns its Outcome into the Enrollment's next state. A Hold or a Deferral
 // asks again later at the same step, so a held Integration stops only the Enrollments standing on
-// the steps that send through it. A Skipped send moves on to the next step, the skip recorded on
+// the steps that send through it; a Deferral records on the Enrollment since when, why and until
+// when the send waits (wait, ADR 0178), and the send carries since when and why to its message. A Skipped send moves on to the next step, the skip recorded on
 // the step's Outbound message for its report, whatever its reason: an unsubscribe from this
 // Automation too, which exited the Enrollment active when it arrived and skips the sends of a later
 // one to the Destination that refused it, while its other Steps run (ADR 0081, ADR 0127). A Failed
@@ -466,7 +467,7 @@ func (m *StepExecution) send(ctx context.Context, s *ent.Scoped, a *ent.Automati
 	var res outboundmessages.Result
 	err = m.fence(ctx, s, run.ID, func(ctx context.Context) error {
 		var sendErr error
-		res, sendErr = m.out.Send(ctx, s, outboundmessages.AutomationStep(a, run, at.step, st.Step.Integration(), c, content))
+		res, sendErr = m.out.Send(ctx, s, outboundmessages.AutomationStep(a, run, at.step, st.Step.Integration(), c, content, waitedOf(run)))
 		return sendErr
 	})
 	if stale(err) {
@@ -475,10 +476,14 @@ func (m *StepExecution) send(ctx context.Context, s *ent.Scoped, a *ent.Automati
 	if err != nil {
 		return err // retryable: the job's retry replays the same key
 	}
-	// A Hold or a Deferral waits, unchanged, and asks again later (an Automation step cannot
-	// snooze, so it queues itself).
-	if retry := res.Retry(0); retry.Wanted {
-		return m.requeue(ctx, s, run.ID, at.step, m.now().Add(retry.After))
+	// A Hold or a Deferral waits and asks again later (an Automation step cannot snooze, so it
+	// queues itself). A Deferral records its wait on the Enrollment (ADR 0178).
+	now := m.now()
+	if retry := res.Retry(0, now); retry.Wanted {
+		if res.Outcome == outboundmessages.Deferral {
+			return m.wait(ctx, s, run, at.step, deferral{since: lo.FromPtr(run.DeferredSince), cause: res.Cause, until: now.Add(retry.After)}, now)
+		}
+		return m.requeue(ctx, s, run.ID, at.step, now.Add(retry.After))
 	}
 	switch res.Outcome {
 	case outboundmessages.Sent:
@@ -498,6 +503,32 @@ func (m *StepExecution) send(ctx context.Context, s *ent.Scoped, a *ent.Automati
 		}
 		return m.fail(ctx, s, run.ID, fmt.Errorf("%s step %s: %s", st.Step.Kind(), at.step, res.Failure))
 	}
+}
+
+// waitedOf is how the send of the Step the Enrollment stands on has waited so far: none until its
+// first Deferral there.
+func waitedOf(run *ent.AutomationRun) outboundmessages.Waited {
+	if run.DeferredSince == nil {
+		return outboundmessages.Waited{}
+	}
+	return outboundmessages.Waited{Since: *run.DeferredSince, Cause: lo.FromPtr(run.DeferralCause)}
+}
+
+// wait records that the send of the Step of the id step is deferred, as d says, and queues the
+// step again for d.until, in one transaction: the first Deferral at the Step (d.since zero) waits
+// since now, a later one keeps its moment. An Enrollment that moved on or ended meanwhile records
+// nothing and queues nothing.
+func (m *StepExecution) wait(ctx context.Context, s *ent.Scoped, run *ent.AutomationRun, step automationstep.ID, d deferral, now time.Time) error {
+	if d.since.IsZero() {
+		d.since = now
+	}
+	err := m.bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher, q events.Enqueuer) error {
+		if err := deferRun(ctx, ts, run.ID, step, d); err != nil {
+			return err
+		}
+		return q.Enqueue(ctx, RunStepArgs{WorkspaceID: ts.WorkspaceID(), RunID: run.ID, StepID: step}, scheduled(&d.until))
+	})
+	return quiet(err)
 }
 
 // stepMove is what an advance does besides moving the Enrollment: leaving is how the Enrollment

@@ -317,6 +317,7 @@
     "workspaceDelete": "Deleted the workspace",
     "workspaceRestore": "Restored the workspace",
     "workspaceSendCapChange": "Changed the Send cap",
+    "workspaceSendingRulesChange": "Changed the sending rules",
     "workspaceSuspend": "Suspended the workspace",
     "workspaceUnsuspend": "Lifted the suspension of the workspace",
     "workspaceUpdate": "Changed the workspace settings"
@@ -536,13 +537,16 @@
     "stepEmail": "Send email",
     "stepEnd": "End",
     "stepFigures": {
-      "hint": "What each send step sent and skipped, across every version that had it, and each version's share. A contact skipped at a step (no address, opted out of the channel, or suppressed) moves on to the next step.",
+      "hint": "What each send step sent and skipped, across every version that had it, and each version's share, with why contacts were skipped and what the ones waiting at a step wait for now. A contact skipped at a step (no address, opted out of the channel, or suppressed) moves on to the next step.",
       "notLive": "Not in the live version",
       "sent": "Sent",
+      "singleZone_one": "{{count, number}} judged by one time zone",
+      "singleZone_other": "{{count, number}} judged by one time zone",
       "skipped": "Skipped",
       "step": "Step",
       "title": "Send steps",
-      "version": "Version"
+      "version": "Version",
+      "waiting": "Waiting now"
     },
     "stepHttp": "Call a URL",
     "stepRemoveTag": "Remove tag",
@@ -693,6 +697,9 @@
     "scheduleConfirm": {
       "confirm": "Schedule broadcast",
       "countError": "Could not count the recipients",
+      "outsideWindow_one": "{{count, number}} of them ({{share}}) would wait for the sending window at that time: it is closed where they are. They are reached on {{reachedAt}}.",
+      "outsideWindow_other": "{{count, number}} of them ({{share}}) would wait for their sending window at that time: it is closed where they are. The last of them is reached on {{reachedAt}}.",
+      "outsideWindowError": "Could not read the sending window",
       "recipients_one": "It would reach {{count, number}} recipient now: the contacts of its audience who can receive it on its channel. Who receives it is settled when it sends.",
       "recipients_other": "It would reach {{count, number}} recipients now: the contacts of its audience who can receive it on its channel. Who receives it is settled when it sends.",
       "title": "Schedule this broadcast?"
@@ -723,6 +730,7 @@
       "pending": "Pending",
       "recipients": "Recipients",
       "sent": "Sent",
+      "singleZone": "Judged by one time zone",
       "skipped": "Skipped",
       "undelivered": "Undelivered",
       "unsubscribed": "Unsubscribed",
@@ -1653,6 +1661,29 @@
     "useAppCode": "Use a code from the app",
     "useRecoveryCode": "Use a recovery code"
   },
+  "outcomes": {
+    "deferralCause": {
+      "frequency_cap": "Frequency cap",
+      "provider": "Provider asked to slow down",
+      "provider_limit": "Provider limit",
+      "send_cap": "Send cap",
+      "sending_window": "Sending window closed"
+    },
+    "skippedHint": "Why recipients were skipped: a skipped send is final for its recipient and never retried.",
+    "skippedReason": {
+      "contact_erased": "Contact erased",
+      "frequency_cap": "Over the frequency cap",
+      "no_destination": "No address on the channel",
+      "no_local_time": "No sending window in every time zone",
+      "suppressed": "Suppressed",
+      "unconfirmed": "Not confirmed",
+      "unsubscribed_everything": "Unsubscribed from everything",
+      "unsubscribed_source": "Unsubscribed from this sender"
+    },
+    "skippedTitle": "Skipped by reason",
+    "waitingHint": "Recipients whose send waits now, and what for: each goes out once its wait ends.",
+    "waitingTitle": "Waiting now"
+  },
   "overview": {
     "attention": {
       "actions": {
@@ -2501,6 +2532,56 @@
       "verify": "Verify",
       "verifyError": "Could not check the domain",
       "verifyNow": "Verify now"
+    },
+    "sendingRules": {
+      "addCap": "Add cap",
+      "addWindow": "Add country window",
+      "capIncomplete": "Give a cap both a maximum and a period, or leave both blank to remove it.",
+      "capLine": "{{scope}}: at most {{max, number}} marketing messages to one recipient per {{period}}",
+      "capsDescription": "The most marketing messages one recipient gets on a channel per rolling period, from 1 minute to 7 days. A country's cap applies to the numbers of that country instead of the channel's. Leave the maximum and the period blank to remove the cap there. Transactional messages and test sends never count.",
+      "capsTitle": "Frequency caps",
+      "change": "Change",
+      "channelLabel": "Channel",
+      "channels": {
+        "email": "Email",
+        "sms": "SMS",
+        "telegram": "Telegram"
+      },
+      "closesAfterOpens": "Closing time must be after the opening time.",
+      "closesLabel": "{{day}} closes at",
+      "compliance": "Your workspace answers for its own compliance with the rules on marketing messages where your recipients are. Sphericon keeps no table of laws, and these defaults are not legal advice.",
+      "countryLabel": "Country",
+      "countryOffPhone": "Only SMS takes a rule for a country.",
+      "dayHours": "{{day}} {{opens}}–{{closes}}",
+      "everyCountry": "Every country",
+      "formTitle": "Change the sending rules",
+      "inCountry": "{{channel}} in {{country}}",
+      "loadError": "Failed to load the sending rules",
+      "maxMessagesLabel": "Maximum",
+      "neverOpens": "The window must open on at least one day.",
+      "noCap": "{{scope}}: no cap",
+      "noCapPlaceholder": "No cap",
+      "noCaps": "No frequency caps",
+      "noWindows": "No sending windows",
+      "opensLabel": "{{day}} opens at",
+      "periodDays_one": "{{count, number}} day",
+      "periodDays_other": "{{count, number}} days",
+      "periodDescription": "In minutes: 1440 is 24 hours.",
+      "periodHours_one": "{{count, number}} hour",
+      "periodHours_other": "{{count, number}} hours",
+      "periodLabel": "Period (minutes)",
+      "periodMinutes_one": "{{count, number}} minute",
+      "periodMinutes_other": "{{count, number}} minutes",
+      "removeCap": "Remove cap",
+      "removeWindow": "Remove window",
+      "ruleRepeated": "Another rule is already set for this channel and country.",
+      "saved": "Sending rules saved",
+      "saveError": "Could not save the sending rules",
+      "timeRequired": "Enter a time.",
+      "title": "Sending rules",
+      "windowLine": "{{scope}}: {{hours}}",
+      "windowsDescription": "The hours a marketing text goes out, in the recipient's local time; a text outside them waits until they open. A country's window applies to the numbers of that country instead. Closing at 00:00 means midnight at the end of the day. Email and Telegram go out at any hour.",
+      "windowsTitle": "Sending windows"
     },
     "testEventDescription": "Send a test event from your terminal, then watch it appear in the activity feed.",
     "testEventTitle": "Send a test event",

@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/schema/index"
 
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
@@ -40,6 +41,7 @@ func (OutboundMessage) Annotations() []schema.Annotation {
 	a.Checks["outbound_messages_final_report_check"] = "delivered_at IS NULL OR undelivered_at IS NULL"
 	a.Checks["outbound_messages_provenance_check"] = variantCheck("kind", outboundProvenance)
 	a.Checks["outbound_messages_outcome_check"] = variantCheck("status", outboundOutcome)
+	a.Checks["outbound_messages_deferral_check"] = "(deferred_since IS NULL) = (deferral_cause IS NULL)"
 	return []schema.Annotation{WithLowerCheck(a, "destination")}
 }
 
@@ -140,6 +142,27 @@ func (OutboundMessage) Fields() []ent.Field {
 		field.String("failure").
 			Optional().
 			Nillable(),
+		// Since when and why the send waited before it was decided (ADR 0178), from its Request:
+		// the moment its first Deferral at its place began and the cause of its latest. Null for a
+		// send that never waited (outbound_messages_deferral_check: both or neither). A Step record
+		// of a send Step reads its wait here.
+		field.Time("deferred_since").
+			Annotations(Attribute("records since when the send waited, written with its claim")).
+			Optional().
+			Nillable(),
+		field.Enum("deferral_cause").
+			GoType(deferralcause.Cause("")).
+			Optional().
+			Nillable(),
+		// How a Sending window judged the message (ADR 0134), by the zones the recipient may be in:
+		// unjudged when no window held it (a Channel without one, or a send decided before the
+		// window was read); no_zone when one held it but the recipient is in no zone (no local
+		// time); one_zone when the recipient may be in a single zone; several_zones when the window
+		// had to be open in more than one. Written with the claim, or with a Skipped for no local
+		// time.
+		field.Enum("window_zones").
+			Values("unjudged", "no_zone", "one_zone", "several_zones").
+			Default("unjudged"),
 		// Lease: a pending claim may be taken over by a retry only when its
 		// claimed_at is older than the lease, so an in-flight send is never raced.
 		field.Time("claimed_at").
@@ -233,6 +256,9 @@ func (OutboundMessage) Edges() []ent.Edge {
 	return []ent.Edge{
 		// The short links of its text and buttons (ADR 0083) die with it.
 		edge.To("tracked_links", TrackedLink.Type).
+			Annotations(entsql.OnDelete(entsql.Cascade)),
+		// Its places under the Frequency cap (ADR 0178) die with it: a dropped claim frees them.
+		edge.To("frequency_counts", FrequencyCount.Type).
 			Annotations(entsql.OnDelete(entsql.Cascade)),
 		edge.To("broadcast", Broadcast.Type).Field("broadcast_id").Unique().
 			Annotations(entsql.OnDelete(entsql.Restrict)),

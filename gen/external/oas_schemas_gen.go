@@ -936,6 +936,7 @@ const (
 	AuditActionWorkspaceAbuseExempt        AuditAction = "workspace.abuse_exempt"
 	AuditActionWorkspaceAbuseUnexempt      AuditAction = "workspace.abuse_unexempt"
 	AuditActionWorkspaceSendCapChange      AuditAction = "workspace.send_cap_change"
+	AuditActionWorkspaceSendingRulesChange AuditAction = "workspace.sending_rules_change"
 	AuditActionContactImport               AuditAction = "contact.import"
 	AuditActionAuditLogExport              AuditAction = "audit_log.export"
 	AuditActionWebhookEndpointTest         AuditAction = "webhook_endpoint.test"
@@ -1030,6 +1031,7 @@ func (AuditAction) AllValues() []AuditAction {
 		AuditActionWorkspaceAbuseExempt,
 		AuditActionWorkspaceAbuseUnexempt,
 		AuditActionWorkspaceSendCapChange,
+		AuditActionWorkspaceSendingRulesChange,
 		AuditActionContactImport,
 		AuditActionAuditLogExport,
 		AuditActionWebhookEndpointTest,
@@ -1150,6 +1152,8 @@ func (s AuditAction) MarshalText() ([]byte, error) {
 	case AuditActionWorkspaceAbuseUnexempt:
 		return []byte(s), nil
 	case AuditActionWorkspaceSendCapChange:
+		return []byte(s), nil
+	case AuditActionWorkspaceSendingRulesChange:
 		return []byte(s), nil
 	case AuditActionContactImport:
 		return []byte(s), nil
@@ -1362,6 +1366,9 @@ func (s *AuditAction) UnmarshalText(data []byte) error {
 		return nil
 	case AuditActionWorkspaceSendCapChange:
 		*s = AuditActionWorkspaceSendCapChange
+		return nil
+	case AuditActionWorkspaceSendingRulesChange:
+		*s = AuditActionWorkspaceSendingRulesChange
 		return nil
 	case AuditActionContactImport:
 		*s = AuditActionContactImport
@@ -2215,7 +2222,7 @@ type AutomationReport struct {
 	Results AutomationResults `json:"results"`
 	// The send Steps' messages by Step id, each summed over every version that had the Step and sorted by
 	// the newest of those versions, then by its place there: one entry per Step any of the automation's
-	// messages was sent from.
+	// messages was sent from or an active enrollment's send waits at now.
 	Steps []AutomationStepFigures `json:"steps"`
 	// The send Steps' messages by version and Step id, in version order and, within a version, in its Step
 	// order.
@@ -2842,6 +2849,15 @@ type AutomationStepFigures struct {
 	// Messages skipped: the contact had no address on the step's Channel, had opted out of it, or was
 	// suppressed. The enrollment moved on to the next step.
 	Skipped int32 `json:"skipped"`
+	// The skipped messages by Skipped reason (ADR 0178): every reason of the closed list in its order, one
+	// none was skipped for at zero; they add up to `skipped`.
+	SkippedByReason []SkippedReasonCount `json:"skippedByReason"`
+	// The active enrollments standing on the Step whose send waits now, by the cause of its latest
+	// Deferral (ADR 0178): every cause of the closed list in its order, one none waits for at zero.
+	WaitingByCause []DeferralCauseCount `json:"waitingByCause"`
+	// Messages sent whose Sending window judged them by a single time zone (ADR 0134): the recipient could
+	// be in one zone only. Zero on a Channel with no Sending window.
+	SingleZone int32 `json:"singleZone"`
 }
 
 // GetStepId returns the value of StepId.
@@ -2859,6 +2875,21 @@ func (s *AutomationStepFigures) GetSkipped() int32 {
 	return s.Skipped
 }
 
+// GetSkippedByReason returns the value of SkippedByReason.
+func (s *AutomationStepFigures) GetSkippedByReason() []SkippedReasonCount {
+	return s.SkippedByReason
+}
+
+// GetWaitingByCause returns the value of WaitingByCause.
+func (s *AutomationStepFigures) GetWaitingByCause() []DeferralCauseCount {
+	return s.WaitingByCause
+}
+
+// GetSingleZone returns the value of SingleZone.
+func (s *AutomationStepFigures) GetSingleZone() int32 {
+	return s.SingleZone
+}
+
 // SetStepId sets the value of StepId.
 func (s *AutomationStepFigures) SetStepId(val StepId) {
 	s.StepId = val
@@ -2872,6 +2903,21 @@ func (s *AutomationStepFigures) SetSent(val int32) {
 // SetSkipped sets the value of Skipped.
 func (s *AutomationStepFigures) SetSkipped(val int32) {
 	s.Skipped = val
+}
+
+// SetSkippedByReason sets the value of SkippedByReason.
+func (s *AutomationStepFigures) SetSkippedByReason(val []SkippedReasonCount) {
+	s.SkippedByReason = val
+}
+
+// SetWaitingByCause sets the value of WaitingByCause.
+func (s *AutomationStepFigures) SetWaitingByCause(val []DeferralCauseCount) {
+	s.WaitingByCause = val
+}
+
+// SetSingleZone sets the value of SingleZone.
+func (s *AutomationStepFigures) SetSingleZone(val int32) {
+	s.SingleZone = val
 }
 
 // One Step of an automation, by `type`, as a request writes it. A field of another kind is refused.
@@ -3756,6 +3802,13 @@ type AutomationVersionStepFigures struct {
 	Sent int32 `json:"sent"`
 	// Messages skipped, as in AutomationStepFigures.
 	Skipped int32 `json:"skipped"`
+	// The skipped messages by Skipped reason, as in AutomationStepFigures.
+	SkippedByReason []SkippedReasonCount `json:"skippedByReason"`
+	// The active enrollments of the version standing on the Step whose send waits now, by cause, as in
+	// AutomationStepFigures.
+	WaitingByCause []DeferralCauseCount `json:"waitingByCause"`
+	// Messages sent whose Sending window judged them by a single time zone, as in AutomationStepFigures.
+	SingleZone int32 `json:"singleZone"`
 }
 
 // GetVersion returns the value of Version.
@@ -3778,6 +3831,21 @@ func (s *AutomationVersionStepFigures) GetSkipped() int32 {
 	return s.Skipped
 }
 
+// GetSkippedByReason returns the value of SkippedByReason.
+func (s *AutomationVersionStepFigures) GetSkippedByReason() []SkippedReasonCount {
+	return s.SkippedByReason
+}
+
+// GetWaitingByCause returns the value of WaitingByCause.
+func (s *AutomationVersionStepFigures) GetWaitingByCause() []DeferralCauseCount {
+	return s.WaitingByCause
+}
+
+// GetSingleZone returns the value of SingleZone.
+func (s *AutomationVersionStepFigures) GetSingleZone() int32 {
+	return s.SingleZone
+}
+
 // SetVersion sets the value of Version.
 func (s *AutomationVersionStepFigures) SetVersion(val int32) {
 	s.Version = val
@@ -3796,6 +3864,21 @@ func (s *AutomationVersionStepFigures) SetSent(val int32) {
 // SetSkipped sets the value of Skipped.
 func (s *AutomationVersionStepFigures) SetSkipped(val int32) {
 	s.Skipped = val
+}
+
+// SetSkippedByReason sets the value of SkippedByReason.
+func (s *AutomationVersionStepFigures) SetSkippedByReason(val []SkippedReasonCount) {
+	s.SkippedByReason = val
+}
+
+// SetWaitingByCause sets the value of WaitingByCause.
+func (s *AutomationVersionStepFigures) SetWaitingByCause(val []DeferralCauseCount) {
+	s.WaitingByCause = val
+}
+
+// SetSingleZone sets the value of SingleZone.
+func (s *AutomationVersionStepFigures) SetSingleZone(val int32) {
+	s.SingleZone = val
 }
 
 // The enrollments that went on at once from one Wait until on a date instead of waiting, by why: read
@@ -6252,6 +6335,17 @@ type BroadcastReport struct {
 	SentCount int32 `json:"sentCount"`
 	// Recipients skipped at send time (no destination any more, unsubscribed or suppressed after planning).
 	SkippedCount int32 `json:"skippedCount"`
+	// The skipped recipients by Skipped reason (ADR 0178): every reason of the closed list in its order,
+	// one none was skipped for at zero; they add up to `skippedCount`.
+	SkippedByReason []SkippedReasonCount `json:"skippedByReason"`
+	// The pending recipients whose send waits now, by the cause of its latest Deferral (ADR 0178): every
+	// cause of the closed list in its order, one none waits for at zero; all zero once the broadcast is no
+	// longer sending.
+	WaitingByCause []DeferralCauseCount `json:"waitingByCause"`
+	// Messages sent whose Sending window judged them by a single time zone (ADR 0134): the recipient could
+	// be in one zone only, so the window held exactly to its hours; null on a Channel with no Sending
+	// window.
+	SingleZoneCount NilInt32 `json:"singleZoneCount"`
 	// Messages that failed to send.
 	FailedCount int32 `json:"failedCount"`
 	// Recipients whose send has not ended yet; none on a cancelled broadcast but a message already handed
@@ -6314,6 +6408,21 @@ func (s *BroadcastReport) GetSentCount() int32 {
 // GetSkippedCount returns the value of SkippedCount.
 func (s *BroadcastReport) GetSkippedCount() int32 {
 	return s.SkippedCount
+}
+
+// GetSkippedByReason returns the value of SkippedByReason.
+func (s *BroadcastReport) GetSkippedByReason() []SkippedReasonCount {
+	return s.SkippedByReason
+}
+
+// GetWaitingByCause returns the value of WaitingByCause.
+func (s *BroadcastReport) GetWaitingByCause() []DeferralCauseCount {
+	return s.WaitingByCause
+}
+
+// GetSingleZoneCount returns the value of SingleZoneCount.
+func (s *BroadcastReport) GetSingleZoneCount() NilInt32 {
+	return s.SingleZoneCount
 }
 
 // GetFailedCount returns the value of FailedCount.
@@ -6409,6 +6518,21 @@ func (s *BroadcastReport) SetSentCount(val int32) {
 // SetSkippedCount sets the value of SkippedCount.
 func (s *BroadcastReport) SetSkippedCount(val int32) {
 	s.SkippedCount = val
+}
+
+// SetSkippedByReason sets the value of SkippedByReason.
+func (s *BroadcastReport) SetSkippedByReason(val []SkippedReasonCount) {
+	s.SkippedByReason = val
+}
+
+// SetWaitingByCause sets the value of WaitingByCause.
+func (s *BroadcastReport) SetWaitingByCause(val []DeferralCauseCount) {
+	s.WaitingByCause = val
+}
+
+// SetSingleZoneCount sets the value of SingleZoneCount.
+func (s *BroadcastReport) SetSingleZoneCount(val NilInt32) {
+	s.SingleZoneCount = val
 }
 
 // SetFailedCount sets the value of FailedCount.
@@ -11750,6 +11874,100 @@ func (s *DateTriggerKind) UnmarshalText(data []byte) error {
 	}
 }
 
+// What a Deferral waits for: the send is not consumed and goes through every check again when it is
+// retried.
+// Ref: #/components/schemas/DeferralCause
+type DeferralCause string
+
+const (
+	DeferralCauseProviderLimit DeferralCause = "provider_limit"
+	DeferralCauseSendCap       DeferralCause = "send_cap"
+	DeferralCauseProvider      DeferralCause = "provider"
+	DeferralCauseSendingWindow DeferralCause = "sending_window"
+	DeferralCauseFrequencyCap  DeferralCause = "frequency_cap"
+)
+
+// AllValues returns all DeferralCause values.
+func (DeferralCause) AllValues() []DeferralCause {
+	return []DeferralCause{
+		DeferralCauseProviderLimit,
+		DeferralCauseSendCap,
+		DeferralCauseProvider,
+		DeferralCauseSendingWindow,
+		DeferralCauseFrequencyCap,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s DeferralCause) MarshalText() ([]byte, error) {
+	switch s {
+	case DeferralCauseProviderLimit:
+		return []byte(s), nil
+	case DeferralCauseSendCap:
+		return []byte(s), nil
+	case DeferralCauseProvider:
+		return []byte(s), nil
+	case DeferralCauseSendingWindow:
+		return []byte(s), nil
+	case DeferralCauseFrequencyCap:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *DeferralCause) UnmarshalText(data []byte) error {
+	switch DeferralCause(data) {
+	case DeferralCauseProviderLimit:
+		*s = DeferralCauseProviderLimit
+		return nil
+	case DeferralCauseSendCap:
+		*s = DeferralCauseSendCap
+		return nil
+	case DeferralCauseProvider:
+		*s = DeferralCauseProvider
+		return nil
+	case DeferralCauseSendingWindow:
+		*s = DeferralCauseSendingWindow
+		return nil
+	case DeferralCauseFrequencyCap:
+		*s = DeferralCauseFrequencyCap
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// How many sends wait now for one cause.
+// Ref: #/components/schemas/DeferralCauseCount
+type DeferralCauseCount struct {
+	// The cause, one of the closed list.
+	Cause DeferralCause `json:"cause"`
+	// Sends whose latest Deferral was for it and that still wait.
+	Count int32 `json:"count"`
+}
+
+// GetCause returns the value of Cause.
+func (s *DeferralCauseCount) GetCause() DeferralCause {
+	return s.Cause
+}
+
+// GetCount returns the value of Count.
+func (s *DeferralCauseCount) GetCount() int32 {
+	return s.Count
+}
+
+// SetCause sets the value of Cause.
+func (s *DeferralCauseCount) SetCause(val DeferralCause) {
+	s.Cause = val
+}
+
+// SetCount sets the value of Count.
+func (s *DeferralCauseCount) SetCount(val int32) {
+	s.Count = val
+}
+
 // A TXT record the caller publishes: a Sending domain's DKIM key, or a Tracking domain's ownership.
 // Ref: #/components/schemas/DnsRecord
 type DnsRecord struct {
@@ -13863,8 +14081,15 @@ type EnrollmentResource struct {
 	// Id of the Step of its version the Enrollment stands on (ADR 0122): a wait while it waits, the Step
 	// it ended on once it ended; absent only for a version of no Steps.
 	CurrentStepId OptStepId `json:"currentStepId"`
-	// When the wait the Enrollment stands on is due: computed once, when it reached the wait (ADR 0124).
+	// When the wait the Enrollment stands on is due: a wait Step's, computed once when it reached the wait
+	// (ADR 0124), or, while the send of its Step is deferred, when the send is tried again (ADR 0178).
 	ResumeAt OptTimestamp `json:"resumeAt"`
+	// Since when the send of the Step the Enrollment stands on waits: the first Deferral at the Step (ADR
+	// 0178); absent once it moves on, and while its send is not deferred.
+	DeferredSince OptTimestamp `json:"deferredSince"`
+	// Why the send of the Step the Enrollment stands on waits: the cause of its latest Deferral; absent
+	// whenever `deferredSince` is.
+	DeferralCause OptDeferralCause `json:"deferralCause"`
 	// Present on a failed Enrollment whose failure an HTTP step recorded.
 	Failure OptEnrollmentFailure `json:"failure"`
 	// When the Contact was enrolled.
@@ -13916,6 +14141,16 @@ func (s *EnrollmentResource) GetCurrentStepId() OptStepId {
 // GetResumeAt returns the value of ResumeAt.
 func (s *EnrollmentResource) GetResumeAt() OptTimestamp {
 	return s.ResumeAt
+}
+
+// GetDeferredSince returns the value of DeferredSince.
+func (s *EnrollmentResource) GetDeferredSince() OptTimestamp {
+	return s.DeferredSince
+}
+
+// GetDeferralCause returns the value of DeferralCause.
+func (s *EnrollmentResource) GetDeferralCause() OptDeferralCause {
+	return s.DeferralCause
 }
 
 // GetFailure returns the value of Failure.
@@ -13976,6 +14211,16 @@ func (s *EnrollmentResource) SetCurrentStepId(val OptStepId) {
 // SetResumeAt sets the value of ResumeAt.
 func (s *EnrollmentResource) SetResumeAt(val OptTimestamp) {
 	s.ResumeAt = val
+}
+
+// SetDeferredSince sets the value of DeferredSince.
+func (s *EnrollmentResource) SetDeferredSince(val OptTimestamp) {
+	s.DeferredSince = val
+}
+
+// SetDeferralCause sets the value of DeferralCause.
+func (s *EnrollmentResource) SetDeferralCause(val OptDeferralCause) {
+	s.DeferralCause = val
 }
 
 // SetFailure sets the value of Failure.
@@ -15811,6 +16056,117 @@ func (s *FilterPropertyLeafKind) UnmarshalText(data []byte) error {
 	}
 }
 
+// One of the Workspace's Frequency caps (ADR 0137): at most `maxMessages` marketing messages to one
+// Destination on the Channel per rolling `periodMinutes`. A cap with a country is for the numbers of
+// that country and outranks the Channel's own; one with no maximum removes the cap there. Every
+// Broadcast and Automation message counts; Transactional messages and Test sends do not.
+// Ref: #/components/schemas/FrequencyCap
+type FrequencyCap struct {
+	// The Channel it counts on.
+	Channel FrequencyCapChannel `json:"channel"`
+	// The country of the numbers it is for, on a phone Channel only; null for every Destination on the
+	// Channel.
+	Country NilCountryCode `json:"country"`
+	// The most marketing messages one Destination receives in the period; null removes the cap.
+	MaxMessages NilFrequencyCapMaxMessages `json:"maxMessages"`
+	// The rolling period in minutes; null exactly when the maximum is.
+	PeriodMinutes NilFrequencyCapPeriodMinutes `json:"periodMinutes"`
+}
+
+// GetChannel returns the value of Channel.
+func (s *FrequencyCap) GetChannel() FrequencyCapChannel {
+	return s.Channel
+}
+
+// GetCountry returns the value of Country.
+func (s *FrequencyCap) GetCountry() NilCountryCode {
+	return s.Country
+}
+
+// GetMaxMessages returns the value of MaxMessages.
+func (s *FrequencyCap) GetMaxMessages() NilFrequencyCapMaxMessages {
+	return s.MaxMessages
+}
+
+// GetPeriodMinutes returns the value of PeriodMinutes.
+func (s *FrequencyCap) GetPeriodMinutes() NilFrequencyCapPeriodMinutes {
+	return s.PeriodMinutes
+}
+
+// SetChannel sets the value of Channel.
+func (s *FrequencyCap) SetChannel(val FrequencyCapChannel) {
+	s.Channel = val
+}
+
+// SetCountry sets the value of Country.
+func (s *FrequencyCap) SetCountry(val NilCountryCode) {
+	s.Country = val
+}
+
+// SetMaxMessages sets the value of MaxMessages.
+func (s *FrequencyCap) SetMaxMessages(val NilFrequencyCapMaxMessages) {
+	s.MaxMessages = val
+}
+
+// SetPeriodMinutes sets the value of PeriodMinutes.
+func (s *FrequencyCap) SetPeriodMinutes(val NilFrequencyCapPeriodMinutes) {
+	s.PeriodMinutes = val
+}
+
+// A Channel a Frequency cap counts marketing messages on (ADR 0137).
+// Ref: #/components/schemas/FrequencyCapChannel
+type FrequencyCapChannel string
+
+const (
+	FrequencyCapChannelEmail    FrequencyCapChannel = "email"
+	FrequencyCapChannelSMS      FrequencyCapChannel = "sms"
+	FrequencyCapChannelTelegram FrequencyCapChannel = "telegram"
+)
+
+// AllValues returns all FrequencyCapChannel values.
+func (FrequencyCapChannel) AllValues() []FrequencyCapChannel {
+	return []FrequencyCapChannel{
+		FrequencyCapChannelEmail,
+		FrequencyCapChannelSMS,
+		FrequencyCapChannelTelegram,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s FrequencyCapChannel) MarshalText() ([]byte, error) {
+	switch s {
+	case FrequencyCapChannelEmail:
+		return []byte(s), nil
+	case FrequencyCapChannelSMS:
+		return []byte(s), nil
+	case FrequencyCapChannelTelegram:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *FrequencyCapChannel) UnmarshalText(data []byte) error {
+	switch FrequencyCapChannel(data) {
+	case FrequencyCapChannelEmail:
+		*s = FrequencyCapChannelEmail
+		return nil
+	case FrequencyCapChannelSMS:
+		*s = FrequencyCapChannelSMS
+		return nil
+	case FrequencyCapChannelTelegram:
+		*s = FrequencyCapChannelTelegram
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type FrequencyCapMaxMessages int32
+
+type FrequencyCapPeriodMinutes int32
+
 // Whether a Contact has something: a Tag, a Telegram chat, a phone that can be texted.
 // Ref: #/components/schemas/HasOperator
 type HasOperator string
@@ -17393,6 +17749,8 @@ func (s *MessageSender) UnmarshalText(data []byte) error {
 	}
 }
 
+type MinuteOfDay int32
+
 // Which side of `at` a moment is on: before is strictly earlier, after is at or later, so the two
 // split time at `at`.
 // Ref: #/components/schemas/MomentOperator
@@ -17636,6 +17994,51 @@ func (o NilAutomationVersion) Or(d AutomationVersion) AutomationVersion {
 	return d
 }
 
+// NewNilCountryCode returns new NilCountryCode with value set to v.
+func NewNilCountryCode(v CountryCode) NilCountryCode {
+	return NilCountryCode{
+		Value: v,
+	}
+}
+
+// NilCountryCode is nullable CountryCode.
+type NilCountryCode struct {
+	Value CountryCode
+	Null  bool
+}
+
+// SetTo sets value to v.
+func (o *NilCountryCode) SetTo(v CountryCode) {
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o NilCountryCode) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *NilCountryCode) SetToNull() {
+	o.Null = true
+	var v CountryCode
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o NilCountryCode) Get() (v CountryCode, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o NilCountryCode) Or(d CountryCode) CountryCode {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewNilCurrencyCode returns new NilCurrencyCode with value set to v.
 func NewNilCurrencyCode(v CurrencyCode) NilCurrencyCode {
 	return NilCurrencyCode{
@@ -17855,6 +18258,96 @@ func (o NilFloat64) Get() (v float64, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o NilFloat64) Or(d float64) float64 {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewNilFrequencyCapMaxMessages returns new NilFrequencyCapMaxMessages with value set to v.
+func NewNilFrequencyCapMaxMessages(v FrequencyCapMaxMessages) NilFrequencyCapMaxMessages {
+	return NilFrequencyCapMaxMessages{
+		Value: v,
+	}
+}
+
+// NilFrequencyCapMaxMessages is nullable FrequencyCapMaxMessages.
+type NilFrequencyCapMaxMessages struct {
+	Value FrequencyCapMaxMessages
+	Null  bool
+}
+
+// SetTo sets value to v.
+func (o *NilFrequencyCapMaxMessages) SetTo(v FrequencyCapMaxMessages) {
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o NilFrequencyCapMaxMessages) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *NilFrequencyCapMaxMessages) SetToNull() {
+	o.Null = true
+	var v FrequencyCapMaxMessages
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o NilFrequencyCapMaxMessages) Get() (v FrequencyCapMaxMessages, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o NilFrequencyCapMaxMessages) Or(d FrequencyCapMaxMessages) FrequencyCapMaxMessages {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewNilFrequencyCapPeriodMinutes returns new NilFrequencyCapPeriodMinutes with value set to v.
+func NewNilFrequencyCapPeriodMinutes(v FrequencyCapPeriodMinutes) NilFrequencyCapPeriodMinutes {
+	return NilFrequencyCapPeriodMinutes{
+		Value: v,
+	}
+}
+
+// NilFrequencyCapPeriodMinutes is nullable FrequencyCapPeriodMinutes.
+type NilFrequencyCapPeriodMinutes struct {
+	Value FrequencyCapPeriodMinutes
+	Null  bool
+}
+
+// SetTo sets value to v.
+func (o *NilFrequencyCapPeriodMinutes) SetTo(v FrequencyCapPeriodMinutes) {
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o NilFrequencyCapPeriodMinutes) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *NilFrequencyCapPeriodMinutes) SetToNull() {
+	o.Null = true
+	var v FrequencyCapPeriodMinutes
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o NilFrequencyCapPeriodMinutes) Get() (v FrequencyCapPeriodMinutes, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o NilFrequencyCapPeriodMinutes) Or(d FrequencyCapPeriodMinutes) FrequencyCapPeriodMinutes {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -18982,6 +19475,52 @@ func (o OptCustomFieldType) Get() (v CustomFieldType, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptCustomFieldType) Or(d CustomFieldType) CustomFieldType {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptDeferralCause returns new OptDeferralCause with value set to v.
+func NewOptDeferralCause(v DeferralCause) OptDeferralCause {
+	return OptDeferralCause{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptDeferralCause is optional DeferralCause.
+type OptDeferralCause struct {
+	Value DeferralCause
+	Set   bool
+}
+
+// IsSet returns true if OptDeferralCause was set.
+func (o OptDeferralCause) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptDeferralCause) Reset() {
+	var v DeferralCause
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptDeferralCause) SetTo(v DeferralCause) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptDeferralCause) Get() (v DeferralCause, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptDeferralCause) Or(d DeferralCause) DeferralCause {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -27588,6 +28127,158 @@ func (s *SendingDomainsListOK) SetTotalPages(val int32) {
 	s.TotalPages = val
 }
 
+// The Workspace's sending rules: its Frequency caps and its Sending windows. A new Workspace has three
+// marketing texts per 1440 minutes on SMS and an SMS window of 8:00 to 20:00 every day. The Workspace
+// answers for its compliance: the app keeps no table of laws, and the defaults are not legal advice.
+// Ref: #/components/schemas/SendingRules
+type SendingRules struct {
+	// The Frequency caps.
+	FrequencyCaps []FrequencyCap `json:"frequencyCaps"`
+	// The Sending windows.
+	SendingWindows []SendingWindow `json:"sendingWindows"`
+}
+
+// GetFrequencyCaps returns the value of FrequencyCaps.
+func (s *SendingRules) GetFrequencyCaps() []FrequencyCap {
+	return s.FrequencyCaps
+}
+
+// GetSendingWindows returns the value of SendingWindows.
+func (s *SendingRules) GetSendingWindows() []SendingWindow {
+	return s.SendingWindows
+}
+
+// SetFrequencyCaps sets the value of FrequencyCaps.
+func (s *SendingRules) SetFrequencyCaps(val []FrequencyCap) {
+	s.FrequencyCaps = val
+}
+
+// SetSendingWindows sets the value of SendingWindows.
+func (s *SendingRules) SetSendingWindows(val []SendingWindow) {
+	s.SendingWindows = val
+}
+
+// One of the Workspace's Sending windows (ADR 0134): the hours of each day of the week, in the
+// recipient's local time, in which a marketing message on the Channel may go out; a day it does not
+// list stays closed. A window with a country is for the numbers of that country and outranks the
+// Channel's own. It opens at least once a week.
+// Ref: #/components/schemas/SendingWindow
+type SendingWindow struct {
+	// The Channel it holds.
+	Channel SendingWindowChannel `json:"channel"`
+	// The country of the numbers it is for; null for every number on the Channel.
+	Country NilCountryCode `json:"country"`
+	// The hours it is open, at most one entry per day.
+	Hours []SendingWindowHours `json:"hours"`
+}
+
+// GetChannel returns the value of Channel.
+func (s *SendingWindow) GetChannel() SendingWindowChannel {
+	return s.Channel
+}
+
+// GetCountry returns the value of Country.
+func (s *SendingWindow) GetCountry() NilCountryCode {
+	return s.Country
+}
+
+// GetHours returns the value of Hours.
+func (s *SendingWindow) GetHours() []SendingWindowHours {
+	return s.Hours
+}
+
+// SetChannel sets the value of Channel.
+func (s *SendingWindow) SetChannel(val SendingWindowChannel) {
+	s.Channel = val
+}
+
+// SetCountry sets the value of Country.
+func (s *SendingWindow) SetCountry(val NilCountryCode) {
+	s.Country = val
+}
+
+// SetHours sets the value of Hours.
+func (s *SendingWindow) SetHours(val []SendingWindowHours) {
+	s.Hours = val
+}
+
+// A Channel a Sending window holds (ADR 0134): only SMS, since email and Telegram go out at any hour.
+// Ref: #/components/schemas/SendingWindowChannel
+type SendingWindowChannel string
+
+const (
+	SendingWindowChannelSMS SendingWindowChannel = "sms"
+)
+
+// AllValues returns all SendingWindowChannel values.
+func (SendingWindowChannel) AllValues() []SendingWindowChannel {
+	return []SendingWindowChannel{
+		SendingWindowChannelSMS,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SendingWindowChannel) MarshalText() ([]byte, error) {
+	switch s {
+	case SendingWindowChannelSMS:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SendingWindowChannel) UnmarshalText(data []byte) error {
+	switch SendingWindowChannel(data) {
+	case SendingWindowChannelSMS:
+		*s = SendingWindowChannelSMS
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// The hours a Sending window is open on one day of the week, in the recipient's local time.
+// Ref: #/components/schemas/SendingWindowHours
+type SendingWindowHours struct {
+	// The day, in the recipient's local time.
+	Day Weekday `json:"day"`
+	// The minute of the day it opens.
+	OpensAt MinuteOfDay `json:"opensAt"`
+	// The minute of the day it closes, after it opens.
+	ClosesAt MinuteOfDay `json:"closesAt"`
+}
+
+// GetDay returns the value of Day.
+func (s *SendingWindowHours) GetDay() Weekday {
+	return s.Day
+}
+
+// GetOpensAt returns the value of OpensAt.
+func (s *SendingWindowHours) GetOpensAt() MinuteOfDay {
+	return s.OpensAt
+}
+
+// GetClosesAt returns the value of ClosesAt.
+func (s *SendingWindowHours) GetClosesAt() MinuteOfDay {
+	return s.ClosesAt
+}
+
+// SetDay sets the value of Day.
+func (s *SendingWindowHours) SetDay(val Weekday) {
+	s.Day = val
+}
+
+// SetOpensAt sets the value of OpensAt.
+func (s *SendingWindowHours) SetOpensAt(val MinuteOfDay) {
+	s.OpensAt = val
+}
+
+// SetClosesAt sets the value of ClosesAt.
+func (s *SendingWindowHours) SetClosesAt(val MinuteOfDay) {
+	s.ClosesAt = val
+}
+
 // A test of what sent the message a message's sent, delivery or engagement System event is about (ADR
 // 0153, ADR 0180): the Broadcast or the Automation named by its id, archived or not, which the Event
 // carries as its `broadcastId` or `automationId`. A filter of any other action refuses it, and so does
@@ -28406,6 +29097,35 @@ func (s *SkippedReason) UnmarshalText(data []byte) error {
 	default:
 		return errors.Errorf("invalid value: %q", data)
 	}
+}
+
+// How many sends were Skipped for one reason.
+// Ref: #/components/schemas/SkippedReasonCount
+type SkippedReasonCount struct {
+	// The reason, one of the closed list.
+	Reason SkippedReason `json:"reason"`
+	// Sends Skipped for it.
+	Count int32 `json:"count"`
+}
+
+// GetReason returns the value of Reason.
+func (s *SkippedReasonCount) GetReason() SkippedReason {
+	return s.Reason
+}
+
+// GetCount returns the value of Count.
+func (s *SkippedReasonCount) GetCount() int32 {
+	return s.Count
+}
+
+// SetReason sets the value of Reason.
+func (s *SkippedReasonCount) SetReason(val SkippedReason) {
+	s.Reason = val
+}
+
+// SetCount sets the value of Count.
+func (s *SkippedReasonCount) SetCount(val int32) {
+	s.Count = val
 }
 
 // SMS's content of a Broadcast as stored.
@@ -35457,6 +36177,9 @@ type WorkspaceResource struct {
 	// The Send cap the platform set on the Workspace, with its sends over the last 24 hours; null when no
 	// Send cap applies.
 	SendCap OptNilSendCap `json:"sendCap"`
+	// The Workspace's sending rules (ADR 0134, ADR 0137): its Frequency caps and its Sending windows.
+	// Read-only: only a person changes them, in the console's Workspace settings.
+	SendingRules SendingRules `json:"sendingRules"`
 	// The revision of the Workspace this answer shows (ADR 0119).
 	Revision Revision `json:"revision"`
 }
@@ -35504,6 +36227,11 @@ func (s *WorkspaceResource) GetTimezone() TimeZoneName {
 // GetSendCap returns the value of SendCap.
 func (s *WorkspaceResource) GetSendCap() OptNilSendCap {
 	return s.SendCap
+}
+
+// GetSendingRules returns the value of SendingRules.
+func (s *WorkspaceResource) GetSendingRules() SendingRules {
+	return s.SendingRules
 }
 
 // GetRevision returns the value of Revision.
@@ -35554,6 +36282,11 @@ func (s *WorkspaceResource) SetTimezone(val TimeZoneName) {
 // SetSendCap sets the value of SendCap.
 func (s *WorkspaceResource) SetSendCap(val OptNilSendCap) {
 	s.SendCap = val
+}
+
+// SetSendingRules sets the value of SendingRules.
+func (s *WorkspaceResource) SetSendingRules(val SendingRules) {
+	s.SendingRules = val
 }
 
 // SetRevision sets the value of Revision.

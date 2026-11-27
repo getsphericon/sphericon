@@ -100,6 +100,7 @@ export const zAuditAction = z.enum([
   'workspace.abuse_exempt',
   'workspace.abuse_unexempt',
   'workspace.send_cap_change',
+  'workspace.sending_rules_change',
   'contact.import',
   'audit_log.export',
   'webhook_endpoint.test',
@@ -485,6 +486,14 @@ export const zDeferralCause = z.enum([
 ]);
 
 /**
+ * How many sends wait now for one cause
+ */
+export const zDeferralCauseCount = z.object({
+  cause: zDeferralCause,
+  count: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
  * A TXT record the caller publishes: a Sending domain's DKIM key, or a Tracking domain's ownership
  */
 export const zDnsRecord = z.object({
@@ -656,6 +665,48 @@ export const zEntryPolicy = z.enum(['once', 'again']);
  * How an event count is bounded: at least `times`, or at most `times`
  */
 export const zEventCountOperator = z.enum(['atLeast', 'atMost']);
+
+/**
+ * A Channel a Frequency cap counts marketing messages on (ADR 0137)
+ */
+export const zFrequencyCapChannel = z.enum([
+  'email',
+  'sms',
+  'telegram'
+]);
+
+/**
+ * The most marketing messages one Destination receives in a Frequency cap's period
+ */
+export const zFrequencyCapMaxMessages = z.int().gte(1).lte(1000);
+
+/**
+ * A Frequency cap's rolling period in minutes: one minute to seven days
+ */
+export const zFrequencyCapPeriodMinutes = z.int().gte(1).lte(10080);
+
+/**
+ * One of the Workspace's Frequency caps (ADR 0137): at most `maxMessages` marketing messages to one
+ * Destination on the Channel per rolling `periodMinutes`. A cap with a country is for the numbers of
+ * that country and outranks the Channel's own; one with no maximum removes the cap there. Every
+ * Broadcast and Automation message counts; Transactional messages and Test sends do not.
+ */
+export const zFrequencyCap = z.object({
+  channel: zFrequencyCapChannel,
+  country: zCountryCode.nullable(),
+  maxMessages: zFrequencyCapMaxMessages.nullable(),
+  periodMinutes: zFrequencyCapPeriodMinutes.nullable()
+});
+
+/**
+ * A Frequency cap as a replacement of the rules names it
+ */
+export const zFrequencyCapInput = z.strictObject({
+  channel: zFrequencyCapChannel,
+  country: zCountryCode.nullable(),
+  maxMessages: zFrequencyCapMaxMessages.nullable(),
+  periodMinutes: zFrequencyCapPeriodMinutes.nullable()
+});
 
 /**
  * Scopes an OAuth client may be granted without any extra opt-in: the external
@@ -930,6 +981,11 @@ export const zAutomationResults = z.object({
  * What sends the message a message's System event is about
  */
 export const zMessageSender = z.enum(['broadcast', 'automation']);
+
+/**
+ * A minute of the day: 0 is midnight at its start, 1440 midnight at its end
+ */
+export const zMinuteOfDay = z.int().gte(0).lte(1440);
 
 /**
  * Which side of `at` a moment is on: before is strictly earlier, after is at or later, so the two
@@ -1300,6 +1356,12 @@ export const zSendScope = z.enum([
   'confirmations:send',
   'mcp:send'
 ]);
+
+/**
+ * A Channel a Sending window holds (ADR 0134): only SMS, since email and Telegram go out at any
+ * hour
+ */
+export const zSendingWindowChannel = z.enum(['sms']);
 
 /**
  * A test of what sent the message a message's sent, delivery or engagement System event is about
@@ -1745,39 +1807,6 @@ export const zSiteBroadcastLimit = z.enum(['sendCap', 'providerLimit']);
  */
 export const zSiteBroadcastLinkClicksList = z.object({
   items: z.array(zLinkClicks)
-});
-
-/**
- * Delivery figures of a broadcast, derived from its recipients and their messages, per Channel
- * (ADR 0080): every Channel reports recipients, sent, skipped, failed, pending, clicked and
- * unsubscribed. A figure the broadcast's Channel does not report is null, never zero: Telegram
- * reports no delivered, opened, bounced or complained count and so no delivery or open rate; SMS
- * reports delivered and undelivered, and no opened, bounced or complained count, delivery or open
- * rate; only SMS reports undelivered.
- */
-export const zSiteBroadcastStats = z.object({
-  recipientsTotal: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  sentCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  skippedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  failedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  pendingCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  cancelledCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  openedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
-  clickedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  untrackedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  unsubscribedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  deliveredCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
-  undeliveredCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
-  bouncedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
-  complainedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
-  capturedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
-  deliveryRate: z.number().nullable(),
-  openRate: z.number().nullable(),
-  clickRate: z.number(),
-  clickToOpenRate: z.number().nullable(),
-  unsubscribeRate: z.number(),
-  failureRate: z.number(),
-  revenue: zMessageRevenue
 });
 
 /**
@@ -2742,6 +2771,50 @@ export const zSkippedReason = z.enum([
 ]);
 
 /**
+ * How many sends were Skipped for one reason
+ */
+export const zSkippedReasonCount = z.object({
+  reason: zSkippedReason,
+  count: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
+ * Delivery figures of a broadcast, derived from its recipients and their messages, per Channel
+ * (ADR 0080): every Channel reports recipients, sent, skipped, failed, pending, clicked and
+ * unsubscribed. A figure the broadcast's Channel does not report is null, never zero: Telegram
+ * reports no delivered, opened, bounced or complained count and so no delivery or open rate; SMS
+ * reports delivered and undelivered, and no opened, bounced or complained count, delivery or open
+ * rate; only SMS reports undelivered.
+ */
+export const zSiteBroadcastStats = z.object({
+  recipientsTotal: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  sentCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  skippedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  skippedByReason: z.array(zSkippedReasonCount),
+  waitingByCause: z.array(zDeferralCauseCount),
+  singleZoneCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
+  failedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  pendingCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  cancelledCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  openedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
+  clickedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  untrackedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  unsubscribedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  deliveredCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
+  undeliveredCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
+  bouncedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
+  complainedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
+  capturedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
+  deliveryRate: z.number().nullable(),
+  openRate: z.number().nullable(),
+  clickRate: z.number(),
+  clickToOpenRate: z.number().nullable(),
+  unsubscribeRate: z.number(),
+  failureRate: z.number(),
+  revenue: zMessageRevenue
+});
+
+/**
  * SMS's content of a Broadcast as stored
  */
 export const zSmsBroadcastContent = z.object({
@@ -2932,7 +3005,10 @@ export const zAutomationPathFigures = z.object({
 export const zAutomationStepFigures = z.object({
   stepId: zStepId,
   sent: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  skipped: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+  skipped: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  skippedByReason: z.array(zSkippedReasonCount),
+  waitingByCause: z.array(zDeferralCauseCount),
+  singleZone: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
 });
 
 /**
@@ -2942,7 +3018,10 @@ export const zAutomationVersionStepFigures = z.object({
   version: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   stepId: zStepId,
   sent: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  skipped: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+  skipped: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  skippedByReason: z.array(zSkippedReasonCount),
+  waitingByCause: z.array(zDeferralCauseCount),
+  singleZone: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
 });
 
 /**
@@ -3935,6 +4014,14 @@ export const zSiteBindingResource = z.object({
 });
 
 /**
+ * How many of a broadcast's recipients the Sending window would hold at a moment (ADR 0134)
+ */
+export const zSiteBroadcastOutsideWindowResult = z.object({
+  held: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  reachedAt: z.exactOptional(zTimestamp)
+});
+
+/**
  * How far a sending broadcast has got. A broadcast limited by its Integration's Provider
  * limit is paced: recipients go out at an even interval. The Workspace's Send cap lets a
  * day's worth out at a time. The estimate is derived on the server from both, the later
@@ -4891,6 +4978,75 @@ export const zWeekday = z.enum([
 ]);
 
 /**
+ * The hours a Sending window is open on one day of the week, in the recipient's local time
+ */
+export const zSendingWindowHours = z.object({
+  day: zWeekday,
+  opensAt: zMinuteOfDay,
+  closesAt: zMinuteOfDay
+});
+
+/**
+ * One of the Workspace's Sending windows (ADR 0134): the hours of each day of the week, in the
+ * recipient's local time, in which a marketing message on the Channel may go out; a day it does not
+ * list stays closed. A window with a country is for the numbers of that country and outranks the
+ * Channel's own. It opens at least once a week.
+ */
+export const zSendingWindow = z.object({
+  channel: zSendingWindowChannel,
+  country: zCountryCode.nullable(),
+  hours: z.array(zSendingWindowHours)
+});
+
+/**
+ * The Workspace's sending rules: its Frequency caps and its Sending windows. A new Workspace has
+ * three marketing texts per 1440 minutes on SMS and an SMS window of 8:00 to 20:00 every day. The
+ * Workspace answers for its compliance: the app keeps no table of laws, and the defaults are not
+ * legal advice.
+ */
+export const zSendingRules = z.object({
+  frequencyCaps: z.array(zFrequencyCap),
+  sendingWindows: z.array(zSendingWindow)
+});
+
+/**
+ * A day's hours of a Sending window as a replacement of the rules names them
+ */
+export const zSendingWindowHoursInput = z.strictObject({
+  day: zWeekday,
+  opensAt: zMinuteOfDay,
+  closesAt: zMinuteOfDay
+});
+
+/**
+ * A Sending window as a replacement of the rules names it
+ */
+export const zSendingWindowInput = z.strictObject({
+  channel: zSendingWindowChannel,
+  country: zCountryCode.nullable(),
+  hours: z.array(zSendingWindowHoursInput).max(7)
+});
+
+/**
+ * Replace the Workspace's sending rules as a whole: a cap or a window left out is removed
+ */
+export const zSiteReplaceSendingRulesInput = z.strictObject({
+  revision: zRevision,
+  frequencyCaps: z.array(zFrequencyCapInput).max(300),
+  sendingWindows: z.array(zSendingWindowInput).max(300)
+});
+
+/**
+ * The Workspace's sending rules as /site shows them (ADR 0134, ADR 0137), with the Workspace's
+ * revision. Every member reads them.
+ */
+export const zSiteSendingRulesResource = z.object({
+  frequencyCaps: z.array(zFrequencyCap),
+  sendingWindows: z.array(zSendingWindow),
+  revision: zRevision
+});
+
+/**
  * Wait until the next moment a local time comes, on chosen weekdays or on any day, in the
  * Contact's time zone, or the Workspace time zone when the Contact has no valid one (ADR 0126)
  */
@@ -5169,6 +5325,8 @@ export const zEnrollmentResource = z.object({
   occurrence: z.exactOptional(zEnrollmentOccurrence),
   currentStepId: z.exactOptional(zStepId),
   resumeAt: z.exactOptional(zTimestamp),
+  deferredSince: z.exactOptional(zTimestamp),
+  deferralCause: z.exactOptional(zDeferralCause),
   failure: z.exactOptional(zEnrollmentFailure),
   createdAt: zTimestamp,
   updatedAt: zTimestamp
@@ -5817,6 +5975,16 @@ export const zSiteAutomationResource = z.object({
   revision: zRevision,
   createdAt: zTimestamp,
   updatedAt: zTimestamp
+});
+
+/**
+ * Request body for the share of a broadcast's audience outside its Sending window: the audience, as the segment preview names it, and a moment
+ */
+export const zSiteBroadcastOutsideWindowInput = z.strictObject({
+  condition: z.exactOptional(zSegmentConditionInput),
+  channel: zBroadcastChannel,
+  integrationId: z.exactOptional(zEntityId.nullable()),
+  scheduledAt: zTimestamp
 });
 
 /**
@@ -8171,6 +8339,26 @@ export const zSiteSendingDomainsVerifyPath = z.object({
  */
 export const zSiteSendingDomainsVerifyResponse = zSendingDomainResource;
 
+export const zSiteWorkspacesGetSendingRulesPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteWorkspacesGetSendingRulesResponse = zSiteSendingRulesResource;
+
+export const zSiteWorkspacesReplaceSendingRulesBody = zSiteReplaceSendingRulesInput;
+
+export const zSiteWorkspacesReplaceSendingRulesPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteWorkspacesReplaceSendingRulesResponse = zSiteSendingRulesResource;
+
 export const zSiteSetupChecklistGetPath = z.object({
   workspaceId: zWorkspaceId
 });
@@ -8635,6 +8823,17 @@ export const zSiteAutomationsUnarchivePath = z.object({
  * The request has succeeded.
  */
 export const zSiteAutomationsUnarchiveResponse = zSiteAutomationResource;
+
+export const zSiteBroadcastsOutsideWindowBody = zSiteBroadcastOutsideWindowInput;
+
+export const zSiteBroadcastsOutsideWindowPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteBroadcastsOutsideWindowResponse = zSiteBroadcastOutsideWindowResult;
 
 export const zSiteRulesListPath = z.object({
   workspaceId: zWorkspaceId

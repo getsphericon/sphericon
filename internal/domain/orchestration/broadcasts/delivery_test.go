@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -19,7 +20,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
+	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -181,7 +184,7 @@ func TestSuppressedRecipientIsSkippedNotFailed(t *testing.T) {
 	require.NoError(t, d.del.SendRecipient(d.t.Context(), d.s, id))
 
 	assert.Equal(t, outboundmessage.StatusSkipped, d.messageOf(id).Status)
-	assert.Equal(t, broadcasts.Stats{Recipients: 1, Skipped: 1}, d.stats())
+	assert.Equal(t, broadcasts.Stats{Recipients: 1, Skipped: 1, SkippedBy: map[skipreason.Reason]int{skipreason.Suppressed: 1}}, d.stats())
 	assert.Empty(t, d.box.sent)
 }
 
@@ -267,8 +270,37 @@ func TestDeferredRecipientStaysPendingAndSleeps(t *testing.T) {
 	require.ErrorAs(t, err, &deferred)
 	assert.Positive(t, deferred.Delay)
 	assert.True(t, d.pending(second))
-	assert.NotNil(t, d.recipientRow(second).DeferredUntil)
+	rec := d.recipientRow(second)
+	require.NotNil(t, rec.DeferredUntil)
+	assert.WithinDuration(t, fixedNow.Add(deferred.Delay), *rec.DeferredUntil, time.Microsecond, "until its release moment")
+	assert.Equal(t, deferralcause.ProviderLimit, lo.FromPtr(rec.DeferralCause), "why it waits")
 	assert.Nil(t, d.broadcastRow().HoldReason, "busy is not a hold")
+}
+
+// A deferred recipient that is decided waits no more: its release moment and its cause are cleared.
+func TestADecidedRecipientKeepsNoDeferral(t *testing.T) {
+	d := newDelivery(t, atFixedNow())
+	d.env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(1).ExecX(d.t.Context())
+	for _, key := range []string{"tx:1", "tx:2", "tx:3"} {
+		res, err := d.out.Send(d.t.Context(), d.s, outboundmessages.Request{
+			Ref: outboundmessages.TransactionalRef{}, Key: key, Destination: "a@example.com",
+			Content: outboundmessages.EmailContent{Subject: "Receipt", Body: "<p>Hi</p>"},
+		})
+		require.NoError(t, err)
+		require.Equal(t, outboundmessages.Sent, res.Outcome)
+	}
+	id := d.recipient(fixtures.ContactAliceID)
+	var deferred *broadcasts.DeferredError
+	require.ErrorAs(t, d.del.SendRecipient(d.t.Context(), d.s, id), &deferred)
+
+	// The limit is lifted.
+	d.env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).ClearMaxPerSecond().ExecX(d.t.Context())
+	require.NoError(t, d.del.SendRecipient(d.t.Context(), d.s, id))
+
+	assert.Equal(t, outboundmessage.StatusSent, d.messageOf(id).Status)
+	rec := d.recipientRow(id)
+	assert.Nil(t, rec.DeferredUntil)
+	assert.Nil(t, rec.DeferralCause)
 }
 
 // The Provider limit that defers a recipient is the Broadcast's own Integration's: the

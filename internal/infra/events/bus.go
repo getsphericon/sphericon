@@ -27,7 +27,9 @@ type Publisher interface {
 type Bus struct {
 	db    *sql.DB
 	hooks []ent.Hook
-	jobs  JobQueue
+	// inters are the interceptors of every transaction client (Intercept).
+	inters []ent.Interceptor
+	jobs   JobQueue
 	// consumers are the consumers every Publish inserts jobs for (UseConsumers).
 	consumers   []Consumer
 	subscribers []Subscriber
@@ -56,6 +58,13 @@ func New(pool *sql.DB, newTxClient func(dialect.Driver) *ent.Client, now func() 
 // concurrent callers.
 func (b *Bus) Use(hooks ...ent.Hook) {
 	b.hooks = append(b.hooks, hooks...)
+}
+
+// Intercept registers ent query interceptors on the transaction client of every later WithinTx, as
+// Use does hooks: for a test that injects a fault into a read of a transaction the bus opens itself.
+// Register before the bus is shared with concurrent callers.
+func (b *Bus) Intercept(inters ...ent.Interceptor) {
+	b.inters = append(b.inters, inters...)
 }
 
 // OnStored registers what runs for every Event newly stored, once the transaction that stored
@@ -104,6 +113,7 @@ func (b *Bus) within(ctx context.Context, fn func(tx *ent.Client, pub *txPublish
 	drv := newTxDriver(sqlTx)
 	txClient := b.newTxClient(drv)
 	txClient.Use(b.hooks...)
+	txClient.Intercept(b.inters...)
 
 	pub := &txPublisher{bus: b, tx: sqlTx, client: txClient}
 	drv.pub = pub

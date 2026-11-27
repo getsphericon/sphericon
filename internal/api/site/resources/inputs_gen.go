@@ -263,6 +263,20 @@ func (c *InputsImpl) BroadcastCreate(source *site.CreateBroadcastInput) (broadca
 	}
 	return broadcastsCreateInput, nil
 }
+func (c *InputsImpl) BroadcastOutsideWindow(source *site.SiteBroadcastOutsideWindowInput) (broadcasts.WindowInput, error) {
+	var broadcastsWindowInput broadcasts.WindowInput
+	if source != nil {
+		pConditiontreeSegment, err := segmentConditionIn((*source).Condition)
+		if err != nil {
+			return broadcastsWindowInput, err
+		}
+		broadcastsWindowInput.Condition = pConditiontreeSegment
+		broadcastsWindowInput.Channel = c.BroadcastChannel((*source).Channel)
+		broadcastsWindowInput.IntegrationID = nilEntityIDPtrIn((*source).IntegrationId)
+		broadcastsWindowInput.At = timeIn((*source).ScheduledAt)
+	}
+	return broadcastsWindowInput, nil
+}
 func (c *InputsImpl) BroadcastSchedule(source *site.ScheduleBroadcastInput) broadcasts.ScheduleInput {
 	var broadcastsScheduleInput broadcasts.ScheduleInput
 	if source != nil {
@@ -550,6 +564,28 @@ func (c *InputsImpl) EntryPolicy(source site.EventTriggerInputEntryPolicy) autom
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return automationversionEntryPolicy
+}
+func (c *InputsImpl) FrequencyCapChannelIn(source site.FrequencyCapChannel) channels.Channel {
+	var channelsChannel channels.Channel
+	switch source {
+	case site.FrequencyCapChannelEmail:
+		channelsChannel = channels.Email
+	case site.FrequencyCapChannelSMS:
+		channelsChannel = channels.SMS
+	case site.FrequencyCapChannelTelegram:
+		channelsChannel = channels.Telegram
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return channelsChannel
+}
+func (c *InputsImpl) FrequencyCapIn(source site.FrequencyCapInput) workspaces.FrequencyCap {
+	var workspacesFrequencyCap workspaces.FrequencyCap
+	workspacesFrequencyCap.Channel = c.FrequencyCapChannelIn(source.Channel)
+	workspacesFrequencyCap.Country = nilCountryIn(source.Country)
+	workspacesFrequencyCap.MaxMessages = frequencyCapMaxMessagesIn(source.MaxMessages)
+	workspacesFrequencyCap.PeriodMinutes = frequencyCapPeriodMinutesIn(source.PeriodMinutes)
+	return workspacesFrequencyCap
 }
 func (c *InputsImpl) HttpStepIn(source site.HttpStepInput) automationstep.HTTP {
 	var automationstepHTTP automationstep.HTTP
@@ -977,6 +1013,54 @@ func (c *InputsImpl) SendingDomainCreate(source *site.CreateSendingDomainInput) 
 		sendingdomainsCreateInput.Selector = stringIn((*source).DkimSelector)
 	}
 	return sendingdomainsCreateInput
+}
+func (c *InputsImpl) SendingRulesReplace(source *site.SiteReplaceSendingRulesInput) workspaces.ReplaceSendingRulesInput {
+	var workspacesReplaceSendingRulesInput workspaces.ReplaceSendingRulesInput
+	if source != nil {
+		workspacesReplaceSendingRulesInput.Revision = revisionIn((*source).Revision)
+		if (*source).FrequencyCaps != nil {
+			workspacesReplaceSendingRulesInput.FrequencyCaps = make([]workspaces.FrequencyCap, len((*source).FrequencyCaps))
+			for i := 0; i < len((*source).FrequencyCaps); i++ {
+				workspacesReplaceSendingRulesInput.FrequencyCaps[i] = c.FrequencyCapIn((*source).FrequencyCaps[i])
+			}
+		}
+		if (*source).SendingWindows != nil {
+			workspacesReplaceSendingRulesInput.SendingWindows = make([]workspaces.SendingWindow, len((*source).SendingWindows))
+			for j := 0; j < len((*source).SendingWindows); j++ {
+				workspacesReplaceSendingRulesInput.SendingWindows[j] = c.SendingWindowIn((*source).SendingWindows[j])
+			}
+		}
+	}
+	return workspacesReplaceSendingRulesInput
+}
+func (c *InputsImpl) SendingWindowChannelIn(source site.SendingWindowChannel) channels.Channel {
+	var channelsChannel channels.Channel
+	switch source {
+	case site.SendingWindowChannelSMS:
+		channelsChannel = channels.SMS
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return channelsChannel
+}
+func (c *InputsImpl) SendingWindowHoursIn(source site.SendingWindowHoursInput) workspaces.OpenHours {
+	var workspacesOpenHours workspaces.OpenHours
+	workspacesOpenHours.Day = c.WeekdayIn(source.Day)
+	workspacesOpenHours.OpensAt = minuteOfDayIn(source.OpensAt)
+	workspacesOpenHours.ClosesAt = minuteOfDayIn(source.ClosesAt)
+	return workspacesOpenHours
+}
+func (c *InputsImpl) SendingWindowIn(source site.SendingWindowInput) workspaces.SendingWindow {
+	var workspacesSendingWindow workspaces.SendingWindow
+	workspacesSendingWindow.Channel = c.SendingWindowChannelIn(source.Channel)
+	workspacesSendingWindow.Country = nilCountryIn(source.Country)
+	if source.Hours != nil {
+		workspacesSendingWindow.Hours = make([]workspaces.OpenHours, len(source.Hours))
+		for i := 0; i < len(source.Hours); i++ {
+			workspacesSendingWindow.Hours[i] = c.SendingWindowHoursIn(source.Hours[i])
+		}
+	}
+	return workspacesSendingWindow
 }
 func (c *InputsImpl) SignUp(source *site.SiteSignUpInput) signup.SignUpInput {
 	var signupSignUpInput signup.SignUpInput

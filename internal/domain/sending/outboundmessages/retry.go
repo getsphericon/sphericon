@@ -14,7 +14,8 @@ type Retry struct {
 	// Wanted is true for a Hold and a Deferral, the reversible Outcomes; every other
 	// Outcome is final.
 	Wanted bool
-	// After is how long to wait before asking Outbound send again; zero when not Wanted.
+	// After is how long to wait before asking Outbound send again, from the moment the policy was
+	// asked at; zero when not Wanted.
 	After time.Duration
 }
 
@@ -37,6 +38,10 @@ const (
 	// rewritten. Its ceiling before jitter leaves room for the jitter under the bound.
 	sendCapBound   = 10 * time.Minute
 	sendCapCeiling = time.Duration(float64(sendCapBound) / (1 + deferralJitter))
+	// releaseJitter is the most added at random to the release moment of a per-recipient Deferral,
+	// so the sends a window opening or a place freeing wakes at once do not wake in the same
+	// instant, while each still wakes when its moment comes.
+	releaseJitter = time.Minute
 )
 
 // HoldRetry is the retry of a Hold: HoldBackoff, whatever the source.
@@ -44,19 +49,24 @@ func HoldRetry() Retry {
 	return Retry{Wanted: true, After: HoldBackoff}
 }
 
-// Retry is the retry policy for this Result. backlog is how many sends of the same source
-// are awake and ahead of this one (each needs a token of its own first; 0 for a source
-// with no queue). The jitter of a Deferral is drawn here, the one place it is used.
+// Retry is the retry policy for this Result, asked at now. backlog is how many sends of the
+// same source are awake and ahead of this one (each needs a token of its own first; 0 for a
+// source with no queue). The jitter of a Deferral is drawn here, the one place it is used.
 //
-// A Deferral waits the wait until capacity returns scaled by the backlog, floored at
-// deferralFloor and capped at deferralCeiling, plus up to deferralJitter of random spread; one
-// caused by the Send cap is capped so that, jitter included, it never waits past sendCapBound.
-// A Hold waits HoldBackoff.
-func (r Result) Retry(backlog int) Retry {
+// A per-recipient Deferral (Result.Until) waits until its release moment plus up to
+// releaseJitter: the moment is the recipient's, so neither the backlog nor a per-source ceiling
+// moves it. A per-source Deferral waits the wait until capacity returns scaled by the backlog,
+// floored at deferralFloor and capped at deferralCeiling, plus up to deferralJitter of random
+// spread; one caused by the Send cap is capped so that, jitter included, it never waits past
+// sendCapBound. A Hold waits HoldBackoff.
+func (r Result) Retry(backlog int, now time.Time) Retry {
 	switch r.Outcome {
 	case Held:
 		return HoldRetry()
 	case Deferral:
+		if !r.Until.IsZero() {
+			return releaseRetry(r.Until.Sub(now), rand.Float64())
+		}
 		ceiling := deferralCeiling
 		if r.Cause == deferralcause.SendCap {
 			ceiling = sendCapCeiling
@@ -77,4 +87,10 @@ func deferralRetry(wait time.Duration, backlog int, jitter float64, ceiling time
 		base = min(max(time.Duration(int64(wait)*ahead), deferralFloor), ceiling)
 	}
 	return Retry{Wanted: true, After: base + time.Duration(float64(base)*deferralJitter*jitter)}
+}
+
+// releaseRetry is the retry of a per-recipient Deferral whose release moment is ahead away (a
+// moment already past is due at once), with the jitter, in [0, 1), given.
+func releaseRetry(ahead time.Duration, jitter float64) Retry {
+	return Retry{Wanted: true, After: max(ahead, 0) + time.Duration(float64(releaseJitter)*jitter)}
 }

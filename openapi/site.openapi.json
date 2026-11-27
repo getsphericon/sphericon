@@ -4594,6 +4594,51 @@
         "x-required-permissions": []
       }
     },
+    "/workspaces/{workspaceId}/broadcasts/outside-window": {
+      "post": {
+        "operationId": "SiteBroadcasts_outsideWindow",
+        "description": "The share of a broadcast's audience its Sending window would hold if it were sent at\n`scheduledAt` (ADR 0134): how many of the recipients the segment preview counts for the Channel\nand Integration would wait for their window, judged in every zone their number may be in and\ntheir own time zone, and when the last of them is reached. A condition that does not compile is\na 422.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SiteBroadcastResourceParentKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteBroadcastOutsideWindowResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the\nstatus is the response's and the body's `status`, and `code` tells apart the answers a client\nbranches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the\nrate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's\n`retryAfter` is the wait for a client that reads only the body. Every operation declares it,\nas the `default` response (ADR 0103).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Broadcasts"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteBroadcastOutsideWindowInput"
+              }
+            }
+          }
+        },
+        "x-required-permissions": []
+      }
+    },
     "/workspaces/{workspaceId}/broadcasts/{broadcastId}/links": {
       "get": {
         "operationId": "SiteBroadcastLinks_list",
@@ -9183,6 +9228,94 @@
         "x-required-permissions": ["sending_domains:manage"]
       }
     },
+    "/workspaces/{workspaceId}/sending-rules": {
+      "get": {
+        "operationId": "SiteWorkspaces_getSendingRules",
+        "description": "Read the Workspace's sending rules (ADR 0134, ADR 0137): its Frequency caps and its Sending\nwindows. Open to every member.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteSendingRulesResource"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the\nstatus is the response's and the body's `status`, and `code` tells apart the answers a client\nbranches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the\nrate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's\n`retryAfter` is the wait for a client that reads only the body. Every operation declares it,\nas the `default` response (ADR 0103).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Workspaces"],
+        "x-required-permissions": []
+      },
+      "put": {
+        "operationId": "SiteWorkspaces_replaceSendingRules",
+        "description": "Replace the Workspace's sending rules as a whole (Owner and Admin only): its Frequency caps and\nits Sending windows. Only a person changes them, here: neither `/api` nor MCP does. 422 for a\nwindow that never opens in a week, a window on a Channel that has none, a country on a Channel\nother than a phone's, a cap with a maximum and no period or the reverse, or two caps or windows\nfor one Channel and country. A change is recorded as an Audit entry; a replacement that changes\nnothing records none.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteSendingRulesResource"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the\nstatus is the response's and the body's `status`, and `code` tells apart the answers a client\nbranches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the\nrate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's\n`retryAfter` is the wait for a client that reads only the body. Every operation declares it,\nas the `default` response (ADR 0103).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Workspaces"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteReplaceSendingRulesInput"
+              }
+            }
+          }
+        },
+        "x-required-permissions": ["workspace:update"]
+      }
+    },
     "/workspaces/{workspaceId}/setup-checklist": {
       "get": {
         "operationId": "SiteSetupChecklist_get",
@@ -11504,6 +11637,7 @@
           "workspace.abuse_exempt",
           "workspace.abuse_unexempt",
           "workspace.send_cap_change",
+          "workspace.sending_rules_change",
           "contact.import",
           "audit_log.export",
           "webhook_endpoint.test",
@@ -11980,7 +12114,7 @@
             "items": {
               "$ref": "#/components/schemas/AutomationStepFigures"
             },
-            "description": "The send Steps' messages by Step id, each summed over every version that had the Step and\nsorted by the newest of those versions, then by its place there: one entry per Step any of the\nautomation's messages was sent from"
+            "description": "The send Steps' messages by Step id, each summed over every version that had the Step and\nsorted by the newest of those versions, then by its place there: one entry per Step any of the\nautomation's messages was sent from or an active enrollment's send waits at now"
           },
           "versionSteps": {
             "type": "array",
@@ -12235,7 +12369,14 @@
       },
       "AutomationStepFigures": {
         "type": "object",
-        "required": ["stepId", "sent", "skipped"],
+        "required": [
+          "stepId",
+          "sent",
+          "skipped",
+          "skippedByReason",
+          "waitingByCause",
+          "singleZone"
+        ],
         "properties": {
           "stepId": {
             "allOf": [
@@ -12254,6 +12395,25 @@
             "type": "integer",
             "format": "int32",
             "description": "Messages skipped: the contact had no address on the step's Channel, had opted out of it, or\nwas suppressed. The enrollment moved on to the next step."
+          },
+          "skippedByReason": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SkippedReasonCount"
+            },
+            "description": "The skipped messages by Skipped reason (ADR 0178): every reason of the closed list in its\norder, one none was skipped for at zero; they add up to `skipped`"
+          },
+          "waitingByCause": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DeferralCauseCount"
+            },
+            "description": "The active enrollments standing on the Step whose send waits now, by the cause of its latest\nDeferral (ADR 0178): every cause of the closed list in its order, one none waits for at zero"
+          },
+          "singleZone": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Messages sent whose Sending window judged them by a single time zone (ADR 0134): the\nrecipient could be in one zone only. Zero on a Channel with no Sending window."
           }
         },
         "description": "The messages of one send Step, over every version that had it"
@@ -12398,7 +12558,15 @@
       },
       "AutomationVersionStepFigures": {
         "type": "object",
-        "required": ["version", "stepId", "sent", "skipped"],
+        "required": [
+          "version",
+          "stepId",
+          "sent",
+          "skipped",
+          "skippedByReason",
+          "waitingByCause",
+          "singleZone"
+        ],
         "properties": {
           "version": {
             "type": "integer",
@@ -12422,6 +12590,25 @@
             "type": "integer",
             "format": "int32",
             "description": "Messages skipped, as in AutomationStepFigures"
+          },
+          "skippedByReason": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SkippedReasonCount"
+            },
+            "description": "The skipped messages by Skipped reason, as in AutomationStepFigures"
+          },
+          "waitingByCause": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DeferralCauseCount"
+            },
+            "description": "The active enrollments of the version standing on the Step whose send waits now, by cause, as\nin AutomationStepFigures"
+          },
+          "singleZone": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Messages sent whose Sending window judged them by a single time zone, as in\nAutomationStepFigures"
           }
         },
         "description": "The messages one version's send Step sent"
@@ -14759,6 +14946,26 @@
         "enum": ["provider_limit", "send_cap", "provider", "sending_window", "frequency_cap"],
         "description": "What a Deferral waits for: the send is not consumed and goes through every check again when it is retried"
       },
+      "DeferralCauseCount": {
+        "type": "object",
+        "required": ["cause", "count"],
+        "properties": {
+          "cause": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DeferralCause"
+              }
+            ],
+            "description": "The cause, one of the closed list"
+          },
+          "count": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Sends whose latest Deferral was for it and that still wait"
+          }
+        },
+        "description": "How many sends wait now for one cause"
+      },
       "DnsRecord": {
         "type": "object",
         "required": ["type", "host", "value"],
@@ -15452,7 +15659,23 @@
                 "$ref": "#/components/schemas/Timestamp"
               }
             ],
-            "description": "When the wait the Enrollment stands on is due: computed once, when it reached the wait (ADR 0124)"
+            "description": "When the wait the Enrollment stands on is due: a wait Step's, computed once when it reached the wait (ADR 0124), or, while the send of its Step is deferred, when the send is tried again (ADR 0178)"
+          },
+          "deferredSince": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "Since when the send of the Step the Enrollment stands on waits: the first Deferral at the Step (ADR 0178); absent once it moves on, and while its send is not deferred"
+          },
+          "deferralCause": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DeferralCause"
+              }
+            ],
+            "description": "Why the send of the Step the Enrollment stands on waits: the cause of its latest Deferral; absent whenever `deferredSince` is"
           },
           "failure": {
             "allOf": [
@@ -15876,6 +16099,116 @@
         },
         "description": "A test of one property of the Event or line a filter is about, its key in a field of its own,\nso a key holding a dot is one key. It names no subject: a filter tests the one object it is\nabout.",
         "additionalProperties": false
+      },
+      "FrequencyCap": {
+        "type": "object",
+        "required": ["channel", "country", "maxMessages", "periodMinutes"],
+        "properties": {
+          "channel": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FrequencyCapChannel"
+              }
+            ],
+            "description": "The Channel it counts on"
+          },
+          "country": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CountryCode"
+              }
+            ],
+            "nullable": true,
+            "description": "The country of the numbers it is for, on a phone Channel only; null for every Destination on\nthe Channel"
+          },
+          "maxMessages": {
+            "type": "integer",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FrequencyCapMaxMessages"
+              }
+            ],
+            "nullable": true,
+            "description": "The most marketing messages one Destination receives in the period; null removes the cap"
+          },
+          "periodMinutes": {
+            "type": "integer",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FrequencyCapPeriodMinutes"
+              }
+            ],
+            "nullable": true,
+            "description": "The rolling period in minutes; null exactly when the maximum is"
+          }
+        },
+        "description": "One of the Workspace's Frequency caps (ADR 0137): at most `maxMessages` marketing messages to one\nDestination on the Channel per rolling `periodMinutes`. A cap with a country is for the numbers of\nthat country and outranks the Channel's own; one with no maximum removes the cap there. Every\nBroadcast and Automation message counts; Transactional messages and Test sends do not."
+      },
+      "FrequencyCapChannel": {
+        "type": "string",
+        "enum": ["email", "sms", "telegram"],
+        "description": "A Channel a Frequency cap counts marketing messages on (ADR 0137)"
+      },
+      "FrequencyCapInput": {
+        "type": "object",
+        "required": ["channel", "country", "maxMessages", "periodMinutes"],
+        "properties": {
+          "channel": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FrequencyCapChannel"
+              }
+            ],
+            "description": "The Channel it counts on"
+          },
+          "country": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CountryCode"
+              }
+            ],
+            "nullable": true,
+            "description": "The country of the numbers it is for, on a phone Channel only; null for every Destination on\nthe Channel"
+          },
+          "maxMessages": {
+            "type": "integer",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FrequencyCapMaxMessages"
+              }
+            ],
+            "nullable": true,
+            "description": "The most marketing messages one Destination receives in the period; null removes the cap"
+          },
+          "periodMinutes": {
+            "type": "integer",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FrequencyCapPeriodMinutes"
+              }
+            ],
+            "nullable": true,
+            "description": "The rolling period in minutes; null exactly when the maximum is"
+          }
+        },
+        "description": "A Frequency cap as a replacement of the rules names it",
+        "additionalProperties": false
+      },
+      "FrequencyCapMaxMessages": {
+        "type": "integer",
+        "format": "int32",
+        "minimum": 1,
+        "maximum": 1000,
+        "description": "The most marketing messages one Destination receives in a Frequency cap's period"
+      },
+      "FrequencyCapPeriodMinutes": {
+        "type": "integer",
+        "format": "int32",
+        "minimum": 1,
+        "maximum": 10080,
+        "description": "A Frequency cap's rolling period in minutes: one minute to seven days"
       },
       "GrantableScope": {
         "type": "string",
@@ -16340,6 +16673,13 @@
         "type": "string",
         "enum": ["broadcast", "automation"],
         "description": "What sends the message a message's System event is about"
+      },
+      "MinuteOfDay": {
+        "type": "integer",
+        "format": "int32",
+        "minimum": 0,
+        "maximum": 1440,
+        "description": "A minute of the day: 0 is midnight at its start, 1440 midnight at its end"
       },
       "MomentOperator": {
         "type": "string",
@@ -18008,6 +18348,161 @@
         },
         "description": "Sending domain (ADR 0010). sphericon generates the DKIM keypair; the caller publishes the\nDKIM TXT record. The private key is never returned. `verified` is re-checked in the\nbackground: the domain loses it (`verificationLostAt`) if the DNS record disappears."
       },
+      "SendingRules": {
+        "type": "object",
+        "required": ["frequencyCaps", "sendingWindows"],
+        "properties": {
+          "frequencyCaps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FrequencyCap"
+            },
+            "description": "The Frequency caps"
+          },
+          "sendingWindows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SendingWindow"
+            },
+            "description": "The Sending windows"
+          }
+        },
+        "description": "The Workspace's sending rules: its Frequency caps and its Sending windows. A new Workspace has\nthree marketing texts per 1440 minutes on SMS and an SMS window of 8:00 to 20:00 every day. The\nWorkspace answers for its compliance: the app keeps no table of laws, and the defaults are not\nlegal advice."
+      },
+      "SendingWindow": {
+        "type": "object",
+        "required": ["channel", "country", "hours"],
+        "properties": {
+          "channel": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SendingWindowChannel"
+              }
+            ],
+            "description": "The Channel it holds"
+          },
+          "country": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CountryCode"
+              }
+            ],
+            "nullable": true,
+            "description": "The country of the numbers it is for; null for every number on the Channel"
+          },
+          "hours": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SendingWindowHours"
+            },
+            "description": "The hours it is open, at most one entry per day"
+          }
+        },
+        "description": "One of the Workspace's Sending windows (ADR 0134): the hours of each day of the week, in the\nrecipient's local time, in which a marketing message on the Channel may go out; a day it does not\nlist stays closed. A window with a country is for the numbers of that country and outranks the\nChannel's own. It opens at least once a week."
+      },
+      "SendingWindowChannel": {
+        "type": "string",
+        "enum": ["sms"],
+        "description": "A Channel a Sending window holds (ADR 0134): only SMS, since email and Telegram go out at any\nhour"
+      },
+      "SendingWindowHours": {
+        "type": "object",
+        "required": ["day", "opensAt", "closesAt"],
+        "properties": {
+          "day": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Weekday"
+              }
+            ],
+            "description": "The day, in the recipient's local time"
+          },
+          "opensAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MinuteOfDay"
+              }
+            ],
+            "description": "The minute of the day it opens"
+          },
+          "closesAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MinuteOfDay"
+              }
+            ],
+            "description": "The minute of the day it closes, after it opens"
+          }
+        },
+        "description": "The hours a Sending window is open on one day of the week, in the recipient's local time"
+      },
+      "SendingWindowHoursInput": {
+        "type": "object",
+        "required": ["day", "opensAt", "closesAt"],
+        "properties": {
+          "day": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Weekday"
+              }
+            ],
+            "description": "The day, in the recipient's local time"
+          },
+          "opensAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MinuteOfDay"
+              }
+            ],
+            "description": "The minute of the day it opens"
+          },
+          "closesAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MinuteOfDay"
+              }
+            ],
+            "description": "The minute of the day it closes, after it opens"
+          }
+        },
+        "description": "A day's hours of a Sending window as a replacement of the rules names them",
+        "additionalProperties": false
+      },
+      "SendingWindowInput": {
+        "type": "object",
+        "required": ["channel", "country", "hours"],
+        "properties": {
+          "channel": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SendingWindowChannel"
+              }
+            ],
+            "description": "The Channel it holds"
+          },
+          "country": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CountryCode"
+              }
+            ],
+            "nullable": true,
+            "description": "The country of the numbers it is for; null for every number on the Channel"
+          },
+          "hours": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SendingWindowHoursInput"
+            },
+            "maxItems": 7,
+            "description": "The hours it is open, at most one entry per day; it must open at least once a week"
+          }
+        },
+        "description": "A Sending window as a replacement of the rules names it",
+        "additionalProperties": false
+      },
       "SentByLeaf": {
         "type": "object",
         "required": ["kind", "sender", "id"],
@@ -19344,6 +19839,68 @@
         },
         "description": "A broadcast's per-link click figures, most clicked first"
       },
+      "SiteBroadcastOutsideWindowInput": {
+        "type": "object",
+        "required": ["channel", "scheduledAt"],
+        "properties": {
+          "condition": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SegmentConditionInput"
+              }
+            ],
+            "description": "The condition of the broadcast's segment; absent means all contacts"
+          },
+          "channel": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BroadcastChannel"
+              }
+            ],
+            "description": "The broadcast's Channel"
+          },
+          "integrationId": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "nullable": true,
+            "description": "The Integration the broadcast routes through; null or absent is the Channel's default"
+          },
+          "scheduledAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "The moment the broadcast would be scheduled at"
+          }
+        },
+        "description": "Request body for the share of a broadcast's audience outside its Sending window: the audience, as the segment preview names it, and a moment",
+        "additionalProperties": false
+      },
+      "SiteBroadcastOutsideWindowResult": {
+        "type": "object",
+        "required": ["held"],
+        "properties": {
+          "held": {
+            "type": "integer",
+            "format": "int32",
+            "description": "How many of the recipients the broadcast would take would wait for their Sending window to\nopen. A recipient whose zones are never open at once is skipped (no_local_time), not counted.\nAlways 0 on email and Telegram, which no window holds."
+          },
+          "reachedAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the last of them is reached: the latest moment their windows open. Absent when none is held."
+          }
+        },
+        "description": "How many of a broadcast's recipients the Sending window would hold at a moment (ADR 0134)"
+      },
       "SiteBroadcastProgress": {
         "type": "object",
         "required": ["processedCount", "remainingCount", "limitedBy"],
@@ -19567,6 +20124,9 @@
           "recipientsTotal",
           "sentCount",
           "skippedCount",
+          "skippedByReason",
+          "waitingByCause",
+          "singleZoneCount",
           "failedCount",
           "pendingCount",
           "cancelledCount",
@@ -19602,6 +20162,26 @@
             "type": "integer",
             "format": "int32",
             "description": "Recipients skipped at send time: no destination any more, or an opt-out that landed after planning"
+          },
+          "skippedByReason": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SkippedReasonCount"
+            },
+            "description": "The skipped recipients by Skipped reason (ADR 0178): every reason of the closed list in its order, one none was skipped for at zero; they add up to `skippedCount`"
+          },
+          "waitingByCause": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DeferralCauseCount"
+            },
+            "description": "The pending recipients whose send waits now, by the cause of its latest Deferral (ADR 0178): every cause of the closed list in its order, one none waits for at zero; all zero once the broadcast is no longer sending"
+          },
+          "singleZoneCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true,
+            "description": "Messages sent whose Sending window judged them by a single time zone (ADR 0134): the recipient could be in one zone only, so the window held exactly to its hours; null on a Channel with no Sending window"
           },
           "failedCount": {
             "type": "integer",
@@ -22392,6 +22972,38 @@
         "description": "Proof of the User's password (or a fresh provider login or Passkey check), for regenerating Recovery codes",
         "additionalProperties": false
       },
+      "SiteReplaceSendingRulesInput": {
+        "type": "object",
+        "required": ["revision", "frequencyCaps", "sendingWindows"],
+        "properties": {
+          "revision": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Revision"
+              }
+            ],
+            "description": "The Workspace's `revision` the change was made on (ADR 0119): the one it was read with"
+          },
+          "frequencyCaps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FrequencyCapInput"
+            },
+            "maxItems": 300,
+            "description": "Every Frequency cap, at most one per Channel and country"
+          },
+          "sendingWindows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SendingWindowInput"
+            },
+            "maxItems": 300,
+            "description": "Every Sending window, at most one per Channel and country"
+          }
+        },
+        "description": "Replace the Workspace's sending rules as a whole: a cap or a window left out is removed",
+        "additionalProperties": false
+      },
       "SiteReportPeriod": {
         "type": "object",
         "required": ["from", "to"],
@@ -22852,6 +23464,35 @@
           }
         },
         "description": "The Complaint and Bounce rates of one Sending domain over a window"
+      },
+      "SiteSendingRulesResource": {
+        "type": "object",
+        "required": ["frequencyCaps", "sendingWindows", "revision"],
+        "properties": {
+          "frequencyCaps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FrequencyCap"
+            },
+            "description": "The Frequency caps"
+          },
+          "sendingWindows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SendingWindow"
+            },
+            "description": "The Sending windows"
+          },
+          "revision": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Revision"
+              }
+            ],
+            "description": "The Workspace's revision this answer shows (ADR 0119): a replacement of the rules names it"
+          }
+        },
+        "description": "The Workspace's sending rules as /site shows them (ADR 0134, ADR 0137), with the Workspace's\nrevision. Every member reads them."
       },
       "SiteSetConfirmedOptInInput": {
         "type": "object",
@@ -24285,6 +24926,26 @@
           "frequency_cap"
         ],
         "description": "Why an Outbound message was Skipped: final for its Destination, never retried. The first four\nare Send-eligibility's; a client switches over the list."
+      },
+      "SkippedReasonCount": {
+        "type": "object",
+        "required": ["reason", "count"],
+        "properties": {
+          "reason": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SkippedReason"
+              }
+            ],
+            "description": "The reason, one of the closed list"
+          },
+          "count": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Sends Skipped for it"
+          }
+        },
+        "description": "How many sends were Skipped for one reason"
       },
       "SmsBroadcastContent": {
         "type": "object",

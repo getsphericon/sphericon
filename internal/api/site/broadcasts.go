@@ -151,6 +151,21 @@ func (h *Handlers) SiteBroadcastsCancel(ctx context.Context, params siteapi.Site
 	return &res, nil
 }
 
+// SiteBroadcastsOutsideWindow answers how many of a Broadcast's recipients its Sending window would
+// hold at the moment the editor would schedule it, and when the last of them is reached (ADR 0134).
+func (h *Handlers) SiteBroadcastsOutsideWindow(ctx context.Context, req *siteapi.SiteBroadcastOutsideWindowInput, _ siteapi.SiteBroadcastsOutsideWindowParams) (*siteapi.SiteBroadcastOutsideWindowResult, error) {
+	in, err := inputs.BroadcastOutsideWindow(req)
+	if err != nil {
+		return nil, err
+	}
+	held, err := h.broadcasts.OutsideWindow(ctx, workspaceScope(ctx), in)
+	if err != nil {
+		return nil, err
+	}
+	res := mapper.OutsideWindowToResource(held)
+	return &res, nil
+}
+
 // SiteBroadcastsTestSend renders the broadcast with sample merge data and sends
 // it to a single address — no recipient rows, no tracking (a token would point
 // at a nonexistent recipient). Used to preview the rendered email or text. The

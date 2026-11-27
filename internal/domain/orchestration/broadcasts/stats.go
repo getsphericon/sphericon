@@ -14,9 +14,12 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/infra/aggregates"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 )
 
 // Stats is a Broadcast's delivery figures. They are read from its rows: the audience is its
@@ -32,6 +35,16 @@ type Stats struct {
 	Recipients int
 	// Sent, Skipped and Failed count the recipients whose message ended that way.
 	Sent, Skipped, Failed int
+	// SkippedBy counts the Skipped ones by their Skipped reason (ADR 0178): they add up to
+	// Skipped. A reason none was Skipped for has no entry.
+	SkippedBy map[skipreason.Reason]int
+	// SingleZone counts the sent messages a Sending window judged by a single zone (ADR 0134): the
+	// recipient could be in one zone only.
+	SingleZone int
+	// Waiting counts the pending recipients whose send waits now, by the cause of its latest
+	// Deferral (ADR 0178), while the Broadcast is sending: a finished one has none waiting, so
+	// nothing of it is frozen. A cause none waits for has no entry.
+	Waiting map[deferralcause.Cause]int
 	// Cancelled counts the recipients of a cancelled Broadcast that have no message (ADR 0150):
 	// Cancel left them unsent, and none is created for them afterwards. It is zero on any other
 	// Broadcast, and no row is written for them.
@@ -62,12 +75,18 @@ type Stats struct {
 
 // Figures is the Stats as the Broadcast's Channel reports them (ADR 0080): every Channel reports
 // recipients, sent, skipped, failed, pending, clicked, unsubscribed and untracked; opened,
-// delivered, undelivered, bounced, complained and captured, and the rates built on them, are nil on
-// a Channel that does not report them, never zero. Telegram and SMS have no delivery rate and no open rate.
+// delivered, undelivered, bounced, complained, captured and single zone, and the rates built on
+// them, are nil on a Channel that does not report them, never zero. Telegram and SMS have no
+// delivery rate and no open rate.
 type Figures struct {
 	Recipients, Sent, Skipped, Failed, Cancelled, Pending, Clicked, Unsubscribed, Untracked int
 
-	Opened, Delivered, Undelivered, Bounced, Complained, Captured *int
+	// SkippedByReason and WaitingByCause name every reason and cause of the closed lists, in
+	// their order, one the Stats have none of at zero.
+	SkippedByReason []skipreason.Count
+	WaitingByCause  []deferralcause.Count
+
+	Opened, Delivered, Undelivered, Bounced, Complained, Captured, SingleZone *int
 
 	DeliveryRate, OpenRate, ClickToOpenRate *float32
 	ClickRate, UnsubscribeRate, FailureRate float32
@@ -80,6 +99,7 @@ func (st Stats) Figures() Figures {
 	f := Figures{
 		Recipients: st.Recipients, Sent: st.Sent, Skipped: st.Skipped, Failed: st.Failed,
 		Cancelled: st.Cancelled, Pending: st.Pending,
+		SkippedByReason: skipreason.Counts(st.SkippedBy), WaitingByCause: deferralcause.Counts(st.Waiting),
 		Clicked: st.Clicked, Unsubscribed: st.Unsubscribed, Untracked: st.Untracked,
 		ClickRate: st.ClickRate(), UnsubscribeRate: st.UnsubscribeRate(), FailureRate: st.FailureRate(),
 		Revenue: st.Revenue,
@@ -98,6 +118,9 @@ func (st Stats) Figures() Figures {
 	}
 	if st.ReportsCaptured() {
 		f.Captured = &st.Captured
+	}
+	if st.ReportsSendingWindow() {
+		f.SingleZone = &st.SingleZone
 	}
 	return f
 }
@@ -120,6 +143,10 @@ func (st Stats) ReportsBounces() bool { return st.onEmail() }
 
 // ReportsCaptured says whether the Channel has a Test inbox that captures its messages: email.
 func (st Stats) ReportsCaptured() bool { return st.onEmail() }
+
+// ReportsSendingWindow says whether a Sending window holds the Channel's messages, and so whether
+// it reports the sends judged by a single zone: SMS (workspaces.HasSendingWindow).
+func (st Stats) ReportsSendingWindow() bool { return workspaces.HasSendingWindow(st.Channel) }
 
 // onEmail says whether the figures are an email Broadcast's: the Channel StatsFor set, or none
 // (StatsOf, which reads them as email's).
@@ -245,22 +272,89 @@ func (m *Module) StatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (map[
 // 0143): Channel and Revenue are not stored. frozenStats reads the row back; the two are the one
 // mapping between Stats and BroadcastFigure, kept side by side.
 func (st Stats) Frozen(c *ent.BroadcastFigureScopedCreate) *ent.BroadcastFigureScopedCreate {
-	return c.
+	c.
 		SetRecipients(st.Recipients).SetUnsubscribed(st.Unsubscribed).
 		SetSent(st.Sent).SetSkipped(st.Skipped).SetFailed(st.Failed).SetCancelled(st.Cancelled).SetPending(st.Pending).
 		SetDelivered(st.Delivered).SetUndelivered(st.Undelivered).
 		SetBounced(st.Bounced).SetComplained(st.Complained).
-		SetOpened(st.Opened).SetClicked(st.Clicked).SetUntracked(st.Untracked).SetCaptured(st.Captured)
+		SetOpened(st.Opened).SetClicked(st.Clicked).SetUntracked(st.Untracked).SetCaptured(st.Captured).
+		SetSingleZone(st.SingleZone)
+	for _, r := range skipreason.All() {
+		setSkipped(c, r, st.SkippedBy[r])
+	}
+	return c
 }
 
 // frozenStats is the Stats a frozen figures row keeps, Frozen read back.
 func frozenStats(f *ent.BroadcastFigure) Stats {
+	skippedBy := map[skipreason.Reason]int{}
+	for _, r := range skipreason.All() {
+		skippedBy[r] = skippedOf(f, r)
+	}
 	return Stats{
 		Recipients: f.Recipients, Unsubscribed: f.Unsubscribed,
 		Sent: f.Sent, Skipped: f.Skipped, Failed: f.Failed, Cancelled: f.Cancelled, Pending: f.Pending,
 		Delivered: f.Delivered, Undelivered: f.Undelivered, Bounced: f.Bounced, Complained: f.Complained,
 		Opened: f.Opened, Clicked: f.Clicked, Untracked: f.Untracked, Captured: f.Captured,
+		SingleZone: f.SingleZone,
+		SkippedBy:  counted(skippedBy),
 	}
+}
+
+// setSkipped and skippedOf are the one mapping of the Skipped reasons onto a frozen figures row's
+// columns, one per reason: each switch names every reason of the closed list (review rule 19), so a
+// new reason fails the build until it has its column here.
+func setSkipped(c *ent.BroadcastFigureScopedCreate, r skipreason.Reason, n int) {
+	switch r {
+	case skipreason.Suppressed:
+		c.SetSkippedSuppressed(n)
+	case skipreason.UnsubscribedEverything:
+		c.SetSkippedUnsubscribedEverything(n)
+	case skipreason.UnsubscribedSource:
+		c.SetSkippedUnsubscribedSource(n)
+	case skipreason.Unconfirmed:
+		c.SetSkippedUnconfirmed(n)
+	case skipreason.NoDestination:
+		c.SetSkippedNoDestination(n)
+	case skipreason.ContactErased:
+		c.SetSkippedContactErased(n)
+	case skipreason.NoLocalTime:
+		c.SetSkippedNoLocalTime(n)
+	case skipreason.FrequencyCap:
+		c.SetSkippedFrequencyCap(n)
+	}
+}
+
+func skippedOf(f *ent.BroadcastFigure, r skipreason.Reason) int {
+	switch r {
+	case skipreason.Suppressed:
+		return f.SkippedSuppressed
+	case skipreason.UnsubscribedEverything:
+		return f.SkippedUnsubscribedEverything
+	case skipreason.UnsubscribedSource:
+		return f.SkippedUnsubscribedSource
+	case skipreason.Unconfirmed:
+		return f.SkippedUnconfirmed
+	case skipreason.NoDestination:
+		return f.SkippedNoDestination
+	case skipreason.ContactErased:
+		return f.SkippedContactErased
+	case skipreason.NoLocalTime:
+		return f.SkippedNoLocalTime
+	case skipreason.FrequencyCap:
+		return f.SkippedFrequencyCap
+	}
+	return 0
+}
+
+// counted is the counts of by above zero, nil when none is: what the grouped count of the rows
+// gives, so a frozen row reads back the Stats it was frozen from.
+func counted[K comparable](by map[K]int) map[K]int {
+	out := lo.OmitByValues(by, []int{0})
+	if len(out) == 0 {
+		return nil
+	}
+	return out
 }
 
 // RowStatsOf counts the given Broadcasts' figures from their rows, Revenue aside, whether or not
@@ -304,6 +398,7 @@ func (m *Module) RowStatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (m
 		Bounced     int                    `json:"bounced"`
 		Complained  int                    `json:"complained"`
 		Captured    int                    `json:"captured"`
+		SingleZone  int                    `json:"single_zone"`
 	}
 	if err := s.OutboundMessage().Query().
 		Where(outboundmessage.BroadcastIDIn(ids...)).
@@ -315,6 +410,7 @@ func (m *Module) RowStatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (m
 			aggregates.CountSet(outboundmessage.FieldBouncedAt, "bounced"),
 			aggregates.CountSet(outboundmessage.FieldComplainedAt, "complained"),
 			aggregates.CountTrue(outboundmessage.FieldCaptured, "captured"),
+			aggregates.CountEQ(outboundmessage.FieldWindowZones, string(outboundmessage.WindowZonesOneZone), "single_zone"),
 		).
 		Scan(ctx, &messages); err != nil {
 		return nil, err
@@ -328,7 +424,7 @@ func (m *Module) RowStatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (m
 		st.Captured += row.Captured
 		switch row.Status {
 		case outboundmessage.StatusSent:
-			st.Sent = row.Count
+			st.Sent, st.SingleZone = row.Count, row.SingleZone
 		case outboundmessage.StatusSkipped:
 			st.Skipped = row.Count
 		case outboundmessage.StatusFailed:
@@ -339,6 +435,12 @@ func (m *Module) RowStatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (m
 		out[row.BroadcastID] = st
 	}
 	if err := engagementOf(ctx, s, ids, out); err != nil {
+		return nil, err
+	}
+	if err := skippedByReasonOf(ctx, s, ids, out); err != nil {
+		return nil, err
+	}
+	if err := waitingOf(ctx, s, ids, out); err != nil {
 		return nil, err
 	}
 	var cancelled []struct {
@@ -367,6 +469,65 @@ func (m *Module) RowStatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (m
 		out[id] = st
 	}
 	return out, nil
+}
+
+// skippedByReasonOf counts into out the given Broadcasts' Skipped messages by their Skipped reason
+// (ADR 0178).
+func skippedByReasonOf(ctx context.Context, s *ent.Scoped, ids []int64, out map[int64]Stats) error {
+	var rows []struct {
+		BroadcastID int64             `json:"broadcast_id"`
+		Reason      skipreason.Reason `json:"skipped_reason"`
+		Count       int               `json:"count"`
+	}
+	if err := s.OutboundMessage().Query().
+		Where(outboundmessage.BroadcastIDIn(ids...), outboundmessage.StatusEQ(outboundmessage.StatusSkipped)).
+		GroupBy(outboundmessage.FieldBroadcastID, outboundmessage.FieldSkippedReason).
+		Aggregate(ent.As(ent.Count(), "count")).
+		Scan(ctx, &rows); err != nil {
+		return err
+	}
+	for _, row := range rows {
+		st := out[row.BroadcastID]
+		if st.SkippedBy == nil {
+			st.SkippedBy = map[skipreason.Reason]int{}
+		}
+		st.SkippedBy[row.Reason] = row.Count
+		out[row.BroadcastID] = st
+	}
+	return nil
+}
+
+// waitingOf counts into out the given Broadcasts' recipients that wait now, by the cause of their
+// latest Deferral (ADR 0178): pending, on a Broadcast still sending. The cause is cleared once a
+// recipient's send is decided, and a recipient of a Broadcast that ended waits for nothing, whatever
+// its row still holds.
+func waitingOf(ctx context.Context, s *ent.Scoped, ids []int64, out map[int64]Stats) error {
+	var rows []struct {
+		BroadcastID int64               `json:"broadcast_id"`
+		Cause       deferralcause.Cause `json:"deferral_cause"`
+		Count       int                 `json:"count"`
+	}
+	if err := s.BroadcastRecipient().Query().
+		Where(
+			broadcastrecipient.BroadcastIDIn(ids...),
+			broadcastrecipient.DeferralCauseNotNil(),
+			broadcastrecipient.HasBroadcastWith(broadcast.StatusEQ(broadcast.StatusSending)),
+			Pending(),
+		).
+		GroupBy(broadcastrecipient.FieldBroadcastID, broadcastrecipient.FieldDeferralCause).
+		Aggregate(ent.As(ent.Count(), "count")).
+		Scan(ctx, &rows); err != nil {
+		return err
+	}
+	for _, row := range rows {
+		st := out[row.BroadcastID]
+		if st.Waiting == nil {
+			st.Waiting = map[deferralcause.Cause]int{}
+		}
+		st.Waiting[row.Cause] = row.Count
+		out[row.BroadcastID] = st
+	}
+	return nil
 }
 
 // engagementOf counts into out the given Broadcasts' opened and clicked over their tracked

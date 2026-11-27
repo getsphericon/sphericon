@@ -560,6 +560,18 @@ func (UnimplementedHandler) SiteBroadcastsList(ctx context.Context, params SiteB
 	return r, ht.ErrNotImplemented
 }
 
+// SiteBroadcastsOutsideWindow implements SiteBroadcasts_outsideWindow operation.
+//
+// The share of a broadcast's audience its Sending window would hold if it were sent at `scheduledAt`
+// (ADR 0134): how many of the recipients the segment preview counts for the Channel and Integration
+// would wait for their window, judged in every zone their number may be in and their own time zone,
+// and when the last of them is reached. A condition that does not compile is a 422.
+//
+// POST /workspaces/{workspaceId}/broadcasts/outside-window
+func (UnimplementedHandler) SiteBroadcastsOutsideWindow(ctx context.Context, req *SiteBroadcastOutsideWindowInput, params SiteBroadcastsOutsideWindowParams) (r *SiteBroadcastOutsideWindowResult, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteBroadcastsSchedule implements SiteBroadcasts_schedule operation.
 //
 // Schedule a broadcast to send at a future time. The answer carries `recipients`, the recipients it
@@ -2185,6 +2197,16 @@ func (UnimplementedHandler) SiteWorkspacesGetRevenueSettings(ctx context.Context
 	return r, ht.ErrNotImplemented
 }
 
+// SiteWorkspacesGetSendingRules implements SiteWorkspaces_getSendingRules operation.
+//
+// Read the Workspace's sending rules (ADR 0134, ADR 0137): its Frequency caps and its Sending windows.
+// Open to every member.
+//
+// GET /workspaces/{workspaceId}/sending-rules
+func (UnimplementedHandler) SiteWorkspacesGetSendingRules(ctx context.Context, params SiteWorkspacesGetSendingRulesParams) (r *SiteSendingRulesResource, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteWorkspacesLeave implements SiteWorkspaces_leave operation.
 //
 // Leave a Workspace (any Role): the caller's own Membership is removed at once, with no Owner involved
@@ -2224,6 +2246,20 @@ func (UnimplementedHandler) SiteWorkspacesList(ctx context.Context) (r []SiteWor
 //
 // GET /workspaces/deleted
 func (UnimplementedHandler) SiteWorkspacesListDeleted(ctx context.Context) (r []SiteDeletedWorkspaceResource, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteWorkspacesReplaceSendingRules implements SiteWorkspaces_replaceSendingRules operation.
+//
+// Replace the Workspace's sending rules as a whole (Owner and Admin only): its Frequency caps and its
+// Sending windows. Only a person changes them, here: neither `/api` nor MCP does. 422 for a window
+// that never opens in a week, a window on a Channel that has none, a country on a Channel other than a
+// phone's, a cap with a maximum and no period or the reverse, or two caps or windows for one Channel
+// and country. A change is recorded as an Audit entry; a replacement that changes nothing records
+// none.
+//
+// PUT /workspaces/{workspaceId}/sending-rules
+func (UnimplementedHandler) SiteWorkspacesReplaceSendingRules(ctx context.Context, req *SiteReplaceSendingRulesInput, params SiteWorkspacesReplaceSendingRulesParams) (r *SiteSendingRulesResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

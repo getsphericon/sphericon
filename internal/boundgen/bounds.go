@@ -91,7 +91,31 @@ var Bounds = []Bound{
 	},
 	{
 		Name: "CountryCode", Doc: "is an ISO 3166-1 alpha-2 country code, a Contact's country.",
-		Spec: site, Schema: "CountryCode", Owners: []string{contactOwner},
+		Spec: site, Schema: "CountryCode", Owners: []string{contactOwner, "FrequencyCap", "SendingWindow"},
+	},
+	{
+		Name: "FrequencyCapMaxMessages", Doc: "is the most marketing messages a Frequency cap lets one Destination receive in its period.",
+		Spec: site, Schema: "FrequencyCapMaxMessages", Owners: []string{"FrequencyCap"},
+	},
+	{
+		Name: "FrequencyCapPeriodMinutes", Doc: "is a Frequency cap's rolling period in minutes.",
+		Spec: site, Schema: "FrequencyCapPeriodMinutes", Owners: []string{"FrequencyCap"},
+	},
+	{
+		Name: "MinuteOfDay", Doc: "is a minute of the day a Sending window opens or closes at.",
+		Spec: site, Schema: "MinuteOfDay", Owners: []string{"SendingWindow"},
+	},
+	{
+		Name: "FrequencyCaps", Doc: "is how many Frequency caps a Workspace has.",
+		Spec: site, Schema: "SiteReplaceSendingRulesInput", Property: "frequencyCaps", Owners: []string{"FrequencyCap"},
+	},
+	{
+		Name: "SendingWindows", Doc: "is how many Sending windows a Workspace has.",
+		Spec: site, Schema: "SiteReplaceSendingRulesInput", Property: "sendingWindows", Owners: []string{"SendingWindow"},
+	},
+	{
+		Name: "SendingWindowHours", Doc: "is how many days of the week a Sending window lists its hours for.",
+		Spec: site, Schema: "SendingWindowInput", Property: "hours", Owners: []string{"SendingWindow"},
 	},
 	{
 		Name: "ImageURL", Doc: "is the https URL of an image, a Contact's avatar.",

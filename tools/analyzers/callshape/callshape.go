@@ -253,14 +253,15 @@ func isConstructor(name string) bool {
 	return ok && (rest == "" || ast.IsExported(rest))
 }
 
-// isScope holds for *ent.Scoped, *ent.WorkspaceLocked (the scope that stands for the Workspace lock)
-// and *ent.Client.
+// isScope holds for *ent.Scoped, *ent.WorkspaceLocked (the scope that stands for the Workspace lock),
+// *ent.DestinationLocked (the one that stands for the Destination locks) and *ent.Client.
 func isScope(t types.Type) bool {
 	ptr, ok := t.(*types.Pointer)
 	if !ok {
 		return false
 	}
 	return analysisx.IsNamed(ptr.Elem(), entx.Path, "Scoped") || analysisx.IsNamed(ptr.Elem(), entx.Path, "WorkspaceLocked") ||
+		analysisx.IsNamed(ptr.Elem(), entx.Path, "DestinationLocked") ||
 		analysisx.IsNamed(ptr.Elem(), entx.Path, "Client")
 }
 

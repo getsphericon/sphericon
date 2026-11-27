@@ -128,6 +128,10 @@ import (
 // goverter:extend nilTimeZone
 // goverter:extend nilRegionalFormat
 // goverter:extend attributionWindowDays
+// goverter:extend nilCountryCode
+// goverter:extend nilFrequencyCapMaxMessages
+// goverter:extend nilFrequencyCapPeriodMinutes
+// goverter:extend minuteOfDay
 // goverter:extend workspaceTimezone
 // goverter:extend optNilTimestamp
 // goverter:extend nilTimestamp
@@ -182,6 +186,7 @@ import (
 // goverter:extend optAbuseWarning
 // goverter:extend optTrackingReason
 // goverter:extend optSkippedReason
+// goverter:extend optDeferralCause
 // goverter:extend timestampOf
 // goverter:extend tagNames
 // goverter:extend auditDiff
@@ -268,6 +273,20 @@ type Converter interface {
 	WorkspaceToResource(source *ent.Workspace) siteapi.SiteWorkspaceResource
 	// The revenue settings are two columns of the Workspace (ADR 0064).
 	RevenueSettingsToResource(source *ent.Workspace) siteapi.SiteRevenueSettingsResource
+	// The Workspace's sending rules (ADR 0134, ADR 0137) with the revision they were read at.
+	// goverter:useEmptyOnNil:slice
+	SendingRulesToResource(source workspaces.SendingRules) siteapi.SiteSendingRulesResource
+	FrequencyCapToResource(source workspaces.FrequencyCap) siteapi.FrequencyCap
+	// goverter:useEmptyOnNil:slice
+	SendingWindowToResource(source workspaces.SendingWindow) siteapi.SendingWindow
+	SendingWindowHoursToResource(source workspaces.OpenHours) siteapi.SendingWindowHours
+	// goverter:enum:transform value
+	FrequencyCapChannelToResource(source channels.Channel) siteapi.FrequencyCapChannel
+	// Only SMS has a Sending window (workspaces.HasSendingWindow), as the rows' CHECK holds.
+	// goverter:enum:transform value
+	// goverter:enum:map Email @panic
+	// goverter:enum:map Telegram @panic
+	SendingWindowChannelToResource(source channels.Channel) siteapi.SendingWindowChannel
 	// The confirmation email's settings (ADR 0013): what the Workspace stores beside the defaults,
 	// null where it keeps the default.
 	// goverter:map FromEmail | nilEmailAddress
@@ -383,6 +402,7 @@ type Converter interface {
 	// goverter:map Complained ComplainedCount
 	// goverter:map Captured CapturedCount
 	// goverter:map Untracked UntrackedCount
+	// goverter:map SingleZone SingleZoneCount
 	BroadcastStatsToResource(source broadcasts.Figures) siteapi.SiteBroadcastStats
 
 	// goverter:map Processed ProcessedCount
@@ -555,6 +575,7 @@ type Converter interface {
 	// goverter:enum:transform value
 	EngagementTrackingOutcomeToResource(source engagementtracking.Outcome) siteapi.EngagementTrackingOutcome
 	TestSendResultToResource(source outboundmessages.Result) siteapi.SiteTestSendBroadcastResult
+	OutsideWindowToResource(source broadcasts.OutsideWindow) siteapi.SiteBroadcastOutsideWindowResult
 	SmsLengthLimitToResource(source smsrender.Limit) siteapi.SiteSmsLengthLimit
 	SmsOptOutToResource(source *confirmations.SMSOptOut) siteapi.SmsOptOut
 	// goverter:enum:transform value
@@ -886,6 +907,8 @@ type Converter interface {
 	// goverter:enum:transform value
 	SkippedReasonToResource(source skipreason.Reason) siteapi.SkippedReason
 	// goverter:enum:transform value
+	DeferralCauseToResource(source deferralcause.Cause) siteapi.DeferralCause
+	// goverter:enum:transform value
 	TrackingStateToResource(source trackingdomain.State) siteapi.TrackingState
 	// goverter:enum:transform value
 	TrackingDomainRoleToResource(source trackingdomain.Role) siteapi.TrackingDomainRole
@@ -1138,6 +1161,27 @@ func nilRegionalFormat(v *string) siteapi.NilRegionalFormat {
 func attributionWindowDays(v int) siteapi.AttributionWindowDays {
 	return siteapi.AttributionWindowDays(narrow.Int32(v))
 }
+
+// nilCountryCode is a country of a sending rule, null for the Channel's own.
+func nilCountryCode(v *string) siteapi.NilCountryCode {
+	return convert.Nil[siteapi.NilCountryCode]((*siteapi.CountryCode)(v))
+}
+
+// nilFrequencyCapMaxMessages is a Frequency cap's maximum, null where the row removes the cap.
+func nilFrequencyCapMaxMessages(v *int) siteapi.NilFrequencyCapMaxMessages {
+	return convert.NilVia[siteapi.NilFrequencyCapMaxMessages](v, func(n int) siteapi.FrequencyCapMaxMessages {
+		return siteapi.FrequencyCapMaxMessages(narrow.Int32(n))
+	})
+}
+
+// nilFrequencyCapPeriodMinutes is a Frequency cap's period, null where the row removes the cap.
+func nilFrequencyCapPeriodMinutes(v *int) siteapi.NilFrequencyCapPeriodMinutes {
+	return convert.NilVia[siteapi.NilFrequencyCapPeriodMinutes](v, func(n int) siteapi.FrequencyCapPeriodMinutes {
+		return siteapi.FrequencyCapPeriodMinutes(narrow.Int32(n))
+	})
+}
+
+func minuteOfDay(v int) siteapi.MinuteOfDay { return siteapi.MinuteOfDay(narrow.Int32(v)) }
 
 func optNilTimeZone(v *string) siteapi.OptNilTimeZoneName {
 	return convert.Opt[siteapi.OptNilTimeZoneName]((*siteapi.TimeZoneName)(v))
@@ -1473,6 +1517,11 @@ func optTrackingReason(c Converter, v *trackingdomain.Reason) siteapi.OptTrackin
 // optSkippedReason is absent on every message but a skipped one.
 func optSkippedReason(c Converter, v *skipreason.Reason) siteapi.OptNilSkippedReason {
 	return convert.OptVia[siteapi.OptNilSkippedReason](v, c.SkippedReasonToResource)
+}
+
+// optDeferralCause is absent on everything that does not wait.
+func optDeferralCause(c Converter, v *deferralcause.Cause) siteapi.OptDeferralCause {
+	return convert.OptVia[siteapi.OptDeferralCause](v, c.DeferralCauseToResource)
 }
 
 // tagNames lists the names of a contact's loaded tags, in the order they were read.

@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
+	"github.com/getsphericon/sphericon/internal/domain/sending/frequencycap"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
@@ -24,8 +25,8 @@ func (env *TestEnv) OutboundModule() *outboundmessages.Module {
 }
 
 // OutboundModules are the Modules of an Outbound send module a test builds over bus and now: the
-// env's Contacts (a send only reads through it), and the Chats, the Provider limit's reads and the
-// Standing over that bus and clock, as the wiring builds them over the Instance's. A test with a
+// env's Contacts (a send only reads through it), and the Chats, the Provider limit's reads, the
+// Standing and the Frequency cap over that bus and clock, as the wiring builds them over the Instance's. A test with a
 // bus or a clock of its own passes it, so the chats publish in its send's transaction.
 func (env *TestEnv) OutboundModules(bus *events.Bus, now func() time.Time) outboundmessages.Modules {
 	return outboundmessages.Modules{
@@ -34,6 +35,7 @@ func (env *TestEnv) OutboundModules(bus *events.Bus, now func() time.Time) outbo
 		Limits:   providerlimit.New(now),
 		Standing: integrations.NewStanding(now),
 		Consents: Module[*engagementtracking.Module](env),
+		Caps:     frequencycap.New(bus, now),
 	}
 }
 

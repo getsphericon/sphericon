@@ -18,6 +18,9 @@ extend-exclude = [
   "internal/kernel/emaildoc/testdata/golden",
   "CHANGELOG.md",
   ".agents/skills",
+  # IANA's zone.tab, kept as the time zone database ships it: its country codes and place names
+  # are no prose.
+  "internal/kernel/phone/zone.tab",
 ]
 
 [default]

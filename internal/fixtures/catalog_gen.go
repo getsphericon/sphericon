@@ -1323,6 +1323,14 @@ const (
 	ConfirmationKrustyConfirmedDestination = "+13125557721"
 	// ConfirmationKrustyConfirmedID is from fixtures/confirmations.
 	ConfirmationKrustyConfirmedID = 7720
+	// ConfirmationLacunaAdaDestination is from fixtures/confirmations.
+	ConfirmationLacunaAdaDestination = "+16175557740"
+	// ConfirmationLacunaAdaID is from fixtures/confirmations.
+	ConfirmationLacunaAdaID = 7740
+	// ConfirmationLacunaDotDestination is from fixtures/confirmations.
+	ConfirmationLacunaDotDestination = "+16175557743"
+	// ConfirmationLacunaDotID is from fixtures/confirmations.
+	ConfirmationLacunaDotID = 7743
 	// ConfirmationLiamDestination is from fixtures/confirmations.
 	ConfirmationLiamDestination = "liam.python@codebasics.dev"
 	// ConfirmationLiamID is from fixtures/confirmations.
@@ -2251,6 +2259,38 @@ const (
 	ExpiredTokenPrefix = "expiredtok01"
 	// ExpiredTokenSecret is from fixtures/api_tokens.
 	ExpiredTokenSecret = "expired-token-secret-0000000000000000000"
+	// FrequencyCapAcmeSMSID is from fixtures/frequency_caps.
+	FrequencyCapAcmeSMSID = 1001
+	// FrequencyCapGlobexGermanyID is from fixtures/frequency_caps.
+	FrequencyCapGlobexGermanyID = 900
+	// FrequencyCapLacunaSMSID is from fixtures/frequency_caps.
+	FrequencyCapLacunaSMSID = 1096
+	// FrequencyCapLacunaTelegramID is from fixtures/frequency_caps.
+	FrequencyCapLacunaTelegramID = 1196
+	// FrequencyCountBystanderDestination is from fixtures/frequency_counts.
+	FrequencyCountBystanderDestination = "ben@initech.test"
+	// FrequencyCountBystanderID is from fixtures/frequency_counts.
+	FrequencyCountBystanderID = 301
+	// FrequencyCountErasableDestination is from fixtures/frequency_counts.
+	FrequencyCountErasableDestination = "erin@initech.test"
+	// FrequencyCountErasableID is from fixtures/frequency_counts.
+	FrequencyCountErasableID = 300
+	// FrequencyCountExpiredDestination is from fixtures/frequency_counts.
+	FrequencyCountExpiredDestination = "usage.old@codebasics.dev"
+	// FrequencyCountExpiredID is from fixtures/frequency_counts.
+	FrequencyCountExpiredID = 1
+	// FrequencyCountGlobexDestination is from fixtures/frequency_counts.
+	FrequencyCountGlobexDestination = "usage@globex.test"
+	// FrequencyCountGlobexID is from fixtures/frequency_counts.
+	FrequencyCountGlobexID = 200
+	// FrequencyCountRecentDestination is from fixtures/frequency_counts.
+	FrequencyCountRecentDestination = "usage.ses@codebasics.dev"
+	// FrequencyCountRecentID is from fixtures/frequency_counts.
+	FrequencyCountRecentID = 2
+	// FrequencyCountTexterDestination is from fixtures/frequency_counts.
+	FrequencyCountTexterDestination = "+14155550810"
+	// FrequencyCountTexterID is from fixtures/frequency_counts.
+	FrequencyCountTexterID = 3
 	// FreshLoginAttemptEmail is from fixtures/auth_attempts.
 	FreshLoginAttemptEmail = "fresh@attempts.test"
 	// FreshLoginAttemptID is from fixtures/auth_attempts.
@@ -4037,6 +4077,10 @@ const (
 	SendingDomainVerifiedDomain = "mail.acme.com"
 	// SendingDomainVerifiedID is from fixtures/sending_domains.
 	SendingDomainVerifiedID = 1
+	// SendingWindowAcmeSMSID is from fixtures/sending_windows.
+	SendingWindowAcmeSMSID = 1001
+	// SendingWindowLacunaSMSID is from fixtures/sending_windows.
+	SendingWindowLacunaSMSID = 1096
 	// ServiceCredentialDomainsReaderID is from fixtures/service_credentials.
 	ServiceCredentialDomainsReaderID = 7101
 	// ServiceCredentialDomainsReaderName is from fixtures/service_credentials.

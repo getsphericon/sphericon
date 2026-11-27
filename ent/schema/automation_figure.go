@@ -47,6 +47,19 @@ func (AutomationFigure) Fields() []ent.Field {
 		// delivery stamps.
 		field.Int("sent").NonNegative().Default(0),
 		field.Int("skipped").NonNegative().Default(0),
+		// The skipped by Skipped reason (ADR 0178), one column per reason of the closed list
+		// skipreason holds: they add up to skipped. 0 in what was added before they were kept.
+		field.Int("skipped_suppressed").NonNegative().Default(0),
+		field.Int("skipped_unsubscribed_everything").NonNegative().Default(0),
+		field.Int("skipped_unsubscribed_source").NonNegative().Default(0),
+		field.Int("skipped_unconfirmed").NonNegative().Default(0),
+		field.Int("skipped_no_destination").NonNegative().Default(0),
+		field.Int("skipped_contact_erased").NonNegative().Default(0),
+		field.Int("skipped_no_local_time").NonNegative().Default(0),
+		field.Int("skipped_frequency_cap").NonNegative().Default(0),
+		// The sent messages a Sending window judged by a single zone (ADR 0134). 0 in what was
+		// added before they were kept.
+		field.Int("single_zone").NonNegative().Default(0),
 		field.Int("delivered").NonNegative().Default(0),
 		field.Int("bounced").NonNegative().Default(0),
 		field.Int("complained").NonNegative().Default(0),

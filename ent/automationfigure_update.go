@@ -92,6 +92,195 @@ func (_u *AutomationFigureUpdate) AddSkipped(v int) *AutomationFigureUpdate {
 	return _u
 }
 
+// SetSkippedSuppressed sets the "skipped_suppressed" field.
+func (_u *AutomationFigureUpdate) SetSkippedSuppressed(v int) *AutomationFigureUpdate {
+	_u.mutation.ResetSkippedSuppressed()
+	_u.mutation.SetSkippedSuppressed(v)
+	return _u
+}
+
+// SetNillableSkippedSuppressed sets the "skipped_suppressed" field if the given value is not nil.
+func (_u *AutomationFigureUpdate) SetNillableSkippedSuppressed(v *int) *AutomationFigureUpdate {
+	if v != nil {
+		_u.SetSkippedSuppressed(*v)
+	}
+	return _u
+}
+
+// AddSkippedSuppressed adds value to the "skipped_suppressed" field.
+func (_u *AutomationFigureUpdate) AddSkippedSuppressed(v int) *AutomationFigureUpdate {
+	_u.mutation.AddSkippedSuppressed(v)
+	return _u
+}
+
+// SetSkippedUnsubscribedEverything sets the "skipped_unsubscribed_everything" field.
+func (_u *AutomationFigureUpdate) SetSkippedUnsubscribedEverything(v int) *AutomationFigureUpdate {
+	_u.mutation.ResetSkippedUnsubscribedEverything()
+	_u.mutation.SetSkippedUnsubscribedEverything(v)
+	return _u
+}
+
+// SetNillableSkippedUnsubscribedEverything sets the "skipped_unsubscribed_everything" field if the given value is not nil.
+func (_u *AutomationFigureUpdate) SetNillableSkippedUnsubscribedEverything(v *int) *AutomationFigureUpdate {
+	if v != nil {
+		_u.SetSkippedUnsubscribedEverything(*v)
+	}
+	return _u
+}
+
+// AddSkippedUnsubscribedEverything adds value to the "skipped_unsubscribed_everything" field.
+func (_u *AutomationFigureUpdate) AddSkippedUnsubscribedEverything(v int) *AutomationFigureUpdate {
+	_u.mutation.AddSkippedUnsubscribedEverything(v)
+	return _u
+}
+
+// SetSkippedUnsubscribedSource sets the "skipped_unsubscribed_source" field.
+func (_u *AutomationFigureUpdate) SetSkippedUnsubscribedSource(v int) *AutomationFigureUpdate {
+	_u.mutation.ResetSkippedUnsubscribedSource()
+	_u.mutation.SetSkippedUnsubscribedSource(v)
+	return _u
+}
+
+// SetNillableSkippedUnsubscribedSource sets the "skipped_unsubscribed_source" field if the given value is not nil.
+func (_u *AutomationFigureUpdate) SetNillableSkippedUnsubscribedSource(v *int) *AutomationFigureUpdate {
+	if v != nil {
+		_u.SetSkippedUnsubscribedSource(*v)
+	}
+	return _u
+}
+
+// AddSkippedUnsubscribedSource adds value to the "skipped_unsubscribed_source" field.
+func (_u *AutomationFigureUpdate) AddSkippedUnsubscribedSource(v int) *AutomationFigureUpdate {
+	_u.mutation.AddSkippedUnsubscribedSource(v)
+	return _u
+}
+
+// SetSkippedUnconfirmed sets the "skipped_unconfirmed" field.
+func (_u *AutomationFigureUpdate) SetSkippedUnconfirmed(v int) *AutomationFigureUpdate {
+	_u.mutation.ResetSkippedUnconfirmed()
+	_u.mutation.SetSkippedUnconfirmed(v)
+	return _u
+}
+
+// SetNillableSkippedUnconfirmed sets the "skipped_unconfirmed" field if the given value is not nil.
+func (_u *AutomationFigureUpdate) SetNillableSkippedUnconfirmed(v *int) *AutomationFigureUpdate {
+	if v != nil {
+		_u.SetSkippedUnconfirmed(*v)
+	}
+	return _u
+}
+
+// AddSkippedUnconfirmed adds value to the "skipped_unconfirmed" field.
+func (_u *AutomationFigureUpdate) AddSkippedUnconfirmed(v int) *AutomationFigureUpdate {
+	_u.mutation.AddSkippedUnconfirmed(v)
+	return _u
+}
+
+// SetSkippedNoDestination sets the "skipped_no_destination" field.
+func (_u *AutomationFigureUpdate) SetSkippedNoDestination(v int) *AutomationFigureUpdate {
+	_u.mutation.ResetSkippedNoDestination()
+	_u.mutation.SetSkippedNoDestination(v)
+	return _u
+}
+
+// SetNillableSkippedNoDestination sets the "skipped_no_destination" field if the given value is not nil.
+func (_u *AutomationFigureUpdate) SetNillableSkippedNoDestination(v *int) *AutomationFigureUpdate {
+	if v != nil {
+		_u.SetSkippedNoDestination(*v)
+	}
+	return _u
+}
+
+// AddSkippedNoDestination adds value to the "skipped_no_destination" field.
+func (_u *AutomationFigureUpdate) AddSkippedNoDestination(v int) *AutomationFigureUpdate {
+	_u.mutation.AddSkippedNoDestination(v)
+	return _u
+}
+
+// SetSkippedContactErased sets the "skipped_contact_erased" field.
+func (_u *AutomationFigureUpdate) SetSkippedContactErased(v int) *AutomationFigureUpdate {
+	_u.mutation.ResetSkippedContactErased()
+	_u.mutation.SetSkippedContactErased(v)
+	return _u
+}
+
+// SetNillableSkippedContactErased sets the "skipped_contact_erased" field if the given value is not nil.
+func (_u *AutomationFigureUpdate) SetNillableSkippedContactErased(v *int) *AutomationFigureUpdate {
+	if v != nil {
+		_u.SetSkippedContactErased(*v)
+	}
+	return _u
+}
+
+// AddSkippedContactErased adds value to the "skipped_contact_erased" field.
+func (_u *AutomationFigureUpdate) AddSkippedContactErased(v int) *AutomationFigureUpdate {
+	_u.mutation.AddSkippedContactErased(v)
+	return _u
+}
+
+// SetSkippedNoLocalTime sets the "skipped_no_local_time" field.
+func (_u *AutomationFigureUpdate) SetSkippedNoLocalTime(v int) *AutomationFigureUpdate {
+	_u.mutation.ResetSkippedNoLocalTime()
+	_u.mutation.SetSkippedNoLocalTime(v)
+	return _u
+}
+
+// SetNillableSkippedNoLocalTime sets the "skipped_no_local_time" field if the given value is not nil.
+func (_u *AutomationFigureUpdate) SetNillableSkippedNoLocalTime(v *int) *AutomationFigureUpdate {
+	if v != nil {
+		_u.SetSkippedNoLocalTime(*v)
+	}
+	return _u
+}
+
+// AddSkippedNoLocalTime adds value to the "skipped_no_local_time" field.
+func (_u *AutomationFigureUpdate) AddSkippedNoLocalTime(v int) *AutomationFigureUpdate {
+	_u.mutation.AddSkippedNoLocalTime(v)
+	return _u
+}
+
+// SetSkippedFrequencyCap sets the "skipped_frequency_cap" field.
+func (_u *AutomationFigureUpdate) SetSkippedFrequencyCap(v int) *AutomationFigureUpdate {
+	_u.mutation.ResetSkippedFrequencyCap()
+	_u.mutation.SetSkippedFrequencyCap(v)
+	return _u
+}
+
+// SetNillableSkippedFrequencyCap sets the "skipped_frequency_cap" field if the given value is not nil.
+func (_u *AutomationFigureUpdate) SetNillableSkippedFrequencyCap(v *int) *AutomationFigureUpdate {
+	if v != nil {
+		_u.SetSkippedFrequencyCap(*v)
+	}
+	return _u
+}
+
+// AddSkippedFrequencyCap adds value to the "skipped_frequency_cap" field.
+func (_u *AutomationFigureUpdate) AddSkippedFrequencyCap(v int) *AutomationFigureUpdate {
+	_u.mutation.AddSkippedFrequencyCap(v)
+	return _u
+}
+
+// SetSingleZone sets the "single_zone" field.
+func (_u *AutomationFigureUpdate) SetSingleZone(v int) *AutomationFigureUpdate {
+	_u.mutation.ResetSingleZone()
+	_u.mutation.SetSingleZone(v)
+	return _u
+}
+
+// SetNillableSingleZone sets the "single_zone" field if the given value is not nil.
+func (_u *AutomationFigureUpdate) SetNillableSingleZone(v *int) *AutomationFigureUpdate {
+	if v != nil {
+		_u.SetSingleZone(*v)
+	}
+	return _u
+}
+
+// AddSingleZone adds value to the "single_zone" field.
+func (_u *AutomationFigureUpdate) AddSingleZone(v int) *AutomationFigureUpdate {
+	_u.mutation.AddSingleZone(v)
+	return _u
+}
+
 // SetDelivered sets the "delivered" field.
 func (_u *AutomationFigureUpdate) SetDelivered(v int) *AutomationFigureUpdate {
 	_u.mutation.ResetDelivered()
@@ -240,6 +429,51 @@ func (_u *AutomationFigureUpdate) check() error {
 			return &ValidationError{Name: "skipped", err: fmt.Errorf(`ent: validator failed for field "AutomationFigure.skipped": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.SkippedSuppressed(); ok {
+		if err := automationfigure.SkippedSuppressedValidator(v); err != nil {
+			return &ValidationError{Name: "skipped_suppressed", err: fmt.Errorf(`ent: validator failed for field "AutomationFigure.skipped_suppressed": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.SkippedUnsubscribedEverything(); ok {
+		if err := automationfigure.SkippedUnsubscribedEverythingValidator(v); err != nil {
+			return &ValidationError{Name: "skipped_unsubscribed_everything", err: fmt.Errorf(`ent: validator failed for field "AutomationFigure.skipped_unsubscribed_everything": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.SkippedUnsubscribedSource(); ok {
+		if err := automationfigure.SkippedUnsubscribedSourceValidator(v); err != nil {
+			return &ValidationError{Name: "skipped_unsubscribed_source", err: fmt.Errorf(`ent: validator failed for field "AutomationFigure.skipped_unsubscribed_source": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.SkippedUnconfirmed(); ok {
+		if err := automationfigure.SkippedUnconfirmedValidator(v); err != nil {
+			return &ValidationError{Name: "skipped_unconfirmed", err: fmt.Errorf(`ent: validator failed for field "AutomationFigure.skipped_unconfirmed": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.SkippedNoDestination(); ok {
+		if err := automationfigure.SkippedNoDestinationValidator(v); err != nil {
+			return &ValidationError{Name: "skipped_no_destination", err: fmt.Errorf(`ent: validator failed for field "AutomationFigure.skipped_no_destination": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.SkippedContactErased(); ok {
+		if err := automationfigure.SkippedContactErasedValidator(v); err != nil {
+			return &ValidationError{Name: "skipped_contact_erased", err: fmt.Errorf(`ent: validator failed for field "AutomationFigure.skipped_contact_erased": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.SkippedNoLocalTime(); ok {
+		if err := automationfigure.SkippedNoLocalTimeValidator(v); err != nil {
+			return &ValidationError{Name: "skipped_no_local_time", err: fmt.Errorf(`ent: validator failed for field "AutomationFigure.skipped_no_local_time": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.SkippedFrequencyCap(); ok {
+		if err := automationfigure.SkippedFrequencyCapValidator(v); err != nil {
+			return &ValidationError{Name: "skipped_frequency_cap", err: fmt.Errorf(`ent: validator failed for field "AutomationFigure.skipped_frequency_cap": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.SingleZone(); ok {
+		if err := automationfigure.SingleZoneValidator(v); err != nil {
+			return &ValidationError{Name: "single_zone", err: fmt.Errorf(`ent: validator failed for field "AutomationFigure.single_zone": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Delivered(); ok {
 		if err := automationfigure.DeliveredValidator(v); err != nil {
 			return &ValidationError{Name: "delivered", err: fmt.Errorf(`ent: validator failed for field "AutomationFigure.delivered": %w`, err)}
@@ -304,6 +538,60 @@ func (_u *AutomationFigureUpdate) sqlSave(ctx context.Context) (_node int, err e
 	}
 	if value, ok := _u.mutation.AddedSkipped(); ok {
 		_spec.AddField(automationfigure.FieldSkipped, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.SkippedSuppressed(); ok {
+		_spec.SetField(automationfigure.FieldSkippedSuppressed, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedSkippedSuppressed(); ok {
+		_spec.AddField(automationfigure.FieldSkippedSuppressed, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.SkippedUnsubscribedEverything(); ok {
+		_spec.SetField(automationfigure.FieldSkippedUnsubscribedEverything, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedSkippedUnsubscribedEverything(); ok {
+		_spec.AddField(automationfigure.FieldSkippedUnsubscribedEverything, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.SkippedUnsubscribedSource(); ok {
+		_spec.SetField(automationfigure.FieldSkippedUnsubscribedSource, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedSkippedUnsubscribedSource(); ok {
+		_spec.AddField(automationfigure.FieldSkippedUnsubscribedSource, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.SkippedUnconfirmed(); ok {
+		_spec.SetField(automationfigure.FieldSkippedUnconfirmed, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedSkippedUnconfirmed(); ok {
+		_spec.AddField(automationfigure.FieldSkippedUnconfirmed, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.SkippedNoDestination(); ok {
+		_spec.SetField(automationfigure.FieldSkippedNoDestination, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedSkippedNoDestination(); ok {
+		_spec.AddField(automationfigure.FieldSkippedNoDestination, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.SkippedContactErased(); ok {
+		_spec.SetField(automationfigure.FieldSkippedContactErased, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedSkippedContactErased(); ok {
+		_spec.AddField(automationfigure.FieldSkippedContactErased, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.SkippedNoLocalTime(); ok {
+		_spec.SetField(automationfigure.FieldSkippedNoLocalTime, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedSkippedNoLocalTime(); ok {
+		_spec.AddField(automationfigure.FieldSkippedNoLocalTime, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.SkippedFrequencyCap(); ok {
+		_spec.SetField(automationfigure.FieldSkippedFrequencyCap, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedSkippedFrequencyCap(); ok {
+		_spec.AddField(automationfigure.FieldSkippedFrequencyCap, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.SingleZone(); ok {
+		_spec.SetField(automationfigure.FieldSingleZone, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedSingleZone(); ok {
+		_spec.AddField(automationfigure.FieldSingleZone, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.Delivered(); ok {
 		_spec.SetField(automationfigure.FieldDelivered, field.TypeInt, value)
@@ -439,6 +727,195 @@ func (_u *AutomationFigureUpdateOne) SetNillableSkipped(v *int) *AutomationFigur
 // AddSkipped adds value to the "skipped" field.
 func (_u *AutomationFigureUpdateOne) AddSkipped(v int) *AutomationFigureUpdateOne {
 	_u.mutation.AddSkipped(v)
+	return _u
+}
+
+// SetSkippedSuppressed sets the "skipped_suppressed" field.
+func (_u *AutomationFigureUpdateOne) SetSkippedSuppressed(v int) *AutomationFigureUpdateOne {
+	_u.mutation.ResetSkippedSuppressed()
+	_u.mutation.SetSkippedSuppressed(v)
+	return _u
+}
+
+// SetNillableSkippedSuppressed sets the "skipped_suppressed" field if the given value is not nil.
+func (_u *AutomationFigureUpdateOne) SetNillableSkippedSuppressed(v *int) *AutomationFigureUpdateOne {
+	if v != nil {
+		_u.SetSkippedSuppressed(*v)
+	}
+	return _u
+}
+
+// AddSkippedSuppressed adds value to the "skipped_suppressed" field.
+func (_u *AutomationFigureUpdateOne) AddSkippedSuppressed(v int) *AutomationFigureUpdateOne {
+	_u.mutation.AddSkippedSuppressed(v)
+	return _u
+}
+
+// SetSkippedUnsubscribedEverything sets the "skipped_unsubscribed_everything" field.
+func (_u *AutomationFigureUpdateOne) SetSkippedUnsubscribedEverything(v int) *AutomationFigureUpdateOne {
+	_u.mutation.ResetSkippedUnsubscribedEverything()
+	_u.mutation.SetSkippedUnsubscribedEverything(v)
+	return _u
+}
+
+// SetNillableSkippedUnsubscribedEverything sets the "skipped_unsubscribed_everything" field if the given value is not nil.
+func (_u *AutomationFigureUpdateOne) SetNillableSkippedUnsubscribedEverything(v *int) *AutomationFigureUpdateOne {
+	if v != nil {
+		_u.SetSkippedUnsubscribedEverything(*v)
+	}
+	return _u
+}
+
+// AddSkippedUnsubscribedEverything adds value to the "skipped_unsubscribed_everything" field.
+func (_u *AutomationFigureUpdateOne) AddSkippedUnsubscribedEverything(v int) *AutomationFigureUpdateOne {
+	_u.mutation.AddSkippedUnsubscribedEverything(v)
+	return _u
+}
+
+// SetSkippedUnsubscribedSource sets the "skipped_unsubscribed_source" field.
+func (_u *AutomationFigureUpdateOne) SetSkippedUnsubscribedSource(v int) *AutomationFigureUpdateOne {
+	_u.mutation.ResetSkippedUnsubscribedSource()
+	_u.mutation.SetSkippedUnsubscribedSource(v)
+	return _u
+}
+
+// SetNillableSkippedUnsubscribedSource sets the "skipped_unsubscribed_source" field if the given value is not nil.
+func (_u *AutomationFigureUpdateOne) SetNillableSkippedUnsubscribedSource(v *int) *AutomationFigureUpdateOne {
+	if v != nil {
+		_u.SetSkippedUnsubscribedSource(*v)
+	}
+	return _u
+}
+
+// AddSkippedUnsubscribedSource adds value to the "skipped_unsubscribed_source" field.
+func (_u *AutomationFigureUpdateOne) AddSkippedUnsubscribedSource(v int) *AutomationFigureUpdateOne {
+	_u.mutation.AddSkippedUnsubscribedSource(v)
+	return _u
+}
+
+// SetSkippedUnconfirmed sets the "skipped_unconfirmed" field.
+func (_u *AutomationFigureUpdateOne) SetSkippedUnconfirmed(v int) *AutomationFigureUpdateOne {
+	_u.mutation.ResetSkippedUnconfirmed()
+	_u.mutation.SetSkippedUnconfirmed(v)
+	return _u
+}
+
+// SetNillableSkippedUnconfirmed sets the "skipped_unconfirmed" field if the given value is not nil.
+func (_u *AutomationFigureUpdateOne) SetNillableSkippedUnconfirmed(v *int) *AutomationFigureUpdateOne {
+	if v != nil {
+		_u.SetSkippedUnconfirmed(*v)
+	}
+	return _u
+}
+
+// AddSkippedUnconfirmed adds value to the "skipped_unconfirmed" field.
+func (_u *AutomationFigureUpdateOne) AddSkippedUnconfirmed(v int) *AutomationFigureUpdateOne {
+	_u.mutation.AddSkippedUnconfirmed(v)
+	return _u
+}
+
+// SetSkippedNoDestination sets the "skipped_no_destination" field.
+func (_u *AutomationFigureUpdateOne) SetSkippedNoDestination(v int) *AutomationFigureUpdateOne {
+	_u.mutation.ResetSkippedNoDestination()
+	_u.mutation.SetSkippedNoDestination(v)
+	return _u
+}
+
+// SetNillableSkippedNoDestination sets the "skipped_no_destination" field if the given value is not nil.
+func (_u *AutomationFigureUpdateOne) SetNillableSkippedNoDestination(v *int) *AutomationFigureUpdateOne {
+	if v != nil {
+		_u.SetSkippedNoDestination(*v)
+	}
+	return _u
+}
+
+// AddSkippedNoDestination adds value to the "skipped_no_destination" field.
+func (_u *AutomationFigureUpdateOne) AddSkippedNoDestination(v int) *AutomationFigureUpdateOne {
+	_u.mutation.AddSkippedNoDestination(v)
+	return _u
+}
+
+// SetSkippedContactErased sets the "skipped_contact_erased" field.
+func (_u *AutomationFigureUpdateOne) SetSkippedContactErased(v int) *AutomationFigureUpdateOne {
+	_u.mutation.ResetSkippedContactErased()
+	_u.mutation.SetSkippedContactErased(v)
+	return _u
+}
+
+// SetNillableSkippedContactErased sets the "skipped_contact_erased" field if the given value is not nil.
+func (_u *AutomationFigureUpdateOne) SetNillableSkippedContactErased(v *int) *AutomationFigureUpdateOne {
+	if v != nil {
+		_u.SetSkippedContactErased(*v)
+	}
+	return _u
+}
+
+// AddSkippedContactErased adds value to the "skipped_contact_erased" field.
+func (_u *AutomationFigureUpdateOne) AddSkippedContactErased(v int) *AutomationFigureUpdateOne {
+	_u.mutation.AddSkippedContactErased(v)
+	return _u
+}
+
+// SetSkippedNoLocalTime sets the "skipped_no_local_time" field.
+func (_u *AutomationFigureUpdateOne) SetSkippedNoLocalTime(v int) *AutomationFigureUpdateOne {
+	_u.mutation.ResetSkippedNoLocalTime()
+	_u.mutation.SetSkippedNoLocalTime(v)
+	return _u
+}
+
+// SetNillableSkippedNoLocalTime sets the "skipped_no_local_time" field if the given value is not nil.
+func (_u *AutomationFigureUpdateOne) SetNillableSkippedNoLocalTime(v *int) *AutomationFigureUpdateOne {
+	if v != nil {
+		_u.SetSkippedNoLocalTime(*v)
+	}
+	return _u
+}
+
+// AddSkippedNoLocalTime adds value to the "skipped_no_local_time" field.
+func (_u *AutomationFigureUpdateOne) AddSkippedNoLocalTime(v int) *AutomationFigureUpdateOne {
+	_u.mutation.AddSkippedNoLocalTime(v)
+	return _u
+}
+
+// SetSkippedFrequencyCap sets the "skipped_frequency_cap" field.
+func (_u *AutomationFigureUpdateOne) SetSkippedFrequencyCap(v int) *AutomationFigureUpdateOne {
+	_u.mutation.ResetSkippedFrequencyCap()
+	_u.mutation.SetSkippedFrequencyCap(v)
+	return _u
+}
+
+// SetNillableSkippedFrequencyCap sets the "skipped_frequency_cap" field if the given value is not nil.
+func (_u *AutomationFigureUpdateOne) SetNillableSkippedFrequencyCap(v *int) *AutomationFigureUpdateOne {
+	if v != nil {
+		_u.SetSkippedFrequencyCap(*v)
+	}
+	return _u
+}
+
+// AddSkippedFrequencyCap adds value to the "skipped_frequency_cap" field.
+func (_u *AutomationFigureUpdateOne) AddSkippedFrequencyCap(v int) *AutomationFigureUpdateOne {
+	_u.mutation.AddSkippedFrequencyCap(v)
+	return _u
+}
+
+// SetSingleZone sets the "single_zone" field.
+func (_u *AutomationFigureUpdateOne) SetSingleZone(v int) *AutomationFigureUpdateOne {
+	_u.mutation.ResetSingleZone()
+	_u.mutation.SetSingleZone(v)
+	return _u
+}
+
+// SetNillableSingleZone sets the "single_zone" field if the given value is not nil.
+func (_u *AutomationFigureUpdateOne) SetNillableSingleZone(v *int) *AutomationFigureUpdateOne {
+	if v != nil {
+		_u.SetSingleZone(*v)
+	}
+	return _u
+}
+
+// AddSingleZone adds value to the "single_zone" field.
+func (_u *AutomationFigureUpdateOne) AddSingleZone(v int) *AutomationFigureUpdateOne {
+	_u.mutation.AddSingleZone(v)
 	return _u
 }
 
@@ -603,6 +1080,51 @@ func (_u *AutomationFigureUpdateOne) check() error {
 			return &ValidationError{Name: "skipped", err: fmt.Errorf(`ent: validator failed for field "AutomationFigure.skipped": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.SkippedSuppressed(); ok {
+		if err := automationfigure.SkippedSuppressedValidator(v); err != nil {
+			return &ValidationError{Name: "skipped_suppressed", err: fmt.Errorf(`ent: validator failed for field "AutomationFigure.skipped_suppressed": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.SkippedUnsubscribedEverything(); ok {
+		if err := automationfigure.SkippedUnsubscribedEverythingValidator(v); err != nil {
+			return &ValidationError{Name: "skipped_unsubscribed_everything", err: fmt.Errorf(`ent: validator failed for field "AutomationFigure.skipped_unsubscribed_everything": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.SkippedUnsubscribedSource(); ok {
+		if err := automationfigure.SkippedUnsubscribedSourceValidator(v); err != nil {
+			return &ValidationError{Name: "skipped_unsubscribed_source", err: fmt.Errorf(`ent: validator failed for field "AutomationFigure.skipped_unsubscribed_source": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.SkippedUnconfirmed(); ok {
+		if err := automationfigure.SkippedUnconfirmedValidator(v); err != nil {
+			return &ValidationError{Name: "skipped_unconfirmed", err: fmt.Errorf(`ent: validator failed for field "AutomationFigure.skipped_unconfirmed": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.SkippedNoDestination(); ok {
+		if err := automationfigure.SkippedNoDestinationValidator(v); err != nil {
+			return &ValidationError{Name: "skipped_no_destination", err: fmt.Errorf(`ent: validator failed for field "AutomationFigure.skipped_no_destination": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.SkippedContactErased(); ok {
+		if err := automationfigure.SkippedContactErasedValidator(v); err != nil {
+			return &ValidationError{Name: "skipped_contact_erased", err: fmt.Errorf(`ent: validator failed for field "AutomationFigure.skipped_contact_erased": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.SkippedNoLocalTime(); ok {
+		if err := automationfigure.SkippedNoLocalTimeValidator(v); err != nil {
+			return &ValidationError{Name: "skipped_no_local_time", err: fmt.Errorf(`ent: validator failed for field "AutomationFigure.skipped_no_local_time": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.SkippedFrequencyCap(); ok {
+		if err := automationfigure.SkippedFrequencyCapValidator(v); err != nil {
+			return &ValidationError{Name: "skipped_frequency_cap", err: fmt.Errorf(`ent: validator failed for field "AutomationFigure.skipped_frequency_cap": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.SingleZone(); ok {
+		if err := automationfigure.SingleZoneValidator(v); err != nil {
+			return &ValidationError{Name: "single_zone", err: fmt.Errorf(`ent: validator failed for field "AutomationFigure.single_zone": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Delivered(); ok {
 		if err := automationfigure.DeliveredValidator(v); err != nil {
 			return &ValidationError{Name: "delivered", err: fmt.Errorf(`ent: validator failed for field "AutomationFigure.delivered": %w`, err)}
@@ -684,6 +1206,60 @@ func (_u *AutomationFigureUpdateOne) sqlSave(ctx context.Context) (_node *Automa
 	}
 	if value, ok := _u.mutation.AddedSkipped(); ok {
 		_spec.AddField(automationfigure.FieldSkipped, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.SkippedSuppressed(); ok {
+		_spec.SetField(automationfigure.FieldSkippedSuppressed, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedSkippedSuppressed(); ok {
+		_spec.AddField(automationfigure.FieldSkippedSuppressed, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.SkippedUnsubscribedEverything(); ok {
+		_spec.SetField(automationfigure.FieldSkippedUnsubscribedEverything, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedSkippedUnsubscribedEverything(); ok {
+		_spec.AddField(automationfigure.FieldSkippedUnsubscribedEverything, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.SkippedUnsubscribedSource(); ok {
+		_spec.SetField(automationfigure.FieldSkippedUnsubscribedSource, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedSkippedUnsubscribedSource(); ok {
+		_spec.AddField(automationfigure.FieldSkippedUnsubscribedSource, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.SkippedUnconfirmed(); ok {
+		_spec.SetField(automationfigure.FieldSkippedUnconfirmed, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedSkippedUnconfirmed(); ok {
+		_spec.AddField(automationfigure.FieldSkippedUnconfirmed, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.SkippedNoDestination(); ok {
+		_spec.SetField(automationfigure.FieldSkippedNoDestination, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedSkippedNoDestination(); ok {
+		_spec.AddField(automationfigure.FieldSkippedNoDestination, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.SkippedContactErased(); ok {
+		_spec.SetField(automationfigure.FieldSkippedContactErased, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedSkippedContactErased(); ok {
+		_spec.AddField(automationfigure.FieldSkippedContactErased, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.SkippedNoLocalTime(); ok {
+		_spec.SetField(automationfigure.FieldSkippedNoLocalTime, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedSkippedNoLocalTime(); ok {
+		_spec.AddField(automationfigure.FieldSkippedNoLocalTime, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.SkippedFrequencyCap(); ok {
+		_spec.SetField(automationfigure.FieldSkippedFrequencyCap, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedSkippedFrequencyCap(); ok {
+		_spec.AddField(automationfigure.FieldSkippedFrequencyCap, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.SingleZone(); ok {
+		_spec.SetField(automationfigure.FieldSingleZone, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedSingleZone(); ok {
+		_spec.AddField(automationfigure.FieldSingleZone, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.Delivered(); ok {
 		_spec.SetField(automationfigure.FieldDelivered, field.TypeInt, value)

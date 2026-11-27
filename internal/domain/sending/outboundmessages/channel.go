@@ -28,10 +28,11 @@ type channel interface {
 	// integ is nil when the Channel has no Integration to send through: a test double's sender
 	// may still answer. messaging.ErrNoProvider when none can be built.
 	adapter(ctx context.Context, s *ent.Scoped, integ *ent.Integration) (Adapter, error)
-	// targets resolves where the message goes, after the claim: one target per Destination the
-	// Channel reaches the Request's recipient at. dest is the Request's own normalized Destination
-	// (on email the address, empty for a Contact with none); a Channel of Bindings ignores it and
-	// reads the recipient's Bindings on the route's Integration. None is a Skipped no_destination.
+	// targets resolves where the message goes, read only and before the claim: one target per
+	// Destination the Channel reaches the Request's recipient at. dest is the Request's own normalized
+	// Destination (on email the address, empty for a Contact with none); a Channel of Bindings ignores
+	// it and reads the recipient's Bindings on the route's Integration. None is a Skipped
+	// no_destination.
 	targets(ctx context.Context, s *ent.Scoped, req Request, route Route, dest string) ([]target, error)
 	// tracks is whether req's surface asks for its message to be tracked (ADR 0120): the request's
 	// Track, and on a Channel whose content can keep its links as written, that it does not. The

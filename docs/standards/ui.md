@@ -207,7 +207,9 @@ edits a resource of its own mounts that form too (`defineEditForm`: the Brand ki
 Integration's Inbound window, which stays open across its Save and its operations). The form is handed
 the resource as the session shows it and the refusal of its last write, so one whose fields depend on
 what is stored (an Integration's credentials, by provider) or that places a refusal itself (a Preset's
-params) needs nothing of its own. A create page
+params) needs nothing of its own. An edit given `refusalField` shows a refused Save's field errors
+under its fields, naming the form's field of each path of the problem when its form keys a list
+otherwise than the request (the Sending rules' days), and toasts only what no field shows. A create page
 or modal has no session. A list action that writes one field of a row (turning a Webhook on or off)
 is no editor: it sends that field alone with the revision the row shows, and a refusal says why and
 reads the list again.

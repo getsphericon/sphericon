@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
+	"github.com/getsphericon/sphericon/ent/frequencycount"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
@@ -26,6 +27,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 )
 
@@ -246,6 +248,60 @@ func (_u *OutboundMessageUpdate) SetNillableFailure(v *string) *OutboundMessageU
 // ClearFailure clears the value of the "failure" field.
 func (_u *OutboundMessageUpdate) ClearFailure() *OutboundMessageUpdate {
 	_u.mutation.ClearFailure()
+	return _u
+}
+
+// SetDeferredSince sets the "deferred_since" field.
+func (_u *OutboundMessageUpdate) SetDeferredSince(v time.Time) *OutboundMessageUpdate {
+	_u.mutation.SetDeferredSince(v)
+	return _u
+}
+
+// SetNillableDeferredSince sets the "deferred_since" field if the given value is not nil.
+func (_u *OutboundMessageUpdate) SetNillableDeferredSince(v *time.Time) *OutboundMessageUpdate {
+	if v != nil {
+		_u.SetDeferredSince(*v)
+	}
+	return _u
+}
+
+// ClearDeferredSince clears the value of the "deferred_since" field.
+func (_u *OutboundMessageUpdate) ClearDeferredSince() *OutboundMessageUpdate {
+	_u.mutation.ClearDeferredSince()
+	return _u
+}
+
+// SetDeferralCause sets the "deferral_cause" field.
+func (_u *OutboundMessageUpdate) SetDeferralCause(v deferralcause.Cause) *OutboundMessageUpdate {
+	_u.mutation.SetDeferralCause(v)
+	return _u
+}
+
+// SetNillableDeferralCause sets the "deferral_cause" field if the given value is not nil.
+func (_u *OutboundMessageUpdate) SetNillableDeferralCause(v *deferralcause.Cause) *OutboundMessageUpdate {
+	if v != nil {
+		_u.SetDeferralCause(*v)
+	}
+	return _u
+}
+
+// ClearDeferralCause clears the value of the "deferral_cause" field.
+func (_u *OutboundMessageUpdate) ClearDeferralCause() *OutboundMessageUpdate {
+	_u.mutation.ClearDeferralCause()
+	return _u
+}
+
+// SetWindowZones sets the "window_zones" field.
+func (_u *OutboundMessageUpdate) SetWindowZones(v outboundmessage.WindowZones) *OutboundMessageUpdate {
+	_u.mutation.SetWindowZones(v)
+	return _u
+}
+
+// SetNillableWindowZones sets the "window_zones" field if the given value is not nil.
+func (_u *OutboundMessageUpdate) SetNillableWindowZones(v *outboundmessage.WindowZones) *OutboundMessageUpdate {
+	if v != nil {
+		_u.SetWindowZones(*v)
+	}
 	return _u
 }
 
@@ -711,6 +767,21 @@ func (_u *OutboundMessageUpdate) AddTrackedLinks(v ...*TrackedLink) *OutboundMes
 	return _u.AddTrackedLinkIDs(ids...)
 }
 
+// AddFrequencyCountIDs adds the "frequency_counts" edge to the FrequencyCount entity by IDs.
+func (_u *OutboundMessageUpdate) AddFrequencyCountIDs(ids ...int64) *OutboundMessageUpdate {
+	_u.mutation.AddFrequencyCountIDs(ids...)
+	return _u
+}
+
+// AddFrequencyCounts adds the "frequency_counts" edges to the FrequencyCount entity.
+func (_u *OutboundMessageUpdate) AddFrequencyCounts(v ...*FrequencyCount) *OutboundMessageUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddFrequencyCountIDs(ids...)
+}
+
 // SetBroadcast sets the "broadcast" edge to the Broadcast entity.
 func (_u *OutboundMessageUpdate) SetBroadcast(v *Broadcast) *OutboundMessageUpdate {
 	return _u.SetBroadcastID(v.ID)
@@ -781,6 +852,27 @@ func (_u *OutboundMessageUpdate) RemoveTrackedLinks(v ...*TrackedLink) *Outbound
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveTrackedLinkIDs(ids...)
+}
+
+// ClearFrequencyCounts clears all "frequency_counts" edges to the FrequencyCount entity.
+func (_u *OutboundMessageUpdate) ClearFrequencyCounts() *OutboundMessageUpdate {
+	_u.mutation.ClearFrequencyCounts()
+	return _u
+}
+
+// RemoveFrequencyCountIDs removes the "frequency_counts" edge to FrequencyCount entities by IDs.
+func (_u *OutboundMessageUpdate) RemoveFrequencyCountIDs(ids ...int64) *OutboundMessageUpdate {
+	_u.mutation.RemoveFrequencyCountIDs(ids...)
+	return _u
+}
+
+// RemoveFrequencyCounts removes "frequency_counts" edges to FrequencyCount entities.
+func (_u *OutboundMessageUpdate) RemoveFrequencyCounts(v ...*FrequencyCount) *OutboundMessageUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveFrequencyCountIDs(ids...)
 }
 
 // ClearBroadcast clears the "broadcast" edge to the Broadcast entity.
@@ -884,6 +976,16 @@ func (_u *OutboundMessageUpdate) check() error {
 			return &ValidationError{Name: "skipped_reason", err: fmt.Errorf(`ent: validator failed for field "OutboundMessage.skipped_reason": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.DeferralCause(); ok {
+		if err := outboundmessage.DeferralCauseValidator(v); err != nil {
+			return &ValidationError{Name: "deferral_cause", err: fmt.Errorf(`ent: validator failed for field "OutboundMessage.deferral_cause": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.WindowZones(); ok {
+		if err := outboundmessage.WindowZonesValidator(v); err != nil {
+			return &ValidationError{Name: "window_zones", err: fmt.Errorf(`ent: validator failed for field "OutboundMessage.window_zones": %w`, err)}
+		}
+	}
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "OutboundMessage.workspace"`)
 	}
@@ -963,6 +1065,21 @@ func (_u *OutboundMessageUpdate) sqlSave(ctx context.Context) (_node int, err er
 	}
 	if _u.mutation.FailureCleared() {
 		_spec.ClearField(outboundmessage.FieldFailure, field.TypeString)
+	}
+	if value, ok := _u.mutation.DeferredSince(); ok {
+		_spec.SetField(outboundmessage.FieldDeferredSince, field.TypeTime, value)
+	}
+	if _u.mutation.DeferredSinceCleared() {
+		_spec.ClearField(outboundmessage.FieldDeferredSince, field.TypeTime)
+	}
+	if value, ok := _u.mutation.DeferralCause(); ok {
+		_spec.SetField(outboundmessage.FieldDeferralCause, field.TypeEnum, value)
+	}
+	if _u.mutation.DeferralCauseCleared() {
+		_spec.ClearField(outboundmessage.FieldDeferralCause, field.TypeEnum)
+	}
+	if value, ok := _u.mutation.WindowZones(); ok {
+		_spec.SetField(outboundmessage.FieldWindowZones, field.TypeEnum, value)
 	}
 	if value, ok := _u.mutation.ClaimedAt(); ok {
 		_spec.SetField(outboundmessage.FieldClaimedAt, field.TypeTime, value)
@@ -1121,6 +1238,51 @@ func (_u *OutboundMessageUpdate) sqlSave(ctx context.Context) (_node int, err er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(trackedlink.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.FrequencyCountsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   outboundmessage.FrequencyCountsTable,
+			Columns: []string{outboundmessage.FrequencyCountsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(frequencycount.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedFrequencyCountsIDs(); len(nodes) > 0 && !_u.mutation.FrequencyCountsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   outboundmessage.FrequencyCountsTable,
+			Columns: []string{outboundmessage.FrequencyCountsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(frequencycount.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.FrequencyCountsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   outboundmessage.FrequencyCountsTable,
+			Columns: []string{outboundmessage.FrequencyCountsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(frequencycount.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -1588,6 +1750,60 @@ func (_u *OutboundMessageUpdateOne) ClearFailure() *OutboundMessageUpdateOne {
 	return _u
 }
 
+// SetDeferredSince sets the "deferred_since" field.
+func (_u *OutboundMessageUpdateOne) SetDeferredSince(v time.Time) *OutboundMessageUpdateOne {
+	_u.mutation.SetDeferredSince(v)
+	return _u
+}
+
+// SetNillableDeferredSince sets the "deferred_since" field if the given value is not nil.
+func (_u *OutboundMessageUpdateOne) SetNillableDeferredSince(v *time.Time) *OutboundMessageUpdateOne {
+	if v != nil {
+		_u.SetDeferredSince(*v)
+	}
+	return _u
+}
+
+// ClearDeferredSince clears the value of the "deferred_since" field.
+func (_u *OutboundMessageUpdateOne) ClearDeferredSince() *OutboundMessageUpdateOne {
+	_u.mutation.ClearDeferredSince()
+	return _u
+}
+
+// SetDeferralCause sets the "deferral_cause" field.
+func (_u *OutboundMessageUpdateOne) SetDeferralCause(v deferralcause.Cause) *OutboundMessageUpdateOne {
+	_u.mutation.SetDeferralCause(v)
+	return _u
+}
+
+// SetNillableDeferralCause sets the "deferral_cause" field if the given value is not nil.
+func (_u *OutboundMessageUpdateOne) SetNillableDeferralCause(v *deferralcause.Cause) *OutboundMessageUpdateOne {
+	if v != nil {
+		_u.SetDeferralCause(*v)
+	}
+	return _u
+}
+
+// ClearDeferralCause clears the value of the "deferral_cause" field.
+func (_u *OutboundMessageUpdateOne) ClearDeferralCause() *OutboundMessageUpdateOne {
+	_u.mutation.ClearDeferralCause()
+	return _u
+}
+
+// SetWindowZones sets the "window_zones" field.
+func (_u *OutboundMessageUpdateOne) SetWindowZones(v outboundmessage.WindowZones) *OutboundMessageUpdateOne {
+	_u.mutation.SetWindowZones(v)
+	return _u
+}
+
+// SetNillableWindowZones sets the "window_zones" field if the given value is not nil.
+func (_u *OutboundMessageUpdateOne) SetNillableWindowZones(v *outboundmessage.WindowZones) *OutboundMessageUpdateOne {
+	if v != nil {
+		_u.SetWindowZones(*v)
+	}
+	return _u
+}
+
 // SetClaimedAt sets the "claimed_at" field.
 func (_u *OutboundMessageUpdateOne) SetClaimedAt(v time.Time) *OutboundMessageUpdateOne {
 	_u.mutation.SetClaimedAt(v)
@@ -2050,6 +2266,21 @@ func (_u *OutboundMessageUpdateOne) AddTrackedLinks(v ...*TrackedLink) *Outbound
 	return _u.AddTrackedLinkIDs(ids...)
 }
 
+// AddFrequencyCountIDs adds the "frequency_counts" edge to the FrequencyCount entity by IDs.
+func (_u *OutboundMessageUpdateOne) AddFrequencyCountIDs(ids ...int64) *OutboundMessageUpdateOne {
+	_u.mutation.AddFrequencyCountIDs(ids...)
+	return _u
+}
+
+// AddFrequencyCounts adds the "frequency_counts" edges to the FrequencyCount entity.
+func (_u *OutboundMessageUpdateOne) AddFrequencyCounts(v ...*FrequencyCount) *OutboundMessageUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddFrequencyCountIDs(ids...)
+}
+
 // SetBroadcast sets the "broadcast" edge to the Broadcast entity.
 func (_u *OutboundMessageUpdateOne) SetBroadcast(v *Broadcast) *OutboundMessageUpdateOne {
 	return _u.SetBroadcastID(v.ID)
@@ -2120,6 +2351,27 @@ func (_u *OutboundMessageUpdateOne) RemoveTrackedLinks(v ...*TrackedLink) *Outbo
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveTrackedLinkIDs(ids...)
+}
+
+// ClearFrequencyCounts clears all "frequency_counts" edges to the FrequencyCount entity.
+func (_u *OutboundMessageUpdateOne) ClearFrequencyCounts() *OutboundMessageUpdateOne {
+	_u.mutation.ClearFrequencyCounts()
+	return _u
+}
+
+// RemoveFrequencyCountIDs removes the "frequency_counts" edge to FrequencyCount entities by IDs.
+func (_u *OutboundMessageUpdateOne) RemoveFrequencyCountIDs(ids ...int64) *OutboundMessageUpdateOne {
+	_u.mutation.RemoveFrequencyCountIDs(ids...)
+	return _u
+}
+
+// RemoveFrequencyCounts removes "frequency_counts" edges to FrequencyCount entities.
+func (_u *OutboundMessageUpdateOne) RemoveFrequencyCounts(v ...*FrequencyCount) *OutboundMessageUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveFrequencyCountIDs(ids...)
 }
 
 // ClearBroadcast clears the "broadcast" edge to the Broadcast entity.
@@ -2236,6 +2488,16 @@ func (_u *OutboundMessageUpdateOne) check() error {
 			return &ValidationError{Name: "skipped_reason", err: fmt.Errorf(`ent: validator failed for field "OutboundMessage.skipped_reason": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.DeferralCause(); ok {
+		if err := outboundmessage.DeferralCauseValidator(v); err != nil {
+			return &ValidationError{Name: "deferral_cause", err: fmt.Errorf(`ent: validator failed for field "OutboundMessage.deferral_cause": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.WindowZones(); ok {
+		if err := outboundmessage.WindowZonesValidator(v); err != nil {
+			return &ValidationError{Name: "window_zones", err: fmt.Errorf(`ent: validator failed for field "OutboundMessage.window_zones": %w`, err)}
+		}
+	}
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "OutboundMessage.workspace"`)
 	}
@@ -2332,6 +2594,21 @@ func (_u *OutboundMessageUpdateOne) sqlSave(ctx context.Context) (_node *Outboun
 	}
 	if _u.mutation.FailureCleared() {
 		_spec.ClearField(outboundmessage.FieldFailure, field.TypeString)
+	}
+	if value, ok := _u.mutation.DeferredSince(); ok {
+		_spec.SetField(outboundmessage.FieldDeferredSince, field.TypeTime, value)
+	}
+	if _u.mutation.DeferredSinceCleared() {
+		_spec.ClearField(outboundmessage.FieldDeferredSince, field.TypeTime)
+	}
+	if value, ok := _u.mutation.DeferralCause(); ok {
+		_spec.SetField(outboundmessage.FieldDeferralCause, field.TypeEnum, value)
+	}
+	if _u.mutation.DeferralCauseCleared() {
+		_spec.ClearField(outboundmessage.FieldDeferralCause, field.TypeEnum)
+	}
+	if value, ok := _u.mutation.WindowZones(); ok {
+		_spec.SetField(outboundmessage.FieldWindowZones, field.TypeEnum, value)
 	}
 	if value, ok := _u.mutation.ClaimedAt(); ok {
 		_spec.SetField(outboundmessage.FieldClaimedAt, field.TypeTime, value)
@@ -2490,6 +2767,51 @@ func (_u *OutboundMessageUpdateOne) sqlSave(ctx context.Context) (_node *Outboun
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(trackedlink.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.FrequencyCountsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   outboundmessage.FrequencyCountsTable,
+			Columns: []string{outboundmessage.FrequencyCountsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(frequencycount.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedFrequencyCountsIDs(); len(nodes) > 0 && !_u.mutation.FrequencyCountsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   outboundmessage.FrequencyCountsTable,
+			Columns: []string{outboundmessage.FrequencyCountsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(frequencycount.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.FrequencyCountsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   outboundmessage.FrequencyCountsTable,
+			Columns: []string{outboundmessage.FrequencyCountsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(frequencycount.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

@@ -43,6 +43,29 @@ func stepFigures(t *testing.T, env *testhelper.TestEnv, automationID int64) []ex
 	return automationReport(t, env, automationID).Steps
 }
 
+// sendStep is a send Step's figures as the report gives them: none waiting, and every Skipped
+// reason at zero but the ones skipped names.
+func sendStep(stepID externalapi.StepId, sent int32, skipped map[externalapi.SkippedReason]int32) externalapi.AutomationStepFigures {
+	return externalapi.AutomationStepFigures{
+		StepId: stepID, Sent: sent, Skipped: lo.Sum(lo.Values(skipped)),
+		SkippedByReason: lo.Map(externalapi.SkippedReason("").AllValues(), func(r externalapi.SkippedReason, _ int) externalapi.SkippedReasonCount {
+			return externalapi.SkippedReasonCount{Reason: r, Count: skipped[r]}
+		}),
+		WaitingByCause: lo.Map(externalapi.DeferralCause("").AllValues(), func(c externalapi.DeferralCause, _ int) externalapi.DeferralCauseCount {
+			return externalapi.DeferralCauseCount{Cause: c}
+		}),
+	}
+}
+
+// versionSendStep is sendStep for one version's send Step.
+func versionSendStep(version int32, stepID externalapi.StepId, sent int32, skipped map[externalapi.SkippedReason]int32) externalapi.AutomationVersionStepFigures {
+	f := sendStep(stepID, sent, skipped)
+	return externalapi.AutomationVersionStepFigures{
+		Version: version, StepId: f.StepId, Sent: f.Sent, Skipped: f.Skipped,
+		SkippedByReason: f.SkippedByReason, WaitingByCause: f.WaitingByCause,
+	}
+}
+
 // The ids of the fixture Automation "Jobs emails then tag"'s two email steps, at positions 0 and 2.
 const (
 	firstEmailStepID  = "11bbd2a8-1c74-5ea8-8d63-b2bb27f4f0c6"
@@ -64,10 +87,13 @@ func tagNames(t *testing.T, env *testhelper.TestEnv, contactID int64) []string {
 // A Contact who cannot be emailed walks past both email steps to the tag step and completes: the
 // skips do not end the sequence, and the report counts one skip at each email step.
 func TestASkippedEmailMovesTheEnrollmentOnToTheStepsAfterIt(t *testing.T) {
-	cannotBeEmailed := map[string]struct{ runID, contactID int64 }{
-		"no email address":        {fixtures.AutomationRunJobsEmailsThenTagNoEmailID, fixtures.ContactJobsNoEmailID},
-		"suppressed":              {fixtures.AutomationRunJobsEmailsThenTagComplainedID, fixtures.ContactComplainedID},
-		"unsubscribed everything": {fixtures.AutomationRunJobsEmailsThenTagUnsubscribedEverythingID, fixtures.ContactUnsubscribedEverythingID},
+	cannotBeEmailed := map[string]struct {
+		runID, contactID int64
+		reason           externalapi.SkippedReason
+	}{
+		"no email address":        {fixtures.AutomationRunJobsEmailsThenTagNoEmailID, fixtures.ContactJobsNoEmailID, externalapi.SkippedReasonNoDestination},
+		"suppressed":              {fixtures.AutomationRunJobsEmailsThenTagComplainedID, fixtures.ContactComplainedID, externalapi.SkippedReasonSuppressed},
+		"unsubscribed everything": {fixtures.AutomationRunJobsEmailsThenTagUnsubscribedEverythingID, fixtures.ContactUnsubscribedEverythingID, externalapi.SkippedReasonUnsubscribedEverything},
 	}
 	for name, enrolled := range cannotBeEmailed {
 		t.Run(name, func(t *testing.T) {
@@ -81,7 +107,8 @@ func TestASkippedEmailMovesTheEnrollmentOnToTheStepsAfterIt(t *testing.T) {
 			assert.Empty(t, fs.sent, "no email goes out")
 			assert.Equal(t, automationrun.StatusCompleted, env.DB.AutomationRun.GetX(t.Context(), runID).Status, "the skips do not end the Enrollment")
 			assert.Contains(t, tagNames(t, env, contactID), "walked-past", "the step after the emails ran")
-			assert.Equal(t, []externalapi.AutomationStepFigures{{StepId: firstEmailStepID, Skipped: 1}, {StepId: secondEmailStepID, Skipped: 1}}, stepFigures(t, env, fixtures.AutomationJobsEmailsThenTagID))
+			skipped := map[externalapi.SkippedReason]int32{enrolled.reason: 1}
+			assert.Equal(t, []externalapi.AutomationStepFigures{sendStep(firstEmailStepID, 0, skipped), sendStep(secondEmailStepID, 0, skipped)}, stepFigures(t, env, fixtures.AutomationJobsEmailsThenTagID))
 		})
 	}
 }
@@ -127,7 +154,7 @@ func TestEachEmailStepSendsThroughItsOwnIntegration(t *testing.T) {
 	assert.Equal(t, []string{"First", "Second"}, subjectsOf(fs))
 	assert.Equal(t, []int64{fixtures.IntegrationAcmeDefaultID, fixtures.IntegrationAcmeMailgunID}, through)
 	assert.Equal(t, automationrun.StatusCompleted, env.DB.AutomationRun.GetX(t.Context(), runID).Status)
-	assert.Equal(t, []externalapi.AutomationStepFigures{{StepId: firstEmailStepID, Sent: 1}, {StepId: secondEmailStepID, Sent: 1}}, stepFigures(t, env, fixtures.AutomationJobsEmailsThenTagID))
+	assert.Equal(t, []externalapi.AutomationStepFigures{sendStep(firstEmailStepID, 1, nil), sendStep(secondEmailStepID, 1, nil)}, stepFigures(t, env, fixtures.AutomationJobsEmailsThenTagID))
 }
 
 // A held Integration stops only the Enrollments at the steps that send through it: the step
@@ -198,10 +225,10 @@ func TestASendStepKeepsItsFiguresAndKeysWhenAStepIsInsertedAboveIt(t *testing.T)
 	env.RunQueuedSteps(t, stepper)
 
 	report := automationReport(t, env, fixtures.AutomationJobsEditableID)
-	assert.Equal(t, []externalapi.AutomationStepFigures{{StepId: editableEmailStepID, Sent: 2}}, report.Steps)
+	assert.Equal(t, []externalapi.AutomationStepFigures{sendStep(editableEmailStepID, 2, nil)}, report.Steps)
 	assert.Equal(t, []externalapi.AutomationVersionStepFigures{
-		{Version: 1, StepId: editableEmailStepID, Sent: 1},
-		{Version: 2, StepId: editableEmailStepID, Sent: 1},
+		versionSendStep(1, editableEmailStepID, 1, nil),
+		versionSendStep(2, editableEmailStepID, 1, nil),
 	}, report.VersionSteps)
 	keys := env.DB.OutboundMessage.Query().
 		Where(outboundmessage.AutomationRunIDIn(early, late)).

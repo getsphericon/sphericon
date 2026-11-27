@@ -274,6 +274,28 @@ func (h *Handlers) SiteWorkspacesUpdateRevenueSettings(ctx context.Context, req 
 	return &r, nil
 }
 
+// SiteWorkspacesGetSendingRules reads the Frequency caps and the Sending windows (every member,
+// ADR 0134, ADR 0137).
+func (h *Handlers) SiteWorkspacesGetSendingRules(ctx context.Context, _ siteapi.SiteWorkspacesGetSendingRulesParams) (*siteapi.SiteSendingRulesResource, error) {
+	rules, err := h.workspaces.SendingRules(ctx, workspaceScope(ctx))
+	if err != nil {
+		return nil, err
+	}
+	r := mapper.SendingRulesToResource(rules)
+	return &r, nil
+}
+
+// SiteWorkspacesReplaceSendingRules replaces the Frequency caps and the Sending windows as a whole
+// (Permission workspace:update, ADR 0137).
+func (h *Handlers) SiteWorkspacesReplaceSendingRules(ctx context.Context, req *siteapi.SiteReplaceSendingRulesInput, _ siteapi.SiteWorkspacesReplaceSendingRulesParams) (*siteapi.SiteSendingRulesResource, error) {
+	rules, err := h.workspaces.ReplaceSendingRules(ctx, workspaceScope(ctx), inputs.SendingRulesReplace(req))
+	if err != nil {
+		return nil, err
+	}
+	r := mapper.SendingRulesToResource(rules)
+	return &r, nil
+}
+
 // SiteWorkspacesSetConfirmedOptIn turns confirmed opt-in on or off (Permission workspace:update,
 // ADR 0013); turning it on grandfathers the addresses mailable now.
 func (h *Handlers) SiteWorkspacesSetConfirmedOptIn(ctx context.Context, req *siteapi.SiteSetConfirmedOptInInput, _ siteapi.SiteWorkspacesSetConfirmedOptInParams) (*siteapi.SiteWorkspaceResource, error) {

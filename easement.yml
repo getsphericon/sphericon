@@ -70,6 +70,7 @@ forbid_symbol:
       - internal/domain/sending/bindings/*.go
       - internal/domain/sending/callbackinterpretation/*.go
       - internal/domain/sending/capturedmessages/*.go
+      - internal/domain/sending/frequencycap/*.go
       - internal/domain/sending/integrations/*.go
       - internal/domain/sending/outboundmessages/engagement/*.go
       - internal/domain/sending/privaterelayranges/*.go

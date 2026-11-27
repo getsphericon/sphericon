@@ -685,7 +685,7 @@ test('the period picked shows the results of that period', async () => {
   await expect.element(screen.getByText('Previous 30 days: 3 (+33.33%)')).not.toBeInTheDocument()
 })
 
-test('shows what each send step sent and skipped, by its id across versions, named by the live version', async () => {
+test('shows what each send step sent, skipped by reason and has waiting by cause, by its id across versions, named by the live version', async () => {
   const live = {
     number: 2,
     trigger: {
@@ -710,13 +710,51 @@ test('shows what each send step sent and skipped, by its id across versions, nam
       body: {
         ...NO_AUTOMATION_REPORT,
         steps: [
-          { stepId: stepId(11), sent: 41, skipped: 3 },
-          { stepId: stepId(13), sent: 17, skipped: 29 },
+          {
+            stepId: stepId(11),
+            sent: 41,
+            skipped: 3,
+            skippedByReason: [{ reason: 'suppressed', count: 3 }],
+            waitingByCause: [{ cause: 'provider_limit', count: 2 }],
+            singleZone: 0,
+          },
+          {
+            stepId: stepId(13),
+            sent: 17,
+            skipped: 29,
+            skippedByReason: [],
+            waitingByCause: [],
+            singleZone: 0,
+          },
         ],
         versionSteps: [
-          { version: 1, stepId: stepId(13), sent: 17, skipped: 29 },
-          { version: 1, stepId: stepId(11), sent: 20, skipped: 3 },
-          { version: 2, stepId: stepId(11), sent: 21, skipped: 0 },
+          {
+            version: 1,
+            stepId: stepId(13),
+            sent: 17,
+            skipped: 29,
+            skippedByReason: [],
+            waitingByCause: [],
+            singleZone: 0,
+          },
+          {
+            version: 1,
+            stepId: stepId(11),
+            sent: 20,
+            skipped: 3,
+            skippedByReason: [],
+            waitingByCause: [],
+            singleZone: 0,
+          },
+          {
+            version: 2,
+            stepId: stepId(11),
+            sent: 21,
+            skipped: 0,
+            skippedByReason: [],
+            waitingByCause: [],
+            singleZone: 0,
+          },
         ],
       },
     }),
@@ -729,13 +767,15 @@ test('shows what each send step sent and skipped, by its id across versions, nam
 
   await expect.element(screen.getByText('Send steps')).toBeInTheDocument()
   await expect
-    .element(screen.getByRole('row', { name: '1. Send email: Welcome aboard 41 3' }))
+    .element(screen.getByRole('row', { name: /^1\. Send email: Welcome aboard 41 3/ }))
+    .toBeInTheDocument()
+  await expect.element(screen.getByText('Suppressed: 3')).toBeInTheDocument()
+  await expect.element(screen.getByText('Provider limit: 2')).toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('row', { name: 'Not in the live version 17 29 0' }))
     .toBeInTheDocument()
   await expect
-    .element(screen.getByRole('row', { name: 'Not in the live version 17 29' }))
-    .toBeInTheDocument()
-  await expect
-    .element(screen.getByRole('row', { name: '2 1. Send email: Welcome aboard 21 0' }))
+    .element(screen.getByRole('row', { name: '2 1. Send email: Welcome aboard 21 0 0' }))
     .toBeInTheDocument()
 })
 

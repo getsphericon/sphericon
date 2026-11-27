@@ -22,6 +22,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 )
 
@@ -60,6 +61,12 @@ type OutboundMessage struct {
 	SkippedReason *skipreason.Reason `json:"skipped_reason,omitempty"`
 	// Failure holds the value of the "failure" field.
 	Failure *string `json:"failure,omitempty"`
+	// DeferredSince holds the value of the "deferred_since" field.
+	DeferredSince *time.Time `json:"deferred_since,omitempty"`
+	// DeferralCause holds the value of the "deferral_cause" field.
+	DeferralCause *deferralcause.Cause `json:"deferral_cause,omitempty"`
+	// WindowZones holds the value of the "window_zones" field.
+	WindowZones outboundmessage.WindowZones `json:"window_zones,omitempty"`
 	// ClaimedAt holds the value of the "claimed_at" field.
 	ClaimedAt time.Time `json:"claimed_at,omitempty"`
 	// SentAt holds the value of the "sent_at" field.
@@ -120,6 +127,8 @@ type OutboundMessageEdges struct {
 	Workspace *Workspace `json:"workspace,omitempty"`
 	// TrackedLinks holds the value of the tracked_links edge.
 	TrackedLinks []*TrackedLink `json:"tracked_links,omitempty"`
+	// FrequencyCounts holds the value of the frequency_counts edge.
+	FrequencyCounts []*FrequencyCount `json:"frequency_counts,omitempty"`
 	// Broadcast holds the value of the broadcast edge.
 	Broadcast *Broadcast `json:"broadcast,omitempty"`
 	// Automation holds the value of the automation edge.
@@ -138,7 +147,7 @@ type OutboundMessageEdges struct {
 	Template *EmailTemplate `json:"template,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [10]bool
+	loadedTypes [11]bool
 }
 
 // WorkspaceOrErr returns the Workspace value or an error if the edge
@@ -161,12 +170,21 @@ func (e OutboundMessageEdges) TrackedLinksOrErr() ([]*TrackedLink, error) {
 	return nil, &NotLoadedError{edge: "tracked_links"}
 }
 
+// FrequencyCountsOrErr returns the FrequencyCounts value or an error if the edge
+// was not loaded in eager-loading.
+func (e OutboundMessageEdges) FrequencyCountsOrErr() ([]*FrequencyCount, error) {
+	if e.loadedTypes[2] {
+		return e.FrequencyCounts, nil
+	}
+	return nil, &NotLoadedError{edge: "frequency_counts"}
+}
+
 // BroadcastOrErr returns the Broadcast value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e OutboundMessageEdges) BroadcastOrErr() (*Broadcast, error) {
 	if e.Broadcast != nil {
 		return e.Broadcast, nil
-	} else if e.loadedTypes[2] {
+	} else if e.loadedTypes[3] {
 		return nil, &NotFoundError{label: broadcast.Label}
 	}
 	return nil, &NotLoadedError{edge: "broadcast"}
@@ -177,7 +195,7 @@ func (e OutboundMessageEdges) BroadcastOrErr() (*Broadcast, error) {
 func (e OutboundMessageEdges) AutomationOrErr() (*Automation, error) {
 	if e.Automation != nil {
 		return e.Automation, nil
-	} else if e.loadedTypes[3] {
+	} else if e.loadedTypes[4] {
 		return nil, &NotFoundError{label: automation.Label}
 	}
 	return nil, &NotLoadedError{edge: "automation"}
@@ -188,7 +206,7 @@ func (e OutboundMessageEdges) AutomationOrErr() (*Automation, error) {
 func (e OutboundMessageEdges) AutomationVersionOrErr() (*AutomationVersion, error) {
 	if e.AutomationVersion != nil {
 		return e.AutomationVersion, nil
-	} else if e.loadedTypes[4] {
+	} else if e.loadedTypes[5] {
 		return nil, &NotFoundError{label: automationversion.Label}
 	}
 	return nil, &NotLoadedError{edge: "automation_version"}
@@ -199,7 +217,7 @@ func (e OutboundMessageEdges) AutomationVersionOrErr() (*AutomationVersion, erro
 func (e OutboundMessageEdges) IntegrationOrErr() (*Integration, error) {
 	if e.Integration != nil {
 		return e.Integration, nil
-	} else if e.loadedTypes[5] {
+	} else if e.loadedTypes[6] {
 		return nil, &NotFoundError{label: integration.Label}
 	}
 	return nil, &NotLoadedError{edge: "integration"}
@@ -210,7 +228,7 @@ func (e OutboundMessageEdges) IntegrationOrErr() (*Integration, error) {
 func (e OutboundMessageEdges) BroadcastRecipientOrErr() (*BroadcastRecipient, error) {
 	if e.BroadcastRecipient != nil {
 		return e.BroadcastRecipient, nil
-	} else if e.loadedTypes[6] {
+	} else if e.loadedTypes[7] {
 		return nil, &NotFoundError{label: broadcastrecipient.Label}
 	}
 	return nil, &NotLoadedError{edge: "broadcast_recipient"}
@@ -221,7 +239,7 @@ func (e OutboundMessageEdges) BroadcastRecipientOrErr() (*BroadcastRecipient, er
 func (e OutboundMessageEdges) AutomationRunOrErr() (*AutomationRun, error) {
 	if e.AutomationRun != nil {
 		return e.AutomationRun, nil
-	} else if e.loadedTypes[7] {
+	} else if e.loadedTypes[8] {
 		return nil, &NotFoundError{label: automationrun.Label}
 	}
 	return nil, &NotLoadedError{edge: "automation_run"}
@@ -232,7 +250,7 @@ func (e OutboundMessageEdges) AutomationRunOrErr() (*AutomationRun, error) {
 func (e OutboundMessageEdges) ContactOrErr() (*Contact, error) {
 	if e.Contact != nil {
 		return e.Contact, nil
-	} else if e.loadedTypes[8] {
+	} else if e.loadedTypes[9] {
 		return nil, &NotFoundError{label: contact.Label}
 	}
 	return nil, &NotLoadedError{edge: "contact"}
@@ -243,7 +261,7 @@ func (e OutboundMessageEdges) ContactOrErr() (*Contact, error) {
 func (e OutboundMessageEdges) TemplateOrErr() (*EmailTemplate, error) {
 	if e.Template != nil {
 		return e.Template, nil
-	} else if e.loadedTypes[9] {
+	} else if e.loadedTypes[10] {
 		return nil, &NotFoundError{label: emailtemplate.Label}
 	}
 	return nil, &NotLoadedError{edge: "template"}
@@ -260,9 +278,9 @@ func (*OutboundMessage) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case outboundmessage.FieldID, outboundmessage.FieldWorkspaceID, outboundmessage.FieldContactID, outboundmessage.FieldBroadcastID, outboundmessage.FieldBroadcastRecipientID, outboundmessage.FieldAutomationID, outboundmessage.FieldAutomationRunID, outboundmessage.FieldAutomationVersionID, outboundmessage.FieldIntegrationID, outboundmessage.FieldTemplateID:
 			values[i] = new(sql.NullInt64)
-		case outboundmessage.FieldKind, outboundmessage.FieldIdempotencyKey, outboundmessage.FieldChannel, outboundmessage.FieldDestination, outboundmessage.FieldSendingSource, outboundmessage.FieldSendingDomain, outboundmessage.FieldProviderMessageID, outboundmessage.FieldStatus, outboundmessage.FieldSkippedReason, outboundmessage.FieldFailure, outboundmessage.FieldUndeliveredCode, outboundmessage.FieldAutomationStepID, outboundmessage.FieldRequestDigest, outboundmessage.FieldSubject, outboundmessage.FieldAppOrigin:
+		case outboundmessage.FieldKind, outboundmessage.FieldIdempotencyKey, outboundmessage.FieldChannel, outboundmessage.FieldDestination, outboundmessage.FieldSendingSource, outboundmessage.FieldSendingDomain, outboundmessage.FieldProviderMessageID, outboundmessage.FieldStatus, outboundmessage.FieldSkippedReason, outboundmessage.FieldFailure, outboundmessage.FieldDeferralCause, outboundmessage.FieldWindowZones, outboundmessage.FieldUndeliveredCode, outboundmessage.FieldAutomationStepID, outboundmessage.FieldRequestDigest, outboundmessage.FieldSubject, outboundmessage.FieldAppOrigin:
 			values[i] = new(sql.NullString)
-		case outboundmessage.FieldCreatedAt, outboundmessage.FieldUpdatedAt, outboundmessage.FieldClaimedAt, outboundmessage.FieldSentAt, outboundmessage.FieldDeliveredAt, outboundmessage.FieldBouncedAt, outboundmessage.FieldComplainedAt, outboundmessage.FieldUndeliveredAt, outboundmessage.FieldOpenedAt, outboundmessage.FieldClickedAt, outboundmessage.FieldTrackingDecidedAt, outboundmessage.FieldTrackingWithdrawnAt:
+		case outboundmessage.FieldCreatedAt, outboundmessage.FieldUpdatedAt, outboundmessage.FieldDeferredSince, outboundmessage.FieldClaimedAt, outboundmessage.FieldSentAt, outboundmessage.FieldDeliveredAt, outboundmessage.FieldBouncedAt, outboundmessage.FieldComplainedAt, outboundmessage.FieldUndeliveredAt, outboundmessage.FieldOpenedAt, outboundmessage.FieldClickedAt, outboundmessage.FieldTrackingDecidedAt, outboundmessage.FieldTrackingWithdrawnAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -382,6 +400,26 @@ func (_m *OutboundMessage) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Failure = new(string)
 				*_m.Failure = value.String
+			}
+		case outboundmessage.FieldDeferredSince:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field deferred_since", values[i])
+			} else if value.Valid {
+				_m.DeferredSince = new(time.Time)
+				*_m.DeferredSince = value.Time
+			}
+		case outboundmessage.FieldDeferralCause:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field deferral_cause", values[i])
+			} else if value.Valid {
+				_m.DeferralCause = new(deferralcause.Cause)
+				*_m.DeferralCause = deferralcause.Cause(value.String)
+			}
+		case outboundmessage.FieldWindowZones:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field window_zones", values[i])
+			} else if value.Valid {
+				_m.WindowZones = outboundmessage.WindowZones(value.String)
 			}
 		case outboundmessage.FieldClaimedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -571,6 +609,11 @@ func (_m *OutboundMessage) QueryTrackedLinks() *TrackedLinkQuery {
 	return NewOutboundMessageClient(_m.config).QueryTrackedLinks(_m)
 }
 
+// QueryFrequencyCounts queries the "frequency_counts" edge of the OutboundMessage entity.
+func (_m *OutboundMessage) QueryFrequencyCounts() *FrequencyCountQuery {
+	return NewOutboundMessageClient(_m.config).QueryFrequencyCounts(_m)
+}
+
 // QueryBroadcast queries the "broadcast" edge of the OutboundMessage entity.
 func (_m *OutboundMessage) QueryBroadcast() *BroadcastQuery {
 	return NewOutboundMessageClient(_m.config).QueryBroadcast(_m)
@@ -690,6 +733,19 @@ func (_m *OutboundMessage) String() string {
 		builder.WriteString("failure=")
 		builder.WriteString(*v)
 	}
+	builder.WriteString(", ")
+	if v := _m.DeferredSince; v != nil {
+		builder.WriteString("deferred_since=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.DeferralCause; v != nil {
+		builder.WriteString("deferral_cause=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("window_zones=")
+	builder.WriteString(fmt.Sprintf("%v", _m.WindowZones))
 	builder.WriteString(", ")
 	builder.WriteString("claimed_at=")
 	builder.WriteString(_m.ClaimedAt.Format(time.ANSIC))

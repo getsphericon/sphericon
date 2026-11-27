@@ -1,0 +1,341 @@
+# The SMS Frequency cap every Workspace starts with (ADR 0137): one row per Workspace of
+# workspaces.yml, under 1000 + its id, as Creation.CreateIn and the sending_rules migration write it.
+
+# --- Globex (workspace 2) foreign row, first by id: a stricter cap for Germany — DO NOT change ---
+- id: 900 # fixture: FrequencyCapGlobexGermany
+  workspace_id: 2
+  channel: sms
+  country: DE
+  max_messages: 1
+  period_minutes: 60
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+
+- id: 1001 # fixture: FrequencyCapAcmeSMS
+  workspace_id: 1
+  channel: sms
+  max_messages: 3
+  period_minutes: 1440
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1002
+  workspace_id: 2
+  channel: sms
+  max_messages: 3
+  period_minutes: 1440
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1003
+  workspace_id: 3
+  channel: sms
+  max_messages: 3
+  period_minutes: 1440
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1004
+  workspace_id: 4
+  channel: sms
+  max_messages: 3
+  period_minutes: 1440
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1005
+  workspace_id: 5
+  channel: sms
+  max_messages: 3
+  period_minutes: 1440
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1006
+  workspace_id: 6
+  channel: sms
+  max_messages: 3
+  period_minutes: 1440
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1007
+  workspace_id: 7
+  channel: sms
+  max_messages: 3
+  period_minutes: 1440
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1008
+  workspace_id: 8
+  channel: sms
+  max_messages: 3
+  period_minutes: 1440
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1009
+  workspace_id: 9
+  channel: sms
+  max_messages: 3
+  period_minutes: 1440
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1010
+  workspace_id: 10
+  channel: sms
+  max_messages: 3
+  period_minutes: 1440
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1011
+  workspace_id: 11
+  channel: sms
+  max_messages: 3
+  period_minutes: 1440
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1012
+  workspace_id: 12
+  channel: sms
+  max_messages: 3
+  period_minutes: 1440
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1013
+  workspace_id: 13
+  channel: sms
+  max_messages: 3
+  period_minutes: 1440
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1020
+  workspace_id: 20
+  channel: sms
+  max_messages: 3
+  period_minutes: 1440
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1055
+  workspace_id: 55
+  channel: sms
+  max_messages: 3
+  period_minutes: 1440
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1056
+  workspace_id: 56
+  channel: sms
+  max_messages: 3
+  period_minutes: 1440
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1057
+  workspace_id: 57
+  channel: sms
+  max_messages: 3
+  period_minutes: 1440
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1058
+  workspace_id: 58
+  channel: sms
+  max_messages: 3
+  period_minutes: 1440
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1059
+  workspace_id: 59
+  channel: sms
+  max_messages: 3
+  period_minutes: 1440
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1060
+  workspace_id: 60
+  channel: sms
+  max_messages: 3
+  period_minutes: 1440
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 6800
+  workspace_id: 5800
+  channel: sms
+  max_messages: 3
+  period_minutes: 1440
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1061
+  workspace_id: 61
+  channel: sms
+  max_messages: 3
+  period_minutes: 1440
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1062
+  workspace_id: 62
+  channel: sms
+  max_messages: 3
+  period_minutes: 1440
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1063
+  workspace_id: 63
+  channel: sms
+  max_messages: 3
+  period_minutes: 1440
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1087
+  workspace_id: 87
+  channel: sms
+  max_messages: 3
+  period_minutes: 1440
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1079
+  workspace_id: 79
+  channel: sms
+  max_messages: 3
+  period_minutes: 1440
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1083
+  workspace_id: 83
+  channel: sms
+  max_messages: 3
+  period_minutes: 1440
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1084
+  workspace_id: 84
+  channel: sms
+  max_messages: 3
+  period_minutes: 1440
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1085
+  workspace_id: 85
+  channel: sms
+  max_messages: 3
+  period_minutes: 1440
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1075
+  workspace_id: 75
+  channel: sms
+  max_messages: 3
+  period_minutes: 1440
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1076
+  workspace_id: 76
+  channel: sms
+  max_messages: 3
+  period_minutes: 1440
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1077
+  workspace_id: 77
+  channel: sms
+  max_messages: 3
+  period_minutes: 1440
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1078
+  workspace_id: 78
+  channel: sms
+  max_messages: 3
+  period_minutes: 1440
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1071
+  workspace_id: 71
+  channel: sms
+  max_messages: 3
+  period_minutes: 1440
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1072
+  workspace_id: 72
+  channel: sms
+  max_messages: 3
+  period_minutes: 1440
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1073
+  workspace_id: 73
+  channel: sms
+  max_messages: 3
+  period_minutes: 1440
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1074
+  workspace_id: 74
+  channel: sms
+  max_messages: 3
+  period_minutes: 1440
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1094
+  workspace_id: 94
+  channel: sms
+  max_messages: 3
+  period_minutes: 1440
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1095
+  workspace_id: 95
+  channel: sms
+  max_messages: 3
+  period_minutes: 1440
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1091
+  workspace_id: 91
+  channel: sms
+  max_messages: 3
+  period_minutes: 1440
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1092
+  workspace_id: 92
+  channel: sms
+  max_messages: 3
+  period_minutes: 1440
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1096 # fixture: FrequencyCapLacunaSMS
+  workspace_id: 96
+  channel: sms
+  max_messages: 3
+  period_minutes: 1440
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+# Lacuna: a Telegram row with no maximum, so no cap, which a test gives a maximum to cap Tia's chats.
+- id: 1196 # fixture: FrequencyCapLacunaTelegram
+  workspace_id: 96
+  channel: telegram
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1097
+  workspace_id: 97
+  channel: sms
+  max_messages: 3
+  period_minutes: 1440
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1098
+  workspace_id: 98
+  channel: sms
+  max_messages: 3
+  period_minutes: 1440
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 1099
+  workspace_id: 99
+  channel: sms
+  max_messages: 3
+  period_minutes: 1440
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 2553
+  workspace_id: 1553
+  channel: sms
+  max_messages: 3
+  period_minutes: 1440
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

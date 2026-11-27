@@ -18,12 +18,14 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
+	"github.com/getsphericon/sphericon/ent/frequencycount"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/trackedlink"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 )
 
@@ -209,6 +211,48 @@ func (_c *OutboundMessageCreate) SetFailure(v string) *OutboundMessageCreate {
 func (_c *OutboundMessageCreate) SetNillableFailure(v *string) *OutboundMessageCreate {
 	if v != nil {
 		_c.SetFailure(*v)
+	}
+	return _c
+}
+
+// SetDeferredSince sets the "deferred_since" field.
+func (_c *OutboundMessageCreate) SetDeferredSince(v time.Time) *OutboundMessageCreate {
+	_c.mutation.SetDeferredSince(v)
+	return _c
+}
+
+// SetNillableDeferredSince sets the "deferred_since" field if the given value is not nil.
+func (_c *OutboundMessageCreate) SetNillableDeferredSince(v *time.Time) *OutboundMessageCreate {
+	if v != nil {
+		_c.SetDeferredSince(*v)
+	}
+	return _c
+}
+
+// SetDeferralCause sets the "deferral_cause" field.
+func (_c *OutboundMessageCreate) SetDeferralCause(v deferralcause.Cause) *OutboundMessageCreate {
+	_c.mutation.SetDeferralCause(v)
+	return _c
+}
+
+// SetNillableDeferralCause sets the "deferral_cause" field if the given value is not nil.
+func (_c *OutboundMessageCreate) SetNillableDeferralCause(v *deferralcause.Cause) *OutboundMessageCreate {
+	if v != nil {
+		_c.SetDeferralCause(*v)
+	}
+	return _c
+}
+
+// SetWindowZones sets the "window_zones" field.
+func (_c *OutboundMessageCreate) SetWindowZones(v outboundmessage.WindowZones) *OutboundMessageCreate {
+	_c.mutation.SetWindowZones(v)
+	return _c
+}
+
+// SetNillableWindowZones sets the "window_zones" field if the given value is not nil.
+func (_c *OutboundMessageCreate) SetNillableWindowZones(v *outboundmessage.WindowZones) *OutboundMessageCreate {
+	if v != nil {
+		_c.SetWindowZones(*v)
 	}
 	return _c
 }
@@ -575,6 +619,21 @@ func (_c *OutboundMessageCreate) AddTrackedLinks(v ...*TrackedLink) *OutboundMes
 	return _c.AddTrackedLinkIDs(ids...)
 }
 
+// AddFrequencyCountIDs adds the "frequency_counts" edge to the FrequencyCount entity by IDs.
+func (_c *OutboundMessageCreate) AddFrequencyCountIDs(ids ...int64) *OutboundMessageCreate {
+	_c.mutation.AddFrequencyCountIDs(ids...)
+	return _c
+}
+
+// AddFrequencyCounts adds the "frequency_counts" edges to the FrequencyCount entity.
+func (_c *OutboundMessageCreate) AddFrequencyCounts(v ...*FrequencyCount) *OutboundMessageCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddFrequencyCountIDs(ids...)
+}
+
 // SetBroadcast sets the "broadcast" edge to the Broadcast entity.
 func (_c *OutboundMessageCreate) SetBroadcast(v *Broadcast) *OutboundMessageCreate {
 	return _c.SetBroadcastID(v.ID)
@@ -666,6 +725,10 @@ func (_c *OutboundMessageCreate) defaults() {
 		v := outboundmessage.DefaultStatus
 		_c.mutation.SetStatus(v)
 	}
+	if _, ok := _c.mutation.WindowZones(); !ok {
+		v := outboundmessage.DefaultWindowZones
+		_c.mutation.SetWindowZones(v)
+	}
 	if _, ok := _c.mutation.ClaimedAt(); !ok {
 		v := outboundmessage.DefaultClaimedAt()
 		_c.mutation.SetClaimedAt(v)
@@ -726,6 +789,19 @@ func (_c *OutboundMessageCreate) check() error {
 	if v, ok := _c.mutation.SkippedReason(); ok {
 		if err := outboundmessage.SkippedReasonValidator(v); err != nil {
 			return &ValidationError{Name: "skipped_reason", err: fmt.Errorf(`ent: validator failed for field "OutboundMessage.skipped_reason": %w`, err)}
+		}
+	}
+	if v, ok := _c.mutation.DeferralCause(); ok {
+		if err := outboundmessage.DeferralCauseValidator(v); err != nil {
+			return &ValidationError{Name: "deferral_cause", err: fmt.Errorf(`ent: validator failed for field "OutboundMessage.deferral_cause": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.WindowZones(); !ok {
+		return &ValidationError{Name: "window_zones", err: errors.New(`ent: missing required field "OutboundMessage.window_zones"`)}
+	}
+	if v, ok := _c.mutation.WindowZones(); ok {
+		if err := outboundmessage.WindowZonesValidator(v); err != nil {
+			return &ValidationError{Name: "window_zones", err: fmt.Errorf(`ent: validator failed for field "OutboundMessage.window_zones": %w`, err)}
 		}
 	}
 	if _, ok := _c.mutation.ClaimedAt(); !ok {
@@ -825,6 +901,18 @@ func (_c *OutboundMessageCreate) createSpec() (*OutboundMessage, *sqlgraph.Creat
 		_spec.SetField(outboundmessage.FieldFailure, field.TypeString, value)
 		_node.Failure = &value
 	}
+	if value, ok := _c.mutation.DeferredSince(); ok {
+		_spec.SetField(outboundmessage.FieldDeferredSince, field.TypeTime, value)
+		_node.DeferredSince = &value
+	}
+	if value, ok := _c.mutation.DeferralCause(); ok {
+		_spec.SetField(outboundmessage.FieldDeferralCause, field.TypeEnum, value)
+		_node.DeferralCause = &value
+	}
+	if value, ok := _c.mutation.WindowZones(); ok {
+		_spec.SetField(outboundmessage.FieldWindowZones, field.TypeEnum, value)
+		_node.WindowZones = value
+	}
 	if value, ok := _c.mutation.ClaimedAt(); ok {
 		_spec.SetField(outboundmessage.FieldClaimedAt, field.TypeTime, value)
 		_node.ClaimedAt = value
@@ -919,6 +1007,22 @@ func (_c *OutboundMessageCreate) createSpec() (*OutboundMessage, *sqlgraph.Creat
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(trackedlink.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.FrequencyCountsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   outboundmessage.FrequencyCountsTable,
+			Columns: []string{outboundmessage.FrequencyCountsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(frequencycount.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -1303,6 +1407,54 @@ func (u *OutboundMessageUpsert) UpdateFailure() *OutboundMessageUpsert {
 // ClearFailure clears the value of the "failure" field.
 func (u *OutboundMessageUpsert) ClearFailure() *OutboundMessageUpsert {
 	u.SetNull(outboundmessage.FieldFailure)
+	return u
+}
+
+// SetDeferredSince sets the "deferred_since" field.
+func (u *OutboundMessageUpsert) SetDeferredSince(v time.Time) *OutboundMessageUpsert {
+	u.Set(outboundmessage.FieldDeferredSince, v)
+	return u
+}
+
+// UpdateDeferredSince sets the "deferred_since" field to the value that was provided on create.
+func (u *OutboundMessageUpsert) UpdateDeferredSince() *OutboundMessageUpsert {
+	u.SetExcluded(outboundmessage.FieldDeferredSince)
+	return u
+}
+
+// ClearDeferredSince clears the value of the "deferred_since" field.
+func (u *OutboundMessageUpsert) ClearDeferredSince() *OutboundMessageUpsert {
+	u.SetNull(outboundmessage.FieldDeferredSince)
+	return u
+}
+
+// SetDeferralCause sets the "deferral_cause" field.
+func (u *OutboundMessageUpsert) SetDeferralCause(v deferralcause.Cause) *OutboundMessageUpsert {
+	u.Set(outboundmessage.FieldDeferralCause, v)
+	return u
+}
+
+// UpdateDeferralCause sets the "deferral_cause" field to the value that was provided on create.
+func (u *OutboundMessageUpsert) UpdateDeferralCause() *OutboundMessageUpsert {
+	u.SetExcluded(outboundmessage.FieldDeferralCause)
+	return u
+}
+
+// ClearDeferralCause clears the value of the "deferral_cause" field.
+func (u *OutboundMessageUpsert) ClearDeferralCause() *OutboundMessageUpsert {
+	u.SetNull(outboundmessage.FieldDeferralCause)
+	return u
+}
+
+// SetWindowZones sets the "window_zones" field.
+func (u *OutboundMessageUpsert) SetWindowZones(v outboundmessage.WindowZones) *OutboundMessageUpsert {
+	u.Set(outboundmessage.FieldWindowZones, v)
+	return u
+}
+
+// UpdateWindowZones sets the "window_zones" field to the value that was provided on create.
+func (u *OutboundMessageUpsert) UpdateWindowZones() *OutboundMessageUpsert {
+	u.SetExcluded(outboundmessage.FieldWindowZones)
 	return u
 }
 
@@ -1983,6 +2135,62 @@ func (u *OutboundMessageUpsertOne) UpdateFailure() *OutboundMessageUpsertOne {
 func (u *OutboundMessageUpsertOne) ClearFailure() *OutboundMessageUpsertOne {
 	return u.Update(func(s *OutboundMessageUpsert) {
 		s.ClearFailure()
+	})
+}
+
+// SetDeferredSince sets the "deferred_since" field.
+func (u *OutboundMessageUpsertOne) SetDeferredSince(v time.Time) *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.SetDeferredSince(v)
+	})
+}
+
+// UpdateDeferredSince sets the "deferred_since" field to the value that was provided on create.
+func (u *OutboundMessageUpsertOne) UpdateDeferredSince() *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.UpdateDeferredSince()
+	})
+}
+
+// ClearDeferredSince clears the value of the "deferred_since" field.
+func (u *OutboundMessageUpsertOne) ClearDeferredSince() *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.ClearDeferredSince()
+	})
+}
+
+// SetDeferralCause sets the "deferral_cause" field.
+func (u *OutboundMessageUpsertOne) SetDeferralCause(v deferralcause.Cause) *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.SetDeferralCause(v)
+	})
+}
+
+// UpdateDeferralCause sets the "deferral_cause" field to the value that was provided on create.
+func (u *OutboundMessageUpsertOne) UpdateDeferralCause() *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.UpdateDeferralCause()
+	})
+}
+
+// ClearDeferralCause clears the value of the "deferral_cause" field.
+func (u *OutboundMessageUpsertOne) ClearDeferralCause() *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.ClearDeferralCause()
+	})
+}
+
+// SetWindowZones sets the "window_zones" field.
+func (u *OutboundMessageUpsertOne) SetWindowZones(v outboundmessage.WindowZones) *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.SetWindowZones(v)
+	})
+}
+
+// UpdateWindowZones sets the "window_zones" field to the value that was provided on create.
+func (u *OutboundMessageUpsertOne) UpdateWindowZones() *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.UpdateWindowZones()
 	})
 }
 
@@ -2895,6 +3103,62 @@ func (u *OutboundMessageUpsertBulk) UpdateFailure() *OutboundMessageUpsertBulk {
 func (u *OutboundMessageUpsertBulk) ClearFailure() *OutboundMessageUpsertBulk {
 	return u.Update(func(s *OutboundMessageUpsert) {
 		s.ClearFailure()
+	})
+}
+
+// SetDeferredSince sets the "deferred_since" field.
+func (u *OutboundMessageUpsertBulk) SetDeferredSince(v time.Time) *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.SetDeferredSince(v)
+	})
+}
+
+// UpdateDeferredSince sets the "deferred_since" field to the value that was provided on create.
+func (u *OutboundMessageUpsertBulk) UpdateDeferredSince() *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.UpdateDeferredSince()
+	})
+}
+
+// ClearDeferredSince clears the value of the "deferred_since" field.
+func (u *OutboundMessageUpsertBulk) ClearDeferredSince() *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.ClearDeferredSince()
+	})
+}
+
+// SetDeferralCause sets the "deferral_cause" field.
+func (u *OutboundMessageUpsertBulk) SetDeferralCause(v deferralcause.Cause) *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.SetDeferralCause(v)
+	})
+}
+
+// UpdateDeferralCause sets the "deferral_cause" field to the value that was provided on create.
+func (u *OutboundMessageUpsertBulk) UpdateDeferralCause() *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.UpdateDeferralCause()
+	})
+}
+
+// ClearDeferralCause clears the value of the "deferral_cause" field.
+func (u *OutboundMessageUpsertBulk) ClearDeferralCause() *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.ClearDeferralCause()
+	})
+}
+
+// SetWindowZones sets the "window_zones" field.
+func (u *OutboundMessageUpsertBulk) SetWindowZones(v outboundmessage.WindowZones) *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.SetWindowZones(v)
+	})
+}
+
+// UpdateWindowZones sets the "window_zones" field to the value that was provided on create.
+func (u *OutboundMessageUpsertBulk) UpdateWindowZones() *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.UpdateWindowZones()
 	})
 }
 

@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"pgregory.net/rapid"
 
@@ -15,7 +16,7 @@ import (
 // the retry falls in: the delay itself, and that plus a fifth.
 
 func deferral(wait time.Duration, backlog int) outboundmessages.Retry {
-	return outboundmessages.Result{Outcome: outboundmessages.Deferral, Wait: wait}.Retry(backlog)
+	return outboundmessages.Result{Outcome: outboundmessages.Deferral, Wait: wait}.Retry(backlog, time.Now())
 }
 
 // A Deferral waits the limit's wait (floored at a second) scaled by the recipients still
@@ -67,7 +68,7 @@ func TestASendCapDeferralAlwaysRetriesWithinTheBound(t *testing.T) {
 		wait := time.Duration(rapid.Int64Range(0, int64(48*time.Hour)).Draw(t, "wait"))
 		backlog := rapid.IntRange(0, 100_000).Draw(t, "backlog")
 
-		retry := outboundmessages.Result{Outcome: outboundmessages.Deferral, Cause: deferralcause.SendCap, Wait: wait}.Retry(backlog)
+		retry := outboundmessages.Result{Outcome: outboundmessages.Deferral, Cause: deferralcause.SendCap, Wait: wait}.Retry(backlog, time.Now())
 
 		assert.True(t, retry.Wanted)
 		assert.GreaterOrEqual(t, retry.After, time.Second)
@@ -75,4 +76,36 @@ func TestASendCapDeferralAlwaysRetriesWithinTheBound(t *testing.T) {
 		base := min(max(float64(wait)*float64(1+backlog), float64(time.Second)), float64(10*time.Minute)/1.2)
 		assert.GreaterOrEqual(t, float64(retry.After), base-1)
 	})
+}
+
+// A per-recipient Deferral (a Frequency cap, a Sending window) wakes at its release moment plus at
+// most a minute of jitter, however far off the moment is and whatever the backlog: neither the
+// backlog nor a per-source ceiling moves it. A moment already past is due now.
+func TestAPerRecipientDeferralRetriesAtItsReleaseMoment(t *testing.T) {
+	rapid.Check(t, func(t *rapid.T) {
+		now := time.Date(2030, time.March, 4, 10, 0, 0, 0, time.UTC)
+		ahead := time.Duration(rapid.Int64Range(-int64(time.Hour), int64(7*24*time.Hour)).Draw(t, "ahead"))
+		backlog := rapid.IntRange(0, 100_000).Draw(t, "backlog")
+		cause := rapid.SampledFrom([]deferralcause.Cause{deferralcause.FrequencyCap, deferralcause.SendingWindow}).Draw(t, "cause")
+		until := now.Add(ahead)
+
+		retry := outboundmessages.Result{Outcome: outboundmessages.Deferral, Cause: cause, Until: until}.Retry(backlog, now)
+
+		due := lo.Latest(until, now)
+		assert.True(t, retry.Wanted)
+		wake := now.Add(retry.After)
+		assert.False(t, wake.Before(due), "never before the release moment, nor before now")
+		assert.Less(t, wake.Sub(due), time.Minute, "within a minute of it")
+	})
+}
+
+// A 23-hour wait for a place under the Frequency cap is not cut to the hour a per-source Deferral is
+// capped at.
+func TestAPerRecipientDeferralIsNotCappedByThePerSourceCeiling(t *testing.T) {
+	now := time.Date(2030, time.March, 4, 10, 0, 0, 0, time.UTC)
+
+	retry := outboundmessages.Result{Outcome: outboundmessages.Deferral, Cause: deferralcause.FrequencyCap, Until: now.Add(23 * time.Hour)}.Retry(0, now)
+
+	assert.GreaterOrEqual(t, retry.After, 23*time.Hour)
+	assert.Less(t, retry.After, 23*time.Hour+time.Minute)
 }

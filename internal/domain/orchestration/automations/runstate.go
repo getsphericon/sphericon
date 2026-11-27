@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
+	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
@@ -72,7 +73,9 @@ func machine(s *ent.Scoped, runID int64, endedAt time.Time, extra func(*ent.Auto
 				Where(automationrun.ID(runID), automationrun.StatusEQ(from)).
 				SetStatus(to).
 				SetEndedAt(endedAt).
-				ClearResumeAt()
+				ClearResumeAt().
+				ClearDeferredSince().
+				ClearDeferralCause()
 			if extra != nil {
 				extra(u)
 			}
@@ -190,13 +193,42 @@ func stale(err error) bool {
 func advanceRun(ctx context.Context, s *ent.Scoped, runID int64, from, to automationstep.ID, resumeAt *time.Time) error {
 	u := s.AutomationRun().Update().
 		Where(automationrun.ID(runID), automationrun.StatusEQ(automationrun.StatusActive), automationrun.CurrentStepID(from)).
-		SetCurrentStepID(to)
+		SetCurrentStepID(to).
+		ClearDeferredSince().
+		ClearDeferralCause()
 	if resumeAt != nil {
 		u.SetResumeAt(*resumeAt)
 	} else {
 		u.ClearResumeAt()
 	}
 	n, err := u.Save(ctx)
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return lifecycle.ErrInvalidTransition
+	}
+	return nil
+}
+
+// deferral is the wait of a deferred send at its Step (ADR 0178): since when, why and until when.
+type deferral struct {
+	since time.Time
+	cause deferralcause.Cause
+	until time.Time
+}
+
+// deferRun records on an active Enrollment standing on the Step of the id step that its send waits,
+// as d says: the Step is held until d.until (resume_at). It is a compare-and-swap on `active` and on
+// the Step, lifecycle.ErrInvalidTransition when the Enrollment is no longer there. The move off the
+// Step clears it (advanceRun, machine).
+func deferRun(ctx context.Context, s *ent.Scoped, runID int64, step automationstep.ID, d deferral) error {
+	n, err := s.AutomationRun().Update().
+		Where(automationrun.ID(runID), automationrun.StatusEQ(automationrun.StatusActive), automationrun.CurrentStepID(step)).
+		SetDeferredSince(d.since).
+		SetDeferralCause(d.cause).
+		SetResumeAt(d.until).
+		Save(ctx)
 	if err != nil {
 		return err
 	}

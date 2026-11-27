@@ -32,3 +32,19 @@ func (Cause) Values() []string {
 	}
 	return values
 }
+
+// Count is how many sends wait for one cause.
+type Count struct {
+	Cause Cause
+	Count int
+}
+
+// Counts lists the count by holds of every cause, in the order of the closed list: a cause by
+// lacks reads zero, so a report names every cause whatever its rows hold.
+func Counts(by map[Cause]int) []Count {
+	counts := make([]Count, len(all))
+	for i, c := range all {
+		counts[i] = Count{Cause: c, Count: by[c]}
+	}
+	return counts
+}

@@ -1,0 +1,62 @@
+# The count of the Frequency cap (ADR 0178): the place a marketing message takes at each Destination
+# it was claimed for. A send writes its own rows; these anchor the prune and the Erasure (the rows of
+# the Erasure are dated outside the period every count of a send's test reads).
+
+# Acme (workspace 1): a place counted eight days ago, past the longest period, which the prune
+# deletes, and one counted an hour ago, which it keeps.
+- id: 1 # fixture: FrequencyCountExpired
+  outbound_message_id: 109
+  channel: email
+  destination: usage.old@codebasics.dev
+  counted_at: '{{daysAgo 8}}'
+  workspace_id: 1
+  created_at: '{{daysAgo 8}}'
+  updated_at: '{{daysAgo 8}}'
+- id: 2 # fixture: FrequencyCountRecent
+  outbound_message_id: 110
+  channel: email
+  destination: usage.ses@codebasics.dev
+  counted_at: '{{hoursAgo 1}}'
+  workspace_id: 1
+  created_at: '{{hoursAgo 1}}'
+  updated_at: '{{hoursAgo 1}}'
+
+# Globex (workspace 2): the place of its usage Broadcast email (OutboundMessageGlobexUsage), a row
+# of another Workspace for the scoped client's isolation test.
+- id: 200 # fixture: FrequencyCountGlobex
+  outbound_message_id: 901
+  channel: email
+  destination: usage@globex.test
+  counted_at: '{{hoursAgo 1}}'
+  workspace_id: 2
+  created_at: '{{hoursAgo 1}}'
+  updated_at: '{{hoursAgo 1}}'
+
+# Acme: the place of the text to ContactTexter (OutboundTexterSms), which its Erasure deletes.
+- id: 3 # fixture: FrequencyCountTexter
+  outbound_message_id: 7500
+  channel: sms
+  destination: '+14155550810'
+  counted_at: '2026-02-01 00:00:00'
+  workspace_id: 1
+  created_at: '2026-02-01 00:00:00'
+  updated_at: '2026-02-01 00:00:00'
+
+# Initech (workspace 3): the place of ContactErasable's Broadcast message, which its Erasure deletes,
+# and the place of ContactBystander's, which it leaves.
+- id: 300 # fixture: FrequencyCountErasable
+  outbound_message_id: 300
+  channel: email
+  destination: erin@initech.test
+  counted_at: '2026-01-02 00:00:00'
+  workspace_id: 3
+  created_at: '2026-01-02 00:00:00'
+  updated_at: '2026-01-02 00:00:00'
+- id: 301 # fixture: FrequencyCountBystander
+  outbound_message_id: 302
+  channel: email
+  destination: ben@initech.test
+  counted_at: '2026-01-02 00:00:00'
+  workspace_id: 3
+  created_at: '2026-01-02 00:00:00'
+  updated_at: '2026-01-02 00:00:00'

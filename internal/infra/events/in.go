@@ -20,7 +20,7 @@ var ErrNotInBusTx = errors.New("events: the client is not bound to a transaction
 var ErrNotPurging = errors.New("events: the scope is not bound to a purging transaction")
 
 // InTx is a client bound to a transaction: the *ent.Client a Within… method hands out, and the
-// *ent.Scoped and *ent.WorkspaceLocked bound to it.
+// *ent.Scoped, *ent.WorkspaceLocked and *ent.DestinationLocked bound to it.
 type InTx interface {
 	TxDriver() (ent.TxBound, bool)
 }

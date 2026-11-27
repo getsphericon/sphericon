@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -16,6 +17,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
+	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/messageretention"
 )
@@ -96,6 +99,13 @@ func TestPruneMessagesKeepsEveryReportsFigures(t *testing.T) {
 	beforeStats, beforeFigures := reports(t, env)
 	require.NotEmpty(t, beforeStats)
 	require.NotEmpty(t, beforeFigures)
+	require.True(t, lo.SomeBy(lo.Values(beforeStats), func(st broadcasts.Stats) bool { return len(st.SkippedBy) > 0 }),
+		"a finished Broadcast has messages Skipped by reason, which its frozen figures keep (ADR 0178)")
+	require.True(t, lo.SomeBy(lo.Values(beforeStats), func(st broadcasts.Stats) bool { return st.SingleZone > 0 }),
+		"a finished Broadcast has sends a Sending window judged by a single zone, which its frozen figures keep (ADR 0134)")
+	require.True(t, lo.SomeBy(lo.Values(beforeFigures), func(f automationFigures) bool {
+		return lo.SomeBy(f.Steps, func(st automations.StepFigures) bool { return st.SingleZone > 0 })
+	}), "an Automation has sends a Sending window judged by a single zone, which its pruned figures keep")
 
 	// Batches of one and a budget of three: every loop of the prune turns, and every run stops
 	// before its Workspace's work is done and the next one continues from what is left.
@@ -135,11 +145,16 @@ func TestPrunedMessagesStayUnderTheirVersionAndStep(t *testing.T) {
 
 	firstEmail := automationstep.ID("2a17428c-014b-5b9e-866e-a08363b2780d")
 	drip := figures[fixtures.AutomationOnboardingDripID]
+	none := deferralcause.Counts(nil)
+	// Version 1's skip was pruned before, version 2's now: each keeps its reason (ADR 0178).
+	suppressed := skipreason.Counts(map[skipreason.Reason]int{skipreason.Suppressed: 1})
+	noDestination := skipreason.Counts(map[skipreason.Reason]int{skipreason.NoDestination: 1})
 	assert.Equal(t, []automations.VersionStepFigures{
-		{Version: 1, StepID: firstEmail, Sent: 4, Skipped: 1},
-		{Version: 2, StepID: firstEmail, Skipped: 1},
+		{Version: 1, StepID: firstEmail, Sent: 4, Skipped: 1, SkippedByReason: suppressed, WaitingByCause: none},
+		{Version: 2, StepID: firstEmail, Skipped: 1, SkippedByReason: noDestination, WaitingByCause: none},
 	}, drip.VersionSteps)
-	assert.Equal(t, []automations.StepFigures{{StepID: firstEmail, Sent: 4, Skipped: 2}}, drip.Steps)
+	both := skipreason.Counts(map[skipreason.Reason]int{skipreason.Suppressed: 1, skipreason.NoDestination: 1})
+	assert.Equal(t, []automations.StepFigures{{StepID: firstEmail, Sent: 4, Skipped: 2, SkippedByReason: both, WaitingByCause: none}}, drip.Steps)
 }
 
 func TestPruneMessagesIsIdempotent(t *testing.T) {

@@ -42,6 +42,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/eventjournalentry"
 	"github.com/getsphericon/sphericon/ent/eventreceipt"
+	"github.com/getsphericon/sphericon/ent/frequencycap"
+	"github.com/getsphericon/sphericon/ent/frequencycount"
 	"github.com/getsphericon/sphericon/ent/heldorderevent"
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/identitysecret"
@@ -75,6 +77,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendcaplimiter"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
+	"github.com/getsphericon/sphericon/ent/sendingwindow"
 	"github.com/getsphericon/sphericon/ent/servicecredential"
 	"github.com/getsphericon/sphericon/ent/signupitem"
 	"github.com/getsphericon/sphericon/ent/signupsurveyresponse"
@@ -185,6 +188,8 @@ func checkColumn(t, c string) error {
 			event.Table:                      event.ValidColumn,
 			eventjournalentry.Table:          eventjournalentry.ValidColumn,
 			eventreceipt.Table:               eventreceipt.ValidColumn,
+			frequencycap.Table:               frequencycap.ValidColumn,
+			frequencycount.Table:             frequencycount.ValidColumn,
 			heldorderevent.Table:             heldorderevent.ValidColumn,
 			hold.Table:                       hold.ValidColumn,
 			identitysecret.Table:             identitysecret.ValidColumn,
@@ -218,6 +223,7 @@ func checkColumn(t, c string) error {
 			segment.Table:                    segment.ValidColumn,
 			sendcaplimiter.Table:             sendcaplimiter.ValidColumn,
 			sendingdomain.Table:              sendingdomain.ValidColumn,
+			sendingwindow.Table:              sendingwindow.ValidColumn,
 			servicecredential.Table:          servicecredential.ValidColumn,
 			signupitem.Table:                 signupitem.ValidColumn,
 			signupsurveyresponse.Table:       signupsurveyresponse.ValidColumn,

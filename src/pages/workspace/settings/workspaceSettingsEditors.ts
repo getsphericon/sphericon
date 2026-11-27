@@ -3,6 +3,7 @@ import {
   siteWorkspacesGetConfirmationEmailOptions,
   siteWorkspacesGetOptions,
   siteWorkspacesGetRevenueSettingsOptions,
+  siteWorkspacesGetSendingRulesOptions,
 } from '../../../generated/site/@tanstack/react-query.gen.ts'
 import {
   siteAuditSetRetention,
@@ -10,10 +11,13 @@ import {
   siteWorkspacesSetTimezone,
   siteWorkspacesUpdate,
   siteWorkspacesUpdateConfirmationEmail,
+  siteWorkspacesReplaceSendingRules,
   siteWorkspacesUpdateRevenueSettings,
 } from '../../../generated/site/sdk.gen.ts'
 import { defineEditForm, defineModalEditor } from '../../../resources/defineResource.tsx'
 import { withRevision } from '../../../resources/resourceEditor.ts'
+import { formPathOf, sendingRulesFormSchema } from './sendingRules.ts'
+import { SendingRulesFields } from './SendingRulesFields.tsx'
 import {
   ConfirmationEmailFields,
   GeneralFields,
@@ -152,5 +156,29 @@ export const retentionEditor = defineModalEditor({
     updated: t(($) => $.settings.auditLog.retentionSaved),
     loadErrorTitle: t(($) => $.settings.auditLog.retentionError),
     saveErrorTitle: t(($) => $.settings.auditLog.retentionError),
+  }),
+})
+
+// The Workspace's Frequency caps and Sending windows (ADR 0134, ADR 0137), in a modal over their
+// lines: a refusal of a field shows under it, the form naming a window's day by its day.
+export const sendingRulesEditor = defineModalEditor({
+  editorId: 'workspaceSendingRulesEditor',
+  schema: sendingRulesFormSchema,
+  Form: SendingRulesFields,
+  getOptions: ofWorkspace(siteWorkspacesGetSendingRulesOptions),
+  update: withRevision(async ({ path, body, throwOnError }) =>
+    siteWorkspacesReplaceSendingRules({
+      path: { workspaceId: path.workspaceId },
+      body,
+      throwOnError,
+    }),
+  ),
+  operations: {},
+  refusalField: formPathOf,
+  texts: (t) => ({
+    editTitle: t(($) => $.settings.sendingRules.formTitle),
+    updated: t(($) => $.settings.sendingRules.saved),
+    loadErrorTitle: t(($) => $.settings.sendingRules.loadError),
+    saveErrorTitle: t(($) => $.settings.sendingRules.saveError),
   }),
 })

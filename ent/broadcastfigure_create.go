@@ -162,6 +162,132 @@ func (_c *BroadcastFigureCreate) SetNillableUntracked(v *int) *BroadcastFigureCr
 	return _c
 }
 
+// SetSkippedSuppressed sets the "skipped_suppressed" field.
+func (_c *BroadcastFigureCreate) SetSkippedSuppressed(v int) *BroadcastFigureCreate {
+	_c.mutation.SetSkippedSuppressed(v)
+	return _c
+}
+
+// SetNillableSkippedSuppressed sets the "skipped_suppressed" field if the given value is not nil.
+func (_c *BroadcastFigureCreate) SetNillableSkippedSuppressed(v *int) *BroadcastFigureCreate {
+	if v != nil {
+		_c.SetSkippedSuppressed(*v)
+	}
+	return _c
+}
+
+// SetSkippedUnsubscribedEverything sets the "skipped_unsubscribed_everything" field.
+func (_c *BroadcastFigureCreate) SetSkippedUnsubscribedEverything(v int) *BroadcastFigureCreate {
+	_c.mutation.SetSkippedUnsubscribedEverything(v)
+	return _c
+}
+
+// SetNillableSkippedUnsubscribedEverything sets the "skipped_unsubscribed_everything" field if the given value is not nil.
+func (_c *BroadcastFigureCreate) SetNillableSkippedUnsubscribedEverything(v *int) *BroadcastFigureCreate {
+	if v != nil {
+		_c.SetSkippedUnsubscribedEverything(*v)
+	}
+	return _c
+}
+
+// SetSkippedUnsubscribedSource sets the "skipped_unsubscribed_source" field.
+func (_c *BroadcastFigureCreate) SetSkippedUnsubscribedSource(v int) *BroadcastFigureCreate {
+	_c.mutation.SetSkippedUnsubscribedSource(v)
+	return _c
+}
+
+// SetNillableSkippedUnsubscribedSource sets the "skipped_unsubscribed_source" field if the given value is not nil.
+func (_c *BroadcastFigureCreate) SetNillableSkippedUnsubscribedSource(v *int) *BroadcastFigureCreate {
+	if v != nil {
+		_c.SetSkippedUnsubscribedSource(*v)
+	}
+	return _c
+}
+
+// SetSkippedUnconfirmed sets the "skipped_unconfirmed" field.
+func (_c *BroadcastFigureCreate) SetSkippedUnconfirmed(v int) *BroadcastFigureCreate {
+	_c.mutation.SetSkippedUnconfirmed(v)
+	return _c
+}
+
+// SetNillableSkippedUnconfirmed sets the "skipped_unconfirmed" field if the given value is not nil.
+func (_c *BroadcastFigureCreate) SetNillableSkippedUnconfirmed(v *int) *BroadcastFigureCreate {
+	if v != nil {
+		_c.SetSkippedUnconfirmed(*v)
+	}
+	return _c
+}
+
+// SetSkippedNoDestination sets the "skipped_no_destination" field.
+func (_c *BroadcastFigureCreate) SetSkippedNoDestination(v int) *BroadcastFigureCreate {
+	_c.mutation.SetSkippedNoDestination(v)
+	return _c
+}
+
+// SetNillableSkippedNoDestination sets the "skipped_no_destination" field if the given value is not nil.
+func (_c *BroadcastFigureCreate) SetNillableSkippedNoDestination(v *int) *BroadcastFigureCreate {
+	if v != nil {
+		_c.SetSkippedNoDestination(*v)
+	}
+	return _c
+}
+
+// SetSkippedContactErased sets the "skipped_contact_erased" field.
+func (_c *BroadcastFigureCreate) SetSkippedContactErased(v int) *BroadcastFigureCreate {
+	_c.mutation.SetSkippedContactErased(v)
+	return _c
+}
+
+// SetNillableSkippedContactErased sets the "skipped_contact_erased" field if the given value is not nil.
+func (_c *BroadcastFigureCreate) SetNillableSkippedContactErased(v *int) *BroadcastFigureCreate {
+	if v != nil {
+		_c.SetSkippedContactErased(*v)
+	}
+	return _c
+}
+
+// SetSkippedNoLocalTime sets the "skipped_no_local_time" field.
+func (_c *BroadcastFigureCreate) SetSkippedNoLocalTime(v int) *BroadcastFigureCreate {
+	_c.mutation.SetSkippedNoLocalTime(v)
+	return _c
+}
+
+// SetNillableSkippedNoLocalTime sets the "skipped_no_local_time" field if the given value is not nil.
+func (_c *BroadcastFigureCreate) SetNillableSkippedNoLocalTime(v *int) *BroadcastFigureCreate {
+	if v != nil {
+		_c.SetSkippedNoLocalTime(*v)
+	}
+	return _c
+}
+
+// SetSkippedFrequencyCap sets the "skipped_frequency_cap" field.
+func (_c *BroadcastFigureCreate) SetSkippedFrequencyCap(v int) *BroadcastFigureCreate {
+	_c.mutation.SetSkippedFrequencyCap(v)
+	return _c
+}
+
+// SetNillableSkippedFrequencyCap sets the "skipped_frequency_cap" field if the given value is not nil.
+func (_c *BroadcastFigureCreate) SetNillableSkippedFrequencyCap(v *int) *BroadcastFigureCreate {
+	if v != nil {
+		_c.SetSkippedFrequencyCap(*v)
+	}
+	return _c
+}
+
+// SetSingleZone sets the "single_zone" field.
+func (_c *BroadcastFigureCreate) SetSingleZone(v int) *BroadcastFigureCreate {
+	_c.mutation.SetSingleZone(v)
+	return _c
+}
+
+// SetNillableSingleZone sets the "single_zone" field if the given value is not nil.
+func (_c *BroadcastFigureCreate) SetNillableSingleZone(v *int) *BroadcastFigureCreate {
+	if v != nil {
+		_c.SetSingleZone(*v)
+	}
+	return _c
+}
+
 // SetPrunedAt sets the "pruned_at" field.
 func (_c *BroadcastFigureCreate) SetPrunedAt(v time.Time) *BroadcastFigureCreate {
 	_c.mutation.SetPrunedAt(v)
@@ -238,6 +364,42 @@ func (_c *BroadcastFigureCreate) defaults() {
 	if _, ok := _c.mutation.Untracked(); !ok {
 		v := broadcastfigure.DefaultUntracked
 		_c.mutation.SetUntracked(v)
+	}
+	if _, ok := _c.mutation.SkippedSuppressed(); !ok {
+		v := broadcastfigure.DefaultSkippedSuppressed
+		_c.mutation.SetSkippedSuppressed(v)
+	}
+	if _, ok := _c.mutation.SkippedUnsubscribedEverything(); !ok {
+		v := broadcastfigure.DefaultSkippedUnsubscribedEverything
+		_c.mutation.SetSkippedUnsubscribedEverything(v)
+	}
+	if _, ok := _c.mutation.SkippedUnsubscribedSource(); !ok {
+		v := broadcastfigure.DefaultSkippedUnsubscribedSource
+		_c.mutation.SetSkippedUnsubscribedSource(v)
+	}
+	if _, ok := _c.mutation.SkippedUnconfirmed(); !ok {
+		v := broadcastfigure.DefaultSkippedUnconfirmed
+		_c.mutation.SetSkippedUnconfirmed(v)
+	}
+	if _, ok := _c.mutation.SkippedNoDestination(); !ok {
+		v := broadcastfigure.DefaultSkippedNoDestination
+		_c.mutation.SetSkippedNoDestination(v)
+	}
+	if _, ok := _c.mutation.SkippedContactErased(); !ok {
+		v := broadcastfigure.DefaultSkippedContactErased
+		_c.mutation.SetSkippedContactErased(v)
+	}
+	if _, ok := _c.mutation.SkippedNoLocalTime(); !ok {
+		v := broadcastfigure.DefaultSkippedNoLocalTime
+		_c.mutation.SetSkippedNoLocalTime(v)
+	}
+	if _, ok := _c.mutation.SkippedFrequencyCap(); !ok {
+		v := broadcastfigure.DefaultSkippedFrequencyCap
+		_c.mutation.SetSkippedFrequencyCap(v)
+	}
+	if _, ok := _c.mutation.SingleZone(); !ok {
+		v := broadcastfigure.DefaultSingleZone
+		_c.mutation.SetSingleZone(v)
 	}
 }
 
@@ -375,6 +537,78 @@ func (_c *BroadcastFigureCreate) check() error {
 			return &ValidationError{Name: "untracked", err: fmt.Errorf(`ent: validator failed for field "BroadcastFigure.untracked": %w`, err)}
 		}
 	}
+	if _, ok := _c.mutation.SkippedSuppressed(); !ok {
+		return &ValidationError{Name: "skipped_suppressed", err: errors.New(`ent: missing required field "BroadcastFigure.skipped_suppressed"`)}
+	}
+	if v, ok := _c.mutation.SkippedSuppressed(); ok {
+		if err := broadcastfigure.SkippedSuppressedValidator(v); err != nil {
+			return &ValidationError{Name: "skipped_suppressed", err: fmt.Errorf(`ent: validator failed for field "BroadcastFigure.skipped_suppressed": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.SkippedUnsubscribedEverything(); !ok {
+		return &ValidationError{Name: "skipped_unsubscribed_everything", err: errors.New(`ent: missing required field "BroadcastFigure.skipped_unsubscribed_everything"`)}
+	}
+	if v, ok := _c.mutation.SkippedUnsubscribedEverything(); ok {
+		if err := broadcastfigure.SkippedUnsubscribedEverythingValidator(v); err != nil {
+			return &ValidationError{Name: "skipped_unsubscribed_everything", err: fmt.Errorf(`ent: validator failed for field "BroadcastFigure.skipped_unsubscribed_everything": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.SkippedUnsubscribedSource(); !ok {
+		return &ValidationError{Name: "skipped_unsubscribed_source", err: errors.New(`ent: missing required field "BroadcastFigure.skipped_unsubscribed_source"`)}
+	}
+	if v, ok := _c.mutation.SkippedUnsubscribedSource(); ok {
+		if err := broadcastfigure.SkippedUnsubscribedSourceValidator(v); err != nil {
+			return &ValidationError{Name: "skipped_unsubscribed_source", err: fmt.Errorf(`ent: validator failed for field "BroadcastFigure.skipped_unsubscribed_source": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.SkippedUnconfirmed(); !ok {
+		return &ValidationError{Name: "skipped_unconfirmed", err: errors.New(`ent: missing required field "BroadcastFigure.skipped_unconfirmed"`)}
+	}
+	if v, ok := _c.mutation.SkippedUnconfirmed(); ok {
+		if err := broadcastfigure.SkippedUnconfirmedValidator(v); err != nil {
+			return &ValidationError{Name: "skipped_unconfirmed", err: fmt.Errorf(`ent: validator failed for field "BroadcastFigure.skipped_unconfirmed": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.SkippedNoDestination(); !ok {
+		return &ValidationError{Name: "skipped_no_destination", err: errors.New(`ent: missing required field "BroadcastFigure.skipped_no_destination"`)}
+	}
+	if v, ok := _c.mutation.SkippedNoDestination(); ok {
+		if err := broadcastfigure.SkippedNoDestinationValidator(v); err != nil {
+			return &ValidationError{Name: "skipped_no_destination", err: fmt.Errorf(`ent: validator failed for field "BroadcastFigure.skipped_no_destination": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.SkippedContactErased(); !ok {
+		return &ValidationError{Name: "skipped_contact_erased", err: errors.New(`ent: missing required field "BroadcastFigure.skipped_contact_erased"`)}
+	}
+	if v, ok := _c.mutation.SkippedContactErased(); ok {
+		if err := broadcastfigure.SkippedContactErasedValidator(v); err != nil {
+			return &ValidationError{Name: "skipped_contact_erased", err: fmt.Errorf(`ent: validator failed for field "BroadcastFigure.skipped_contact_erased": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.SkippedNoLocalTime(); !ok {
+		return &ValidationError{Name: "skipped_no_local_time", err: errors.New(`ent: missing required field "BroadcastFigure.skipped_no_local_time"`)}
+	}
+	if v, ok := _c.mutation.SkippedNoLocalTime(); ok {
+		if err := broadcastfigure.SkippedNoLocalTimeValidator(v); err != nil {
+			return &ValidationError{Name: "skipped_no_local_time", err: fmt.Errorf(`ent: validator failed for field "BroadcastFigure.skipped_no_local_time": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.SkippedFrequencyCap(); !ok {
+		return &ValidationError{Name: "skipped_frequency_cap", err: errors.New(`ent: missing required field "BroadcastFigure.skipped_frequency_cap"`)}
+	}
+	if v, ok := _c.mutation.SkippedFrequencyCap(); ok {
+		if err := broadcastfigure.SkippedFrequencyCapValidator(v); err != nil {
+			return &ValidationError{Name: "skipped_frequency_cap", err: fmt.Errorf(`ent: validator failed for field "BroadcastFigure.skipped_frequency_cap": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.SingleZone(); !ok {
+		return &ValidationError{Name: "single_zone", err: errors.New(`ent: missing required field "BroadcastFigure.single_zone"`)}
+	}
+	if v, ok := _c.mutation.SingleZone(); ok {
+		if err := broadcastfigure.SingleZoneValidator(v); err != nil {
+			return &ValidationError{Name: "single_zone", err: fmt.Errorf(`ent: validator failed for field "BroadcastFigure.single_zone": %w`, err)}
+		}
+	}
 	if len(_c.mutation.WorkspaceIDs()) == 0 {
 		return &ValidationError{Name: "workspace", err: errors.New(`ent: missing required edge "BroadcastFigure.workspace"`)}
 	}
@@ -481,6 +715,42 @@ func (_c *BroadcastFigureCreate) createSpec() (*BroadcastFigure, *sqlgraph.Creat
 	if value, ok := _c.mutation.Untracked(); ok {
 		_spec.SetField(broadcastfigure.FieldUntracked, field.TypeInt, value)
 		_node.Untracked = value
+	}
+	if value, ok := _c.mutation.SkippedSuppressed(); ok {
+		_spec.SetField(broadcastfigure.FieldSkippedSuppressed, field.TypeInt, value)
+		_node.SkippedSuppressed = value
+	}
+	if value, ok := _c.mutation.SkippedUnsubscribedEverything(); ok {
+		_spec.SetField(broadcastfigure.FieldSkippedUnsubscribedEverything, field.TypeInt, value)
+		_node.SkippedUnsubscribedEverything = value
+	}
+	if value, ok := _c.mutation.SkippedUnsubscribedSource(); ok {
+		_spec.SetField(broadcastfigure.FieldSkippedUnsubscribedSource, field.TypeInt, value)
+		_node.SkippedUnsubscribedSource = value
+	}
+	if value, ok := _c.mutation.SkippedUnconfirmed(); ok {
+		_spec.SetField(broadcastfigure.FieldSkippedUnconfirmed, field.TypeInt, value)
+		_node.SkippedUnconfirmed = value
+	}
+	if value, ok := _c.mutation.SkippedNoDestination(); ok {
+		_spec.SetField(broadcastfigure.FieldSkippedNoDestination, field.TypeInt, value)
+		_node.SkippedNoDestination = value
+	}
+	if value, ok := _c.mutation.SkippedContactErased(); ok {
+		_spec.SetField(broadcastfigure.FieldSkippedContactErased, field.TypeInt, value)
+		_node.SkippedContactErased = value
+	}
+	if value, ok := _c.mutation.SkippedNoLocalTime(); ok {
+		_spec.SetField(broadcastfigure.FieldSkippedNoLocalTime, field.TypeInt, value)
+		_node.SkippedNoLocalTime = value
+	}
+	if value, ok := _c.mutation.SkippedFrequencyCap(); ok {
+		_spec.SetField(broadcastfigure.FieldSkippedFrequencyCap, field.TypeInt, value)
+		_node.SkippedFrequencyCap = value
+	}
+	if value, ok := _c.mutation.SingleZone(); ok {
+		_spec.SetField(broadcastfigure.FieldSingleZone, field.TypeInt, value)
+		_node.SingleZone = value
 	}
 	if value, ok := _c.mutation.PrunedAt(); ok {
 		_spec.SetField(broadcastfigure.FieldPrunedAt, field.TypeTime, value)
@@ -681,6 +951,33 @@ func (u *BroadcastFigureUpsertOne) UpdateNewValues() *BroadcastFigureUpsertOne {
 		}
 		if _, exists := u.create.mutation.Untracked(); exists {
 			s.SetIgnore(broadcastfigure.FieldUntracked)
+		}
+		if _, exists := u.create.mutation.SkippedSuppressed(); exists {
+			s.SetIgnore(broadcastfigure.FieldSkippedSuppressed)
+		}
+		if _, exists := u.create.mutation.SkippedUnsubscribedEverything(); exists {
+			s.SetIgnore(broadcastfigure.FieldSkippedUnsubscribedEverything)
+		}
+		if _, exists := u.create.mutation.SkippedUnsubscribedSource(); exists {
+			s.SetIgnore(broadcastfigure.FieldSkippedUnsubscribedSource)
+		}
+		if _, exists := u.create.mutation.SkippedUnconfirmed(); exists {
+			s.SetIgnore(broadcastfigure.FieldSkippedUnconfirmed)
+		}
+		if _, exists := u.create.mutation.SkippedNoDestination(); exists {
+			s.SetIgnore(broadcastfigure.FieldSkippedNoDestination)
+		}
+		if _, exists := u.create.mutation.SkippedContactErased(); exists {
+			s.SetIgnore(broadcastfigure.FieldSkippedContactErased)
+		}
+		if _, exists := u.create.mutation.SkippedNoLocalTime(); exists {
+			s.SetIgnore(broadcastfigure.FieldSkippedNoLocalTime)
+		}
+		if _, exists := u.create.mutation.SkippedFrequencyCap(); exists {
+			s.SetIgnore(broadcastfigure.FieldSkippedFrequencyCap)
+		}
+		if _, exists := u.create.mutation.SingleZone(); exists {
+			s.SetIgnore(broadcastfigure.FieldSingleZone)
 		}
 	}))
 	return u
@@ -994,6 +1291,33 @@ func (u *BroadcastFigureUpsertBulk) UpdateNewValues() *BroadcastFigureUpsertBulk
 			}
 			if _, exists := b.mutation.Untracked(); exists {
 				s.SetIgnore(broadcastfigure.FieldUntracked)
+			}
+			if _, exists := b.mutation.SkippedSuppressed(); exists {
+				s.SetIgnore(broadcastfigure.FieldSkippedSuppressed)
+			}
+			if _, exists := b.mutation.SkippedUnsubscribedEverything(); exists {
+				s.SetIgnore(broadcastfigure.FieldSkippedUnsubscribedEverything)
+			}
+			if _, exists := b.mutation.SkippedUnsubscribedSource(); exists {
+				s.SetIgnore(broadcastfigure.FieldSkippedUnsubscribedSource)
+			}
+			if _, exists := b.mutation.SkippedUnconfirmed(); exists {
+				s.SetIgnore(broadcastfigure.FieldSkippedUnconfirmed)
+			}
+			if _, exists := b.mutation.SkippedNoDestination(); exists {
+				s.SetIgnore(broadcastfigure.FieldSkippedNoDestination)
+			}
+			if _, exists := b.mutation.SkippedContactErased(); exists {
+				s.SetIgnore(broadcastfigure.FieldSkippedContactErased)
+			}
+			if _, exists := b.mutation.SkippedNoLocalTime(); exists {
+				s.SetIgnore(broadcastfigure.FieldSkippedNoLocalTime)
+			}
+			if _, exists := b.mutation.SkippedFrequencyCap(); exists {
+				s.SetIgnore(broadcastfigure.FieldSkippedFrequencyCap)
+			}
+			if _, exists := b.mutation.SingleZone(); exists {
+				s.SetIgnore(broadcastfigure.FieldSingleZone)
 			}
 		}
 	}))

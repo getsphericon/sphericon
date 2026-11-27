@@ -91,6 +91,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/callbackinterpretation"
 	"github.com/getsphericon/sphericon/internal/domain/sending/capturedmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/confirmationrequests"
+	"github.com/getsphericon/sphericon/internal/domain/sending/frequencycap"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/linkclick"
@@ -617,6 +618,7 @@ var jobsPackage = do.Package(
 			SendingDomains:       do.MustInvoke[*sendingdomains.Module](i),
 			StepExecution:        do.MustInvoke[*automations.StepExecution](i),
 			Automations:          do.MustInvoke[*automations.Module](i),
+			FrequencyCaps:        do.MustInvoke[*frequencycap.Module](i),
 			JoinDomains:          do.MustInvoke[*joindomains.Module](i),
 			Integrations:         do.MustInvoke[*integrations.Module](i),
 			Chats:                do.MustInvoke[*bindings.Chats](i),
@@ -680,6 +682,11 @@ var deliveryPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*ratelimit.Limiter, error) {
 		return ratelimit.New(do.MustInvoke[*config.Config](i).RateLimits), nil
 	}),
+	// The Frequency cap (ADR 0137, ADR 0178): the lock and the count every marketing claim is written
+	// under.
+	do.Lazy(func(i do.Injector) (*frequencycap.Module, error) {
+		return frequencycap.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil
+	}),
 	// The Outbound send module (ADR 0015): the one place an email leaves sphericon on a
 	// Workspace's behalf, for every send surface.
 	do.Lazy(func(i do.Injector) (*outboundmessages.Module, error) {
@@ -706,6 +713,7 @@ var deliveryPackage = do.Package(
 			Limits:   do.MustInvoke[*providerlimit.Module](i),
 			Standing: do.MustInvoke[*integrations.Standing](i),
 			Consents: do.MustInvoke[*engagementtracking.Module](i),
+			Caps:     do.MustInvoke[*frequencycap.Module](i),
 		}
 		return outboundmessages.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*holds.Holds](i), do.MustInvoke[outboundmessages.Senders](i), do.MustInvoke[*messagetoken.Tracker](i),
 			mods, deps, outboundmessages.Config{SendCaps: do.MustInvoke[providerlimit.SendCaps](i)}, do.MustInvoke[Clock](i)), nil

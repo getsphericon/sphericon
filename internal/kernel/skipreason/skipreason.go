@@ -4,6 +4,8 @@
 // Send-eligibility gives the first four; Outbound send the rest.
 package skipreason
 
+import "slices"
+
 // Reason is why a send is Skipped.
 type Reason string
 
@@ -40,6 +42,9 @@ var all = []Reason{
 	NoDestination, ContactErased, NoLocalTime, FrequencyCap,
 }
 
+// All is every reason, in the order of the closed list.
+func All() []Reason { return slices.Clone(all) }
+
 // Values is every reason, as an ent enum column takes them.
 func (Reason) Values() []string {
 	values := make([]string, len(all))
@@ -47,4 +52,20 @@ func (Reason) Values() []string {
 		values[i] = string(r)
 	}
 	return values
+}
+
+// Count is how many sends were Skipped for one reason.
+type Count struct {
+	Reason Reason
+	Count  int
+}
+
+// Counts lists the count by holds of every reason, in the order of the closed list: a reason by
+// lacks reads zero, so a report names every reason whatever its rows hold.
+func Counts(by map[Reason]int) []Count {
+	counts := make([]Count, len(all))
+	for i, r := range all {
+		counts[i] = Count{Reason: r, Count: by[r]}
+	}
+	return counts
 }

@@ -44,6 +44,10 @@ model WorkspaceResource {
    * when no Send cap applies */
   sendCap?: SendCap | null;
 
+  /** The Workspace's sending rules (ADR 0134, ADR 0137): its Frequency caps and its Sending windows.
+   * Read-only: only a person changes them, in the console's Workspace settings. */
+  sendingRules: SendingRules;
+
   /** The revision of the Workspace this answer shows (ADR 0119) */
   revision: Revision;
 }
@@ -51,14 +55,17 @@ model WorkspaceResource {
 @route("/workspace")
 @tag("Workspace")
 namespace Workspace {
-  /** Read the Workspace the token acts in: its name, postal address, confirmed opt-in, Engagement tracking default, Link identity token settings, time zone and Send cap. Read
+  /** Read the Workspace the token acts in: its name, postal address, confirmed opt-in, Engagement tracking default, Link identity token settings, time zone, Send cap and sending rules. Read
    * the postal address before arming marketing email: an empty one refuses it, and only a person
    * can set it. Read the Send cap to explain a slow send or to plan one: a send larger than what
    * remains of it in the last 24 hours goes out over more than a day. Read confirmed opt-in to know
    * whether a Contact needs a Confirmation before email reaches it. Read the Engagement tracking
-   * default to know whether a Destination with no consent recorded is tracked. Read-only: no
-   * operation changes the Send cap, the postal address, confirmed opt-in or the Engagement tracking
-   * default. */
+   * default to know whether a Destination with no consent recorded is tracked. Read the sending
+   * rules to explain a marketing message that waits or is skipped: a Frequency cap limits the
+   * marketing messages one Destination receives per period, and a Sending window the hours a
+   * marketing text goes out in the recipient's local time. Read-only: no operation changes the Send
+   * cap, the postal address, confirmed opt-in, the Engagement tracking default or the sending
+   * rules. */
   @get
   @requiresScopes(#[])
   op get(): WorkspaceResource | Problem;

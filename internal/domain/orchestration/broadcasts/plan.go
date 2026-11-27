@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/smsrender"
@@ -250,20 +251,37 @@ func newAudiences(out *outboundmessages.Module) audiences {
 // A Contact without a Destination (on Telegram, an eligible Binding on the routed Integration) is left out, so no row is created that could never send and
 // would block finalization forever.
 func (a audiences) of(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (*ent.ContactQuery, error) {
-	reached, err := a.eligibility.BroadcastAudience(ctx, s, b.Channel, b.IntegrationID)
+	var cond *conditiontree.Segment
+	if b.SegmentID != nil {
+		if b.Condition == nil {
+			return nil, fmt.Errorf("%w: broadcast %d: the condition of segment %d was not copied", ErrNoAudience, b.ID, *b.SegmentID)
+		}
+		cond = b.Condition
+	}
+	audience, err := a.matching(ctx, s, b.Channel, b.IntegrationID, cond)
 	if err != nil {
 		return nil, fmt.Errorf("broadcasts: broadcast %d: %w", b.ID, err)
 	}
+	return audience, nil
+}
+
+// matching is the Contacts a Broadcast on the Channel ch, routed through the Integration
+// integrationID (nil: the Channel's default), takes from those cond matches (nil: every Contact):
+// the ones with an eligible Destination on ch. A cond that does not compile is ErrNoAudience. The
+// plan and the share outside the Sending window both read the audience through it, so the two
+// cannot drift.
+func (a audiences) matching(ctx context.Context, s *ent.Scoped, ch channels.Channel, integrationID *int64, cond *conditiontree.Segment) (*ent.ContactQuery, error) {
+	reached, err := a.eligibility.BroadcastAudience(ctx, s, ch, integrationID)
+	if err != nil {
+		return nil, err
+	}
 	audience := s.Contact().Query().Where(reached)
-	if b.SegmentID == nil {
+	if cond == nil {
 		return audience, nil
 	}
-	if b.Condition == nil {
-		return nil, fmt.Errorf("%w: broadcast %d: the condition of segment %d was not copied", ErrNoAudience, b.ID, *b.SegmentID)
-	}
-	pred, err := a.conditions.Compile(ctx, s, *b.Condition)
+	pred, err := a.conditions.Compile(ctx, s, *cond)
 	if err != nil {
-		return nil, fmt.Errorf("%w: broadcast %d condition: %w", ErrNoAudience, b.ID, err)
+		return nil, fmt.Errorf("%w: condition: %w", ErrNoAudience, err)
 	}
 	return audience.Where(pred), nil
 }

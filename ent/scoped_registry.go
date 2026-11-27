@@ -30,6 +30,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
 	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/ent/frequencycap"
+	"github.com/getsphericon/sphericon/ent/frequencycount"
 	"github.com/getsphericon/sphericon/ent/heldorderevent"
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/identitysecret"
@@ -50,6 +52,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendcaplimiter"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
+	"github.com/getsphericon/sphericon/ent/sendingwindow"
 	"github.com/getsphericon/sphericon/ent/starttoken"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
@@ -360,6 +363,15 @@ func ScopedEntities() []*ScopedEntity {
 				b.SetStepID(src.StepID)
 				b.SetSent(src.Sent)
 				b.SetSkipped(src.Skipped)
+				b.SetSkippedSuppressed(src.SkippedSuppressed)
+				b.SetSkippedUnsubscribedEverything(src.SkippedUnsubscribedEverything)
+				b.SetSkippedUnsubscribedSource(src.SkippedUnsubscribedSource)
+				b.SetSkippedUnconfirmed(src.SkippedUnconfirmed)
+				b.SetSkippedNoDestination(src.SkippedNoDestination)
+				b.SetSkippedContactErased(src.SkippedContactErased)
+				b.SetSkippedNoLocalTime(src.SkippedNoLocalTime)
+				b.SetSkippedFrequencyCap(src.SkippedFrequencyCap)
+				b.SetSingleZone(src.SingleZone)
 				b.SetDelivered(src.Delivered)
 				b.SetBounced(src.Bounced)
 				b.SetComplained(src.Complained)
@@ -482,6 +494,12 @@ func ScopedEntities() []*ScopedEntity {
 				}
 				if src.ResumeAt != nil {
 					b.SetResumeAt(*src.ResumeAt)
+				}
+				if src.DeferredSince != nil {
+					b.SetDeferredSince(*src.DeferredSince)
+				}
+				if src.DeferralCause != nil {
+					b.SetDeferralCause(*src.DeferralCause)
 				}
 				if src.FailureKind != nil {
 					b.SetFailureKind(*src.FailureKind)
@@ -989,6 +1007,15 @@ func ScopedEntities() []*ScopedEntity {
 				b.SetClicked(src.Clicked)
 				b.SetCaptured(src.Captured)
 				b.SetUntracked(src.Untracked)
+				b.SetSkippedSuppressed(src.SkippedSuppressed)
+				b.SetSkippedUnsubscribedEverything(src.SkippedUnsubscribedEverything)
+				b.SetSkippedUnsubscribedSource(src.SkippedUnsubscribedSource)
+				b.SetSkippedUnconfirmed(src.SkippedUnconfirmed)
+				b.SetSkippedNoDestination(src.SkippedNoDestination)
+				b.SetSkippedContactErased(src.SkippedContactErased)
+				b.SetSkippedNoLocalTime(src.SkippedNoLocalTime)
+				b.SetSkippedFrequencyCap(src.SkippedFrequencyCap)
+				b.SetSingleZone(src.SingleZone)
 				if src.PrunedAt != nil {
 					b.SetPrunedAt(*src.PrunedAt)
 				}
@@ -1036,6 +1063,12 @@ func ScopedEntities() []*ScopedEntity {
 				}
 				if src.DeferredUntil != nil {
 					b.SetDeferredUntil(*src.DeferredUntil)
+				}
+				if src.DeferralCause != nil {
+					b.SetDeferralCause(*src.DeferralCause)
+				}
+				if src.DeferredSince != nil {
+					b.SetDeferredSince(*src.DeferredSince)
 				}
 				if src.UnsubscribedAt != nil {
 					b.SetUnsubscribedAt(*src.UnsubscribedAt)
@@ -1674,6 +1707,96 @@ func ScopedEntities() []*ScopedEntity {
 					},
 				},
 			},
+		},
+		{
+			Kind:         Kinds["FrequencyCap"],
+			Name:         "FrequencyCap",
+			Wrapper:      reflect.TypeFor[*FrequencyCapScoped](),
+			AuditActions: []string{},
+			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
+				return c.FrequencyCap.Query().Where(frequencycap.WorkspaceID(ws)).Order(Asc(frequencycap.FieldID)).IDs(ctx)
+			},
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.FrequencyCap().Get(ctx, id)
+			},
+			Touch: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.FrequencyCap().UpdateOneID(id).Exec(ctx)
+			},
+			BulkTouch: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.FrequencyCap().Update().Where(frequencycap.ID(id)).Save(ctx)
+			},
+			Delete: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.FrequencyCap().DeleteOneID(id).Exec(ctx)
+			},
+			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.FrequencyCap().Delete().Where(frequencycap.ID(id)).Exec(ctx)
+			},
+			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
+				src, err := s.c.FrequencyCap.Get(ctx, id)
+				if err != nil {
+					return 0, err
+				}
+				_ = remap
+				b := s.FrequencyCap().Create()
+				b.SetChannel(src.Channel)
+				if src.Country != nil {
+					b.SetCountry(*src.Country)
+				}
+				if src.MaxMessages != nil {
+					b.SetMaxMessages(*src.MaxMessages)
+				}
+				if src.PeriodMinutes != nil {
+					b.SetPeriodMinutes(*src.PeriodMinutes)
+				}
+				created, err := b.Save(ctx)
+				if err != nil {
+					return 0, err
+				}
+				return created.WorkspaceID, nil
+			},
+			Refs: []ScopedRef{},
+		},
+		{
+			Kind:         Kinds["FrequencyCount"],
+			Name:         "FrequencyCount",
+			Wrapper:      reflect.TypeFor[*FrequencyCountScoped](),
+			AuditActions: []string{},
+			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
+				return c.FrequencyCount.Query().Where(frequencycount.WorkspaceID(ws)).Order(Asc(frequencycount.FieldID)).IDs(ctx)
+			},
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.FrequencyCount().Get(ctx, id)
+			},
+			Touch: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.FrequencyCount().UpdateOneID(id).Exec(ctx)
+			},
+			BulkTouch: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.FrequencyCount().Update().Where(frequencycount.ID(id)).Save(ctx)
+			},
+			Delete: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.FrequencyCount().DeleteOneID(id).Exec(ctx)
+			},
+			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.FrequencyCount().Delete().Where(frequencycount.ID(id)).Exec(ctx)
+			},
+			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
+				src, err := s.c.FrequencyCount.Get(ctx, id)
+				if err != nil {
+					return 0, err
+				}
+				_ = remap
+				b := s.FrequencyCount().Create()
+				b.SetOutboundMessageID(remap("OutboundMessage", src.OutboundMessageID))
+				b.SetChannel(src.Channel)
+				b.SetDestination(src.Destination)
+				b.SetCountedAt(src.CountedAt)
+				created, err := b.Save(ctx)
+				if err != nil {
+					return 0, err
+				}
+				return created.WorkspaceID, nil
+			},
+			Refs: []ScopedRef{},
 		},
 		{
 			Kind:         Kinds["HeldOrderEvent"],
@@ -2347,6 +2470,13 @@ func ScopedEntities() []*ScopedEntity {
 				if src.Failure != nil {
 					b.SetFailure(*src.Failure)
 				}
+				if src.DeferredSince != nil {
+					b.SetDeferredSince(*src.DeferredSince)
+				}
+				if src.DeferralCause != nil {
+					b.SetDeferralCause(*src.DeferralCause)
+				}
+				b.SetWindowZones(src.WindowZones)
 				b.SetClaimedAt(src.ClaimedAt)
 				if src.SentAt != nil {
 					b.SetSentAt(*src.SentAt)
@@ -2424,6 +2554,12 @@ func ScopedEntities() []*ScopedEntity {
 					Name: "tracked_links", Target: "TrackedLink",
 					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
 						return s.OutboundMessage().UpdateOneID(id).AddTrackedLinkIDs(target).Exec(ctx)
+					},
+				},
+				{
+					Name: "frequency_counts", Target: "FrequencyCount",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.OutboundMessage().UpdateOneID(id).AddFrequencyCountIDs(target).Exec(ctx)
 					},
 				},
 				{
@@ -2914,6 +3050,90 @@ func ScopedEntities() []*ScopedEntity {
 				}
 				if src.DmarcFoundAt != nil {
 					b.SetDmarcFoundAt(*src.DmarcFoundAt)
+				}
+				created, err := b.Save(ctx)
+				if err != nil {
+					return 0, err
+				}
+				return created.WorkspaceID, nil
+			},
+			Refs: []ScopedRef{},
+		},
+		{
+			Kind:         Kinds["SendingWindow"],
+			Name:         "SendingWindow",
+			Wrapper:      reflect.TypeFor[*SendingWindowScoped](),
+			AuditActions: []string{},
+			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
+				return c.SendingWindow.Query().Where(sendingwindow.WorkspaceID(ws)).Order(Asc(sendingwindow.FieldID)).IDs(ctx)
+			},
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.SendingWindow().Get(ctx, id)
+			},
+			Touch: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.SendingWindow().UpdateOneID(id).Exec(ctx)
+			},
+			BulkTouch: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.SendingWindow().Update().Where(sendingwindow.ID(id)).Save(ctx)
+			},
+			Delete: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.SendingWindow().DeleteOneID(id).Exec(ctx)
+			},
+			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.SendingWindow().Delete().Where(sendingwindow.ID(id)).Exec(ctx)
+			},
+			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
+				src, err := s.c.SendingWindow.Get(ctx, id)
+				if err != nil {
+					return 0, err
+				}
+				_ = remap
+				b := s.SendingWindow().Create()
+				b.SetChannel(src.Channel)
+				if src.Country != nil {
+					b.SetCountry(*src.Country)
+				}
+				if src.MondayOpens != nil {
+					b.SetMondayOpens(*src.MondayOpens)
+				}
+				if src.MondayCloses != nil {
+					b.SetMondayCloses(*src.MondayCloses)
+				}
+				if src.TuesdayOpens != nil {
+					b.SetTuesdayOpens(*src.TuesdayOpens)
+				}
+				if src.TuesdayCloses != nil {
+					b.SetTuesdayCloses(*src.TuesdayCloses)
+				}
+				if src.WednesdayOpens != nil {
+					b.SetWednesdayOpens(*src.WednesdayOpens)
+				}
+				if src.WednesdayCloses != nil {
+					b.SetWednesdayCloses(*src.WednesdayCloses)
+				}
+				if src.ThursdayOpens != nil {
+					b.SetThursdayOpens(*src.ThursdayOpens)
+				}
+				if src.ThursdayCloses != nil {
+					b.SetThursdayCloses(*src.ThursdayCloses)
+				}
+				if src.FridayOpens != nil {
+					b.SetFridayOpens(*src.FridayOpens)
+				}
+				if src.FridayCloses != nil {
+					b.SetFridayCloses(*src.FridayCloses)
+				}
+				if src.SaturdayOpens != nil {
+					b.SetSaturdayOpens(*src.SaturdayOpens)
+				}
+				if src.SaturdayCloses != nil {
+					b.SetSaturdayCloses(*src.SaturdayCloses)
+				}
+				if src.SundayOpens != nil {
+					b.SetSundayOpens(*src.SundayOpens)
+				}
+				if src.SundayCloses != nil {
+					b.SetSundayCloses(*src.SundayCloses)
 				}
 				created, err := b.Save(ctx)
 				if err != nil {

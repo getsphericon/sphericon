@@ -30,6 +30,7 @@ import (
 	engagementtracking "github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	orders "github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	brandkits "github.com/getsphericon/sphericon/internal/domain/content/brandkits"
+	workspaces "github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	auditlog "github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
 	automations "github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	broadcasts "github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
@@ -49,6 +50,7 @@ import (
 	channels "github.com/getsphericon/sphericon/internal/kernel/channels"
 	conditiontree "github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	datetrigger "github.com/getsphericon/sphericon/internal/kernel/datetrigger"
+	deferralcause "github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 	emaildoc "github.com/getsphericon/sphericon/internal/kernel/emaildoc"
 	emailrender "github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	holdreason "github.com/getsphericon/sphericon/internal/kernel/holdreason"
@@ -420,6 +422,19 @@ func (c *ConverterImpl) BroadcastReportToResource(source broadcasts.Report) exte
 	externalapiBroadcastReport.RecipientsTotal = count(source.Figures.Recipients)
 	externalapiBroadcastReport.SentCount = count(source.Figures.Sent)
 	externalapiBroadcastReport.SkippedCount = count(source.Figures.Skipped)
+	if source.Figures.SkippedByReason != nil {
+		externalapiBroadcastReport.SkippedByReason = make([]external.SkippedReasonCount, len(source.Figures.SkippedByReason))
+		for i := 0; i < len(source.Figures.SkippedByReason); i++ {
+			externalapiBroadcastReport.SkippedByReason[i] = c.skipreasonCountToExternalapiSkippedReasonCount(source.Figures.SkippedByReason[i])
+		}
+	}
+	if source.Figures.WaitingByCause != nil {
+		externalapiBroadcastReport.WaitingByCause = make([]external.DeferralCauseCount, len(source.Figures.WaitingByCause))
+		for j := 0; j < len(source.Figures.WaitingByCause); j++ {
+			externalapiBroadcastReport.WaitingByCause[j] = c.deferralcauseCountToExternalapiDeferralCauseCount(source.Figures.WaitingByCause[j])
+		}
+	}
+	externalapiBroadcastReport.SingleZoneCount = nilInt32(source.Figures.SingleZone)
 	externalapiBroadcastReport.FailedCount = count(source.Figures.Failed)
 	externalapiBroadcastReport.PendingCount = count(source.Figures.Pending)
 	externalapiBroadcastReport.CancelledCount = count(source.Figures.Cancelled)
@@ -840,6 +855,24 @@ func (c *ConverterImpl) DateTriggerToResource(source datetrigger.Date) external.
 	externalapiDateTrigger.LocalTime = external.LocalTime(source.LocalTime)
 	return externalapiDateTrigger
 }
+func (c *ConverterImpl) DeferralCauseToResource(source deferralcause.Cause) external.DeferralCause {
+	var externalapiDeferralCause external.DeferralCause
+	switch source {
+	case deferralcause.FrequencyCap:
+		externalapiDeferralCause = external.DeferralCauseFrequencyCap
+	case deferralcause.ProviderLimit:
+		externalapiDeferralCause = external.DeferralCauseProviderLimit
+	case deferralcause.SendCap:
+		externalapiDeferralCause = external.DeferralCauseSendCap
+	case deferralcause.SendingWindow:
+		externalapiDeferralCause = external.DeferralCauseSendingWindow
+	case deferralcause.SlowDown:
+		externalapiDeferralCause = external.DeferralCauseProvider
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiDeferralCause
+}
 func (c *ConverterImpl) DnsRecordToResource(source sendingdomains.Record) external.DnsRecord {
 	var externalapiDnsRecord external.DnsRecord
 	externalapiDnsRecord.Type = dnsRecordType(source)
@@ -1059,6 +1092,8 @@ func (c *ConverterImpl) EnrollmentToResource(source *ent.AutomationRun) external
 		externalapiEnrollmentResource.Occurrence = enrollmentOccurrence((*source).Occurrence)
 		externalapiEnrollmentResource.CurrentStepId = optStepID((*source).CurrentStepID)
 		externalapiEnrollmentResource.ResumeAt = optTimestamp((*source).ResumeAt)
+		externalapiEnrollmentResource.DeferredSince = optTimestamp((*source).DeferredSince)
+		externalapiEnrollmentResource.DeferralCause = optDeferralCause(c, (*source).DeferralCause)
 		externalapiEnrollmentResource.Failure = enrollmentFailure(c, (*source))
 		externalapiEnrollmentResource.CreatedAt = timestamp((*source).CreatedAt)
 		externalapiEnrollmentResource.UpdatedAt = timestamp((*source).UpdatedAt)
@@ -1123,6 +1158,28 @@ func (c *ConverterImpl) EventToExport(source *ent.Event) external.ContactExportE
 		externalapiContactExportEvent.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return externalapiContactExportEvent
+}
+func (c *ConverterImpl) FrequencyCapChannelToResource(source channels.Channel) external.FrequencyCapChannel {
+	var externalapiFrequencyCapChannel external.FrequencyCapChannel
+	switch source {
+	case channels.Email:
+		externalapiFrequencyCapChannel = external.FrequencyCapChannelEmail
+	case channels.SMS:
+		externalapiFrequencyCapChannel = external.FrequencyCapChannelSMS
+	case channels.Telegram:
+		externalapiFrequencyCapChannel = external.FrequencyCapChannelTelegram
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiFrequencyCapChannel
+}
+func (c *ConverterImpl) FrequencyCapToResource(source workspaces.FrequencyCap) external.FrequencyCap {
+	var externalapiFrequencyCap external.FrequencyCap
+	externalapiFrequencyCap.Channel = c.FrequencyCapChannelToResource(source.Channel)
+	externalapiFrequencyCap.Country = nilCountryCode(source.Country)
+	externalapiFrequencyCap.MaxMessages = nilFrequencyCapMaxMessages(source.MaxMessages)
+	externalapiFrequencyCap.PeriodMinutes = nilFrequencyCapPeriodMinutes(source.PeriodMinutes)
+	return externalapiFrequencyCap
 }
 func (c *ConverterImpl) HoldReasonToResource(source holdreason.Reason) external.HoldReason {
 	var externalapiHoldReason external.HoldReason
@@ -1763,6 +1820,49 @@ func (c *ConverterImpl) SendingDomainsListPage(source pagination.Page[external.S
 	externalapiSendingDomainsListOK.TotalItems = count(source.TotalItems)
 	externalapiSendingDomainsListOK.TotalPages = count(source.TotalPages)
 	return &externalapiSendingDomainsListOK
+}
+func (c *ConverterImpl) SendingRulesToResource(source workspaces.SendingRules) external.SendingRules {
+	var externalapiSendingRules external.SendingRules
+	externalapiSendingRules.FrequencyCaps = make([]external.FrequencyCap, len(source.FrequencyCaps))
+	for i := 0; i < len(source.FrequencyCaps); i++ {
+		externalapiSendingRules.FrequencyCaps[i] = c.FrequencyCapToResource(source.FrequencyCaps[i])
+	}
+	externalapiSendingRules.SendingWindows = make([]external.SendingWindow, len(source.SendingWindows))
+	for j := 0; j < len(source.SendingWindows); j++ {
+		externalapiSendingRules.SendingWindows[j] = c.SendingWindowToResource(source.SendingWindows[j])
+	}
+	return externalapiSendingRules
+}
+func (c *ConverterImpl) SendingWindowChannelToResource(source channels.Channel) external.SendingWindowChannel {
+	var externalapiSendingWindowChannel external.SendingWindowChannel
+	switch source {
+	case channels.Email:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	case channels.SMS:
+		externalapiSendingWindowChannel = external.SendingWindowChannelSMS
+	case channels.Telegram:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiSendingWindowChannel
+}
+func (c *ConverterImpl) SendingWindowHoursToResource(source workspaces.OpenHours) external.SendingWindowHours {
+	var externalapiSendingWindowHours external.SendingWindowHours
+	externalapiSendingWindowHours.Day = c.WeekdayToResource(source.Day)
+	externalapiSendingWindowHours.OpensAt = minuteOfDay(source.OpensAt)
+	externalapiSendingWindowHours.ClosesAt = minuteOfDay(source.ClosesAt)
+	return externalapiSendingWindowHours
+}
+func (c *ConverterImpl) SendingWindowToResource(source workspaces.SendingWindow) external.SendingWindow {
+	var externalapiSendingWindow external.SendingWindow
+	externalapiSendingWindow.Channel = c.SendingWindowChannelToResource(source.Channel)
+	externalapiSendingWindow.Country = nilCountryCode(source.Country)
+	externalapiSendingWindow.Hours = make([]external.SendingWindowHours, len(source.Hours))
+	for i := 0; i < len(source.Hours); i++ {
+		externalapiSendingWindow.Hours[i] = c.SendingWindowHoursToResource(source.Hours[i])
+	}
+	return externalapiSendingWindow
 }
 func (c *ConverterImpl) SesConfigToResource(source integrations.RedactedSES) external.SesConfig {
 	var externalapiSesConfig external.SesConfig
@@ -2415,6 +2515,7 @@ func (c *ConverterImpl) WorkspaceToResource(source *ent.Workspace) external.Work
 		}
 		externalapiWorkspaceResource.Timezone = workspaceTimezone((*source).Timezone)
 		// externalapiWorkspaceResource.SendCap: ignore
+		// externalapiWorkspaceResource.SendingRules: ignore
 		externalapiWorkspaceResource.Revision = revision((*source).Revision)
 	}
 	return externalapiWorkspaceResource
@@ -2444,6 +2545,19 @@ func (c *ConverterImpl) automationsStepFiguresToExternalapiAutomationStepFigures
 	externalapiAutomationStepFigures.StepId = external.StepId(source.StepID)
 	externalapiAutomationStepFigures.Sent = count(source.Sent)
 	externalapiAutomationStepFigures.Skipped = count(source.Skipped)
+	if source.SkippedByReason != nil {
+		externalapiAutomationStepFigures.SkippedByReason = make([]external.SkippedReasonCount, len(source.SkippedByReason))
+		for i := 0; i < len(source.SkippedByReason); i++ {
+			externalapiAutomationStepFigures.SkippedByReason[i] = c.skipreasonCountToExternalapiSkippedReasonCount(source.SkippedByReason[i])
+		}
+	}
+	if source.WaitingByCause != nil {
+		externalapiAutomationStepFigures.WaitingByCause = make([]external.DeferralCauseCount, len(source.WaitingByCause))
+		for j := 0; j < len(source.WaitingByCause); j++ {
+			externalapiAutomationStepFigures.WaitingByCause[j] = c.deferralcauseCountToExternalapiDeferralCauseCount(source.WaitingByCause[j])
+		}
+	}
+	externalapiAutomationStepFigures.SingleZone = count(source.SingleZone)
 	return externalapiAutomationStepFigures
 }
 func (c *ConverterImpl) automationsVersionStepFiguresToExternalapiAutomationVersionStepFigures(source automations.VersionStepFigures) external.AutomationVersionStepFigures {
@@ -2452,6 +2566,19 @@ func (c *ConverterImpl) automationsVersionStepFiguresToExternalapiAutomationVers
 	externalapiAutomationVersionStepFigures.StepId = external.StepId(source.StepID)
 	externalapiAutomationVersionStepFigures.Sent = count(source.Sent)
 	externalapiAutomationVersionStepFigures.Skipped = count(source.Skipped)
+	if source.SkippedByReason != nil {
+		externalapiAutomationVersionStepFigures.SkippedByReason = make([]external.SkippedReasonCount, len(source.SkippedByReason))
+		for i := 0; i < len(source.SkippedByReason); i++ {
+			externalapiAutomationVersionStepFigures.SkippedByReason[i] = c.skipreasonCountToExternalapiSkippedReasonCount(source.SkippedByReason[i])
+		}
+	}
+	if source.WaitingByCause != nil {
+		externalapiAutomationVersionStepFigures.WaitingByCause = make([]external.DeferralCauseCount, len(source.WaitingByCause))
+		for j := 0; j < len(source.WaitingByCause); j++ {
+			externalapiAutomationVersionStepFigures.WaitingByCause[j] = c.deferralcauseCountToExternalapiDeferralCauseCount(source.WaitingByCause[j])
+		}
+	}
+	externalapiAutomationVersionStepFigures.SingleZone = count(source.SingleZone)
 	return externalapiAutomationVersionStepFigures
 }
 func (c *ConverterImpl) automationsWaitUntilFiguresToExternalapiAutomationWaitUntilFigures(source automations.WaitUntilFigures) external.AutomationWaitUntilFigures {
@@ -2464,6 +2591,12 @@ func (c *ConverterImpl) automationsWaitUntilFiguresToExternalapiAutomationWaitUn
 }
 func (c *ConverterImpl) automationstepIDToExternalapiStepId(source automationstep.ID) external.StepId {
 	return external.StepId(source)
+}
+func (c *ConverterImpl) deferralcauseCountToExternalapiDeferralCauseCount(source deferralcause.Count) external.DeferralCauseCount {
+	var externalapiDeferralCauseCount external.DeferralCauseCount
+	externalapiDeferralCauseCount.Cause = c.DeferralCauseToResource(source.Cause)
+	externalapiDeferralCauseCount.Count = count(source.Count)
+	return externalapiDeferralCauseCount
 }
 func (c *ConverterImpl) emaildocAgentAttrToExternalapiEmailSchemaAttribute(source emaildoc.AgentAttr) external.EmailSchemaAttribute {
 	var externalapiEmailSchemaAttribute external.EmailSchemaAttribute
@@ -2541,4 +2674,10 @@ func (c *ConverterImpl) schemaCapturedHeaderToExternalapiCapturedMessageHeader(s
 	externalapiCapturedMessageHeader.Name = source.Name
 	externalapiCapturedMessageHeader.Value = source.Value
 	return externalapiCapturedMessageHeader
+}
+func (c *ConverterImpl) skipreasonCountToExternalapiSkippedReasonCount(source skipreason.Count) external.SkippedReasonCount {
+	var externalapiSkippedReasonCount external.SkippedReasonCount
+	externalapiSkippedReasonCount.Reason = c.SkippedReasonToResource(source.Reason)
+	externalapiSkippedReasonCount.Count = count(source.Count)
+	return externalapiSkippedReasonCount
 }

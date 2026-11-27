@@ -209,6 +209,7 @@ export const AuditAction = {
   WORKSPACE_ABUSE_EXEMPT: 'workspace.abuse_exempt',
   WORKSPACE_ABUSE_UNEXEMPT: 'workspace.abuse_unexempt',
   WORKSPACE_SEND_CAP_CHANGE: 'workspace.send_cap_change',
+  WORKSPACE_SENDING_RULES_CHANGE: 'workspace.sending_rules_change',
   CONTACT_IMPORT: 'contact.import',
   AUDIT_LOG_EXPORT: 'audit_log.export',
   WEBHOOK_ENDPOINT_TEST: 'webhook_endpoint.test',
@@ -572,7 +573,7 @@ export type AutomationReport = {
   /**
    * The send Steps' messages by Step id, each summed over every version that had the Step and
    * sorted by the newest of those versions, then by its place there: one entry per Step any of the
-   * automation's messages was sent from
+   * automation's messages was sent from or an active enrollment's send waits at now
    */
   steps: Array<AutomationStepFigures>;
   /**
@@ -790,6 +791,21 @@ export type AutomationStepFigures = {
    * was suppressed. The enrollment moved on to the next step.
    */
   skipped: number;
+  /**
+   * The skipped messages by Skipped reason (ADR 0178): every reason of the closed list in its
+   * order, one none was skipped for at zero; they add up to `skipped`
+   */
+  skippedByReason: Array<SkippedReasonCount>;
+  /**
+   * The active enrollments standing on the Step whose send waits now, by the cause of its latest
+   * Deferral (ADR 0178): every cause of the closed list in its order, one none waits for at zero
+   */
+  waitingByCause: Array<DeferralCauseCount>;
+  /**
+   * Messages sent whose Sending window judged them by a single time zone (ADR 0134): the
+   * recipient could be in one zone only. Zero on a Channel with no Sending window.
+   */
+  singleZone: number;
 };
 
 /**
@@ -885,6 +901,20 @@ export type AutomationVersionStepFigures = {
    * Messages skipped, as in AutomationStepFigures
    */
   skipped: number;
+  /**
+   * The skipped messages by Skipped reason, as in AutomationStepFigures
+   */
+  skippedByReason: Array<SkippedReasonCount>;
+  /**
+   * The active enrollments of the version standing on the Step whose send waits now, by cause, as
+   * in AutomationStepFigures
+   */
+  waitingByCause: Array<DeferralCauseCount>;
+  /**
+   * Messages sent whose Sending window judged them by a single time zone, as in
+   * AutomationStepFigures
+   */
+  singleZone: number;
 };
 
 /**
@@ -2445,6 +2475,20 @@ export const DeferralCause = {
 export type DeferralCause = typeof DeferralCause[keyof typeof DeferralCause];
 
 /**
+ * How many sends wait now for one cause
+ */
+export type DeferralCauseCount = {
+  /**
+   * The cause, one of the closed list
+   */
+  cause: DeferralCause;
+  /**
+   * Sends whose latest Deferral was for it and that still wait
+   */
+  count: number;
+};
+
+/**
  * A TXT record the caller publishes: a Sending domain's DKIM key, or a Tracking domain's ownership
  */
 export type DnsRecord = {
@@ -2962,9 +3006,17 @@ export type EnrollmentResource = {
    */
   currentStepId?: StepId;
   /**
-   * When the wait the Enrollment stands on is due: computed once, when it reached the wait (ADR 0124)
+   * When the wait the Enrollment stands on is due: a wait Step's, computed once when it reached the wait (ADR 0124), or, while the send of its Step is deferred, when the send is tried again (ADR 0178)
    */
   resumeAt?: Timestamp;
+  /**
+   * Since when the send of the Step the Enrollment stands on waits: the first Deferral at the Step (ADR 0178); absent once it moves on, and while its send is not deferred
+   */
+  deferredSince?: Timestamp;
+  /**
+   * Why the send of the Step the Enrollment stands on waits: the cause of its latest Deferral; absent whenever `deferredSince` is
+   */
+  deferralCause?: DeferralCause;
   /**
    * Present on a failed Enrollment whose failure an HTTP step recorded
    */
@@ -3326,6 +3378,79 @@ export type FilterPropertyLeafInput = {
 };
 
 /**
+ * One of the Workspace's Frequency caps (ADR 0137): at most `maxMessages` marketing messages to one
+ * Destination on the Channel per rolling `periodMinutes`. A cap with a country is for the numbers of
+ * that country and outranks the Channel's own; one with no maximum removes the cap there. Every
+ * Broadcast and Automation message counts; Transactional messages and Test sends do not.
+ */
+export type FrequencyCap = {
+  /**
+   * The Channel it counts on
+   */
+  channel: FrequencyCapChannel;
+  /**
+   * The country of the numbers it is for, on a phone Channel only; null for every Destination on
+   * the Channel
+   */
+  country: CountryCode | null;
+  /**
+   * The most marketing messages one Destination receives in the period; null removes the cap
+   */
+  maxMessages: FrequencyCapMaxMessages | null;
+  /**
+   * The rolling period in minutes; null exactly when the maximum is
+   */
+  periodMinutes: FrequencyCapPeriodMinutes | null;
+};
+
+/**
+ * A Channel a Frequency cap counts marketing messages on (ADR 0137)
+ */
+export const FrequencyCapChannel = {
+  EMAIL: 'email',
+  SMS: 'sms',
+  TELEGRAM: 'telegram'
+} as const;
+
+/**
+ * A Channel a Frequency cap counts marketing messages on (ADR 0137)
+ */
+export type FrequencyCapChannel = typeof FrequencyCapChannel[keyof typeof FrequencyCapChannel];
+
+/**
+ * A Frequency cap as a replacement of the rules names it
+ */
+export type FrequencyCapInput = {
+  /**
+   * The Channel it counts on
+   */
+  channel: FrequencyCapChannel;
+  /**
+   * The country of the numbers it is for, on a phone Channel only; null for every Destination on
+   * the Channel
+   */
+  country: CountryCode | null;
+  /**
+   * The most marketing messages one Destination receives in the period; null removes the cap
+   */
+  maxMessages: FrequencyCapMaxMessages | null;
+  /**
+   * The rolling period in minutes; null exactly when the maximum is
+   */
+  periodMinutes: FrequencyCapPeriodMinutes | null;
+};
+
+/**
+ * The most marketing messages one Destination receives in a Frequency cap's period
+ */
+export type FrequencyCapMaxMessages = number;
+
+/**
+ * A Frequency cap's rolling period in minutes: one minute to seven days
+ */
+export type FrequencyCapPeriodMinutes = number;
+
+/**
  * Scopes an OAuth client may be granted without any extra opt-in: the external
  * API's read/write vocabulary. Token management scopes are deliberately absent,
  * so a connector can never mint further credentials.
@@ -3675,6 +3800,11 @@ export const MessageSender = { BROADCAST: 'broadcast', AUTOMATION: 'automation' 
  * What sends the message a message's System event is about
  */
 export type MessageSender = typeof MessageSender[keyof typeof MessageSender];
+
+/**
+ * A minute of the day: 0 is midnight at its start, 1440 midnight at its end
+ */
+export type MinuteOfDay = number;
 
 /**
  * Which side of `at` a moment is on: before is strictly earlier, after is at or later, so the two
@@ -4880,6 +5010,110 @@ export type SendingDomainResource = {
 };
 
 /**
+ * The Workspace's sending rules: its Frequency caps and its Sending windows. A new Workspace has
+ * three marketing texts per 1440 minutes on SMS and an SMS window of 8:00 to 20:00 every day. The
+ * Workspace answers for its compliance: the app keeps no table of laws, and the defaults are not
+ * legal advice.
+ */
+export type SendingRules = {
+  /**
+   * The Frequency caps
+   */
+  frequencyCaps: Array<FrequencyCap>;
+  /**
+   * The Sending windows
+   */
+  sendingWindows: Array<SendingWindow>;
+};
+
+/**
+ * One of the Workspace's Sending windows (ADR 0134): the hours of each day of the week, in the
+ * recipient's local time, in which a marketing message on the Channel may go out; a day it does not
+ * list stays closed. A window with a country is for the numbers of that country and outranks the
+ * Channel's own. It opens at least once a week.
+ */
+export type SendingWindow = {
+  /**
+   * The Channel it holds
+   */
+  channel: SendingWindowChannel;
+  /**
+   * The country of the numbers it is for; null for every number on the Channel
+   */
+  country: CountryCode | null;
+  /**
+   * The hours it is open, at most one entry per day
+   */
+  hours: Array<SendingWindowHours>;
+};
+
+/**
+ * A Channel a Sending window holds (ADR 0134): only SMS, since email and Telegram go out at any
+ * hour
+ */
+export const SendingWindowChannel = { SMS: 'sms' } as const;
+
+/**
+ * A Channel a Sending window holds (ADR 0134): only SMS, since email and Telegram go out at any
+ * hour
+ */
+export type SendingWindowChannel = typeof SendingWindowChannel[keyof typeof SendingWindowChannel];
+
+/**
+ * The hours a Sending window is open on one day of the week, in the recipient's local time
+ */
+export type SendingWindowHours = {
+  /**
+   * The day, in the recipient's local time
+   */
+  day: Weekday;
+  /**
+   * The minute of the day it opens
+   */
+  opensAt: MinuteOfDay;
+  /**
+   * The minute of the day it closes, after it opens
+   */
+  closesAt: MinuteOfDay;
+};
+
+/**
+ * A day's hours of a Sending window as a replacement of the rules names them
+ */
+export type SendingWindowHoursInput = {
+  /**
+   * The day, in the recipient's local time
+   */
+  day: Weekday;
+  /**
+   * The minute of the day it opens
+   */
+  opensAt: MinuteOfDay;
+  /**
+   * The minute of the day it closes, after it opens
+   */
+  closesAt: MinuteOfDay;
+};
+
+/**
+ * A Sending window as a replacement of the rules names it
+ */
+export type SendingWindowInput = {
+  /**
+   * The Channel it holds
+   */
+  channel: SendingWindowChannel;
+  /**
+   * The country of the numbers it is for; null for every number on the Channel
+   */
+  country: CountryCode | null;
+  /**
+   * The hours it is open, at most one entry per day; it must open at least once a week
+   */
+  hours: Array<SendingWindowHoursInput>;
+};
+
+/**
  * A test of what sent the message a message's sent, delivery or engagement System event is about
  * (ADR 0153, ADR 0180): the Broadcast or the Automation named by its id, archived or not, which the
  * Event carries as its `broadcastId` or `automationId`. A filter of any other action refuses it, and
@@ -5920,6 +6154,44 @@ export type SiteBroadcastLinkClicksList = {
 };
 
 /**
+ * Request body for the share of a broadcast's audience outside its Sending window: the audience, as the segment preview names it, and a moment
+ */
+export type SiteBroadcastOutsideWindowInput = {
+  /**
+   * The condition of the broadcast's segment; absent means all contacts
+   */
+  condition?: SegmentConditionInput;
+  /**
+   * The broadcast's Channel
+   */
+  channel: BroadcastChannel;
+  /**
+   * The Integration the broadcast routes through; null or absent is the Channel's default
+   */
+  integrationId?: EntityId | null;
+  /**
+   * The moment the broadcast would be scheduled at
+   */
+  scheduledAt: Timestamp;
+};
+
+/**
+ * How many of a broadcast's recipients the Sending window would hold at a moment (ADR 0134)
+ */
+export type SiteBroadcastOutsideWindowResult = {
+  /**
+   * How many of the recipients the broadcast would take would wait for their Sending window to
+   * open. A recipient whose zones are never open at once is skipped (no_local_time), not counted.
+   * Always 0 on email and Telegram, which no window holds.
+   */
+  held: number;
+  /**
+   * When the last of them is reached: the latest moment their windows open. Absent when none is held.
+   */
+  reachedAt?: Timestamp;
+};
+
+/**
  * How far a sending broadcast has got. A broadcast limited by its Integration's Provider
  * limit is paced: recipients go out at an even interval. The Workspace's Send cap lets a
  * day's worth out at a time. The estimate is derived on the server from both, the later
@@ -6054,6 +6326,18 @@ export type SiteBroadcastStats = {
    * Recipients skipped at send time: no destination any more, or an opt-out that landed after planning
    */
   skippedCount: number;
+  /**
+   * The skipped recipients by Skipped reason (ADR 0178): every reason of the closed list in its order, one none was skipped for at zero; they add up to `skippedCount`
+   */
+  skippedByReason: Array<SkippedReasonCount>;
+  /**
+   * The pending recipients whose send waits now, by the cause of its latest Deferral (ADR 0178): every cause of the closed list in its order, one none waits for at zero; all zero once the broadcast is no longer sending
+   */
+  waitingByCause: Array<DeferralCauseCount>;
+  /**
+   * Messages sent whose Sending window judged them by a single time zone (ADR 0134): the recipient could be in one zone only, so the window held exactly to its hours; null on a Channel with no Sending window
+   */
+  singleZoneCount: number | null;
   /**
    * Messages that failed to send
    */
@@ -7958,6 +8242,24 @@ export type SiteRecoveryCodesInput = {
 };
 
 /**
+ * Replace the Workspace's sending rules as a whole: a cap or a window left out is removed
+ */
+export type SiteReplaceSendingRulesInput = {
+  /**
+   * The Workspace's `revision` the change was made on (ADR 0119): the one it was read with
+   */
+  revision: Revision;
+  /**
+   * Every Frequency cap, at most one per Channel and country
+   */
+  frequencyCaps: Array<FrequencyCapInput>;
+  /**
+   * Every Sending window, at most one per Channel and country
+   */
+  sendingWindows: Array<SendingWindowInput>;
+};
+
+/**
  * The Report days a period of a report runs over, spread into each period model
  */
 export type SiteReportPeriod = {
@@ -8273,6 +8575,25 @@ export type SiteSendingDomainRates = {
    * Hard bounces over sent
    */
   bounceRate: RateTriple;
+};
+
+/**
+ * The Workspace's sending rules as /site shows them (ADR 0134, ADR 0137), with the Workspace's
+ * revision. Every member reads them.
+ */
+export type SiteSendingRulesResource = {
+  /**
+   * The Frequency caps
+   */
+  frequencyCaps: Array<FrequencyCap>;
+  /**
+   * The Sending windows
+   */
+  sendingWindows: Array<SendingWindow>;
+  /**
+   * The Workspace's revision this answer shows (ADR 0119): a replacement of the rules names it
+   */
+  revision: Revision;
 };
 
 /**
@@ -9313,6 +9634,20 @@ export const SkippedReason = {
  * are Send-eligibility's; a client switches over the list.
  */
 export type SkippedReason = typeof SkippedReason[keyof typeof SkippedReason];
+
+/**
+ * How many sends were Skipped for one reason
+ */
+export type SkippedReasonCount = {
+  /**
+   * The reason, one of the closed list
+   */
+  reason: SkippedReason;
+  /**
+   * Sends Skipped for it
+   */
+  count: number;
+};
 
 /**
  * SMS's content of a Broadcast as stored
@@ -14779,6 +15114,42 @@ export type SiteBroadcastsCreateResponses = {
 
 export type SiteBroadcastsCreateResponse = SiteBroadcastsCreateResponses[keyof SiteBroadcastsCreateResponses];
 
+export type SiteBroadcastsOutsideWindowData = {
+  body: SiteBroadcastOutsideWindowInput;
+  path: {
+    /**
+     * The Workspace id: its short opaque public address and the route key for nested
+     * workspace resources (ADR 0043)
+     */
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/broadcasts/outside-window';
+};
+
+export type SiteBroadcastsOutsideWindowErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SiteBroadcastsOutsideWindowError = SiteBroadcastsOutsideWindowErrors[keyof SiteBroadcastsOutsideWindowErrors];
+
+export type SiteBroadcastsOutsideWindowResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteBroadcastOutsideWindowResult;
+};
+
+export type SiteBroadcastsOutsideWindowResponse = SiteBroadcastsOutsideWindowResponses[keyof SiteBroadcastsOutsideWindowResponses];
+
 export type SiteBroadcastLinksListData = {
   body?: never;
   path: {
@@ -18732,6 +19103,70 @@ export type SiteSendingDomainsVerifyResponses = {
 };
 
 export type SiteSendingDomainsVerifyResponse = SiteSendingDomainsVerifyResponses[keyof SiteSendingDomainsVerifyResponses];
+
+export type SiteWorkspacesGetSendingRulesData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/sending-rules';
+};
+
+export type SiteWorkspacesGetSendingRulesErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SiteWorkspacesGetSendingRulesError = SiteWorkspacesGetSendingRulesErrors[keyof SiteWorkspacesGetSendingRulesErrors];
+
+export type SiteWorkspacesGetSendingRulesResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteSendingRulesResource;
+};
+
+export type SiteWorkspacesGetSendingRulesResponse = SiteWorkspacesGetSendingRulesResponses[keyof SiteWorkspacesGetSendingRulesResponses];
+
+export type SiteWorkspacesReplaceSendingRulesData = {
+  body: SiteReplaceSendingRulesInput;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/sending-rules';
+};
+
+export type SiteWorkspacesReplaceSendingRulesErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SiteWorkspacesReplaceSendingRulesError = SiteWorkspacesReplaceSendingRulesErrors[keyof SiteWorkspacesReplaceSendingRulesErrors];
+
+export type SiteWorkspacesReplaceSendingRulesResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteSendingRulesResource;
+};
+
+export type SiteWorkspacesReplaceSendingRulesResponse = SiteWorkspacesReplaceSendingRulesResponses[keyof SiteWorkspacesReplaceSendingRulesResponses];
 
 export type SiteSetupChecklistGetData = {
   body?: never;

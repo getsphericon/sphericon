@@ -1,6 +1,7 @@
 package jobs_test
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/twilio/twiliotest"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
@@ -51,7 +53,7 @@ func TestAnSMSBroadcastTextsOnlyTheConfirmedNumbers(t *testing.T) {
 	smsSent := env.QueuedCount(t, systemevent.SmsSent, map[string]any{"broadcastId": id, "contactId": fixtures.ContactLacunaBeaID})
 	assert.Equal(t, 1, smsSent)
 	figures := figuresOf(t, env, id)
-	assert.Equal(t, broadcasts.Stats{Recipients: 1, Sent: 1}, figures)
+	assert.Equal(t, broadcasts.Stats{Recipients: 1, Sent: 1, SingleZone: 1}, figures, "a Boston number is judged by one zone")
 }
 
 // A Recipient frozen with a confirmed phone is checked again when its text is sent: one that lost
@@ -88,7 +90,39 @@ func TestAnSMSBroadcastSkipsARecipientThatLostItsPhoneOrOptedOutWithTheReason(t 
 		fixtures.ContactLacunaCydID: skipreason.Suppressed,
 	}, reasons)
 	figures := figuresOf(t, env, id)
-	assert.Equal(t, broadcasts.Stats{Recipients: 4, Sent: 1, Skipped: 3}, figures)
+	assert.Equal(t, broadcasts.Stats{Recipients: 4, Sent: 1, SingleZone: 1, Skipped: 3, SkippedBy: map[skipreason.Reason]int{
+		skipreason.NoDestination: 1, skipreason.UnsubscribedEverything: 1, skipreason.Suppressed: 1,
+	}}, figures)
+}
+
+// Bea's number got three Broadcast texts in the last day, at Lacuna's cap of three a day: the
+// Greeting's Recipient for her is Skipped with frequency_cap, not texted (ADR 0137).
+func TestAnSMSBroadcastSkipsARecipientOverItsFrequencyCap(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	account := env.LacunaTwilio(t)
+	bea := env.DB.Contact.GetX(ctx, fixtures.ContactLacunaBeaID)
+	integrationID := int64(account.Integration.ID)
+	for i := range 3 {
+		res, err := env.OutboundModule().Send(ctx, env.DB.Scoped(fixtures.LacunaID), outboundmessages.Request{
+			Ref:     outboundmessages.BroadcastRef{BroadcastID: fixtures.BroadcastLacunaSmsHelloID},
+			Key:     fmt.Sprintf("earlier:%d", i),
+			Contact: bea, Destination: *bea.Phone, IntegrationID: &integrationID,
+			Content: outboundmessages.SMSContent{Text: "Earlier news"},
+		})
+		require.NoError(t, err)
+		require.Equal(t, outboundmessages.Sent, res.Outcome)
+	}
+	id := int64(fixtures.BroadcastLacunaSmsGreetingID)
+
+	require.NoError(t, env.SendBroadcastThrough(t, env.OutboundModule(), id))
+
+	assert.Len(t, env.Twilio.Messages(), 3, "only the earlier texts went out")
+	msg := env.DB.OutboundMessage.Query().Where(outboundmessage.BroadcastID(id)).OnlyX(ctx)
+	assert.Equal(t, outboundmessage.StatusSkipped, msg.Status)
+	assert.Equal(t, skipreason.FrequencyCap, lo.FromPtr(msg.SkippedReason))
+	figures := figuresOf(t, env, id)
+	assert.Equal(t, broadcasts.Stats{Recipients: 1, Skipped: 1, SkippedBy: map[skipreason.Reason]int{skipreason.FrequencyCap: 1}}, figures)
 }
 
 // Lacuna's four confirmed phones are paced.

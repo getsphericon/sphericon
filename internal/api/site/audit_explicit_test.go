@@ -278,6 +278,11 @@ func TestExplicitAuditPathsAreAllListed(t *testing.T) {
 	_, err = testhelper.Module[*suspension.Suspender](env).SetSendCap(ctx, fixtures.AcmeID, suspension.SetSendCapInput{By: suspension.StaffMember("op-42"), SendCap: new(500)}) // workspace.send_cap_change
 	require.NoError(t, err)
 
+	_, err = owner.SiteWorkspacesReplaceSendingRules(ctx, &siteapi.SiteReplaceSendingRulesInput{ // workspace.sending_rules_change
+		Revision: siteapi.Revision(env.WorkspaceRevision(ctx, t, string(fixtures.AcmePublicID))), FrequencyCaps: []siteapi.FrequencyCapInput{},
+		SendingWindows: []siteapi.SendingWindowInput{}}, siteapi.SiteWorkspacesReplaceSendingRulesParams{WorkspaceId: fixtures.AcmePublicID})
+	require.NoError(t, err)
+
 	_, err = env.ExternalAnchor(t).ContactsBatchUpsert(ctx, &externalapi.UpsertContactsInput{ // contact.import
 		Contacts: []externalapi.UpsertContactInput{{Email: externalapi.NewOptNilEmailAddress("explicit.import@example.org")}}})
 	require.NoError(t, err)
@@ -306,7 +311,7 @@ func TestExplicitAuditPathsAreAllListed(t *testing.T) {
 	slices.Sort(want)
 	assert.Equal(t, want, seen)
 
-	assert.Equal(t, []string{"ee/domain/insights/auditentries/export.go", "internal/domain/contacts/contacts/contacts.go", "internal/domain/identity/invitations/invitations.go", "internal/domain/identity/memberships/creation.go", "internal/domain/identity/memberships/membershipsunchecked/membershipsunchecked.go", "internal/domain/identity/memberships/role_change.go", "internal/domain/identity/suspension/suspension.go", "internal/domain/identity/users/acceptance.go", "internal/domain/identity/users/users.go", "internal/domain/identity/workspaces/deletion.go", "internal/domain/orchestration/webhookendpoints/webhookendpoints.go", "internal/usecase/workspaceview/confirmedoptin.go", "internal/usecase/workspaceview/restore.go"},
+	assert.Equal(t, []string{"ee/domain/insights/auditentries/export.go", "internal/domain/contacts/contacts/contacts.go", "internal/domain/identity/invitations/invitations.go", "internal/domain/identity/memberships/creation.go", "internal/domain/identity/memberships/membershipsunchecked/membershipsunchecked.go", "internal/domain/identity/memberships/role_change.go", "internal/domain/identity/suspension/suspension.go", "internal/domain/identity/users/acceptance.go", "internal/domain/identity/users/users.go", "internal/domain/identity/workspaces/deletion.go", "internal/domain/identity/workspaces/sendingrules.go", "internal/domain/orchestration/webhookendpoints/webhookendpoints.go", "internal/usecase/workspaceview/confirmedoptin.go", "internal/usecase/workspaceview/restore.go"},
 		recordAuditCallSites(t), "a new explicit RecordAudit call site: list its actions and drive them above")
 }
 

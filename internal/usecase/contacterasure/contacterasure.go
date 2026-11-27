@@ -56,6 +56,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules/rulesunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	"github.com/getsphericon/sphericon/internal/domain/sending/capturedmessages/capturedmessagesunchecked"
+	"github.com/getsphericon/sphericon/internal/domain/sending/frequencycap/frequencycapunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages/outboundmessagesunchecked"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -189,6 +190,7 @@ type UseCase struct {
 	visitors      *visitorsunchecked.Module
 	stamps        *consentstampsunchecked.Module
 	outbound      *outboundmessagesunchecked.Module
+	counts        *frequencycapunchecked.Module
 	captured      *capturedmessagesunchecked.Module
 	optOuts       *unsubscribesunchecked.Module
 	suppressions  *suppressionsunchecked.Module
@@ -221,6 +223,7 @@ func New(bus *events.Bus, catalogue *broadcasts.Module, people *contacts.Module,
 		visitors:      visitorsunchecked.New(),
 		stamps:        consentstampsunchecked.New(),
 		outbound:      outboundmessagesunchecked.New(),
+		counts:        frequencycapunchecked.New(),
 		captured:      capturedmessagesunchecked.New(),
 		optOuts:       unsubscribesunchecked.New(),
 		suppressions:  suppressionsunchecked.New(),

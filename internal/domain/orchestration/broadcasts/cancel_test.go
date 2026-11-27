@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/sending/linkclick"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -80,7 +81,7 @@ func TestAClaimRacingCancelLoses(t *testing.T) {
 	d := newDelivery(t, time.Now)
 	alice := d.recipient(fixtures.ContactAliceID)
 	cancelled := make(chan broadcasts.Cancelled, 1)
-	d.env.DB.OutboundMessage.Use(cancelAfterTheClaim(d, cancelled))
+	cancelOnceTheClaimCommits(d, cancelled)
 
 	require.NoError(t, d.del.SendRecipient(d.t.Context(), d.s, alice))
 
@@ -105,6 +106,24 @@ func TestAFailureRacingCancelLoses(t *testing.T) {
 	require.NoError(t, d.del.SendRecipient(d.t.Context(), d.s, alice))
 
 	answer := testhelper.Receive(t, cancelled, "Cancel landed after the failure")
+	assert.Equal(t, broadcast.StatusCancelled, answer.Broadcast.Status)
+	assert.Zero(t, d.messages(alice))
+	assert.Equal(t, broadcasts.Stats{Recipients: 1, Cancelled: 1}, d.stats())
+}
+
+// A Skipped that races Cancel loses too: a Recipient Send-eligibility forbids (Alice opted out of
+// Broadcasts) is Skipped before any claim, and a Cancel that lands right after its row is written
+// withdraws it.
+func TestASkippedRacingCancelLoses(t *testing.T) {
+	d := newDelivery(t, time.Now)
+	d.env.UnsubscribeFromBroadcasts(d.t.Context(), fixtures.ContactAliceEmail)
+	alice := d.recipient(fixtures.ContactAliceID)
+	cancelled := make(chan broadcasts.Cancelled, 1)
+	d.env.DB.OutboundMessage.Use(cancelAfterTheClaim(d, cancelled))
+
+	require.NoError(t, d.del.SendRecipient(d.t.Context(), d.s, alice))
+
+	answer := testhelper.Receive(t, cancelled, "Cancel landed after the Skipped row")
 	assert.Equal(t, broadcast.StatusCancelled, answer.Broadcast.Status)
 	assert.Zero(t, d.messages(alice))
 	assert.Equal(t, broadcasts.Stats{Recipients: 1, Cancelled: 1}, d.stats())
@@ -148,6 +167,35 @@ func cancelAfterTheClaim(d *delivery, cancelled chan<- broadcasts.Cancelled) ent
 	}
 }
 
+// cancelOnceTheClaimCommits cancels the sending Broadcast once, right after the transaction that
+// writes the claim (under its Destination locks) commits: at the first read of an Outbound message
+// after the claim's row is written, the one that comes before the source's stop is asked. It hands
+// over what Cancel answered.
+func cancelOnceTheClaimCommits(d *delivery, cancelled chan<- broadcasts.Cancelled) {
+	claimed, done := false, false
+	d.env.Bus.Use(func(next ent.Mutator) ent.Mutator {
+		return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+			v, err := next.Mutate(ctx, m)
+			claimed = claimed || (err == nil && m.Op().Is(ent.OpCreate) && m.Type() == ent.TypeOutboundMessage)
+			return v, err
+		})
+	})
+	d.env.DB.OutboundMessage.Intercept(ent.InterceptFunc(func(next ent.Querier) ent.Querier {
+		return ent.QuerierFunc(func(ctx context.Context, q ent.Query) (ent.Value, error) {
+			if !claimed || done {
+				return next.Query(ctx, q)
+			}
+			done = true
+			answer, err := d.module().Cancel(ctx, d.s, fixtures.BroadcastSendingID)
+			if err != nil {
+				return nil, err
+			}
+			cancelled <- answer
+			return next.Query(ctx, q)
+		})
+	}))
+}
+
 // A message claimed before Cancel goes on: a provider cannot be called back, and the claim is the
 // point of no return. Cancel does not count it among the unsent, and its send ends it as any other
 // (Bob opted out of Broadcasts, so it ends skipped, not withdrawn).
@@ -162,7 +210,7 @@ func TestAMessageClaimedBeforeCancelGoesOn(t *testing.T) {
 
 	assert.Zero(t, cancelled.Unsent)
 	assert.Equal(t, outboundmessage.StatusSkipped, d.messageOf(bob).Status)
-	assert.Equal(t, broadcasts.Stats{Recipients: 1, Skipped: 1}, d.stats())
+	assert.Equal(t, broadcasts.Stats{Recipients: 1, Skipped: 1, SkippedBy: map[skipreason.Reason]int{skipreason.UnsubscribedSource: 1}}, d.stats())
 }
 
 // A claim written after Cancel whose withdrawal never finished (its attempt died between the claim

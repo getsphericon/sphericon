@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 )
 
 // The figures of several Broadcasts come from their rows in one read; a Broadcast with no
@@ -26,14 +28,14 @@ func TestStatsOfReadsEachBroadcastsRows(t *testing.T) {
 	// Fixtures: 11 recipients, all sent, 5 opened and 2 clicked; the delivery result is stamped
 	// on three messages (3 delivered, 1 bounced, 1 complained).
 	assert.Equal(t, broadcasts.Stats{Recipients: 11, Sent: 11, Opened: 5, Clicked: 2, Delivered: 3, Bounced: 1, Complained: 1}, got[fixtures.BroadcastSentID])
-	assert.Equal(t, broadcasts.Stats{Recipients: 5, Failed: 3, Skipped: 2}, got[fixtures.BroadcastFailedID])
+	assert.Equal(t, broadcasts.Stats{Recipients: 5, Failed: 3, Skipped: 2, SkippedBy: map[skipreason.Reason]int{skipreason.Suppressed: 1, skipreason.UnsubscribedSource: 1}}, got[fixtures.BroadcastFailedID])
 	// The cancelled one left both its recipients unsent.
 	assert.Equal(t, broadcasts.Stats{Recipients: 2, Cancelled: 2}, got[fixtures.BroadcastCancelledID])
 	assert.Zero(t, got[fixtures.BroadcastDraftID])
 }
 
-// everyCount is Stats with every count set, each to a value of its own: a count added to Stats is
-// set here too, without an edit.
+// everyCount is Stats with every count set, each to a value of its own, Skipped for every reason
+// of the closed list included: a count or a reason added is set here too, without an edit.
 func everyCount() broadcasts.Stats {
 	var st broadcasts.Stats
 	v := reflect.ValueOf(&st).Elem()
@@ -42,6 +44,9 @@ func everyCount() broadcasts.Stats {
 			f.SetInt(int64(i + 1))
 		}
 	}
+	st.SkippedBy = lo.SliceToMap(skipreason.All(), func(r skipreason.Reason) (skipreason.Reason, int) {
+		return r, 100 + lo.IndexOf(skipreason.All(), r)
+	})
 	return st
 }
 

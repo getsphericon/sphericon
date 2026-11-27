@@ -97,6 +97,51 @@ func Skipped(v int) predicate.AutomationFigure {
 	return predicate.AutomationFigure(sql.FieldEQ(FieldSkipped, v))
 }
 
+// SkippedSuppressed applies equality check predicate on the "skipped_suppressed" field. It's identical to SkippedSuppressedEQ.
+func SkippedSuppressed(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldEQ(FieldSkippedSuppressed, v))
+}
+
+// SkippedUnsubscribedEverything applies equality check predicate on the "skipped_unsubscribed_everything" field. It's identical to SkippedUnsubscribedEverythingEQ.
+func SkippedUnsubscribedEverything(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldEQ(FieldSkippedUnsubscribedEverything, v))
+}
+
+// SkippedUnsubscribedSource applies equality check predicate on the "skipped_unsubscribed_source" field. It's identical to SkippedUnsubscribedSourceEQ.
+func SkippedUnsubscribedSource(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldEQ(FieldSkippedUnsubscribedSource, v))
+}
+
+// SkippedUnconfirmed applies equality check predicate on the "skipped_unconfirmed" field. It's identical to SkippedUnconfirmedEQ.
+func SkippedUnconfirmed(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldEQ(FieldSkippedUnconfirmed, v))
+}
+
+// SkippedNoDestination applies equality check predicate on the "skipped_no_destination" field. It's identical to SkippedNoDestinationEQ.
+func SkippedNoDestination(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldEQ(FieldSkippedNoDestination, v))
+}
+
+// SkippedContactErased applies equality check predicate on the "skipped_contact_erased" field. It's identical to SkippedContactErasedEQ.
+func SkippedContactErased(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldEQ(FieldSkippedContactErased, v))
+}
+
+// SkippedNoLocalTime applies equality check predicate on the "skipped_no_local_time" field. It's identical to SkippedNoLocalTimeEQ.
+func SkippedNoLocalTime(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldEQ(FieldSkippedNoLocalTime, v))
+}
+
+// SkippedFrequencyCap applies equality check predicate on the "skipped_frequency_cap" field. It's identical to SkippedFrequencyCapEQ.
+func SkippedFrequencyCap(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldEQ(FieldSkippedFrequencyCap, v))
+}
+
+// SingleZone applies equality check predicate on the "single_zone" field. It's identical to SingleZoneEQ.
+func SingleZone(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldEQ(FieldSingleZone, v))
+}
+
 // Delivered applies equality check predicate on the "delivered" field. It's identical to DeliveredEQ.
 func Delivered(v int) predicate.AutomationFigure {
 	return predicate.AutomationFigure(sql.FieldEQ(FieldDelivered, v))
@@ -419,6 +464,366 @@ func SkippedLT(v int) predicate.AutomationFigure {
 // SkippedLTE applies the LTE predicate on the "skipped" field.
 func SkippedLTE(v int) predicate.AutomationFigure {
 	return predicate.AutomationFigure(sql.FieldLTE(FieldSkipped, v))
+}
+
+// SkippedSuppressedEQ applies the EQ predicate on the "skipped_suppressed" field.
+func SkippedSuppressedEQ(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldEQ(FieldSkippedSuppressed, v))
+}
+
+// SkippedSuppressedNEQ applies the NEQ predicate on the "skipped_suppressed" field.
+func SkippedSuppressedNEQ(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldNEQ(FieldSkippedSuppressed, v))
+}
+
+// SkippedSuppressedIn applies the In predicate on the "skipped_suppressed" field.
+func SkippedSuppressedIn(vs ...int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldIn(FieldSkippedSuppressed, vs...))
+}
+
+// SkippedSuppressedNotIn applies the NotIn predicate on the "skipped_suppressed" field.
+func SkippedSuppressedNotIn(vs ...int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldNotIn(FieldSkippedSuppressed, vs...))
+}
+
+// SkippedSuppressedGT applies the GT predicate on the "skipped_suppressed" field.
+func SkippedSuppressedGT(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldGT(FieldSkippedSuppressed, v))
+}
+
+// SkippedSuppressedGTE applies the GTE predicate on the "skipped_suppressed" field.
+func SkippedSuppressedGTE(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldGTE(FieldSkippedSuppressed, v))
+}
+
+// SkippedSuppressedLT applies the LT predicate on the "skipped_suppressed" field.
+func SkippedSuppressedLT(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldLT(FieldSkippedSuppressed, v))
+}
+
+// SkippedSuppressedLTE applies the LTE predicate on the "skipped_suppressed" field.
+func SkippedSuppressedLTE(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldLTE(FieldSkippedSuppressed, v))
+}
+
+// SkippedUnsubscribedEverythingEQ applies the EQ predicate on the "skipped_unsubscribed_everything" field.
+func SkippedUnsubscribedEverythingEQ(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldEQ(FieldSkippedUnsubscribedEverything, v))
+}
+
+// SkippedUnsubscribedEverythingNEQ applies the NEQ predicate on the "skipped_unsubscribed_everything" field.
+func SkippedUnsubscribedEverythingNEQ(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldNEQ(FieldSkippedUnsubscribedEverything, v))
+}
+
+// SkippedUnsubscribedEverythingIn applies the In predicate on the "skipped_unsubscribed_everything" field.
+func SkippedUnsubscribedEverythingIn(vs ...int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldIn(FieldSkippedUnsubscribedEverything, vs...))
+}
+
+// SkippedUnsubscribedEverythingNotIn applies the NotIn predicate on the "skipped_unsubscribed_everything" field.
+func SkippedUnsubscribedEverythingNotIn(vs ...int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldNotIn(FieldSkippedUnsubscribedEverything, vs...))
+}
+
+// SkippedUnsubscribedEverythingGT applies the GT predicate on the "skipped_unsubscribed_everything" field.
+func SkippedUnsubscribedEverythingGT(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldGT(FieldSkippedUnsubscribedEverything, v))
+}
+
+// SkippedUnsubscribedEverythingGTE applies the GTE predicate on the "skipped_unsubscribed_everything" field.
+func SkippedUnsubscribedEverythingGTE(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldGTE(FieldSkippedUnsubscribedEverything, v))
+}
+
+// SkippedUnsubscribedEverythingLT applies the LT predicate on the "skipped_unsubscribed_everything" field.
+func SkippedUnsubscribedEverythingLT(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldLT(FieldSkippedUnsubscribedEverything, v))
+}
+
+// SkippedUnsubscribedEverythingLTE applies the LTE predicate on the "skipped_unsubscribed_everything" field.
+func SkippedUnsubscribedEverythingLTE(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldLTE(FieldSkippedUnsubscribedEverything, v))
+}
+
+// SkippedUnsubscribedSourceEQ applies the EQ predicate on the "skipped_unsubscribed_source" field.
+func SkippedUnsubscribedSourceEQ(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldEQ(FieldSkippedUnsubscribedSource, v))
+}
+
+// SkippedUnsubscribedSourceNEQ applies the NEQ predicate on the "skipped_unsubscribed_source" field.
+func SkippedUnsubscribedSourceNEQ(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldNEQ(FieldSkippedUnsubscribedSource, v))
+}
+
+// SkippedUnsubscribedSourceIn applies the In predicate on the "skipped_unsubscribed_source" field.
+func SkippedUnsubscribedSourceIn(vs ...int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldIn(FieldSkippedUnsubscribedSource, vs...))
+}
+
+// SkippedUnsubscribedSourceNotIn applies the NotIn predicate on the "skipped_unsubscribed_source" field.
+func SkippedUnsubscribedSourceNotIn(vs ...int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldNotIn(FieldSkippedUnsubscribedSource, vs...))
+}
+
+// SkippedUnsubscribedSourceGT applies the GT predicate on the "skipped_unsubscribed_source" field.
+func SkippedUnsubscribedSourceGT(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldGT(FieldSkippedUnsubscribedSource, v))
+}
+
+// SkippedUnsubscribedSourceGTE applies the GTE predicate on the "skipped_unsubscribed_source" field.
+func SkippedUnsubscribedSourceGTE(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldGTE(FieldSkippedUnsubscribedSource, v))
+}
+
+// SkippedUnsubscribedSourceLT applies the LT predicate on the "skipped_unsubscribed_source" field.
+func SkippedUnsubscribedSourceLT(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldLT(FieldSkippedUnsubscribedSource, v))
+}
+
+// SkippedUnsubscribedSourceLTE applies the LTE predicate on the "skipped_unsubscribed_source" field.
+func SkippedUnsubscribedSourceLTE(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldLTE(FieldSkippedUnsubscribedSource, v))
+}
+
+// SkippedUnconfirmedEQ applies the EQ predicate on the "skipped_unconfirmed" field.
+func SkippedUnconfirmedEQ(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldEQ(FieldSkippedUnconfirmed, v))
+}
+
+// SkippedUnconfirmedNEQ applies the NEQ predicate on the "skipped_unconfirmed" field.
+func SkippedUnconfirmedNEQ(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldNEQ(FieldSkippedUnconfirmed, v))
+}
+
+// SkippedUnconfirmedIn applies the In predicate on the "skipped_unconfirmed" field.
+func SkippedUnconfirmedIn(vs ...int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldIn(FieldSkippedUnconfirmed, vs...))
+}
+
+// SkippedUnconfirmedNotIn applies the NotIn predicate on the "skipped_unconfirmed" field.
+func SkippedUnconfirmedNotIn(vs ...int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldNotIn(FieldSkippedUnconfirmed, vs...))
+}
+
+// SkippedUnconfirmedGT applies the GT predicate on the "skipped_unconfirmed" field.
+func SkippedUnconfirmedGT(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldGT(FieldSkippedUnconfirmed, v))
+}
+
+// SkippedUnconfirmedGTE applies the GTE predicate on the "skipped_unconfirmed" field.
+func SkippedUnconfirmedGTE(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldGTE(FieldSkippedUnconfirmed, v))
+}
+
+// SkippedUnconfirmedLT applies the LT predicate on the "skipped_unconfirmed" field.
+func SkippedUnconfirmedLT(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldLT(FieldSkippedUnconfirmed, v))
+}
+
+// SkippedUnconfirmedLTE applies the LTE predicate on the "skipped_unconfirmed" field.
+func SkippedUnconfirmedLTE(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldLTE(FieldSkippedUnconfirmed, v))
+}
+
+// SkippedNoDestinationEQ applies the EQ predicate on the "skipped_no_destination" field.
+func SkippedNoDestinationEQ(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldEQ(FieldSkippedNoDestination, v))
+}
+
+// SkippedNoDestinationNEQ applies the NEQ predicate on the "skipped_no_destination" field.
+func SkippedNoDestinationNEQ(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldNEQ(FieldSkippedNoDestination, v))
+}
+
+// SkippedNoDestinationIn applies the In predicate on the "skipped_no_destination" field.
+func SkippedNoDestinationIn(vs ...int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldIn(FieldSkippedNoDestination, vs...))
+}
+
+// SkippedNoDestinationNotIn applies the NotIn predicate on the "skipped_no_destination" field.
+func SkippedNoDestinationNotIn(vs ...int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldNotIn(FieldSkippedNoDestination, vs...))
+}
+
+// SkippedNoDestinationGT applies the GT predicate on the "skipped_no_destination" field.
+func SkippedNoDestinationGT(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldGT(FieldSkippedNoDestination, v))
+}
+
+// SkippedNoDestinationGTE applies the GTE predicate on the "skipped_no_destination" field.
+func SkippedNoDestinationGTE(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldGTE(FieldSkippedNoDestination, v))
+}
+
+// SkippedNoDestinationLT applies the LT predicate on the "skipped_no_destination" field.
+func SkippedNoDestinationLT(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldLT(FieldSkippedNoDestination, v))
+}
+
+// SkippedNoDestinationLTE applies the LTE predicate on the "skipped_no_destination" field.
+func SkippedNoDestinationLTE(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldLTE(FieldSkippedNoDestination, v))
+}
+
+// SkippedContactErasedEQ applies the EQ predicate on the "skipped_contact_erased" field.
+func SkippedContactErasedEQ(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldEQ(FieldSkippedContactErased, v))
+}
+
+// SkippedContactErasedNEQ applies the NEQ predicate on the "skipped_contact_erased" field.
+func SkippedContactErasedNEQ(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldNEQ(FieldSkippedContactErased, v))
+}
+
+// SkippedContactErasedIn applies the In predicate on the "skipped_contact_erased" field.
+func SkippedContactErasedIn(vs ...int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldIn(FieldSkippedContactErased, vs...))
+}
+
+// SkippedContactErasedNotIn applies the NotIn predicate on the "skipped_contact_erased" field.
+func SkippedContactErasedNotIn(vs ...int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldNotIn(FieldSkippedContactErased, vs...))
+}
+
+// SkippedContactErasedGT applies the GT predicate on the "skipped_contact_erased" field.
+func SkippedContactErasedGT(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldGT(FieldSkippedContactErased, v))
+}
+
+// SkippedContactErasedGTE applies the GTE predicate on the "skipped_contact_erased" field.
+func SkippedContactErasedGTE(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldGTE(FieldSkippedContactErased, v))
+}
+
+// SkippedContactErasedLT applies the LT predicate on the "skipped_contact_erased" field.
+func SkippedContactErasedLT(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldLT(FieldSkippedContactErased, v))
+}
+
+// SkippedContactErasedLTE applies the LTE predicate on the "skipped_contact_erased" field.
+func SkippedContactErasedLTE(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldLTE(FieldSkippedContactErased, v))
+}
+
+// SkippedNoLocalTimeEQ applies the EQ predicate on the "skipped_no_local_time" field.
+func SkippedNoLocalTimeEQ(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldEQ(FieldSkippedNoLocalTime, v))
+}
+
+// SkippedNoLocalTimeNEQ applies the NEQ predicate on the "skipped_no_local_time" field.
+func SkippedNoLocalTimeNEQ(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldNEQ(FieldSkippedNoLocalTime, v))
+}
+
+// SkippedNoLocalTimeIn applies the In predicate on the "skipped_no_local_time" field.
+func SkippedNoLocalTimeIn(vs ...int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldIn(FieldSkippedNoLocalTime, vs...))
+}
+
+// SkippedNoLocalTimeNotIn applies the NotIn predicate on the "skipped_no_local_time" field.
+func SkippedNoLocalTimeNotIn(vs ...int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldNotIn(FieldSkippedNoLocalTime, vs...))
+}
+
+// SkippedNoLocalTimeGT applies the GT predicate on the "skipped_no_local_time" field.
+func SkippedNoLocalTimeGT(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldGT(FieldSkippedNoLocalTime, v))
+}
+
+// SkippedNoLocalTimeGTE applies the GTE predicate on the "skipped_no_local_time" field.
+func SkippedNoLocalTimeGTE(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldGTE(FieldSkippedNoLocalTime, v))
+}
+
+// SkippedNoLocalTimeLT applies the LT predicate on the "skipped_no_local_time" field.
+func SkippedNoLocalTimeLT(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldLT(FieldSkippedNoLocalTime, v))
+}
+
+// SkippedNoLocalTimeLTE applies the LTE predicate on the "skipped_no_local_time" field.
+func SkippedNoLocalTimeLTE(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldLTE(FieldSkippedNoLocalTime, v))
+}
+
+// SkippedFrequencyCapEQ applies the EQ predicate on the "skipped_frequency_cap" field.
+func SkippedFrequencyCapEQ(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldEQ(FieldSkippedFrequencyCap, v))
+}
+
+// SkippedFrequencyCapNEQ applies the NEQ predicate on the "skipped_frequency_cap" field.
+func SkippedFrequencyCapNEQ(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldNEQ(FieldSkippedFrequencyCap, v))
+}
+
+// SkippedFrequencyCapIn applies the In predicate on the "skipped_frequency_cap" field.
+func SkippedFrequencyCapIn(vs ...int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldIn(FieldSkippedFrequencyCap, vs...))
+}
+
+// SkippedFrequencyCapNotIn applies the NotIn predicate on the "skipped_frequency_cap" field.
+func SkippedFrequencyCapNotIn(vs ...int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldNotIn(FieldSkippedFrequencyCap, vs...))
+}
+
+// SkippedFrequencyCapGT applies the GT predicate on the "skipped_frequency_cap" field.
+func SkippedFrequencyCapGT(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldGT(FieldSkippedFrequencyCap, v))
+}
+
+// SkippedFrequencyCapGTE applies the GTE predicate on the "skipped_frequency_cap" field.
+func SkippedFrequencyCapGTE(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldGTE(FieldSkippedFrequencyCap, v))
+}
+
+// SkippedFrequencyCapLT applies the LT predicate on the "skipped_frequency_cap" field.
+func SkippedFrequencyCapLT(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldLT(FieldSkippedFrequencyCap, v))
+}
+
+// SkippedFrequencyCapLTE applies the LTE predicate on the "skipped_frequency_cap" field.
+func SkippedFrequencyCapLTE(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldLTE(FieldSkippedFrequencyCap, v))
+}
+
+// SingleZoneEQ applies the EQ predicate on the "single_zone" field.
+func SingleZoneEQ(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldEQ(FieldSingleZone, v))
+}
+
+// SingleZoneNEQ applies the NEQ predicate on the "single_zone" field.
+func SingleZoneNEQ(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldNEQ(FieldSingleZone, v))
+}
+
+// SingleZoneIn applies the In predicate on the "single_zone" field.
+func SingleZoneIn(vs ...int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldIn(FieldSingleZone, vs...))
+}
+
+// SingleZoneNotIn applies the NotIn predicate on the "single_zone" field.
+func SingleZoneNotIn(vs ...int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldNotIn(FieldSingleZone, vs...))
+}
+
+// SingleZoneGT applies the GT predicate on the "single_zone" field.
+func SingleZoneGT(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldGT(FieldSingleZone, v))
+}
+
+// SingleZoneGTE applies the GTE predicate on the "single_zone" field.
+func SingleZoneGTE(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldGTE(FieldSingleZone, v))
+}
+
+// SingleZoneLT applies the LT predicate on the "single_zone" field.
+func SingleZoneLT(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldLT(FieldSingleZone, v))
+}
+
+// SingleZoneLTE applies the LTE predicate on the "single_zone" field.
+func SingleZoneLTE(v int) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldLTE(FieldSingleZone, v))
 }
 
 // DeliveredEQ applies the EQ predicate on the "delivered" field.

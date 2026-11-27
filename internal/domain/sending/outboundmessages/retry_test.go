@@ -13,11 +13,11 @@ import (
 // Only a Hold and a Deferral want a retry: every other Outcome is final.
 func TestOnlyAHoldOrADeferralWantsARetry(t *testing.T) {
 	for _, o := range []outboundmessages.Outcome{outboundmessages.Sent, outboundmessages.Skipped, outboundmessages.Failed, outboundmessages.Refused} {
-		retry := outboundmessages.Result{Outcome: o}.Retry(0)
+		retry := outboundmessages.Result{Outcome: o}.Retry(0, time.Now())
 		assert.False(t, retry.Wanted, o)
 	}
-	hold := outboundmessages.Result{Outcome: outboundmessages.Held}.Retry(0)
-	deferral := outboundmessages.Result{Outcome: outboundmessages.Deferral, Wait: time.Second}.Retry(0)
+	hold := outboundmessages.Result{Outcome: outboundmessages.Held}.Retry(0, time.Now())
+	deferral := outboundmessages.Result{Outcome: outboundmessages.Deferral, Wait: time.Second}.Retry(0, time.Now())
 	assert.True(t, hold.Wanted)
 	assert.True(t, deferral.Wanted)
 }
@@ -26,7 +26,7 @@ func TestOnlyAHoldOrADeferralWantsARetry(t *testing.T) {
 // Automation run held by the same freeze come back on the same schedule.
 func TestAHoldRetriesAfterTheHoldBackoffForEverySource(t *testing.T) {
 	for _, reason := range []holdreason.Reason{holdreason.WorkspaceSuspended, holdreason.StaffHold, holdreason.NoIntegration} {
-		retry := outboundmessages.Result{Outcome: outboundmessages.Held, Hold: reason}.Retry(0)
+		retry := outboundmessages.Result{Outcome: outboundmessages.Held, Hold: reason}.Retry(0, time.Now())
 		assert.Equal(t, 15*time.Minute, retry.After, string(reason))
 	}
 	hold := outboundmessages.HoldRetry()
@@ -35,7 +35,7 @@ func TestAHoldRetriesAfterTheHoldBackoffForEverySource(t *testing.T) {
 
 // A Deferral's jitter adds at most a fifth of the delay, so the drawn retry stays inside it.
 func TestADeferralResultRetriesWithinTheJitterBand(t *testing.T) {
-	retry := outboundmessages.Result{Outcome: outboundmessages.Deferral, Wait: time.Second}.Retry(4)
+	retry := outboundmessages.Result{Outcome: outboundmessages.Deferral, Wait: time.Second}.Retry(4, time.Now())
 	assert.GreaterOrEqual(t, retry.After, 5*time.Second)
 	assert.LessOrEqual(t, retry.After, 6*time.Second)
 }

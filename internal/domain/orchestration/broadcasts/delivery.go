@@ -112,7 +112,7 @@ func (d *Delivery) deliver(ctx context.Context, s *ent.Scoped, rec *ent.Broadcas
 	if err != nil {
 		return err
 	}
-	if retry := res.Retry(0); retry.Wanted {
+	if retry := res.Retry(0, d.out.Now()); retry.Wanted {
 		return d.retryLater(ctx, s, b, rec, res)
 	}
 	return d.settle(ctx, s, rec, res)
@@ -170,8 +170,15 @@ func (d *Delivery) fail(ctx context.Context, s *ent.Scoped, rec *ent.BroadcastRe
 }
 
 // settle takes what a decided Outbound outcome means for the Broadcast. The message already
-// holds the recipient's outcome; a send that went through lifts the Broadcast's hold, if any.
+// holds the recipient's outcome and its wait, so the recipient waits no more: its Deferral, if it
+// had one, is cleared (ADR 0178). A send that went through lifts the Broadcast's hold, if any.
 func (d *Delivery) settle(ctx context.Context, s *ent.Scoped, rec *ent.BroadcastRecipient, res outboundmessages.Result) error {
+	if rec.DeferredUntil != nil || rec.DeferralCause != nil || rec.DeferredSince != nil {
+		err := s.BroadcastRecipient().UpdateOneID(rec.ID).ClearDeferredUntil().ClearDeferralCause().ClearDeferredSince().Exec(ctx)
+		if err != nil {
+			return fmt.Errorf("clear the deferral of recipient %d: %w", rec.ID, err)
+		}
+	}
 	if res.Outcome != outboundmessages.Sent {
 		return nil
 	}
@@ -208,9 +215,15 @@ func (d *Delivery) retryLater(ctx context.Context, s *ent.Scoped, b *ent.Broadca
 	if cerr != nil {
 		ahead = 0 // the estimate only spreads retries; never fail the send over it
 	}
-	retry := res.Retry(ahead)
-	// Best effort, like the count: it only sharpens later recipients' backlog.
-	if uerr := s.BroadcastRecipient().UpdateOneID(rec.ID).SetDeferredUntil(now.Add(retry.After)).Exec(ctx); uerr != nil {
+	retry := res.Retry(ahead, now)
+	// Best effort, like the count: it sharpens later recipients' backlog and says since when, why
+	// and until when the recipient waits (ADR 0178), which the send itself does not need. Since when
+	// is its first Deferral's moment, kept across the later ones.
+	wait := s.BroadcastRecipient().UpdateOneID(rec.ID).SetDeferredUntil(now.Add(retry.After)).SetDeferralCause(res.Cause)
+	if rec.DeferredSince == nil {
+		wait.SetDeferredSince(now)
+	}
+	if uerr := wait.Exec(ctx); uerr != nil {
 		slog.WarnContext(ctx, "broadcast recipient deferral not recorded", "error", uerr, "recipient_id", rec.ID)
 	}
 	return &DeferredError{Delay: retry.After, Cause: res.Cause}

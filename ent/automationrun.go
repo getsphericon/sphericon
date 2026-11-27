@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
+	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 )
 
 // AutomationRun is the model entity for the AutomationRun schema.
@@ -63,6 +64,10 @@ type AutomationRun struct {
 	CurrentStepID *automationstep.ID `json:"current_step_id,omitempty"`
 	// ResumeAt holds the value of the "resume_at" field.
 	ResumeAt *time.Time `json:"resume_at,omitempty"`
+	// DeferredSince holds the value of the "deferred_since" field.
+	DeferredSince *time.Time `json:"deferred_since,omitempty"`
+	// DeferralCause holds the value of the "deferral_cause" field.
+	DeferralCause *deferralcause.Cause `json:"deferral_cause,omitempty"`
 	// FailureKind holds the value of the "failure_kind" field.
 	FailureKind *automationrun.FailureKind `json:"failure_kind,omitempty"`
 	// FailureStatus holds the value of the "failure_status" field.
@@ -156,9 +161,9 @@ func (*AutomationRun) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case automationrun.FieldID, automationrun.FieldWorkspaceID, automationrun.FieldAutomationID, automationrun.FieldContactID, automationrun.FieldVersionID, automationrun.FieldFiringID, automationrun.FieldOccurrence, automationrun.FieldOrdinal, automationrun.FieldFailureStatus:
 			values[i] = new(sql.NullInt64)
-		case automationrun.FieldStatus, automationrun.FieldEventAction, automationrun.FieldTriggerSourceID, automationrun.FieldKeyValue, automationrun.FieldCurrentStepID, automationrun.FieldFailureKind, automationrun.FieldFailureExcerpt:
+		case automationrun.FieldStatus, automationrun.FieldEventAction, automationrun.FieldTriggerSourceID, automationrun.FieldKeyValue, automationrun.FieldCurrentStepID, automationrun.FieldDeferralCause, automationrun.FieldFailureKind, automationrun.FieldFailureExcerpt:
 			values[i] = new(sql.NullString)
-		case automationrun.FieldCreatedAt, automationrun.FieldUpdatedAt, automationrun.FieldBeganAt, automationrun.FieldEndedAt, automationrun.FieldResumeAt:
+		case automationrun.FieldCreatedAt, automationrun.FieldUpdatedAt, automationrun.FieldBeganAt, automationrun.FieldEndedAt, automationrun.FieldResumeAt, automationrun.FieldDeferredSince:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -306,6 +311,20 @@ func (_m *AutomationRun) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.ResumeAt = new(time.Time)
 				*_m.ResumeAt = value.Time
+			}
+		case automationrun.FieldDeferredSince:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field deferred_since", values[i])
+			} else if value.Valid {
+				_m.DeferredSince = new(time.Time)
+				*_m.DeferredSince = value.Time
+			}
+		case automationrun.FieldDeferralCause:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field deferral_cause", values[i])
+			} else if value.Valid {
+				_m.DeferralCause = new(deferralcause.Cause)
+				*_m.DeferralCause = deferralcause.Cause(value.String)
 			}
 		case automationrun.FieldFailureKind:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -460,6 +479,16 @@ func (_m *AutomationRun) String() string {
 	if v := _m.ResumeAt; v != nil {
 		builder.WriteString("resume_at=")
 		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.DeferredSince; v != nil {
+		builder.WriteString("deferred_since=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.DeferralCause; v != nil {
+		builder.WriteString("deferral_cause=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")
 	if v := _m.FailureKind; v != nil {

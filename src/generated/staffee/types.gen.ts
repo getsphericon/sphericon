@@ -66,6 +66,7 @@ export const AuditAction = {
   WORKSPACE_ABUSE_EXEMPT: 'workspace.abuse_exempt',
   WORKSPACE_ABUSE_UNEXEMPT: 'workspace.abuse_unexempt',
   WORKSPACE_SEND_CAP_CHANGE: 'workspace.send_cap_change',
+  WORKSPACE_SENDING_RULES_CHANGE: 'workspace.sending_rules_change',
   CONTACT_IMPORT: 'contact.import',
   AUDIT_LOG_EXPORT: 'audit_log.export',
   WEBHOOK_ENDPOINT_TEST: 'webhook_endpoint.test',

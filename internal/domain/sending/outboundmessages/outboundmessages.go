@@ -7,10 +7,19 @@
 //   - holds: Workspace freeze, then the Send route of the Request's Channel and the Channel's own
 //     check (email: an unverified Sending domain) — reversible, per-source, never consumed as a
 //     per-recipient failure;
+//   - the targets: where the message goes on its Channel, read only;
+//   - Send-eligibility of each target, fail-closed: a target it forbids is dropped, and when none is
+//     left the send is Skipped (final for that destination), recorded as a decided message under
+//     the Request's idempotency key with no claim taken first;
+//   - the Sending window of a marketing text (sendingwindow, ADR 0134): outside it the send is a
+//     Deferral until it opens in every zone the recipient may be in, recording nothing, and when no
+//     moment of the week is open in all of them it is Skipped with no_local_time, recorded as a
+//     decided message;
 //   - claim: the Outbound message row is taken before the provider is called, under
-//     the Request's idempotency key, with a lease against racing retries;
-//   - Send-eligibility on the Channel, per message, fail-closed (a Skipped is final for that
-//     destination);
+//     the Request's idempotency key, with a lease against racing retries; a new claim of a
+//     marketing message is checked against the Frequency cap of each target and written with its
+//     count, under the lock of each Destination a cap holds (frequencycap, ADR 0178): a target over
+//     its cap is dropped, and when none is left the send is Skipped, recorded as a decided message;
 //   - render, the Provider limit and the Send cap, the provider call;
 //   - the record of the result and the Channel's sent Event, in one transaction.
 //
@@ -49,10 +58,12 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
+	"github.com/getsphericon/sphericon/internal/domain/sending/frequencycap"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
+	"github.com/getsphericon/sphericon/internal/domain/sending/sendingwindow"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
@@ -65,9 +76,9 @@ import (
 )
 
 // Outcome is what an Outbound send did. Sent, Skipped and Failed are final for the
-// destination; Held and Deferral are reversible per-source Outcomes — nothing was
-// consumed, the caller should try the same Request again later (a Held after its own
-// delay, a Deferral after Result.Wait).
+// destination; Held and Deferral are reversible Outcomes — nothing was consumed, the
+// caller should try the same Request again later (a Held after its own delay, a Deferral
+// when Result.Retry says).
 type Outcome string
 
 const (
@@ -81,15 +92,17 @@ const (
 	Failed Outcome = "failed"
 	// Held: the source cannot send right now. Result.Hold says why.
 	Held Outcome = "held"
-	// Deferral: a send limit is spent — the Integration's Provider limit (ADR 0023), the
-	// Workspace's Send cap (ADR 0067) or the provider's own. Nothing is wrong with the source,
-	// it is busy: no hold reason, no claim, no attempt consumed. Result.Wait says when
-	// capacity returns and Result.Cause which limit it waits for.
+	// Deferral: the send waits. Per source, a send limit is spent — the Integration's Provider
+	// limit (ADR 0023), the Workspace's Send cap (ADR 0067) or the provider's own: nothing is
+	// wrong with the source, it is busy, and Result.Wait says when capacity returns. Per
+	// recipient, the recipient may not get it yet — an Automation's send over its Destination's
+	// Frequency cap (ADR 0137, ADR 0178): Result.Until is the moment it may. Either way no hold
+	// reason, no claim, no attempt consumed, and Result.Cause says what it waits for.
 	Deferral Outcome = "deferral"
 	// Refused: a Test send the System sender will not make (ADR 0041). Result.Refusal is a Refuse*
 	// constant; unlike a Held it does not clear by waiting.
 	Refused Outcome = "refused"
-	// Withdrawn: the source stopped taking new messages before this one was claimed
+	// Withdrawn: the source stopped taking new messages before this one was claimed or decided
 	// (Request.Stopped, a cancelled Broadcast, ADR 0150). Nothing was sent or recorded, and it is
 	// final: the same Request is withdrawn again.
 	Withdrawn Outcome = "withdrawn"
@@ -180,10 +193,14 @@ var ErrNoTracker = errors.New("outbound: marketing send requires an unsubscribe 
 // Result is the outcome of a Send.
 type Result struct {
 	Outcome Outcome
-	// Wait is, for a Deferral, how long until capacity returns.
+	// Wait is, for a per-source Deferral (a Provider limit, the Send cap, the provider), how long
+	// until capacity returns.
 	Wait time.Duration
-	// Cause is, for a Deferral of a Send, the limit it waits for; empty for every other Outcome
-	// and for a Test send (its cap is Limit).
+	// Until is, for a per-recipient Deferral (the Frequency cap, a Sending window), the moment the
+	// recipient's send may go: its release moment. Zero for every other Outcome.
+	Until time.Time
+	// Cause is, for a Deferral of a Send, what it waits for; empty for every other Outcome and
+	// for a Test send (its cap is Limit).
 	Cause deferralcause.Cause
 	// SkippedReason is why a Skipped send was skipped.
 	SkippedReason skipreason.Reason
@@ -280,6 +297,10 @@ type Module struct {
 	contacts    *contacts.Module
 	// consents answers a Destination's effective Engagement tracking consent (ADR 0120).
 	consents *engagementtracking.Module
+	// caps holds the Destination locks of a claim and its count (ADR 0178).
+	caps *frequencycap.Module
+	// windows reads the Sending window of a marketing text (stateless, built by New).
+	windows *sendingwindow.Module
 }
 
 // TrackingHosts names the host a Workspace's links are built on: its current Tracking domain
@@ -302,6 +323,9 @@ type Modules struct {
 	Standing *integrations.Standing
 	// Consents answers whether a Destination consents to being tracked (ADR 0120).
 	Consents *engagementtracking.Module
+	// Caps takes the Destination locks a claim is written under and counts a marketing message at
+	// each Destination it is claimed for (ADR 0178).
+	Caps *frequencycap.Module
 }
 
 // Deps are the collaborators of the module's optional parts, each passed by the wiring; a nil one
@@ -364,7 +388,8 @@ func New(bus *events.Bus, hs *holds.Holds, senders Senders, tracker *messagetoke
 		sendCaps: cfg.SendCaps, lease: cmp.Or(cfg.Lease, DefaultLease), now: now,
 		buckets: providerlimit.NewBuckets(bus.WithinAuditTx, now), limits: mods.Limits,
 		standing: mods.Standing, chats: mods.Chats,
-		eligibility: eligibility.New(), contacts: mods.Contacts, consents: mods.Consents,
+		eligibility: eligibility.New(), contacts: mods.Contacts, consents: mods.Consents, caps: mods.Caps,
+		windows: sendingwindow.New(),
 	}
 	m.channels = map[channels.Channel]channel{channels.Email: emailChannel{m: m}, channels.Telegram: telegramChannel{m: m}, channels.SMS: smsChannel{m: m}}
 	return m
@@ -414,17 +439,26 @@ type Request struct {
 	Ref Ref
 
 	// Stopped, when set, says when the source stopped taking new messages: the surface that owns
-	// it reads its own state (a cancelled Broadcast, ADR 0150). It is asked once a new claim is
-	// written, so a stop that raced the claim is seen: one committed before the question withdraws
-	// the claim (Withdrawn, nothing recorded), and one committed after it finds the claim, a
-	// message that goes out. A claim another attempt left behind is asked too, once its lease has
-	// run out: one written after the stop is a withdrawal that never finished, and is withdrawn
-	// instead of taken over; one written before it goes on.
+	// it reads its own state (a cancelled Broadcast, ADR 0150). It is asked once a new claim, or a
+	// Skipped decided before the claim, is written, so a stop that raced the write is seen: one
+	// committed before the question withdraws the row (Withdrawn, nothing recorded), and one
+	// committed after it finds the row, a message that goes out or stays Skipped. A claim another
+	// attempt left behind is asked too, once its lease has run out: one written after the stop is a
+	// withdrawal that never finished, and is withdrawn instead of taken over; one written before it
+	// goes on.
 	Stopped SourceStop
+
+	// Waited is how the send has waited at its place before this attempt, which its Outbound
+	// message keeps once decided (ADR 0178); the zero value for a send that has not waited.
+	Waited Waited
 
 	// digest is what a Transactional request with the caller's key asked for (requestDigest); ""
 	// for every other send. Only Transactional sets it.
 	digest string
+
+	// window is what the Sending window said of the send at this attempt, which its message keeps
+	// (how many zones judged it, windowZones). Only Send sets it, once it has read the window.
+	window sendingwindow.Judgement
 }
 
 // Kind is the surface that asked for the send: its Ref's.
@@ -526,34 +560,39 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 		return Result{Outcome: Held, Hold: g.hold}, nil
 	}
 
-	msg, replay, err := m.claim(ctx, s, req, dest, g, existing)
+	// Where the message goes is the Channel's to resolve, read only and before the claim: a Channel
+	// of Bindings reads the Contact's Bindings of the routed Integration. A Contact with no
+	// Destination on the Channel has nothing to send to, and a target Send-eligibility forbids is
+	// dropped: when none is left, the send is Skipped, recorded as a decided message under the key
+	// with no claim taken first, after the holds (ADR 0079, 0081, 0178).
+	eligible, skip, err := m.recipients(ctx, s, req, ch, g, dest)
+	if err != nil {
+		return Result{}, err
+	}
+	if len(eligible) == 0 {
+		return m.skipUnclaimed(ctx, s, req, dest, g, existing, skip)
+	}
+
+	// The Sending window, after Send-eligibility and before the Frequency cap (ADR 0134, ADR 0178).
+	if stop, err := m.window(ctx, s, &req, dest, g, existing, eligible); stop != nil {
+		return *stop, err
+	}
+
+	// The Frequency cap sits here, before the claim (ADR 0178): under the lock of each Destination a
+	// cap holds, a target over its cap is dropped and a new claim is written to the rest with its
+	// count; with none left, the send is Skipped, or an Automation's deferred until a place frees
+	// (claimNew, overCap).
+	c, replay, err := m.claim(ctx, s, req, dest, g, existing, eligible)
 	if err != nil {
 		return Result{}, err
 	}
 	if replay != nil {
 		return *replay, nil
 	}
-
-	// Where the message goes is the Channel's to resolve, after the claim: a Channel of Bindings
-	// reads the Contact's Bindings of the routed Integration. A Contact with no Destination on the
-	// Channel has nothing to send to: a Skipped, recorded on the claimed message like an opt-out,
-	// after the holds as eligibility is (ADR 0079, 0081).
-	targets, err := ch.targets(ctx, s, req, g.route, dest)
-	if err != nil {
-		m.release(ctx, s, msg)
-		return Result{}, err
-	}
-	if len(targets) == 0 {
-		return m.skip(ctx, s, msg, skipreason.NoDestination)
-	}
-
-	eligible, skip, err := m.eligibleTargets(ctx, s, req, targets)
-	if err != nil {
-		m.release(ctx, s, msg)
-		return Result{}, err
-	}
+	msg, eligible := c.msg, c.targets
 	if len(eligible) == 0 {
-		return m.skip(ctx, s, msg, skip)
+		// A claim taken over whose every Destination with a place is gone or ineligible since.
+		return m.skip(ctx, s, msg, skipreason.NoDestination)
 	}
 	dest = eligible[0].dest
 
@@ -623,6 +662,64 @@ func renderedSubject(rendered any) string {
 		return email.Subject
 	}
 	return ""
+}
+
+// window reads the Sending window for req (judgeWindow) and keeps what it said on req, for its
+// message. It is read on every attempt, a claim left behind included, so no text goes out at night.
+// Outside the window the send waits for it to open in every zone the recipient may be in: the
+// Result is a Deferral until then, which writes nothing and leaves any row under the key to the
+// attempt that sends. With no moment of the week open in all of them the Result is a Skipped,
+// recorded as one decided before the claim. A STOP or anything else that came while it waited is
+// read again from the top when it opens, and the Frequency cap only then. The Result is nil when the
+// send goes on, and the zero one with an error.
+func (m *Module) window(ctx context.Context, s *ent.Scoped, req *Request, dest string, g gateResult, existing *ent.OutboundMessage, eligible []target) (*Result, error) {
+	judged, err := m.judgeWindow(ctx, s, *req, eligible)
+	if err != nil {
+		return &Result{}, err
+	}
+	req.window = judged
+	if judged.NoLocalTime {
+		res, err := m.skipUnclaimed(ctx, s, *req, dest, g, existing, skipreason.NoLocalTime)
+		return &res, err
+	}
+	if !judged.Open {
+		return &Result{Outcome: Deferral, Cause: deferralcause.SendingWindow, Until: judged.Opens}, nil
+	}
+	return nil, nil
+}
+
+// judgeWindow reads the Sending window for req at now (ADR 0134): a message that may wait
+// (recipientLimitsOf) is judged by the window of its Channel that holds its number, the one target a
+// text has, and by the Contact's time zone; a Channel no window holds is open. Any other message is
+// open whatever the hour.
+func (m *Module) judgeWindow(ctx context.Context, s *ent.Scoped, req Request, targets []target) (sendingwindow.Judgement, error) {
+	limits, err := recipientLimitsOf(req.Kind())
+	if err != nil || !limits.waits {
+		return sendingwindow.Judgement{Open: true}, err
+	}
+	rule, err := m.windows.Rule(ctx, s, req.Channel())
+	if err != nil {
+		return sendingwindow.Judgement{}, err
+	}
+	var zone *string
+	if req.Contact != nil {
+		zone = req.Contact.TimeZone
+	}
+	return rule.Judge(targets[0].dest, zone, m.now())
+}
+
+// recipients is the targets of req that Send-eligibility allows, read only: those its Channel
+// resolves through the route g (dest is the Request's own Destination), each checked on its own.
+// When none is left, skip says why: no_destination when the Channel resolves none.
+func (m *Module) recipients(ctx context.Context, s *ent.Scoped, req Request, ch channel, g gateResult, dest string) (eligible []target, skip skipreason.Reason, err error) {
+	targets, err := ch.targets(ctx, s, req, g.route, dest)
+	if err != nil {
+		return nil, "", err
+	}
+	if len(targets) == 0 {
+		return nil, skipreason.NoDestination, nil
+	}
+	return m.eligibleTargets(ctx, s, req, targets)
 }
 
 // eligibleTargets is the targets that pass Send-eligibility, each checked on its own at send time,
@@ -739,8 +836,8 @@ func (m *Module) stopOf(ctx context.Context, s *ent.Scoped, g gateResult, req Re
 	return nil, nil
 }
 
-// dropTarget removes a target its provider said reaches no one, in a transaction of its own, and
-// returns the Skipped reason the target now has.
+// dropTarget removes a target its provider said reaches no one, in a transaction of its own that
+// also frees the message's place at it, and returns the Skipped reason the target now has.
 func (m *Module) dropTarget(ctx context.Context, s *ent.Scoped, req Request, g gateResult, t target, messageID int64) (skipreason.Reason, error) {
 	ch, err := m.channel(req.Channel())
 	if err != nil {
@@ -749,8 +846,11 @@ func (m *Module) dropTarget(ctx context.Context, s *ent.Scoped, req Request, g g
 	var skip skipreason.Reason
 	err = m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
 		var uerr error
-		skip, uerr = ch.unreachable(ctx, ts, pub, g.route.Integration, req, t, messageID)
-		return uerr
+		if skip, uerr = ch.unreachable(ctx, ts, pub, g.route.Integration, req, t, messageID); uerr != nil {
+			return uerr
+		}
+		// The message never reaches the target: it frees its place there (ADR 0178).
+		return m.caps.Uncount(ctx, ts, frequencycap.UncountInput{MessageID: messageID, Destination: t.dest})
 	})
 	return skip, err
 }
@@ -835,7 +935,7 @@ type Failure struct {
 // FailRecipient ends a Broadcast recipient's send as Failed with cause, for a recipient that
 // can never go out: its Contact has no address, or its last attempt failed. Every recipient
 // ends with exactly one Outbound message (ADR 0015), so this records one even when no attempt
-// ever claimed the key. It is idempotent: a message already final is replayed, not rewritten
+// ever claimed the key, with the recipient's wait (ADR 0178). It is idempotent: a message already final is replayed, not rewritten
 // (a send that reached the provider stays Sent).
 //
 // A live claim is another attempt that may still reach the provider, so nothing is failed and
@@ -858,6 +958,7 @@ func (m *Module) FailRecipient(ctx context.Context, s *ent.Scoped, f Failure) (R
 			SetStatus(outboundmessage.StatusFailed).
 			SetFailure(cause.Error())
 		ref.stamp(create)
+		recipientWaited(rec).stamp(create)
 		if rec.ContactID != 0 {
 			create.SetContactID(rec.ContactID)
 		}
@@ -1090,14 +1191,19 @@ func (m *Module) ListTransactional(ctx context.Context, s *ent.Scoped, p paginat
 }
 
 // recordOptedOut records that the person at target stopped at the provider, which refused the send
-// for it: the Channel's opt-out (channel.optedOut), in a transaction of its own.
+// for it: the Channel's opt-out (channel.optedOut), in a transaction of its own that also frees the
+// message's place at it.
 func (m *Module) recordOptedOut(ctx context.Context, s *ent.Scoped, req Request, g gateResult, msg *ent.OutboundMessage, t target) error {
 	ch, err := m.channel(req.Channel())
 	if err != nil {
 		return err
 	}
 	return m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
-		return ch.optedOut(ctx, ts, pub, g.route.Integration, msg, t, m.now())
+		if err := ch.optedOut(ctx, ts, pub, g.route.Integration, msg, t, m.now()); err != nil {
+			return err
+		}
+		// The message never reaches the target: it frees its place there (ADR 0178).
+		return m.caps.Uncount(ctx, ts, frequencycap.UncountInput{MessageID: msg.ID, Destination: t.dest})
 	})
 }
 

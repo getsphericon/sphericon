@@ -36,6 +36,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/callbackinterpretation"
 	"github.com/getsphericon/sphericon/internal/domain/sending/capturedmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/confirmationrequests"
+	"github.com/getsphericon/sphericon/internal/domain/sending/frequencycap"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/privaterelayranges"
@@ -128,7 +129,9 @@ type Deps struct {
 	// Automations prunes the skipped entries into Automations past the Events' window (ADR 0127)
 	// and lists the Automations the date scheduler ticks (ADR 0126).
 	Automations *automations.Module
-	JoinDomains *joindomains.Module
+	// FrequencyCaps prunes the Frequency cap's count rows past the longest period (ADR 0178).
+	FrequencyCaps *frequencycap.Module
+	JoinDomains   *joindomains.Module
 	// Integrations reads an Integration's provider send quota (ADR 0023) and releases a deleted
 	// Telegram bot's webhook (ADR 0145).
 	Integrations *integrations.Module
@@ -194,6 +197,7 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 	river.AddWorker(workers, NewRefreshPrivateRelayWorker(deps.Machine))
 	river.AddWorker(workers, NewPruneEventsWorker(entClient, deps.Rules, deps.Retention.Events, now))
 	river.AddWorker(workers, NewPruneSkippedEntriesWorker(deps.Automations, entClient, deps.Retention.Events))
+	river.AddWorker(workers, NewPruneFrequencyCountsWorker(deps.FrequencyCaps, entClient))
 	river.AddWorker(workers, NewDateTickWorker(entClient, deps.Automations))
 	river.AddWorker(workers, NewDecideOccurrencesWorker(entClient, stepper))
 	river.AddWorker(workers, NewPruneMessagesWorker(deps.MessageRetention))
@@ -366,6 +370,8 @@ func periodicJobs(extra []*river.PeriodicJob) []*river.PeriodicJob {
 		dailyUTC(3, PruneEventsArgs{}),
 		// Delete the skipped entries into Automations past the same window (ADR 0127).
 		dailyUTC(3, PruneSkippedEntriesArgs{}),
+		// Delete the Frequency cap's count rows past the longest period (ADR 0178).
+		dailyUTC(3, PruneFrequencyCountsArgs{}),
 		// Delete expired Outbound messages, keeping their figures (ADR 0143).
 		dailyUTC(5, PruneMessagesArgs{}),
 		// Erase Workspaces whose 30-day deletion window has passed (ADR 0043).

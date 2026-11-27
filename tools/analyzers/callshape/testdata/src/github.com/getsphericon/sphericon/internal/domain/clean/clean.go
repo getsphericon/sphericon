@@ -31,6 +31,12 @@ func (*Module) Purge(context.Context, *ent.Client, int64) error { return nil }
 // Rename takes the scope that stands for the Workspace lock and an entity: neither is a client.
 func (*Module) Rename(context.Context, *ent.WorkspaceLocked, *ent.User, string) error { return nil }
 
+// Count takes the scope that stands for the Destination locks, an entity and a callback: none is a
+// client.
+func (*Module) Count(context.Context, *ent.DestinationLocked, *ent.User, func(*ent.DestinationLocked) error) error {
+	return nil
+}
+
 // Since takes a time that is an input, not the clock.
 func (*Module) Since(_ context.Context, _ *ent.Scoped, from time.Time) error { return nil }
 

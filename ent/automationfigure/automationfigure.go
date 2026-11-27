@@ -30,6 +30,24 @@ const (
 	FieldSent = "sent"
 	// FieldSkipped holds the string denoting the skipped field in the database.
 	FieldSkipped = "skipped"
+	// FieldSkippedSuppressed holds the string denoting the skipped_suppressed field in the database.
+	FieldSkippedSuppressed = "skipped_suppressed"
+	// FieldSkippedUnsubscribedEverything holds the string denoting the skipped_unsubscribed_everything field in the database.
+	FieldSkippedUnsubscribedEverything = "skipped_unsubscribed_everything"
+	// FieldSkippedUnsubscribedSource holds the string denoting the skipped_unsubscribed_source field in the database.
+	FieldSkippedUnsubscribedSource = "skipped_unsubscribed_source"
+	// FieldSkippedUnconfirmed holds the string denoting the skipped_unconfirmed field in the database.
+	FieldSkippedUnconfirmed = "skipped_unconfirmed"
+	// FieldSkippedNoDestination holds the string denoting the skipped_no_destination field in the database.
+	FieldSkippedNoDestination = "skipped_no_destination"
+	// FieldSkippedContactErased holds the string denoting the skipped_contact_erased field in the database.
+	FieldSkippedContactErased = "skipped_contact_erased"
+	// FieldSkippedNoLocalTime holds the string denoting the skipped_no_local_time field in the database.
+	FieldSkippedNoLocalTime = "skipped_no_local_time"
+	// FieldSkippedFrequencyCap holds the string denoting the skipped_frequency_cap field in the database.
+	FieldSkippedFrequencyCap = "skipped_frequency_cap"
+	// FieldSingleZone holds the string denoting the single_zone field in the database.
+	FieldSingleZone = "single_zone"
 	// FieldDelivered holds the string denoting the delivered field in the database.
 	FieldDelivered = "delivered"
 	// FieldBounced holds the string denoting the bounced field in the database.
@@ -80,6 +98,15 @@ var Columns = []string{
 	FieldStepID,
 	FieldSent,
 	FieldSkipped,
+	FieldSkippedSuppressed,
+	FieldSkippedUnsubscribedEverything,
+	FieldSkippedUnsubscribedSource,
+	FieldSkippedUnconfirmed,
+	FieldSkippedNoDestination,
+	FieldSkippedContactErased,
+	FieldSkippedNoLocalTime,
+	FieldSkippedFrequencyCap,
+	FieldSingleZone,
 	FieldDelivered,
 	FieldBounced,
 	FieldComplained,
@@ -111,6 +138,42 @@ var (
 	DefaultSkipped int
 	// SkippedValidator is a validator for the "skipped" field. It is called by the builders before save.
 	SkippedValidator func(int) error
+	// DefaultSkippedSuppressed holds the default value on creation for the "skipped_suppressed" field.
+	DefaultSkippedSuppressed int
+	// SkippedSuppressedValidator is a validator for the "skipped_suppressed" field. It is called by the builders before save.
+	SkippedSuppressedValidator func(int) error
+	// DefaultSkippedUnsubscribedEverything holds the default value on creation for the "skipped_unsubscribed_everything" field.
+	DefaultSkippedUnsubscribedEverything int
+	// SkippedUnsubscribedEverythingValidator is a validator for the "skipped_unsubscribed_everything" field. It is called by the builders before save.
+	SkippedUnsubscribedEverythingValidator func(int) error
+	// DefaultSkippedUnsubscribedSource holds the default value on creation for the "skipped_unsubscribed_source" field.
+	DefaultSkippedUnsubscribedSource int
+	// SkippedUnsubscribedSourceValidator is a validator for the "skipped_unsubscribed_source" field. It is called by the builders before save.
+	SkippedUnsubscribedSourceValidator func(int) error
+	// DefaultSkippedUnconfirmed holds the default value on creation for the "skipped_unconfirmed" field.
+	DefaultSkippedUnconfirmed int
+	// SkippedUnconfirmedValidator is a validator for the "skipped_unconfirmed" field. It is called by the builders before save.
+	SkippedUnconfirmedValidator func(int) error
+	// DefaultSkippedNoDestination holds the default value on creation for the "skipped_no_destination" field.
+	DefaultSkippedNoDestination int
+	// SkippedNoDestinationValidator is a validator for the "skipped_no_destination" field. It is called by the builders before save.
+	SkippedNoDestinationValidator func(int) error
+	// DefaultSkippedContactErased holds the default value on creation for the "skipped_contact_erased" field.
+	DefaultSkippedContactErased int
+	// SkippedContactErasedValidator is a validator for the "skipped_contact_erased" field. It is called by the builders before save.
+	SkippedContactErasedValidator func(int) error
+	// DefaultSkippedNoLocalTime holds the default value on creation for the "skipped_no_local_time" field.
+	DefaultSkippedNoLocalTime int
+	// SkippedNoLocalTimeValidator is a validator for the "skipped_no_local_time" field. It is called by the builders before save.
+	SkippedNoLocalTimeValidator func(int) error
+	// DefaultSkippedFrequencyCap holds the default value on creation for the "skipped_frequency_cap" field.
+	DefaultSkippedFrequencyCap int
+	// SkippedFrequencyCapValidator is a validator for the "skipped_frequency_cap" field. It is called by the builders before save.
+	SkippedFrequencyCapValidator func(int) error
+	// DefaultSingleZone holds the default value on creation for the "single_zone" field.
+	DefaultSingleZone int
+	// SingleZoneValidator is a validator for the "single_zone" field. It is called by the builders before save.
+	SingleZoneValidator func(int) error
 	// DefaultDelivered holds the default value on creation for the "delivered" field.
 	DefaultDelivered int
 	// DeliveredValidator is a validator for the "delivered" field. It is called by the builders before save.
@@ -175,6 +238,51 @@ func BySent(opts ...sql.OrderTermOption) OrderOption {
 // BySkipped orders the results by the skipped field.
 func BySkipped(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSkipped, opts...).ToFunc()
+}
+
+// BySkippedSuppressed orders the results by the skipped_suppressed field.
+func BySkippedSuppressed(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSkippedSuppressed, opts...).ToFunc()
+}
+
+// BySkippedUnsubscribedEverything orders the results by the skipped_unsubscribed_everything field.
+func BySkippedUnsubscribedEverything(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSkippedUnsubscribedEverything, opts...).ToFunc()
+}
+
+// BySkippedUnsubscribedSource orders the results by the skipped_unsubscribed_source field.
+func BySkippedUnsubscribedSource(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSkippedUnsubscribedSource, opts...).ToFunc()
+}
+
+// BySkippedUnconfirmed orders the results by the skipped_unconfirmed field.
+func BySkippedUnconfirmed(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSkippedUnconfirmed, opts...).ToFunc()
+}
+
+// BySkippedNoDestination orders the results by the skipped_no_destination field.
+func BySkippedNoDestination(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSkippedNoDestination, opts...).ToFunc()
+}
+
+// BySkippedContactErased orders the results by the skipped_contact_erased field.
+func BySkippedContactErased(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSkippedContactErased, opts...).ToFunc()
+}
+
+// BySkippedNoLocalTime orders the results by the skipped_no_local_time field.
+func BySkippedNoLocalTime(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSkippedNoLocalTime, opts...).ToFunc()
+}
+
+// BySkippedFrequencyCap orders the results by the skipped_frequency_cap field.
+func BySkippedFrequencyCap(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSkippedFrequencyCap, opts...).ToFunc()
+}
+
+// BySingleZone orders the results by the single_zone field.
+func BySingleZone(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSingleZone, opts...).ToFunc()
 }
 
 // ByDelivered orders the results by the delivered field.

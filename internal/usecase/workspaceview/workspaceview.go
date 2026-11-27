@@ -50,6 +50,8 @@ type Summary struct {
 	// SendCap is the Send cap the send path enforces with the sends of the last 24 hours (ADR
 	// 0067); nil when none applies.
 	SendCap *providerlimit.SendCapStatus
+	// SendingRules are the Workspace's Frequency caps and Sending windows (ADR 0134, ADR 0137).
+	SendingRules workspaces.SendingRules
 	// ShortLinkLength is how long a short tracked link of the Workspace is, 0 when the Instance
 	// tracks no links; SMSMaxLength is the longest text an SMS goes out as. The SMS counter
 	// counts against both.
@@ -322,8 +324,8 @@ func (u *UseCase) withGrace(ctx context.Context, views []View, strongSession boo
 	if err != nil {
 		return err
 	}
-	for i, v := range views {
-		if end, ok := ends[v.Membership.ID]; ok {
+	for i := range views {
+		if end, ok := ends[views[i].Membership.ID]; ok {
 			views[i].SecondFactorGraceEndsAt = &end
 		}
 	}
@@ -344,8 +346,13 @@ func (u *UseCase) summarize(ctx context.Context, s *ent.Scoped, ws *ent.Workspac
 	if err != nil {
 		return Summary{}, err
 	}
+	rules, err := u.workspaces.SendingRules(ctx, s)
+	if err != nil {
+		return Summary{}, err
+	}
 	return Summary{
 		Workspace:       ws,
+		SendingRules:    rules,
 		Holds:           standing.Holds(),
 		SendCap:         sendCap,
 		ShortLinkLength: linkLength,

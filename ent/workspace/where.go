@@ -2189,6 +2189,75 @@ func HasHoldsWith(preds ...predicate.Hold) predicate.Workspace {
 	})
 }
 
+// HasFrequencyCaps applies the HasEdge predicate on the "frequency_caps" edge.
+func HasFrequencyCaps() predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, FrequencyCapsTable, FrequencyCapsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasFrequencyCapsWith applies the HasEdge predicate on the "frequency_caps" edge with a given conditions (other predicates).
+func HasFrequencyCapsWith(preds ...predicate.FrequencyCap) predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := newFrequencyCapsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasFrequencyCounts applies the HasEdge predicate on the "frequency_counts" edge.
+func HasFrequencyCounts() predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, FrequencyCountsTable, FrequencyCountsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasFrequencyCountsWith applies the HasEdge predicate on the "frequency_counts" edge with a given conditions (other predicates).
+func HasFrequencyCountsWith(preds ...predicate.FrequencyCount) predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := newFrequencyCountsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasSendingWindows applies the HasEdge predicate on the "sending_windows" edge.
+func HasSendingWindows() predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, SendingWindowsTable, SendingWindowsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasSendingWindowsWith applies the HasEdge predicate on the "sending_windows" edge with a given conditions (other predicates).
+func HasSendingWindowsWith(preds ...predicate.SendingWindow) predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := newSendingWindowsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasBroadcasts applies the HasEdge predicate on the "broadcasts" edge.
 func HasBroadcasts() predicate.Workspace {
 	return predicate.Workspace(func(s *sql.Selector) {

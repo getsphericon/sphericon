@@ -11,9 +11,11 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
+	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 	"github.com/getsphericon/sphericon/internal/kernel/httpheader"
 	"github.com/getsphericon/sphericon/internal/kernel/localcalendar"
 	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
@@ -263,6 +265,10 @@ func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {
 // goverter:useZeroValueOnPointerInconsistency
 // goverter:extend timestamp
 // goverter:extend revision
+// goverter:extend nilCountryCode
+// goverter:extend nilFrequencyCapMaxMessages
+// goverter:extend nilFrequencyCapPeriodMinutes
+// goverter:extend minuteOfDay
 // goverter:extend optNilString
 // goverter:extend optNilStrings
 // goverter:extend optNilStepID
@@ -302,6 +308,7 @@ func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {
 // goverter:extend optEditorDocument
 // goverter:extend optTrackingReason
 // goverter:extend optSkippedReason
+// goverter:extend optDeferralCause
 // goverter:extend auditDiff
 // goverter:extend optWebhookDisabledReason
 // goverter:extend nilCurrencyCode
@@ -372,8 +379,11 @@ type Converter interface {
 	// goverter:map Figures.Complained ComplainedCount
 	// goverter:map Figures.Captured CapturedCount
 	// goverter:map Figures.Untracked UntrackedCount
+	// goverter:map Figures.SingleZone SingleZoneCount
 	// goverter:map Figures.OpenRate OpenRate
 	// goverter:map Figures.ClickRate ClickRate
+	// goverter:map Figures.SkippedByReason SkippedByReason
+	// goverter:map Figures.WaitingByCause WaitingByCause
 	BroadcastReportToResource(source broadcasts.Report) externalapi.BroadcastReport
 	// The Reporting currency is the Workspace's, null until chosen; the sums are minor units.
 	// goverter:autoMap Credited
@@ -551,7 +561,24 @@ type Converter interface {
 	// The Send cap shown is the one the send path enforces (outboundmessages.Module.SendCapStatus), which
 	// the mapper cannot see: the handler attaches it through SendCapStatusToResource.
 	// goverter:ignore SendCap
+	// The sending rules live beside the Workspace (workspaces.Module.SendingRules): the handler
+	// attaches them through SendingRulesToResource.
+	// goverter:ignore SendingRules
 	WorkspaceToResource(source *ent.Workspace) externalapi.WorkspaceResource
+	// The Workspace's sending rules (ADR 0134, ADR 0137), read only on this surface.
+	// goverter:useEmptyOnNil:slice
+	SendingRulesToResource(source workspaces.SendingRules) externalapi.SendingRules
+	FrequencyCapToResource(source workspaces.FrequencyCap) externalapi.FrequencyCap
+	// goverter:useEmptyOnNil:slice
+	SendingWindowToResource(source workspaces.SendingWindow) externalapi.SendingWindow
+	SendingWindowHoursToResource(source workspaces.OpenHours) externalapi.SendingWindowHours
+	// goverter:enum:transform value
+	FrequencyCapChannelToResource(source channels.Channel) externalapi.FrequencyCapChannel
+	// Only SMS has a Sending window (workspaces.HasSendingWindow), as the rows' CHECK holds.
+	// goverter:enum:transform value
+	// goverter:enum:map Email @panic
+	// goverter:enum:map Telegram @panic
+	SendingWindowChannelToResource(source channels.Channel) externalapi.SendingWindowChannel
 
 	// The live version and the draft are the edges the rules module loads (ADR 0065).
 	// goverter:map Edges.LiveVersion Live | ruleVersionOrNull
@@ -782,6 +809,8 @@ type Converter interface {
 	TrackingReasonToResource(source trackingdomain.Reason) externalapi.TrackingReason
 	// goverter:enum:transform value
 	SkippedReasonToResource(source skipreason.Reason) externalapi.SkippedReason
+	// goverter:enum:transform value
+	DeferralCauseToResource(source deferralcause.Cause) externalapi.DeferralCause
 	// goverter:enum:transform value
 	TransactionalSendStatusToResource(source outboundmessages.TransactionalStatus) externalapi.TransactionalSendStatus
 	// goverter:enum:transform value
@@ -1111,6 +1140,11 @@ func optSkippedReason(c Converter, v *skipreason.Reason) externalapi.OptNilSkipp
 	return convert.OptVia[externalapi.OptNilSkippedReason](v, c.SkippedReasonToResource)
 }
 
+// optDeferralCause is absent on everything that does not wait.
+func optDeferralCause(c Converter, v *deferralcause.Cause) externalapi.OptDeferralCause {
+	return convert.OptVia[externalapi.OptDeferralCause](v, c.DeferralCauseToResource)
+}
+
 // enrollmentOccurrence is the occurrence of a date Trigger the enrollment was made for (ADR 0126):
 // its anniversary year, or a once date's one occurrence; absent for one an Event or a rule began.
 func enrollmentOccurrence(stored *datetrigger.StoredOccurrence) externalapi.OptEnrollmentOccurrence {
@@ -1335,3 +1369,24 @@ func revision(v int64) externalapi.Revision {
 func ownershipRecordType(trackingdomains.OwnershipRecord) externalapi.DnsRecordType {
 	return externalapi.DnsRecordTypeTXT
 }
+
+// nilCountryCode is a country of a sending rule, null for the Channel's own.
+func nilCountryCode(v *string) externalapi.NilCountryCode {
+	return convert.Nil[externalapi.NilCountryCode]((*externalapi.CountryCode)(v))
+}
+
+// nilFrequencyCapMaxMessages is a Frequency cap's maximum, null where the row removes the cap.
+func nilFrequencyCapMaxMessages(v *int) externalapi.NilFrequencyCapMaxMessages {
+	return convert.NilVia[externalapi.NilFrequencyCapMaxMessages](v, func(n int) externalapi.FrequencyCapMaxMessages {
+		return externalapi.FrequencyCapMaxMessages(narrow.Int32(n))
+	})
+}
+
+// nilFrequencyCapPeriodMinutes is a Frequency cap's period, null where the row removes the cap.
+func nilFrequencyCapPeriodMinutes(v *int) externalapi.NilFrequencyCapPeriodMinutes {
+	return convert.NilVia[externalapi.NilFrequencyCapPeriodMinutes](v, func(n int) externalapi.FrequencyCapPeriodMinutes {
+		return externalapi.FrequencyCapPeriodMinutes(narrow.Int32(n))
+	})
+}
+
+func minuteOfDay(v int) externalapi.MinuteOfDay { return externalapi.MinuteOfDay(narrow.Int32(v)) }

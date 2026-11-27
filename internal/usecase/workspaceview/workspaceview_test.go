@@ -48,9 +48,9 @@ var ritaGraceEnds = time.Date(2026, 3, 8, 0, 0, 0, 0, time.UTC)
 // graceOf is the grace end of the view of the Workspace workspaceID among views, nil for none.
 func graceOf(t *testing.T, views []workspaceview.View, workspaceID int64) *time.Time {
 	t.Helper()
-	for _, v := range views {
-		if v.Membership.WorkspaceID == workspaceID {
-			return v.SecondFactorGraceEndsAt
+	for i := range views {
+		if views[i].Membership.WorkspaceID == workspaceID {
+			return views[i].SecondFactorGraceEndsAt
 		}
 	}
 	require.Failf(t, "no view", "of the Workspace %d", workspaceID)

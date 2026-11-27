@@ -985,7 +985,7 @@ model AutomationReport {
 
   /** The send Steps' messages by Step id, each summed over every version that had the Step and
    * sorted by the newest of those versions, then by its place there: one entry per Step any of the
-   * automation's messages was sent from */
+   * automation's messages was sent from or an active enrollment's send waits at now */
   steps: AutomationStepFigures[];
 
   /** The send Steps' messages by version and Step id, in version order and, within a version, in
@@ -1049,6 +1049,18 @@ model AutomationStepFigures {
   /** Messages skipped: the contact had no address on the step's Channel, had opted out of it, or
    * was suppressed. The enrollment moved on to the next step. */
   skipped: int32;
+
+  /** The skipped messages by Skipped reason (ADR 0178): every reason of the closed list in its
+   * order, one none was skipped for at zero; they add up to `skipped` */
+  skippedByReason: SkippedReasonCount[];
+
+  /** The active enrollments standing on the Step whose send waits now, by the cause of its latest
+   * Deferral (ADR 0178): every cause of the closed list in its order, one none waits for at zero */
+  waitingByCause: DeferralCauseCount[];
+
+  /** Messages sent whose Sending window judged them by a single time zone (ADR 0134): the
+   * recipient could be in one zone only. Zero on a Channel with no Sending window. */
+  singleZone: int32;
 }
 
 /** The messages one version's send Step sent */
@@ -1064,4 +1076,15 @@ model AutomationVersionStepFigures {
 
   /** Messages skipped, as in AutomationStepFigures */
   skipped: int32;
+
+  /** The skipped messages by Skipped reason, as in AutomationStepFigures */
+  skippedByReason: SkippedReasonCount[];
+
+  /** The active enrollments of the version standing on the Step whose send waits now, by cause, as
+   * in AutomationStepFigures */
+  waitingByCause: DeferralCauseCount[];
+
+  /** Messages sent whose Sending window judged them by a single time zone, as in
+   * AutomationStepFigures */
+  singleZone: int32;
 }

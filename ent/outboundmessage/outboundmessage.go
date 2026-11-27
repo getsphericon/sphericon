@@ -9,6 +9,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 )
 
@@ -47,6 +48,12 @@ const (
 	FieldSkippedReason = "skipped_reason"
 	// FieldFailure holds the string denoting the failure field in the database.
 	FieldFailure = "failure"
+	// FieldDeferredSince holds the string denoting the deferred_since field in the database.
+	FieldDeferredSince = "deferred_since"
+	// FieldDeferralCause holds the string denoting the deferral_cause field in the database.
+	FieldDeferralCause = "deferral_cause"
+	// FieldWindowZones holds the string denoting the window_zones field in the database.
+	FieldWindowZones = "window_zones"
 	// FieldClaimedAt holds the string denoting the claimed_at field in the database.
 	FieldClaimedAt = "claimed_at"
 	// FieldSentAt holds the string denoting the sent_at field in the database.
@@ -99,6 +106,8 @@ const (
 	EdgeWorkspace = "workspace"
 	// EdgeTrackedLinks holds the string denoting the tracked_links edge name in mutations.
 	EdgeTrackedLinks = "tracked_links"
+	// EdgeFrequencyCounts holds the string denoting the frequency_counts edge name in mutations.
+	EdgeFrequencyCounts = "frequency_counts"
 	// EdgeBroadcast holds the string denoting the broadcast edge name in mutations.
 	EdgeBroadcast = "broadcast"
 	// EdgeAutomation holds the string denoting the automation edge name in mutations.
@@ -131,6 +140,13 @@ const (
 	TrackedLinksInverseTable = "tracked_links"
 	// TrackedLinksColumn is the table column denoting the tracked_links relation/edge.
 	TrackedLinksColumn = "outbound_message_id"
+	// FrequencyCountsTable is the table that holds the frequency_counts relation/edge.
+	FrequencyCountsTable = "frequency_counts"
+	// FrequencyCountsInverseTable is the table name for the FrequencyCount entity.
+	// It exists in this package in order to avoid circular dependency with the "frequencycount" package.
+	FrequencyCountsInverseTable = "frequency_counts"
+	// FrequencyCountsColumn is the table column denoting the frequency_counts relation/edge.
+	FrequencyCountsColumn = "outbound_message_id"
 	// BroadcastTable is the table that holds the broadcast relation/edge.
 	BroadcastTable = "outbound_messages"
 	// BroadcastInverseTable is the table name for the Broadcast entity.
@@ -207,6 +223,9 @@ var Columns = []string{
 	FieldStatus,
 	FieldSkippedReason,
 	FieldFailure,
+	FieldDeferredSince,
+	FieldDeferralCause,
+	FieldWindowZones,
 	FieldClaimedAt,
 	FieldSentAt,
 	FieldDeliveredAt,
@@ -335,6 +354,44 @@ func SkippedReasonValidator(sr skipreason.Reason) error {
 	}
 }
 
+// DeferralCauseValidator is a validator for the "deferral_cause" field enum values. It is called by the builders before save.
+func DeferralCauseValidator(dc deferralcause.Cause) error {
+	switch dc {
+	case "provider_limit", "send_cap", "provider", "sending_window", "frequency_cap":
+		return nil
+	default:
+		return fmt.Errorf("outboundmessage: invalid enum value for deferral_cause field: %q", dc)
+	}
+}
+
+// WindowZones defines the type for the "window_zones" enum field.
+type WindowZones string
+
+// WindowZonesUnjudged is the default value of the WindowZones enum.
+const DefaultWindowZones = WindowZonesUnjudged
+
+// WindowZones values.
+const (
+	WindowZonesUnjudged     WindowZones = "unjudged"
+	WindowZonesNoZone       WindowZones = "no_zone"
+	WindowZonesOneZone      WindowZones = "one_zone"
+	WindowZonesSeveralZones WindowZones = "several_zones"
+)
+
+func (wz WindowZones) String() string {
+	return string(wz)
+}
+
+// WindowZonesValidator is a validator for the "window_zones" field enum values. It is called by the builders before save.
+func WindowZonesValidator(wz WindowZones) error {
+	switch wz {
+	case WindowZonesUnjudged, WindowZonesNoZone, WindowZonesOneZone, WindowZonesSeveralZones:
+		return nil
+	default:
+		return fmt.Errorf("outboundmessage: invalid enum value for window_zones field: %q", wz)
+	}
+}
+
 // OrderOption defines the ordering options for the OutboundMessage queries.
 type OrderOption func(*sql.Selector)
 
@@ -411,6 +468,21 @@ func BySkippedReason(opts ...sql.OrderTermOption) OrderOption {
 // ByFailure orders the results by the failure field.
 func ByFailure(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldFailure, opts...).ToFunc()
+}
+
+// ByDeferredSince orders the results by the deferred_since field.
+func ByDeferredSince(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDeferredSince, opts...).ToFunc()
+}
+
+// ByDeferralCause orders the results by the deferral_cause field.
+func ByDeferralCause(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDeferralCause, opts...).ToFunc()
+}
+
+// ByWindowZones orders the results by the window_zones field.
+func ByWindowZones(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldWindowZones, opts...).ToFunc()
 }
 
 // ByClaimedAt orders the results by the claimed_at field.
@@ -554,6 +626,20 @@ func ByTrackedLinks(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// ByFrequencyCountsCount orders the results by frequency_counts count.
+func ByFrequencyCountsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newFrequencyCountsStep(), opts...)
+	}
+}
+
+// ByFrequencyCounts orders the results by frequency_counts terms.
+func ByFrequencyCounts(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newFrequencyCountsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByBroadcastField orders the results by broadcast field.
 func ByBroadcastField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -621,6 +707,13 @@ func newTrackedLinksStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(TrackedLinksInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, TrackedLinksTable, TrackedLinksColumn),
+	)
+}
+func newFrequencyCountsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(FrequencyCountsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, FrequencyCountsTable, FrequencyCountsColumn),
 	)
 }
 func newBroadcastStep() *sqlgraph.Step {
