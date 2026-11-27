@@ -2590,15 +2590,6 @@ func (c *ConverterImpl) RulesToResources(source []*ent.Rule) ([]site.SiteRuleRes
 	}
 	return siteapiSiteRuleResourceList, nil
 }
-func (c *ConverterImpl) SegmentContactsListPage(source pagination.Page[*ent.Contact]) *site.SiteSegmentContactsListOK {
-	var siteapiSiteSegmentContactsListOK site.SiteSegmentContactsListOK
-	siteapiSiteSegmentContactsListOK.Items = c.ContactsToResources(source.Items)
-	siteapiSiteSegmentContactsListOK.Page = count(source.Page)
-	siteapiSiteSegmentContactsListOK.PageSize = count(source.PageSize)
-	siteapiSiteSegmentContactsListOK.TotalItems = count(source.TotalItems)
-	siteapiSiteSegmentContactsListOK.TotalPages = count(source.TotalPages)
-	return &siteapiSiteSegmentContactsListOK
-}
 func (c *ConverterImpl) SegmentToResource(source *ent.Segment) (site.SiteSegmentResource, error) {
 	var siteapiSiteSegmentResource site.SiteSegmentResource
 	if source != nil {

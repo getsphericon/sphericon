@@ -29748,8 +29748,10 @@ func (s *Server) handleSiteSecondFactorStartEnrollmentRequest(args [0]string, ar
 
 // handleSiteSegmentContactsListRequest handles SiteSegmentContacts_list operation.
 //
-// List the contacts a segment matches right now, evaluated live, ascending by id. A stored condition
-// that no longer fits the contact schema is a 422.
+// List the contacts a segment matches right now, evaluated live, ascending by id, read by a cursor on
+// the contact id: a contact that joins while the pages are read neither shifts a page nor comes twice.
+// A stored condition that no longer fits the contact schema is a 422; a cursor no page handed out is a
+// 400.
 //
 // GET /workspaces/{workspaceId}/segments/{segmentId}/contacts
 func (s *Server) handleSiteSegmentContactsListRequest(args [2]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -29882,7 +29884,7 @@ func (s *Server) handleSiteSegmentContactsListRequest(args [2]string, argsEscape
 
 	var rawBody []byte
 
-	var response *SiteSegmentContactsListOK
+	var response *SiteSegmentContactList
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -29901,13 +29903,13 @@ func (s *Server) handleSiteSegmentContactsListRequest(args [2]string, argsEscape
 					In:   "path",
 				}: params.SegmentId,
 				{
-					Name: "page",
+					Name: "cursor",
 					In:   "query",
-				}: params.Page,
+				}: params.Cursor,
 				{
-					Name: "pageSize",
+					Name: "limit",
 					In:   "query",
-				}: params.PageSize,
+				}: params.Limit,
 			},
 			Raw: r,
 		}
@@ -29915,7 +29917,7 @@ func (s *Server) handleSiteSegmentContactsListRequest(args [2]string, argsEscape
 		type (
 			Request  = struct{}
 			Params   = SiteSegmentContactsListParams
-			Response = *SiteSegmentContactsListOK
+			Response = *SiteSegmentContactList
 		)
 		response, err = middleware.HookMiddleware[
 			Request,

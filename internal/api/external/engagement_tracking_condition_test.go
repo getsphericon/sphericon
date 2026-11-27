@@ -52,7 +52,7 @@ func segmentMembers(t *testing.T, env *testhelper.TestEnv, c *externalapi.Client
 	})
 	require.NoError(t, err)
 	members, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteSegmentContactsList(t.Context(), siteapi.SiteSegmentContactsListParams{
-		WorkspaceId: fixtures.AcmePublicID, SegmentId: siteapi.EntityId(segment.ID), PageSize: siteapi.NewOptInt32(100),
+		WorkspaceId: fixtures.AcmePublicID, SegmentId: siteapi.EntityId(segment.ID), Limit: siteapi.NewOptInt32(100),
 	})
 	require.NoError(t, err)
 	return lo.Map(members.Items, func(item siteapi.SiteContactResource, _ int) string { return string(item.Email.Value) })

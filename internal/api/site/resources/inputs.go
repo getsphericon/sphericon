@@ -253,6 +253,11 @@ type Inputs interface {
 	SkippedEntriesFilter(source siteapi.SiteSkippedEntriesListParams) automations.SkippedEntriesFilter
 	// The Contact a Data export names by its id or its email.
 	ContactExport(source siteapi.SiteContactsExportParams) dataexport.OpenInput
+	// The page of a Segment's Contacts a list reads after its cursor (ADR 0138).
+	// goverter:map SegmentId SegmentID | segmentIDPtrIn
+	// goverter:map Cursor After | segmentCursorIn
+	// goverter:map Limit | limitIn
+	SegmentContactsPage(source siteapi.SiteSegmentContactsListParams) (segments.ContactsInput, error)
 
 	WebhookCreate(source *siteapi.CreateWebhookInput) webhookendpoints.CreateInput
 	WebhookUpdate(source *siteapi.UpdateWebhookInput) webhookendpoints.UpdateInput
@@ -1063,3 +1068,15 @@ func revisionPtrIn(v siteapi.Revision) *int64 {
 	r := int64(v)
 	return &r
 }
+
+// segmentIDPtrIn is the Segment a path names, as the optional Segment of a read of Contacts.
+func segmentIDPtrIn(id siteapi.EntityId) *int64 {
+	v := int64(id)
+	return &v
+}
+
+// segmentCursorIn is the Contact id a page of a Segment's Contacts reads after.
+func segmentCursorIn(o siteapi.OptString) (int64, error) { return segments.Cursor(o.Or("")) }
+
+// limitIn is a page's size, 0 when the request names none.
+func limitIn(o siteapi.OptInt32) int { return int(o.Or(0)) }

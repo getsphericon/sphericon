@@ -350,6 +350,7 @@ var TransportOnly = []TransportBound{
 	{Spec: external, Operation: "AuditEntries_list", Parameter: limit, Doc: "is the size of a page of the Audit log a read returns."},
 	{Spec: external, Operation: "SendingDomainRates_list", Parameter: "windowDays", Doc: "is how many days of a Sending domain's rates a read returns."},
 	{Spec: site, Operation: "SiteAudit_list", Parameter: limit, Doc: "is the size of a page of the Audit log a read returns."},
+	{Spec: site, Operation: "SiteSegmentContacts_list", Parameter: limit, Doc: "is the size of a page of a Segment's Contacts a read returns."},
 	{Spec: site, Operation: "SiteContacts_lookup", Parameter: "email", Doc: "is the address a read looks a Contact up by."},
 	{Spec: site, Operation: "SiteContacts_erase", Parameter: "email", Doc: "is the address an erasure finds its Contact by; it writes no address."},
 	{Spec: service, Parameter: "UsagePeriodQuery", Doc: "is the period a read of the usage covers."},

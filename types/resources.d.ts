@@ -2049,6 +2049,7 @@ export default interface Resources {
       "eventWindowEver": "ever",
       "eventWindowLabel": "In the last (days)",
       "eventsKept": "Events of the last day are kept" | "Events of the last {{count, number}} days are kept",
+      "loadMoreContacts": "Load more contacts",
       "matchingContacts": "Matching contacts",
       "nameLabel": "Name",
       "noMatchingContacts": "No contacts match this segment",

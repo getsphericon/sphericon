@@ -2086,6 +2086,7 @@
     "eventTimesLabel": "Times",
     "eventWindowEver": "ever",
     "eventWindowLabel": "In the last (days)",
+    "loadMoreContacts": "Load more contacts",
     "matchingContacts": "Matching contacts",
     "nameLabel": "Name",
     "noMatchingContacts": "No contacts match this segment",

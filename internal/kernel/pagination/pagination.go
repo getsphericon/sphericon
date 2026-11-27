@@ -188,16 +188,16 @@ func (p CursorPage[T]) Map[U any](f func(T) U) CursorPage[U] {
 	return CursorPage[U]{Items: items, NextCursor: p.NextCursor, HasMore: p.HasMore}
 }
 
-// IDPage is one page of a log read newest first, before an entry id: the items, and the id
-// cursor of the next page, 0 on the last one.
+// IDPage is one page of rows read by their id, beyond an id cursor: a log newest first before it, a
+// list ascending after it. It holds the items and the id cursor of the next page, 0 on the last one.
 type IDPage[T any] struct {
 	Items []T
 	Next  int64
 }
 
-// ByID is the page of the rows a log read for a limit: up to limit+1 rows newest first, one past
-// the limit meaning that an older page follows, whose cursor is idOf the last row kept. Items is
-// never nil.
+// ByID is the page of the rows read by id for a limit: up to limit+1 rows in the page's order, one
+// past the limit meaning that another page follows, whose cursor is idOf the last row kept. Items
+// is never nil.
 func ByID[T any](rows []T, limit int, idOf func(T) int64) IDPage[T] {
 	items := append([]T{}, rows[:min(len(rows), limit)]...)
 	page := IDPage[T]{Items: items}
