@@ -194,14 +194,14 @@ func standingOf(ctx context.Context, s *ent.Scoped, channel channels.Channel, de
 }
 
 // proof is the immutable Event of g, its Channel's own: marketing.confirmed for an email address,
-// sms.confirmed for a phone number. An Automation trigger is an action with no property filter, so
+// sms.confirmed for a phone number, dated when the consent was given (g.at, ADR 0154). An Automation trigger is an action with no property filter, so
 // one Channel's consent never starts what another's was meant to (a welcome email).
 func (g grant) proof(workspaceID int64) (events.DomainEvent, error) {
 	switch g.channel {
 	case channels.Email:
 		e := &events.MarketingConfirmed{
 			WorkspaceID: workspaceID, ContactID: g.contactID, Email: g.destination,
-			Provenance: string(g.provenance), IP: g.ip,
+			Provenance: string(g.provenance), IP: g.ip, ObservedAt: g.at.At,
 		}
 		if ev := g.evidence; ev != nil {
 			e.Wording, e.Source, e.Brand = ev.Wording, ev.Source, ev.Brand
@@ -210,6 +210,7 @@ func (g grant) proof(workspaceID int64) (events.DomainEvent, error) {
 	case channels.SMS:
 		e := &events.SmsConfirmed{
 			WorkspaceID: workspaceID, ContactID: g.contactID, Phone: g.destination, Provenance: string(g.provenance),
+			ObservedAt: g.at.At,
 		}
 		if ev := g.evidence; ev != nil {
 			e.Wording, e.Source, e.Brand = ev.Wording, ev.Source, ev.Brand
