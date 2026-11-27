@@ -156,7 +156,7 @@ func (m *StepExecution) awaitMessage(ctx context.Context, s *ent.Scoped, run *en
 		return err
 	}
 	if rec.DecidedPathID != nil {
-		return m.advance(ctx, s, run.ID, at, stepMove{leaving: leaving{path: &pathTaken{id: *rec.DecidedPathID}}})
+		return m.advance(ctx, s, run.ID, at, stepMove{path: &pathTaken{id: *rec.DecidedPathID}})
 	}
 	if rec.DueAt == nil {
 		return fmt.Errorf("wait for event step %s of run %d has neither a decided path nor a deadline", at.step, run.ID)
@@ -168,7 +168,7 @@ func (m *StepExecution) awaitMessage(ctx context.Context, s *ent.Scoped, run *en
 	if err != nil {
 		return err
 	}
-	return m.advance(ctx, s, run.ID, at, stepMove{leaving: leaving{path: &pathTaken{id: deadlinePath(w, h)}}})
+	return m.advance(ctx, s, run.ID, at, stepMove{path: &pathTaken{id: deadlinePath(w, h)}})
 }
 
 // wakeOnMessage moves down `arrived` the Enrollment standing on a Wait for event that waits for the

@@ -47,8 +47,8 @@ type UseCase struct {
 
 // New returns the reach-back, batch messages to a transaction (Batch; a test passes 1 to turn
 // every loop).
-func New(bus *events.Bus, messages *outboundmessages.Module, credits *orders.Module, flows *automations.Module, batch int) *UseCase {
-	return &UseCase{bus: bus, messages: messages, orders: credits, automations: flows, events: eventsunchecked.New(), batch: batch}
+func New(bus *events.Bus, messages *outboundmessages.Module, credits *orders.Module, automationsModule *automations.Module, batch int) *UseCase {
+	return &UseCase{bus: bus, messages: messages, orders: credits, automations: automationsModule, events: eventsunchecked.New(), batch: batch}
 }
 
 // Refusal is the Destination that refused tracking, in the form its consent is stored in.
