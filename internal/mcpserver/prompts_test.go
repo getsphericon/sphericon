@@ -136,14 +136,17 @@ func TestMCPWinBackPromptMeasuresClicksNotOpens(t *testing.T) {
 
 	body := promptText(t, s, "win-back")
 
-	assert.Contains(t, body, "clicks or a product action", "engagement is clicks or a product action")
-	assert.NotRegexp(t, `opens, clicks|opens or clicks`, body, "opens are not offered as a measure")
+	measure := regexp.MustCompile(`measure engagement: ([^.]*)\.`).FindStringSubmatch(body)
+	require.NotNil(t, measure, "the prompt names the engagement to measure")
+	assert.Contains(t, measure[1], "clicks", "engagement is measured by clicks")
+	assert.NotContains(t, measure[1], "opens", "opens are not offered as a measure")
 	assert.Contains(t, body, "Opens are not a reliable signal", "the prompt says why opens are left out")
 }
 
-// The set-up prompt proposes one subdomain per stream, so the Transactional stream's reputation is
-// kept apart from the marketing one's, and verifies both.
-func TestMCPSetUpSendingDomainPromptProposesASubdomainPerStream(t *testing.T) {
+// The set-up prompt proposes a subdomain for marketing mail and one for Transactional mail, so the
+// reputation of one is kept apart from the other's, verifies both, and says how each kind of mail
+// comes to send from its own.
+func TestMCPSetUpSendingDomainPromptKeepsMarketingAndTransactionalApart(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.MCPClient(t, env.ScopedBearer(t, apitokens.ScopeContactsRead))
 
@@ -151,7 +154,6 @@ func TestMCPSetUpSendingDomainPromptProposesASubdomainPerStream(t *testing.T) {
 
 	assert.Contains(t, body, "`mail.example.com`", "a subdomain for marketing mail")
 	assert.Contains(t, body, "`notify.example.com`", "a subdomain for Transactional mail")
-	assert.Contains(t, body, "verify both", "both subdomains are verified")
-	assert.NotContains(t, body, "a subdomain such as `mail.example.com` is the usual choice",
-		"no single subdomain for all mail")
+	assert.Contains(t, body, "you verify both", "both subdomains are verified")
+	assert.Contains(t, body, "default email Integration", "the prompt says where Transactional mail takes its sender")
 }
