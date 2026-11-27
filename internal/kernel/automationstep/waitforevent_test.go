@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 )
 
 // storedWait is a stored root path whose second Step is a Wait for event on order.created with a
@@ -75,4 +76,31 @@ func TestAStoredWaitForEventRefusesAFieldItDoesNotHold(t *testing.T) {
 			assert.Error(t, err)
 		})
 	}
+}
+
+// storedMessageWait is a stored root path of an email, then a Wait for event on an open of its
+// message, whose unknown path tags the Contact.
+const storedMessageWait = `{"id":"6a0c6a52-4f0e-4f65-9a70-0d4a1c0e1b01","steps":[` +
+	`{"id":"6a0c6a52-4f0e-4f65-9a70-0d4a1c0e1b02","type":"email","subject":"Welcome","body":"<p>Hello</p>"},` +
+	`{"id":"6a0c6a52-4f0e-4f65-9a70-0d4a1c0e1b03","type":"wait_for_event","name":"welcome_open","timeoutSeconds":172800,` +
+	`"awaits":{"kind":"message","step":"6a0c6a52-4f0e-4f65-9a70-0d4a1c0e1b02","engagement":"opened"},` +
+	`"arrived":{"id":"6a0c6a52-4f0e-4f65-9a70-0d4a1c0e1b04","steps":[]},` +
+	`"timedOut":{"id":"6a0c6a52-4f0e-4f65-9a70-0d4a1c0e1b05","steps":[]},` +
+	`"unknown":{"id":"6a0c6a52-4f0e-4f65-9a70-0d4a1c0e1b06","steps":[{"id":"6a0c6a52-4f0e-4f65-9a70-0d4a1c0e1b07","type":"apply_tag","tag":"untracked"}]}}]}`
+
+// A Wait for event on an open of a message is stored with the send Step it names, opened or
+// clicked, and its unknown path, read back as it was; the walker visits its unknown path last and
+// places a Step of it under `unknown`.
+func TestAWaitForAMessageRoundTripsWithItsUnknownPath(t *testing.T) {
+	var p automationstep.Path
+	require.NoError(t, json.Unmarshal([]byte(storedMessageWait), &p))
+
+	locations := automationstep.Locations(p)
+	written, err := json.Marshal(p)
+	require.NoError(t, err)
+	w := p.Steps[1].Payload.(automationstep.WaitForEvent)
+
+	assert.Equal(t, automationstep.AwaitedMessage{Step: "6a0c6a52-4f0e-4f65-9a70-0d4a1c0e1b02", Engagement: conditiontree.MessageOpened}, w.Awaits)
+	assert.Equal(t, "steps.1.unknown.steps.0", locations["6a0c6a52-4f0e-4f65-9a70-0d4a1c0e1b07"])
+	assert.JSONEq(t, storedMessageWait, string(written))
 }

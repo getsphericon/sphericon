@@ -1618,6 +1618,92 @@ func (s AwaitedEventKind) Validate() error {
 	}
 }
 
+func (s *AwaitedMessage) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Kind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "kind",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Engagement.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "engagement",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *AwaitedMessageInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Kind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "kind",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Engagement.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "engagement",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s AwaitedMessageInputKind) Validate() error {
+	switch s {
+	case "message":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s AwaitedMessageKind) Validate() error {
+	switch s {
+	case "message":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s *BirthdayDateField) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -19501,6 +19587,11 @@ func (s WaitForEventAwaitsInputSum) Validate() error {
 			return err
 		}
 		return nil
+	case AwaitedMessageInputWaitForEventAwaitsInputSum:
+		if err := s.AwaitedMessageInput.Validate(); err != nil {
+			return err
+		}
+		return nil
 	default:
 		return errors.Errorf("invalid type %q", s.Type)
 	}
@@ -19510,6 +19601,11 @@ func (s WaitForEventAwaitsSum) Validate() error {
 	switch s.Type {
 	case AwaitedEventWaitForEventAwaitsSum:
 		if err := s.AwaitedEvent.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case AwaitedMessageWaitForEventAwaitsSum:
+		if err := s.AwaitedMessage.Validate(); err != nil {
 			return err
 		}
 		return nil
@@ -19599,6 +19695,24 @@ func (s *WaitForEventStep) Validate() error {
 			Error: err,
 		})
 	}
+	if err := func() error {
+		if value, ok := s.Unknown.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "unknown",
+			Error: err,
+		})
+	}
 	if len(failures) > 0 {
 		return &validate.Error{Fields: failures}
 	}
@@ -19663,6 +19777,24 @@ func (s *WaitForEventStepInput) Validate() error {
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
 			Name:  "timedOut",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.Unknown.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "unknown",
 			Error: err,
 		})
 	}

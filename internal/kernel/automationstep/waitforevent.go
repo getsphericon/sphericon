@@ -6,21 +6,26 @@ import (
 	"fmt"
 	"iter"
 	"strings"
+
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 )
 
 // WaitForEvent holds the Enrollment until what it Awaits arrives or TimeoutSeconds pass from when
-// it reached the Step (ADR 0124), then sends it down Arrived or TimedOut. Its paths rejoin at the
-// Step after it. Name is the key later Steps read the Event it arrived on by (ADR 0136): it belongs
-// to one Step id across every version of the Automation.
+// it reached the Step (ADR 0124), then sends it down Arrived or TimedOut, or down Unknown when it
+// awaits an open or a click it cannot know of (AwaitedMessage). Its paths rejoin at the Step after
+// it. Name is the key later Steps read the Event it arrived on by (ADR 0136): it belongs to one Step
+// id across every version of the Automation.
 type WaitForEvent struct {
 	Name           string
 	TimeoutSeconds int
 	Awaits         Awaits
 	Arrived        Path
 	TimedOut       Path
+	Unknown        *Path
 }
 
-// Awaits is what a Wait for event waits for, one type per kind: AwaitedEvent. A new kind is an arm
+// Awaits is what a Wait for event waits for, one type per kind: AwaitedEvent and AwaitedMessage. A
+// new kind is an arm
 // of the contract's WaitForEventAwaits, whose discriminator generates its AwaitsKind
 // (awaits_gen.go); it adds its type and its line in awaitsDecoders, and a type switch over Awaits
 // that misses it fails the lint (gochecksumtype).
@@ -48,10 +53,22 @@ func (a AwaitedEvent) stored() Awaits {
 	return AwaitedEvent{Actions: actions}
 }
 
+// AwaitedMessage waits for an open or a click (Engagement) of the message the send Step of the id
+// Step sent to the Enrollment, with the meaning a Branch's test of that message has (ADR 0122).
+type AwaitedMessage struct {
+	Step       ID                       `json:"step"`
+	Engagement conditiontree.Engagement `json:"engagement"`
+}
+
+func (AwaitedMessage) AwaitsKind() AwaitsKind { return AwaitsMessage }
+
+func (a AwaitedMessage) stored() Awaits { return a }
+
 // The places of a Wait for event's paths in its Step's document, which are its fields.
 const (
 	placeArrived  = "arrived"
 	placeTimedOut = "timedOut"
+	placeUnknown  = "unknown"
 )
 
 func (WaitForEvent) Kind() Kind { return KindWaitForEvent }
@@ -65,19 +82,29 @@ func (w WaitForEvent) Stored() Payload {
 	return w
 }
 
+// Forks are arrived, timed out, then unknown when the Wait for event has it.
 func (w WaitForEvent) Forks() []PlacedPath {
-	return []PlacedPath{{Place: placeArrived, Path: w.Arrived}, {Place: placeTimedOut, Path: w.TimedOut}}
+	out := []PlacedPath{{Place: placeArrived, Path: w.Arrived}, {Place: placeTimedOut, Path: w.TimedOut}}
+	if w.Unknown != nil {
+		out = append(out, PlacedPath{Place: placeUnknown, Path: *w.Unknown})
+	}
+	return out
 }
 
 func (w WaitForEvent) WithForks(paths []Path) Fork {
 	w.Arrived, w.TimedOut = paths[0], paths[1]
+	if w.Unknown != nil {
+		unknown := paths[2]
+		w.Unknown = &unknown
+	}
 	return w
 }
 
 // awaitsDecoders read the fields of each kind of what is awaited, refusing any field the kind does
 // not hold.
 var awaitsDecoders = map[AwaitsKind]func([]byte) (Awaits, error){
-	AwaitsEvent: decodeAwaitsAs[AwaitedEvent],
+	AwaitsEvent:   decodeAwaitsAs[AwaitedEvent],
+	AwaitsMessage: decodeAwaitsAs[AwaitedMessage],
 }
 
 func decodeAwaitsAs[A Awaits](b []byte) (Awaits, error) {
@@ -96,6 +123,7 @@ type waitForEventJSON struct {
 	Awaits         json.RawMessage `json:"awaits"`
 	Arrived        Path            `json:"arrived"`
 	TimedOut       Path            `json:"timedOut"`
+	Unknown        *Path           `json:"unknown,omitempty"`
 }
 
 // MarshalJSON writes the Wait for event with the kind of what it awaits beside that kind's fields.
@@ -118,9 +146,13 @@ func (w WaitForEvent) MarshalJSON() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return json.Marshal(waitForEventJSON{
+	stored := waitForEventJSON{
 		Name: w.Name, TimeoutSeconds: w.TimeoutSeconds, Awaits: awaits, Arrived: emptied(w.Arrived), TimedOut: emptied(w.TimedOut),
-	})
+	}
+	if w.Unknown != nil {
+		stored.Unknown = new(emptied(*w.Unknown))
+	}
+	return json.Marshal(stored)
 }
 
 // emptied is the path with no Steps written as an empty list, which a path stores.
@@ -159,7 +191,7 @@ func (w *WaitForEvent) UnmarshalJSON(b []byte) error {
 	if err != nil {
 		return fmt.Errorf("awaits %s: %w", kind, err)
 	}
-	*w = WaitForEvent{Name: raw.Name, TimeoutSeconds: raw.TimeoutSeconds, Awaits: a, Arrived: raw.Arrived, TimedOut: raw.TimedOut}
+	*w = WaitForEvent{Name: raw.Name, TimeoutSeconds: raw.TimeoutSeconds, Awaits: a, Arrived: raw.Arrived, TimedOut: raw.TimedOut, Unknown: raw.Unknown}
 	return nil
 }
 

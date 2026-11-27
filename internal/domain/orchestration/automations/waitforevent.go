@@ -61,6 +61,7 @@ func validateWaitForEvent(st *automationstep.Step, w automationstep.WaitForEvent
 			}
 			seen[trimmed] = true
 		}
+	case automationstep.AwaitedMessage:
 	case nil:
 		return refuse(st, "a wait for event needs what it waits for")
 	}
@@ -141,7 +142,8 @@ func awaitedActions(w automationstep.WaitForEvent) []string {
 	switch a := w.Awaits.(type) {
 	case automationstep.AwaitedEvent:
 		return a.Actions
-	case nil:
+	case automationstep.AwaitedMessage, nil:
+		// An open or a click of a message is no action: it wakes by the message (wakeOnMessage).
 	}
 	return nil
 }

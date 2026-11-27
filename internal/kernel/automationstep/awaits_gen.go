@@ -7,10 +7,12 @@ type AwaitsKind string
 
 // The discriminator values of the contract's unions, in the order they first name them.
 const (
-	AwaitsEvent AwaitsKind = "event"
+	AwaitsEvent   AwaitsKind = "event"
+	AwaitsMessage AwaitsKind = "message"
 )
 
 // AwaitsKinds is every AwaitsKind, in the contract's order.
 var AwaitsKinds = []AwaitsKind{
 	AwaitsEvent,
+	AwaitsMessage,
 }

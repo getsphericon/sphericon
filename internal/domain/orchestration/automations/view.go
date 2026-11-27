@@ -123,8 +123,8 @@ type SplitPathView struct {
 	Steps  []StepView
 }
 
-// WaitForEventView is a Wait for event: its name, its timeout, what it awaits and its two paths,
-// each path's Steps views too.
+// WaitForEventView is a Wait for event: its name, its timeout, what it awaits and its paths, the
+// unknown one only when it has it, each path's Steps views too.
 type WaitForEventView struct {
 	ID             automationstep.ID
 	Type           automationstep.Kind
@@ -133,6 +133,7 @@ type WaitForEventView struct {
 	Awaits         automationstep.Awaits
 	Arrived        PathView
 	TimedOut       PathView
+	Unknown        *PathView
 }
 
 func (WaitForEventView) stepView() {}
@@ -214,10 +215,18 @@ func waitForEventView(id automationstep.ID, w automationstep.WaitForEvent) (Step
 	if err != nil {
 		return nil, err
 	}
-	return WaitForEventView{
+	v := WaitForEventView{
 		ID: id, Type: automationstep.KindWaitForEvent, Name: w.Name, TimeoutSeconds: w.TimeoutSeconds, Awaits: w.Awaits,
 		Arrived: arrived, TimedOut: timedOut,
-	}, nil
+	}
+	if w.Unknown != nil {
+		unknown, err := View(*w.Unknown)
+		if err != nil {
+			return nil, err
+		}
+		v.Unknown = &unknown
+	}
+	return v, nil
 }
 
 // viewOf is the view of the Step; a kind with none is an error.

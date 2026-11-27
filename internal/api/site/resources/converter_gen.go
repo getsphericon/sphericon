@@ -3378,6 +3378,11 @@ func (c *ConverterImpl) WaitForEventStepToResource(source automations.WaitForEve
 		return siteapiWaitForEventStep, err
 	}
 	siteapiWaitForEventStep.TimedOut = siteapiAutomationPath2
+	siteapiOptAutomationPath, err := optAutomationPath(c, source.Unknown)
+	if err != nil {
+		return siteapiWaitForEventStep, err
+	}
+	siteapiWaitForEventStep.Unknown = siteapiOptAutomationPath
 	return siteapiWaitForEventStep, nil
 }
 func (c *ConverterImpl) WaitStepToResource(source automations.WaitView) site.WaitStep {

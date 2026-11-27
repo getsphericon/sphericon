@@ -668,7 +668,7 @@ func splitStepIn(c Inputs, in *siteapi.SplitStepInput) (automationstep.Step, err
 	return automationstep.Step{ID: stepIDIn(in.ID), Payload: sp}, nil
 }
 
-// waitForEventStepIn maps a Wait for event: its name, its timeout, what it awaits and its two paths.
+// waitForEventStepIn maps a Wait for event: its name, its timeout, what it awaits and its paths.
 // The save checks them.
 func waitForEventStepIn(c Inputs, in *siteapi.WaitForEventStepInput) (automationstep.Step, error) {
 	awaits, err := waitForEventAwaitsIn(in.Awaits)
@@ -686,6 +686,13 @@ func waitForEventStepIn(c Inputs, in *siteapi.WaitForEventStepInput) (automation
 	w := automationstep.WaitForEvent{
 		Name: string(in.Name), TimeoutSeconds: int(in.TimeoutSeconds), Awaits: awaits, Arrived: arrived, TimedOut: timedOut,
 	}
+	if u, ok := in.Unknown.Get(); ok {
+		unknown, err := c.AutomationPath(u)
+		if err != nil {
+			return automationstep.Step{}, err
+		}
+		w.Unknown = &unknown
+	}
 	return automationstep.Step{ID: stepIDIn(in.ID), Payload: w}, nil
 }
 
@@ -695,6 +702,9 @@ func waitForEventAwaitsIn(in siteapi.WaitForEventAwaitsInput) (automationstep.Aw
 	switch in.OneOf.Type {
 	case siteapi.AwaitedEventInputWaitForEventAwaitsInputSum:
 		return automationstep.AwaitedEvent{Actions: in.OneOf.AwaitedEventInput.Actions}, nil
+	case siteapi.AwaitedMessageInputWaitForEventAwaitsInputSum:
+		m := in.OneOf.AwaitedMessageInput
+		return automationstep.AwaitedMessage{Step: automationstep.ID(m.Step), Engagement: conditiontree.Engagement(m.Engagement)}, nil
 	default:
 		return nil, fmt.Errorf("what a wait for event awaits has no kind %q", in.OneOf.Type)
 	}

@@ -4005,6 +4005,168 @@ func (s *AwaitedEventKind) UnmarshalText(data []byte) error {
 	}
 }
 
+// A Wait for event waits for an open or a click of the message a send Step sent to this Enrollment
+// (ADR 0124), with the meaning of a Branch's test of that message (ADR 0122): its first human open or
+// click, whenever it happened, one before the Enrollment reached the Step included. It takes `unknown`
+// at once when the message went out untracked or its tracking was withdrawn since (ADR 0120), when the
+// send Step was skipped and when the Enrollment never passed it, and at the timeout, instead of
+// `timedOut`, when its tracking was withdrawn during the wait. The Step must be a send Step that can
+// come before the Wait for event: an email Step for `opened`, any send Step for `clicked`. A Step it
+// names cannot be removed.
+// Ref: #/components/schemas/AwaitedMessage
+type AwaitedMessage struct {
+	Kind AwaitedMessageKind `json:"kind"`
+	// The send Step's id.
+	Step StepId `json:"step"`
+	// Whether it waits for an open or a click of the message.
+	Engagement MessageEngagement `json:"engagement"`
+}
+
+// GetKind returns the value of Kind.
+func (s *AwaitedMessage) GetKind() AwaitedMessageKind {
+	return s.Kind
+}
+
+// GetStep returns the value of Step.
+func (s *AwaitedMessage) GetStep() StepId {
+	return s.Step
+}
+
+// GetEngagement returns the value of Engagement.
+func (s *AwaitedMessage) GetEngagement() MessageEngagement {
+	return s.Engagement
+}
+
+// SetKind sets the value of Kind.
+func (s *AwaitedMessage) SetKind(val AwaitedMessageKind) {
+	s.Kind = val
+}
+
+// SetStep sets the value of Step.
+func (s *AwaitedMessage) SetStep(val StepId) {
+	s.Step = val
+}
+
+// SetEngagement sets the value of Engagement.
+func (s *AwaitedMessage) SetEngagement(val MessageEngagement) {
+	s.Engagement = val
+}
+
+// A Wait for event waits for an open or a click of the message a send Step sent to this Enrollment
+// (ADR 0124), with the meaning of a Branch's test of that message (ADR 0122): its first human open or
+// click, whenever it happened, one before the Enrollment reached the Step included. It takes `unknown`
+// at once when the message went out untracked or its tracking was withdrawn since (ADR 0120), when the
+// send Step was skipped and when the Enrollment never passed it, and at the timeout, instead of
+// `timedOut`, when its tracking was withdrawn during the wait. The Step must be a send Step that can
+// come before the Wait for event: an email Step for `opened`, any send Step for `clicked`. A Step it
+// names cannot be removed.
+// Ref: #/components/schemas/AwaitedMessageInput
+type AwaitedMessageInput struct {
+	Kind AwaitedMessageInputKind `json:"kind"`
+	// The send Step's id.
+	Step StepId `json:"step"`
+	// Whether it waits for an open or a click of the message.
+	Engagement MessageEngagement `json:"engagement"`
+}
+
+// GetKind returns the value of Kind.
+func (s *AwaitedMessageInput) GetKind() AwaitedMessageInputKind {
+	return s.Kind
+}
+
+// GetStep returns the value of Step.
+func (s *AwaitedMessageInput) GetStep() StepId {
+	return s.Step
+}
+
+// GetEngagement returns the value of Engagement.
+func (s *AwaitedMessageInput) GetEngagement() MessageEngagement {
+	return s.Engagement
+}
+
+// SetKind sets the value of Kind.
+func (s *AwaitedMessageInput) SetKind(val AwaitedMessageInputKind) {
+	s.Kind = val
+}
+
+// SetStep sets the value of Step.
+func (s *AwaitedMessageInput) SetStep(val StepId) {
+	s.Step = val
+}
+
+// SetEngagement sets the value of Engagement.
+func (s *AwaitedMessageInput) SetEngagement(val MessageEngagement) {
+	s.Engagement = val
+}
+
+type AwaitedMessageInputKind string
+
+const (
+	AwaitedMessageInputKindMessage AwaitedMessageInputKind = "message"
+)
+
+// AllValues returns all AwaitedMessageInputKind values.
+func (AwaitedMessageInputKind) AllValues() []AwaitedMessageInputKind {
+	return []AwaitedMessageInputKind{
+		AwaitedMessageInputKindMessage,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s AwaitedMessageInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case AwaitedMessageInputKindMessage:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *AwaitedMessageInputKind) UnmarshalText(data []byte) error {
+	switch AwaitedMessageInputKind(data) {
+	case AwaitedMessageInputKindMessage:
+		*s = AwaitedMessageInputKindMessage
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type AwaitedMessageKind string
+
+const (
+	AwaitedMessageKindMessage AwaitedMessageKind = "message"
+)
+
+// AllValues returns all AwaitedMessageKind values.
+func (AwaitedMessageKind) AllValues() []AwaitedMessageKind {
+	return []AwaitedMessageKind{
+		AwaitedMessageKindMessage,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s AwaitedMessageKind) MarshalText() ([]byte, error) {
+	switch s {
+	case AwaitedMessageKindMessage:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *AwaitedMessageKind) UnmarshalText(data []byte) error {
+	switch AwaitedMessageKind(data) {
+	case AwaitedMessageKindMessage:
+		*s = AwaitedMessageKindMessage
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // The Contact's date of birth, a date field every Contact has.
 // Ref: #/components/schemas/BirthdayDateField
 type BirthdayDateField struct {
@@ -44868,8 +45030,9 @@ func (s *WaitForEventAwaitsInput) SetOneOf(val WaitForEventAwaitsInputSum) {
 // WaitForEventAwaitsInputSum represents sum type.
 type WaitForEventAwaitsInputSum struct {
 	// Type selects the active sum variant, switch on this field.
-	Type              WaitForEventAwaitsInputSumType
-	AwaitedEventInput AwaitedEventInput
+	Type                WaitForEventAwaitsInputSumType
+	AwaitedEventInput   AwaitedEventInput
+	AwaitedMessageInput AwaitedMessageInput
 }
 
 // WaitForEventAwaitsInputSumType is oneOf type of WaitForEventAwaitsInputSum.
@@ -44877,12 +45040,18 @@ type WaitForEventAwaitsInputSumType string
 
 // Possible values for WaitForEventAwaitsInputSumType.
 const (
-	AwaitedEventInputWaitForEventAwaitsInputSum WaitForEventAwaitsInputSumType = "event"
+	AwaitedEventInputWaitForEventAwaitsInputSum   WaitForEventAwaitsInputSumType = "event"
+	AwaitedMessageInputWaitForEventAwaitsInputSum WaitForEventAwaitsInputSumType = "message"
 )
 
 // IsAwaitedEventInput reports whether WaitForEventAwaitsInputSum is AwaitedEventInput.
 func (s WaitForEventAwaitsInputSum) IsAwaitedEventInput() bool {
 	return s.Type == AwaitedEventInputWaitForEventAwaitsInputSum
+}
+
+// IsAwaitedMessageInput reports whether WaitForEventAwaitsInputSum is AwaitedMessageInput.
+func (s WaitForEventAwaitsInputSum) IsAwaitedMessageInput() bool {
+	return s.Type == AwaitedMessageInputWaitForEventAwaitsInputSum
 }
 
 // SetAwaitedEventInput sets WaitForEventAwaitsInputSum to AwaitedEventInput.
@@ -44906,11 +45075,33 @@ func NewAwaitedEventInputWaitForEventAwaitsInputSum(v AwaitedEventInput) WaitFor
 	return s
 }
 
+// SetAwaitedMessageInput sets WaitForEventAwaitsInputSum to AwaitedMessageInput.
+func (s *WaitForEventAwaitsInputSum) SetAwaitedMessageInput(v AwaitedMessageInput) {
+	s.Type = AwaitedMessageInputWaitForEventAwaitsInputSum
+	s.AwaitedMessageInput = v
+}
+
+// GetAwaitedMessageInput returns AwaitedMessageInput and true boolean if WaitForEventAwaitsInputSum is AwaitedMessageInput.
+func (s WaitForEventAwaitsInputSum) GetAwaitedMessageInput() (v AwaitedMessageInput, ok bool) {
+	if !s.IsAwaitedMessageInput() {
+		return v, false
+	}
+	return s.AwaitedMessageInput, true
+}
+
+// NewAwaitedMessageInputWaitForEventAwaitsInputSum returns new WaitForEventAwaitsInputSum from AwaitedMessageInput.
+func NewAwaitedMessageInputWaitForEventAwaitsInputSum(v AwaitedMessageInput) WaitForEventAwaitsInputSum {
+	var s WaitForEventAwaitsInputSum
+	s.SetAwaitedMessageInput(v)
+	return s
+}
+
 // WaitForEventAwaitsSum represents sum type.
 type WaitForEventAwaitsSum struct {
 	// Type selects the active sum variant, switch on this field.
-	Type         WaitForEventAwaitsSumType
-	AwaitedEvent AwaitedEvent
+	Type           WaitForEventAwaitsSumType
+	AwaitedEvent   AwaitedEvent
+	AwaitedMessage AwaitedMessage
 }
 
 // WaitForEventAwaitsSumType is oneOf type of WaitForEventAwaitsSum.
@@ -44918,12 +45109,18 @@ type WaitForEventAwaitsSumType string
 
 // Possible values for WaitForEventAwaitsSumType.
 const (
-	AwaitedEventWaitForEventAwaitsSum WaitForEventAwaitsSumType = "event"
+	AwaitedEventWaitForEventAwaitsSum   WaitForEventAwaitsSumType = "event"
+	AwaitedMessageWaitForEventAwaitsSum WaitForEventAwaitsSumType = "message"
 )
 
 // IsAwaitedEvent reports whether WaitForEventAwaitsSum is AwaitedEvent.
 func (s WaitForEventAwaitsSum) IsAwaitedEvent() bool {
 	return s.Type == AwaitedEventWaitForEventAwaitsSum
+}
+
+// IsAwaitedMessage reports whether WaitForEventAwaitsSum is AwaitedMessage.
+func (s WaitForEventAwaitsSum) IsAwaitedMessage() bool {
+	return s.Type == AwaitedMessageWaitForEventAwaitsSum
 }
 
 // SetAwaitedEvent sets WaitForEventAwaitsSum to AwaitedEvent.
@@ -44947,14 +45144,36 @@ func NewAwaitedEventWaitForEventAwaitsSum(v AwaitedEvent) WaitForEventAwaitsSum 
 	return s
 }
 
+// SetAwaitedMessage sets WaitForEventAwaitsSum to AwaitedMessage.
+func (s *WaitForEventAwaitsSum) SetAwaitedMessage(v AwaitedMessage) {
+	s.Type = AwaitedMessageWaitForEventAwaitsSum
+	s.AwaitedMessage = v
+}
+
+// GetAwaitedMessage returns AwaitedMessage and true boolean if WaitForEventAwaitsSum is AwaitedMessage.
+func (s WaitForEventAwaitsSum) GetAwaitedMessage() (v AwaitedMessage, ok bool) {
+	if !s.IsAwaitedMessage() {
+		return v, false
+	}
+	return s.AwaitedMessage, true
+}
+
+// NewAwaitedMessageWaitForEventAwaitsSum returns new WaitForEventAwaitsSum from AwaitedMessage.
+func NewAwaitedMessageWaitForEventAwaitsSum(v AwaitedMessage) WaitForEventAwaitsSum {
+	var s WaitForEventAwaitsSum
+	s.SetAwaitedMessage(v)
+	return s
+}
+
 type WaitForEventName string
 
 // A Step that holds the Enrollment until what it awaits arrives or its timeout passes (ADR 0124), then
-// takes `arrived` or `timedOut`; the paths rejoin at the Step after it. An Event counts when it is the
-// Contact's, occurred at or after the moment the Enrollment reached the Step and no later than the
-// timeout, and is neither a machine open or click, loaded history nor the Event that began the
-// Enrollment. One that occurred within the window but was recorded late is taken at the timeout. An
-// Event an exit or the goal matches ends the Enrollment instead.
+// takes `arrived` or `timedOut`, or `unknown` when it waits for an open or a click that it cannot know
+// of; the paths rejoin at the Step after it. An Event counts when it is the Contact's, occurred at or
+// after the moment the Enrollment reached the Step and no later than the timeout, and is neither a
+// machine open or click, loaded history nor the Event that began the Enrollment. One that occurred
+// within the window but was recorded late is taken at the timeout. An Event an exit or the goal
+// matches ends the Enrollment instead.
 // Ref: #/components/schemas/WaitForEventStep
 type WaitForEventStep struct {
 	// The Step's id.
@@ -44970,6 +45189,9 @@ type WaitForEventStep struct {
 	Arrived AutomationPath `json:"arrived"`
 	// The path taken when the timeout passes first.
 	TimedOut AutomationPath `json:"timedOut"`
+	// The path taken when the Step waits for an open or a click (`message`) and cannot know whether one
+	// happened; never present when it waits for an Event.
+	Unknown OptAutomationPath `json:"unknown"`
 }
 
 // GetID returns the value of ID.
@@ -45007,6 +45229,11 @@ func (s *WaitForEventStep) GetTimedOut() AutomationPath {
 	return s.TimedOut
 }
 
+// GetUnknown returns the value of Unknown.
+func (s *WaitForEventStep) GetUnknown() OptAutomationPath {
+	return s.Unknown
+}
+
 // SetID sets the value of ID.
 func (s *WaitForEventStep) SetID(val StepId) {
 	s.ID = val
@@ -45042,6 +45269,11 @@ func (s *WaitForEventStep) SetTimedOut(val AutomationPath) {
 	s.TimedOut = val
 }
 
+// SetUnknown sets the value of Unknown.
+func (s *WaitForEventStep) SetUnknown(val OptAutomationPath) {
+	s.Unknown = val
+}
+
 // A Wait for event, as a request writes it.
 // Ref: #/components/schemas/WaitForEventStepInput
 type WaitForEventStepInput struct {
@@ -45061,6 +45293,10 @@ type WaitForEventStepInput struct {
 	Arrived AutomationPathInput `json:"arrived"`
 	// The path taken when the timeout passes first.
 	TimedOut AutomationPathInput `json:"timedOut"`
+	// The path taken when the Step waits for an open or a click (`message`) and cannot know whether one
+	// happened. Publish refuses a Wait for event on a message without it, and a save refuses it on a Wait
+	// for event on an Event.
+	Unknown OptAutomationPathInput `json:"unknown"`
 }
 
 // GetID returns the value of ID.
@@ -45098,6 +45334,11 @@ func (s *WaitForEventStepInput) GetTimedOut() AutomationPathInput {
 	return s.TimedOut
 }
 
+// GetUnknown returns the value of Unknown.
+func (s *WaitForEventStepInput) GetUnknown() OptAutomationPathInput {
+	return s.Unknown
+}
+
 // SetID sets the value of ID.
 func (s *WaitForEventStepInput) SetID(val OptStepId) {
 	s.ID = val
@@ -45131,6 +45372,11 @@ func (s *WaitForEventStepInput) SetArrived(val AutomationPathInput) {
 // SetTimedOut sets the value of TimedOut.
 func (s *WaitForEventStepInput) SetTimedOut(val AutomationPathInput) {
 	s.TimedOut = val
+}
+
+// SetUnknown sets the value of Unknown.
+func (s *WaitForEventStepInput) SetUnknown(val OptAutomationPathInput) {
+	s.Unknown = val
 }
 
 type WaitForEventStepInputType string

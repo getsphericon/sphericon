@@ -1403,6 +1403,9 @@ func waitForEventAwaits(a automationstep.Awaits) (siteapi.WaitForEventAwaits, er
 	case automationstep.AwaitedEvent:
 		ev := siteapi.AwaitedEvent{Kind: siteapi.AwaitedEventKindEvent, Actions: append([]string{}, a.Actions...)}
 		return siteapi.WaitForEventAwaits{OneOf: siteapi.NewAwaitedEventWaitForEventAwaitsSum(ev)}, nil
+	case automationstep.AwaitedMessage:
+		m := siteapi.AwaitedMessage{Kind: siteapi.AwaitedMessageKindMessage, Step: siteapi.StepId(a.Step), Engagement: siteapi.MessageEngagement(a.Engagement)}
+		return siteapi.WaitForEventAwaits{OneOf: siteapi.NewAwaitedMessageWaitForEventAwaitsSum(m)}, nil
 	case nil:
 	}
 	return siteapi.WaitForEventAwaits{}, errors.New("a wait for event that awaits nothing")
