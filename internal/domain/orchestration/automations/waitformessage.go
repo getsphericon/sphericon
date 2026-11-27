@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"slices"
 
+	"entgo.io/ent/dialect/sql"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationsteprecord"
@@ -53,11 +55,24 @@ func engagementActions(e conditiontree.Engagement) []string {
 	return nil
 }
 
-// runHeard is heardOf the message the Enrollment runID was sent.
+// runHeard is heardOf the message the Enrollment runID was sent, read in the transaction of the move
+// that reaches the wait (arrive) with the message's row locked against a hit on it to its end. A
+// hit locks the row FOR SHARE while it records its open or click (engagement.Recorder), which a
+// lock FOR NO KEY UPDATE conflicts with and FOR SHARE would not: a hit that took the row first
+// commits before this read, which sees its Event; one that comes after waits for the move to commit,
+// and the wake of its Event then finds the Enrollment on the wait. An open in the seconds between
+// the send and the Step is never left to the deadline (ADR 0124).
 func runHeard(ctx context.Context, s *ent.Scoped, runID int64, a automationstep.AwaitedMessage) (heard, error) {
 	run, err := s.AutomationRun().Get(ctx, runID)
 	if err != nil {
 		return heard{}, err
+	}
+	_, err = s.OutboundMessage().Query().
+		Where(outboundmessage.AutomationRunID(runID), outboundmessage.AutomationStepID(a.Step)).
+		ForUpdate(func(o *sql.LockOptions) { o.Strength = sql.LockNoKeyUpdate }).
+		IDs(ctx)
+	if err != nil {
+		return heard{}, fmt.Errorf("lock the message the wait for event awaits: %w", err)
 	}
 	return heardOf(ctx, s, run, a)
 }
