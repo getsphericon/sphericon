@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -31,13 +32,9 @@ func verifyNews(t *testing.T, env *testhelper.TestEnv) *siteapi.SendingDomainRes
 // envelopeOf is the envelope of the Integration id in res; the test fails when there is none.
 func envelopeOf(t *testing.T, res *siteapi.SendingDomainResource, id int64) siteapi.SendingDomainEnvelope {
 	t.Helper()
-	for _, e := range res.Envelopes {
-		if e.IntegrationId == siteapi.EntityId(id) {
-			return e
-		}
-	}
-	require.Failf(t, "no envelope", "integration %d has no envelope", id)
-	return siteapi.SendingDomainEnvelope{}
+	e, ok := lo.Find(res.Envelopes, func(e siteapi.SendingDomainEnvelope) bool { return e.IntegrationId == siteapi.EntityId(id) })
+	require.Truef(t, ok, "integration %d has an envelope", id)
+	return e
 }
 
 func TestSiteSendingDomainShowsACustomMailFromOfSES(t *testing.T) {
@@ -92,8 +89,8 @@ func TestSiteSendingDomainShowsAnSMTPRelayAsSetAtItsProviderAndNoTestInbox(t *te
 	assert.Equal(t, siteapi.IntegrationProviderSMTP, smtp.Provider)
 	assert.True(t, smtp.MailFrom.Null, "no record for an SMTP relay")
 	assert.True(t, smtp.CheckedAt.Null, "an SMTP relay is asked nothing")
-	for _, e := range res.Envelopes {
-		assert.NotEqual(t, siteapi.IntegrationProviderInbox, e.Provider, "the Test inbox has no envelope")
+	for i := range res.Envelopes {
+		assert.NotEqual(t, siteapi.IntegrationProviderInbox, res.Envelopes[i].Provider, "the Test inbox has no envelope")
 	}
 }
 
@@ -104,9 +101,10 @@ func TestSiteSendingDomainShowsOneEnvelopePerEmailIntegration(t *testing.T) {
 
 	require.NotEmpty(t, res.Envelopes)
 	ids := map[siteapi.EntityId]bool{}
-	for _, e := range res.Envelopes {
-		assert.Falsef(t, ids[e.IntegrationId], "integration %d has one envelope", e.IntegrationId)
-		ids[e.IntegrationId] = true
+	for i := range res.Envelopes {
+		id := res.Envelopes[i].IntegrationId
+		assert.Falsef(t, ids[id], "integration %d has one envelope", id)
+		ids[id] = true
 	}
 	assert.True(t, ids[siteapi.EntityId(fixtures.IntegrationAcmeSesID)])
 	assert.True(t, ids[siteapi.EntityId(fixtures.IntegrationAcmeDefaultID)])

@@ -104,8 +104,6 @@ func (SendingDomain) Indexes() []ent.Index {
 		index.Fields("workspace_id", "domain").
 			Unique().
 			Annotations(entsql.IndexWhere("discarded_at IS NULL")),
-		// Supports the workspace foreign key, which the partial unique index above cannot.
-		index.Fields("workspace_id"),
 		// Lets the periodic re-check job find the least-recently-checked rows.
 		index.Fields("last_checked_at"),
 	}

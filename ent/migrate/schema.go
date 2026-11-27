@@ -3095,11 +3095,6 @@ var (
 				},
 			},
 			{
-				Name:    "sendingdomain_workspace_id",
-				Unique:  false,
-				Columns: []*schema.Column{SendingDomainsColumns[13]},
-			},
-			{
 				Name:    "sendingdomain_last_checked_at",
 				Unique:  false,
 				Columns: []*schema.Column{SendingDomainsColumns[8]},

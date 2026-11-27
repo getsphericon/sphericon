@@ -80,10 +80,10 @@ type Module struct {
 
 // New builds the module over the raw client, which reads across Workspaces: bus opens the transactions its writes run in (a check's DKIM outcome is
 // stored and its loss published in one, which tells the Owners, ADR 0105), lookup resolves the
-// DNS records a check reads, integrations are the Workspace's email Integrations whose envelopes
+// DNS records a check reads, integs are the Workspace's email Integrations whose envelopes
 // a check reads (ADR 0184), and now is the Instance clock.
-func New(client *ent.Client, bus *events.Bus, cipher *secrets.Cipher, lookup domainname.TXTLookup, integrations *integrations.Module, now func() time.Time) *Module {
-	return &Module{client: client, bus: bus, cipher: cipher, dns: NewDNS(lookup), integrations: integrations, now: now}
+func New(client *ent.Client, bus *events.Bus, cipher *secrets.Cipher, lookup domainname.TXTLookup, integs *integrations.Module, now func() time.Time) *Module {
+	return &Module{client: client, bus: bus, cipher: cipher, dns: NewDNS(lookup), integrations: integs, now: now}
 }
 
 // CreateInput is a new Sending domain. An empty Selector means DefaultSelector.
