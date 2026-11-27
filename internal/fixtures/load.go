@@ -16,27 +16,47 @@ import (
 // fixture ids stay clear of the rows an app inserts, and so do the rows that survive the load in a
 // table the fixtures do not own (keepSequencesAheadOfRows).
 //
-// "Now" is the database's clock, not Go's: the first test of a package may run inside a
-// testing/synctest bubble, where time.Now() starts in the year 2000, and every fixture loaded
-// there would be dated around it.
+// The rows are dated from the database's clock (DatabaseNow), read when Load starts.
 func Load(ctx context.Context, sqlDB *sql.DB, cipher *secrets.Cipher, dir string) error {
-	return load(ctx, sqlDB, cipher, dir)
+	now, err := DatabaseNow(ctx, sqlDB)
+	if err != nil {
+		return err
+	}
+	return load(ctx, sqlDB, cipher, dir, now)
+}
+
+// LoadAt is Load with the rows dated from now: a caller that loads more than one database names
+// one instant for all of them, so a row's calendar day is the same in each, and a test can read
+// the day a fixture fell on from that instant, not from a clock that may have passed midnight
+// since the load.
+func LoadAt(ctx context.Context, sqlDB *sql.DB, cipher *secrets.Cipher, dir string, now time.Time) error {
+	return load(ctx, sqlDB, cipher, dir, now)
+}
+
+// DatabaseNow is the database's clock, which dates the fixtures, not Go's: the first test of a
+// package may run inside a testing/synctest bubble, where time.Now() starts in the year 2000, and
+// every fixture loaded there would be dated around it.
+func DatabaseNow(ctx context.Context, sqlDB *sql.DB) (time.Time, error) {
+	var now time.Time
+	// raw sql: the database's clock as a bare value, read before any fixture exists.
+	if err := sqlDB.QueryRowContext(ctx, `SELECT now()`).Scan(&now); err != nil {
+		return time.Time{}, err
+	}
+	return now, nil
 }
 
 // Seed is Load into a database that is not a test one (the development database), which the
 // fixture library refuses otherwise.
 func Seed(ctx context.Context, sqlDB *sql.DB, cipher *secrets.Cipher, dir string) error {
-	return load(ctx, sqlDB, cipher, dir, testfixtures.DangerousSkipTestDatabaseCheck())
-}
-
-// load is Load with the extra options of the fixture library opts.
-func load(ctx context.Context, sqlDB *sql.DB, cipher *secrets.Cipher, dir string, opts ...func(*testfixtures.Loader) error) error {
-	var now time.Time
-	// raw sql: the database's clock as a bare value, read before any fixture exists.
-	if err := sqlDB.QueryRowContext(ctx, `SELECT now()`).Scan(&now); err != nil {
+	now, err := DatabaseNow(ctx, sqlDB)
+	if err != nil {
 		return err
 	}
+	return load(ctx, sqlDB, cipher, dir, now, testfixtures.DangerousSkipTestDatabaseCheck())
+}
 
+// load is LoadAt with the extra options of the fixture library opts.
+func load(ctx context.Context, sqlDB *sql.DB, cipher *secrets.Cipher, dir string, now time.Time, opts ...func(*testfixtures.Loader) error) error {
 	loader, err := testfixtures.New(append([]func(*testfixtures.Loader) error{
 		testfixtures.Database(sqlDB),
 		testfixtures.Dialect("postgres"),

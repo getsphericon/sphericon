@@ -3,7 +3,11 @@
 `internal/testhelper.Setup(t)` is the standard fixture. Each test process gets a database of
 its own, cloned from a template with the migrated schema only (built once per change of the
 migrations); the committed YAML fixtures from `fixtures/` are loaded into it once per test
-process, so their relative dates count from now. Then each test runs inside
+process, so their relative dates count from now: from one instant per process, `env.FixturesNow()`,
+which dates the baseline `RealDB` clones too. A test that expects the calendar day a fixture row
+fell on (a report's day, a series point) computes it from `env.FixturesNow()`, or runs the report
+on that clock, never from `time.Now()`: a package that runs past midnight after the load would
+look a day off. Then each test runs inside
 a transaction that rolls back on cleanup (`dbcleaner`'s `Transaction` strategy, go-txdb underneath:
 full isolation, DB stays at fixture state). Tests drive the real server in-memory through **actors** (typed ogen clients, see
 below) — no sockets. See `internal/api/site/contacts_test.go`.
@@ -45,8 +49,8 @@ finishes without waiting for it (a write that must take no such lock). A claim o
 message is written in a transaction of the bus (under its Destination locks, ADR 0178): a test that
 hooks or intercepts it registers on `env.Bus` too (`Use`, `Intercept`), and a hook that writes
 writes through the mutation's own client (`m.Client()`), since the env's pool has one connection. Its database
-is a clone of a second database the process leases and loads with the fixtures at the same moment
-as `Setup`'s, so both see the same rows with the same relative dates; the clone is dropped when the
+is a clone of a second database the process leases and loads with the fixtures dated from the same
+instant as `Setup`'s, so both see the same rows with the same relative dates; the clone is dropped when the
 test ends, so no test cleans up by hand or resets state at its start. It costs the clone, ten times
 a rolled-back test. A test below the Instance takes a database alone: `testhelper.RealDB(t)` (a
 `*sql.DB`, for a raw pool, a migration, river's own middleware), `RealDBURL(t)` (a URL, e.g.
