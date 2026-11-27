@@ -15,7 +15,8 @@ import (
 )
 
 // A Branch's paths each hold a Condition (ADR 0124), of the Branch path's place: a Rule's leaves,
-// whose property tests read the Event the Enrollment began with. The Branch reads all of them for
+// whose property tests read the Event the Enrollment began with or the one an earlier Wait for
+// event arrived on (ADR 0136). The Branch reads all of them for
 // its Contact in one statement, so every path is judged on one consistent read of the Contact.
 
 // CheckBranch checks a Branch path's Condition as a Rule's is checked: it reads as the place's
@@ -31,13 +32,16 @@ func (m *Module) CheckBranch(ctx context.Context, s *ent.Scoped, g conditiontree
 }
 
 // OutcomesInput is what Outcomes reads: the Contact, the Conditions in order, the properties of
-// the Event the Enrollment began with (nil for none), which each property test reads, and the
+// the Event the Enrollment began with (nil for none), which each test of the triggering Event
+// reads, the properties of the Events its Wait for event Steps arrived on by each Step's name,
+// which each test of the awaited Event reads (a name absent from it has no copy, ADR 0136), and the
 // messages the Enrollment was sent by the send Step that sent each, which each test of its own
 // message reads (a Step absent from it sent none).
 type OutcomesInput struct {
 	ContactID  int64
 	Conditions []conditiontree.Branch
 	Properties map[string]any
+	Awaited    map[string]map[string]any
 	Messages   map[automationstep.ID]SentMessage
 }
 
@@ -53,16 +57,13 @@ func (m *Module) Outcomes(ctx context.Context, s *ent.Scoped, in OutcomesInput) 
 	if len(conds) == 0 {
 		return []conditiontree.Truth{}, nil
 	}
-	if props == nil {
-		props = map[string]any{}
-	}
-	trigger, err := json.Marshal(props)
+	trigger, err := propertiesDocument(props)
 	if err != nil {
 		return nil, fmt.Errorf("encode the Enrollment's Event properties: %w", err)
 	}
 	now := m.now()
-	read := &compiler{s: s, now: now, trigger: trigger, messages: in.Messages}
-	counted := &compiler{s: s, now: now, trigger: trigger, messages: in.Messages, counted: true}
+	read := &compiler{s: s, now: now, trigger: trigger, awaited: in.Awaited, messages: in.Messages}
+	counted := &compiler{s: s, now: now, trigger: trigger, awaited: in.Awaited, messages: in.Messages, counted: true}
 	type judged struct{ held, asCounted predicate.Contact }
 	preds := make([]judged, len(conds))
 	for i, g := range conds {

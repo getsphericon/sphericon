@@ -7439,6 +7439,300 @@ func (s *AwaitedMessageKind) UnmarshalJSON(data []byte) error {
 }
 
 // Encode implements json.Marshaler.
+func (s *AwaitedSource) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *AwaitedSource) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("kind")
+		s.Kind.Encode(e)
+	}
+	{
+		e.FieldStart("name")
+		s.Name.Encode(e)
+	}
+}
+
+var jsonFieldsNameOfAwaitedSource = [2]string{
+	0: "kind",
+	1: "name",
+}
+
+// Decode decodes AwaitedSource from json.
+func (s *AwaitedSource) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode AwaitedSource to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "kind":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Kind.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"kind\"")
+			}
+		case "name":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Name.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"name\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode AwaitedSource")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000011,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfAwaitedSource) {
+					name = jsonFieldsNameOfAwaitedSource[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *AwaitedSource) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *AwaitedSource) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *AwaitedSourceInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *AwaitedSourceInput) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("kind")
+		s.Kind.Encode(e)
+	}
+	{
+		e.FieldStart("name")
+		s.Name.Encode(e)
+	}
+}
+
+var jsonFieldsNameOfAwaitedSourceInput = [2]string{
+	0: "kind",
+	1: "name",
+}
+
+// Decode decodes AwaitedSourceInput from json.
+func (s *AwaitedSourceInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode AwaitedSourceInput to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "kind":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Kind.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"kind\"")
+			}
+		case "name":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Name.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"name\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode AwaitedSourceInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000011,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfAwaitedSourceInput) {
+					name = jsonFieldsNameOfAwaitedSourceInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *AwaitedSourceInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *AwaitedSourceInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes AwaitedSourceInputKind as json.
+func (s AwaitedSourceInputKind) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes AwaitedSourceInputKind from json.
+func (s *AwaitedSourceInputKind) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode AwaitedSourceInputKind to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch AwaitedSourceInputKind(v) {
+	case AwaitedSourceInputKindAwaited:
+		*s = AwaitedSourceInputKindAwaited
+	default:
+		*s = AwaitedSourceInputKind(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s AwaitedSourceInputKind) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *AwaitedSourceInputKind) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes AwaitedSourceKind as json.
+func (s AwaitedSourceKind) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes AwaitedSourceKind from json.
+func (s *AwaitedSourceKind) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode AwaitedSourceKind to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch AwaitedSourceKind(v) {
+	case AwaitedSourceKindAwaited:
+		*s = AwaitedSourceKindAwaited
+	default:
+		*s = AwaitedSourceKind(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s AwaitedSourceKind) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *AwaitedSourceKind) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
 func (s *BirthdayDateField) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
@@ -10168,6 +10462,16 @@ func (s BranchPropertySourceInputSum) encodeFields(e *jx.Encoder) {
 	case TriggerSourceInputBranchPropertySourceInputSum:
 		e.FieldStart("kind")
 		e.Str("trigger")
+	case AwaitedSourceInputBranchPropertySourceInputSum:
+		e.FieldStart("kind")
+		e.Str("awaited")
+		{
+			s := s.AwaitedSourceInput
+			{
+				e.FieldStart("name")
+				s.Name.Encode(e)
+			}
+		}
 	}
 }
 
@@ -10197,6 +10501,9 @@ func (s *BranchPropertySourceInputSum) Decode(d *jx.Decoder) error {
 				case "trigger":
 					s.Type = TriggerSourceInputBranchPropertySourceInputSum
 					found = true
+				case "awaited":
+					s.Type = AwaitedSourceInputBranchPropertySourceInputSum
+					found = true
 				default:
 					return errors.Errorf("unknown type %s", typ)
 				}
@@ -10213,6 +10520,10 @@ func (s *BranchPropertySourceInputSum) Decode(d *jx.Decoder) error {
 	switch s.Type {
 	case TriggerSourceInputBranchPropertySourceInputSum:
 		if err := s.TriggerSourceInput.Decode(d); err != nil {
+			return err
+		}
+	case AwaitedSourceInputBranchPropertySourceInputSum:
+		if err := s.AwaitedSourceInput.Decode(d); err != nil {
 			return err
 		}
 	default:
@@ -10246,6 +10557,16 @@ func (s BranchPropertySourceSum) encodeFields(e *jx.Encoder) {
 	case TriggerSourceBranchPropertySourceSum:
 		e.FieldStart("kind")
 		e.Str("trigger")
+	case AwaitedSourceBranchPropertySourceSum:
+		e.FieldStart("kind")
+		e.Str("awaited")
+		{
+			s := s.AwaitedSource
+			{
+				e.FieldStart("name")
+				s.Name.Encode(e)
+			}
+		}
 	}
 }
 
@@ -10275,6 +10596,9 @@ func (s *BranchPropertySourceSum) Decode(d *jx.Decoder) error {
 				case "trigger":
 					s.Type = TriggerSourceBranchPropertySourceSum
 					found = true
+				case "awaited":
+					s.Type = AwaitedSourceBranchPropertySourceSum
+					found = true
 				default:
 					return errors.Errorf("unknown type %s", typ)
 				}
@@ -10291,6 +10615,10 @@ func (s *BranchPropertySourceSum) Decode(d *jx.Decoder) error {
 	switch s.Type {
 	case TriggerSourceBranchPropertySourceSum:
 		if err := s.TriggerSource.Decode(d); err != nil {
+			return err
+		}
+	case AwaitedSourceBranchPropertySourceSum:
+		if err := s.AwaitedSource.Decode(d); err != nil {
 			return err
 		}
 	default:
@@ -64469,6 +64797,16 @@ func (s WaitForEventPropertySourceInputSum) encodeFields(e *jx.Encoder) {
 	case TriggerSourceInputWaitForEventPropertySourceInputSum:
 		e.FieldStart("kind")
 		e.Str("trigger")
+	case AwaitedSourceInputWaitForEventPropertySourceInputSum:
+		e.FieldStart("kind")
+		e.Str("awaited")
+		{
+			s := s.AwaitedSourceInput
+			{
+				e.FieldStart("name")
+				s.Name.Encode(e)
+			}
+		}
 	}
 }
 
@@ -64498,6 +64836,9 @@ func (s *WaitForEventPropertySourceInputSum) Decode(d *jx.Decoder) error {
 				case "trigger":
 					s.Type = TriggerSourceInputWaitForEventPropertySourceInputSum
 					found = true
+				case "awaited":
+					s.Type = AwaitedSourceInputWaitForEventPropertySourceInputSum
+					found = true
 				default:
 					return errors.Errorf("unknown type %s", typ)
 				}
@@ -64514,6 +64855,10 @@ func (s *WaitForEventPropertySourceInputSum) Decode(d *jx.Decoder) error {
 	switch s.Type {
 	case TriggerSourceInputWaitForEventPropertySourceInputSum:
 		if err := s.TriggerSourceInput.Decode(d); err != nil {
+			return err
+		}
+	case AwaitedSourceInputWaitForEventPropertySourceInputSum:
+		if err := s.AwaitedSourceInput.Decode(d); err != nil {
 			return err
 		}
 	default:
@@ -64547,6 +64892,16 @@ func (s WaitForEventPropertySourceSum) encodeFields(e *jx.Encoder) {
 	case TriggerSourceWaitForEventPropertySourceSum:
 		e.FieldStart("kind")
 		e.Str("trigger")
+	case AwaitedSourceWaitForEventPropertySourceSum:
+		e.FieldStart("kind")
+		e.Str("awaited")
+		{
+			s := s.AwaitedSource
+			{
+				e.FieldStart("name")
+				s.Name.Encode(e)
+			}
+		}
 	}
 }
 
@@ -64576,6 +64931,9 @@ func (s *WaitForEventPropertySourceSum) Decode(d *jx.Decoder) error {
 				case "trigger":
 					s.Type = TriggerSourceWaitForEventPropertySourceSum
 					found = true
+				case "awaited":
+					s.Type = AwaitedSourceWaitForEventPropertySourceSum
+					found = true
 				default:
 					return errors.Errorf("unknown type %s", typ)
 				}
@@ -64592,6 +64950,10 @@ func (s *WaitForEventPropertySourceSum) Decode(d *jx.Decoder) error {
 	switch s.Type {
 	case TriggerSourceWaitForEventPropertySourceSum:
 		if err := s.TriggerSource.Decode(d); err != nil {
+			return err
+		}
+	case AwaitedSourceWaitForEventPropertySourceSum:
+		if err := s.AwaitedSource.Decode(d); err != nil {
 			return err
 		}
 	default:

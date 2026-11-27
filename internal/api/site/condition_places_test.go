@@ -96,6 +96,17 @@ func TestSiteConditionRefusesWhatItsPlaceDoesNotAdmitByItsPath(t *testing.T) {
 			"condition.entries.1.entries.1",
 		},
 		{
+			"a property test of the awaited Event in a Segment",
+			`{"kind":"property","of":{"kind":"awaited","name":"purchase"},"key":"total","test":{"kind":"number","operator":"gt","value":100}}`,
+			"condition.entries.1.entries.1",
+		},
+		{
+			"a property test of the awaited Event in an Event filter",
+			`{"kind":"event","action":"order.created","operator":"atLeast","times":1,"filter":{"kind":"group","combinator":"and","entries":[` +
+				`{"kind":"property","of":{"kind":"awaited","name":"purchase"},"key":"total","test":{"kind":"number","operator":"gt","value":100}}]}}`,
+			"condition.entries.1.entries.1.filter.entries.0.of",
+		},
+		{
 			"a test of an Enrollment's own message in a Segment",
 			`{"kind":"stepMessage","step":"5a0f6d2e-8b1c-4e3a-9f7d-000000000002","engagement":"opened"}`,
 			"condition.entries.1.entries.1",
@@ -142,22 +153,40 @@ func TestSiteConditionRefusesWhatItsPlaceDoesNotAdmitByItsPath(t *testing.T) {
 	}
 }
 
-// A Rule's Condition does not admit the test of an Enrollment's own message, which is a Branch
-// path's alone (ADR 0122): the schema refuses it with a 400 that names its path.
-func TestSiteRuleConditionRefusesATestOfAnEnrollmentsOwnMessage(t *testing.T) {
-	env := testhelper.Setup(t)
-	edited := env.SiteActorVia(t, fixtures.OwnerJohnEmail, testhelper.EditBody(func(body map[string]any) {
-		body["condition"] = testhelper.NestedCondition(t, `{"kind":"stepMessage","step":"5a0f6d2e-8b1c-4e3a-9f7d-000000000002","engagement":"clicked"}`)
-	}))
+// A Rule's Condition admits neither the test of an Enrollment's own message (ADR 0122) nor a test of
+// the Event a Wait for event arrived on (ADR 0136), an Automation's alone: the schema refuses each
+// with a 400 that names its path.
+func TestSiteRuleConditionRefusesWhatOnlyAnAutomationAdmitsByItsPath(t *testing.T) {
+	for _, tc := range []struct {
+		name, leaf, path string
+	}{
+		{
+			"a test of an Enrollment's own message",
+			`{"kind":"stepMessage","step":"5a0f6d2e-8b1c-4e3a-9f7d-000000000002","engagement":"clicked"}`,
+			"condition.entries.1.entries.1",
+		},
+		{
+			"a property test of the awaited Event",
+			`{"kind":"property","of":{"kind":"awaited","name":"purchase"},"key":"total","test":{"kind":"number","operator":"gt","value":100}}`,
+			"condition.entries.1.entries.1.of",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			env := testhelper.Setup(t)
+			edited := env.SiteActorVia(t, fixtures.OwnerJohnEmail, testhelper.EditBody(func(body map[string]any) {
+				body["condition"] = testhelper.NestedCondition(t, tc.leaf)
+			}))
 
-	_, err := edited.SiteRulesCreate(t.Context(), &siteapi.CreateRuleInput{
-		Name: "Misplaced", TriggerEvents: []string{"checkout"},
-		Actions:   []siteapi.RuleActionInput{tagAction(siteapi.RuleActionTypeApplyTag, "x")},
-		Condition: siteapi.NewOptRuleConditionInput(testhelper.ConditionInput[siteapi.RuleConditionInput](t, `{"kind":"group","combinator":"and","entries":[]}`)),
-	}, siteapi.SiteRulesCreateParams{WorkspaceId: fixtures.AcmePublicID})
+			_, err := edited.SiteRulesCreate(t.Context(), &siteapi.CreateRuleInput{
+				Name: "Misplaced", TriggerEvents: []string{"checkout"},
+				Actions:   []siteapi.RuleActionInput{tagAction(siteapi.RuleActionTypeApplyTag, "x")},
+				Condition: siteapi.NewOptRuleConditionInput(testhelper.ConditionInput[siteapi.RuleConditionInput](t, `{"kind":"group","combinator":"and","entries":[]}`)),
+			}, siteapi.SiteRulesCreateParams{WorkspaceId: fixtures.AcmePublicID})
 
-	refused := testhelper.SiteRefusal(t, err, http.StatusBadRequest)
-	assert.Equal(t, []string{"condition.entries.1.entries.1"}, slices.Collect(maps.Keys(refused.Errors.Or(nil))))
+			refused := testhelper.SiteRefusal(t, err, http.StatusBadRequest)
+			assert.Equal(t, []string{tc.path}, slices.Collect(maps.Keys(refused.Errors.Or(nil))))
+		})
+	}
 }
 
 // Every attribute the contract lists is one a Condition tests: none is refused.

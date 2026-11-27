@@ -4196,6 +4196,136 @@ func (s *AwaitedMessageKind) UnmarshalText(data []byte) error {
 	}
 }
 
+// The Event a Wait for event of the Automation arrived on, kept by the Enrollment under the Wait for
+// event's name (ADR 0136), whose properties a property test reads. The Wait for event must be one that
+// can come before the Step holding the test. Where the Enrollment keeps no copy of it (the Wait for
+// event timed out, or its path never passed it), the test fails.
+// Ref: #/components/schemas/AwaitedSource
+type AwaitedSource struct {
+	Kind AwaitedSourceKind `json:"kind"`
+	// The Wait for event's name.
+	Name WaitForEventName `json:"name"`
+}
+
+// GetKind returns the value of Kind.
+func (s *AwaitedSource) GetKind() AwaitedSourceKind {
+	return s.Kind
+}
+
+// GetName returns the value of Name.
+func (s *AwaitedSource) GetName() WaitForEventName {
+	return s.Name
+}
+
+// SetKind sets the value of Kind.
+func (s *AwaitedSource) SetKind(val AwaitedSourceKind) {
+	s.Kind = val
+}
+
+// SetName sets the value of Name.
+func (s *AwaitedSource) SetName(val WaitForEventName) {
+	s.Name = val
+}
+
+// The Event a Wait for event of the Automation arrived on, kept by the Enrollment under the Wait for
+// event's name (ADR 0136), whose properties a property test reads. The Wait for event must be one that
+// can come before the Step holding the test. Where the Enrollment keeps no copy of it (the Wait for
+// event timed out, or its path never passed it), the test fails.
+// Ref: #/components/schemas/AwaitedSourceInput
+type AwaitedSourceInput struct {
+	Kind AwaitedSourceInputKind `json:"kind"`
+	// The Wait for event's name.
+	Name WaitForEventName `json:"name"`
+}
+
+// GetKind returns the value of Kind.
+func (s *AwaitedSourceInput) GetKind() AwaitedSourceInputKind {
+	return s.Kind
+}
+
+// GetName returns the value of Name.
+func (s *AwaitedSourceInput) GetName() WaitForEventName {
+	return s.Name
+}
+
+// SetKind sets the value of Kind.
+func (s *AwaitedSourceInput) SetKind(val AwaitedSourceInputKind) {
+	s.Kind = val
+}
+
+// SetName sets the value of Name.
+func (s *AwaitedSourceInput) SetName(val WaitForEventName) {
+	s.Name = val
+}
+
+type AwaitedSourceInputKind string
+
+const (
+	AwaitedSourceInputKindAwaited AwaitedSourceInputKind = "awaited"
+)
+
+// AllValues returns all AwaitedSourceInputKind values.
+func (AwaitedSourceInputKind) AllValues() []AwaitedSourceInputKind {
+	return []AwaitedSourceInputKind{
+		AwaitedSourceInputKindAwaited,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s AwaitedSourceInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case AwaitedSourceInputKindAwaited:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *AwaitedSourceInputKind) UnmarshalText(data []byte) error {
+	switch AwaitedSourceInputKind(data) {
+	case AwaitedSourceInputKindAwaited:
+		*s = AwaitedSourceInputKindAwaited
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type AwaitedSourceKind string
+
+const (
+	AwaitedSourceKindAwaited AwaitedSourceKind = "awaited"
+)
+
+// AllValues returns all AwaitedSourceKind values.
+func (AwaitedSourceKind) AllValues() []AwaitedSourceKind {
+	return []AwaitedSourceKind{
+		AwaitedSourceKindAwaited,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s AwaitedSourceKind) MarshalText() ([]byte, error) {
+	switch s {
+	case AwaitedSourceKindAwaited:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *AwaitedSourceKind) UnmarshalText(data []byte) error {
+	switch AwaitedSourceKind(data) {
+	case AwaitedSourceKindAwaited:
+		*s = AwaitedSourceKindAwaited
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // The Contact's date of birth, a date field every Contact has.
 // Ref: #/components/schemas/BirthdayDateField
 type BirthdayDateField struct {
@@ -5689,7 +5819,8 @@ func (s *BranchPropertyLeafKind) UnmarshalText(data []byte) error {
 	}
 }
 
-// Whose properties a Branch path's property test reads, by `kind`: the Event the Enrollment began with.
+// Whose properties a Branch path's property test reads, by `kind`: the Event the Enrollment began
+// with, or the one an earlier Wait for event arrived on.
 // Ref: #/components/schemas/BranchPropertySource
 type BranchPropertySource struct {
 	OneOf BranchPropertySourceSum
@@ -5705,7 +5836,8 @@ func (s *BranchPropertySource) SetOneOf(val BranchPropertySourceSum) {
 	s.OneOf = val
 }
 
-// Whose properties a Branch path's property test reads, by `kind`: the Event the Enrollment began with.
+// Whose properties a Branch path's property test reads, by `kind`: the Event the Enrollment began
+// with, or the one an earlier Wait for event arrived on.
 // Ref: #/components/schemas/BranchPropertySourceInput
 type BranchPropertySourceInput struct {
 	OneOf BranchPropertySourceInputSum
@@ -5726,6 +5858,7 @@ type BranchPropertySourceInputSum struct {
 	// Type selects the active sum variant, switch on this field.
 	Type               BranchPropertySourceInputSumType
 	TriggerSourceInput TriggerSourceInput
+	AwaitedSourceInput AwaitedSourceInput
 }
 
 // BranchPropertySourceInputSumType is oneOf type of BranchPropertySourceInputSum.
@@ -5734,11 +5867,17 @@ type BranchPropertySourceInputSumType string
 // Possible values for BranchPropertySourceInputSumType.
 const (
 	TriggerSourceInputBranchPropertySourceInputSum BranchPropertySourceInputSumType = "trigger"
+	AwaitedSourceInputBranchPropertySourceInputSum BranchPropertySourceInputSumType = "awaited"
 )
 
 // IsTriggerSourceInput reports whether BranchPropertySourceInputSum is TriggerSourceInput.
 func (s BranchPropertySourceInputSum) IsTriggerSourceInput() bool {
 	return s.Type == TriggerSourceInputBranchPropertySourceInputSum
+}
+
+// IsAwaitedSourceInput reports whether BranchPropertySourceInputSum is AwaitedSourceInput.
+func (s BranchPropertySourceInputSum) IsAwaitedSourceInput() bool {
+	return s.Type == AwaitedSourceInputBranchPropertySourceInputSum
 }
 
 // SetTriggerSourceInput sets BranchPropertySourceInputSum to TriggerSourceInput.
@@ -5762,11 +5901,33 @@ func NewTriggerSourceInputBranchPropertySourceInputSum(v TriggerSourceInput) Bra
 	return s
 }
 
+// SetAwaitedSourceInput sets BranchPropertySourceInputSum to AwaitedSourceInput.
+func (s *BranchPropertySourceInputSum) SetAwaitedSourceInput(v AwaitedSourceInput) {
+	s.Type = AwaitedSourceInputBranchPropertySourceInputSum
+	s.AwaitedSourceInput = v
+}
+
+// GetAwaitedSourceInput returns AwaitedSourceInput and true boolean if BranchPropertySourceInputSum is AwaitedSourceInput.
+func (s BranchPropertySourceInputSum) GetAwaitedSourceInput() (v AwaitedSourceInput, ok bool) {
+	if !s.IsAwaitedSourceInput() {
+		return v, false
+	}
+	return s.AwaitedSourceInput, true
+}
+
+// NewAwaitedSourceInputBranchPropertySourceInputSum returns new BranchPropertySourceInputSum from AwaitedSourceInput.
+func NewAwaitedSourceInputBranchPropertySourceInputSum(v AwaitedSourceInput) BranchPropertySourceInputSum {
+	var s BranchPropertySourceInputSum
+	s.SetAwaitedSourceInput(v)
+	return s
+}
+
 // BranchPropertySourceSum represents sum type.
 type BranchPropertySourceSum struct {
 	// Type selects the active sum variant, switch on this field.
 	Type          BranchPropertySourceSumType
 	TriggerSource TriggerSource
+	AwaitedSource AwaitedSource
 }
 
 // BranchPropertySourceSumType is oneOf type of BranchPropertySourceSum.
@@ -5775,11 +5936,17 @@ type BranchPropertySourceSumType string
 // Possible values for BranchPropertySourceSumType.
 const (
 	TriggerSourceBranchPropertySourceSum BranchPropertySourceSumType = "trigger"
+	AwaitedSourceBranchPropertySourceSum BranchPropertySourceSumType = "awaited"
 )
 
 // IsTriggerSource reports whether BranchPropertySourceSum is TriggerSource.
 func (s BranchPropertySourceSum) IsTriggerSource() bool {
 	return s.Type == TriggerSourceBranchPropertySourceSum
+}
+
+// IsAwaitedSource reports whether BranchPropertySourceSum is AwaitedSource.
+func (s BranchPropertySourceSum) IsAwaitedSource() bool {
+	return s.Type == AwaitedSourceBranchPropertySourceSum
 }
 
 // SetTriggerSource sets BranchPropertySourceSum to TriggerSource.
@@ -5800,6 +5967,27 @@ func (s BranchPropertySourceSum) GetTriggerSource() (v TriggerSource, ok bool) {
 func NewTriggerSourceBranchPropertySourceSum(v TriggerSource) BranchPropertySourceSum {
 	var s BranchPropertySourceSum
 	s.SetTriggerSource(v)
+	return s
+}
+
+// SetAwaitedSource sets BranchPropertySourceSum to AwaitedSource.
+func (s *BranchPropertySourceSum) SetAwaitedSource(v AwaitedSource) {
+	s.Type = AwaitedSourceBranchPropertySourceSum
+	s.AwaitedSource = v
+}
+
+// GetAwaitedSource returns AwaitedSource and true boolean if BranchPropertySourceSum is AwaitedSource.
+func (s BranchPropertySourceSum) GetAwaitedSource() (v AwaitedSource, ok bool) {
+	if !s.IsAwaitedSource() {
+		return v, false
+	}
+	return s.AwaitedSource, true
+}
+
+// NewAwaitedSourceBranchPropertySourceSum returns new BranchPropertySourceSum from AwaitedSource.
+func NewAwaitedSourceBranchPropertySourceSum(v AwaitedSource) BranchPropertySourceSum {
+	var s BranchPropertySourceSum
+	s.SetAwaitedSource(v)
 	return s
 }
 
@@ -46321,7 +46509,8 @@ func (s *WaitForEventPropertyLeafKind) UnmarshalText(data []byte) error {
 }
 
 // Whose properties a Wait for event's property test reads, by `kind`: the Event the Enrollment began
-// with. The Event the Wait for event awaits is tested by its matcher's filter.
+// with, or the one an earlier Wait for event arrived on. The Event the Wait for event awaits is tested
+// by its matcher's filter.
 // Ref: #/components/schemas/WaitForEventPropertySource
 type WaitForEventPropertySource struct {
 	OneOf WaitForEventPropertySourceSum
@@ -46338,7 +46527,8 @@ func (s *WaitForEventPropertySource) SetOneOf(val WaitForEventPropertySourceSum)
 }
 
 // Whose properties a Wait for event's property test reads, by `kind`: the Event the Enrollment began
-// with. The Event the Wait for event awaits is tested by its matcher's filter.
+// with, or the one an earlier Wait for event arrived on. The Event the Wait for event awaits is tested
+// by its matcher's filter.
 // Ref: #/components/schemas/WaitForEventPropertySourceInput
 type WaitForEventPropertySourceInput struct {
 	OneOf WaitForEventPropertySourceInputSum
@@ -46359,6 +46549,7 @@ type WaitForEventPropertySourceInputSum struct {
 	// Type selects the active sum variant, switch on this field.
 	Type               WaitForEventPropertySourceInputSumType
 	TriggerSourceInput TriggerSourceInput
+	AwaitedSourceInput AwaitedSourceInput
 }
 
 // WaitForEventPropertySourceInputSumType is oneOf type of WaitForEventPropertySourceInputSum.
@@ -46367,11 +46558,17 @@ type WaitForEventPropertySourceInputSumType string
 // Possible values for WaitForEventPropertySourceInputSumType.
 const (
 	TriggerSourceInputWaitForEventPropertySourceInputSum WaitForEventPropertySourceInputSumType = "trigger"
+	AwaitedSourceInputWaitForEventPropertySourceInputSum WaitForEventPropertySourceInputSumType = "awaited"
 )
 
 // IsTriggerSourceInput reports whether WaitForEventPropertySourceInputSum is TriggerSourceInput.
 func (s WaitForEventPropertySourceInputSum) IsTriggerSourceInput() bool {
 	return s.Type == TriggerSourceInputWaitForEventPropertySourceInputSum
+}
+
+// IsAwaitedSourceInput reports whether WaitForEventPropertySourceInputSum is AwaitedSourceInput.
+func (s WaitForEventPropertySourceInputSum) IsAwaitedSourceInput() bool {
+	return s.Type == AwaitedSourceInputWaitForEventPropertySourceInputSum
 }
 
 // SetTriggerSourceInput sets WaitForEventPropertySourceInputSum to TriggerSourceInput.
@@ -46395,11 +46592,33 @@ func NewTriggerSourceInputWaitForEventPropertySourceInputSum(v TriggerSourceInpu
 	return s
 }
 
+// SetAwaitedSourceInput sets WaitForEventPropertySourceInputSum to AwaitedSourceInput.
+func (s *WaitForEventPropertySourceInputSum) SetAwaitedSourceInput(v AwaitedSourceInput) {
+	s.Type = AwaitedSourceInputWaitForEventPropertySourceInputSum
+	s.AwaitedSourceInput = v
+}
+
+// GetAwaitedSourceInput returns AwaitedSourceInput and true boolean if WaitForEventPropertySourceInputSum is AwaitedSourceInput.
+func (s WaitForEventPropertySourceInputSum) GetAwaitedSourceInput() (v AwaitedSourceInput, ok bool) {
+	if !s.IsAwaitedSourceInput() {
+		return v, false
+	}
+	return s.AwaitedSourceInput, true
+}
+
+// NewAwaitedSourceInputWaitForEventPropertySourceInputSum returns new WaitForEventPropertySourceInputSum from AwaitedSourceInput.
+func NewAwaitedSourceInputWaitForEventPropertySourceInputSum(v AwaitedSourceInput) WaitForEventPropertySourceInputSum {
+	var s WaitForEventPropertySourceInputSum
+	s.SetAwaitedSourceInput(v)
+	return s
+}
+
 // WaitForEventPropertySourceSum represents sum type.
 type WaitForEventPropertySourceSum struct {
 	// Type selects the active sum variant, switch on this field.
 	Type          WaitForEventPropertySourceSumType
 	TriggerSource TriggerSource
+	AwaitedSource AwaitedSource
 }
 
 // WaitForEventPropertySourceSumType is oneOf type of WaitForEventPropertySourceSum.
@@ -46408,11 +46627,17 @@ type WaitForEventPropertySourceSumType string
 // Possible values for WaitForEventPropertySourceSumType.
 const (
 	TriggerSourceWaitForEventPropertySourceSum WaitForEventPropertySourceSumType = "trigger"
+	AwaitedSourceWaitForEventPropertySourceSum WaitForEventPropertySourceSumType = "awaited"
 )
 
 // IsTriggerSource reports whether WaitForEventPropertySourceSum is TriggerSource.
 func (s WaitForEventPropertySourceSum) IsTriggerSource() bool {
 	return s.Type == TriggerSourceWaitForEventPropertySourceSum
+}
+
+// IsAwaitedSource reports whether WaitForEventPropertySourceSum is AwaitedSource.
+func (s WaitForEventPropertySourceSum) IsAwaitedSource() bool {
+	return s.Type == AwaitedSourceWaitForEventPropertySourceSum
 }
 
 // SetTriggerSource sets WaitForEventPropertySourceSum to TriggerSource.
@@ -46433,6 +46658,27 @@ func (s WaitForEventPropertySourceSum) GetTriggerSource() (v TriggerSource, ok b
 func NewTriggerSourceWaitForEventPropertySourceSum(v TriggerSource) WaitForEventPropertySourceSum {
 	var s WaitForEventPropertySourceSum
 	s.SetTriggerSource(v)
+	return s
+}
+
+// SetAwaitedSource sets WaitForEventPropertySourceSum to AwaitedSource.
+func (s *WaitForEventPropertySourceSum) SetAwaitedSource(v AwaitedSource) {
+	s.Type = AwaitedSourceWaitForEventPropertySourceSum
+	s.AwaitedSource = v
+}
+
+// GetAwaitedSource returns AwaitedSource and true boolean if WaitForEventPropertySourceSum is AwaitedSource.
+func (s WaitForEventPropertySourceSum) GetAwaitedSource() (v AwaitedSource, ok bool) {
+	if !s.IsAwaitedSource() {
+		return v, false
+	}
+	return s.AwaitedSource, true
+}
+
+// NewAwaitedSourceWaitForEventPropertySourceSum returns new WaitForEventPropertySourceSum from AwaitedSource.
+func NewAwaitedSourceWaitForEventPropertySourceSum(v AwaitedSource) WaitForEventPropertySourceSum {
+	var s WaitForEventPropertySourceSum
+	s.SetAwaitedSource(v)
 	return s
 }
 

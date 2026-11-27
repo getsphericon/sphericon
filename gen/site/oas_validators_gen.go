@@ -1774,6 +1774,92 @@ func (s AwaitedMessageKind) Validate() error {
 	}
 }
 
+func (s *AwaitedSource) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Kind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "kind",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Name.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "name",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *AwaitedSourceInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Kind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "kind",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Name.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "name",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s AwaitedSourceInputKind) Validate() error {
+	switch s {
+	case "awaited":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s AwaitedSourceKind) Validate() error {
+	switch s {
+	case "awaited":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s *BirthdayDateField) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -2579,6 +2665,11 @@ func (s BranchPropertySourceInputSum) Validate() error {
 			return err
 		}
 		return nil
+	case AwaitedSourceInputBranchPropertySourceInputSum:
+		if err := s.AwaitedSourceInput.Validate(); err != nil {
+			return err
+		}
+		return nil
 	default:
 		return errors.Errorf("invalid type %q", s.Type)
 	}
@@ -2588,6 +2679,11 @@ func (s BranchPropertySourceSum) Validate() error {
 	switch s.Type {
 	case TriggerSourceBranchPropertySourceSum:
 		if err := s.TriggerSource.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case AwaitedSourceBranchPropertySourceSum:
+		if err := s.AwaitedSource.Validate(); err != nil {
 			return err
 		}
 		return nil
@@ -20178,6 +20274,11 @@ func (s WaitForEventPropertySourceInputSum) Validate() error {
 			return err
 		}
 		return nil
+	case AwaitedSourceInputWaitForEventPropertySourceInputSum:
+		if err := s.AwaitedSourceInput.Validate(); err != nil {
+			return err
+		}
+		return nil
 	default:
 		return errors.Errorf("invalid type %q", s.Type)
 	}
@@ -20187,6 +20288,11 @@ func (s WaitForEventPropertySourceSum) Validate() error {
 	switch s.Type {
 	case TriggerSourceWaitForEventPropertySourceSum:
 		if err := s.TriggerSource.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case AwaitedSourceWaitForEventPropertySourceSum:
+		if err := s.AwaitedSource.Validate(); err != nil {
 			return err
 		}
 		return nil

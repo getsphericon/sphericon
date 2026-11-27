@@ -364,9 +364,10 @@ func splitRound(run *ent.AutomationRun) int {
 }
 
 // branch decides a Branch for the Enrollment (ADR 0124): every path's Condition is read for its
-// Contact, on its live data now, in one read, the Enrollment's `event` copy given to the property
-// tests (ADR 0180), and the first path whose Condition is not false decides: true takes it,
-// unknown takes the unknown path, and none takes otherwise. The move down the path, the Branch's
+// Contact, on its live data now, in one read, the Enrollment's `event` copy and the copies of the
+// Events its Wait for event Steps arrived on given to the property tests (ADR 0180, ADR 0136), and
+// the first path whose Condition is not false decides: true takes it, unknown takes the unknown
+// path, and none takes otherwise. The move down the path, the Branch's
 // record of the path and of every path's outcome, and the reach of the Step it leads to commit in
 // one transaction behind the compare-and-set on the cursor, so the path is decided once: a job
 // delivered again finds the Enrollment moved on. A Condition that no longer reads (a Custom field
@@ -376,7 +377,14 @@ func (m *StepExecution) branch(ctx context.Context, s *ent.Scoped, run *ent.Auto
 	if err != nil {
 		return err
 	}
-	truths, err := m.conditions.Outcomes(ctx, s, condition.OutcomesInput{ContactID: run.ContactID, Conditions: b.Conditions(), Properties: run.EventProperties, Messages: messages})
+	conds := b.Conditions()
+	awaited, err := awaitedFor(ctx, s, run.ID, at.index, lo.Map(conds, func(c conditiontree.Branch, _ int) conditiontree.Group { return c.Group })...)
+	if err != nil {
+		return err
+	}
+	truths, err := m.conditions.Outcomes(ctx, s, condition.OutcomesInput{
+		ContactID: run.ContactID, Conditions: conds, Properties: run.EventProperties, Awaited: awaited, Messages: messages,
+	})
 	if errors.Is(err, condition.ErrStorage) {
 		return err
 	}

@@ -67,3 +67,35 @@ func TestSiteAutomationRefusesAWaitForEventConditionTestingTheEnrollmentsOwnMess
 	refused := testhelper.SiteRefusal(t, err, http.StatusBadRequest)
 	assert.Equal(t, []string{"steps.steps.0.awaits.condition.entries.1.entries.1"}, slices.Collect(maps.Keys(refused.Errors.Or(nil))))
 }
+
+// A property test of `awaited` (ADR 0136, ADR 0181) names the Wait for event and the key each in a
+// field of its own: a Branch path after the Wait for event and a later Wait for event's Condition
+// hold it, and both round-trip through /site as written.
+func TestSiteAutomationKeepsATestOfTheAwaitedEvent(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	ctx := t.Context()
+	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
+	awaitedTotal := `{"kind":"property","of":{"kind":"awaited","name":"purchase"},"key":"order.total","test":{"kind":"number","operator":"gt","value":100}}`
+	purchase := `{"id":"7d2a4b3c-9e5f-4a6b-8c7d-2e3f4a5b6c21","type":"wait_for_event","name":"purchase","timeoutSeconds":259200,` +
+		`"awaits":{"kind":"event","matchers":[{"action":"order.created"}]},` +
+		`"arrived":{"id":"7d2a4b3c-9e5f-4a6b-8c7d-2e3f4a5b6c22","steps":[]},"timedOut":{"id":"7d2a4b3c-9e5f-4a6b-8c7d-2e3f4a5b6c23","steps":[]}}`
+	review := `{"id":"7d2a4b3c-9e5f-4a6b-8c7d-2e3f4a5b6c24","type":"wait_for_event","name":"review","timeoutSeconds":259200,` +
+		`"awaits":{"kind":"event","matchers":[{"action":"review.posted"}],` +
+		`"condition":{"kind":"group","combinator":"and","entries":[` + awaitedTotal + `]}},` +
+		`"arrived":{"id":"7d2a4b3c-9e5f-4a6b-8c7d-2e3f4a5b6c25","steps":[]},"timedOut":{"id":"7d2a4b3c-9e5f-4a6b-8c7d-2e3f4a5b6c26","steps":[]}}`
+	branch := `{"id":"7d2a4b3c-9e5f-4a6b-8c7d-2e3f4a5b6c27","type":"branch","paths":[{"id":"7d2a4b3c-9e5f-4a6b-8c7d-2e3f4a5b6c28",` +
+		`"condition":{"kind":"group","combinator":"and","entries":[` + awaitedTotal + `]},"steps":[]}],` +
+		`"otherwise":{"id":"7d2a4b3c-9e5f-4a6b-8c7d-2e3f4a5b6c29","steps":[]}}`
+
+	created, err := c.SiteAutomationsCreate(ctx, &siteapi.CreateAutomationInput{
+		Name: "Big orders", Trigger: testhelper.SiteTrigger("signup"),
+		Steps: testhelper.SitePathEdit(testhelper.SiteWaitForEvent(t, purchase), testhelper.SiteWaitForEvent(t, review), testhelper.SiteBranch(t, branch)),
+	}, siteapi.SiteAutomationsCreateParams{WorkspaceId: workspaceID})
+	require.NoError(t, err)
+
+	steps := created.Draft.Value.Steps.Steps
+	require.Len(t, steps, 3)
+	assert.JSONEq(t, review, testhelper.JSONOf(t, &steps[1].OneOf.WaitForEventStep))
+	assert.JSONEq(t, branch, testhelper.JSONOf(t, &steps[2].OneOf.BranchStep))
+}

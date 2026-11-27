@@ -1052,6 +1052,34 @@ export type AwaitedMessageInput = {
 };
 
 /**
+ * The Event a Wait for event of the Automation arrived on, kept by the Enrollment under the Wait
+ * for event's name (ADR 0136), whose properties a property test reads. The Wait for event must be
+ * one that can come before the Step holding the test. Where the Enrollment keeps no copy of it
+ * (the Wait for event timed out, or its path never passed it), the test fails.
+ */
+export type AwaitedSource = {
+  kind: 'awaited';
+  /**
+   * The Wait for event's name
+   */
+  name: WaitForEventName;
+};
+
+/**
+ * The Event a Wait for event of the Automation arrived on, kept by the Enrollment under the Wait
+ * for event's name (ADR 0136), whose properties a property test reads. The Wait for event must be
+ * one that can come before the Step holding the test. Where the Enrollment keeps no copy of it
+ * (the Wait for event timed out, or its path never passed it), the test fails.
+ */
+export type AwaitedSourceInput = {
+  kind: 'awaited';
+  /**
+   * The Wait for event's name
+   */
+  name: WaitForEventName;
+};
+
+/**
  * The Contact's date of birth, a date field every Contact has
  */
 export type BirthdayDateField = {
@@ -1282,15 +1310,23 @@ export type BranchPropertyLeafInput = {
 
 /**
  * Whose properties a Branch path's property test reads, by `kind`: the Event the Enrollment
- * began with
+ * began with, or the one an earlier Wait for event arrived on
  */
-export type BranchPropertySource = TriggerSource;
+export type BranchPropertySource = ({
+  kind: 'trigger';
+} & TriggerSource) | ({
+  kind: 'awaited';
+} & AwaitedSource);
 
 /**
  * Whose properties a Branch path's property test reads, by `kind`: the Event the Enrollment
- * began with
+ * began with, or the one an earlier Wait for event arrived on
  */
-export type BranchPropertySourceInput = TriggerSourceInput;
+export type BranchPropertySourceInput = ({
+  kind: 'trigger';
+} & TriggerSourceInput) | ({
+  kind: 'awaited';
+} & AwaitedSourceInput);
 
 /**
  * A Step that sends each Enrollment down the first of its paths whose Condition holds, on the
@@ -8598,15 +8634,25 @@ export type WaitForEventPropertyLeafInput = {
 
 /**
  * Whose properties a Wait for event's property test reads, by `kind`: the Event the Enrollment
- * began with. The Event the Wait for event awaits is tested by its matcher's filter.
+ * began with, or the one an earlier Wait for event arrived on. The Event the Wait for event awaits
+ * is tested by its matcher's filter.
  */
-export type WaitForEventPropertySource = TriggerSource;
+export type WaitForEventPropertySource = ({
+  kind: 'trigger';
+} & TriggerSource) | ({
+  kind: 'awaited';
+} & AwaitedSource);
 
 /**
  * Whose properties a Wait for event's property test reads, by `kind`: the Event the Enrollment
- * began with. The Event the Wait for event awaits is tested by its matcher's filter.
+ * began with, or the one an earlier Wait for event arrived on. The Event the Wait for event awaits
+ * is tested by its matcher's filter.
  */
-export type WaitForEventPropertySourceInput = TriggerSourceInput;
+export type WaitForEventPropertySourceInput = ({
+  kind: 'trigger';
+} & TriggerSourceInput) | ({
+  kind: 'awaited';
+} & AwaitedSourceInput);
 
 /**
  * A Step that holds the Enrollment until what it awaits arrives or its timeout passes (ADR
