@@ -1,0 +1,41 @@
+id: stored-history-through-the-predicate
+valid:
+  - |
+    func outcome(stored *ent.Event) DryRunOutcome {
+    	if events.WasHistory(stored) {
+    		return Backfill
+    	}
+    	return WouldFire
+    }
+  - |
+    func live(s *ent.Scoped) *ent.EventQuery {
+    	return s.Event().Query().Where(events.Live(), events.HumanOnly())
+    }
+  - |
+    func triggers(env events.Envelope) bool { return !events.IsHistory(env) }
+  - |
+    func cause(ctx context.Context, in Input) context.Context {
+    	if in.Backfill {
+    		return events.WithCause(ctx, events.Backfill())
+    	}
+    	return ctx
+    }
+  - |
+    func submit(req *externalapi.RecordEventsBatchInput) bool { return req.Backfill.Or(false) }
+  - |
+    func backfilled(res DryRun) bool { return res.Outcome == rules.Backfill }
+invalid:
+  - |
+    func outcome(stored *ent.Event) bool { return stored.Backfill }
+  - |
+    func live(s *ent.Scoped) *ent.EventQuery {
+    	return s.Event().Query().Where(event.Backfill(false))
+    }
+  - |
+    func history(s *ent.Scoped) *ent.EventQuery {
+    	return s.Event().Query().Where(event.BackfillNEQ(false))
+    }
+  - |
+    func columns() []string { return []string{event.FieldBackfill} }
+  - |
+    func mark(c *ent.EventCreate) *ent.EventCreate { return c.SetBackfill(true) }

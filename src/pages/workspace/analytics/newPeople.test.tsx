@@ -14,10 +14,10 @@ const base = routeMount(newPeopleRoute, { workspaceId: 'TestWs01' })
 const mount = { ...base, initialPath: `${base.initialPath}?range=30d` }
 
 const report = {
-  total: 7,
+  total: 8,
   timeseries: [
-    { date: '2026-03-07', manual: 3, api: 2, tracker: 2 },
-    { date: '2026-03-08', manual: 0, api: 0, tracker: 0 },
+    { date: '2026-03-07', manual: 3, api: 2, tracker: 2, import: 1 },
+    { date: '2026-03-08', manual: 0, api: 0, tracker: 0, import: 0 },
   ],
 }
 
@@ -26,9 +26,10 @@ test('shows how many people joined in the window and the legend of the sources',
 
   const { screen } = await renderWithRouter(<NewPeoplePage />, mount)
 
-  await expect.element(screen.getByText('7', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('8', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByText('Manual')).toBeInTheDocument()
   await expect.element(screen.getByText('Tracker')).toBeInTheDocument()
+  await expect.element(screen.getByText('CSV import')).toBeInTheDocument()
 })
 
 test('reads the section window from the URL', async () => {

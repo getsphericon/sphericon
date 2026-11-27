@@ -114,8 +114,9 @@ func (Event) Fields() []ent.Field {
 		field.String("url").
 			Optional().
 			Nillable(),
-		// Loaded as history (a Backfill): recorded, but no Automation enrolls, no Webhook
-		// receives it and no Rule fires on it.
+		// History (a Backfill or an import's, ADR 0138): recorded, but no Automation enrolls, no
+		// Webhook receives it and no Rule fires on it. Set from the envelope's cause and read only
+		// through events.IsHistory's stored forms (events.Live, events.WasHistory).
 		field.Bool("backfill").
 			Annotations(Attribute(reasonFact)).
 			Default(false).

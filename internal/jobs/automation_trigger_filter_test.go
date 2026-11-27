@@ -35,14 +35,14 @@ func TestAHistoricEventPassingTheTriggerFilterEnrollsNoOne(t *testing.T) {
 	require.NoError(t, err)
 	_, err = mod.Publish(ctx, acme, a.ID, testhelper.AutomationRevisionIn(ctx, t, acme, a.ID))
 	require.NoError(t, err)
-	paidOrder := func(contactID int64, backfill bool) *events.CollectedEvent {
+	paidOrder := func(contactID int64) *events.CollectedEvent {
 		return &events.CollectedEvent{WorkspaceID: fixtures.AcmeID, ContactID: contactID, Action: "order.completed",
-			Properties: map[string]any{"status": "paid"}, OccurredAt: time.Now(), Backfill: backfill}
+			Properties: map[string]any{"status": "paid"}, OccurredAt: time.Now()}
 	}
 
-	publishEvent(t, env, paidOrder(fixtures.ContactBobID, true))
+	publishIn(events.WithCause(ctx, events.Backfill()), t, env, paidOrder(fixtures.ContactBobID))
 	historyTriggers := triggersOn(t, env, "order.completed")
-	publishEvent(t, env, paidOrder(fixtures.ContactAliceID, false))
+	publishEvent(t, env, paidOrder(fixtures.ContactAliceID))
 	live := triggersOn(t, env, "order.completed")
 	require.Len(t, live, 1)
 	require.NoError(t, jobs.NewEvaluateTriggerWorker(env.DB, testhelper.Module[*automations.StepExecution](env)).Work(ctx, job(live[0])))

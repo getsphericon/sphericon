@@ -244,7 +244,8 @@ func TestTodayIsTheLocalDayNotTheUTCDay(t *testing.T) {
 
 // Read on 14 March over 7 days, Gotham's current period is 8-14 March in New York and the previous
 // one 1-7 March. Send A and the manual sign-up at 23:59 EST on 7 March (8 March in UTC) fall in the
-// previous period; sends B (opened and clicked), C and D and the four later sign-ups in the current one.
+// previous period; sends B (opened and clicked), C and D and the five later sign-ups (one imported)
+// in the current one.
 func TestEachPeriodFigureIsReadForThePeriodJustBeforeTheWindowToo(t *testing.T) {
 	env := testhelper.Setup(t)
 
@@ -254,7 +255,7 @@ func TestEachPeriodFigureIsReadForThePeriodJustBeforeTheWindowToo(t *testing.T) 
 		From: "2026-03-08", To: "2026-03-14",
 		Sending:     analyticsreport.Sending{Broadcast: 3},
 		Email:       analyticsreport.Email{Sent: 3, Opened: 1, Clicked: 1, OpenRate: 1.0 / 3, ClickRate: 1.0 / 3, ClickToOpenRate: 1},
-		NewContacts: 4,
+		NewContacts: 5,
 	}, ov.Current)
 	assert.Equal(t, analyticsreport.Period{
 		From: "2026-03-01", To: "2026-03-07",

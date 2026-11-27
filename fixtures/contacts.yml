@@ -1550,6 +1550,14 @@
   workspace_id: 61
   created_at: '2026-03-08 12:00:00+00'
   updated_at: '2026-03-08 12:00:00+00'
+# Brought by a CSV import, with no address, so no count of the reachable sees it.
+- id: 20105
+  revision: 1
+  subject_id: signup-imported
+  source: import
+  workspace_id: 61
+  created_at: '2026-03-08 15:00:00+00'
+  updated_at: '2026-03-08 15:00:00+00'
 
 # --- Capton (workspace 63): the audience of its two scheduled Broadcasts (#939) ---
 # {{range $i := seq 20200 20202}}

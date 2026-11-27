@@ -16958,6 +16958,8 @@ func (s *ContactExportSource) Decode(d *jx.Decoder) error {
 		*s = ContactExportSourceAPI
 	case ContactExportSourceTracker:
 		*s = ContactExportSourceTracker
+	case ContactExportSourceImport:
+		*s = ContactExportSourceImport
 	default:
 		*s = ContactExportSource(v)
 	}
