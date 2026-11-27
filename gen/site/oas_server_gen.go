@@ -519,7 +519,7 @@ type Handler interface {
 	// cells, with a column saying why. It is deleted once downloaded whole; the link works once, in the
 	// session that asked for it, within a minute (400 otherwise).
 	//
-	// GET /workspaces/{workspaceId}/contact-imports/{importId}/report
+	// GET /workspaces/{workspaceId}/contact-imports/{importId}/report/{token}
 	SiteContactImportsReport(ctx context.Context, params SiteContactImportsReportParams) (*SiteContactImportsReportOKHeaders, error)
 	// SiteContactImportsReportLink implements SiteContactImports_reportLink operation.
 	//

@@ -406,12 +406,12 @@ namespace SiteContactImports {
    * once, in the session that asked for it, within a minute (400 otherwise).
    */
   @get
-  @route("/{importId}/report")
+  @route("/{importId}/report/{token}")
   @requiresPermissions(#[Permission.contactsImport])
   op report(
     @path workspaceId: WorkspaceId,
     @path importId: EntityId,
-    @query token: string,
+    @path token: string,
   ):
     | {
         @header contentType: "text/csv";

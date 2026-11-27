@@ -8164,20 +8164,6 @@ export const zSiteContactImportsPreviewPath = z.object({
  */
 export const zSiteContactImportsPreviewResponse = zSiteContactImportPreview;
 
-export const zSiteContactImportsReportPath = z.object({
-  workspaceId: zWorkspaceId,
-  importId: zEntityId
-});
-
-export const zSiteContactImportsReportQuery = z.object({
-  token: z.string()
-});
-
-/**
- * The request has succeeded.
- */
-export const zSiteContactImportsReportResponse = z.string();
-
 export const zSiteContactImportsReportLinkPath = z.object({
   workspaceId: zWorkspaceId,
   importId: zEntityId
@@ -8187,6 +8173,17 @@ export const zSiteContactImportsReportLinkPath = z.object({
  * The request has succeeded.
  */
 export const zSiteContactImportsReportLinkResponse = zDownloadLink;
+
+export const zSiteContactImportsReportPath = z.object({
+  workspaceId: zWorkspaceId,
+  importId: zEntityId,
+  token: z.string()
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteContactImportsReportResponse = z.string();
 
 export const zSiteContactImportsRunPath = z.object({
   workspaceId: zWorkspaceId,

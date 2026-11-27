@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"path"
 	"strings"
 	"testing"
 	"time"
@@ -279,7 +280,7 @@ func TestAContactImportReportDownloadsOnceInItsSession(t *testing.T) {
 	require.NoError(t, err)
 	u, err := url.Parse(link.URL)
 	require.NoError(t, err)
-	params := siteapi.SiteContactImportsReportParams{WorkspaceId: fixtures.AcmePublicID, ImportId: imp.ID, Token: u.Query().Get("token")}
+	params := siteapi.SiteContactImportsReportParams{WorkspaceId: fixtures.AcmePublicID, ImportId: imp.ID, Token: path.Base(u.Path)}
 	_, elsewhere := other.SiteContactImportsReport(ctx, params)
 	res, err := session.SiteContactImportsReport(ctx, params)
 	require.NoError(t, err)

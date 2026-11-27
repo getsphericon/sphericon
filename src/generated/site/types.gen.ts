@@ -16896,41 +16896,6 @@ export type SiteContactImportsPreviewResponses = {
 
 export type SiteContactImportsPreviewResponse = SiteContactImportsPreviewResponses[keyof SiteContactImportsPreviewResponses];
 
-export type SiteContactImportsReportData = {
-  body?: never;
-  path: {
-    workspaceId: WorkspaceId;
-    importId: EntityId;
-  };
-  query: {
-    token: string;
-  };
-  url: '/workspaces/{workspaceId}/contact-imports/{importId}/report';
-};
-
-export type SiteContactImportsReportErrors = {
-  /**
-   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
-   * status is the response's and the body's `status`, and `code` tells apart the answers a client
-   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
-   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
-   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
-   * as the `default` response (ADR 0103).
-   */
-  default: ProblemDetails;
-};
-
-export type SiteContactImportsReportError = SiteContactImportsReportErrors[keyof SiteContactImportsReportErrors];
-
-export type SiteContactImportsReportResponses = {
-  /**
-   * The request has succeeded.
-   */
-  200: Blob | File;
-};
-
-export type SiteContactImportsReportResponse = SiteContactImportsReportResponses[keyof SiteContactImportsReportResponses];
-
 export type SiteContactImportsReportLinkData = {
   body?: never;
   path: {
@@ -16963,6 +16928,40 @@ export type SiteContactImportsReportLinkResponses = {
 };
 
 export type SiteContactImportsReportLinkResponse = SiteContactImportsReportLinkResponses[keyof SiteContactImportsReportLinkResponses];
+
+export type SiteContactImportsReportData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+    importId: EntityId;
+    token: string;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/contact-imports/{importId}/report/{token}';
+};
+
+export type SiteContactImportsReportErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SiteContactImportsReportError = SiteContactImportsReportErrors[keyof SiteContactImportsReportErrors];
+
+export type SiteContactImportsReportResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: Blob | File;
+};
+
+export type SiteContactImportsReportResponse = SiteContactImportsReportResponses[keyof SiteContactImportsReportResponses];
 
 export type SiteContactImportsRunData = {
   body?: never;

@@ -13125,14 +13125,14 @@ func (s *Server) handleSiteContactImportsPreviewRequest(args [2]string, argsEsca
 // cells, with a column saying why. It is deleted once downloaded whole; the link works once, in the
 // session that asked for it, within a minute (400 otherwise).
 //
-// GET /workspaces/{workspaceId}/contact-imports/{importId}/report
-func (s *Server) handleSiteContactImportsReportRequest(args [2]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// GET /workspaces/{workspaceId}/contact-imports/{importId}/report/{token}
+func (s *Server) handleSiteContactImportsReportRequest(args [3]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteContactImports_report"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.HTTPRouteKey.String("/workspaces/{workspaceId}/contact-imports/{importId}/report"),
+		semconv.HTTPRouteKey.String("/workspaces/{workspaceId}/contact-imports/{importId}/report/{token}"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
@@ -13276,7 +13276,7 @@ func (s *Server) handleSiteContactImportsReportRequest(args [2]string, argsEscap
 				}: params.ImportId,
 				{
 					Name: "token",
-					In:   "query",
+					In:   "path",
 				}: params.Token,
 			},
 			Raw: r,

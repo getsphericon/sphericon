@@ -2840,26 +2840,6 @@ export const siteContactImportsPreviewOptions = (options: Options<SiteContactImp
   queryKey: siteContactImportsPreviewQueryKey(options)
 });
 
-export const siteContactImportsReportQueryKey = (options: Options<SiteContactImportsReportData>) => createQueryKey('siteContactImportsReport', options, false, ['Site Contact Imports']);
-
-/**
- * Download the refused rows' report the link names: the file's header and each reported row's
- * original cells, with a column saying why. It is deleted once downloaded whole; the link works
- * once, in the session that asked for it, within a minute (400 otherwise).
- */
-export const siteContactImportsReportOptions = (options: Options<SiteContactImportsReportData>) => queryOptions<SiteContactImportsReportResponse, SiteContactImportsReportError, SiteContactImportsReportResponse, ReturnType<typeof siteContactImportsReportQueryKey>>({
-  queryFn: async ({ queryKey, signal }) => {
-    const { data } = await siteContactImportsReport({
-      ...options,
-      ...queryKey[0],
-      signal,
-      throwOnError: true
-    });
-    return data;
-  },
-  queryKey: siteContactImportsReportQueryKey(options)
-});
-
 export const siteContactImportsReportLinkMutationKey = (options?: Partial<Options<SiteContactImportsReportLinkData>>) => createMutationKey('siteContactImportsReportLink', options, ['Site Contact Imports']);
 
 /**
@@ -2879,6 +2859,26 @@ export const siteContactImportsReportLinkMutation = (options?: Partial<Options<S
   };
   return mutationOptions;
 };
+
+export const siteContactImportsReportQueryKey = (options: Options<SiteContactImportsReportData>) => createQueryKey('siteContactImportsReport', options, false, ['Site Contact Imports']);
+
+/**
+ * Download the refused rows' report the link names: the file's header and each reported row's
+ * original cells, with a column saying why. It is deleted once downloaded whole; the link works
+ * once, in the session that asked for it, within a minute (400 otherwise).
+ */
+export const siteContactImportsReportOptions = (options: Options<SiteContactImportsReportData>) => queryOptions<SiteContactImportsReportResponse, SiteContactImportsReportError, SiteContactImportsReportResponse, ReturnType<typeof siteContactImportsReportQueryKey>>({
+  queryFn: async ({ queryKey, signal }) => {
+    const { data } = await siteContactImportsReport({
+      ...options,
+      ...queryKey[0],
+      signal,
+      throwOnError: true
+    });
+    return data;
+  },
+  queryKey: siteContactImportsReportQueryKey(options)
+});
 
 export const siteContactImportsRunMutationKey = (options?: Partial<Options<SiteContactImportsRunData>>) => createMutationKey('siteContactImportsRun', options, ['Site Contact Imports']);
 

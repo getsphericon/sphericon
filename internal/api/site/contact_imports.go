@@ -73,7 +73,7 @@ func (h *Handlers) SiteContactImportsReportLink(ctx context.Context, params site
 	if err != nil {
 		return nil, err
 	}
-	path := paths.Site + "/workspaces/" + url.PathEscape(string(params.WorkspaceId)) + "/contact-imports/" + publicid.Encode(id) + "/report?token=" + url.QueryEscape(link.Token)
+	path := paths.Site + "/workspaces/" + url.PathEscape(string(params.WorkspaceId)) + "/contact-imports/" + publicid.Encode(id) + "/report/" + url.PathEscape(link.Token)
 	res := mapper.DownloadLinkToResource(resources.DownloadLinkView{URL: path, ExpiresAt: link.ExpiresAt})
 	return &res, nil
 }

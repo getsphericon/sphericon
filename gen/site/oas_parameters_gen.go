@@ -9088,15 +9088,14 @@ func unpackSiteContactImportsReportParams(packed middleware.Parameters) (params 
 	{
 		key := middleware.ParameterKey{
 			Name: "token",
-			In:   "query",
+			In:   "path",
 		}
 		params.Token = packed[key].(string)
 	}
 	return params
 }
 
-func decodeSiteContactImportsReportParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteContactImportsReportParams, _ error) {
-	q := uri.NewQueryDecoder(r.URL.Query())
+func decodeSiteContactImportsReportParams(args [3]string, argsEscaped bool, r *http.Request) (params SiteContactImportsReportParams, _ error) {
 	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
@@ -9209,16 +9208,25 @@ func decodeSiteContactImportsReportParams(args [2]string, argsEscaped bool, r *h
 			Err:  err,
 		}
 	}
-	// Decode query: token.
+	// Decode path: token.
 	if err := func() error {
-		cfg := uri.QueryParameterDecodingConfig{
-			Name:    "token",
-			Style:   uri.QueryStyleForm,
-			Explode: false,
+		param := args[2]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[2])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
 		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "token",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
 
-		if err := q.HasParam(cfg); err == nil {
-			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+			if err := func() error {
 				val, err := d.DecodeValue()
 				if err != nil {
 					return err
@@ -9231,17 +9239,17 @@ func decodeSiteContactImportsReportParams(args [2]string, argsEscaped bool, r *h
 
 				params.Token = c
 				return nil
-			}); err != nil {
+			}(); err != nil {
 				return err
 			}
 		} else {
-			return err
+			return validate.ErrFieldRequired
 		}
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
 			Name: "token",
-			In:   "query",
+			In:   "path",
 			Err:  err,
 		}
 	}

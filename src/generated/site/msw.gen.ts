@@ -3600,39 +3600,6 @@ export function handleSiteContactImportsPreview(response?: HandleSiteContactImpo
   }, options);
 }
 
-export type HandleSiteContactImportsReportResponse = {
-  body: SiteContactImportsReportResponses[200];
-  status?: 200;
-};
-
-/**
- * Handler for the `GET /workspaces/{workspaceId}/contact-imports/{importId}/report` operation.
- */
-export function handleSiteContactImportsReport(response?: HandleSiteContactImportsReportResponse | HttpResponseResolver<{
-  workspaceId: string;
-  importId: string;
-}, never>, options?: RequestHandlerOptions): HttpHandler {
-  return http.get<{
-    workspaceId: string;
-    importId: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/contact-imports/:importId/report`, info => {
-    if (typeof response === 'function') {
-      return response(info);
-    }
-    const body = response?.body;
-    if (body !== undefined) {
-      return new HttpResponse(body, { status: response?.status ?? 200 });
-    }
-    if (options?.responseFallback === 'passthrough') {
-      return;
-    }
-    return new Response('Not Implemented', {
-      status: 501,
-      statusText: 'Not Implemented'
-    });
-  }, options);
-}
-
 export type HandleSiteContactImportsReportLinkResponse = {
   body: SiteContactImportsReportLinkResponses[200];
   status?: 200;
@@ -3655,6 +3622,41 @@ export function handleSiteContactImportsReportLink(response?: HandleSiteContactI
     const body = response?.body;
     if (body !== undefined) {
       return HttpResponse.json(body, { status: response?.status ?? 200 });
+    }
+    if (options?.responseFallback === 'passthrough') {
+      return;
+    }
+    return new Response('Not Implemented', {
+      status: 501,
+      statusText: 'Not Implemented'
+    });
+  }, options);
+}
+
+export type HandleSiteContactImportsReportResponse = {
+  body: SiteContactImportsReportResponses[200];
+  status?: 200;
+};
+
+/**
+ * Handler for the `GET /workspaces/{workspaceId}/contact-imports/{importId}/report/{token}` operation.
+ */
+export function handleSiteContactImportsReport(response?: HandleSiteContactImportsReportResponse | HttpResponseResolver<{
+  workspaceId: string;
+  importId: string;
+  token: string;
+}, never>, options?: RequestHandlerOptions): HttpHandler {
+  return http.get<{
+    workspaceId: string;
+    importId: string;
+    token: string;
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/contact-imports/:importId/report/:token`, info => {
+    if (typeof response === 'function') {
+      return response(info);
+    }
+    const body = response?.body;
+    if (body !== undefined) {
+      return new HttpResponse(body, { status: response?.status ?? 200 });
     }
     if (options?.responseFallback === 'passthrough') {
       return;
@@ -7745,13 +7747,13 @@ export type MswHandlerFactories = {
    */
   siteContactImportsPreview: typeof handleSiteContactImportsPreview;
   /**
-   * Handler for the `GET /workspaces/{workspaceId}/contact-imports/{importId}/report` operation.
-   */
-  siteContactImportsReport: typeof handleSiteContactImportsReport;
-  /**
    * Handler for the `POST /workspaces/{workspaceId}/contact-imports/{importId}/report-link` operation.
    */
   siteContactImportsReportLink: typeof handleSiteContactImportsReportLink;
+  /**
+   * Handler for the `GET /workspaces/{workspaceId}/contact-imports/{importId}/report/{token}` operation.
+   */
+  siteContactImportsReport: typeof handleSiteContactImportsReport;
   /**
    * Handler for the `POST /workspaces/{workspaceId}/contact-imports/{importId}/run` operation.
    */
@@ -8337,8 +8339,8 @@ export function createMswHandlers(config: RequestHandlerOptions = {}): CreateMsw
     siteContactImportsGet: wrap(handleSiteContactImportsGet),
     siteContactImportsSaveMapping: wrap(handleSiteContactImportsSaveMapping),
     siteContactImportsPreview: wrap(handleSiteContactImportsPreview),
-    siteContactImportsReport: wrap(handleSiteContactImportsReport),
     siteContactImportsReportLink: wrap(handleSiteContactImportsReportLink),
+    siteContactImportsReport: wrap(handleSiteContactImportsReport),
     siteContactImportsRun: wrap(handleSiteContactImportsRun),
     siteContactsList: wrap(handleSiteContactsList),
     siteContactsCreate: wrap(handleSiteContactsCreate),
@@ -8463,6 +8465,7 @@ export function createMswHandlers(config: RequestHandlerOptions = {}): CreateMsw
     const overrides = options.pick ?? {};
     return [
       invoke(pick.siteEnrollmentsGet, overrides.siteEnrollmentsGet),
+      invoke(pick.siteContactImportsReport, overrides.siteContactImportsReport),
       invoke(pick.siteTagsRemove, overrides.siteTagsRemove),
       invoke(pick.siteEnrollmentsList, overrides.siteEnrollmentsList),
       invoke(pick.siteAutomationReportsGet, overrides.siteAutomationReportsGet),
@@ -8481,7 +8484,6 @@ export function createMswHandlers(config: RequestHandlerOptions = {}): CreateMsw
       invoke(pick.siteBroadcastsUnarchive, overrides.siteBroadcastsUnarchive),
       invoke(pick.siteContactImportsSaveMapping, overrides.siteContactImportsSaveMapping),
       invoke(pick.siteContactImportsPreview, overrides.siteContactImportsPreview),
-      invoke(pick.siteContactImportsReport, overrides.siteContactImportsReport),
       invoke(pick.siteContactImportsReportLink, overrides.siteContactImportsReportLink),
       invoke(pick.siteContactImportsRun, overrides.siteContactImportsRun),
       invoke(pick.siteTelegramListBindings, overrides.siteTelegramListBindings),

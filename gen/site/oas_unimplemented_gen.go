@@ -722,7 +722,7 @@ func (UnimplementedHandler) SiteContactImportsPreview(ctx context.Context, param
 // cells, with a column saying why. It is deleted once downloaded whole; the link works once, in the
 // session that asked for it, within a minute (400 otherwise).
 //
-// GET /workspaces/{workspaceId}/contact-imports/{importId}/report
+// GET /workspaces/{workspaceId}/contact-imports/{importId}/report/{token}
 func (UnimplementedHandler) SiteContactImportsReport(ctx context.Context, params SiteContactImportsReportParams) (r *SiteContactImportsReportOKHeaders, _ error) {
 	return r, ht.ErrNotImplemented
 }

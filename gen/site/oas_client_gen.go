@@ -541,7 +541,7 @@ type Invoker interface {
 	// cells, with a column saying why. It is deleted once downloaded whole; the link works once, in the
 	// session that asked for it, within a minute (400 otherwise).
 	//
-	// GET /workspaces/{workspaceId}/contact-imports/{importId}/report
+	// GET /workspaces/{workspaceId}/contact-imports/{importId}/report/{token}
 	SiteContactImportsReport(ctx context.Context, params SiteContactImportsReportParams) (*SiteContactImportsReportOKHeaders, error)
 	// SiteContactImportsReportLink invokes SiteContactImports_reportLink operation.
 	//
@@ -11579,7 +11579,7 @@ func (c *Client) sendSiteContactImportsPreview(ctx context.Context, params SiteC
 // cells, with a column saying why. It is deleted once downloaded whole; the link works once, in the
 // session that asked for it, within a minute (400 otherwise).
 //
-// GET /workspaces/{workspaceId}/contact-imports/{importId}/report
+// GET /workspaces/{workspaceId}/contact-imports/{importId}/report/{token}
 func (c *Client) SiteContactImportsReport(ctx context.Context, params SiteContactImportsReportParams) (*SiteContactImportsReportOKHeaders, error) {
 	res, err := c.sendSiteContactImportsReport(ctx, params)
 	return res, err
@@ -11589,7 +11589,7 @@ func (c *Client) sendSiteContactImportsReport(ctx context.Context, params SiteCo
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteContactImports_report"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.URLTemplateKey.String("/workspaces/{workspaceId}/contact-imports/{importId}/report"),
+		semconv.URLTemplateKey.String("/workspaces/{workspaceId}/contact-imports/{importId}/report/{token}"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -11622,7 +11622,7 @@ func (c *Client) sendSiteContactImportsReport(ctx context.Context, params SiteCo
 
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
-	var pathParts [5]string
+	var pathParts [6]string
 	pathParts[0] = "/workspaces/"
 	{
 		// Encode "workspaceId" parameter.
@@ -11667,26 +11667,26 @@ func (c *Client) sendSiteContactImportsReport(ctx context.Context, params SiteCo
 		}
 		pathParts[3] = encoded
 	}
-	pathParts[4] = "/report"
-	uri.AddPathParts(u, pathParts[:]...)
-
-	stage = "EncodeQueryParams"
-	q := uri.NewQueryEncoder()
+	pathParts[4] = "/report/"
 	{
 		// Encode "token" parameter.
-		cfg := uri.QueryParameterEncodingConfig{
-			Name:    "token",
-			Style:   uri.QueryStyleForm,
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "token",
+			Style:   uri.PathStyleSimple,
 			Explode: false,
-		}
-
-		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+		})
+		if err := func() error {
 			return e.EncodeValue(conv.StringToString(params.Token))
-		}); err != nil {
-			return res, errors.Wrap(err, "encode query")
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
 		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[5] = encoded
 	}
-	u.RawQuery = q.Values().Encode()
+	uri.AddPathParts(u, pathParts[:]...)
 
 	stage = "EncodeRequest"
 	r, err := ht.NewRequest(ctx, "GET", u)
