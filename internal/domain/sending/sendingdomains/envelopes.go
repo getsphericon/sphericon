@@ -8,6 +8,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/sendingdomainenvelope"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
+	"github.com/getsphericon/sphericon/internal/infra/messaging/ses"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
 )
 
@@ -27,10 +28,6 @@ const (
 	EnvelopeSetAtProvider EnvelopeState = "set_at_provider"
 )
 
-// MailFromPermission is the permission an SES Integration's credentials need to read a Sending
-// domain's identity: what an unknown envelope names.
-const MailFromPermission = "ses:GetEmailIdentity"
-
 // Envelope is the envelope one email Integration sends a Sending domain's mail with, as its last
 // check read it.
 type Envelope struct {
@@ -40,25 +37,46 @@ type Envelope struct {
 	State           EnvelopeState
 	// MailFrom is the custom MAIL FROM; set only when State is EnvelopeCustom.
 	MailFrom *messaging.MailFrom
-	// PermissionNeeded is MailFromPermission when State is EnvelopeUnknown, empty otherwise.
+	// PermissionNeeded is ses.MailFromPermission when State is EnvelopeUnknown, empty otherwise.
 	PermissionNeeded string
 	// CheckedAt is when the envelope was read; nil for an SMTP relay and before the first read.
 	CheckedAt *time.Time
 }
 
-// Integrations is what the envelopes of a Sending domain ask of the Workspace's email
-// Integrations (integrations.Module): which they are, and what a provider keeps as the domain's
-// envelope.
-type Integrations interface {
-	EnvelopeIntegrations(ctx context.Context, s *ent.Scoped) ([]*ent.Integration, error)
-	ReadMailFrom(ctx context.Context, integ *ent.Integration, domain string) (mailFrom messaging.MailFrom, keeps bool, err error)
+// View is a Sending domain as its readers see it: the row, and the envelope of each email
+// Integration of the Workspace (ADR 0184).
+type View struct {
+	Domain    *ent.SendingDomain
+	Envelopes []Envelope
 }
 
-// Envelopes returns the envelopes of each of doms, keyed by Sending domain id: one per email
+// viewsOf is the View of each of doms, their envelopes read at once.
+func (m *Module) viewsOf(ctx context.Context, s *ent.Scoped, doms []*ent.SendingDomain) ([]View, error) {
+	envelopes, err := m.envelopes(ctx, s, doms)
+	if err != nil {
+		return nil, err
+	}
+	views := make([]View, len(doms))
+	for i, d := range doms {
+		views[i] = View{Domain: d, Envelopes: envelopes[d.ID]}
+	}
+	return views, nil
+}
+
+// viewOf is the View of dom.
+func (m *Module) viewOf(ctx context.Context, s *ent.Scoped, dom *ent.SendingDomain) (View, error) {
+	views, err := m.viewsOf(ctx, s, []*ent.SendingDomain{dom})
+	if err != nil {
+		return View{}, err
+	}
+	return views[0], nil
+}
+
+// envelopes returns the envelopes of each of doms, keyed by Sending domain id: one per email
 // Integration of the Workspace, the Test inbox excepted, in the order of their ids. An SMTP relay
 // is set at its provider and kept nowhere; an SES one is what the domain's last check read, and
 // unknown before the first read.
-func (m *Module) Envelopes(ctx context.Context, s *ent.Scoped, doms []*ent.SendingDomain) (map[int64][]Envelope, error) {
+func (m *Module) envelopes(ctx context.Context, s *ent.Scoped, doms []*ent.SendingDomain) (map[int64][]Envelope, error) {
 	out := make(map[int64][]Envelope, len(doms))
 	if len(doms) == 0 {
 		return out, nil
@@ -97,10 +115,10 @@ func (m *Module) Envelopes(ctx context.Context, s *ent.Scoped, doms []*ent.Sendi
 func envelopeOf(integ *ent.Integration, row *ent.SendingDomainEnvelope) Envelope {
 	env := Envelope{IntegrationID: integ.ID, IntegrationName: integ.Name, Provider: integ.Provider}
 	switch {
-	case integ.Provider != providers.SES:
+	case !integ.Provider.KeepsEnvelope():
 		env.State = EnvelopeSetAtProvider
 	case row == nil:
-		env.State, env.PermissionNeeded = EnvelopeUnknown, MailFromPermission
+		env.State, env.PermissionNeeded = EnvelopeUnknown, ses.MailFromPermission
 	default:
 		env.State, env.CheckedAt = EnvelopeState(row.State), &row.CheckedAt
 		switch env.State {
@@ -109,7 +127,8 @@ func envelopeOf(integ *ent.Integration, row *ent.SendingDomainEnvelope) Envelope
 				Domain: *row.MailFromDomain, Status: *row.MailFromStatus, OnMXFailure: *row.MailFromOnMxFailure,
 			}
 		case EnvelopeUnknown:
-			env.PermissionNeeded = MailFromPermission
+			env.PermissionNeeded = ses.MailFromPermission
+		case EnvelopeProviderDefault, EnvelopeSetAtProvider:
 		}
 	}
 	return env
@@ -127,10 +146,10 @@ func (m *Module) checkEnvelopes(ctx context.Context, s *ent.Scoped, dom *ent.Sen
 		return
 	}
 	for _, integ := range integs {
-		mailFrom, keeps, err := m.integrations.ReadMailFrom(ctx, integ, dom.Domain)
-		if !keeps {
+		if !integ.Provider.KeepsEnvelope() {
 			continue
 		}
+		mailFrom, err := m.integrations.ReadMailFrom(ctx, integ, dom.Domain)
 		state := EnvelopeProviderDefault
 		switch {
 		case err != nil:

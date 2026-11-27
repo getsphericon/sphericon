@@ -3,32 +3,20 @@ package site
 import (
 	"context"
 
-	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
-// sendingDomainResource maps the row, then attaches what the mapper cannot see: the DNS records
-// the user publishes, which the sendingdomains module derives, and the envelopes of the
-// Workspace's email Integrations, which its checks read (ADR 0184).
-func (h *Handlers) sendingDomainResource(d *ent.SendingDomain, envelopes []sendingdomains.Envelope) siteapi.SendingDomainResource {
-	rec := h.sendingDomains.Records(d)
-	res := mapper.SendingDomainToResource(d)
+// sendingDomainResource maps the View, then attaches what the mapper cannot see of the row: the
+// DNS records the user publishes, which the sendingdomains module derives.
+func (h *Handlers) sendingDomainResource(v sendingdomains.View) siteapi.SendingDomainResource {
+	rec := h.sendingDomains.Records(v.Domain)
+	res := mapper.SendingDomainToResource(v.Domain)
 	res.DkimRecord = mapper.DnsRecordToResource(rec.DKIM)
 	res.DmarcRecord = mapper.DnsRecordToResource(rec.DMARC)
-	res.Envelopes = mapper.SendingDomainEnvelopesToResource(envelopes)
+	res.Envelopes = mapper.SendingDomainEnvelopesToResource(v.Envelopes)
 	return res
-}
-
-// oneSendingDomainResource is sendingDomainResource of one row, with its envelopes read.
-func (h *Handlers) oneSendingDomainResource(ctx context.Context, s *ent.Scoped, d *ent.SendingDomain) (*siteapi.SendingDomainResource, error) {
-	envelopes, err := h.sendingDomains.Envelopes(ctx, s, []*ent.SendingDomain{d})
-	if err != nil {
-		return nil, err
-	}
-	res := h.sendingDomainResource(d, envelopes[d.ID])
-	return &res, nil
 }
 
 func (h *Handlers) SiteSendingDomainsList(ctx context.Context, params siteapi.SiteSendingDomainsListParams) (*siteapi.SiteSendingDomainsListOK, error) {
@@ -38,13 +26,7 @@ func (h *Handlers) SiteSendingDomainsList(ctx context.Context, params siteapi.Si
 	if err != nil {
 		return nil, err
 	}
-	envelopes, err := h.sendingDomains.Envelopes(ctx, s, page.Items)
-	if err != nil {
-		return nil, err
-	}
-	return mapper.SendingDomainsListPage(page.Map(func(d *ent.SendingDomain) siteapi.SendingDomainResource {
-		return h.sendingDomainResource(d, envelopes[d.ID])
-	})), nil
+	return mapper.SendingDomainsListPage(page.Map(h.sendingDomainResource)), nil
 }
 
 func (h *Handlers) SiteSendingDomainsCreate(ctx context.Context, req *siteapi.CreateSendingDomainInput, _ siteapi.SiteSendingDomainsCreateParams) (*siteapi.SendingDomainResource, error) {
@@ -54,7 +36,8 @@ func (h *Handlers) SiteSendingDomainsCreate(ctx context.Context, req *siteapi.Cr
 	if err != nil {
 		return nil, err
 	}
-	return h.oneSendingDomainResource(ctx, s, d)
+	res := h.sendingDomainResource(d)
+	return &res, nil
 }
 
 func (h *Handlers) SiteSendingDomainsGet(ctx context.Context, params siteapi.SiteSendingDomainsGetParams) (*siteapi.SendingDomainResource, error) {
@@ -65,7 +48,8 @@ func (h *Handlers) SiteSendingDomainsGet(ctx context.Context, params siteapi.Sit
 	if err != nil {
 		return nil, err
 	}
-	return h.oneSendingDomainResource(ctx, s, d)
+	res := h.sendingDomainResource(d)
+	return &res, nil
 }
 
 // SiteSendingDomainsDelete deletes a sending domain for good (ADR 0049): it leaves the list. Live
@@ -82,5 +66,6 @@ func (h *Handlers) SiteSendingDomainsVerify(ctx context.Context, params siteapi.
 	if err != nil {
 		return nil, err
 	}
-	return h.oneSendingDomainResource(ctx, s, d)
+	res := h.sendingDomainResource(d)
+	return &res, nil
 }

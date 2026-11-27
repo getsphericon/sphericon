@@ -230,6 +230,10 @@ func (s *sender) ConfigurationSetMissing(ctx context.Context) (bool, error) {
 	return false, nil
 }
 
+// MailFromPermission is the permission an SES Integration's credentials need for MailFrom to read a
+// Sending domain's identity.
+const MailFromPermission = "ses:GetEmailIdentity"
+
 // MailFrom reads the custom MAIL FROM of the domain's identity at SES (GetEmailIdentity, permission
 // ses:GetEmailIdentity; see messaging.MailFromReader). An identity without one is the zero
 // MailFrom; an identity SES does not have, a denied read and a status or behaviour this build does

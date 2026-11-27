@@ -45,5 +45,5 @@ func TestAScheduleQueuedFirstRefusesTheDeleteOfTheDomainItSendsFrom(t *testing.T
 	assert.Equal(t, []liveuse.User{{Kind: liveuse.Broadcast, ID: b.ID, Name: b.Name}}, used.Users)
 	kept, err := domains.Get(ctx, s, fixtures.SendingDomainVerifiedID)
 	require.NoError(t, err)
-	assert.Nil(t, kept.DiscardedAt, "the domain the Broadcast sends from is kept")
+	assert.Nil(t, kept.Domain.DiscardedAt, "the domain the Broadcast sends from is kept")
 }

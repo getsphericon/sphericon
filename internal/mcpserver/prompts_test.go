@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -168,8 +169,8 @@ func TestMCPSetUpSendingDomainPromptReadsTheEnvelopesAndSuggestsNoSPFRecord(t *t
 	body := promptText(t, s, "set-up-sending-domain")
 
 	assert.Contains(t, body, "`envelopes`", "the prompt names the envelopes")
-	for _, state := range []string{"provider_default", "custom", "unknown", "set_at_provider"} {
-		assert.Containsf(t, body, "`"+state+"`", "the prompt explains the %s envelope", state)
+	for _, state := range externalapi.SendingDomainEnvelopeStateCustom.AllValues() {
+		assert.Containsf(t, body, "`"+string(state)+"`", "the prompt explains the %s envelope", state)
 	}
 	records := regexp.MustCompile("it carries the ([^`]*)").FindStringSubmatch(body)
 	require.NotNil(t, records, "the prompt says which records the domain carries")

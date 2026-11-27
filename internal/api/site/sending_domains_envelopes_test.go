@@ -103,6 +103,7 @@ func TestSiteSendingDomainShowsOneEnvelopePerEmailIntegration(t *testing.T) {
 
 	res := verifyNews(t, env)
 
+	require.NotEmpty(t, res.Envelopes)
 	ids := map[siteapi.EntityId]bool{}
 	for _, e := range res.Envelopes {
 		assert.Falsef(t, ids[e.IntegrationId], "integration %d has one envelope", e.IntegrationId)

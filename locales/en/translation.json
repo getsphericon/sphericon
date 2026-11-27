@@ -2565,7 +2565,7 @@
       "envelopeSetAtProvider": "Set at the SMTP provider: the envelope and its SPF are configured there.",
       "envelopesHint": "SPF is checked on the envelope (MAIL FROM) domain each email integration sends with, not on this domain, so it needs no SPF record of its own. It never holds a send.",
       "envelopesNone": "No email integration sends this domain's mail yet.",
-      "envelopeUnknown": "Unknown: the integration's credentials need {{permission}} to read this domain's identity in Amazon SES.",
+      "envelopeUnknown": "Unknown: Amazon SES could not be asked about this domain's identity yet. Its credentials need {{permission}}, and SES needs an identity for this domain; the next check reads it again.",
       "loadError": "Failed to load sending domains",
       "lost": "Verification lost",
       "mailFromFailed": "Failed",

@@ -63,6 +63,7 @@ func (SendingDomainEnvelope) Fields() []ent.Field {
 		// What the provider does with a send while the custom domain's MX record fails.
 		field.Enum("mail_from_on_mx_failure").
 			GoType(providers.MXFailureBehavior("")).
+			Annotations(Attribute(reasonLatest)).
 			Optional().
 			Nillable(),
 		// When the envelope was read.

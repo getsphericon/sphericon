@@ -63,7 +63,7 @@ func TestDevRecords_trustsSeededDomains(t *testing.T) {
 	row, err := domains(env, devLookup(env)).Verify(t.Context(), acme(env), fixtures.SendingDomainUnverifiedID)
 
 	require.NoError(t, err)
-	assert.True(t, dkimstate.Is(row), "dev lookup makes a seeded domain verify")
+	assert.True(t, dkimstate.Is(row.Domain), "dev lookup makes a seeded domain verify")
 }
 
 // The end-to-end resolver answers a Sending domain's DMARC record with the suggested one, so a
@@ -89,7 +89,7 @@ func TestVerify_becomesVerified(t *testing.T) {
 	lookup := dnstest.Resolver(t, map[string]mockdns.Zone{"sphericon._domainkey.news.acme.com.": {TXT: []string{dom.DkimPublicKey}}}).LookupTXT
 	row, err := domains(env, lookup).Verify(ctx, acme(env), fixtures.SendingDomainUnverifiedID)
 	require.NoError(t, err)
-	assert.True(t, dkimstate.Is(row))
+	assert.True(t, dkimstate.Is(row.Domain))
 
 	reloaded, err := env.DB.SendingDomain.Get(ctx, fixtures.SendingDomainUnverifiedID)
 	require.NoError(t, err)
@@ -107,7 +107,7 @@ func TestVerify_flipsToUnverifiedWhenRecordGoneAndEmailsOwner(t *testing.T) {
 
 	row, err := domains(env, gone).Verify(ctx, acme(env), fixtures.SendingDomainVerifiedID)
 	require.NoError(t, err)
-	assert.False(t, dkimstate.Is(row))
+	assert.False(t, dkimstate.Is(row.Domain))
 
 	reloaded, err := env.DB.SendingDomain.Get(ctx, fixtures.SendingDomainVerifiedID)
 	require.NoError(t, err)
@@ -144,7 +144,7 @@ func TestVerify_verifiedAgainClearsTheLoss(t *testing.T) {
 	verified, err := domains(env, back).Verify(ctx, acme(env), dom.ID)
 
 	require.NoError(t, err)
-	assert.True(t, dkimstate.Is(verified))
+	assert.True(t, dkimstate.Is(verified.Domain))
 	row, err := env.DB.SendingDomain.Get(ctx, dom.ID)
 	require.NoError(t, err)
 	assert.True(t, dkimstate.Is(row))
@@ -160,7 +160,7 @@ func TestVerify_aFailingNoticeNeverFailsTheCheck(t *testing.T) {
 	checked, err := domains(env, dnstest.Resolver(t, nil).LookupTXT).Verify(ctx, acme(env), fixtures.SendingDomainVerifiedID)
 
 	require.NoError(t, err)
-	assert.False(t, dkimstate.Is(checked))
+	assert.False(t, dkimstate.Is(checked.Domain))
 	row, err := env.DB.SendingDomain.Get(ctx, fixtures.SendingDomainVerifiedID)
 	require.NoError(t, err)
 	assert.False(t, dkimstate.Is(row))
@@ -261,9 +261,9 @@ func TestUpdate_movingTheSelectorOfAVerifiedDomainLosesItWithoutANotice(t *testi
 		sendingdomains.UpdateInput{Selector: patch.Set("moved")})
 
 	require.NoError(t, err)
-	assert.Equal(t, "moved", row.DkimSelector)
-	assert.False(t, dkimstate.Is(row))
-	assert.NotNil(t, row.VerificationLostAt)
+	assert.Equal(t, "moved", row.Domain.DkimSelector)
+	assert.False(t, dkimstate.Is(row.Domain))
+	assert.NotNil(t, row.Domain.VerificationLostAt)
 	assert.Empty(t, env.SystemMail.Messages(), "the Owner who moved it is not told")
 }
 

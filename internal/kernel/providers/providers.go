@@ -83,6 +83,11 @@ func (Enforcement) Values() []string {
 	return []string{string(EnforcementProbation), string(EnforcementShutdown)}
 }
 
+// KeepsEnvelope reports whether the Provider keeps a Sending domain's envelope (its MAIL FROM) as a
+// setting of its own the app can read (SES's custom MAIL FROM, ADR 0184). An SMTP relay's envelope
+// is set at a provider the app does not know; the Test inbox sends nowhere.
+func (p Provider) KeepsEnvelope() bool { return p == SES }
+
 // MailFromStatus is what a provider last said of a custom MAIL FROM domain it was told to use for a
 // Sending domain (SES MailFromDomainStatus, ADR 0184): whether it found the domain's MX record.
 type MailFromStatus string

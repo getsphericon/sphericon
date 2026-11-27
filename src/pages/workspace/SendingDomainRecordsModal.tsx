@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { CopyTextButton } from '../../components/CopyTextButton.tsx'
 import type {
   MailFromStatus,
+  MxFailureBehavior,
   SendingDomainEnvelope,
   SendingDomainResource,
 } from '../../generated/site/types.gen.ts'
@@ -139,15 +140,22 @@ function EnvelopeDetail({ envelope }: { envelope: SendingDomainEnvelope }) {
       </Text>
     )
   }
-  if (envelope.state === 'provider_default' || !mailFrom) {
+  if (envelope.state === 'provider_default') {
     return <Text size="sm">{t(($) => $.settings.sendingDomains.envelopeProviderDefault)}</Text>
   }
-  const status = {
+  if (!mailFrom) {
+    return null
+  }
+  const status: Record<MailFromStatus, string> = {
     pending: t(($) => $.settings.sendingDomains.mailFromPending),
     success: t(($) => $.settings.sendingDomains.mailFromSuccess),
     failed: t(($) => $.settings.sendingDomains.mailFromFailed),
     temporary_failure: t(($) => $.settings.sendingDomains.mailFromTemporaryFailure),
-  }[mailFrom.status]
+  }
+  const onMxFailure: Record<MxFailureBehavior, string> = {
+    fall_back: t(($) => $.settings.sendingDomains.onMxFailureFallBack),
+    reject: t(($) => $.settings.sendingDomains.onMxFailureReject),
+  }
   return (
     <Stack gap={4}>
       <Group gap="xs">
@@ -155,13 +163,11 @@ function EnvelopeDetail({ envelope }: { envelope: SendingDomainEnvelope }) {
           {t(($) => $.settings.sendingDomains.envelopeCustom, { domain: mailFrom.domain })}
         </Text>
         <Badge color={mailFromStatusColor[mailFrom.status]} variant="light" size="sm">
-          {status}
+          {status[mailFrom.status]}
         </Badge>
       </Group>
       <Text c="dimmed" size="xs">
-        {mailFrom.onMxFailure === 'reject'
-          ? t(($) => $.settings.sendingDomains.onMxFailureReject)
-          : t(($) => $.settings.sendingDomains.onMxFailureFallBack)}
+        {onMxFailure[mailFrom.onMxFailure]}
       </Text>
     </Stack>
   )

@@ -19,12 +19,12 @@ import (
 // domain as the check left it: `verified`, `lastCheckedAt`, `dmarcCheckedAt`, `dmarcFoundAt` and
 // the envelopes are the outcome. It confirms the domain is in the Workspace and kept first: an unknown or a
 // deleted domain is ErrNotFound.
-func (m *Module) Verify(ctx context.Context, s *ent.Scoped, id int64) (*ent.SendingDomain, error) {
+func (m *Module) Verify(ctx context.Context, s *ent.Scoped, id int64) (View, error) {
 	if _, err := editable(ctx, s, id); err != nil {
-		return nil, err
+		return View{}, err
 	}
 	if err := m.Recheck(ctx, s, id); err != nil {
-		return nil, err
+		return View{}, err
 	}
 	return m.Get(ctx, s, id)
 }
@@ -36,7 +36,7 @@ func (m *Module) Verify(ctx context.Context, s *ent.Scoped, id int64) (*ent.Send
 // A deleted domain is not kept working (ADR 0099): a check queued before the deletion does nothing.
 // An unknown id is ErrNotFound.
 func (m *Module) Recheck(ctx context.Context, s *ent.Scoped, id int64) error {
-	dom, err := m.Get(ctx, s, id)
+	dom, err := m.row(ctx, s, id)
 	if err != nil {
 		return err
 	}
