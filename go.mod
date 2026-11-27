@@ -8,14 +8,14 @@ require (
 	entgo.io/ent v0.14.6
 	github.com/AfterShip/email-verifier v1.5.0
 	github.com/XSAM/otelsql v0.44.0
-	github.com/aws/aws-sdk-go-v2 v1.48.0
-	github.com/aws/aws-sdk-go-v2/credentials v1.21.3
-	github.com/aws/aws-sdk-go-v2/service/sesv2 v1.80.0
-	github.com/aws/smithy-go v1.28.9
+	github.com/aws/aws-sdk-go-v2 v1.48.1
+	github.com/aws/aws-sdk-go-v2/credentials v1.21.4
+	github.com/aws/aws-sdk-go-v2/service/sesv2 v1.80.1
+	github.com/aws/smithy-go v1.28.10
 	github.com/caarlos0/env/v11 v11.4.2
 	github.com/coreos/go-oidc/v3 v3.21.0
 	github.com/descope/virtualwebauthn v1.0.5
-	github.com/dop251/goja v0.0.0-20261118204651-8dfece3d1e1d
+	github.com/dop251/goja v0.0.0-20261125210501-5e92a7e24d0c
 	github.com/doyensec/safeurl v0.2.5
 	github.com/emersion/go-msgauth v0.7.0
 	github.com/emersion/go-sasl v0.0.0-20241020182733-b788ff22d5a6
@@ -47,8 +47,8 @@ require (
 	github.com/miekg/dns v1.1.73
 	github.com/modelcontextprotocol/go-sdk v1.8.0
 	github.com/mokevnin/dbcleaner/v2 v2.0.0
-	github.com/monperrus/crawler-user-agents v1.67.0
-	github.com/mymmrac/telego v1.13.0
+	github.com/monperrus/crawler-user-agents v1.85.0
+	github.com/mymmrac/telego v1.14.0
 	github.com/nicksnyder/go-i18n/v2 v2.7.0
 	github.com/nyaruka/phonenumbers v1.8.1
 	github.com/ogen-go/ogen v1.25.0
@@ -56,7 +56,7 @@ require (
 	github.com/osteele/liquid v1.9.2
 	github.com/peterldowns/pgtestdb v0.1.1
 	github.com/pquerna/otp v1.5.0
-	github.com/pressly/goose/v3 v3.30.1
+	github.com/pressly/goose/v3 v3.30.2
 	github.com/prometheus/client_golang v1.25.0
 	github.com/prometheus/common v0.74.0
 	github.com/qmuntal/stateless v1.8.0
@@ -98,7 +98,7 @@ require (
 	golang.org/x/tools v0.53.0
 	gopkg.in/dnaeon/go-vcr.v4 v4.0.8
 	pgregory.net/rapid v1.3.0
-	riverqueue.com/riverui v0.22.0
+	riverqueue.com/riverui v0.23.0
 )
 
 require (
@@ -110,12 +110,12 @@ require (
 	github.com/apparentlymart/go-textseg/v17 v17.0.1 // indirect
 	github.com/avast/retry-go v3.0.0+incompatible // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.7.27 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/configsources v1.5.12 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.8.12 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/v4a v1.5.12 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.13.25 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/configsources v1.5.13 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.8.13 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/v4a v1.5.13 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.13.26 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/checksum v1.11.13 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.14.12 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.14.13 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.20.12 // indirect
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.114.10 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -166,7 +166,7 @@ require (
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
 	github.com/jessevdk/go-flags v1.6.1 // indirect
-	github.com/jonbaldie/go-mutesting/v2 v2.10.45 // indirect
+	github.com/jonbaldie/go-mutesting/v2 v2.10.46 // indirect
 	github.com/klauspost/compress v1.20.4 // indirect
 	github.com/klauspost/cpuid/v2 v2.4.2 // indirect
 	github.com/leodido/go-urn v1.5.0 // indirect
@@ -195,7 +195,6 @@ require (
 	github.com/schollz/progressbar/v3 v3.19.1 // indirect
 	github.com/segmentio/asm v1.2.1 // indirect
 	github.com/segmentio/encoding v0.5.4 // indirect
-	github.com/sethvargo/go-retry v0.5.0 // indirect
 	github.com/shopspring/decimal v1.6.0 // indirect
 	github.com/smartystreets/assertions v1.1.0 // indirect
 	github.com/termie/go-shutil v0.0.0-20140729215957-bcacb06fecae // indirect
@@ -207,7 +206,7 @@ require (
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ulikunitz/xz v0.5.17 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
-	github.com/valyala/fasthttp v1.78.0 // indirect
+	github.com/valyala/fasthttp v1.79.0 // indirect
 	github.com/valyala/fastjson v1.6.10 // indirect
 	github.com/vladopajic/go-test-coverage/v2 v2.23.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect

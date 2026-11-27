@@ -63,7 +63,8 @@ func TestAFailedFirstReadIsTriedAgainAfterAWhile(t *testing.T) {
 // from being the person's again, so the test says so rather than passing with nothing to judge.
 func instancesOf(t *testing.T, pattern string) []string {
 	t.Helper()
-	for _, crawler := range agents.Crawlers {
+	for i := range agents.Crawlers {
+		crawler := &agents.Crawlers[i]
 		if crawler.Pattern == pattern {
 			require.NotEmpty(t, crawler.Instances, pattern)
 			return crawler.Instances
@@ -91,7 +92,8 @@ func TestADisplayProxyOpenIsThePersonsAndItsClickIsMachine(t *testing.T) {
 func crawlerInstances(t *testing.T, skip []string) []string {
 	t.Helper()
 	var out []string
-	for _, crawler := range agents.Crawlers {
+	for i := range agents.Crawlers {
+		crawler := &agents.Crawlers[i]
 		if slices.Contains(skip, crawler.Pattern) {
 			continue
 		}
