@@ -90,7 +90,7 @@ func checkedMapping(ctx context.Context, s *ent.Scoped, imp *ent.ContactImport, 
 	if len(mapping.Columns) != len(imp.Header) {
 		return csvimport.Mapping{}, ErrColumnCount
 	}
-	if mapping.DecimalSeparator != "." && mapping.DecimalSeparator != "," {
+	if mapping.DecimalSeparator != csvimport.DecimalPoint && mapping.DecimalSeparator != csvimport.DecimalComma {
 		return csvimport.Mapping{}, ErrDecimalSeparator
 	}
 	if mapping.DefaultCountry != "" {
@@ -229,7 +229,7 @@ func (m *Module) propose(ctx context.Context, s *ent.Scoped, imp *ent.ContactImp
 		dates[f.Key] = f.Type == customfield.TypeDatetime
 	}
 	mapping := csvimport.Mapping{
-		DecimalSeparator: lo.Ternary(imp.Delimiter == contactimport.DelimiterSemicolon, ",", "."),
+		DecimalSeparator: lo.Ternary(imp.Delimiter == contactimport.DelimiterSemicolon, csvimport.DecimalComma, csvimport.DecimalPoint),
 		Tag:              "Imported " + m.now().In(zone).Format("2006-01-02"),
 	}
 	used := map[string]bool{}

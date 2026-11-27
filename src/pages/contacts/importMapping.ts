@@ -27,13 +27,11 @@ export interface ColumnChoice {
   dateFormat: ContactImportDateFormat | null
 }
 
-// The mapping form's values: a choice per column of the file and the choices for every row.
-export interface MappingValues {
+// The mapping form's values: a choice per column of the file and the choices for every row, the
+// Tag for every row as typed ('' for none).
+export type MappingValues = Omit<ContactImportMappingInput, 'columns' | 'tag'> & {
   columns: ColumnChoice[]
-  decimalSeparator: ContactImportMappingInput['decimalSeparator']
-  defaultCountry: string | null
   tag: string
-  onlyAddNew: boolean
 }
 
 export const ignore: Target = 'ignore'

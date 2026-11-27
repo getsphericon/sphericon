@@ -96,6 +96,8 @@ func (rd reading) row(cells []string) readRow {
 	}
 	state := &rowState{reading: rd}
 	for at, col := range rd.mapping.Columns {
+		// Every cell passes here before its reader: where a cell the app's own CSV writer guarded
+		// with a leading apostrophe (csvfile) would be read back as written.
 		cell := cells[at]
 		if strings.TrimSpace(cell) == "" {
 			continue

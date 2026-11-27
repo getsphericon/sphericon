@@ -36,14 +36,23 @@ type Column struct {
 // choices that hold for every row.
 type Mapping struct {
 	Columns []Column `json:"columns"`
-	// DecimalSeparator is "." or ",".
-	DecimalSeparator string `json:"decimalSeparator"`
+	// DecimalSeparator is DecimalPoint or DecimalComma.
+	DecimalSeparator DecimalSeparator `json:"decimalSeparator"`
 	// DefaultCountry is the ISO 3166-1 alpha-2 country a phone without its country code is read
 	// in when its row names none; "" for none.
 	DefaultCountry string `json:"defaultCountry,omitempty"`
 	// Tag is given to every row; "" for none.
 	Tag string `json:"tag,omitempty"`
 }
+
+// DecimalSeparator is the character a file's numbers write their decimals after: the values of
+// the contract's ContactImportDecimalSeparator.
+type DecimalSeparator string
+
+const (
+	DecimalPoint DecimalSeparator = "."
+	DecimalComma DecimalSeparator = ","
+)
 
 // DateFormat is how a column writes its dates: the values of the contract's ContactImportDateFormat.
 type DateFormat string

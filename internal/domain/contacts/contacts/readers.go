@@ -59,19 +59,19 @@ func readWith(cell string, read func(string) (string, bool), reason csvimport.Re
 	return v, ""
 }
 
-// ReadNumber is a number written with sep as its decimal separator ("." or ","): an optional sign,
+// ReadNumber is a number written with sep as its decimal separator: an optional sign,
 // digits and at most one separator, no grouping and no exponent. A number too large to hold is
 // refused, as is anything else.
-func ReadNumber(cell, sep string) (float64, csvimport.Reason) {
+func ReadNumber(cell string, sep csvimport.DecimalSeparator) (float64, csvimport.Reason) {
 	s := strings.TrimSpace(cell)
 	if s == "" || strings.ContainsAny(s, "eE_ ") {
 		return 0, csvimport.ReasonNotNumber
 	}
-	other := lo.Ternary(sep == ",", ".", ",")
-	if strings.Contains(s, other) || strings.Count(s, sep) > 1 {
+	other := lo.Ternary(sep == csvimport.DecimalComma, csvimport.DecimalPoint, csvimport.DecimalComma)
+	if strings.Contains(s, string(other)) || strings.Count(s, string(sep)) > 1 {
 		return 0, csvimport.ReasonNotNumber
 	}
-	s = strings.Replace(s, sep, ".", 1)
+	s = strings.Replace(s, string(sep), string(csvimport.DecimalPoint), 1)
 	digits := strings.TrimLeft(s, "+-")
 	if len(s)-len(digits) > 1 || digits == "" || digits == "." || strings.ContainsFunc(digits, func(r rune) bool { return r != '.' && (r < '0' || r > '9') }) {
 		return 0, csvimport.ReasonNotNumber
@@ -190,7 +190,7 @@ func ReadTags(cell string) ([]string, csvimport.Reason) {
 // ReadCustomField is the value of a Custom field of type t: a number written with sep, a boolean,
 // a datetime in format f, or a string as written (trimmed). The value is of the JSON type the
 // field's type reads (TypeReads).
-func ReadCustomField(t customfield.Type, cell, sep string, f csvimport.DateFormat) (any, csvimport.Reason) {
+func ReadCustomField(t customfield.Type, cell string, sep csvimport.DecimalSeparator, f csvimport.DateFormat) (any, csvimport.Reason) {
 	switch t {
 	case customfield.TypeNumber:
 		return asAny(ReadNumber(cell, sep))

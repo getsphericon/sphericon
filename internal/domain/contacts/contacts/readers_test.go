@@ -22,14 +22,14 @@ func TestANumberReadsWithItsSeparator(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
 		whole := rapid.Int64Range(0, 1_000_000_000).Draw(t, "whole")
 		cents := rapid.IntRange(0, 99).Draw(t, "cents")
-		sep := rapid.SampledFrom([]string{".", ","}).Draw(t, "sep")
+		sep := rapid.SampledFrom([]csvimport.DecimalSeparator{csvimport.DecimalPoint, csvimport.DecimalComma}).Draw(t, "sep")
 		sign := rapid.SampledFrom([]string{"", "-", "+"}).Draw(t, "sign")
 		cell := fmt.Sprintf("%s%d%s%02d", sign, whole, sep, cents)
-		want, err := strconv.ParseFloat(strings.Replace(cell, sep, ".", 1), 64)
+		want, err := strconv.ParseFloat(strings.Replace(cell, string(sep), ".", 1), 64)
 		require.NoError(t, err)
 
 		got, reason := contacts.ReadNumber(cell, sep)
-		other := map[string]string{".": ",", ",": "."}[sep]
+		other := map[csvimport.DecimalSeparator]csvimport.DecimalSeparator{csvimport.DecimalPoint: csvimport.DecimalComma, csvimport.DecimalComma: csvimport.DecimalPoint}[sep]
 		_, otherReason := contacts.ReadNumber(cell, other)
 
 		assert.Empty(t, reason)
@@ -40,7 +40,7 @@ func TestANumberReadsWithItsSeparator(t *testing.T) {
 
 func TestTextThatIsNoNumberIsNotRead(t *testing.T) {
 	for _, cell := range []string{"", "abc", "1.2.3", "1e5", "1 000", "--1", "+", ".", "Inf", "NaN", "0x10"} {
-		_, reason := contacts.ReadNumber(cell, ".")
+		_, reason := contacts.ReadNumber(cell, csvimport.DecimalPoint)
 		assert.Equal(t, csvimport.ReasonNotNumber, reason, cell)
 	}
 }
@@ -172,7 +172,7 @@ func TestACustomFieldValueIsOfItsType(t *testing.T) {
 		cell := rapid.SampledFrom([]string{"42", "4,2", "yes", "2024-03-04", "04/03/2024", "2024-03-04T10:00:00Z", "hello"}).Draw(t, "cell")
 		format := rapid.SampledFrom(csvimport.DateFormats).Draw(t, "format")
 
-		value, reason := contacts.ReadCustomField(typ, cell, ",", format)
+		value, reason := contacts.ReadCustomField(typ, cell, csvimport.DecimalComma, format)
 		read := reason == "" && contacts.TypeReads(typ, value)
 		dropped := reason != "" && value == nil
 
@@ -185,7 +185,7 @@ func FuzzAReaderReturnsAValueOrAReason(f *testing.F) {
 		f.Add(seed)
 	}
 	f.Fuzz(func(t *testing.T, cell string) {
-		_, numberReason := contacts.ReadNumber(cell, ",")
+		_, numberReason := contacts.ReadNumber(cell, csvimport.DecimalComma)
 		_, dateReason := contacts.ReadDate(cell, csvimport.DateDMYSlash, time.UTC)
 		datetime, datetimeReason := contacts.ReadDatetime(cell, csvimport.DateTimeRFC3339)
 		tags, tagsReason := contacts.ReadTags(cell)

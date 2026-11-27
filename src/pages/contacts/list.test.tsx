@@ -1,9 +1,13 @@
 import { HttpResponse } from 'msw'
-import { expect, test } from 'vitest'
+import { beforeEach, expect, test } from 'vitest'
 
-import { handleSiteContactsList, handleSiteTagsList } from '../../generated/site/msw.gen.ts'
+import {
+  handleSiteContactsList,
+  handleSiteTagsList,
+  handleSiteWorkspacesList,
+} from '../../generated/site/msw.gen.ts'
 import { Route as contactsRoute } from '../../routes/workspaces/$workspaceId/contacts/index.tsx'
-import { page, TIMESTAMPS, testId } from '../../test/payloads.ts'
+import { page, TIMESTAMPS, testId, workspace } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -11,6 +15,19 @@ import { worker } from '../../test/worker.ts'
 import { ContactsListPage } from './list.tsx'
 
 const LIST_ROUTE = routeMount(contactsRoute, { workspaceId: 'TestWs01' })
+
+// The page reads the signed-in User's Permissions, which offer the import to those holding
+// contacts:import.
+beforeEach(() => {
+  worker.use(handleSiteWorkspacesList({ body: [workspace({ permissions: ['contacts:import'] })] }))
+})
+
+test('offers the import to a Member holding contacts:import', async () => {
+  worker.use(handleSiteContactsList({ body: page([], 0) }))
+  const { screen } = await renderWithRouter(<ContactsListPage />, LIST_ROUTE)
+
+  await expect.element(screen.getByRole('link', { name: 'Import contacts' })).toBeVisible()
+})
 
 // Opens a column's filter: the button in its header, named by what it filters.
 type Screen = Awaited<ReturnType<typeof renderWithRouter>>['screen']

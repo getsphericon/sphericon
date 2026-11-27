@@ -28,7 +28,7 @@ func contactImportMapping(c Converter, v contactimports.View) siteapi.ContactImp
 	}
 	return siteapi.ContactImportMapping{
 		Columns:          columns,
-		DecimalSeparator: siteapi.ContactImportDecimalSeparator(v.Mapping.DecimalSeparator),
+		DecimalSeparator: siteapi.ContactImportDecimalSeparator(string(v.Mapping.DecimalSeparator)),
 		DefaultCountry:   convert.Nil[siteapi.NilCountryCode](optionalCountry(v.Mapping.DefaultCountry)),
 		Tag:              convert.Nil[siteapi.NilName](optionalName(v.Mapping.Tag)),
 		OnlyAddNew:       v.Import.OnlyAddNew,
@@ -103,7 +103,7 @@ func contactImportMappingIn(c Inputs, source *siteapi.ContactImportMappingInput)
 	}
 	return csvimport.Mapping{
 		Columns:          columns,
-		DecimalSeparator: string(source.DecimalSeparator),
+		DecimalSeparator: csvimport.DecimalSeparator(string(source.DecimalSeparator)),
 		DefaultCountry:   lo.FromPtr(convert.StringPtr(source.DefaultCountry)),
 		Tag:              lo.FromPtr(convert.StringPtr(source.Tag)),
 	}
