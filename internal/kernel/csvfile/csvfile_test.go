@@ -122,7 +122,8 @@ func TestTheChunksEndWithTheErrorThePagesEndWith(t *testing.T) {
 func TestAReaderThatStopsStopsThePages(t *testing.T) {
 	p := &pages{items: [][][]string{{{"name"}}, {{"Ada"}}, {{"Bob"}}}}
 
-	for range csvfile.Chunks(p.seq()) {
+	for _, err := range csvfile.Chunks(p.seq()) {
+		require.NoError(t, err)
 		break
 	}
 
