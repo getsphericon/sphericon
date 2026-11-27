@@ -5,36 +5,43 @@ import (
 	"fmt"
 	"strings"
 
-	"golang.org/x/net/publicsuffix"
-
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
 )
 
 // LookupDMARC reports whether a DMARC record is published for the domain, found the way a
-// receiver finds it (RFC 7489 §6.6.3): at _dmarc.<domain> and, when that name has no DMARC
-// record, at _dmarc.<organizational domain>. A record is found when exactly one TXT record at
-// the name starts with v=DMARC1; any policy counts, p=none too (ADR 0012). Two or more end the
-// discovery with no record, as receivers ignore them. A missing record is false with a nil error;
+// receiver finds it: by the DNS tree walk of RFC 9989 §4.10, which asks _dmarc.<domain> and then
+// _dmarc.<parent> for each parent down to the top-level domain, at most eight names (dmarcTargets).
+// A name holds a record when exactly one TXT record there starts with v=DMARC1; two or more are
+// discarded and the walk goes on to the parent, as RFC 9989 says. The first name that holds a
+// record ends the walk: any policy counts, p=none too (ADR 0012), whether it is the domain's own,
+// its organizational domain's or its public suffix's. A missing record is false with a nil error;
 // a resolver failure returns the error, so the caller keeps what it knew.
 func (n *DNS) LookupDMARC(ctx context.Context, domain string) (bool, error) {
-	found, err := dmarcRecords(ctx, n.lookup, domain)
-	if err != nil || found > 0 {
-		return found == 1, err
+	for _, target := range dmarcTargets(domain) {
+		found, err := dmarcRecords(ctx, n.lookup, target)
+		if err != nil {
+			return false, err
+		}
+		if found == 1 {
+			return true, nil
+		}
 	}
-	org, ok := organizationalDomain(domain)
-	if !ok {
-		return false, nil
-	}
-	found, err = dmarcRecords(ctx, n.lookup, org)
-	return found == 1, err
+	return false, nil
 }
 
-// organizationalDomain is the domain's organizational domain (RFC 7489 §3.2, from the public
-// suffix list), and false when there is none other to ask: the domain is its own, or the list
-// does not place it.
-func organizationalDomain(domain string) (string, bool) {
-	org, err := publicsuffix.EffectiveTLDPlusOne(domain)
-	return org, err == nil && org != domain
+// dmarcTreeWalkLimit is the most names the tree walk asks (RFC 9989 §4.10).
+const dmarcTreeWalkLimit = 8
+
+// dmarcTargets is the names the DNS tree walk asks, in order (RFC 9989 §4.10): the domain itself,
+// then each parent down to the top-level domain. A domain of more than eight labels skips to its
+// right-most seven, so that no walk asks more than eight names.
+func dmarcTargets(domain string) []string {
+	labels := strings.Split(strings.TrimSuffix(domain, "."), ".")
+	targets := []string{strings.Join(labels, ".")}
+	for i := max(1, len(labels)-(dmarcTreeWalkLimit-1)); i < len(labels); i++ {
+		targets = append(targets, strings.Join(labels[i:], "."))
+	}
+	return targets
 }
 
 // dmarcRecords counts the DMARC records at _dmarc.<domain>; NXDOMAIN is none.
