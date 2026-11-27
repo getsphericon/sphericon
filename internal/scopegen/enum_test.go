@@ -139,7 +139,8 @@ func TestGenerateConditionOperatorsTypesEachOperatorEnumWithItsList(t *testing.T
 	 "HasOperator":{"type":"string","enum":["has","doesNotHave"]},
 	 "EventCountOperator":{"type":"string","enum":["atLeast","atMost"]},
 	 "MessageSender":{"type":"string","enum":["broadcast","automation"]},
-	 "EngagementTrackingChannel":{"type":"string","enum":["email","telegram"]}}}}`))
+	 "EngagementTrackingChannel":{"type":"string","enum":["email","telegram"]},
+	 "MessageEngagement":{"type":"string","enum":["opened","clicked"]}}}}`))
 	require.NoError(t, err)
 
 	out := string(src)
@@ -151,4 +152,5 @@ func TestGenerateConditionOperatorsTypesEachOperatorEnumWithItsList(t *testing.T
 	require.Regexp(t, `AtMost\s+EventCountOperator = "atMost"`, out)
 	require.Regexp(t, `var Senders = \[\]Sender\{\s+SenderBroadcast,\s+SenderAutomation,\s+\}`, out)
 	require.Regexp(t, `var TrackingChannels = \[\]TrackingChannel\{\s+TrackingEmail,\s+TrackingTelegram,\s+\}`, out)
+	require.Regexp(t, `var Engagements = \[\]Engagement\{\s+MessageOpened,\s+MessageClicked,\s+\}`, out)
 }

@@ -12771,7 +12771,7 @@
             "description": "The group's tests and nested groups"
           }
         },
-        "description": "A Branch path's Condition: the tree of tests the Contact, on its live data when the Enrollment\nreaches the Branch, and the Event the Enrollment began with match"
+        "description": "A Branch path's Condition: the tree of tests the Contact, on its live data when the Enrollment\nreaches the Branch, the Event the Enrollment began with and the messages the Enrollment was sent\nmatch"
       },
       "BranchConditionInput": {
         "type": "object",
@@ -12801,7 +12801,7 @@
             "description": "The group's tests and nested groups"
           }
         },
-        "description": "A Branch path's Condition: the tree of tests the Contact, on its live data when the Enrollment\nreaches the Branch, and the Event the Enrollment began with match",
+        "description": "A Branch path's Condition: the tree of tests the Contact, on its live data when the Enrollment\nreaches the Branch, the Event the Enrollment began with and the messages the Enrollment was sent\nmatch",
         "additionalProperties": false
       },
       "BranchConditionNode": {
@@ -12836,6 +12836,9 @@
           },
           {
             "$ref": "#/components/schemas/BranchPropertyLeaf"
+          },
+          {
+            "$ref": "#/components/schemas/StepMessageLeaf"
           }
         ],
         "discriminator": {
@@ -12850,10 +12853,11 @@
             "customField": "#/components/schemas/CustomFieldLeaf",
             "event": "#/components/schemas/EventLeaf",
             "property": "#/components/schemas/BranchPropertyLeaf",
+            "stepMessage": "#/components/schemas/StepMessageLeaf",
             "group": "#/components/schemas/BranchCondition"
           }
         },
-        "description": "An entry of a Branch path's Condition, by `kind`: a Rule's, the property test reading the\nEvent the Enrollment began with"
+        "description": "An entry of a Branch path's Condition, by `kind`: a Rule's, the property test reading the\nEvent the Enrollment began with, and the test of the Enrollment's own message"
       },
       "BranchConditionNodeInput": {
         "type": "object",
@@ -12887,6 +12891,9 @@
           },
           {
             "$ref": "#/components/schemas/BranchPropertyLeafInput"
+          },
+          {
+            "$ref": "#/components/schemas/StepMessageLeafInput"
           }
         ],
         "discriminator": {
@@ -12901,10 +12908,11 @@
             "customField": "#/components/schemas/CustomFieldLeafInput",
             "event": "#/components/schemas/EventLeafInput",
             "property": "#/components/schemas/BranchPropertyLeafInput",
+            "stepMessage": "#/components/schemas/StepMessageLeafInput",
             "group": "#/components/schemas/BranchConditionInput"
           }
         },
-        "description": "An entry of a Branch path's Condition, by `kind`: a Rule's, the property test reading the\nEvent the Enrollment began with"
+        "description": "An entry of a Branch path's Condition, by `kind`: a Rule's, the property test reading the\nEvent the Enrollment began with, and the test of the Enrollment's own message"
       },
       "BranchPath": {
         "type": "object",
@@ -13100,7 +13108,7 @@
             "description": "The path taken when the first Condition that does not fail is unknown; present only on a\nBranch whose Conditions can be unknown"
           }
         },
-        "description": "A Step that sends each Enrollment down the first of its paths whose Condition holds, on the\nContact's live data when the Enrollment reaches it (ADR 0124), and down `otherwise` when none\ndoes. A Condition that is unknown for the Contact (an engagement count of a Destination that is\nnot tracked, ADR 0123) before any holds sends it down `unknown`. The paths rejoin at the Step\nafter the Branch."
+        "description": "A Step that sends each Enrollment down the first of its paths whose Condition holds, on the\nContact's live data when the Enrollment reaches it (ADR 0124), and down `otherwise` when none\ndoes. A Condition that is unknown for the Contact (an engagement count of a Destination that is\nnot tracked, ADR 0123, or a test of the Enrollment's own message that cannot be known, ADR 0122)\nbefore any holds sends it down `unknown`. The paths rejoin at the Step\nafter the Branch."
       },
       "BranchStepInput": {
         "type": "object",
@@ -13144,7 +13152,7 @@
             "description": "The path taken when the first Condition that does not fail is unknown"
           }
         },
-        "description": "A Branch, as a request writes it. Publish refuses it without `unknown` when a Condition counts\nan open or a click, and with `unknown` when none does.",
+        "description": "A Branch, as a request writes it. Publish refuses it without `unknown` when a Condition counts\nan open or a click or tests the Enrollment's own message, and with `unknown` when none does.",
         "additionalProperties": false
       },
       "BranchUnknownPathInput": {
@@ -13170,7 +13178,7 @@
         "properties": {
           "needed": {
             "type": "boolean",
-            "description": "True when one of its Conditions can be unknown for a Contact (it counts an open or a click,\nADR 0123): Publish then refuses the Branch without an unknown path, and with one when false"
+            "description": "True when one of its Conditions can be unknown for a Contact (it counts an open or a click,\nADR 0123, or tests the Enrollment's own message, ADR 0122): Publish then refuses the Branch\nwithout an unknown path, and with one when false"
           }
         },
         "description": "Whether a Branch needs its unknown path (ADR 0124)"
@@ -16628,6 +16636,11 @@
         "minimum": 1,
         "maximum": 10000,
         "description": "A per-second Provider limit the caller may set"
+      },
+      "MessageEngagement": {
+        "type": "string",
+        "enum": ["opened", "clicked"],
+        "description": "What a test of an Enrollment's own message asks of it: that it was opened (an email Step's\nmessage only) or clicked"
       },
       "MessageRevenue": {
         "type": "object",
@@ -25500,6 +25513,61 @@
       "StepId": {
         "type": "string",
         "description": "The id of a Step or a path: a UUID in its lowercase text form, kept by every version of the\nautomation. A client mints it when it creates the Step or path and sends it back on every save;\none sent without an id is given one. Unique within a version, Steps and paths together."
+      },
+      "StepMessageLeaf": {
+        "type": "object",
+        "required": ["kind", "step", "engagement"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["stepMessage"]
+          },
+          "step": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StepId"
+              }
+            ],
+            "description": "The send Step's id"
+          },
+          "engagement": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MessageEngagement"
+              }
+            ],
+            "description": "Whether the message was opened or clicked"
+          }
+        },
+        "description": "A test of the message a send Step of the Automation sent to this Enrollment (ADR 0122): whether\nit was opened or clicked, by the first human open or click stamped on it, so an open or click by\na machine never counts (ADR 0053). It is unknown, never false, when the message went out\nuntracked, when its tracking was withdrawn since (ADR 0120), when the Step was skipped and when\nthe Enrollment never passed it, so a Branch holding it needs its unknown path. The Step must be a\nsend Step that can come before the Branch: an email Step for `opened`, any send Step for\n`clicked`. A Step a test names cannot be removed."
+      },
+      "StepMessageLeafInput": {
+        "type": "object",
+        "required": ["kind", "step", "engagement"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["stepMessage"]
+          },
+          "step": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StepId"
+              }
+            ],
+            "description": "The send Step's id"
+          },
+          "engagement": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MessageEngagement"
+              }
+            ],
+            "description": "Whether the message was opened or clicked"
+          }
+        },
+        "description": "A test of the message a send Step of the Automation sent to this Enrollment (ADR 0122): whether\nit was opened or clicked, by the first human open or click stamped on it, so an open or click by\na machine never counts (ADR 0053). It is unknown, never false, when the message went out\nuntracked, when its tracking was withdrawn since (ADR 0120), when the Step was skipped and when\nthe Enrollment never passed it, so a Branch holding it needs its unknown path. The Step must be a\nsend Step that can come before the Branch: an email Step for `opened`, any send Step for\n`clicked`. A Step a test names cannot be removed.",
+        "additionalProperties": false
       },
       "SuppressionChannel": {
         "type": "string",

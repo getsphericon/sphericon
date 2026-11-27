@@ -17,6 +17,7 @@ const (
 	KindCustomField        Kind = "customField"
 	KindEvent              Kind = "event"
 	KindProperty           Kind = "property"
+	KindStepMessage        Kind = "stepMessage"
 	KindSentBy             Kind = "sentBy"
 )
 
@@ -59,6 +60,7 @@ var BranchKinds = []Kind{
 	KindCustomField,
 	KindEvent,
 	KindProperty,
+	KindStepMessage,
 }
 
 // EventFilterKinds is every Kind an Event filter admits.

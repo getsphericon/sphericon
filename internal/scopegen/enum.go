@@ -208,6 +208,14 @@ var ConditionOperators = Table{
 			List:    "TrackingChannels",
 			ListDoc: []string{"TrackingChannels is every TrackingChannel, in the contract's order."},
 		},
+		Enum{
+			Schema:  "MessageEngagement",
+			Doc:     []string{"Engagement is what a stepMessage leaf asks of the message a send Step sent to the Enrollment: opened or clicked."},
+			Type:    "Engagement",
+			Prefix:  "Message",
+			List:    "Engagements",
+			ListDoc: []string{"Engagements is every Engagement, in the contract's order."},
+		},
 	),
 }
 

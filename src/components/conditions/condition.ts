@@ -9,6 +9,7 @@ import {
   EngagementTrackingChannel,
   EventCountOperator,
   HasOperator,
+  MessageEngagement,
   MessageSender,
   MomentOperator,
   NumberOperator,
@@ -20,6 +21,7 @@ import type {
   BirthdayLeafInput,
   BranchCondition,
   BranchConditionInput,
+  BranchConditionNode,
   CustomFieldLeafInput,
   EngagementTrackingLeafInput,
   EventFilter,
@@ -34,12 +36,12 @@ import type {
   PresenceTestInput,
   RuleCondition,
   RuleConditionInput,
-  RuleConditionNode,
   RulePropertyLeafInput,
   SegmentCondition,
   SegmentConditionInput,
   SentByLeafInput,
   SmsLeafInput,
+  StepMessageLeafInput,
   TagLeafInput,
   TelegramLeafInput,
   TextTestInput,
@@ -108,6 +110,7 @@ const customFieldIdPrefix = 'customField:'
 export const eventFieldPrefix = 'event:'
 const trackingFieldPrefix = 'engagementTracking:'
 const sentByFieldPrefix = 'sentBy:'
+const stepMessageFieldPrefix = 'stepMessage:'
 
 // A sent-by test is edited as a rule on the field "sentBy:<sender>", whose one operator names the
 // Broadcast or Automation picked as its value.
@@ -116,6 +119,12 @@ export const sentByOperator = 'is'
 // sentByFieldId is the field of the test that a sender of the kind sent the message.
 export function sentByFieldId(sender: MessageSender): string {
   return `${sentByFieldPrefix}${sender}`
+}
+
+// stepMessageFieldId is the field of the test of the message the send Step of the id sent to the
+// Enrollment (ADR 0122), whose operator is the engagement it asks for: opened or clicked.
+export function stepMessageFieldId(stepId: string): string {
+  return `${stepMessageFieldPrefix}${stepId}`
 }
 
 export function customFieldId(key: string): string {
@@ -357,7 +366,7 @@ function testRule(test: AnyTest, timeZone?: string): Pick<RuleType, 'operator' |
 }
 
 function toRule(
-  node: Exclude<RuleConditionNode | EventFilterNode, { kind: 'group' }>,
+  node: Exclude<BranchConditionNode | EventFilterNode, { kind: 'group' }>,
   timeZone?: string,
 ): RuleType {
   let rule: RuleType
@@ -394,6 +403,9 @@ function toRule(
     case 'sentBy':
       rule = { field: sentByFieldId(node.sender), operator: sentByOperator, value: node.id }
       break
+    case 'stepMessage':
+      rule = { field: stepMessageFieldId(node.step), operator: node.engagement, value: '' }
+      break
   }
   return rule
 }
@@ -403,7 +415,7 @@ function toRule(
 // keeps its own state from then on, and toDraft reads it back. timeZone is the User time zone the
 // days of before and after are read in (ADR 0068), undefined for the browser's.
 export function toQuery(condition: AnyCondition, timeZone?: string): RuleGroupType {
-  const entries: readonly (RuleConditionNode | EventFilterNode)[] = condition.entries
+  const entries: readonly (BranchConditionNode | EventFilterNode)[] = condition.entries
   return {
     combinator: condition.combinator,
     ...(condition.not === undefined ? {} : { not: condition.not }),
@@ -436,6 +448,7 @@ type NodeDraft =
   | Blank<Tested<RulePropertyLeafInput>, 'key'>
   | Blank<Tested<FilterPropertyLeafInput>, 'key'>
   | SentByLeafInput
+  | StepMessageLeafInput
   | ConditionDraft
 export type ConditionDraft = Omit<RuleConditionInput, 'entries'> & { entries: NodeDraft[] }
 
@@ -552,6 +565,16 @@ function toPropertyLeaf(rule: RuleType, timeZone?: string): NodeDraft[] {
   return [{ kind: 'property', of: { kind: 'trigger' }, ...(key === '' ? {} : { key }), test }]
 }
 
+const engagementByName = byName(MessageEngagement)
+
+// toStepMessageLeaf reads a builder rule as the test of the message of the send Step its field
+// names, asking for the engagement its operator names; nothing for an operator that names none.
+function toStepMessageLeaf(rule: RuleType): NodeDraft[] {
+  const engagement = engagementByName.get(rule.operator)
+  const step = rule.field.slice(stepMessageFieldPrefix.length)
+  return engagement === undefined ? [] : [{ kind: 'stepMessage', step, engagement }]
+}
+
 type LeafKind = Exclude<NodeDraft['kind'], 'group'>
 
 // How a builder rule reads as a leaf of each kind, or as nothing when its operator names no test
@@ -564,6 +587,7 @@ const leaves: Record<LeafKind, (rule: RuleType, timeZone?: string) => NodeDraft[
   sms: (rule) => toHaveLeaf(rule, (operator) => ({ kind: 'sms', operator })),
   property: toPropertyLeaf,
   sentBy: toSentByLeaf,
+  stepMessage: toStepMessageLeaf,
   engagementTracking: (rule, timeZone) => {
     const channel = trackingChannelByName.get(rule.field.slice(trackingFieldPrefix.length))
     const test = takes(leafTests.engagementTracking, toTest(rule.operator, rule.value, timeZone))
@@ -606,6 +630,9 @@ function leafKindOf(field: string): LeafKind | undefined {
   }
   if (field.startsWith(sentByFieldPrefix)) {
     return 'sentBy'
+  }
+  if (field.startsWith(stepMessageFieldPrefix)) {
+    return 'stepMessage'
   }
   return attributeByName.has(field) ? 'attribute' : subjectKinds.get(field)
 }

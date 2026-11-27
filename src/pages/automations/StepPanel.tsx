@@ -14,7 +14,7 @@ import { useTranslation } from 'react-i18next'
 
 import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
 import { allSteps, forkPaths } from './definition.ts'
-import type { EditedStep, Flow, FlowStep, TriggerDraft } from './definition.ts'
+import type { EditedStep, Flow, FlowPath, FlowStep, TriggerDraft } from './definition.ts'
 import type { PathPatch } from './flowEdits.ts'
 import { TRIGGER_NODE_ID } from './flowLayout.ts'
 import { BranchForm, SplitForm } from './ForkForms.tsx'
@@ -37,11 +37,13 @@ export interface ForkControls {
 
 // The form of the selected Step: its kind's own, a fork's paths, or what an End does.
 function StepBody({
+  root,
   step,
   validatorRef,
   onStep,
   forks,
 }: {
+  root: FlowPath
   step: FlowStep
   validatorRef: StepValidator
   onStep: (step: EditedStep) => void
@@ -69,7 +71,7 @@ function StepBody({
     return <Text size="sm">{t(($) => $.automations.endNodeDescription)}</Text>
   }
   if (step.kind === 'branch') {
-    return <BranchForm key={key} step={step} {...forkProps} />
+    return <BranchForm key={key} root={root} step={step} {...forkProps} />
   }
   if (step.kind === 'split') {
     return <SplitForm key={key} step={step} {...forkProps} />
@@ -171,7 +173,13 @@ export function StepPanel({
               onChecked={() => forks.onChecked(TRIGGER_NODE_ID)}
             />
           ) : (
-            <StepBody step={step} validatorRef={validatorRef} onStep={onStep} forks={forks} />
+            <StepBody
+              root={flow.path}
+              step={step}
+              validatorRef={validatorRef}
+              onStep={onStep}
+              forks={forks}
+            />
           )}
         </Fieldset>
       </ScrollArea>

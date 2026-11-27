@@ -459,7 +459,7 @@ export default interface Resources {
       "pathOtherwise": "Otherwise",
       "pathOtherwiseHint": "Otherwise: the path taken when no condition above holds.",
       "pathUnknown": "Unknown",
-      "pathUnknownHint": "Unknown: the path taken when a condition cannot be known for the contact, because its opens or clicks are not tracked.",
+      "pathUnknownHint": "Unknown: the path taken when a condition cannot be known for the contact, because its opens or clicks are not tracked, or the message it tests went out untracked or was never sent to them.",
       "pathWeightLabel": "Path {{number}} weight",
       "pathWeighted": "Path {{number}} · {{weight}}%",
       "pendingDetails": "It runs its last published version: the changes made since then are not published yet.",
@@ -818,6 +818,10 @@ export default interface Resources {
         "doesNotHave": "does not have",
         "has": "has"
       },
+      "messageEngagements": {
+        "clicked": "was clicked",
+        "opened": "was opened"
+      },
       "momentOperators": {
         "after": "is after",
         "before": "is before"
@@ -838,6 +842,7 @@ export default interface Resources {
       },
       "sentByOperator": "is",
       "showArchivedSenders": "Offer archived broadcasts and automations",
+      "stepMessage": "Message of {{step}}",
       "textOperators": {
         "beginsWith": "begins with",
         "contains": "contains",

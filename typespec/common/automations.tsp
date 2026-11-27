@@ -419,7 +419,8 @@ model BranchPathInput {
 /** A Step that sends each Enrollment down the first of its paths whose Condition holds, on the
  * Contact's live data when the Enrollment reaches it (ADR 0124), and down `otherwise` when none
  * does. A Condition that is unknown for the Contact (an engagement count of a Destination that is
- * not tracked, ADR 0123) before any holds sends it down `unknown`. The paths rejoin at the Step
+ * not tracked, ADR 0123, or a test of the Enrollment's own message that cannot be known, ADR 0122)
+ * before any holds sends it down `unknown`. The paths rejoin at the Step
  * after the Branch. */
 model BranchStep {
   /** The Step's id */
@@ -439,7 +440,7 @@ model BranchStep {
 }
 
 /** A Branch, as a request writes it. Publish refuses it without `unknown` when a Condition counts
- * an open or a click, and with `unknown` when none does. */
+ * an open or a click or tests the Enrollment's own message, and with `unknown` when none does. */
 model BranchStepInput {
   /** The Step's id; omitted, the Step is given one */
   id?: StepId;

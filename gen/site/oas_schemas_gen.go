@@ -4214,7 +4214,8 @@ func NewWithinLastTestBirthdayTestSum(v WithinLastTest) BirthdayTestSum {
 }
 
 // A Branch path's Condition: the tree of tests the Contact, on its live data when the Enrollment
-// reaches the Branch, and the Event the Enrollment began with match.
+// reaches the Branch, the Event the Enrollment began with and the messages the Enrollment was sent
+// match.
 // Ref: #/components/schemas/BranchCondition
 type BranchCondition struct {
 	Kind BranchConditionKind `json:"kind"`
@@ -4267,7 +4268,8 @@ func (s *BranchCondition) SetEntries(val []BranchConditionNode) {
 }
 
 // A Branch path's Condition: the tree of tests the Contact, on its live data when the Enrollment
-// reaches the Branch, and the Event the Enrollment began with match.
+// reaches the Branch, the Event the Enrollment began with and the messages the Enrollment was sent
+// match.
 // Ref: #/components/schemas/BranchConditionInput
 type BranchConditionInput struct {
 	Kind BranchConditionInputKind `json:"kind"`
@@ -4388,7 +4390,7 @@ func (s *BranchConditionKind) UnmarshalText(data []byte) error {
 }
 
 // An entry of a Branch path's Condition, by `kind`: a Rule's, the property test reading the Event the
-// Enrollment began with.
+// Enrollment began with, and the test of the Enrollment's own message.
 // Ref: #/components/schemas/BranchConditionNode
 type BranchConditionNode struct {
 	OneOf BranchConditionNodeSum
@@ -4405,7 +4407,7 @@ func (s *BranchConditionNode) SetOneOf(val BranchConditionNodeSum) {
 }
 
 // An entry of a Branch path's Condition, by `kind`: a Rule's, the property test reading the Event the
-// Enrollment began with.
+// Enrollment began with, and the test of the Enrollment's own message.
 // Ref: #/components/schemas/BranchConditionNodeInput
 type BranchConditionNodeInput struct {
 	OneOf BranchConditionNodeInputSum
@@ -4435,6 +4437,7 @@ type BranchConditionNodeInputSum struct {
 	CustomFieldLeafInput        CustomFieldLeafInput
 	EventLeafInput              EventLeafInput
 	BranchPropertyLeafInput     BranchPropertyLeafInput
+	StepMessageLeafInput        StepMessageLeafInput
 }
 
 // BranchConditionNodeInputSumType is oneOf type of BranchConditionNodeInputSum.
@@ -4452,6 +4455,7 @@ const (
 	CustomFieldLeafInputBranchConditionNodeInputSum        BranchConditionNodeInputSumType = "customField"
 	EventLeafInputBranchConditionNodeInputSum              BranchConditionNodeInputSumType = "event"
 	BranchPropertyLeafInputBranchConditionNodeInputSum     BranchConditionNodeInputSumType = "property"
+	StepMessageLeafInputBranchConditionNodeInputSum        BranchConditionNodeInputSumType = "stepMessage"
 )
 
 // IsBranchConditionInput reports whether BranchConditionNodeInputSum is BranchConditionInput.
@@ -4502,6 +4506,11 @@ func (s BranchConditionNodeInputSum) IsEventLeafInput() bool {
 // IsBranchPropertyLeafInput reports whether BranchConditionNodeInputSum is BranchPropertyLeafInput.
 func (s BranchConditionNodeInputSum) IsBranchPropertyLeafInput() bool {
 	return s.Type == BranchPropertyLeafInputBranchConditionNodeInputSum
+}
+
+// IsStepMessageLeafInput reports whether BranchConditionNodeInputSum is StepMessageLeafInput.
+func (s BranchConditionNodeInputSum) IsStepMessageLeafInput() bool {
+	return s.Type == StepMessageLeafInputBranchConditionNodeInputSum
 }
 
 // SetBranchConditionInput sets BranchConditionNodeInputSum to BranchConditionInput.
@@ -4714,6 +4723,27 @@ func NewBranchPropertyLeafInputBranchConditionNodeInputSum(v BranchPropertyLeafI
 	return s
 }
 
+// SetStepMessageLeafInput sets BranchConditionNodeInputSum to StepMessageLeafInput.
+func (s *BranchConditionNodeInputSum) SetStepMessageLeafInput(v StepMessageLeafInput) {
+	s.Type = StepMessageLeafInputBranchConditionNodeInputSum
+	s.StepMessageLeafInput = v
+}
+
+// GetStepMessageLeafInput returns StepMessageLeafInput and true boolean if BranchConditionNodeInputSum is StepMessageLeafInput.
+func (s BranchConditionNodeInputSum) GetStepMessageLeafInput() (v StepMessageLeafInput, ok bool) {
+	if !s.IsStepMessageLeafInput() {
+		return v, false
+	}
+	return s.StepMessageLeafInput, true
+}
+
+// NewStepMessageLeafInputBranchConditionNodeInputSum returns new BranchConditionNodeInputSum from StepMessageLeafInput.
+func NewStepMessageLeafInputBranchConditionNodeInputSum(v StepMessageLeafInput) BranchConditionNodeInputSum {
+	var s BranchConditionNodeInputSum
+	s.SetStepMessageLeafInput(v)
+	return s
+}
+
 // BranchConditionNodeSum represents sum type.
 type BranchConditionNodeSum struct {
 	// Type selects the active sum variant, switch on this field.
@@ -4728,6 +4758,7 @@ type BranchConditionNodeSum struct {
 	CustomFieldLeaf        CustomFieldLeaf
 	EventLeaf              EventLeaf
 	BranchPropertyLeaf     BranchPropertyLeaf
+	StepMessageLeaf        StepMessageLeaf
 }
 
 // BranchConditionNodeSumType is oneOf type of BranchConditionNodeSum.
@@ -4745,6 +4776,7 @@ const (
 	CustomFieldLeafBranchConditionNodeSum        BranchConditionNodeSumType = "customField"
 	EventLeafBranchConditionNodeSum              BranchConditionNodeSumType = "event"
 	BranchPropertyLeafBranchConditionNodeSum     BranchConditionNodeSumType = "property"
+	StepMessageLeafBranchConditionNodeSum        BranchConditionNodeSumType = "stepMessage"
 )
 
 // IsBranchCondition reports whether BranchConditionNodeSum is BranchCondition.
@@ -4789,6 +4821,11 @@ func (s BranchConditionNodeSum) IsEventLeaf() bool { return s.Type == EventLeafB
 // IsBranchPropertyLeaf reports whether BranchConditionNodeSum is BranchPropertyLeaf.
 func (s BranchConditionNodeSum) IsBranchPropertyLeaf() bool {
 	return s.Type == BranchPropertyLeafBranchConditionNodeSum
+}
+
+// IsStepMessageLeaf reports whether BranchConditionNodeSum is StepMessageLeaf.
+func (s BranchConditionNodeSum) IsStepMessageLeaf() bool {
+	return s.Type == StepMessageLeafBranchConditionNodeSum
 }
 
 // SetBranchCondition sets BranchConditionNodeSum to BranchCondition.
@@ -4998,6 +5035,27 @@ func (s BranchConditionNodeSum) GetBranchPropertyLeaf() (v BranchPropertyLeaf, o
 func NewBranchPropertyLeafBranchConditionNodeSum(v BranchPropertyLeaf) BranchConditionNodeSum {
 	var s BranchConditionNodeSum
 	s.SetBranchPropertyLeaf(v)
+	return s
+}
+
+// SetStepMessageLeaf sets BranchConditionNodeSum to StepMessageLeaf.
+func (s *BranchConditionNodeSum) SetStepMessageLeaf(v StepMessageLeaf) {
+	s.Type = StepMessageLeafBranchConditionNodeSum
+	s.StepMessageLeaf = v
+}
+
+// GetStepMessageLeaf returns StepMessageLeaf and true boolean if BranchConditionNodeSum is StepMessageLeaf.
+func (s BranchConditionNodeSum) GetStepMessageLeaf() (v StepMessageLeaf, ok bool) {
+	if !s.IsStepMessageLeaf() {
+		return v, false
+	}
+	return s.StepMessageLeaf, true
+}
+
+// NewStepMessageLeafBranchConditionNodeSum returns new BranchConditionNodeSum from StepMessageLeaf.
+func NewStepMessageLeafBranchConditionNodeSum(v StepMessageLeaf) BranchConditionNodeSum {
+	var s BranchConditionNodeSum
+	s.SetStepMessageLeaf(v)
 	return s
 }
 
@@ -5375,8 +5433,8 @@ func NewTriggerSourceBranchPropertySourceSum(v TriggerSource) BranchPropertySour
 // A Step that sends each Enrollment down the first of its paths whose Condition holds, on the
 // Contact's live data when the Enrollment reaches it (ADR 0124), and down `otherwise` when none does.
 // A Condition that is unknown for the Contact (an engagement count of a Destination that is not
-// tracked, ADR 0123) before any holds sends it down `unknown`. The paths rejoin at the Step after the
-// Branch.
+// tracked, ADR 0123, or a test of the Enrollment's own message that cannot be known, ADR 0122) before
+// any holds sends it down `unknown`. The paths rejoin at the Step after the Branch.
 // Ref: #/components/schemas/BranchStep
 type BranchStep struct {
 	// The Step's id.
@@ -5442,7 +5500,7 @@ func (s *BranchStep) SetUnknown(val OptAutomationPath) {
 }
 
 // A Branch, as a request writes it. Publish refuses it without `unknown` when a Condition counts an
-// open or a click, and with `unknown` when none does.
+// open or a click or tests the Enrollment's own message, and with `unknown` when none does.
 // Ref: #/components/schemas/BranchStepInput
 type BranchStepInput struct {
 	// The Step's id; omitted, the Step is given one.
@@ -5596,7 +5654,8 @@ func (s *BranchUnknownPathInput) SetConditions(val []BranchConditionInput) {
 // Ref: #/components/schemas/BranchUnknownPathResult
 type BranchUnknownPathResult struct {
 	// True when one of its Conditions can be unknown for a Contact (it counts an open or a click, ADR
-	// 0123): Publish then refuses the Branch without an unknown path, and with one when false.
+	// 0123, or tests the Enrollment's own message, ADR 0122): Publish then refuses the Branch without an
+	// unknown path, and with one when false.
 	Needed bool `json:"needed"`
 }
 
@@ -14324,6 +14383,50 @@ type LocaleTag string
 type MaxPerDay int32
 
 type MaxPerSecond int32
+
+// What a test of an Enrollment's own message asks of it: that it was opened (an email Step's message
+// only) or clicked.
+// Ref: #/components/schemas/MessageEngagement
+type MessageEngagement string
+
+const (
+	MessageEngagementOpened  MessageEngagement = "opened"
+	MessageEngagementClicked MessageEngagement = "clicked"
+)
+
+// AllValues returns all MessageEngagement values.
+func (MessageEngagement) AllValues() []MessageEngagement {
+	return []MessageEngagement{
+		MessageEngagementOpened,
+		MessageEngagementClicked,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s MessageEngagement) MarshalText() ([]byte, error) {
+	switch s {
+	case MessageEngagementOpened:
+		return []byte(s), nil
+	case MessageEngagementClicked:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *MessageEngagement) UnmarshalText(data []byte) error {
+	switch MessageEngagement(data) {
+	case MessageEngagementOpened:
+		*s = MessageEngagementOpened
+		return nil
+	case MessageEngagementClicked:
+		*s = MessageEngagementClicked
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
 
 // The Orders credited to one Broadcast or Automation and the net revenue of their Movements (ADR
 // 0064), in the Reporting currency, read from the Movements and never stored: a refund lowers `amount`
@@ -41644,6 +41747,166 @@ func (s *StateOperator) UnmarshalText(data []byte) error {
 }
 
 type StepId string
+
+// A test of the message a send Step of the Automation sent to this Enrollment (ADR 0122): whether it
+// was opened or clicked, by the first human open or click stamped on it, so an open or click by a
+// machine never counts (ADR 0053). It is unknown, never false, when the message went out untracked,
+// when its tracking was withdrawn since (ADR 0120), when the Step was skipped and when the Enrollment
+// never passed it, so a Branch holding it needs its unknown path. The Step must be a send Step that
+// can come before the Branch: an email Step for `opened`, any send Step for `clicked`. A Step a test
+// names cannot be removed.
+// Ref: #/components/schemas/StepMessageLeaf
+type StepMessageLeaf struct {
+	Kind StepMessageLeafKind `json:"kind"`
+	// The send Step's id.
+	Step StepId `json:"step"`
+	// Whether the message was opened or clicked.
+	Engagement MessageEngagement `json:"engagement"`
+}
+
+// GetKind returns the value of Kind.
+func (s *StepMessageLeaf) GetKind() StepMessageLeafKind {
+	return s.Kind
+}
+
+// GetStep returns the value of Step.
+func (s *StepMessageLeaf) GetStep() StepId {
+	return s.Step
+}
+
+// GetEngagement returns the value of Engagement.
+func (s *StepMessageLeaf) GetEngagement() MessageEngagement {
+	return s.Engagement
+}
+
+// SetKind sets the value of Kind.
+func (s *StepMessageLeaf) SetKind(val StepMessageLeafKind) {
+	s.Kind = val
+}
+
+// SetStep sets the value of Step.
+func (s *StepMessageLeaf) SetStep(val StepId) {
+	s.Step = val
+}
+
+// SetEngagement sets the value of Engagement.
+func (s *StepMessageLeaf) SetEngagement(val MessageEngagement) {
+	s.Engagement = val
+}
+
+// A test of the message a send Step of the Automation sent to this Enrollment (ADR 0122): whether it
+// was opened or clicked, by the first human open or click stamped on it, so an open or click by a
+// machine never counts (ADR 0053). It is unknown, never false, when the message went out untracked,
+// when its tracking was withdrawn since (ADR 0120), when the Step was skipped and when the Enrollment
+// never passed it, so a Branch holding it needs its unknown path. The Step must be a send Step that
+// can come before the Branch: an email Step for `opened`, any send Step for `clicked`. A Step a test
+// names cannot be removed.
+// Ref: #/components/schemas/StepMessageLeafInput
+type StepMessageLeafInput struct {
+	Kind StepMessageLeafInputKind `json:"kind"`
+	// The send Step's id.
+	Step StepId `json:"step"`
+	// Whether the message was opened or clicked.
+	Engagement MessageEngagement `json:"engagement"`
+}
+
+// GetKind returns the value of Kind.
+func (s *StepMessageLeafInput) GetKind() StepMessageLeafInputKind {
+	return s.Kind
+}
+
+// GetStep returns the value of Step.
+func (s *StepMessageLeafInput) GetStep() StepId {
+	return s.Step
+}
+
+// GetEngagement returns the value of Engagement.
+func (s *StepMessageLeafInput) GetEngagement() MessageEngagement {
+	return s.Engagement
+}
+
+// SetKind sets the value of Kind.
+func (s *StepMessageLeafInput) SetKind(val StepMessageLeafInputKind) {
+	s.Kind = val
+}
+
+// SetStep sets the value of Step.
+func (s *StepMessageLeafInput) SetStep(val StepId) {
+	s.Step = val
+}
+
+// SetEngagement sets the value of Engagement.
+func (s *StepMessageLeafInput) SetEngagement(val MessageEngagement) {
+	s.Engagement = val
+}
+
+type StepMessageLeafInputKind string
+
+const (
+	StepMessageLeafInputKindStepMessage StepMessageLeafInputKind = "stepMessage"
+)
+
+// AllValues returns all StepMessageLeafInputKind values.
+func (StepMessageLeafInputKind) AllValues() []StepMessageLeafInputKind {
+	return []StepMessageLeafInputKind{
+		StepMessageLeafInputKindStepMessage,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s StepMessageLeafInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case StepMessageLeafInputKindStepMessage:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *StepMessageLeafInputKind) UnmarshalText(data []byte) error {
+	switch StepMessageLeafInputKind(data) {
+	case StepMessageLeafInputKindStepMessage:
+		*s = StepMessageLeafInputKindStepMessage
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type StepMessageLeafKind string
+
+const (
+	StepMessageLeafKindStepMessage StepMessageLeafKind = "stepMessage"
+)
+
+// AllValues returns all StepMessageLeafKind values.
+func (StepMessageLeafKind) AllValues() []StepMessageLeafKind {
+	return []StepMessageLeafKind{
+		StepMessageLeafKindStepMessage,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s StepMessageLeafKind) MarshalText() ([]byte, error) {
+	switch s {
+	case StepMessageLeafKindStepMessage:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *StepMessageLeafKind) UnmarshalText(data []byte) error {
+	switch StepMessageLeafKind(data) {
+	case StepMessageLeafKindStepMessage:
+		*s = StepMessageLeafKindStepMessage
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
 
 // A Channel a destination can be suppressed on.
 // Ref: #/components/schemas/SuppressionChannel

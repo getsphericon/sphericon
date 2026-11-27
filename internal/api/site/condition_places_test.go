@@ -96,6 +96,11 @@ func TestSiteConditionRefusesWhatItsPlaceDoesNotAdmitByItsPath(t *testing.T) {
 			"condition.entries.1.entries.1",
 		},
 		{
+			"a test of an Enrollment's own message in a Segment",
+			`{"kind":"stepMessage","step":"5a0f6d2e-8b1c-4e3a-9f7d-000000000002","engagement":"opened"}`,
+			"condition.entries.1.entries.1",
+		},
+		{
 			"a text operator on a number test",
 			`{"kind":"customField","key":"courses_completed","test":{"kind":"number","operator":"contains","value":1}}`,
 			"condition.entries.1.entries.1.test.operator",
@@ -135,6 +140,24 @@ func TestSiteConditionRefusesWhatItsPlaceDoesNotAdmitByItsPath(t *testing.T) {
 			assert.Equal(t, []string{tc.path}, slices.Collect(maps.Keys(refused.Errors.Or(nil))))
 		})
 	}
+}
+
+// A Rule's Condition does not admit the test of an Enrollment's own message, which is a Branch
+// path's alone (ADR 0122): the schema refuses it with a 400 that names its path.
+func TestSiteRuleConditionRefusesATestOfAnEnrollmentsOwnMessage(t *testing.T) {
+	env := testhelper.Setup(t)
+	edited := env.SiteActorVia(t, fixtures.OwnerJohnEmail, testhelper.EditBody(func(body map[string]any) {
+		body["condition"] = testhelper.NestedCondition(t, `{"kind":"stepMessage","step":"5a0f6d2e-8b1c-4e3a-9f7d-000000000002","engagement":"clicked"}`)
+	}))
+
+	_, err := edited.SiteRulesCreate(t.Context(), &siteapi.CreateRuleInput{
+		Name: "Misplaced", TriggerEvents: []string{"checkout"},
+		Actions:   []siteapi.RuleActionInput{tagAction(siteapi.RuleActionTypeApplyTag, "x")},
+		Condition: siteapi.NewOptRuleConditionInput(testhelper.ConditionInput[siteapi.RuleConditionInput](t, `{"kind":"group","combinator":"and","entries":[]}`)),
+	}, siteapi.SiteRulesCreateParams{WorkspaceId: fixtures.AcmePublicID})
+
+	refused := testhelper.SiteRefusal(t, err, http.StatusBadRequest)
+	assert.Equal(t, []string{"condition.entries.1.entries.1"}, slices.Collect(maps.Keys(refused.Errors.Or(nil))))
 }
 
 // Every attribute the contract lists is one a Condition tests: none is refused.

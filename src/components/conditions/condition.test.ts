@@ -3,6 +3,7 @@ import { expect, test } from 'vitest'
 
 import { MomentOperator } from '../../generated/site/types.gen.ts'
 import type {
+  BranchConditionInput,
   EventFilterInput,
   EventLeaf,
   RuleConditionInput,
@@ -105,6 +106,44 @@ test("a Rule's Condition survives the walk too, a property's key and a Custom fi
 
   expect(back).toEqual(rule)
   expect(toCondition(back, 'rule')).toEqual(rule)
+})
+
+// A Branch path's Condition adds the test of the Enrollment's own message (ADR 0122), "did not open"
+// being its negation.
+const branch: BranchConditionInput = {
+  kind: 'group',
+  combinator: 'or',
+  entries: [
+    { kind: 'stepMessage', step: 'f2b0c1d4-0000-4000-8000-000000000001', engagement: 'clicked' },
+    {
+      kind: 'group',
+      combinator: 'and',
+      not: true,
+      entries: [
+        { kind: 'stepMessage', step: 'f2b0c1d4-0000-4000-8000-000000000002', engagement: 'opened' },
+      ],
+    },
+    { kind: 'tag', name: 'vip', operator: 'has' },
+  ],
+}
+
+test("a Branch path's test of the Enrollment's own message survives the walk, and only a Branch takes it", () => {
+  const back = toDraft(toQuery(branch))
+
+  expect(back).toEqual(branch)
+  expect(toCondition(back, 'branch')).toEqual(branch)
+  expect(toCondition(back, 'rule')).toBeUndefined()
+})
+
+test('a message test with an engagement it does not know is dropped', () => {
+  const draft = toDraft({
+    combinator: 'and',
+    rules: [
+      { field: 'stepMessage:f2b0c1d4-0000-4000-8000-000000000001', operator: 'eq', value: '' },
+    ],
+  })
+
+  expect(draft.entries).toEqual([])
 })
 
 test("a Segment's Condition is no Condition with a property test in it", () => {

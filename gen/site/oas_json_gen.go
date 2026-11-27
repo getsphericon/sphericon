@@ -7683,6 +7683,20 @@ func (s BranchConditionNodeInputSum) encodeFields(e *jx.Encoder) {
 				s.Test.Encode(e)
 			}
 		}
+	case StepMessageLeafInputBranchConditionNodeInputSum:
+		e.FieldStart("kind")
+		e.Str("stepMessage")
+		{
+			s := s.StepMessageLeafInput
+			{
+				e.FieldStart("step")
+				s.Step.Encode(e)
+			}
+			{
+				e.FieldStart("engagement")
+				s.Engagement.Encode(e)
+			}
+		}
 	}
 }
 
@@ -7739,6 +7753,9 @@ func (s *BranchConditionNodeInputSum) Decode(d *jx.Decoder) error {
 				case "property":
 					s.Type = BranchPropertyLeafInputBranchConditionNodeInputSum
 					found = true
+				case "stepMessage":
+					s.Type = StepMessageLeafInputBranchConditionNodeInputSum
+					found = true
 				default:
 					return errors.Errorf("unknown type %s", typ)
 				}
@@ -7791,6 +7808,10 @@ func (s *BranchConditionNodeInputSum) Decode(d *jx.Decoder) error {
 		}
 	case BranchPropertyLeafInputBranchConditionNodeInputSum:
 		if err := s.BranchPropertyLeafInput.Decode(d); err != nil {
+			return err
+		}
+	case StepMessageLeafInputBranchConditionNodeInputSum:
+		if err := s.StepMessageLeafInput.Decode(d); err != nil {
 			return err
 		}
 	default:
@@ -7979,6 +8000,20 @@ func (s BranchConditionNodeSum) encodeFields(e *jx.Encoder) {
 				s.Test.Encode(e)
 			}
 		}
+	case StepMessageLeafBranchConditionNodeSum:
+		e.FieldStart("kind")
+		e.Str("stepMessage")
+		{
+			s := s.StepMessageLeaf
+			{
+				e.FieldStart("step")
+				s.Step.Encode(e)
+			}
+			{
+				e.FieldStart("engagement")
+				s.Engagement.Encode(e)
+			}
+		}
 	}
 }
 
@@ -8035,6 +8070,9 @@ func (s *BranchConditionNodeSum) Decode(d *jx.Decoder) error {
 				case "property":
 					s.Type = BranchPropertyLeafBranchConditionNodeSum
 					found = true
+				case "stepMessage":
+					s.Type = StepMessageLeafBranchConditionNodeSum
+					found = true
 				default:
 					return errors.Errorf("unknown type %s", typ)
 				}
@@ -8087,6 +8125,10 @@ func (s *BranchConditionNodeSum) Decode(d *jx.Decoder) error {
 		}
 	case BranchPropertyLeafBranchConditionNodeSum:
 		if err := s.BranchPropertyLeaf.Decode(d); err != nil {
+			return err
+		}
+	case StepMessageLeafBranchConditionNodeSum:
+		if err := s.StepMessageLeaf.Decode(d); err != nil {
 			return err
 		}
 	default:
@@ -26114,6 +26156,46 @@ func (s MaxPerSecond) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *MaxPerSecond) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes MessageEngagement as json.
+func (s MessageEngagement) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes MessageEngagement from json.
+func (s *MessageEngagement) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode MessageEngagement to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch MessageEngagement(v) {
+	case MessageEngagementOpened:
+		*s = MessageEngagementOpened
+	case MessageEngagementClicked:
+		*s = MessageEngagementClicked
+	default:
+		*s = MessageEngagement(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s MessageEngagement) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *MessageEngagement) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -75097,6 +75179,330 @@ func (s StepId) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *StepId) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *StepMessageLeaf) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *StepMessageLeaf) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("kind")
+		s.Kind.Encode(e)
+	}
+	{
+		e.FieldStart("step")
+		s.Step.Encode(e)
+	}
+	{
+		e.FieldStart("engagement")
+		s.Engagement.Encode(e)
+	}
+}
+
+var jsonFieldsNameOfStepMessageLeaf = [3]string{
+	0: "kind",
+	1: "step",
+	2: "engagement",
+}
+
+// Decode decodes StepMessageLeaf from json.
+func (s *StepMessageLeaf) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode StepMessageLeaf to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "kind":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Kind.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"kind\"")
+			}
+		case "step":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Step.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"step\"")
+			}
+		case "engagement":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				if err := s.Engagement.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"engagement\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode StepMessageLeaf")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfStepMessageLeaf) {
+					name = jsonFieldsNameOfStepMessageLeaf[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *StepMessageLeaf) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *StepMessageLeaf) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *StepMessageLeafInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *StepMessageLeafInput) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("kind")
+		s.Kind.Encode(e)
+	}
+	{
+		e.FieldStart("step")
+		s.Step.Encode(e)
+	}
+	{
+		e.FieldStart("engagement")
+		s.Engagement.Encode(e)
+	}
+}
+
+var jsonFieldsNameOfStepMessageLeafInput = [3]string{
+	0: "kind",
+	1: "step",
+	2: "engagement",
+}
+
+// Decode decodes StepMessageLeafInput from json.
+func (s *StepMessageLeafInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode StepMessageLeafInput to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "kind":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Kind.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"kind\"")
+			}
+		case "step":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Step.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"step\"")
+			}
+		case "engagement":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				if err := s.Engagement.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"engagement\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode StepMessageLeafInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfStepMessageLeafInput) {
+					name = jsonFieldsNameOfStepMessageLeafInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *StepMessageLeafInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *StepMessageLeafInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes StepMessageLeafInputKind as json.
+func (s StepMessageLeafInputKind) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes StepMessageLeafInputKind from json.
+func (s *StepMessageLeafInputKind) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode StepMessageLeafInputKind to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch StepMessageLeafInputKind(v) {
+	case StepMessageLeafInputKindStepMessage:
+		*s = StepMessageLeafInputKindStepMessage
+	default:
+		*s = StepMessageLeafInputKind(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s StepMessageLeafInputKind) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *StepMessageLeafInputKind) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes StepMessageLeafKind as json.
+func (s StepMessageLeafKind) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes StepMessageLeafKind from json.
+func (s *StepMessageLeafKind) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode StepMessageLeafKind to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch StepMessageLeafKind(v) {
+	case StepMessageLeafKindStepMessage:
+		*s = StepMessageLeafKindStepMessage
+	default:
+		*s = StepMessageLeafKind(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s StepMessageLeafKind) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *StepMessageLeafKind) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
