@@ -51,6 +51,7 @@ forbid_symbol:
         wiring,
       ]
     allow_in:
+      - internal/domain/contacts/contactimports/*.go
       - internal/domain/identity/apitokens/*.go
       - internal/domain/identity/consentrecords/*.go
       - internal/domain/identity/invitations/*.go

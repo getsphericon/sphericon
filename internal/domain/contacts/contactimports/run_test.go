@@ -279,3 +279,47 @@ func countByEmail(t *testing.T, env *testhelper.TestEnv, address string) int {
 	require.NoError(t, err)
 	return n
 }
+
+// A batch that fails every try ends the import failed once its job's tries are spent: what it
+// wrote before stays, its file is gone and its report downloads.
+func TestARunWhoseBatchKeepsFailingEndsFailedAfterItsTries(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	acme := env.DB.Scoped(fixtures.AcmeID)
+	imports := testhelper.Module[*contactimports.Module](env)
+	file := emailFile(1500, func(row int) string {
+		if row == 10 {
+			return `""`
+		}
+		return fmt.Sprintf("r%d@example.com", row)
+	})
+	id := runningImport(t, env, file, fixtures.AcmeOwnerMembershipID)
+	env.Bus.Use(func(next entgo.Mutator) entgo.Mutator {
+		return entgo.MutateFunc(func(ctx context.Context, m entgo.Mutation) (entgo.Value, error) {
+			if cm, ok := m.(*ent.ContactMutation); ok {
+				if email, set := cm.Email(); set && email == "r1200@example.com" {
+					return nil, errors.New("injected fault")
+				}
+			}
+			return next.Mutate(ctx, m)
+		})
+	})
+
+	// Each try fails; river tries the job again until its tries are spent.
+	for range contactimports.RunAttempts {
+		env.TryPerformEnqueuedJobs(t, contactimports.RunArgs{})
+		env.RetryJobs(t, contactimports.RunArgs{})
+	}
+	ended, err := imports.Get(ctx, acme, id)
+	require.NoError(t, err)
+	chunks, err := acme.ContactImportChunk().Query().Where(contactimportchunk.ContactImportID(id)).Count(ctx)
+	require.NoError(t, err)
+	_, linkErr := imports.ReportLink(ctx, acme, id, "a-session")
+
+	assert.Equal(t, contactimport.StateFailed, ended.Import.State)
+	assert.Equal(t, 1000, ended.Import.Processed)
+	assert.Equal(t, 999, ended.Import.Created)
+	assert.Zero(t, chunks, "the file is deleted")
+	require.NoError(t, linkErr, "the report downloads")
+	assert.Equal(t, 1, countByEmail(t, env, "r1000@example.com"))
+}

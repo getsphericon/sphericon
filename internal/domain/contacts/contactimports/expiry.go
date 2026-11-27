@@ -1,0 +1,45 @@
+package contactimports
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/contactimport"
+	"github.com/getsphericon/sphericon/ent/contactimportreportrow"
+)
+
+// UploadKept is how long an uploaded file is kept when its import never runs (ADR 0138).
+const UploadKept = 24 * time.Hour
+
+// Expired is what an expiry deleted: the imports abandoned before they ran, with their files, and
+// the reports past their expiry.
+type Expired struct {
+	Uploads, Reports int
+}
+
+// Expire deletes what the imports of every Workspace keep past its time (ADR 0138): an import
+// uploaded or ready for longer than UploadKept, with its file, and the refused rows' report of an
+// import whose report expired, the import itself kept with its counts. It is Instance-wide, so it
+// writes through the raw client its river job hands it, by the module's clock.
+func (m *Module) Expire(ctx context.Context, client *ent.Client) (Expired, error) {
+	now := m.now()
+	uploads, err := client.ContactImport.Delete().
+		Where(contactimport.StateIn(contactimport.StateUploaded, contactimport.StateReady), contactimport.CreatedAtLT(now.Add(-UploadKept))).
+		Exec(ctx)
+	if err != nil {
+		return Expired{}, fmt.Errorf("contactimports: delete abandoned uploads: %w", err)
+	}
+	ids, err := client.ContactImport.Query().Where(contactimport.ReportExpiresAtLT(now)).IDs(ctx)
+	if err != nil || len(ids) == 0 {
+		return Expired{Uploads: uploads}, err
+	}
+	if _, err := client.ContactImportReportRow.Delete().Where(contactimportreportrow.ContactImportIDIn(ids...)).Exec(ctx); err != nil {
+		return Expired{}, fmt.Errorf("contactimports: delete expired reports: %w", err)
+	}
+	if err := client.ContactImport.Update().Where(contactimport.IDIn(ids...)).ClearReportExpiresAt().Exec(ctx); err != nil {
+		return Expired{}, err
+	}
+	return Expired{Uploads: uploads, Reports: len(ids)}, nil
+}
