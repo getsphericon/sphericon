@@ -1,0 +1,14 @@
+id: one-csv-writer
+snapshots:
+  "func export(buf *bytes.Buffer, rows [][]string) error {\n\treturn csv.NewWriter(buf).WriteAll(rows)\n}\n":
+    labels:
+      - source: csv.NewWriter(buf)
+        style: primary
+        start: 64
+        end: 82
+  "func report(w http.ResponseWriter) {\n\tout := csv.NewWriter(w)\n\tout.Flush()\n}\n":
+    labels:
+      - source: csv.NewWriter(w)
+        style: primary
+        start: 45
+        end: 61
