@@ -18,6 +18,8 @@ import type {
   EventMatcher,
   EventMatcherInput,
   TelegramButton,
+  WaitForEventConditionInput,
+  WaitForEventStep as WaitForEventStepRead,
   WaitUntilMoment,
   WaitUntilMomentInput,
   Weekday,
@@ -27,6 +29,7 @@ import {
   zDateOccurrenceInput,
   zEntryPolicy,
   zEventFilterInput,
+  zWaitForEventConditionInput,
   zWaitUntilTimeOfDayInput,
 } from '../../generated/site/zod.gen.ts'
 import { jsonText } from '../../utils/jsonText.ts'
@@ -131,7 +134,30 @@ export interface SplitStep {
   paths: SplitPathDraft[]
 }
 
-export type ForkStep = BranchStep | SplitStep
+// A fork whose listed paths a person adds, removes and gives a Condition or a weight.
+export type ListedFork = BranchStep | SplitStep
+
+// What a Wait for event's panel edits (ADR 0124): its name, fixed once the Step is saved (ADR 0136);
+// its timeout in seconds ('' while blank); the Event matchers it awaits (ADR 0180), each as an exit's
+// draft; and its Condition's text ('' for none, else its JSON, complete or still being typed).
+export interface WaitForEventDraft {
+  name: string
+  timeoutSeconds: number | ''
+  matchers: EndingDraft[]
+  conditionText: string
+}
+
+// A Wait for event on an Event: what its panel edits, and its two paths, `arrived` and `timedOut`.
+export interface WaitForEventStep {
+  id: string
+  kind: 'wait_for_event'
+  draft: WaitForEventDraft
+  arrived: FlowPath
+  timedOut: FlowPath
+}
+
+// A Step whose paths rejoin after it.
+export type ForkStep = ListedFork | WaitForEventStep
 
 // An End: it finishes its path, and is its last Step.
 type EndStep = Pick<AutomationPath, 'id'> & { kind: 'end' }
@@ -149,8 +175,9 @@ export type FlowStep = EditedStep | ForkStep | EndStep | KeptStep
 // The kinds a person puts on the canvas.
 export type InsertedKind = EditedKind | ForkStep['kind'] | EndStep['kind']
 
-// An exit or goal event as the Trigger node holds it (ADR 0133): its action, and its filter's text
-// as the builder leaves it (filterText: '' for none, complete or still being typed).
+// An Event matcher as a panel holds it (ADR 0133): an exit or goal event of the Trigger node, or one a
+// Wait for event awaits. Its action, and its filter's text as the builder leaves it (filterText: ''
+// for none, complete or still being typed).
 export type EndingDraft = Pick<EventMatcherInput, 'action'> & { filterText: string }
 
 // The Trigger as its panel edits it, by kind: an Event matcher that enrolls a Contact (ADR 0133),
@@ -258,10 +285,27 @@ function flowStepOf(step: AutomationStep): FlowStep {
         kind: 'split',
         paths: step.paths.map((path) => ({ ...flowPathOf(path), weight: path.weight })),
       }
-    // The editor does not edit a Wait for event yet (ADR 0124): the version holding one is kept.
     case 'wait_for_event':
+      return waitForEventOf(step)
     default:
       return { id, kind: 'kept', step }
+  }
+}
+
+// A stored Wait for event as the editor holds it: what its panel edits, and its two paths.
+function waitForEventOf(step: WaitForEventStepRead): WaitForEventStep {
+  const { condition, matchers } = step.awaits
+  return {
+    id: step.id,
+    kind: 'wait_for_event',
+    draft: {
+      name: step.name,
+      timeoutSeconds: step.timeoutSeconds,
+      matchers: matchers.map((matcher) => endingDraft(matcher)),
+      conditionText: condition ? filterText(condition) : '',
+    },
+    arrived: flowPathOf(step.arrived),
+    timedOut: flowPathOf(step.timedOut),
   }
 }
 
@@ -363,14 +407,18 @@ export function flowOf(version: AutomationVersion): Flow {
 
 // Whether the Step is a fork: a Step whose paths rejoin after it.
 export function isFork(step: FlowStep): step is ForkStep {
-  return step.kind === 'branch' || step.kind === 'split'
+  return step.kind === 'branch' || step.kind === 'split' || step.kind === 'wait_for_event'
 }
 
 // forkPaths are the paths of a fork, in the order the canvas draws them: a Branch's listed paths,
-// `otherwise`, then the unknown path; a Split's paths. Any other Step has none.
+// `otherwise`, then the unknown path; a Split's paths; a Wait for event's `arrived`, then
+// `timedOut`. Any other Step has none.
 export function forkPaths(step: FlowStep): FlowPath[] {
   if (step.kind === 'branch') {
     return [...step.paths, step.otherwise, ...(step.unknown ? [step.unknown] : [])]
+  }
+  if (step.kind === 'wait_for_event') {
+    return [step.arrived, step.timedOut]
   }
   return step.kind === 'split' ? step.paths : []
 }
@@ -411,6 +459,16 @@ function before(path: FlowPath, id: string, passed: FlowStep[]): FlowStep[] | un
     sofar = [...into, ...forkPaths(step).flatMap((nested) => allSteps(nested))]
   }
   return undefined
+}
+
+// storedStepIds are the ids of every Step the versions hold, at any depth: a Step stored under its
+// id, whose Wait for event name is fixed (ADR 0136).
+export function storedStepIds(versions: (AutomationVersion | null)[]): Set<string> {
+  return new Set(
+    versions.flatMap((version) =>
+      version === null ? [] : allSteps(flowPathOf(version.steps)).map((step) => step.id),
+    ),
+  )
 }
 
 // sendsMessage tells whether the Step sends a message on its Channel: the report counts what such a
@@ -619,7 +677,8 @@ export function branchConditionOf(text: string): BranchConditionInput | undefine
 }
 
 // The path a flow's path saves, or null when it holds what is never saved: a kept Step, a Branch
-// path whose Condition is missing or still being typed, or a Wait until whose moment is not set.
+// path whose Condition is missing or still being typed, a Wait until whose moment is not set, or a
+// Wait for event not one to save (waitForEventInput).
 function pathInput(path: FlowPath): AutomationPathInput | null {
   const steps: AutomationStepInput[] = []
   for (const step of path.steps) {
@@ -643,7 +702,65 @@ function stepInput(step: FlowStep): AutomationStepInput | null {
   if (step.kind === 'branch') {
     return branchInput(step)
   }
+  if (step.kind === 'wait_for_event') {
+    return waitForEventInput(step)
+  }
   return step.kind === 'split' ? splitInput(step) : stepInputOf(step)
+}
+
+// The Condition a Wait for event's text holds: undefined for none (no text, or a group that tests
+// nothing), null while it is still being typed, which is not one to save.
+export function waitForEventConditionOf(
+  text: string,
+): WaitForEventConditionInput | null | undefined {
+  if (text === '') {
+    return undefined
+  }
+  const parsed = jsonText.pipe(zWaitForEventConditionInput).safeParse(text)
+  if (!parsed.success) {
+    return null
+  }
+  return parsed.data.entries.length > 0 ? parsed.data : undefined
+}
+
+// The matchers a Wait for event's drafts save (matcherOf): a row whose action is blank is none.
+export function awaitedMatchersOf(
+  drafts: EndingDraft[],
+): { matcher: EventMatcherInput; incomplete: boolean }[] {
+  return drafts.flatMap((draft) => endingRead(draft))
+}
+
+// The Wait for event a draft saves; null while it is not one to save: its timeout blank, no
+// matcher, a filter or its Condition still being typed, or a path not one to save.
+function waitForEventInput(step: WaitForEventStep): AutomationStepInput | null {
+  const { name, timeoutSeconds, matchers, conditionText } = step.draft
+  const read = awaitedMatchersOf(matchers)
+  const condition = waitForEventConditionOf(conditionText)
+  const arrived = pathInput(step.arrived)
+  const timedOut = pathInput(step.timedOut)
+  if (
+    timeoutSeconds === '' ||
+    read.length === 0 ||
+    read.some((matcher) => matcher.incomplete) ||
+    condition === null ||
+    arrived === null ||
+    timedOut === null
+  ) {
+    return null
+  }
+  return {
+    id: step.id,
+    type: 'wait_for_event',
+    name,
+    timeoutSeconds,
+    awaits: {
+      kind: 'event',
+      matchers: read.map(({ matcher }) => matcher),
+      ...(condition === undefined ? {} : { condition }),
+    },
+    arrived,
+    timedOut,
+  }
 }
 
 function splitInput(step: SplitStep): AutomationStepInput | null {
@@ -689,8 +806,8 @@ type Sendable<Input, Draft> = { sends: Input } | { holds: Draft }
 // A flow's definition: the Trigger, its exit and goal events and the root path, each Step and path
 // with its id. `filterIncomplete` says a filter of the Trigger, an exit or the goal is still being
 // typed, and is left out. The Trigger is held while its date is not set (triggerInputOf), the root
-// path while it holds a kept Step, a Branch path's Condition missing or being typed, or a Wait
-// until not set (pathInputOf).
+// path while it holds a kept Step, a Branch path's Condition missing or being typed, a Wait until
+// not set, or a Wait for event not one to save (pathInputOf).
 export interface FlowDefinition {
   trigger: Sendable<AutomationTriggerInput, TriggerDraft>
   filterIncomplete: boolean
@@ -716,8 +833,8 @@ export function definitionOf(flow: Flow): FlowDefinition {
 }
 
 // The root path a flow saves; null when it holds a kept Step, which the editor never saves, or a
-// Branch path whose Condition is missing or still being typed, or a Wait until not set, which the
-// Save stops on first.
+// Branch path whose Condition is missing or still being typed, a Wait until not set, or a Wait for
+// event not one to save (waitForEventInput), which the Save stops on first.
 export function pathInputOf(flow: Flow): AutomationPathInput | null {
   return pathInput(flow.path)
 }

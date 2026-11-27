@@ -18,6 +18,7 @@ import {
   removeStep,
   setUnknownPath,
   updateFork,
+  updateWaitForEvent,
 } from './flowEdits.ts'
 
 const ROOT = stepId(1)
@@ -273,4 +274,56 @@ test('a copied fork follows its original, it and every path and Step in it with 
   })
   const ids = JSON.stringify(copy).match(/[\da-f]{8}-[\da-f-]{27}/g) ?? []
   expect(ids.some((id) => JSON.stringify(original).includes(id))).toBe(false)
+})
+
+const PURCHASE: AutomationStep = {
+  id: stepId(40),
+  type: 'wait_for_event',
+  name: 'purchase',
+  timeoutSeconds: 3600,
+  awaits: { kind: 'event', matchers: [{ action: 'order.created' }] },
+  arrived: { id: stepId(41), steps: [{ id: stepId(43), type: 'apply_tag', tag: 'buyer' }] },
+  timedOut: { id: stepId(42), steps: [] },
+}
+
+// A name belongs to one Step id (ADR 0136): a copy, which has an id of its own, asks for its own.
+test('a copied Wait for event asks for a name, its paths and Steps with new ids', () => {
+  const copied = copyStep(flowOf(version([PURCHASE])), stepId(40))
+  const copy = copied.flow.path.steps[1]
+
+  expect(copy).toEqual({
+    id: copied.id,
+    kind: 'wait_for_event',
+    draft: {
+      name: '',
+      timeoutSeconds: 3600,
+      matchers: [{ action: 'order.created', filterText: '' }],
+      conditionText: '',
+    },
+    arrived: {
+      id: expect.stringMatching(UUID),
+      steps: [{ id: expect.stringMatching(UUID), kind: 'apply_tag', draft: { tag: 'buyer' } }],
+    },
+    timedOut: { id: expect.stringMatching(UUID), steps: [] },
+  })
+})
+
+test("a Wait for event's panel sets its draft, its paths' Steps left as they are", () => {
+  const flow = flowOf(version([PURCHASE]))
+  const draft = {
+    name: 'purchase',
+    timeoutSeconds: 7200,
+    matchers: [{ action: 'call.booked', filterText: '' }],
+    conditionText: '',
+  }
+
+  const edited = updateWaitForEvent(flow, stepId(40), draft)
+
+  expect(pathInputOf(edited)?.steps).toEqual([
+    {
+      ...PURCHASE,
+      timeoutSeconds: 7200,
+      awaits: { kind: 'event', matchers: [{ action: 'call.booked' }] },
+    },
+  ])
 })

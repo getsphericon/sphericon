@@ -198,7 +198,7 @@ test("a Branch path's stored Condition of every leaf kind is saved back as read"
 test('a Step of a kind the editor does not know, inside a fork path, keeps the version unsaved', () => {
   // A kind the contract may gain, read as the server would send it.
   const newer: AutomationStep = JSON.parse(
-    JSON.stringify({ id: stepId(30), type: 'wait_for_event' }),
+    JSON.stringify({ id: stepId(30), type: 'wait_for_reply' }),
   )
   const split: AutomationStep = {
     id: stepId(15),
@@ -213,6 +213,57 @@ test('a Step of a kind the editor does not know, inside a fork path, keeps the v
 
   expect(holdsKept(flow)).toBe(true)
   expect(pathInputOf(flow)).toBeNull()
+})
+
+// A Wait for event on an Event (ADR 0124, ADR 0180) round-trips: its name, timeout, matchers with
+// their filters, Condition and both paths, each with its id.
+test('a Wait for event round-trips with its matchers, Condition and paths', () => {
+  const wait: AutomationStep = {
+    id: stepId(40),
+    type: 'wait_for_event',
+    name: 'purchase',
+    timeoutSeconds: 259_200,
+    awaits: {
+      kind: 'event',
+      matchers: [
+        {
+          action: 'order.created',
+          filter: {
+            kind: 'group',
+            combinator: 'and',
+            entries: [
+              {
+                kind: 'property',
+                key: 'total',
+                test: { kind: 'number', operator: 'gt', value: 100 },
+              },
+            ],
+          },
+        },
+        { action: 'call.booked' },
+      ],
+      condition: {
+        kind: 'group',
+        combinator: 'and',
+        entries: [{ kind: 'tag', name: 'vip', operator: 'has' }],
+      },
+    },
+    arrived: { id: stepId(41), steps: [{ id: stepId(43), type: 'apply_tag', tag: 'buyer' }] },
+    timedOut: { id: stepId(42), steps: [] },
+  }
+  const plain: AutomationStep = {
+    ...wait,
+    id: stepId(44),
+    name: 'reply',
+    awaits: { kind: 'event', matchers: [{ action: 'call.booked' }] },
+    arrived: { id: stepId(45), steps: [] },
+    timedOut: { id: stepId(46), steps: [] },
+  }
+
+  const flow = flowOf(version([wait, plain]))
+
+  expect(holdsKept(flow)).toBe(false)
+  expect(pathInputOf(flow)).toEqual({ id: ROOT, steps: [wait, plain] })
 })
 
 // A Wait until (ADR 0126) round-trips in each of its forms, every Step keeping its id.

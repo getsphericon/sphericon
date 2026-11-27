@@ -11,7 +11,7 @@ import { useSchemaForm } from '../../resources/schemaForm.ts'
 import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
 import { boundsOf } from '../../utils/bounds.ts'
 import { allSteps, branchConditionOf, filterText, sendsMessage, stepsBefore } from './definition.ts'
-import type { BranchStep, FlowPath, FlowStep, ForkStep, SplitStep } from './definition.ts'
+import type { BranchStep, FlowPath, FlowStep, ListedFork, SplitStep } from './definition.ts'
 import type { PathPatch } from './flowEdits.ts'
 import { canAddPath, canRemovePath, forkError, forkSchemas, weightSum } from './forkRules.ts'
 import { useStepInfo } from './stepKinds.ts'
@@ -23,7 +23,7 @@ const WEIGHT = boundsOf(zSplitPathInput.shape.weight)
 
 // What a fork's panel does to the flow: it sets its paths' Conditions or weights by path id, and
 // adds, removes and (on a Branch) moves a path. The Steps the paths hold are the canvas's.
-export interface ForkFormProps<S extends ForkStep> {
+export interface ForkFormProps<S extends ListedFork> {
   step: S
   // The fork was checked (on blur or on Save): its errors show as the panel opens.
   checked: boolean
@@ -87,7 +87,7 @@ function PathActions({
   )
 }
 
-function AddPathButton({ step, onAddPath }: { step: ForkStep; onAddPath: () => void }) {
+function AddPathButton({ step, onAddPath }: { step: ListedFork; onAddPath: () => void }) {
   const { t } = useTranslation()
   return (
     <Group>

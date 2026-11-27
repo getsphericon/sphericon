@@ -8,8 +8,10 @@ import type {
   FlowStep,
   ForkStep,
   InsertedKind,
+  ListedFork,
   SplitPathDraft,
   TriggerDraft,
+  WaitForEventDraft,
 } from './definition.ts'
 
 // The edits the canvas and the side panel make to the flow. Each returns a new flow; the editor
@@ -20,6 +22,8 @@ import type {
 const NEW_WAIT_SECONDS = 3600
 // A new Split shares its Contacts evenly between its two paths.
 const NEW_SPLIT_WEIGHT = 50
+// A new Wait for event waits a day.
+const NEW_TIMEOUT_SECONDS = 86_400
 
 // The client mints the id of a new Step or path (ADR 0122); the server keeps it.
 const newId = () => crypto.randomUUID()
@@ -71,8 +75,19 @@ function newEditedStep(kind: EditedKind): EditedStep {
   }
 }
 
+// A new Wait for event asks for its name and the Event it awaits, a row of which it starts with,
+// and waits a day for it.
+function newWaitForEventDraft(): WaitForEventDraft {
+  return {
+    name: '',
+    timeoutSeconds: NEW_TIMEOUT_SECONDS,
+    matchers: [{ action: '', filterText: '' }],
+    conditionText: '',
+  }
+}
+
 // A new Step of the kind. A Branch starts with one path to give a Condition and an empty
-// `otherwise`, a Split with two even paths.
+// `otherwise`, a Split with two even paths, a Wait for event with its two paths empty.
 function newStep(kind: InsertedKind): FlowStep {
   if (kind === 'branch') {
     return { id: newId(), kind, paths: [newBranchPath()], otherwise: newPath(), unknown: null }
@@ -80,6 +95,10 @@ function newStep(kind: InsertedKind): FlowStep {
   if (kind === 'split') {
     const paths = [newPath(), newPath()].map((path) => ({ ...path, weight: NEW_SPLIT_WEIGHT }))
     return { id: newId(), kind, paths }
+  }
+  if (kind === 'wait_for_event') {
+    const draft = newWaitForEventDraft()
+    return { id: newId(), kind, draft, arrived: newPath(), timedOut: newPath() }
   }
   return kind === 'end' ? { id: newId(), kind } : newEditedStep(kind)
 }
@@ -94,6 +113,8 @@ function withPaths(step: ForkStep, change: (path: FlowPath) => FlowPath): ForkSt
         otherwise: change(step.otherwise),
         unknown: step.unknown === null ? null : change(step.unknown),
       }
+    case 'wait_for_event':
+      return { ...step, arrived: change(step.arrived), timedOut: change(step.timedOut) }
     case 'split':
     default:
       return { ...step, paths: step.paths.map((path) => ({ ...path, ...change(path) })) }
@@ -122,9 +143,12 @@ function mapStep(flow: Flow, id: string, change: (step: FlowStep) => FlowStep): 
   )
 }
 
-// mapFork changes the fork of the id; a Step of another kind is left as it is.
-function mapFork(flow: Flow, id: string, change: (step: ForkStep) => ForkStep): Flow {
-  return mapStep(flow, id, (step) => (isFork(step) ? change(step) : step))
+// mapFork changes the fork of the id whose paths are listed (a Branch, a Split); a Step of another
+// kind is left as it is.
+function mapFork(flow: Flow, id: string, change: (step: ListedFork) => ListedFork): Flow {
+  return mapStep(flow, id, (step) =>
+    step.kind === 'branch' || step.kind === 'split' ? change(step) : step,
+  )
 }
 
 // A place a Step goes: the path's id, and the index in it (0 is its start).
@@ -158,11 +182,21 @@ export function nestedSteps(step: FlowStep): number {
 
 // copyOf is a copy of the Step, it and every path and Step nested in it with ids of their own: two
 // copies never share figures. A copied HTTP step is not stored: the server keeps a step's URL,
-// secret and header values under its id, which the copy does not have.
+// secret and header values under its id, which the copy does not have. A copied Wait for event
+// asks for a name of its own: a name belongs to one Step id (ADR 0136).
 function copyOf(step: FlowStep): FlowStep {
   const id = newId()
   if (step.kind === 'http') {
     return { ...step, id, draft: { ...structuredClone(step.draft), stored: false } }
+  }
+  if (step.kind === 'wait_for_event') {
+    return {
+      ...step,
+      id,
+      draft: { ...structuredClone(step.draft), name: '' },
+      arrived: copyPath(step.arrived),
+      timedOut: copyPath(step.timedOut),
+    }
   }
   if (isFork(step)) {
     return { ...withPaths(step, copyPath), id }
@@ -192,6 +226,12 @@ export function copyStep(flow: Flow, of: string): { flow: Flow; id: string } {
 // updateStep replaces the Step of its id with the one given, as its panel edited it.
 export function updateStep(flow: Flow, edited: EditedStep): Flow {
   return mapStep(flow, edited.id, () => edited)
+}
+
+// updateWaitForEvent sets what the panel edited on the Wait for event of the id; the Steps its paths
+// hold are the flow's own, which the canvas may have changed meanwhile.
+export function updateWaitForEvent(flow: Flow, id: string, draft: WaitForEventDraft): Flow {
+  return mapStep(flow, id, (step) => (step.kind === 'wait_for_event' ? { ...step, draft } : step))
 }
 
 // What a fork's panel edits of its paths, each by its id: a Branch path's Condition, a Split

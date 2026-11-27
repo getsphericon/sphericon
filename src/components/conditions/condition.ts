@@ -45,6 +45,8 @@ import type {
   TagLeafInput,
   TelegramLeafInput,
   TextTestInput,
+  WaitForEventCondition,
+  WaitForEventConditionInput,
   WithinLastTestInput,
 } from '../../generated/site/types.gen.ts'
 import {
@@ -60,31 +62,35 @@ import {
   zPropertyTestInput,
   zRuleConditionInput,
   zSegmentConditionInput,
+  zWaitForEventConditionInput,
 } from '../../generated/site/zod.gen.ts'
 import { dayOf, nextDay, startOfDay } from '../../utils/datetime.ts'
 
 // The places a Condition is edited in (ADR 0181): a Segment's tests the Contact, a Rule's also the
-// Event that fired it, a Branch path's also the Event its Enrollment began with (ADR 0124), and an
-// Event matcher's filter only the properties of the one Event it is about (ADR 0133). Each place's
-// generated schema decides what its Condition admits.
+// Event that fired it, a Branch path's and a Wait for event's also the Event its Enrollment began
+// with (ADR 0124, ADR 0180), and an Event matcher's filter only the properties of the one Event it
+// is about (ADR 0133). Each place's generated schema decides what its Condition admits.
 interface PlaceConditions {
   segment: SegmentConditionInput
   rule: RuleConditionInput
   branch: BranchConditionInput
+  waitForEvent: WaitForEventConditionInput
   eventFilter: EventFilterInput
 }
 export type ConditionPlace = keyof PlaceConditions
 
-// A Condition the builder loads: a Segment's, a Rule's, a Branch path's or an Event filter, as read
-// or as sent.
+// A Condition the builder loads: a Segment's, a Rule's, a Branch path's, a Wait for event's or an
+// Event filter, as read or as sent.
 export type AnyCondition =
   | SegmentCondition
   | RuleCondition
   | BranchCondition
+  | WaitForEventCondition
   | EventFilter
   | SegmentConditionInput
   | RuleConditionInput
   | BranchConditionInput
+  | WaitForEventConditionInput
   | EventFilterInput
 
 // The empty group matches every contact, in either place.
@@ -666,6 +672,7 @@ const conditionSchemas: { [P in ConditionPlace]: z.ZodType<PlaceConditions[P]> }
   segment: zSegmentConditionInput,
   rule: zRuleConditionInput,
   branch: zBranchConditionInput,
+  waitForEvent: zWaitForEventConditionInput,
   eventFilter: zEventFilterInput,
 }
 

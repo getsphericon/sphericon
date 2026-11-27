@@ -3,7 +3,7 @@ import * as z from 'zod'
 import { zBranchStepInput, zSplitPathInput, zSplitStepInput } from '../../generated/site/zod.gen.ts'
 import { maxItemsOf, minItemsOf } from '../../utils/bounds.ts'
 import { branchConditionOf } from './definition.ts'
-import type { ForkStep, SplitPathDraft } from './definition.ts'
+import type { ListedFork, SplitPathDraft } from './definition.ts'
 
 // What the server asks of a fork (ADR 0124), checked in the editor before a Save sends it: the
 // contract's bounds on a fork's paths and a Split path's weight, a Condition that tests something
@@ -63,7 +63,7 @@ export type ForkError =
   | { kind: 'weight'; index: number }
   | { kind: 'sum'; sum: number }
 
-export function forkError(step: ForkStep): ForkError | null {
+export function forkError(step: ListedFork): ForkError | null {
   const parsed =
     step.kind === 'branch' ? forkSchemas.branch.safeParse(step) : forkSchemas.split.safeParse(step)
   const [issue] = parsed.error?.issues ?? []
@@ -80,11 +80,11 @@ export function forkError(step: ForkStep): ForkError | null {
 }
 
 // Whether a path can be added to the fork: it lists fewer than the contract allows.
-export function canAddPath(step: ForkStep): boolean {
+export function canAddPath(step: ListedFork): boolean {
   return step.paths.length < listedPaths[step.kind].max
 }
 
 // Whether a path can be removed from the fork: it lists more than the contract asks for.
-export function canRemovePath(step: ForkStep): boolean {
+export function canRemovePath(step: ListedFork): boolean {
   return step.paths.length > listedPaths[step.kind].min
 }

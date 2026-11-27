@@ -134,12 +134,13 @@ function propertyField(t: TFunction): Field {
 
 // The fields each place offers, given the Contact's (its attributes, Custom fields and history): a
 // Segment's tests the Contact, a Rule's also a property of the Event that fired it, a Branch path's
-// a property of the Event its Enrollment began with, and an Event filter only the properties of the
-// Event it is about.
+// and a Wait for event's a property of the Event its Enrollment began with, and an Event filter only
+// the properties of the Event it is about.
 const placeFields: Record<ConditionPlace, (t: TFunction, contact: Field[]) => Field[]> = {
   segment: (_t, contact) => contact,
   rule: (t, contact) => [...contact, propertyField(t)],
   branch: (t, contact) => [...contact, propertyField(t)],
+  waitForEvent: (t, contact) => [...contact, propertyField(t)],
   eventFilter: (t) => [propertyField(t)],
 }
 
