@@ -210,9 +210,11 @@ type GoesOn struct {
 	Reason WentOn
 }
 
-// GoesDown lets the Enrollment go on at once down the path Path of the Step it reached.
+// GoesDown lets the Enrollment go on at once down the path Path of the Step it reached; Deadline is
+// the Step's deadline all the same, which its record keeps.
 type GoesDown struct {
-	Path ID
+	Path     ID
+	Deadline time.Time
 }
 
 func (WaitsUntil) due() {}

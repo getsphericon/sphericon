@@ -4035,7 +4035,6 @@ func init() {
 	}
 	AutomationStepRecordsTable.Annotation.Checks = map[string]string{
 		"automation_step_records_awaited_check":     "(awaited_event_id IS NULL) = (awaited_action IS NULL)",
-		"automation_step_records_decided_check":     "due_at IS NULL OR decided_path_id IS NULL",
 		"automation_step_records_left_check":        "outcome IS NULL OR left_at IS NOT NULL",
 		"automation_step_records_outcome_check":     "outcome IN ('done', 'skipped', 'path')",
 		"automation_step_records_reason_check":      "outcome IS NOT NULL OR skip_reason IS NULL",

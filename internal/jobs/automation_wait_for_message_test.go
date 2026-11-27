@@ -140,7 +140,8 @@ func openedBeforeTheWait(t *testing.T) waitingOnMessage {
 
 // An open recorded before the Enrollment reaches the wait takes arrived at once: the move that
 // reaches the wait decides it, read from the recorded open even before the open is stamped on the
-// message, and the job queued with it takes that path.
+// message, and the job queued with it takes that path. The Step record still shows when the
+// Enrollment reached the wait, its deadline, when it left and the path it took.
 func TestAWaitForAnOpenTakesArrivedAtOnceWhenTheMessageWasOpenedBeforeIt(t *testing.T) {
 	w := openedBeforeTheWait(t)
 
@@ -149,7 +150,9 @@ func TestAWaitForAnOpenTakesArrivedAtOnceWhenTheMessageWasOpenedBeforeIt(t *test
 
 	rec := recordOf(t, w.env, w.runID, w.wait.step.ID)
 	assert.Equal(t, w.wait.arrived, tookPath(rec))
-	assert.Nil(t, rec.DueAt, "it waited for no deadline")
+	require.NotNil(t, rec.DueAt, "the record keeps the deadline")
+	assert.WithinDuration(t, rec.ReachedAt.Add(messageTimeout), *rec.DueAt, 0, "reached plus the timeout")
+	assert.NotNil(t, rec.LeftAt)
 }
 
 // What the wait decided as the Enrollment reached it is the path its job takes: a refusal of
@@ -212,7 +215,8 @@ func TestAMachineOpenLeavesTheWaitForAnOpenWaiting(t *testing.T) {
 // The wait takes unknown at once when the app cannot know whether the message was opened: it went
 // out untracked (the address refused tracking, or the Workspace tracks no address that granted
 // nothing), the send Step was skipped (the address is suppressed), or the Enrollment never passed
-// the send Step (it sits on a path of an earlier Branch the Enrollment did not take).
+// the send Step (it sits on a path of an earlier Branch the Enrollment did not take). The Step
+// record still keeps its deadline.
 func TestAWaitForAnOpenItCannotKnowOfTakesUnknownAtOnce(t *testing.T) {
 	cases := []struct {
 		name   string
@@ -252,7 +256,9 @@ func TestAWaitForAnOpenItCannotKnowOfTakesUnknownAtOnce(t *testing.T) {
 			env.RunQueuedSteps(t, stepperAt(env, newMod(env, resolvingTo(&fakeSender{}), time.Now), clock.read))
 
 			rec := recordOf(t, env, runID, wait.step.ID)
+			require.NotNil(t, rec.DueAt, "the record keeps the deadline")
 			assert.Equal(t, wait.unknown, tookPath(rec))
+			assert.WithinDuration(t, rec.ReachedAt.Add(messageTimeout), *rec.DueAt, 0, "the deadline is reached plus the timeout")
 			assert.WithinDuration(t, clock.now, lo.FromPtr(rec.LeftAt), time.Second, "it left at once")
 		})
 	}

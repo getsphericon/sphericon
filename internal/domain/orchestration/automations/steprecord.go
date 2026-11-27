@@ -52,17 +52,18 @@ func arrive(st *automationstep.Step, now time.Time, a arrival) (automationstep.D
 	case automationstep.Wait:
 		return automationstep.WaitsUntil{At: now.Add(time.Duration(p.Seconds) * time.Second)}, nil
 	case automationstep.WaitForEvent:
+		// Its deadline, kept as its due moment: the job that runs then takes the timeout.
+		deadline := now.Add(time.Duration(p.TimeoutSeconds) * time.Second)
 		if awaited, onMessage := p.Message(); onMessage {
 			h, err := a.message(awaited)
 			if err != nil {
 				return nil, err
 			}
 			if path, decided := reachedPath(p, h); decided {
-				return automationstep.GoesDown{Path: path}, nil
+				return automationstep.GoesDown{Path: path, Deadline: deadline}, nil
 			}
 		}
-		// Its deadline, kept as its due moment: the job that runs then takes the timeout.
-		return automationstep.WaitsUntil{At: now.Add(time.Duration(p.TimeoutSeconds) * time.Second)}, nil
+		return automationstep.WaitsUntil{At: deadline}, nil
 	case automationstep.WaitUntil:
 		c, err := a.contact()
 		if err != nil {
@@ -80,12 +81,25 @@ func arrive(st *automationstep.Step, now time.Time, a arrival) (automationstep.D
 
 // dueAt is the moment a wait holds the Enrollment until, nil for a Step it does not hold (one that
 // decided nothing on arrival, nil, a Wait until that went on at once, or a Wait for event that knew
-// its path at once).
+// its path at once): when its job runs.
 func dueAt(d automationstep.Due) *time.Time {
 	switch d := d.(type) {
 	case automationstep.WaitsUntil:
 		return &d.At
 	case automationstep.GoesOn, automationstep.GoesDown, nil:
+	}
+	return nil
+}
+
+// recordedDue is the due moment the Step record keeps: a wait's, and a Wait for event's deadline,
+// whether it waits for it or knew its path at once (ADR 0124); nil for any other arrival.
+func recordedDue(d automationstep.Due) *time.Time {
+	switch d := d.(type) {
+	case automationstep.WaitsUntil:
+		return &d.At
+	case automationstep.GoesDown:
+		return &d.Deadline
+	case automationstep.GoesOn, nil:
 	}
 	return nil
 }
@@ -149,13 +163,13 @@ func runCalendar(ctx context.Context, s *ent.Scoped, runID int64) (automationste
 
 // reach records that the Enrollment runID reached the Step of the id at now, with what the Step
 // decided then: a wait's due moment, why a Wait until let it go on at once, or the path a Wait for
-// event on an open or a click knew of at once.
+// event on an open or a click knew of at once, beside its deadline.
 func reach(ctx context.Context, s *ent.Scoped, runID int64, stepID automationstep.ID, now time.Time, d automationstep.Due) error {
 	return s.AutomationStepRecord().Create().
 		SetRunID(runID).
 		SetStepID(stepID).
 		SetReachedAt(now).
-		SetNillableDueAt(dueAt(d)).
+		SetNillableDueAt(recordedDue(d)).
 		SetNillableWentOn(wentOn(d)).
 		SetNillableDecidedPathID(decidedPath(d)).
 		Exec(ctx)
