@@ -10,7 +10,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/server"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 // deadlineOf is how long a request to path may run under the timeouts of limits: what is left of
@@ -38,5 +40,39 @@ func TestTheUploadOfAnImportRunsUnderATimeoutFittingItsCap(t *testing.T) {
 	other := deadlineOf(t, limits, "/site/workspaces/ws_1/contacts")
 
 	assert.Greater(t, upload, 7*time.Minute)
-	assert.Less(t, other, time.Minute, "the request timeout of the rest")
+	assert.Greater(t, upload-other, 6*time.Minute, "the cap's share beside the request timeout of the rest")
+}
+
+// deadlineRecorder is a response writer whose connection takes a read deadline, as a served
+// request's does: it keeps the last one set.
+type deadlineRecorder struct {
+	*httptest.ResponseRecorder
+
+	readDeadline time.Time
+}
+
+func (d *deadlineRecorder) SetReadDeadline(t time.Time) error {
+	d.readDeadline = t
+	return nil
+}
+
+// The server's ReadTimeout bounds the reading of a body too: through the whole server, the upload
+// of an import's file moves its read deadline to the time its cap takes, by the Instance clock,
+// and any other request leaves it.
+func TestTheUploadOfAnImportMovesItsReadDeadline(t *testing.T) {
+	at := time.Date(2026, 11, 27, 12, 0, 0, 0, time.UTC)
+	for _, mode := range []testhelper.Option{production(), development()} {
+		env := testhelper.Setup(t, mode, testhelper.WithClock(func() time.Time { return at }))
+		post := func(path string) time.Time {
+			rec := &deadlineRecorder{ResponseRecorder: httptest.NewRecorder()}
+			env.Server.ServeHTTP(rec, httptest.NewRequestWithContext(t.Context(), http.MethodPost, path, nil))
+			return rec.readDeadline
+		}
+
+		upload := post("/site/workspaces/" + fixtures.AcmePublicID + "/contact-imports")
+		other := post("/site/workspaces/" + fixtures.AcmePublicID + "/contacts")
+
+		assert.Greater(t, upload.Sub(at), 7*time.Minute)
+		assert.True(t, other.IsZero(), "another request keeps the server's ReadTimeout")
+	}
 }

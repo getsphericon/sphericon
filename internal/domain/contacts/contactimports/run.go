@@ -144,11 +144,15 @@ const (
 // `done`. An ending deletes the file and, while its Member is in the Workspace, records the one
 // contact.import Audit entry, in one transaction. An import not running (a job queued twice) is
 // left as it is. A row the intake refuses is reported; any other error of a row ends the try with
-// it, and on the last try the import ends `failed` with what it wrote kept; a try interrupted (its
+// it, and on the last try, or at once for a refusal, which no try passes, the import ends `failed`
+// with what it wrote kept; a try interrupted (its
 // context cancelled, as a shutdown does) is no failure: the next resumes it.
 func (m *Module) Work(ctx context.Context, s *ent.Scoped, in WorkInput) (Outcome, error) {
 	out, err := m.work(ctx, s, in)
-	if err == nil || !in.LastAttempt || errors.Is(ctx.Err(), context.Canceled) {
+	// A refusal is not tried again (the job runner ends a refused job), so it is as final as the
+	// last try's failure.
+	_, refused := validation.Shown(err)
+	if err == nil || (!in.LastAttempt && !refused) || errors.Is(ctx.Err(), context.Canceled) {
 		return out, err
 	}
 	// A try that ran out of time fails the import as any other error does.

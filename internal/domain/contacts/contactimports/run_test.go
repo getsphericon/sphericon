@@ -24,6 +24,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/csvimport"
 	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
+	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -324,4 +326,31 @@ func TestARunWhoseBatchKeepsFailingEndsFailedAfterItsTries(t *testing.T) {
 	assert.Zero(t, chunks, "the file is deleted")
 	require.NoError(t, linkErr, "the report downloads")
 	assert.Equal(t, 1, countByEmail(t, env, "r1000@example.com"))
+}
+
+// A refusal is never retried (the job runner ends a refused job), so a try that a refusal stops
+// fails the import at once instead of leaving it running.
+func TestARunStoppedByARefusalEndsFailedAtOnce(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	acme := env.DB.Scoped(fixtures.AcmeID)
+	id := runningImport(t, env, emailFile(3, func(row int) string { return fmt.Sprintf("r%d@example.com", row) }), fixtures.AcmeOwnerMembershipID)
+	refusal := validation.Conflict("injected refusal", i18n.ErrorsContactImportNotRunning)
+	env.Bus.Use(func(next entgo.Mutator) entgo.Mutator {
+		return entgo.MutateFunc(func(ctx context.Context, m entgo.Mutation) (entgo.Value, error) {
+			if cm, ok := m.(*ent.ContactImportMutation); ok {
+				if _, set := cm.CheckpointRow(); set {
+					return nil, refusal
+				}
+			}
+			return next.Mutate(ctx, m)
+		})
+	})
+
+	_, err := testhelper.Module[*contactimports.Module](env).Work(ctx, acme, contactimports.WorkInput{ImportID: id})
+	ended, getErr := testhelper.Module[*contactimports.Module](env).Get(ctx, acme, id)
+	require.NoError(t, getErr)
+
+	require.ErrorIs(t, err, refusal)
+	assert.Equal(t, contactimport.StateFailed, ended.Import.State)
 }
