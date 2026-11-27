@@ -266,6 +266,26 @@ test('a Wait for event round-trips with its matchers, Condition and paths', () =
   expect(pathInputOf(flow)).toEqual({ id: ROOT, steps: [wait, plain] })
 })
 
+// The editor edits a Wait for event on an Event; one on an open or click of a message is kept as
+// stored, so nothing can drop it.
+test('a Wait for event on an open or click keeps the version unsaved', () => {
+  const onOpen: AutomationStep = {
+    id: stepId(44),
+    type: 'wait_for_event',
+    name: 'opened',
+    timeoutSeconds: 3600,
+    awaits: { kind: 'message', step: stepId(11), engagement: 'opened' },
+    arrived: { id: stepId(45), steps: [] },
+    timedOut: { id: stepId(46), steps: [] },
+    unknown: { id: stepId(47), steps: [] },
+  }
+
+  const flow = flowOf(version([...STEPS, onOpen]))
+
+  expect(holdsKept(flow)).toBe(true)
+  expect(pathInputOf(flow)).toBeNull()
+})
+
 // A Wait until (ADR 0126) round-trips in each of its forms, every Step keeping its id.
 test('a Wait until on a time of day or on a date round-trips', () => {
   const waits: AutomationStep[] = [

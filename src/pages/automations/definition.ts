@@ -292,8 +292,12 @@ function flowStepOf(step: AutomationStep): FlowStep {
   }
 }
 
-// A stored Wait for event as the editor holds it: what its panel edits, and its two paths.
-function waitForEventOf(step: WaitForEventStepRead): WaitForEventStep {
+// A stored Wait for event on an Event as the editor holds it: what its panel edits, and its two
+// paths. The editor does not edit one on an open or click of a message yet: it is kept.
+function waitForEventOf(step: WaitForEventStepRead): WaitForEventStep | KeptStep {
+  if (step.awaits.kind !== 'event') {
+    return { id: step.id, kind: 'kept', step }
+  }
   const { condition, matchers } = step.awaits
   return {
     id: step.id,
