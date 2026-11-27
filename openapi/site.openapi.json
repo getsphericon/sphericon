@@ -15806,7 +15806,8 @@
           "of": {
             "type": "integer",
             "format": "int32",
-            "description": "The refusal, consent or Engagement tracking column it times, counted from 0"
+            "nullable": true,
+            "description": "The refusal, consent or Engagement tracking column it times, counted from 0; required, null only while the Member has not chosen it"
           },
           "dateFormat": {
             "allOf": [
@@ -15814,7 +15815,8 @@
                 "$ref": "#/components/schemas/ContactImportDateFormat"
               }
             ],
-            "description": "How the cells write their dates; a date without an offset is read in the Workspace time zone"
+            "nullable": true,
+            "description": "How the cells write their dates, a date without an offset read in the Workspace time zone; required, null only while the Member has not chosen it"
           }
         },
         "description": "A column of when the fact of a refusal, consent or Engagement tracking column occurred (ADR\n0154), so an older fact does not override a newer one: a time blank, unreadable or later than the\nrun is dropped and reported, and the fact recorded as occurring now"
@@ -15830,7 +15832,8 @@
           "of": {
             "type": "integer",
             "format": "int32",
-            "description": "The refusal, consent or Engagement tracking column it times, counted from 0"
+            "nullable": true,
+            "description": "The refusal, consent or Engagement tracking column it times, counted from 0; required, null only while the Member has not chosen it"
           },
           "dateFormat": {
             "allOf": [
@@ -15838,7 +15841,8 @@
                 "$ref": "#/components/schemas/ContactImportDateFormat"
               }
             ],
-            "description": "How the cells write their dates; a date without an offset is read in the Workspace time zone"
+            "nullable": true,
+            "description": "How the cells write their dates, a date without an offset read in the Workspace time zone; required, null only while the Member has not chosen it"
           }
         },
         "description": "A column of when the fact of a refusal, consent or Engagement tracking column occurred (ADR\n0154), so an older fact does not override a newer one: a time blank, unreadable or later than the\nrun is dropped and reported, and the fact recorded as occurring now",

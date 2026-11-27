@@ -268,10 +268,14 @@ func readRefusal(r *rowState, col csvimport.Column, at int, cell string) {
 	}
 }
 
+// is reports whether cell is value as a whole, ignoring case and the spaces around it: how a consent
+// or tracking value is matched, since only a refusal column reads a list of items.
+func is(cell, value string) bool { return strings.EqualFold(strings.TrimSpace(cell), value) }
+
 // readConsent notes the consent the cell means.
 func readConsent(r *rowState, col csvimport.Column, at int, cell string) {
 	fact := lo.FromPtr(col.Fact)
-	if lo.SomeBy(fact.Values, func(v string) bool { return matches(cell, v) }) {
+	if lo.SomeBy(fact.Values, func(v string) bool { return is(cell, v) }) {
 		r.facts = append(r.facts, pendingFact{column: at, channel: channels.Channel(fact.Channel)})
 	}
 }
@@ -279,7 +283,7 @@ func readConsent(r *rowState, col csvimport.Column, at int, cell string) {
 // readTracking notes the Engagement tracking consent the cell means: a refusal when it means both.
 func readTracking(r *rowState, col csvimport.Column, at int, cell string) {
 	fact := lo.FromPtr(col.Fact)
-	means := func(v string) bool { return matches(cell, v) }
+	means := func(v string) bool { return is(cell, v) }
 	var state engagementtracking.State
 	switch {
 	case lo.SomeBy(fact.Denied, means):

@@ -759,8 +759,8 @@ export const zContactImportTagsColumnInput = z.strictObject({
  */
 export const zContactImportTimeColumn = z.object({
   kind: z.enum(['time']),
-  of: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  dateFormat: zContactImportDateFormat
+  of: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
+  dateFormat: zContactImportDateFormat.nullable()
 });
 
 /**
@@ -770,8 +770,8 @@ export const zContactImportTimeColumn = z.object({
  */
 export const zContactImportTimeColumnInput = z.strictObject({
   kind: z.enum(['time']),
-  of: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  dateFormat: zContactImportDateFormat
+  of: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
+  dateFormat: zContactImportDateFormat.nullable()
 });
 
 /**

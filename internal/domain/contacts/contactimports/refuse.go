@@ -23,7 +23,7 @@ import (
 // as it is included (ADR 0138). Each is recorded as the Member who runs the import, unaudited
 // as the intake's rows are, under the job's history mark, which holds back its Events as triggers
 // and nothing of its effects. A Telegram refusal is recorded at the Bindings of the Contact the
-// row wrote, none when the intake refused it. A refusal a writer refuses is reported; any other
+// row wrote, and reported as having no Destination when it has none or the intake refused it. A refusal a writer refuses is reported; any other
 // error ends the job.
 func (b batchRun) refuse(ctx context.Context, t *tally, r readRecord, item batch.Item[contacts.Result]) ([]csvimport.Issue, error) {
 	if len(r.read.refusals) == 0 {
@@ -44,6 +44,10 @@ func (b batchRun) refuse(ctx context.Context, t *tally, r readRecord, item batch
 				return nil, err
 			}
 			destinations = users
+			if len(users) == 0 {
+				at := f.column
+				notRecorded = append(notRecorded, issue(&at, csvimport.ReasonNoDestination, b.rd.header))
+			}
 		}
 		for _, dest := range destinations {
 			stands, err := b.record(ctx, s, f, dest, contactID)

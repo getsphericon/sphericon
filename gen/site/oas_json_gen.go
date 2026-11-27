@@ -15498,7 +15498,7 @@ func (s ContactImportColumnInputSum) encodeFields(e *jx.Encoder) {
 			s := s.ContactImportTimeColumnInput
 			{
 				e.FieldStart("of")
-				e.Int32(s.Of)
+				s.Of.Encode(e)
 			}
 			{
 				e.FieldStart("dateFormat")
@@ -15782,7 +15782,7 @@ func (s ContactImportColumnSum) encodeFields(e *jx.Encoder) {
 			s := s.ContactImportTimeColumn
 			{
 				e.FieldStart("of")
-				e.Int32(s.Of)
+				s.Of.Encode(e)
 			}
 			{
 				e.FieldStart("dateFormat")
@@ -20483,7 +20483,7 @@ func (s *ContactImportTimeColumn) encodeFields(e *jx.Encoder) {
 	}
 	{
 		e.FieldStart("of")
-		e.Int32(s.Of)
+		s.Of.Encode(e)
 	}
 	{
 		e.FieldStart("dateFormat")
@@ -20519,9 +20519,7 @@ func (s *ContactImportTimeColumn) Decode(d *jx.Decoder) error {
 		case "of":
 			requiredBitSet[0] |= 1 << 1
 			if err := func() error {
-				v, err := d.Int32()
-				s.Of = int32(v)
-				if err != nil {
+				if err := s.Of.Decode(d); err != nil {
 					return err
 				}
 				return nil
@@ -20609,7 +20607,7 @@ func (s *ContactImportTimeColumnInput) encodeFields(e *jx.Encoder) {
 	}
 	{
 		e.FieldStart("of")
-		e.Int32(s.Of)
+		s.Of.Encode(e)
 	}
 	{
 		e.FieldStart("dateFormat")
@@ -20645,9 +20643,7 @@ func (s *ContactImportTimeColumnInput) Decode(d *jx.Decoder) error {
 		case "of":
 			requiredBitSet[0] |= 1 << 1
 			if err := func() error {
-				v, err := d.Int32()
-				s.Of = int32(v)
-				if err != nil {
+				if err := s.Of.Decode(d); err != nil {
 					return err
 				}
 				return nil

@@ -244,11 +244,11 @@ model ContactImportEngagementTrackingColumn {
 model ContactImportTimeColumn {
   kind: "time";
 
-  /** The refusal, consent or Engagement tracking column it times, counted from 0 */
-  of: int32;
+  /** The refusal, consent or Engagement tracking column it times, counted from 0; required, null only while the Member has not chosen it */
+  of: int32 | null;
 
-  /** How the cells write their dates; a date without an offset is read in the Workspace time zone */
-  dateFormat: ContactImportDateFormat;
+  /** How the cells write their dates, a date without an offset read in the Workspace time zone; required, null only while the Member has not chosen it */
+  dateFormat: ContactImportDateFormat | null;
 }
 
 model ContactImportConsentEvidenceInput is ContactImportConsentEvidence;

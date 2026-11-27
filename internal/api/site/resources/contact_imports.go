@@ -82,7 +82,7 @@ func contactImportColumn(c Converter, col csvimport.Column) siteapi.ContactImpor
 			Kind: siteapi.ContactImportTagsColumnKindTags,
 		})}
 	case csvimport.KindRefusal, csvimport.KindConsent, csvimport.KindEngagementTracking, csvimport.KindTime:
-		return contactImportFactColumn(c, col)
+		return contactImportFactColumn(c, col, format)
 	case csvimport.KindIgnore:
 	}
 	return siteapi.ContactImportColumn{OneOf: siteapi.NewContactImportIgnoreColumnContactImportColumnSum(siteapi.ContactImportIgnoreColumn{
@@ -155,7 +155,7 @@ func contactImportColumnIn(c Inputs, col *siteapi.ContactImportColumnInput) csvi
 }
 
 // contactImportFactColumn is a refusal, consent, Engagement tracking or time column of a mapping.
-func contactImportFactColumn(c Converter, col csvimport.Column) siteapi.ContactImportColumn {
+func contactImportFactColumn(c Converter, col csvimport.Column, format siteapi.NilContactImportDateFormat) siteapi.ContactImportColumn {
 	fact := lo.FromPtr(col.Fact)
 	switch col.Kind {
 	case csvimport.KindRefusal:
@@ -185,7 +185,7 @@ func contactImportFactColumn(c Converter, col csvimport.Column) siteapi.ContactI
 	default:
 	}
 	return siteapi.ContactImportColumn{OneOf: siteapi.NewContactImportTimeColumnContactImportColumnSum(siteapi.ContactImportTimeColumn{
-		Kind: siteapi.ContactImportTimeColumnKindTime, Of: count(lo.FromPtr(fact.Of)), DateFormat: c.ContactImportDateFormat(col.DateFormat),
+		Kind: siteapi.ContactImportTimeColumnKindTime, Of: nilColumn(fact.Of), DateFormat: format,
 	})}
 }
 
@@ -198,11 +198,14 @@ func evidenceText(p csvimport.EvidencePart) siteapi.NilString {
 }
 
 // evidenceColumn is the column of an evidence part, null when its text is given.
-func evidenceColumn(p csvimport.EvidencePart) siteapi.NilInt32 {
-	if p.Column == nil {
+func evidenceColumn(p csvimport.EvidencePart) siteapi.NilInt32 { return nilColumn(p.Column) }
+
+// nilColumn is a column of the file, counted from 0, null for none.
+func nilColumn(at *int) siteapi.NilInt32 {
+	if at == nil {
 		return siteapi.NilInt32{Null: true}
 	}
-	return siteapi.NewNilInt32(count(*p.Column))
+	return siteapi.NewNilInt32(count(*at))
 }
 
 // contactImportFactColumnIn is a refusal, consent, Engagement tracking or time column a request
@@ -230,8 +233,15 @@ func contactImportFactColumnIn(c Inputs, col *siteapi.ContactImportColumnInput) 
 	default:
 	}
 	v := col.OneOf.ContactImportTimeColumnInput
-	of := int(v.Of)
-	return csvimport.Column{Kind: csvimport.KindTime, DateFormat: c.ContactImportDateFormatIn(v.DateFormat), Fact: &csvimport.Fact{Of: &of}}
+	var format csvimport.DateFormat
+	if f, ok := v.DateFormat.Get(); ok {
+		format = c.ContactImportDateFormatIn(f)
+	}
+	fact := &csvimport.Fact{}
+	if of, ok := v.Of.Get(); ok {
+		fact.Of = new(int(of))
+	}
+	return csvimport.Column{Kind: csvimport.KindTime, DateFormat: format, Fact: fact}
 }
 
 // evidencePartIn is an evidence part a request gives: its text, or the column that holds it.

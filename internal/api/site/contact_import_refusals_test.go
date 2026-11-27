@@ -45,7 +45,7 @@ func refusalColumn(channel siteapi.ContactImportRefusalChannel, refusal siteapi.
 // timeColumn is a time column of the column of, written in RFC 3339.
 func timeColumn(of int32) siteapi.ContactImportColumnInput {
 	return siteapi.ContactImportColumnInput{OneOf: siteapi.NewContactImportTimeColumnInputContactImportColumnInputSum(siteapi.ContactImportTimeColumnInput{
-		Kind: siteapi.ContactImportTimeColumnInputKindTime, Of: of, DateFormat: siteapi.ContactImportDateFormatRfc3339,
+		Kind: siteapi.ContactImportTimeColumnInputKindTime, Of: siteapi.NewNilInt32(of), DateFormat: siteapi.NewNilContactImportDateFormat(siteapi.ContactImportDateFormatRfc3339),
 	})}
 }
 
@@ -195,8 +195,8 @@ func TestAnImportedUnsubscribeIsOrderedByItsTime(t *testing.T) {
 	assert.Equal(t, int32(2), done.ReportRows, "the two rows whose time was dropped")
 }
 
-// A consent column records an imported email Confirmation with its evidence; over a standing
-// opt-out it lifts nothing.
+// A consent column records an imported email Confirmation with its evidence for a cell that is one
+// of its values as a whole; over a standing opt-out it lifts nothing.
 func TestAnImportedConsentIsAnImportedConfirmationThatLiftsNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
@@ -204,7 +204,7 @@ func TestAnImportedConsentIsAnImportedConfirmationThatLiftsNothing(t *testing.T)
 	_, err := testhelper.Module[*unsubscriberecording.UseCase](env).Unsubscribe(ctx, acme, fixtures.ContactAliceEmail, eligibility.SourceEverything)
 	require.NoError(t, err)
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	imp := uploaded(t, owner, "email,opted in,form\nann.moved@example.com,Yes,signup page\n"+fixtures.ContactAliceEmail+",yes,signup page\nbob.moved@example.com,no,signup page\n")
+	imp := uploaded(t, owner, "email,opted in,form\nann.moved@example.com,Yes,signup page\n"+fixtures.ContactAliceEmail+",yes,signup page\nbob.moved@example.com,no,signup page\ndora.moved@example.com,\"yes, no\",signup page\n")
 	in := mappingInput(t, imp)
 	in.Columns[1] = siteapi.ContactImportColumnInput{OneOf: siteapi.NewContactImportConsentColumnInputContactImportColumnInputSum(siteapi.ContactImportConsentColumnInput{
 		Kind: siteapi.ContactImportConsentColumnInputKindConsent, Channel: siteapi.ContactImportConsentChannelEmail, Values: []string{"yes"},
@@ -216,11 +216,12 @@ func TestAnImportedConsentIsAnImportedConfirmationThatLiftsNothing(t *testing.T)
 	})}
 
 	runImport(t, env, owner, imp, in)
-	states := emailStates(t, env, "ann.moved@example.com", fixtures.ContactAliceEmail, "bob.moved@example.com")
+	states := emailStates(t, env, "ann.moved@example.com", fixtures.ContactAliceEmail, "bob.moved@example.com", "dora.moved@example.com")
 
 	require.NotNil(t, states["ann.moved@example.com"].Confirmation)
 	assert.Equal(t, confirmation.ProvenanceImported, states["ann.moved@example.com"].Confirmation.Provenance)
 	assert.Nil(t, states["bob.moved@example.com"].Confirmation)
+	assert.Nil(t, states["dora.moved@example.com"].Confirmation, "a consent value matches the whole cell, not an item of a list")
 	assert.Equal(t, eligibility.StateOptedOut, states[fixtures.ContactAliceEmail].State)
 }
 

@@ -11864,10 +11864,12 @@ func (s *ContactImportTagsColumnKind) UnmarshalText(data []byte) error {
 // Ref: #/components/schemas/ContactImportTimeColumn
 type ContactImportTimeColumn struct {
 	Kind ContactImportTimeColumnKind `json:"kind"`
-	// The refusal, consent or Engagement tracking column it times, counted from 0.
-	Of int32 `json:"of"`
-	// How the cells write their dates; a date without an offset is read in the Workspace time zone.
-	DateFormat ContactImportDateFormat `json:"dateFormat"`
+	// The refusal, consent or Engagement tracking column it times, counted from 0; required, null only
+	// while the Member has not chosen it.
+	Of NilInt32 `json:"of"`
+	// How the cells write their dates, a date without an offset read in the Workspace time zone; required,
+	// null only while the Member has not chosen it.
+	DateFormat NilContactImportDateFormat `json:"dateFormat"`
 }
 
 // GetKind returns the value of Kind.
@@ -11876,12 +11878,12 @@ func (s *ContactImportTimeColumn) GetKind() ContactImportTimeColumnKind {
 }
 
 // GetOf returns the value of Of.
-func (s *ContactImportTimeColumn) GetOf() int32 {
+func (s *ContactImportTimeColumn) GetOf() NilInt32 {
 	return s.Of
 }
 
 // GetDateFormat returns the value of DateFormat.
-func (s *ContactImportTimeColumn) GetDateFormat() ContactImportDateFormat {
+func (s *ContactImportTimeColumn) GetDateFormat() NilContactImportDateFormat {
 	return s.DateFormat
 }
 
@@ -11891,12 +11893,12 @@ func (s *ContactImportTimeColumn) SetKind(val ContactImportTimeColumnKind) {
 }
 
 // SetOf sets the value of Of.
-func (s *ContactImportTimeColumn) SetOf(val int32) {
+func (s *ContactImportTimeColumn) SetOf(val NilInt32) {
 	s.Of = val
 }
 
 // SetDateFormat sets the value of DateFormat.
-func (s *ContactImportTimeColumn) SetDateFormat(val ContactImportDateFormat) {
+func (s *ContactImportTimeColumn) SetDateFormat(val NilContactImportDateFormat) {
 	s.DateFormat = val
 }
 
@@ -11906,10 +11908,12 @@ func (s *ContactImportTimeColumn) SetDateFormat(val ContactImportDateFormat) {
 // Ref: #/components/schemas/ContactImportTimeColumnInput
 type ContactImportTimeColumnInput struct {
 	Kind ContactImportTimeColumnInputKind `json:"kind"`
-	// The refusal, consent or Engagement tracking column it times, counted from 0.
-	Of int32 `json:"of"`
-	// How the cells write their dates; a date without an offset is read in the Workspace time zone.
-	DateFormat ContactImportDateFormat `json:"dateFormat"`
+	// The refusal, consent or Engagement tracking column it times, counted from 0; required, null only
+	// while the Member has not chosen it.
+	Of NilInt32 `json:"of"`
+	// How the cells write their dates, a date without an offset read in the Workspace time zone; required,
+	// null only while the Member has not chosen it.
+	DateFormat NilContactImportDateFormat `json:"dateFormat"`
 }
 
 // GetKind returns the value of Kind.
@@ -11918,12 +11922,12 @@ func (s *ContactImportTimeColumnInput) GetKind() ContactImportTimeColumnInputKin
 }
 
 // GetOf returns the value of Of.
-func (s *ContactImportTimeColumnInput) GetOf() int32 {
+func (s *ContactImportTimeColumnInput) GetOf() NilInt32 {
 	return s.Of
 }
 
 // GetDateFormat returns the value of DateFormat.
-func (s *ContactImportTimeColumnInput) GetDateFormat() ContactImportDateFormat {
+func (s *ContactImportTimeColumnInput) GetDateFormat() NilContactImportDateFormat {
 	return s.DateFormat
 }
 
@@ -11933,12 +11937,12 @@ func (s *ContactImportTimeColumnInput) SetKind(val ContactImportTimeColumnInputK
 }
 
 // SetOf sets the value of Of.
-func (s *ContactImportTimeColumnInput) SetOf(val int32) {
+func (s *ContactImportTimeColumnInput) SetOf(val NilInt32) {
 	s.Of = val
 }
 
 // SetDateFormat sets the value of DateFormat.
-func (s *ContactImportTimeColumnInput) SetDateFormat(val ContactImportDateFormat) {
+func (s *ContactImportTimeColumnInput) SetDateFormat(val NilContactImportDateFormat) {
 	s.DateFormat = val
 }
 

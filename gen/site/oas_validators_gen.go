@@ -5665,8 +5665,15 @@ func (s *ContactImportTimeColumn) Validate() error {
 		})
 	}
 	if err := func() error {
-		if err := s.DateFormat.Validate(); err != nil {
-			return err
+		if value, ok := s.DateFormat.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
 		}
 		return nil
 	}(); err != nil {
@@ -5699,8 +5706,15 @@ func (s *ContactImportTimeColumnInput) Validate() error {
 		})
 	}
 	if err := func() error {
-		if err := s.DateFormat.Validate(); err != nil {
-			return err
+		if value, ok := s.DateFormat.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
 		}
 		return nil
 	}(); err != nil {

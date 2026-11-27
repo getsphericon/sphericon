@@ -120,15 +120,8 @@ export function factColumnOf(
         denied: fact.denied.map((v) => v.trim()).filter((v) => v !== ''),
       }
     case time:
-      return fact.of === null || dateFormat === null
-        ? undefined
-        : { kind: 'time', of: fact.of, dateFormat }
+      return { kind: 'time', of: fact.of, dateFormat }
     default:
       return undefined
   }
-}
-
-// Whether the settings record a Suppression, which needs suppressions:manage.
-export function recordsSuppression(kind: string, fact: FactSettings | undefined): boolean {
-  return kind === refusal && (fact?.refusals.some((v) => v.refusal === 'suppression') ?? false)
 }
