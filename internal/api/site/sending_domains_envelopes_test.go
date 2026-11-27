@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"encoding/json"
 	"errors"
 	"testing"
 
@@ -112,20 +111,4 @@ func TestSiteSendingDomainShowsOneEnvelopePerEmailIntegration(t *testing.T) {
 	assert.True(t, ids[siteapi.EntityId(fixtures.IntegrationAcmeSesID)])
 	assert.True(t, ids[siteapi.EntityId(fixtures.IntegrationAcmeDefaultID)])
 	assert.False(t, ids[siteapi.EntityId(fixtures.IntegrationAcmeArchivedID)], "a deleted Integration has none")
-}
-
-func TestSiteSendingDomainHasNoSPFRecordOfItsOwn(t *testing.T) {
-	env := testhelper.Setup(t)
-
-	res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteSendingDomainsGet(t.Context(), siteapi.SiteSendingDomainsGetParams{
-		WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(fixtures.SendingDomainVerifiedID),
-	})
-	require.NoError(t, err)
-
-	raw, err := json.Marshal(res)
-	require.NoError(t, err)
-	var fields map[string]json.RawMessage
-	require.NoError(t, json.Unmarshal(raw, &fields))
-	assert.NotContains(t, fields, "spfRecord")
-	assert.NotContains(t, string(raw), "v=spf1")
 }

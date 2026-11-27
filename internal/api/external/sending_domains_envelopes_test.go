@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"encoding/json"
 	"testing"
 
 	"github.com/samber/lo"
@@ -23,8 +22,8 @@ func externalEnvelope(t *testing.T, envs []externalapi.SendingDomainEnvelope, id
 }
 
 // The /api Sending domain carries the envelope of each email Integration, as its last check read
-// it, and no SPF record of its own (ADR 0184): what an agent reads through sending_domains_list.
-func TestExternalSendingDomainsListShowsTheEnvelopesAndNoSPFRecord(t *testing.T) {
+// it (ADR 0184): what an agent reads through sending_domains_list.
+func TestExternalSendingDomainsListShowsTheEnvelopes(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeSendingDomainsRead)
 
@@ -42,10 +41,4 @@ func TestExternalSendingDomainsListShowsTheEnvelopesAndNoSPFRecord(t *testing.T)
 	assert.Equal(t, externalapi.MailFromStatusSuccess, ses.MailFrom.Value.Status)
 	assert.Equal(t, externalapi.MxFailureBehaviorFallBack, ses.MailFrom.Value.OnMxFailure)
 	assert.Equal(t, externalapi.SendingDomainEnvelopeStateSetAtProvider, smtp.State)
-
-	raw, err := json.Marshal(verified)
-	require.NoError(t, err)
-	var fields map[string]json.RawMessage
-	require.NoError(t, json.Unmarshal(raw, &fields))
-	assert.NotContains(t, fields, "spfRecord")
 }

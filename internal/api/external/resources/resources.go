@@ -689,12 +689,12 @@ type Converter interface {
 	SendingDomainToResource(source *ent.SendingDomain) externalapi.SendingDomainResource
 	// goverter:useEmptyOnNil:slice
 	SendingDomainEnvelopesToResource(source []sendingdomains.Envelope) []externalapi.SendingDomainEnvelope
-	// The state and the provider carry the same values on both sides: a cast, not an enum mapping.
-	// goverter:enum no
 	// goverter:map MailFrom | envelopeMailFrom
 	// goverter:map PermissionNeeded | envelopePermission
 	// goverter:map CheckedAt | envelopeCheckedAt
 	SendingDomainEnvelopeToResource(source sendingdomains.Envelope) externalapi.SendingDomainEnvelope
+	// goverter:map OnMXFailure OnMxFailure
+	SendingDomainMailFromToResource(source messaging.MailFrom) externalapi.SendingDomainMailFrom
 	// goverter:map . Type | dnsRecordType
 	DnsRecordToResource(source sendingdomains.Record) externalapi.DnsRecord
 
@@ -853,6 +853,12 @@ type Converter interface {
 	IntegrationChannelToResource(source channels.Channel) externalapi.IntegrationChannel
 	// goverter:enum:transform value
 	IntegrationProviderToResource(source providers.Provider) externalapi.IntegrationProvider
+	// goverter:enum:transform value
+	SendingDomainEnvelopeStateToResource(source sendingdomains.EnvelopeState) externalapi.SendingDomainEnvelopeState
+	// goverter:enum:transform value
+	MailFromStatusToResource(source providers.MailFromStatus) externalapi.MailFromStatus
+	// goverter:enum:transform value
+	MxFailureBehaviorToResource(source providers.MXFailureBehavior) externalapi.MxFailureBehavior
 	// goverter:enum:transform value
 	LintCodeToResource(source emailrender.Code) externalapi.LintCode
 	// goverter:enum:transform value
@@ -1474,15 +1480,11 @@ func nilFrequencyCapPeriodMinutes(v *int) externalapi.NilFrequencyCapPeriodMinut
 func minuteOfDay(v int) externalapi.MinuteOfDay { return externalapi.MinuteOfDay(narrow.Int32(v)) }
 
 // envelopeMailFrom is an envelope's custom MAIL FROM, null for any other envelope.
-func envelopeMailFrom(v *messaging.MailFrom) externalapi.NilSendingDomainMailFrom {
+func envelopeMailFrom(c Converter, v *messaging.MailFrom) externalapi.NilSendingDomainMailFrom {
 	if v == nil {
 		return externalapi.NilSendingDomainMailFrom{Null: true}
 	}
-	return externalapi.NewNilSendingDomainMailFrom(externalapi.SendingDomainMailFrom{
-		Domain:      v.Domain,
-		Status:      externalapi.MailFromStatus(v.Status),
-		OnMxFailure: externalapi.MxFailureBehavior(v.OnMXFailure),
-	})
+	return externalapi.NewNilSendingDomainMailFrom(c.SendingDomainMailFromToResource(*v))
 }
 
 // envelopePermission is the permission an unknown envelope needs, null for any other envelope.

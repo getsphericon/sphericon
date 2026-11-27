@@ -1332,6 +1332,22 @@ func (c *ConverterImpl) LintFindingsToResource(source []emailrender.Finding) []e
 	}
 	return externalapiLintFindingList
 }
+func (c *ConverterImpl) MailFromStatusToResource(source providers.MailFromStatus) external.MailFromStatus {
+	var externalapiMailFromStatus external.MailFromStatus
+	switch source {
+	case providers.MailFromFailed:
+		externalapiMailFromStatus = external.MailFromStatusFailed
+	case providers.MailFromPending:
+		externalapiMailFromStatus = external.MailFromStatusPending
+	case providers.MailFromSuccess:
+		externalapiMailFromStatus = external.MailFromStatusSuccess
+	case providers.MailFromTemporaryFailure:
+		externalapiMailFromStatus = external.MailFromStatusTemporaryFailure
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiMailFromStatus
+}
 func (c *ConverterImpl) MessageEngagementToResource(source conditiontree.Engagement) external.MessageEngagement {
 	var externalapiMessageEngagement external.MessageEngagement
 	switch source {
@@ -1362,6 +1378,18 @@ func (c *ConverterImpl) MomentOperatorToResource(source conditiontree.MomentOper
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return externalapiMomentOperator
+}
+func (c *ConverterImpl) MxFailureBehaviorToResource(source providers.MXFailureBehavior) external.MxFailureBehavior {
+	var externalapiMxFailureBehavior external.MxFailureBehavior
+	switch source {
+	case providers.MXFailureFallBack:
+		externalapiMxFailureBehavior = external.MxFailureBehaviorFallBack
+	case providers.MXFailureReject:
+		externalapiMxFailureBehavior = external.MxFailureBehaviorReject
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiMxFailureBehavior
 }
 func (c *ConverterImpl) NumberOperatorToResource(source conditiontree.NumberOperator) external.NumberOperator {
 	var externalapiNumberOperator external.NumberOperator
@@ -1789,13 +1817,29 @@ func (c *ConverterImpl) SendCapToResource(source providerlimit.SendCapStatus) ex
 	externalapiSendCap.SentLast24h = count(source.Sent24h)
 	return externalapiSendCap
 }
+func (c *ConverterImpl) SendingDomainEnvelopeStateToResource(source sendingdomains.EnvelopeState) external.SendingDomainEnvelopeState {
+	var externalapiSendingDomainEnvelopeState external.SendingDomainEnvelopeState
+	switch source {
+	case sendingdomains.EnvelopeCustom:
+		externalapiSendingDomainEnvelopeState = external.SendingDomainEnvelopeStateCustom
+	case sendingdomains.EnvelopeProviderDefault:
+		externalapiSendingDomainEnvelopeState = external.SendingDomainEnvelopeStateProviderDefault
+	case sendingdomains.EnvelopeSetAtProvider:
+		externalapiSendingDomainEnvelopeState = external.SendingDomainEnvelopeStateSetAtProvider
+	case sendingdomains.EnvelopeUnknown:
+		externalapiSendingDomainEnvelopeState = external.SendingDomainEnvelopeStateUnknown
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiSendingDomainEnvelopeState
+}
 func (c *ConverterImpl) SendingDomainEnvelopeToResource(source sendingdomains.Envelope) external.SendingDomainEnvelope {
 	var externalapiSendingDomainEnvelope external.SendingDomainEnvelope
 	externalapiSendingDomainEnvelope.IntegrationId = external.EntityId(source.IntegrationID)
 	externalapiSendingDomainEnvelope.IntegrationName = source.IntegrationName
 	externalapiSendingDomainEnvelope.Provider = c.IntegrationProviderToResource(source.Provider)
-	externalapiSendingDomainEnvelope.State = external.SendingDomainEnvelopeState(source.State)
-	externalapiSendingDomainEnvelope.MailFrom = envelopeMailFrom(source.MailFrom)
+	externalapiSendingDomainEnvelope.State = c.SendingDomainEnvelopeStateToResource(source.State)
+	externalapiSendingDomainEnvelope.MailFrom = envelopeMailFrom(c, source.MailFrom)
 	externalapiSendingDomainEnvelope.PermissionNeeded = envelopePermission(source.PermissionNeeded)
 	externalapiSendingDomainEnvelope.CheckedAt = envelopeCheckedAt(source.CheckedAt)
 	return externalapiSendingDomainEnvelope
@@ -1807,6 +1851,13 @@ func (c *ConverterImpl) SendingDomainEnvelopesToResource(source []sendingdomains
 		externalapiSendingDomainEnvelopeList[i] = c.SendingDomainEnvelopeToResource(source[i])
 	}
 	return externalapiSendingDomainEnvelopeList
+}
+func (c *ConverterImpl) SendingDomainMailFromToResource(source messaging.MailFrom) external.SendingDomainMailFrom {
+	var externalapiSendingDomainMailFrom external.SendingDomainMailFrom
+	externalapiSendingDomainMailFrom.Domain = source.Domain
+	externalapiSendingDomainMailFrom.Status = c.MailFromStatusToResource(source.Status)
+	externalapiSendingDomainMailFrom.OnMxFailure = c.MxFailureBehaviorToResource(source.OnMXFailure)
+	return externalapiSendingDomainMailFrom
 }
 func (c *ConverterImpl) SendingDomainRatesListPage(source pagination.Page[reputation.DomainRates], context int32) *external.SendingDomainRatesListOK {
 	var externalapiSendingDomainRatesListOK external.SendingDomainRatesListOK

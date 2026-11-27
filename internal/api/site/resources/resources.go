@@ -709,12 +709,12 @@ type Converter interface {
 	SendingDomainToResource(source *ent.SendingDomain) siteapi.SendingDomainResource
 	// goverter:useEmptyOnNil:slice
 	SendingDomainEnvelopesToResource(source []sendingdomains.Envelope) []siteapi.SendingDomainEnvelope
-	// The state and the provider carry the same values on both sides: a cast, not an enum mapping.
-	// goverter:enum no
 	// goverter:map MailFrom | envelopeMailFrom
 	// goverter:map PermissionNeeded | envelopePermission
 	// goverter:map CheckedAt | envelopeCheckedAt
 	SendingDomainEnvelopeToResource(source sendingdomains.Envelope) siteapi.SendingDomainEnvelope
+	// goverter:map OnMXFailure OnMxFailure
+	SendingDomainMailFromToResource(source messaging.MailFrom) siteapi.SendingDomainMailFrom
 	// goverter:map . Type | dnsRecordType
 	DnsRecordToResource(source sendingdomains.Record) siteapi.DnsRecord
 
@@ -886,6 +886,12 @@ type Converter interface {
 	IntegrationChannelToResource(source channels.Channel) siteapi.IntegrationChannel
 	// goverter:enum:transform value
 	IntegrationProviderToResource(source providers.Provider) siteapi.IntegrationProvider
+	// goverter:enum:transform value
+	SendingDomainEnvelopeStateToResource(source sendingdomains.EnvelopeState) siteapi.SendingDomainEnvelopeState
+	// goverter:enum:transform value
+	MailFromStatusToResource(source providers.MailFromStatus) siteapi.MailFromStatus
+	// goverter:enum:transform value
+	MxFailureBehaviorToResource(source providers.MXFailureBehavior) siteapi.MxFailureBehavior
 	// goverter:enum:transform value
 	InvitableRoleToResource(source invitation.Role) siteapi.SiteInvitableRole
 	// goverter:enum:transform value
@@ -1866,15 +1872,11 @@ func ownershipRecordType(trackingdomains.OwnershipRecord) siteapi.DnsRecordType 
 }
 
 // envelopeMailFrom is an envelope's custom MAIL FROM, null for any other envelope.
-func envelopeMailFrom(v *messaging.MailFrom) siteapi.NilSendingDomainMailFrom {
+func envelopeMailFrom(c Converter, v *messaging.MailFrom) siteapi.NilSendingDomainMailFrom {
 	if v == nil {
 		return siteapi.NilSendingDomainMailFrom{Null: true}
 	}
-	return siteapi.NewNilSendingDomainMailFrom(siteapi.SendingDomainMailFrom{
-		Domain:      v.Domain,
-		Status:      siteapi.MailFromStatus(v.Status),
-		OnMxFailure: siteapi.MxFailureBehavior(v.OnMXFailure),
-	})
+	return siteapi.NewNilSendingDomainMailFrom(c.SendingDomainMailFromToResource(*v))
 }
 
 // envelopePermission is the permission an unknown envelope needs, null for any other envelope.

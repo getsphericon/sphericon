@@ -2513,7 +2513,7 @@ export default interface Resources {
         "envelopeCustom": "Custom MAIL FROM: {{domain}}",
         "envelopeProviderDefault": "Amazon SES sends with its own MAIL FROM domain. For SPF to align with this domain, set a custom MAIL FROM on this domain's identity in Amazon SES.",
         "envelopeSetAtProvider": "Set at the SMTP provider: the envelope and its SPF are configured there.",
-        "envelopeUnknown": "Unknown: the integration's credentials need {{permission}} to read this domain's identity in Amazon SES.",
+        "envelopeUnknown": "Unknown: Amazon SES could not be asked about this domain's identity yet. Its credentials need {{permission}}, and SES needs an identity for this domain; the next check reads it again.",
         "envelopes": "SPF",
         "envelopesHint": "SPF is checked on the envelope (MAIL FROM) domain each email integration sends with, not on this domain, so it needs no SPF record of its own. It never holds a send.",
         "envelopesNone": "No email integration sends this domain's mail yet.",
