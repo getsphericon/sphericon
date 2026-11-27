@@ -10,6 +10,7 @@ import { zSplitPathInput } from '../../generated/site/zod.gen.ts'
 import { useSchemaForm } from '../../resources/schemaForm.ts'
 import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
 import { boundsOf } from '../../utils/bounds.ts'
+import { awaitedBefore } from './awaitedNames.ts'
 import { allSteps, branchConditionOf, filterText, sendsMessage, stepsBefore } from './definition.ts'
 import type { BranchStep, FlowPath, FlowStep, ListedFork, SplitStep } from './definition.ts'
 import type { PathPatch } from './flowEdits.ts'
@@ -129,8 +130,9 @@ function messageStepsOf(
 
 // A Branch's panel: each listed path's Condition, in the Condition builder of the Branch path's
 // place (ADR 0181), which tests the Contact and the Event the Enrollment began with, in the order
-// they are tested, and the messages of the send Steps before it (root is the version's Steps); then
-// `otherwise` and, while a Condition can be unknown, the unknown path.
+// they are tested, the messages of the send Steps before it (root is the version's Steps) and the
+// Events the Wait for events before it arrived on (ADR 0136); then `otherwise` and, while a
+// Condition can be unknown, the unknown path.
 export function BranchForm({
   root,
   step,
@@ -146,6 +148,7 @@ export function BranchForm({
   const { workspaceId } = workspaceRoute.useParams()
   const infoOf = useStepInfo()
   const messageSteps = useMemo(() => messageStepsOf(infoOf, root, step), [infoOf, root, step])
+  const awaitedNames = useMemo(() => awaitedBefore(root, step.id), [root, step.id])
   const form = useSchemaForm(
     forkSchemas.branch,
     { paths: step.paths.map(({ id, conditionText }) => ({ id, conditionText })) },
@@ -186,6 +189,7 @@ export function BranchForm({
                 workspaceId={workspaceId}
                 place="branch"
                 messageSteps={messageSteps}
+                awaitedNames={awaitedNames}
                 initialValue={branchConditionOf(path.conditionText) ?? emptyGroup}
                 onChange={(draft) => form.setFieldValue(field, filterText(draft))}
               />

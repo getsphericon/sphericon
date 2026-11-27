@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 
 import { MessageEditor } from '../../components/MessageEditor.tsx'
 import type { EditorDocument } from '../../generated/site/types.gen.ts'
+import type { BoundTags } from './StepForms.tsx'
 
 // The side panel is narrow, so an email step's message is edited in a dialog opened from it. An
 // edit in the editor writes the document, an edit of a message that has none writes the body and
@@ -11,10 +12,13 @@ import type { EditorDocument } from '../../generated/site/types.gen.ts'
 export function MessageControl({
   doc,
   body,
+  bound,
   onChange,
 }: {
   doc: EditorDocument | null
   body: string
+  // What the message binds beyond the Contact's: the Events its Enrollment began on and awaited.
+  bound: BoundTags
   onChange: (message: { doc: EditorDocument | null; body: string }) => void
 }) {
   const { t } = useTranslation()
@@ -32,11 +36,13 @@ export function MessageControl({
         size="xl"
       >
         <Stack>
-          {/* An Automation's message also binds the Event its Enrollment began on (#752). */}
+          {/* An Automation's message also binds the Event its Enrollment began on (#752) and those
+              earlier Wait for events arrived on (ADR 0136). */}
           <MessageEditor
             doc={doc}
             body={body}
-            eventTags
+            extraTags={bound.tags}
+            propertySources={bound.sources}
             onChange={(edit) => {
               onChange('doc' in edit ? { doc: edit.doc, body } : { doc: null, body: edit.body })
             }}

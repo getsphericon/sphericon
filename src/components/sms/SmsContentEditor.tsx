@@ -1,4 +1,4 @@
-import { Group, Menu, Stack, Switch, Text, Textarea } from '@mantine/core'
+import { Group, Stack, Switch, Text, Textarea } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
 import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -8,6 +8,8 @@ import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/ro
 import { CONTACT_TAGS, UNSUBSCRIBE_URL_TAG } from '../../utils/mergeTags.ts'
 import { measureSms, smsLimitOf, tooLongForSms } from '../../utils/smsParts.ts'
 import { workspaceOptions } from '../../utils/workspace.ts'
+import { MergeTagMenu } from '../MergeTagMenu.tsx'
+import { PropertyTagInsert } from '../PropertyTagInsert.tsx'
 
 // SmsContent is an SMS's Message content: the text, and whether its links go out as short tracked
 // links (ADR 0083).
@@ -16,8 +18,10 @@ export type SmsContent = Omit<SmsBroadcastContent, 'channel'>
 interface Props {
   value: SmsContent
   onChange: (next: SmsContent) => void
-  // Merge tags of the surface beyond the Contact's (an Automation adds the Event's).
+  // Merge tags of the surface beyond the Contact's, and the Events whose property it offers by name
+  // (an Automation's: the Event its Enrollment began on and those Wait for events arrived on).
   extraTags?: readonly string[]
+  propertySources?: readonly string[]
 }
 
 const NO_TAGS: readonly string[] = []
@@ -29,7 +33,12 @@ const NO_TAGS: readonly string[] = []
 // short link (`shortLinkLength`, as written until the Workspace loads). A text longer than the
 // provider sends in its encoding (`smsMaxLength`) is flagged, as the save refuses it. It holds no
 // state of its own.
-export function SmsContentEditor({ value, onChange, extraTags = NO_TAGS }: Props) {
+export function SmsContentEditor({
+  value,
+  onChange,
+  extraTags = NO_TAGS,
+  propertySources = NO_TAGS,
+}: Props) {
   const { t } = useTranslation()
   const { workspaceId } = workspaceRoute.useParams()
   const { data: workspace } = useQuery(workspaceOptions(workspaceId))
@@ -58,20 +67,14 @@ export function SmsContentEditor({ value, onChange, extraTags = NO_TAGS }: Props
         onChange={(e) => onChange({ ...value, text: e.currentTarget.value })}
       />
       <Group justify="space-between">
-        <Menu>
-          <Menu.Target>
-            <Text component="button" type="button" size="sm" c="blue">
-              {t(($) => $.smsEditor.insertMergeTag)}
-            </Text>
-          </Menu.Target>
-          <Menu.Dropdown>
-            {tags.map((tag) => (
-              <Menu.Item key={tag} onClick={() => insert(tag)}>
-                {tag}
-              </Menu.Item>
-            ))}
-          </Menu.Dropdown>
-        </Menu>
+        <Group gap="xs">
+          <MergeTagMenu
+            label={t(($) => $.smsEditor.insertMergeTag)}
+            tags={tags}
+            onInsert={insert}
+          />
+          <PropertyTagInsert sources={propertySources} onInsert={insert} />
+        </Group>
         <Text size="sm" c={tooLong ? 'red' : 'dimmed'}>
           {t(($) => $.smsEditor.counter, {
             characters: t(($) => $.smsEditor.characters, { count: size.characters }),

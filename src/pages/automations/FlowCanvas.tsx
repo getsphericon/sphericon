@@ -9,7 +9,7 @@ import {
   UnstyledButton,
   useComputedColorScheme,
 } from '@mantine/core'
-import { IconAlertCircle, IconPlus, IconTrash } from '@tabler/icons-react'
+import { IconAlertCircle, IconAlertTriangle, IconPlus, IconTrash } from '@tabler/icons-react'
 import type { Icon } from '@tabler/icons-react'
 import { Background, Handle, Position, ReactFlow } from '@xyflow/react'
 import type { NodeProps } from '@xyflow/react'
@@ -18,6 +18,7 @@ import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { useFormat } from '../../hooks/useFormat.ts'
+import { awaitedWarnings } from './awaitedNames.ts'
 import type { CanvasFigures } from './canvasFigures.ts'
 import { sendsMessage } from './definition.ts'
 import type { Flow, FlowStep, InsertedKind } from './definition.ts'
@@ -43,9 +44,13 @@ interface CanvasControls {
   figures: CanvasFigures | null
 }
 
-const Controls = createContext<CanvasControls | null>(null)
+// What the nodes read beside the controls: by Step id, the names of the Wait for events a Step reads
+// that not every path before it passes (awaitedWarnings).
+type CanvasContext = CanvasControls & { warnings: Map<string, string[]> }
 
-function useControls(): CanvasControls {
+const Controls = createContext<CanvasContext | null>(null)
+
+function useControls(): CanvasContext {
   const controls = use(Controls)
   if (controls === null) {
     throw new Error('A canvas node is rendered outside the canvas')
@@ -71,6 +76,7 @@ function NodeBox({
   label,
   detail,
   error = null,
+  warning = null,
   figures = null,
   children,
 }: {
@@ -78,8 +84,10 @@ function NodeBox({
   icon: Icon
   label: string
   detail: string
-  // What is wrong with it, shown in place of the detail.
+  // What is wrong with it, shown in place of the detail; else what it should be warned of, which
+  // refuses nothing.
   error?: string | null
+  warning?: string | null
   figures?: string | null
   children?: ReactNode
 }) {
@@ -103,7 +111,16 @@ function NodeBox({
               <Text size="sm" fw={500} truncate>
                 {label}
               </Text>
+              {error === null && warning !== null && (
+                <Group gap={4} wrap="nowrap">
+                  <IconAlertTriangle size={14} color="var(--mantine-color-orange-filled)" />
+                  <Text size="xs" c="orange" truncate>
+                    {warning}
+                  </Text>
+                </Group>
+              )}
               {error === null ? (
+                warning === null &&
                 detail !== '' && (
                   <Text size="xs" c="dimmed" truncate>
                     {detail}
@@ -209,7 +226,8 @@ function useStepFigures(step: FlowStep): string | null {
 
 function StepNodeView({ data: { step } }: NodeProps<StepNode>) {
   const { t } = useTranslation()
-  const { editable, remove, addPath, errorOf } = useControls()
+  const { editable, remove, addPath, errorOf, warnings } = useControls()
+  const unpassed = warnings.get(step.id)
   const info = useStepInfo()(step)
   const figures = useStepFigures(step)
   // A person adds paths to a Branch and a Split; a Wait for event's paths are its own.
@@ -223,6 +241,11 @@ function StepNodeView({ data: { step } }: NodeProps<StepNode>) {
         label={info.label}
         detail={stepDetail(step)}
         error={errorOf(step.id)}
+        warning={
+          unpassed === undefined
+            ? null
+            : t(($) => $.automations.awaitedWarning.node, { names: unpassed.join(', ') })
+        }
         figures={figures}
       >
         {editable && fork !== null && (
@@ -368,10 +391,11 @@ const nodeTypes = {
 export function FlowCanvas(controls: CanvasControls) {
   const { flow } = controls
   const { nodes, edges } = useMemo(() => layoutFlow(flow), [flow])
+  const warnings = useMemo(() => awaitedWarnings(flow.path), [flow])
   const scheme = useComputedColorScheme('light', { getInitialValueInEffect: true })
 
   return (
-    <Controls value={controls}>
+    <Controls value={{ ...controls, warnings }}>
       <ReactFlow
         nodes={nodes}
         edges={edges}

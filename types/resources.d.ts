@@ -336,6 +336,11 @@ export default interface Resources {
       "addAutomation": "Create automation",
       "addPath": "Add path",
       "applyTagNodeDescription": "Add a tag to the contact.",
+      "awaitedWarning": {
+        "node": "Not every path passes {{names}}",
+        "panel": "Not every path to this step passes the Wait for event {{names}}. On a path that skips it, what this step reads of its event renders empty and a test of it fails." | "Not every path to this step passes the Wait for events {{names}}. On a path that skips one, what this step reads of its event renders empty and a test of it fails.",
+        "title": "A Wait for event may be skipped"
+      },
       "bounced": "Bounced",
       "branchNodeDescription": "Send each contact down the first path whose condition holds.",
       "captured": "Captured, not delivered",
@@ -416,7 +421,7 @@ export default interface Resources {
       "goalEventAdd": "Add goal event",
       "goalEventHint": "This event ends a contact's enrollment as having reached the goal, even if it also matches an exit event.",
       "goalEventLabel": "Goal event",
-      "httpBodyHint": "JSON. It sees the contact's fields and event.action and event.properties of the event that started the enrollment. Merge tags like {{mergeTag}} are escaped for you, so write them inside quotes: the body must be valid JSON when they are empty.",
+      "httpBodyHint": "JSON. It sees the contact's fields, event.action and event.properties of the event that started the enrollment, and awaited.<name> of the event each Wait for event before it arrived on. Merge tags like {{mergeTag}} are escaped for you, so write them inside quotes: the body must be valid JSON when they are empty.",
       "httpBodyLabel": "JSON body",
       "httpDryRun": "Dry run",
       "httpDryRunContactLabel": "Render for contact",
@@ -425,6 +430,7 @@ export default interface Resources {
       "httpDryRunInvalid": "The body is not valid",
       "httpDryRunRendered": "The request body this contact would get (nothing was sent):",
       "httpHeadersLabel": "Headers (up to 5)",
+      "httpInsertMergeTag": "Insert a merge tag",
       "httpNodeDescription": "POST a JSON body to a URL such as a Slack or Zapier hook.",
       "httpSecretHint": "Optional. Signs the request; leave empty to keep the saved one.",
       "httpSecretLabel": "Signing secret",
@@ -822,6 +828,7 @@ export default interface Resources {
         "subject_id": "Subject ID",
         "time_zone": "Time zone"
       },
+      "awaitedProperty": "Property of awaited.{{name}}",
       "eventOperators": {
         "atLeast": "at least (times)",
         "atMost": "at most (times)",
@@ -1531,10 +1538,6 @@ export default interface Resources {
       "verifyRequiredTitle": "Verify your email first"
     },
     "messageEditor": {
-      "eventPropertyHint": "A property of the event that started the enrollment. One the event lacks renders empty.",
-      "eventPropertyInsert": "Insert",
-      "eventPropertyName": "Property name",
-      "insertEventProperty": "Insert event property",
       "insertVariable": "Insert variable",
       "label": "Message",
       "placeholder": "Write your message, or type / to add a heading, list, button or image",
@@ -1851,6 +1854,13 @@ export default interface Resources {
       "unverifiedBadge": "Not verified",
       "updated": "Profile updated",
       "verifiedBadge": "Verified"
+    },
+    "propertyTag": {
+      "insert": "Insert",
+      "nameHint": "A property of the event that started the enrollment, or of the one a Wait for event arrived on. One the event lacks renders empty.",
+      "nameLabel": "Property name",
+      "open": "Insert event property",
+      "sourceLabel": "Event"
     },
     "resetPassword": {
       "confirmPasswordLabel": "Confirm new password",

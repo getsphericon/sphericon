@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { siteBrandKitGetOptions } from '../generated/site/@tanstack/react-query.gen.ts'
 import { Route as workspaceRoute } from '../routes/workspaces/$workspaceId/route.tsx'
 import { brandTheme } from '../utils/brandTheme.ts'
-import { CONTACT_TAGS, EVENT_ACTION_TAG, TELEGRAM_START_TAG } from '../utils/mergeTags.ts'
+import { CONTACT_TAGS, TELEGRAM_START_TAG } from '../utils/mergeTags.ts'
 import type { MessageDoc } from '../utils/messageDoc.ts'
 import { BlockSkeleton } from './Skeletons.tsx'
 
@@ -25,16 +25,26 @@ export interface MessageEditorProps {
   // The message's HTML. Shown (and edited) only for a message with no document.
   body: string
   onChange: (edit: MessageEdit) => void
-  // An Automation's message: it also binds `event`, the Event its Enrollment began on (#752), so the
-  // picker offers `event.action` and a property of that Event by name.
-  eventTags?: boolean
+  // Merge tags of the surface beyond the Contact's, and the Events whose property it offers by name
+  // (PropertyTagInsert): an Automation's message also binds `event`, the Event its Enrollment began
+  // on (#752), and the Events earlier Wait for events arrived on (ADR 0136).
+  extraTags?: readonly string[]
+  propertySources?: readonly string[]
 }
+
+const NONE: readonly string[] = []
 
 // The visual editor for a message (ADR 0040), shared by every place that holds one. A message
 // with no document and a body opens as editable source and is never loaded into the editor,
 // which would drop what it does not model. The mode is decided once, when the editor mounts,
 // so clearing the source text does not flip it into the editor mid-typing.
-export function MessageEditor({ doc, body, onChange, eventTags = false }: MessageEditorProps) {
+export function MessageEditor({
+  doc,
+  body,
+  onChange,
+  extraTags = NONE,
+  propertySources = NONE,
+}: MessageEditorProps) {
   const { t } = useTranslation()
   const [asSource] = useState(() => doc === null && body !== '')
   const [initial] = useState(doc)
@@ -72,12 +82,8 @@ export function MessageEditor({ doc, body, onChange, eventTags = false }: Messag
         <Suspense fallback={<BlockSkeleton />}>
           <VisualEditor
             initial={initial}
-            variables={
-              eventTags
-                ? [...CONTACT_TAGS, TELEGRAM_START_TAG, EVENT_ACTION_TAG]
-                : [...CONTACT_TAGS, TELEGRAM_START_TAG]
-            }
-            eventProperties={eventTags}
+            variables={[...CONTACT_TAGS, TELEGRAM_START_TAG, ...extraTags]}
+            propertySources={propertySources}
             theme={theme}
             onChange={(next) => onChange({ doc: next })}
           />

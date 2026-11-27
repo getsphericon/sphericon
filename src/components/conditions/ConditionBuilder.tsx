@@ -29,6 +29,7 @@ import {
 import { useEventActionLabel } from '../../hooks/useEventActionLabel.ts'
 import { useTimeZone } from '../../hooks/useFormat.ts'
 import {
+  awaitedFieldId,
   customFieldId,
   eventFieldPrefix,
   eventPresets,
@@ -169,6 +170,16 @@ function messageFields(t: TFunction, steps: readonly MessageStep[]): Field[] {
   }))
 }
 
+// The fields of the property tests of the Events earlier Wait for events arrived on (ADR 0136), one
+// per Wait for event by its name, the property's key typed beside it as the triggering Event's.
+function awaitedFields(t: TFunction, names: readonly string[]): Field[] {
+  return names.map((name) => ({
+    name: awaitedFieldId(name),
+    label: t(($) => $.conditions.awaitedProperty, { name }),
+    operators: propertyOperators(t),
+  }))
+}
+
 // What a place reads of the Workspace's catalogue to offer the Contact's fields: an Event filter
 // offers none.
 function testsContact(place: ConditionPlace): boolean {
@@ -200,6 +211,9 @@ interface ConditionBuilderProps {
   // The send Steps a Branch path's Condition may test the message of (ADR 0122), in the order the
   // Enrollment passes them; a Condition of any other place tests none.
   messageSteps?: readonly MessageStep[]
+  // The names of the Wait for events whose arrived Event a Branch path's Condition may test (ADR
+  // 0136): those an Enrollment may have passed when it reaches the Branch.
+  awaitedNames?: readonly string[]
 }
 
 // ConditionBuilder is the visual Condition editor (react-querybuilder + the official
@@ -214,6 +228,7 @@ export function ConditionBuilder({
   propertyKeys,
   filterFields,
   messageSteps,
+  awaitedNames,
 }: ConditionBuilderProps) {
   const { t } = useTranslation()
   const labelOf = useEventActionLabel()
@@ -257,8 +272,18 @@ export function ConditionBuilder({
       ...placeFields[place](t, [...contactFields(t), ...customFields, ...eventFields]),
       ...(filterFields ?? []),
       ...messageFields(t, messageSteps ?? []),
+      ...awaitedFields(t, awaitedNames ?? []),
     ]
-  }, [actionsQuery.data, customFieldsQuery.data, labelOf, t, place, filterFields, messageSteps])
+  }, [
+    actionsQuery.data,
+    customFieldsQuery.data,
+    labelOf,
+    t,
+    place,
+    filterFields,
+    messageSteps,
+    awaitedNames,
+  ])
   // What the value editors read: the values and keys a property test is offered, and, where an
   // event test is edited, the Workspace, the editor of its filter and how far back Events are kept.
   const context: ValueEditorContext = {

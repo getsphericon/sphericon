@@ -1,5 +1,6 @@
 import {
   ActionIcon,
+  Alert,
   Box,
   CloseButton,
   Fieldset,
@@ -9,10 +10,13 @@ import {
   Text,
   Title,
 } from '@mantine/core'
-import { IconCopy } from '@tabler/icons-react'
+import { IconAlertTriangle, IconCopy } from '@tabler/icons-react'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
+import { automationTags } from '../../utils/mergeTags.ts'
+import { awaitedBefore, awaitedWarnings } from './awaitedNames.ts'
 import { allSteps, forkPaths } from './definition.ts'
 import type {
   EditedStep,
@@ -104,6 +108,7 @@ function StepBody({
       step={step}
       onEdit={onStep}
       validatorRef={validatorRef}
+      bound={automationTags(awaitedBefore(root, step.id))}
       checked={forks.checked(step.id)}
       onChecked={() => forks.onChecked(step.id)}
     />
@@ -140,7 +145,9 @@ export function StepPanel({
 }) {
   const { t } = useTranslation()
   const info = useStepInfo()
+  const warnings = useMemo(() => awaitedWarnings(flow.path), [flow])
   const step = allSteps(flow.path).find((candidate) => candidate.id === selected)
+  const unpassed = step === undefined ? undefined : warnings.get(step.id)
   if (selected !== TRIGGER_NODE_ID && step === undefined) {
     return null
   }
@@ -185,6 +192,21 @@ export function StepPanel({
               message={refusal.message}
             />
           </Box>
+        )}
+        {/* A warning refuses nothing: the Step saves and runs, reading the name as empty where no
+            copy is kept (ADR 0136). */}
+        {unpassed !== undefined && (
+          <Alert
+            mb="md"
+            color="orange"
+            icon={<IconAlertTriangle size={16} />}
+            title={t(($) => $.automations.awaitedWarning.title)}
+          >
+            {t(($) => $.automations.awaitedWarning.panel, {
+              count: unpassed.length,
+              names: unpassed.join(', '),
+            })}
+          </Alert>
         )}
         <Fieldset disabled={!editable} variant="unstyled" m={0} miw={0}>
           {step === undefined ? (
