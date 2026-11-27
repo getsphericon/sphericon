@@ -178,3 +178,40 @@ func (w *Workspace) ConfirmFromEmail(msg Message) {
 	err := w.anonymousSite().SitePublicConfirmationsPerform(w.t.Context(), siteapi.SitePublicConfirmationsPerformParams{Token: token})
 	require.NoError(w.t, err, "the confirmation page's Confirm")
 }
+
+// ImportRefusals imports a CSV file of Contacts as ImportCSV does, but with its column at mapped
+// as a refusal column of email: a cell that is one of values records an Unsubscribe of
+// everything, `via: imported` (ADR 0138). It returns the import as it ended.
+func (w *Workspace) ImportRefusals(file string, at int, values ...string) *siteapi.SiteContactImport {
+	w.t.Helper()
+	ctx := w.t.Context()
+	ws := siteapi.WorkspaceId(w.publicID)
+	uploaded, err := w.site.SiteContactImportsUpload(ctx, siteapi.SiteContactImportsUploadReq{Data: strings.NewReader(file)},
+		siteapi.SiteContactImportsUploadParams{WorkspaceId: ws})
+	require.NoError(w.t, err, "upload the file")
+	raw, err := uploaded.Mapping.MarshalJSON()
+	require.NoError(w.t, err)
+	var mapping siteapi.ContactImportMappingInput
+	require.NoError(w.t, mapping.UnmarshalJSON(raw), "the proposal as a request saves it")
+	mapping.Columns[at] = siteapi.ContactImportColumnInput{OneOf: siteapi.NewContactImportRefusalColumnInputContactImportColumnInputSum(siteapi.ContactImportRefusalColumnInput{
+		Kind: siteapi.ContactImportRefusalColumnInputKindRefusal, Channel: siteapi.ContactImportRefusalChannelEmail,
+		Values: lo.Map(values, func(v string, _ int) siteapi.ContactImportRefusalValueInput {
+			return siteapi.ContactImportRefusalValueInput{Value: v, Refusal: siteapi.ContactImportRefusalUnsubscribeEverything}
+		}),
+	})}
+	_, err = w.site.SiteContactImportsSaveMapping(ctx, &mapping, siteapi.SiteContactImportsSaveMappingParams{WorkspaceId: ws, ImportId: uploaded.ID})
+	require.NoError(w.t, err, "save the mapping")
+	preview, err := w.site.SiteContactImportsPreview(ctx, siteapi.SiteContactImportsPreviewParams{WorkspaceId: ws, ImportId: uploaded.ID})
+	require.NoError(w.t, err, "preview the import")
+	require.Positive(w.t, preview.OptOuts, "the preview counts the opt-outs the file records")
+	_, err = w.site.SiteContactImportsRun(ctx, siteapi.SiteContactImportsRunParams{WorkspaceId: ws, ImportId: uploaded.ID})
+	require.NoError(w.t, err, "run the import")
+
+	var done *siteapi.SiteContactImport
+	require.Eventually(w.t, func() bool {
+		imp, err := w.site.SiteContactImportsGet(ctx, siteapi.SiteContactImportsGetParams{WorkspaceId: ws, ImportId: uploaded.ID})
+		done = imp
+		return err == nil && imp.State == siteapi.ContactImportStateDone
+	}, EmailTimeout, 100*time.Millisecond, "the import of %s never ended done", w)
+	return done
+}

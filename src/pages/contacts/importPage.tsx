@@ -14,7 +14,7 @@ import {
   Title,
 } from '@mantine/core'
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
@@ -46,6 +46,17 @@ import {
 } from '../../generated/site/zod.gen.ts'
 import { Route as importPageRoute } from '../../routes/workspaces/$workspaceId/contacts/imports/$importId.tsx'
 import { countryOptions } from '../../utils/countries.ts'
+import { can } from '../../utils/permissions.ts'
+import { workspaceOptions } from '../../utils/workspace.ts'
+import { FactColumnEditor } from './importFactEditor.tsx'
+import {
+  consent,
+  emptyFact,
+  engagementTracking,
+  factTargets,
+  refusal,
+  time,
+} from './importFacts.ts'
 import {
   columnsMissingDateFormat,
   ignore,
@@ -150,6 +161,7 @@ function MappingForm({ workspaceId, imp }: { workspaceId: string; imp: SiteConta
     key: field.key,
     type: field.type,
   }))
+  const { data: workspace } = useQuery(workspaceOptions(workspaceId))
   const [values, setValues] = useState<MappingValues>(() => valuesOf(imp.mapping))
   const [previewed, setPreviewed] = useState(false)
   // Edits not saved yet, which leaving the page would lose.
@@ -190,6 +202,18 @@ function MappingForm({ workspaceId, imp }: { workspaceId: string; imp: SiteConta
       group: t(($) => $.contactImports.customFieldsGroup),
       items: all.customFields.map(({ value, key }) => ({ value, label: key })),
     },
+    {
+      group: t(($) => $.contactImports.facts.group),
+      items: [
+        { value: refusal, label: t(($) => $.contactImports.facts.kinds.refusal) },
+        { value: consent, label: t(($) => $.contactImports.facts.kinds.consent) },
+        {
+          value: engagementTracking,
+          label: t(($) => $.contactImports.facts.kinds.engagementTracking),
+        },
+        { value: time, label: t(($) => $.contactImports.facts.kinds.time) },
+      ],
+    },
   ]
   const dateFormats = zContactImportDateFormat.options.map((format) => ({
     value: format,
@@ -226,41 +250,69 @@ function MappingForm({ workspaceId, imp }: { workspaceId: string; imp: SiteConta
         <Table.Tbody>
           {imp.header.map((header, at) => {
             const choice = values.columns[at] ?? { target: ignore, dateFormat: null }
+            const fact = factTargets.includes(choice.target) ? choice.fact : undefined
             return (
-              <Table.Tr key={at}>
-                <Table.Td>{header === '' ? '-' : header}</Table.Td>
-                <Table.Td>
-                  <Select
-                    aria-label={t(($) => $.contactImports.writesColumn, { column: header })}
-                    data={targetData}
-                    value={choice.target}
-                    allowDeselect={false}
-                    searchable
-                    onChange={(target) => {
-                      setColumn(at, { target: target ?? ignore })
-                      setPreviewed(false)
-                    }}
-                  />
-                </Table.Td>
-                <Table.Td>
-                  {writesDate(choice.target, fields) ? (
+              <Fragment key={at}>
+                <Table.Tr>
+                  <Table.Td>{header === '' ? '-' : header}</Table.Td>
+                  <Table.Td>
                     <Select
-                      aria-label={t(($) => $.contactImports.dateFormatColumn, { column: header })}
-                      placeholder={t(($) => $.contactImports.chooseDateFormat)}
-                      data={dateFormats}
-                      value={choice.dateFormat}
-                      onChange={(format) => {
+                      aria-label={t(($) => $.contactImports.writesColumn, { column: header })}
+                      data={targetData}
+                      value={choice.target}
+                      allowDeselect={false}
+                      searchable
+                      onChange={(target) => {
+                        const next = target ?? ignore
                         setColumn(at, {
-                          dateFormat: zContactImportDateFormat.nullable().parse(format),
+                          target: next,
+                          fact: factTargets.includes(next)
+                            ? (choice.fact ?? emptyFact())
+                            : undefined,
                         })
                         setPreviewed(false)
                       }}
                     />
-                  ) : (
-                    '-'
-                  )}
-                </Table.Td>
-              </Table.Tr>
+                  </Table.Td>
+                  <Table.Td>
+                    {writesDate(choice.target, fields) ? (
+                      <Select
+                        aria-label={t(($) => $.contactImports.dateFormatColumn, { column: header })}
+                        placeholder={t(($) => $.contactImports.chooseDateFormat)}
+                        data={dateFormats}
+                        value={choice.dateFormat}
+                        onChange={(format) => {
+                          setColumn(at, {
+                            dateFormat: zContactImportDateFormat.nullable().parse(format),
+                          })
+                          setPreviewed(false)
+                        }}
+                      />
+                    ) : (
+                      '-'
+                    )}
+                  </Table.Td>
+                </Table.Tr>
+                {fact === undefined ? null : (
+                  <Table.Tr>
+                    <Table.Td />
+                    <Table.Td colSpan={2}>
+                      <FactColumnEditor
+                        kind={choice.target}
+                        column={header}
+                        fact={fact}
+                        header={imp.header}
+                        targets={values.columns.map((c) => c.target)}
+                        canSuppress={can(workspace, 'suppressions:manage')}
+                        onChange={(next) => {
+                          setColumn(at, { fact: next })
+                          setPreviewed(false)
+                        }}
+                      />
+                    </Table.Td>
+                  </Table.Tr>
+                )}
+              </Fragment>
             )
           })}
         </Table.Tbody>
@@ -355,6 +407,17 @@ function PreviewView({ header, preview }: { header: string[]; preview: SiteConta
           tags: preview.distinctTags,
         })}
       </Text>
+      {preview.optOuts > 0 || preview.suppressions > 0 ? (
+        <Alert
+          color="yellow"
+          title={t(($) => $.contactImports.facts.previewRefusals, {
+            optOuts: preview.optOuts,
+            suppressions: preview.suppressions,
+          })}
+        >
+          {t(($) => $.contactImports.facts.optOutsFinal)}
+        </Alert>
+      ) : null}
       <Table.ScrollContainer minWidth={600}>
         <Table striped>
           <Table.Thead>
@@ -425,6 +488,14 @@ function RunView({ workspaceId, imp }: { workspaceId: string; imp: SiteContactIm
           dropped: counts.dropped,
         })}
       </Text>
+      {counts.optedOut > 0 || counts.suppressed > 0 ? (
+        <Text>
+          {t(($) => $.contactImports.facts.countsRefusals, {
+            optedOut: counts.optedOut,
+            suppressed: counts.suppressed,
+          })}
+        </Text>
+      ) : null}
       {imp.reportRows > 0 && imp.state !== 'running' ? (
         <Group>
           <Button

@@ -5,6 +5,8 @@ package e2e
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
 
@@ -30,4 +32,19 @@ func TestACSVImportBringsContactsInAndStartsNothing(t *testing.T) {
 	w.Inbox.Wait(Match{To: signedUp, Subject: "Welcome aboard"})
 	w.Inbox.RequireNone(Match{To: imported})
 	w.Inbox.RequireNone(Match{To: other})
+}
+
+// A file whose status column says one address unsubscribed on the old platform brings that
+// refusal (ADR 0138): a Broadcast to everyone reaches the others and not that address.
+func TestAnImportedUnsubscribeKeepsABroadcastAway(t *testing.T) {
+	t.Parallel()
+	w := env.NewWorkspace(t).Ready()
+	left, stayed := w.NewRecipient(), w.NewRecipient()
+
+	done := w.ImportRefusals("email,status\n"+left+",Unsubscribed\n"+stayed+",subscribed\n", 1, "unsubscribed")
+	w.SendBroadcast(Broadcast{Subject: "Spring news", Body: HTML("What is new this spring")})
+
+	require.Equal(t, int32(1), done.Counts.OptedOut)
+	w.Inbox.Wait(Match{To: stayed, Subject: "Spring news"})
+	w.Inbox.RequireNone(Match{To: left})
 }
