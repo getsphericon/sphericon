@@ -91,8 +91,8 @@ func TestATestOfTheAwaitedEventNamingNoWaitForEventBeforeItIsRefused(t *testing.
 			"step " + string(judgeID) + ` (branch): path 1: the awaited event test names "purchase", which is no wait for event before the branch`,
 		},
 		"a Branch naming no Wait for event of the version": {
-			automationstep.Root(waitNamed(t, purchaseID, "purchase", nil), judging(t, awaitedOver100("purchase"))),
-			"step " + string(judgeID) + ` (branch): path 1: the awaited event test names "purchase", which is no wait for event before the branch`,
+			automationstep.Root(waitNamed(t, purchaseID, "purchase", nil), judging(t, awaitedOver100("refund"))),
+			"step " + string(judgeID) + ` (branch): path 1: the awaited event test names "refund", which is no wait for event before the branch`,
 		},
 		"a Wait for event naming itself": {
 			automationstep.Root(waitNamed(t, purchaseID, "purchase", []string{awaitedOver100("purchase")})),
