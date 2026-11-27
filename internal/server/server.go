@@ -167,7 +167,7 @@ func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.C
 		// whole protection.
 		outer = append(outer, SchemaGuard(schema))
 	}
-	inner := chi.Middlewares{clientip.New(cfg.TrustedProxyCIDRs).Middleware, limiter.Middleware, Timeouts(cfg.BodyLimits), bodyLimit(cfg.BodyLimits), noNUL, collectEventLimit(cfg.BodyLimits.CollectEvent), guard}
+	inner := chi.Middlewares{clientip.New(cfg.TrustedProxyCIDRs).Middleware, limiter.Middleware, Timeouts(cfg.BodyLimits, site.Clock), bodyLimit(cfg.BodyLimits), noNUL, collectEventLimit(cfg.BodyLimits.CollectEvent), guard}
 	return chi.Chain(append(outer, inner...)...).Handler(trackingHostGate(cfg, domains, mux, links)), nil
 }
 
@@ -487,9 +487,9 @@ const slowestUpload = 125_000
 // Timeouts answers 504 to a request that runs longer than it may (chi's Timeout): the upload of a
 // CSV import's file (ADR 0138) the time its own cap takes at slowestUpload beside the request
 // timeout, every other request the request timeout. The server's ReadTimeout bounds the reading
-// of the body too, so the upload also moves its read deadline; a writer that cannot (a test's
-// recorder) leaves it.
-func Timeouts(limits config.BodyLimits) func(http.Handler) http.Handler {
+// of the body too, so the upload also moves its read deadline, from now, the Instance clock; a
+// writer that cannot (a test's recorder) leaves it.
+func Timeouts(limits config.BodyLimits, now func() time.Time) func(http.Handler) http.Handler {
 	upload := requestTimeout + time.Duration(limits.CSVImport/slowestUpload)*time.Second
 	return func(next http.Handler) http.Handler {
 		standard := middleware.Timeout(requestTimeout)(next)
@@ -499,7 +499,7 @@ func Timeouts(limits config.BodyLimits) func(http.Handler) http.Handler {
 				standard.ServeHTTP(w, r)
 				return
 			}
-			err := http.NewResponseController(w).SetReadDeadline(time.Now().Add(upload))
+			err := http.NewResponseController(w).SetReadDeadline(now().Add(upload))
 			if err != nil && !errors.Is(err, http.ErrNotSupported) {
 				slog.WarnContext(r.Context(), "the upload's read deadline was not moved", "err", err)
 			}

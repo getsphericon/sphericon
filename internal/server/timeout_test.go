@@ -17,14 +17,16 @@ import (
 // its context's deadline when the handler starts.
 func deadlineOf(t *testing.T, limits config.BodyLimits, path string) time.Duration {
 	t.Helper()
-	var left time.Duration
-	h := server.Timeouts(limits)(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
-		deadline, ok := r.Context().Deadline()
-		require.True(t, ok, "every request has a deadline")
-		left = time.Until(deadline)
+	var (
+		deadline time.Time
+		ok       bool
+	)
+	h := server.Timeouts(limits, time.Now)(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+		deadline, ok = r.Context().Deadline()
 	}))
 	h.ServeHTTP(httptest.NewRecorder(), httptest.NewRequestWithContext(t.Context(), http.MethodPost, path, nil))
-	return left
+	require.True(t, ok, "every request has a deadline")
+	return time.Until(deadline)
 }
 
 // The upload of a CSV import's file runs under a timeout that fits its own cap, not the 30 seconds
