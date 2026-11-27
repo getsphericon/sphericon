@@ -911,9 +911,6 @@ var audiencePackage = do.Package(
 		return contacts.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*tags.Module](i),
 			do.MustInvoke[*confirmations.Module](i), do.MustInvoke[*engagementtracking.Module](i), do.MustInvoke[addresscheck.Resolver](i), do.MustInvoke[Clock](i)), nil
 	}),
-	do.Lazy(func(i do.Injector) (*downloadlinks.Module, error) {
-		return downloadlinks.New(do.MustInvoke[Clock](i)), nil
-	}),
 	do.Lazy(func(i do.Injector) (*contactimports.Module, error) {
 		return contactimports.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*contacts.Module](i),
 			do.MustInvoke[*memberships.Module](i), do.MustInvoke[*downloadlinks.Module](i), do.MustInvoke[Clock](i)), nil
