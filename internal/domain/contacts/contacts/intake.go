@@ -161,21 +161,14 @@ func (m *Module) intake(ctx context.Context, s *ent.Scoped, src contact.Source, 
 		if err := checkFieldTypes(ctx, ts, in.CustomFields); err != nil {
 			return err
 		}
-		if onlyNew {
-			existing, err := resolve(ctx, ts, AliasKeys{SubjectID: in.SubjectID, Email: in.Email, Phone: in.Phone})
-			if err != nil {
-				return err
-			}
-			if existing != nil {
-				res = Result{Contact: existing, Kept: true}
-				in.EngagementTracking = engagementtracking.RefusalsOf(in.EngagementTracking)
-				return m.recordTracking(ctx, ts, res, in)
-			}
-		}
 		var err error
-		res, err = m.importIn(ctx, ts, src, in.UpsertInput)
+		res, err = m.importIn(ctx, ts, src, in.UpsertInput, onlyNew)
 		if err != nil {
 			return err
+		}
+		if res.Kept {
+			in.EngagementTracking = engagementtracking.RefusalsOf(in.EngagementTracking)
+			return m.recordTracking(ctx, ts, res, in)
 		}
 		for _, name := range in.Tags {
 			if _, err := m.ApplyTagIn(ctx, ts, res.Contact.ID, name); err != nil {

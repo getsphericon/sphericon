@@ -76,6 +76,10 @@ func (m *Module) Confirm(ctx context.Context, s *ent.Scoped, in ConfirmInput) (*
 // confirmable is raw as the Destinations of channel are stored, refused on a Channel that takes no
 // recorded Confirmation.
 func confirmable(channel channels.Channel, raw string) (string, error) {
+	// The Confirmation's row bounds its Destination: its owner checks the bound.
+	if err := validation.MaxLength(fieldname.Destination, raw, bounds.ConsentDestinationMaxLength); err != nil {
+		return "", err
+	}
 	switch channel {
 	case channels.Email, channels.SMS:
 		return unsubscribes.Destination(channel, raw)

@@ -38,6 +38,8 @@ func TestAnImportThatOnlyAddsNewLeavesAKnownContactButForItsRefusals(t *testing.
 				EngagementTracking: engagementtracking.ContactObservations{Email: refusal},
 			},
 			{Email: new("only-new@example.com"), Tags: []string{"from-the-file"}},
+			// A national number, read with the row's country, names the Texter.
+			{Phone: new("(415) 555-0810"), Country: patch.Set("US"), FirstName: patch.Set("Overwritten")},
 		},
 	})
 	require.NoError(t, err)
@@ -46,6 +48,8 @@ func TestAnImportThatOnlyAddsNewLeavesAKnownContactButForItsRefusals(t *testing.
 	tracking, err := testhelper.Module[*engagementtracking.Module](env).Of(ctx, acme, channels.Email, fixtures.ContactAliceEmail)
 	require.NoError(t, err)
 	fresh, err := intake.Get(ctx, acme, out.Items[1].Value.Contact.ID)
+	require.NoError(t, err)
+	texter, err := intake.Get(ctx, acme, fixtures.ContactTexterID)
 	require.NoError(t, err)
 
 	require.NoError(t, out.Items[0].Err)
@@ -58,6 +62,9 @@ func TestAnImportThatOnlyAddsNewLeavesAKnownContactButForItsRefusals(t *testing.
 	assert.True(t, out.Items[1].Value.Created)
 	assert.False(t, out.Items[1].Value.Kept)
 	assert.Contains(t, tagNames(fresh), "from-the-file")
+	require.NoError(t, out.Items[2].Err)
+	assert.True(t, out.Items[2].Value.Kept)
+	assert.Equal(t, "Tess", lo.FromPtr(texter.FirstName))
 }
 
 // What an import's rows publish carries the job's cause (here the send lock's mark stands in for

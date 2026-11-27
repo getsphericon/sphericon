@@ -335,13 +335,15 @@ func (m *Module) Upsert(ctx context.Context, s *ent.Scoped, src contact.Source, 
 	return res, nil
 }
 
-// changes says whether an upsert records the changes of the Custom fields it writes: every
-// upsert does but an import's (importIn).
-type changes bool
+// changes says whether an upsert records the changes of the Custom fields it writes (every upsert
+// does but an import's, importIn) and whether it writes into a Contact it finds at all (an import
+// that only adds new Contacts does not).
+type changes int
 
 const (
-	recordChanges changes = true
-	importChanges changes = false
+	recordChanges changes = iota
+	importChanges
+	importNewOnly
 )
 
 // importSummary counts the rows of one import.
@@ -391,11 +393,16 @@ func (m *Module) UpsertIn(ctx context.Context, s *ent.Scoped, src contact.Source
 }
 
 // importIn is UpsertIn for one row of an import (ADR 0022), inside the row's transaction of the
-// Contact intake (UpsertBatch): it brings earlier state rather than something happening now, so it records no
-// contact.field_changed (#897). Its refusals are the domain errors Upsert returns (ErrEmailTaken
-// and its kin, ErrNotFound).
-func (m *Module) importIn(ctx context.Context, s *ent.Scoped, src contact.Source, in UpsertInput) (Result, error) {
-	res, err := m.upsertIn(ctx, s, src, in, importChanges)
+// Contact intake (UpsertBatch, Import): it brings earlier state rather than something happening now, so it records no
+// contact.field_changed (#897). With onlyNew it leaves a Contact the row resolves to as it is
+// (Result.Kept, ADR 0138). Its refusals are the domain errors Upsert returns (ErrEmailTaken and its
+// kin, ErrNotFound).
+func (m *Module) importIn(ctx context.Context, s *ent.Scoped, src contact.Source, in UpsertInput, onlyNew bool) (Result, error) {
+	ch := importChanges
+	if onlyNew {
+		ch = importNewOnly
+	}
+	res, err := m.upsertIn(ctx, s, src, in, ch)
 	if err != nil {
 		return Result{}, db.NotFoundAs(err, ErrNotFound)
 	}
@@ -425,6 +432,9 @@ func (m *Module) upsertIn(ctx context.Context, s *ent.Scoped, src contact.Source
 	existing, err := resolve(ctx, s, AliasKeys{SubjectID: in.SubjectID, Email: in.Email, Phone: in.Phone})
 	if err != nil {
 		return Result{}, err
+	}
+	if existing != nil && ch == importNewOnly {
+		return Result{Contact: existing, Phone: in.Phone, Kept: true}, nil
 	}
 	if existing != nil {
 		c, err := m.enrich(ctx, s, existing.ID, in, typed, ch)
