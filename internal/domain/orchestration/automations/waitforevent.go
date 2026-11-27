@@ -119,7 +119,8 @@ func (m *Module) checkWaits(ctx context.Context, s *ent.Scoped, steps automation
 		}
 		for _, matcher := range a.Matchers {
 			refusal := func(why string) error { return refuse(st, "an awaited event: "+why) }
-			if err := m.checkNamed(ctx, s, matcher, refusal); err != nil {
+			at := fmt.Sprintf("step %s (%s): an awaited event: ", st.ID, st.Kind())
+			if err := m.checkNamed(ctx, s, matcher, at, refusal); err != nil {
 				return err
 			}
 		}

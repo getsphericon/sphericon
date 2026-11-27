@@ -1108,13 +1108,13 @@ func (v versioned) Merge(ctx context.Context, l *ent.WorkspaceLocked, base *ent.
 	}
 	if e.exits != nil {
 		for _, exit := range def.exits {
-			if err := v.m.checkNamed(ctx, ts, exit, ErrInvalidExitEvent.With); err != nil {
+			if err := v.m.checkNamed(ctx, ts, exit, "", ErrInvalidExitEvent.With); err != nil {
 				return definition{}, err
 			}
 		}
 	}
 	if e.goal.Changes() && def.goal != nil {
-		if err := v.m.checkNamed(ctx, ts, *def.goal, ErrInvalidGoalEvent.With); err != nil {
+		if err := v.m.checkNamed(ctx, ts, *def.goal, "", ErrInvalidGoalEvent.With); err != nil {
 			return definition{}, err
 		}
 	}
@@ -1224,7 +1224,7 @@ func eventMatcherOf(v *ent.AutomationVersion) eventmatcher.Matcher {
 func (m *Module) checkTrigger(ctx context.Context, s *ent.Scoped, t Trigger) error {
 	switch t := t.(type) {
 	case EventTrigger:
-		return m.checkNamed(ctx, s, t.Matcher, ErrInvalidTrigger.With)
+		return m.checkNamed(ctx, s, t.Matcher, "", ErrInvalidTrigger.With)
 	case DateTrigger:
 		return m.checkDate(ctx, s, t.Date)
 	}
@@ -1486,8 +1486,9 @@ func checkIntegration(ctx context.Context, s *ent.Scoped, id *int64) error {
 // match. A Tag is named as the Event carries it, by its stored name, so another spelling of it is
 // refused too. The catalogues are their owners' (tags, contacts). A filter that names a Broadcast
 // or an Automation the Workspace does not have, archived ones being its own (messagesenders), is
-// ErrUnknownSender (ADR 0153).
-func (m *Module) checkNamed(ctx context.Context, s *ent.Scoped, matcher eventmatcher.Matcher, refusal func(why string) error) error {
+// ErrUnknownSender (ADR 0153), its message after at, where the matcher stands ("" for none of the
+// Steps).
+func (m *Module) checkNamed(ctx context.Context, s *ent.Scoped, matcher eventmatcher.Matcher, at string, refusal func(why string) error) error {
 	if matcher.Filter == nil {
 		return nil
 	}
@@ -1496,7 +1497,7 @@ func (m *Module) checkNamed(ctx context.Context, s *ent.Scoped, matcher eventmat
 		return err
 	}
 	if unknown != nil {
-		return ErrUnknownSender.With("the filter: " + unknown.Missing())
+		return ErrUnknownSender.With(at + "the filter: " + unknown.Missing())
 	}
 	named := condition.NamedDefinitions(matcher.Action, *matcher.Filter)
 	for _, name := range named.Tags {

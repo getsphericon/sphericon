@@ -12,11 +12,14 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -226,4 +229,21 @@ func TestTheTimeoutTakesNoEventWhoseConditionFailedWhenItWasHandled(t *testing.T
 			assert.Equal(t, c.takes(w), w.standsOn(t, runID))
 		})
 	}
+}
+
+// A save is refused when a Wait for event's matcher filter names a Broadcast the Workspace does not
+// have (ADR 0153), naming the Step's id and kind as its other refusals do.
+func TestAWaitForEventsFilterNamingAnUnknownBroadcastIsRefusedNamingTheStep(t *testing.T) {
+	env := testhelper.Setup(t)
+	opened := eventmatcher.Matcher{Action: systemevent.EmailOpened, Filter: &conditiontree.EventFilter{Group: groupOf(t,
+		`{"kind":"sentBy","sender":"broadcast","id":"`+publicid.Encode(999999)+`"}`)}}
+	steps := automationstep.Root(automationstep.Step{ID: purchaseID, Payload: automationstep.WaitForEvent{
+		Name: "opened", TimeoutSeconds: int(waitTimeout / time.Second), Awaits: automationstep.AwaitedEvent{Matchers: []eventmatcher.Matcher{opened}},
+		Arrived: automationstep.Root(), TimedOut: automationstep.Root(),
+	}})
+
+	err := saveVersion(t, env, steps)
+
+	require.ErrorIs(t, err, automations.ErrUnknownSender)
+	require.ErrorContains(t, err, "step "+string(purchaseID)+" (wait_for_event): an awaited event: the filter: ")
 }
