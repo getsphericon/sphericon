@@ -195,3 +195,45 @@ func TestSiteRulesAndAutomationsNameWhatSentAMessage(t *testing.T) {
 	testhelper.SiteRefusal(t, unknownTrigger, http.StatusBadRequest)
 	testhelper.SiteRefusal(t, orderTrigger, http.StatusUnprocessableEntity)
 }
+
+// A refusal of tracking reaches a click count that filters its Events as it reaches one that does
+// not (ADR 0123): once the pricing clicker and the blog clicker refuse tracking of their email, the
+// Segment on the newsletter's /pricing link leaves the first out and its negation the second, and
+// the preview counts both among the Contacts left out for unknown engagement.
+func TestSiteSegmentLeavesOutAFilteredClickOfAnUntrackedAddress(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.DunderOwnerDwightEmail)
+	ctx := t.Context()
+	leaf := clickedIn(fixtures.BroadcastDunderNewsletterID, pricingLink)
+	negated := `{"kind":"group","combinator":"and","not":true,"entries":[` + leaf + `]}`
+	refuse := func(contactID int64, address string) {
+		t.Helper()
+		_, err := c.SiteEngagementTrackingCreate(ctx, trackingOfEmail(address, siteapi.EngagementTrackingStateDenied),
+			siteapi.SiteEngagementTrackingCreateParams{WorkspaceId: fixtures.DunderPublicID, ContactId: siteapi.EntityId(contactID)})
+		require.NoError(t, err)
+	}
+	clicked, err := createDunderSegment(t, c, "Pricing in the newsletter", leaf)
+	require.NoError(t, err)
+	notClicked, err := createDunderSegment(t, c, "Not pricing in the newsletter", negated)
+	require.NoError(t, err)
+	everyone, err := c.SiteSegmentsPreview(ctx, &siteapi.SitePreviewSegmentInput{}, siteapi.SiteSegmentsPreviewParams{WorkspaceId: fixtures.DunderPublicID})
+	require.NoError(t, err)
+	clickedBefore, notClickedBefore := dunderMembers(t, c, clicked), dunderMembers(t, c, notClicked)
+	previewBefore := previewOne(t, c, leaf)
+
+	refuse(fixtures.DunderPricingClickerID, fixtures.DunderPricingClickerEmail)
+	refuse(fixtures.DunderBlogClickerID, fixtures.DunderBlogClickerEmail)
+	clickedAfter, notClickedAfter := dunderMembers(t, c, clicked), dunderMembers(t, c, notClicked)
+	previewAfter, previewNegated := previewOne(t, c, leaf), previewOne(t, c, negated)
+	accounted := previewAfter.Count + previewNegated.Count + previewAfter.UnknownEngagement
+
+	assert.Equal(t, []string{fixtures.DunderPricingClickerEmail}, clickedBefore)
+	assert.Contains(t, notClickedBefore, fixtures.DunderBlogClickerEmail, "the blog clicker clicked another link")
+	assert.Zero(t, previewBefore.UnknownEngagement, "everyone is tracked by default")
+	assert.Empty(t, clickedAfter, "the pricing clicker's click is unknown now")
+	assert.NotContains(t, notClickedAfter, fixtures.DunderBlogClickerEmail, "the negation does not put the blog clicker back")
+	assert.NotContains(t, notClickedAfter, fixtures.DunderPricingClickerEmail)
+	assert.Equal(t, int32(2), previewAfter.UnknownEngagement, "both refusals are left out")
+	assert.Equal(t, int32(2), previewNegated.UnknownEngagement, "under the negation too")
+	assert.Equal(t, everyone.Count, accounted, "matched, not matched and left out are everyone")
+}
