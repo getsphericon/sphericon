@@ -406,7 +406,9 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
         </Paper>
         {selected !== null && (
           <StepPanel
-            // A Revert or a reload replaces the content: the panel's form opens it anew.
+            // The panel's form opens anew on another node, whose form is seeded from that node
+            // alone (two Steps of a kind never share its values), and after a Revert or a reload,
+            // which replace the content.
             key={`${selected}:${session.context.content.revision}`}
             flow={flow}
             selected={selected}
