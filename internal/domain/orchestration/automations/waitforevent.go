@@ -155,19 +155,24 @@ func awaitedActions(w automationstep.WaitForEvent) []string {
 
 // awaitWindow is what an Event must be to satisfy a Wait for event an Enrollment stands on: the
 // Contact's, of an awaited action, occurred from when the Enrollment reached the Step through its
-// deadline, and not the Event the Enrollment began on (begunOn, "" for none).
+// deadline, not the Event the Enrollment began on (begunOn, "" for none), and, when the Enrollment
+// is one of a keyed version, carrying none of the key or its value (key and keyValue, nil when
+// unkeyed).
 type awaitWindow struct {
 	contactID         int64
 	actions           []string
 	reached, deadline time.Time
 	begunOn           string
+	key, keyValue     *string
 }
 
 // satisfying is the one predicate an Event stored for the Contact satisfies the window by (ADR
 // 0124), read by the wake on the Event just recorded and by the timeout on every Event recorded:
 // one of the awaited actions, occurred within the window, made by a person (a machine open or click
-// never counts, ADR 0053), live (loaded history never counts) and not the Event that began the
-// Enrollment.
+// never counts, ADR 0053), live (loaded history never counts), not written through a Connection
+// without mcp:send (its mark, ADR 0132: it may not start a send), not the Event that began the
+// Enrollment and, for a keyed Enrollment, carrying none of the key or the Enrollment's value (ADR
+// 0165), as an exit or goal Event must.
 func satisfying(w awaitWindow) []predicate.Event {
 	where := []predicate.Event{
 		event.ContactID(w.contactID),
@@ -175,18 +180,23 @@ func satisfying(w awaitWindow) []predicate.Event {
 		event.OccurredAtGTE(w.reached),
 		event.OccurredAtLTE(w.deadline),
 		event.Backfill(false),
+		event.SendLocked(false),
 		events.HumanOnly(),
 	}
 	if w.begunOn != "" {
 		where = append(where, event.Or(event.SourceIDIsNil(), event.SourceIDNEQ(w.begunOn)))
+	}
+	if w.key != nil && w.keyValue != nil {
+		where = append(where, ofKey(*w.key, *w.keyValue))
 	}
 	return where
 }
 
 // windowOf is the window of the Wait for event w that the Enrollment run, standing on it, waits in:
 // from its Step record's reached moment through its due moment, the deadline recorded when it
-// reached the Step. False when the Enrollment has no open record of the Step (it left it).
-func (m *StepExecution) windowOf(ctx context.Context, s *ent.Scoped, run *ent.AutomationRun, step automationstep.ID, w automationstep.WaitForEvent) (awaitWindow, bool, error) {
+// reached the Step; key is the Enrollment key of the version it runs (nil for none). False when the
+// Enrollment has no open record of the Step (it left it).
+func (m *StepExecution) windowOf(ctx context.Context, s *ent.Scoped, run *ent.AutomationRun, key *string, step automationstep.ID, w automationstep.WaitForEvent) (awaitWindow, bool, error) {
 	rec, err := s.AutomationStepRecord().Query().
 		Where(automationsteprecord.RunID(run.ID), automationsteprecord.StepID(step), automationsteprecord.LeftAtIsNil()).
 		Only(ctx)
@@ -203,7 +213,10 @@ func (m *StepExecution) windowOf(ctx context.Context, s *ent.Scoped, run *ent.Au
 	if err != nil {
 		return awaitWindow{}, false, err
 	}
-	return awaitWindow{contactID: run.ContactID, actions: awaitedActions(w), reached: rec.ReachedAt, deadline: *rec.DueAt, begunOn: begunOn}, true, nil
+	return awaitWindow{
+		contactID: run.ContactID, actions: awaitedActions(w), reached: rec.ReachedAt, deadline: *rec.DueAt, begunOn: begunOn,
+		key: key, keyValue: run.KeyValue,
+	}, true, nil
 }
 
 // begunOnSource is the source id of the Event the Enrollment began on: its Trigger's, or the one
@@ -218,16 +231,16 @@ func begunOnSource(ctx context.Context, s *ent.Scoped, m *StepExecution, run *en
 	return m.firings.SourceOf(ctx, s, *run.FiringID)
 }
 
-// timeout runs the job of a Wait for event at its deadline (ADR 0124): before it, a job run early
-// (a restart) queues itself for the deadline and moves nothing; at it, the Enrollment takes
-// `arrived` when a satisfying Event is already recorded, one that occurred within the window but
-// was recorded late included, and `timed_out` otherwise. The move is the compare-and-set on the
+// timeout runs the job of a Wait for event of the version at its deadline (ADR 0124): before it, a
+// job run early (a restart) queues itself for the deadline and moves nothing; at it, the Enrollment
+// takes `arrived` when a satisfying Event is already recorded, one that occurred within the window
+// but was recorded late included, and `timed_out` otherwise. The move is the compare-and-set on the
 // cursor, so a wake that committed first leaves this job nothing to move.
-func (m *StepExecution) timeout(ctx context.Context, s *ent.Scoped, run *ent.AutomationRun, at place, w automationstep.WaitForEvent) error {
+func (m *StepExecution) timeout(ctx context.Context, s *ent.Scoped, run *ent.AutomationRun, version *ent.AutomationVersion, at place, w automationstep.WaitForEvent) error {
 	if run.ResumeAt != nil && run.ResumeAt.After(m.now()) {
 		return m.requeue(ctx, s, run.ID, at.step, *run.ResumeAt)
 	}
-	win, open, err := m.windowOf(ctx, s, run, at.step, w)
+	win, open, err := m.windowOf(ctx, s, run, version.EnrollmentKey, at.step, w)
 	if err != nil || !open {
 		return err
 	}
@@ -266,7 +279,7 @@ func (m *StepExecution) wake(ctx context.Context, s *ent.Scoped, contactID int64
 		if !waits || !slices.Contains(awaitedActions(w), ev.Action) {
 			continue
 		}
-		win, open, err := m.windowOf(ctx, s, run, st.ID, w)
+		win, open, err := m.windowOf(ctx, s, run, run.Edges.Version.EnrollmentKey, st.ID, w)
 		if err != nil {
 			return fmt.Errorf("wake enrollment %d: %w", run.ID, err)
 		}

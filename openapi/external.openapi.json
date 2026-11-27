@@ -6551,7 +6551,7 @@
             "items": {
               "$ref": "#/components/schemas/AutomationPathFigures"
             },
-            "description": "Each path of a Branch (its unknown path included) and of a Split by its fork's Step id and\nits own id: the enrollments that took it and how many of them reached the goal, over the\nautomation's whole history, each summed over every version that had the path. Sorted by the\nnewest of those versions, then by the fork's place there and the path's place in the fork:\none entry per path an enrollment took, so a path none took has none"
+            "description": "Each path of a Branch (its unknown path included), of a Split and of a Wait for event by its\nfork's Step id and its own id: the enrollments that took it and how many of them reached the\ngoal, over the automation's whole history, each summed over every version that had the path.\nSorted by the newest of those versions, then by the fork's place there and the path's place in\nthe fork: one entry per path an enrollment took, so a path none took has none"
           },
           "waitUntilSteps": {
             "type": "array",

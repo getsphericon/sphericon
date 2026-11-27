@@ -324,7 +324,7 @@ func (m *StepExecution) Step(ctx context.Context, s *ent.Scoped, runID int64, st
 		if a, onMessage := p.Awaits.(automationstep.AwaitedMessage); onMessage {
 			return m.awaitMessage(ctx, s, run, at, p, a)
 		}
-		return m.timeout(ctx, s, run, at, p)
+		return m.timeout(ctx, s, run, version, at, p)
 
 	case automationstep.Split:
 		// The draw holds no random state (ADR 0124): the same Enrollment always lands on the same
