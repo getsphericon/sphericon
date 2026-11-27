@@ -9,6 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent/confirmation"
+	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
@@ -90,4 +92,44 @@ func TestAnImportedOptOutIsRecordedViaImportedAtItsTime(t *testing.T) {
 	assert.True(t, left.Equal(imported.ObservedAt), "the time the import states")
 	require.NotNil(t, sms.OptOut)
 	assert.Equal(t, unsubscribe.ViaImported, sms.OptOut.Via)
+}
+
+// The Channel states read an imported Confirmation and an imported opt-out at the times the import
+// states (ADR 0138, ADR 0154), not when they were recorded, on email and, by the number's hash, on
+// sms.
+func TestChannelStatesReadImportedConsentAndOptOutsAtTheirStatedTimes(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	acme := env.DB.Scoped(fixtures.AcmeID)
+	given := time.Now().UTC().Add(-60 * 24 * time.Hour).Truncate(time.Second)
+	left := given.Add(30 * 24 * time.Hour)
+	evidence := confirmations.Evidence{Wording: "Send me offers", Source: "old platform", Brand: "Acme", OccurredAt: given}
+	for _, consent := range []confirmations.ConfirmInput{
+		{Channel: channels.Email, Destination: fixtures.ContactAliceEmail, Evidence: evidence},
+		{Channel: channels.SMS, Destination: fixtures.ContactTexterPhone, Evidence: evidence},
+	} {
+		_, err := testhelper.Module[*confirmations.Module](env).Confirm(ctx, acme, consent)
+		require.NoError(t, err)
+	}
+	for _, optOut := range []unsubscriberecording.OptOutInput{
+		{Channel: channels.Email, Destination: fixtures.ContactAliceEmail, Source: eligibility.SourceBroadcasts},
+		{Channel: channels.SMS, Destination: fixtures.ContactTexterConfirmedPhone},
+	} {
+		optOut.Via, optOut.At = events.UnsubscribedByImported, left
+		_, err := testhelper.Module[*unsubscriberecording.UseCase](env).OptOut(ctx, acme, optOut)
+		require.NoError(t, err)
+	}
+	ids := []int64{fixtures.ContactAliceID, fixtures.ContactTexterID, fixtures.ContactTexterConfirmedID}
+	contacts := acme.Contact().Query().Where(contact.IDIn(ids...)).AllX(ctx)
+
+	states, err := eligibility.New().ChannelStates(ctx, acme, contacts)
+
+	require.NoError(t, err)
+	imported := &eligibility.ConfirmationFact{Provenance: confirmation.ProvenanceImported, At: given}
+	alice := states[fixtures.ContactAliceID].Email
+	assert.Equal(t, []eligibility.OptOut{{Scope: eligibility.SourceBroadcasts, At: left}}, alice.OptOuts)
+	assert.Equal(t, imported, alice.Confirmation)
+	assert.Equal(t, imported, states[fixtures.ContactTexterID].SMS.Confirmation)
+	stopped := states[fixtures.ContactTexterConfirmedID].SMS.OptOuts
+	assert.Contains(t, stopped, eligibility.OptOut{Scope: eligibility.SourceEverything, At: left})
 }

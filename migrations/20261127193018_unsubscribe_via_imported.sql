@@ -7,4 +7,4 @@ ALTER TABLE "unsubscribes" ADD CONSTRAINT "unsubscribes_via_check" CHECK ((via):
 
 -- +goose Down
 ALTER TABLE "unsubscribes" DROP CONSTRAINT "unsubscribes_via_check";
-ALTER TABLE "unsubscribes" ADD CONSTRAINT "unsubscribes_via_check" CHECK ((via)::text = ANY ((ARRAY['keyword'::character varying, 'button'::character varying, 'block'::character varying, 'link'::character varying, 'refused_send'::character varying, 'manual'::character varying])::text[])) NOT VALID;
+ALTER TABLE "unsubscribes" ADD CONSTRAINT "unsubscribes_via_check" CHECK ((via)::text = ANY ((ARRAY['keyword'::character varying, 'button'::character varying, 'block'::character varying, 'link'::character varying, 'refused_send'::character varying, 'manual'::character varying])::text[]));
