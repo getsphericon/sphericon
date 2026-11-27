@@ -20,15 +20,15 @@ import { useWaitForEventSchema } from './waitForEventRules.ts'
 // paths are the canvas's. Every edit reaches the flow as it is made.
 export function WaitForEventForm({
   step,
-  saved,
+  storedName,
   checked,
   validatorRef,
   onEdit,
   onChecked,
 }: {
   step: WaitForEventStep
-  // The Step is stored under its id: its name is fixed.
-  saved: boolean
+  // The name the Step is stored with under its id, which is fixed; undefined before its first Save.
+  storedName: string | undefined
   // The Step was checked (on blur or on Save): its errors show as the panel opens.
   checked: boolean
   validatorRef: StepValidator
@@ -41,6 +41,9 @@ export function WaitForEventForm({
   const form = useSchemaForm(schema, step.draft, onEdit)
   useValidator(form, validatorRef)
   useShownErrors(form, checked)
+  // A name typed while the first Save was pending is no stored one: it stays editable, so it can be
+  // put back.
+  const locked = storedName !== undefined && form.values.name === storedName
   // A part edited over several inputs (the Events, the Condition) is checked once focus leaves it.
   const checkOnLeaving = (field: keyof WaitForEventDraft) => (event: FocusEvent) => {
     if (!event.currentTarget.contains(event.relatedTarget)) {
@@ -53,11 +56,11 @@ export function WaitForEventForm({
       <TextInput
         label={t(($) => $.automations.waitForEvent.nameLabel)}
         description={
-          saved
+          locked
             ? t(($) => $.automations.waitForEvent.nameLocked)
             : t(($) => $.automations.waitForEvent.nameHint)
         }
-        disabled={saved}
+        disabled={locked}
         {...form.getInputProps('name')}
       />
       <NumberInput

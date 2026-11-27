@@ -199,6 +199,29 @@ test('the name is locked once the Wait for event is first saved, with the reason
     .toBeVisible()
 })
 
+// A name typed while the first Save is pending is no name the server stored: it stays editable, so
+// it can be put back, and locks once it is the stored one again.
+test('a name changed while the first save is pending stays editable until it is the stored one', async () => {
+  const release = Promise.withResolvers<undefined>()
+  const { screen, received } = await editing([], release.promise)
+
+  await screen.getByRole('button', { name: 'Add a step here' }).first().click()
+  await screen.getByRole('menuitem', { name: 'Wait for event' }).click()
+  const panel = panelOf(screen)
+  const name = panel.getByRole('textbox', { name: 'Name' })
+  await name.fill('purchase')
+  await panel.getByRole('combobox', { name: 'Event' }).fill('order.created')
+  await save(screen)
+  await received
+  await name.fill('order')
+  release.resolve(undefined)
+
+  await expect.element(screen.getByText('Automation updated')).toBeInTheDocument()
+  await expect.element(name).toBeEnabled()
+  await name.fill('purchase')
+  await expect.element(name).toBeDisabled()
+})
+
 test('a missing timeout shows on the node and in the panel, and nothing is saved', async () => {
   const { screen, saved } = await editing([purchase()])
 

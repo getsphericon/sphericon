@@ -34,11 +34,11 @@ import { WaitForEventForm } from './WaitForEventForm.tsx'
 
 // What the panel does to a fork of the id (ForkForms.tsx, WaitForEventForm.tsx), whether a node was
 // checked (on blur or on Save), which then shows its errors: a fork, a Wait until or the Trigger, and
-// whether a Step is stored under its id, which fixes a Wait for event's name (ADR 0136).
+// the name a Wait for event is stored with under its id, which is fixed (ADR 0136).
 export interface ForkControls {
   checked: (id: string) => boolean
   onChecked: (id: string) => void
-  saved: (id: string) => boolean
+  storedName: (id: string) => string | undefined
   onWaitForEvent: (id: string, draft: WaitForEventDraft) => void
   onPaths: (id: string, patches: PathPatch[]) => void
   onAddPath: (id: string) => void
@@ -91,7 +91,7 @@ function StepBody({
     return (
       <WaitForEventForm
         step={step}
-        saved={forks.saved(step.id)}
+        storedName={forks.storedName(step.id)}
         checked={forks.checked(step.id)}
         validatorRef={validatorRef}
         onEdit={(draft) => forks.onWaitForEvent(step.id, draft)}

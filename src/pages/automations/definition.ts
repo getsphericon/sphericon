@@ -465,12 +465,16 @@ function before(path: FlowPath, id: string, passed: FlowStep[]): FlowStep[] | un
   return undefined
 }
 
-// storedStepIds are the ids of every Step the versions hold, at any depth: a Step stored under its
-// id, whose Wait for event name is fixed (ADR 0136).
-export function storedStepIds(versions: (AutomationVersion | null)[]): Set<string> {
-  return new Set(
+// storedNames are the names of the Wait for event Steps the versions hold, at any depth, by Step id:
+// a name stored under its Step's id is fixed (ADR 0136).
+export function storedNames(versions: (AutomationVersion | null)[]): Map<string, string> {
+  return new Map(
     versions.flatMap((version) =>
-      version === null ? [] : allSteps(flowPathOf(version.steps)).map((step) => step.id),
+      version === null
+        ? []
+        : allSteps(flowPathOf(version.steps)).flatMap((step) =>
+            step.kind === 'wait_for_event' ? [[step.id, step.draft.name] as const] : [],
+          ),
     ),
   )
 }
