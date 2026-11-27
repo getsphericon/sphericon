@@ -1,9 +1,10 @@
-import { Avatar, EmptyState, Group, Stack, Text, Title } from '@mantine/core'
+import { Avatar, Group, Stack, Text, Title } from '@mantine/core'
 import { useSuspenseInfiniteQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { DataTable } from 'mantine-datatable'
 import { useTranslation } from 'react-i18next'
 
+import { CenteredEmptyState } from '../../components/CenteredEmptyState.tsx'
 import { LoadMore } from '../../components/LoadMore.tsx'
 import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
@@ -44,7 +45,8 @@ function SegmentDetail() {
   )
 
   return (
-    <Stack>
+    // It grows into the page's free height, so an empty list's state sits in the page's middle.
+    <Stack flex={1}>
       <Group justify="space-between" align="flex-start" wrap="wrap">
         <Title order={4}>{segmentQuery.data.name}</Title>
         <Group gap="xs">
@@ -89,7 +91,7 @@ function SegmentContacts({ workspaceId, segmentId }: { workspaceId: string; segm
   const records = query.data.pages.flatMap((page) => page.items)
 
   if (records.length === 0) {
-    return <EmptyState title={t(($) => $.segments.noMatchingContacts)} />
+    return <CenteredEmptyState title={t(($) => $.segments.noMatchingContacts)} />
   }
 
   return (
