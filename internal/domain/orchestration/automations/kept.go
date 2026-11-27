@@ -5,6 +5,8 @@ import (
 	"maps"
 	"slices"
 
+	"github.com/samber/lo"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationsteprecord"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
@@ -88,8 +90,14 @@ func keptByName(index *automationstep.Index, records []*ent.AutomationStepRecord
 // deletes them. Each Step record keeps the path it took, and a later Step reads the name as absent.
 // A copy cleared before, or of another Event, is left as it is, so a second run clears nothing more.
 func (m *Module) ForgetKept(ctx context.Context, s *ent.Scoped, eventIDs []int64) error {
-	if len(eventIDs) == 0 {
-		return nil
+	for _, chunk := range lo.Chunk(eventIDs, forgetChunk) {
+		if err := clearKeptWhere(ctx, s, automationsteprecord.AwaitedEventIDIn(chunk...)); err != nil {
+			return err
+		}
 	}
-	return clearKeptWhere(ctx, s, automationsteprecord.AwaitedEventIDIn(eventIDs...))
+	return nil
 }
+
+// forgetChunk is the Event ids one statement of ForgetKept takes: a refusal deletes every repeat
+// of an open or click, more than a statement takes parameters.
+const forgetChunk = 1000

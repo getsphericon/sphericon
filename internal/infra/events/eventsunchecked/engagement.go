@@ -40,13 +40,14 @@ func (m *Module) DeleteEngagementOf(ctx context.Context, s *ent.Scoped, msgs []*
 	if len(contacts) > 0 {
 		of = append(of, event.ContactIDIn(contacts...))
 	}
-	engaged, err := s.Event().Query().
-		Where(event.Or(of...), event.ActionIn(engagementActions...), events.NamesMessageIn(ids)).
-		IDs(ctx)
+	where := []predicate.Event{event.Or(of...), event.ActionIn(engagementActions...), events.NamesMessageIn(ids)}
+	engaged, err := s.Event().Query().Where(where...).IDs(ctx)
 	if err != nil || len(engaged) == 0 {
 		return nil, err
 	}
-	if _, err := s.Event().Delete().Where(event.IDIn(engaged...)).Exec(ctx); err != nil {
+	// Deleted by the same predicate, not by the ids read: a message's repeats may be many more
+	// than a statement takes parameters.
+	if _, err := s.Event().Delete().Where(where...).Exec(ctx); err != nil {
 		return nil, err
 	}
 	return engaged, nil

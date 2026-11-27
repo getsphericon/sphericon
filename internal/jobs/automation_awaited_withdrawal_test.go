@@ -78,7 +78,8 @@ func clickAs(t *testing.T, env *testhelper.TestEnv, messageID int64) {
 	link, err := env.Tracker.ClickURL(env.Tracked(t, messageID), "https://example.com/offer")
 	require.NoError(t, err)
 	hit := engagement.Hit{UserAgent: browserUA, Address: "192.0.2.10", MayRecord: func() bool { return true }}
-	_, err = testhelper.Module[*engagement.Recorder](env).Click(t.Context(), link[len(env.Tracker.Origin()+"/e/c/"):], hit)
+	token := link[len(env.Tracker.Origin()+"/e/c/"):]
+	_, err = testhelper.Module[*engagement.Recorder](env).Click(t.Context(), token, hit)
 	require.NoError(t, err)
 	env.PerformEnqueuedJobs(t, jobs.EvaluateTriggerArgs{})
 }
@@ -129,8 +130,10 @@ func TestARefusalOfTrackingDeletesTheKeptCopyOfTheDestinationsClick(t *testing.T
 	require.True(t, env.RunNextStep(t, stepper), "Bob's welcome is sent")
 	alicesOrder := enrollOn(t, env, clock, purchaseFlowTrigger, purchases.automationID, fixtures.ContactAliceID)
 
-	clickAs(t, env, sentMessageOf(t, env, alice, welcome.ID))
-	clickAs(t, env, sentMessageOf(t, env, bob, welcome.ID))
+	alicesWelcome := sentMessageOf(t, env, alice, welcome.ID)
+	bobsWelcome := sentMessageOf(t, env, bob, welcome.ID)
+	clickAs(t, env, alicesWelcome)
+	clickAs(t, env, bobsWelcome)
 	orderAs(t, env, clock, fixtures.ContactAliceID)
 	keptClick, path := keptBy(t, env, alice, clicks.wait)
 	require.Equal(t, systemevent.EmailClicked, keptClick, "the click is kept")
@@ -157,6 +160,8 @@ func TestARefusalOfTrackingDeletesTheKeptCopyOfTheDestinationsClick(t *testing.T
 	clock.now = clock.now.Add(2 * time.Hour)
 	env.RunQueuedSteps(t, stepper)
 
-	assert.Contains(t, thanksTo(t, fs, fixtures.ContactAliceEmail), "Clicked []", "a later Step reads the name as absent")
-	assert.Contains(t, thanksTo(t, fs, fixtures.ContactBobEmail), "Clicked [email.clicked]")
+	alicesThanks := thanksTo(t, fs, fixtures.ContactAliceEmail)
+	bobsThanks := thanksTo(t, fs, fixtures.ContactBobEmail)
+	assert.Contains(t, alicesThanks, "Clicked []", "a later Step reads the name as absent")
+	assert.Contains(t, bobsThanks, "Clicked [email.clicked]")
 }
