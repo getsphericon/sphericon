@@ -353,6 +353,9 @@ func (_u *AutomationStepRecordUpdate) sqlSave(ctx context.Context) (_node int, e
 	if _u.mutation.WentOnCleared() {
 		_spec.ClearField(automationsteprecord.FieldWentOn, field.TypeEnum)
 	}
+	if _u.mutation.DecidedPathIDCleared() {
+		_spec.ClearField(automationsteprecord.FieldDecidedPathID, field.TypeString)
+	}
 	if value, ok := _u.mutation.AwaitedEventID(); ok {
 		_spec.SetField(automationsteprecord.FieldAwaitedEventID, field.TypeInt64, value)
 	}
@@ -784,6 +787,9 @@ func (_u *AutomationStepRecordUpdateOne) sqlSave(ctx context.Context) (_node *Au
 	}
 	if _u.mutation.WentOnCleared() {
 		_spec.ClearField(automationsteprecord.FieldWentOn, field.TypeEnum)
+	}
+	if _u.mutation.DecidedPathIDCleared() {
+		_spec.ClearField(automationsteprecord.FieldDecidedPathID, field.TypeString)
 	}
 	if value, ok := _u.mutation.AwaitedEventID(); ok {
 		_spec.SetField(automationsteprecord.FieldAwaitedEventID, field.TypeInt64, value)

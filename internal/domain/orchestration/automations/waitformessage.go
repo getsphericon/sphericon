@@ -4,14 +4,13 @@ import (
 	"context"
 	"fmt"
 	"slices"
-	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationsteprecord"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
@@ -20,21 +19,26 @@ import (
 
 // A Wait for event on an open or a click (ADR 0124) waits for the first human open, or click, of
 // the message the send Step it names sent to the Enrollment, with the meaning of a Branch's test of
-// that message (ADR 0122). Its job runs as soon as the Enrollment reaches it (queuedAt), which takes
-// what it already knows, and again at the deadline; an open or a click recorded meanwhile wakes the
-// Enrollment (wakeOnMessage). Both move it off the Step by the compare-and-set on its cursor
-// (advanceRun), so the first to commit wins. When the app cannot know whether the message was opened
-// or clicked, the Step takes its unknown path, never `timed_out`: people who refused tracking never
-// get the "you did not open it" resend. It keeps no copy of what arrived.
+// that message (ADR 0122). The move that reaches it decides, in its transaction, what it already
+// knows (reachedPath), and the job queued with it takes that path at once; one that does not know
+// yet waits for its deadline, its job queued then (deadlinePath). An open or a click recorded
+// meanwhile wakes the Enrollment (wakeOnMessage). Both move it off the Step by the compare-and-set
+// on its cursor (advanceRun), so the first to commit wins. When the app cannot know whether the
+// message was opened or clicked, the Step takes its unknown path, never `timed_out`: people who
+// refused tracking never get the "you did not open it" resend. It keeps no copy of what arrived.
 
 // heard is what a Wait for event on an open or a click reads of the message the send Step it names
-// sent to the Enrollment: whether it went out tracked (false when there is none: the Step was
-// skipped, or the Enrollment never passed it), when its tracking was withdrawn since (ADR 0120),
-// and whether a human open, or click, of it is recorded, whenever it happened.
+// sent to the Enrollment: the message as a Branch reads it (sentMessageOf; nil when there is none:
+// the Step was skipped, or the Enrollment never passed it), and whether a human open, or click, of
+// it is stamped or recorded, whenever it happened.
 type heard struct {
-	sentTracked bool
-	withdrawnAt *time.Time
-	engaged     bool
+	sent    *condition.SentMessage
+	engaged bool
+}
+
+// tracked reports whether the message was sent tracked and its tracking was not withdrawn since.
+func (h heard) tracked() bool {
+	return h.sent != nil && h.sent.Tracked
 }
 
 // engagementActions are the Events of an open or a click of a message: an email's open, or a
@@ -49,15 +53,13 @@ func engagementActions(e conditiontree.Engagement) []string {
 	return nil
 }
 
-// stamped reports whether the open or click e of the message is stamped on it.
-func stamped(msg *ent.OutboundMessage, e conditiontree.Engagement) bool {
-	switch e {
-	case conditiontree.MessageOpened:
-		return msg.OpenedAt != nil
-	case conditiontree.MessageClicked:
-		return msg.ClickedAt != nil
+// runHeard is heardOf the message the Enrollment runID was sent.
+func runHeard(ctx context.Context, s *ent.Scoped, runID int64, a automationstep.AwaitedMessage) (heard, error) {
+	run, err := s.AutomationRun().Get(ctx, runID)
+	if err != nil {
+		return heard{}, err
 	}
-	return false
+	return heardOf(ctx, s, run, a)
 }
 
 // heardOf reads the message the send Step a names sent to the Enrollment run. It is engaged when
@@ -74,11 +76,12 @@ func heardOf(ctx context.Context, s *ent.Scoped, run *ent.AutomationRun, a autom
 	if err != nil {
 		return heard{}, fmt.Errorf("read the message the wait for event awaits: %w", err)
 	}
-	h := heard{sentTracked: msg.Status == outboundmessage.StatusSent && msg.Tracked, withdrawnAt: msg.TrackingWithdrawnAt}
-	if !h.sentTracked {
-		return h, nil
+	sent := sentMessageOf(msg)
+	h := heard{sent: &sent}
+	if !h.tracked() {
+		return h, nil // an untracked message's opens and clicks are not to be known
 	}
-	if stamped(msg, a.Engagement) {
+	if sent.Stamped(a.Engagement) {
 		h.engaged = true
 		return h, nil
 	}
@@ -97,31 +100,33 @@ func heardOf(ctx context.Context, s *ent.Scoped, run *ent.AutomationRun, a autom
 	return h, nil
 }
 
-// messagePath is the path a Wait for event on an open or a click takes for an Enrollment that
-// reached it at reached, by what it heard of the message, before its deadline or at it; false while
-// it waits on. The unknown path is taken at once when the message went out untracked, there is
-// none, or its tracking was withdrawn before the Enrollment reached the Step; arrived when it was
-// opened or clicked and is still tracked. At the deadline, arrived when it was opened or clicked,
-// else the unknown path when its tracking was withdrawn during the wait, else timed out. Before the
-// deadline, a withdrawal during the wait leaves it waiting, so a job run early (a restart) decides
-// what the deadline would not.
-func messagePath(w automationstep.WaitForEvent, h heard, reached time.Time, atDeadline bool) (automationstep.ID, bool) {
-	unknown := unknownPath(w)
-	withdrawnDuring := h.withdrawnAt != nil && h.withdrawnAt.After(reached)
+// reachedPath is the path a Wait for event on an open or a click takes as the Enrollment reaches it,
+// by what it heard of the message then; false while it waits on. The unknown path when the message
+// is not tracked (it went out untracked, there is none, or its tracking was withdrawn since), and
+// arrived when it was opened or clicked.
+func reachedPath(w automationstep.WaitForEvent, h heard) (automationstep.ID, bool) {
 	switch {
-	case !h.sentTracked, h.withdrawnAt != nil && !withdrawnDuring:
-		return unknown, true
-	case !atDeadline:
-		if h.engaged && !withdrawnDuring {
-			return w.Arrived.ID, true
-		}
-		return "", false
+	case !h.tracked():
+		return unknownPath(w), true
 	case h.engaged:
 		return w.Arrived.ID, true
-	case withdrawnDuring:
-		return unknown, true
 	default:
-		return w.TimedOut.ID, true
+		return "", false
+	}
+}
+
+// deadlinePath is the path a Wait for event on an open or a click that waited takes at its deadline,
+// by what it heard of the message then: arrived when it was opened or clicked, else the unknown path
+// when its tracking was withdrawn during the wait (it was tracked when the Enrollment reached the
+// Step, or the Step would not have waited), else timed out.
+func deadlinePath(w automationstep.WaitForEvent, h heard) automationstep.ID {
+	switch {
+	case h.engaged:
+		return w.Arrived.ID
+	case !h.tracked():
+		return unknownPath(w)
+	default:
+		return w.TimedOut.ID
 	}
 }
 
@@ -135,10 +140,11 @@ func unknownPath(w automationstep.WaitForEvent) automationstep.ID {
 	return w.Unknown.ID
 }
 
-// awaitMessage runs the job of a Wait for event on an open or a click: queued as the Enrollment
-// reaches it, it takes the path messagePath decides by the message as it is now, and, while that is
-// none, queues itself again for the deadline its Step record keeps. The move is the compare-and-set
-// on the cursor, so a wake that committed first leaves this job nothing to move.
+// awaitMessage runs the job of a Wait for event on an open or a click. Queued at once with the path
+// the move that reached it decided, it takes that path, whatever happened since. Queued for the
+// deadline its Step record keeps, it takes the path deadlinePath decides by the message as it is
+// then; run early (a restart), it queues itself again for the deadline. The move is the
+// compare-and-set on the cursor, so a wake that committed first leaves this job nothing to move.
 func (m *StepExecution) awaitMessage(ctx context.Context, s *ent.Scoped, run *ent.AutomationRun, at place, w automationstep.WaitForEvent, a automationstep.AwaitedMessage) error {
 	rec, err := s.AutomationStepRecord().Query().
 		Where(automationsteprecord.RunID(run.ID), automationsteprecord.StepID(at.step), automationsteprecord.LeftAtIsNil()).
@@ -149,30 +155,20 @@ func (m *StepExecution) awaitMessage(ctx context.Context, s *ent.Scoped, run *en
 	if err != nil {
 		return err
 	}
+	if rec.DecidedPathID != nil {
+		return m.advance(ctx, s, run.ID, at, stepMove{leaving: leaving{path: &pathTaken{id: *rec.DecidedPathID}}})
+	}
 	if rec.DueAt == nil {
-		return fmt.Errorf("wait for event step %s of run %d has no deadline", at.step, run.ID)
+		return fmt.Errorf("wait for event step %s of run %d has neither a decided path nor a deadline", at.step, run.ID)
+	}
+	if rec.DueAt.After(m.now()) {
+		return m.requeue(ctx, s, run.ID, at.step, *rec.DueAt)
 	}
 	h, err := heardOf(ctx, s, run, a)
 	if err != nil {
 		return err
 	}
-	path, decided := messagePath(w, h, rec.ReachedAt, !rec.DueAt.After(m.now()))
-	if !decided {
-		return m.requeue(ctx, s, run.ID, at.step, *rec.DueAt)
-	}
-	return m.advance(ctx, s, run.ID, at, stepMove{path: &pathTaken{id: path}})
-}
-
-// queuedAt is when the job of the Step next, reached with what it decided on arrival, runs: a
-// wait's at its due moment, and a Wait for event on an open or a click's at once, to take what it
-// already knows (awaitMessage), its deadline still kept as its due moment.
-func queuedAt(next *automationstep.Step, arrived automationstep.Due) *time.Time {
-	if w, ok := next.Payload.(automationstep.WaitForEvent); ok {
-		if _, onMessage := w.Awaits.(automationstep.AwaitedMessage); onMessage {
-			return nil
-		}
-	}
-	return dueAt(arrived)
+	return m.advance(ctx, s, run.ID, at, stepMove{leaving: leaving{path: &pathTaken{id: deadlinePath(w, h)}}})
 }
 
 // wakeOnMessage moves down `arrived` the Enrollment standing on a Wait for event that waits for the
@@ -209,7 +205,7 @@ func (m *StepExecution) wakeOnMessage(ctx context.Context, s *ent.Scoped, contac
 	if err != nil {
 		return err
 	}
-	if msg.Status != outboundmessage.StatusSent || !engagementtracking.IsTracked(msg) {
+	if !sentMessageOf(msg).Tracked {
 		return nil
 	}
 	run, err := s.AutomationRun().Query().

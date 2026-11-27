@@ -49,6 +49,8 @@ type AutomationStepRecord struct {
 	DueAt *time.Time `json:"due_at,omitempty"`
 	// WentOn holds the value of the "went_on" field.
 	WentOn *automationstep.WentOn `json:"went_on,omitempty"`
+	// DecidedPathID holds the value of the "decided_path_id" field.
+	DecidedPathID *automationstep.ID `json:"decided_path_id,omitempty"`
 	// AwaitedEventID holds the value of the "awaited_event_id" field.
 	AwaitedEventID *int64 `json:"awaited_event_id,omitempty"`
 	// AwaitedAction holds the value of the "awaited_action" field.
@@ -105,7 +107,7 @@ func (*AutomationStepRecord) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case automationsteprecord.FieldID, automationsteprecord.FieldWorkspaceID, automationsteprecord.FieldRunID, automationsteprecord.FieldAwaitedEventID:
 			values[i] = new(sql.NullInt64)
-		case automationsteprecord.FieldStepID, automationsteprecord.FieldOutcome, automationsteprecord.FieldSkipReason, automationsteprecord.FieldPathID, automationsteprecord.FieldWentOn, automationsteprecord.FieldAwaitedAction:
+		case automationsteprecord.FieldStepID, automationsteprecord.FieldOutcome, automationsteprecord.FieldSkipReason, automationsteprecord.FieldPathID, automationsteprecord.FieldWentOn, automationsteprecord.FieldDecidedPathID, automationsteprecord.FieldAwaitedAction:
 			values[i] = new(sql.NullString)
 		case automationsteprecord.FieldCreatedAt, automationsteprecord.FieldUpdatedAt, automationsteprecord.FieldReachedAt, automationsteprecord.FieldLeftAt, automationsteprecord.FieldDueAt:
 			values[i] = new(sql.NullTime)
@@ -215,6 +217,13 @@ func (_m *AutomationStepRecord) assignValues(columns []string, values []any) err
 			} else if value.Valid {
 				_m.WentOn = new(automationstep.WentOn)
 				*_m.WentOn = automationstep.WentOn(value.String)
+			}
+		case automationsteprecord.FieldDecidedPathID:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field decided_path_id", values[i])
+			} else if value.Valid {
+				_m.DecidedPathID = new(automationstep.ID)
+				*_m.DecidedPathID = automationstep.ID(value.String)
 			}
 		case automationsteprecord.FieldAwaitedEventID:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -340,6 +349,11 @@ func (_m *AutomationStepRecord) String() string {
 	builder.WriteString(", ")
 	if v := _m.WentOn; v != nil {
 		builder.WriteString("went_on=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.DecidedPathID; v != nil {
+		builder.WriteString("decided_path_id=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")

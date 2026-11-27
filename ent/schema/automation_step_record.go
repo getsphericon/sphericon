@@ -28,13 +28,15 @@ type AutomationStepRecord struct {
 
 // Annotations adds to the enum checks that only a left Step record has an outcome (one the
 // Enrollment ended on through an exit, a goal, a failure or an unsubscribe is left with none),
-// that only a skipped Step says why, and that a Wait until either waits or went on at once.
+// that only a skipped Step says why, that a Wait until either waits or went on at once, and that a
+// Wait for event on an open or a click either waits or decided its path at once.
 func (AutomationStepRecord) Annotations() []schema.Annotation {
 	a := TableWithEnumChecks("automation_step_records", AutomationStepRecord{}.Fields())
 	a.Checks["automation_step_records_left_check"] = "outcome IS NULL OR left_at IS NOT NULL"
 	a.Checks["automation_step_records_reason_check"] = "outcome IS NOT NULL OR skip_reason IS NULL"
 	a.Checks["automation_step_records_skipped_check"] = variantCheck("outcome", stepOutcome)
 	a.Checks["automation_step_records_wait_check"] = "due_at IS NULL OR went_on IS NULL"
+	a.Checks["automation_step_records_decided_check"] = "due_at IS NULL OR decided_path_id IS NULL"
 	a.Checks["automation_step_records_awaited_check"] = "(awaited_event_id IS NULL) = (awaited_action IS NULL)"
 	return []schema.Annotation{a}
 }
@@ -114,6 +116,16 @@ func (AutomationStepRecord) Fields() []ent.Field {
 		// wait's due_at is, and never both. Null for any other Step, and for a Wait until that waited.
 		field.Enum("went_on").
 			GoType(automationstep.WentOn("")).
+			Optional().
+			Nillable().
+			Immutable(),
+		// At a Wait for event on an open or a click, the path it decided when the Enrollment
+		// reached it, in the transaction of that move (ADR 0124): `unknown` when the message went out
+		// untracked, was never sent or had its tracking withdrawn, `arrived` when it was already
+		// opened or clicked. Its job, queued at once, takes it, whatever happened since; a decided
+		// wait has no deadline. Null for one that waits, and for any other Step.
+		field.String("decided_path_id").
+			GoType(automationstep.ID("")).
 			Optional().
 			Nillable().
 			Immutable(),

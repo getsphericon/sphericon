@@ -541,6 +541,7 @@ var (
 		{Name: "path_outcomes", Type: field.TypeJSON, Nullable: true},
 		{Name: "due_at", Type: field.TypeTime, Nullable: true},
 		{Name: "went_on", Type: field.TypeEnum, Nullable: true, Enums: []string{"past", "no_date", "beyond_bound"}},
+		{Name: "decided_path_id", Type: field.TypeString, Nullable: true},
 		{Name: "awaited_event_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "awaited_action", Type: field.TypeString, Nullable: true},
 		{Name: "awaited_properties", Type: field.TypeJSON, Nullable: true},
@@ -556,13 +557,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "automation_step_records_automation_runs_run",
-				Columns:    []*schema.Column{AutomationStepRecordsColumns[16]},
+				Columns:    []*schema.Column{AutomationStepRecordsColumns[17]},
 				RefColumns: []*schema.Column{AutomationRunsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "automation_step_records_workspaces_automation_step_records",
-				Columns:    []*schema.Column{AutomationStepRecordsColumns[17]},
+				Columns:    []*schema.Column{AutomationStepRecordsColumns[18]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -571,7 +572,7 @@ var (
 			{
 				Name:    "automation_step_records_workspace_id_run_id_step_id",
 				Unique:  true,
-				Columns: []*schema.Column{AutomationStepRecordsColumns[17], AutomationStepRecordsColumns[16], AutomationStepRecordsColumns[3]},
+				Columns: []*schema.Column{AutomationStepRecordsColumns[18], AutomationStepRecordsColumns[17], AutomationStepRecordsColumns[3]},
 			},
 		},
 	}
@@ -4026,6 +4027,7 @@ func init() {
 	}
 	AutomationStepRecordsTable.Annotation.Checks = map[string]string{
 		"automation_step_records_awaited_check":     "(awaited_event_id IS NULL) = (awaited_action IS NULL)",
+		"automation_step_records_decided_check":     "due_at IS NULL OR decided_path_id IS NULL",
 		"automation_step_records_left_check":        "outcome IS NULL OR left_at IS NOT NULL",
 		"automation_step_records_outcome_check":     "outcome IN ('done', 'skipped', 'path')",
 		"automation_step_records_reason_check":      "outcome IS NOT NULL OR skip_reason IS NULL",

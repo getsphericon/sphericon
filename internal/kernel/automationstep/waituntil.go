@@ -189,9 +189,11 @@ type Contact struct {
 	Dates           datetrigger.Holder
 }
 
-// Due is what a Wait until decides for an Enrollment that reaches it, computed once, then kept
-// (ADR 0126): it waits until a moment (WaitsUntil), or goes on at once for a reason (GoesOn). A type
-// switch over it that misses a kind fails the lint (gochecksumtype).
+// Due is what a Step that holds the Enrollment decides for one that reaches it, computed once, then
+// kept: it waits until a moment (WaitsUntil: a wait's delay, a Wait for event's deadline, a Wait
+// until's moment), a Wait until goes on at once for a reason (GoesOn, ADR 0126), or a Wait for event
+// on an open or a click goes on at once down the path it already knows of (GoesDown, ADR 0124). A
+// type switch over it that misses a kind fails the lint (gochecksumtype).
 //
 //sumtype:decl
 type Due interface {
@@ -208,8 +210,14 @@ type GoesOn struct {
 	Reason WentOn
 }
 
+// GoesDown lets the Enrollment go on at once down the path Path of the Step it reached.
+type GoesDown struct {
+	Path ID
+}
+
 func (WaitsUntil) due() {}
 func (GoesOn) due()     {}
+func (GoesDown) due()   {}
 
 // Reach is what the Wait until's moment u decides for the Contact c reaching it at now, computed
 // once, then kept (ADR 0126): the first moment at or after now, one equal to now waiting zero

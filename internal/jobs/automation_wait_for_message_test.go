@@ -119,12 +119,47 @@ func clickLink(t *testing.T, env *testhelper.TestEnv, messageID int64) {
 	require.Equal(t, http.StatusFound, resp.Code)
 }
 
-// An open recorded before the Enrollment reaches the wait takes arrived at once, read from the
-// recorded open even before the open is stamped on the message.
-func TestAWaitForAnOpenTakesArrivedAtOnceWhenTheMessageWasOpenedBeforeIt(t *testing.T) {
-	w := sentAndWaiting(t, conditiontree.MessageOpened)
-	recordOpen(t, w.env, w.messageID(t), browserUA)
+// openedBeforeTheWait is Alice enrolled in an Automation that sends the welcome email, tags her,
+// then waits for the email's open: her email is sent and a person's open of it recorded, which
+// leaves her on the tag, the Step before the wait. The open is not stamped on the message yet, and
+// its Event's trigger job is left queued.
+func openedBeforeTheWait(t *testing.T) waitingOnMessage {
+	t.Helper()
+	env := testhelper.Setup(t)
+	email := welcomeEmail()
+	wait := waitForMessage(email.ID, conditiontree.MessageOpened)
+	auto := publishedBranching(t, env, fixtures.AcmeID, email, tagStep("welcomed"), wait.step)
+	runID := enrollIn(t, env, fixtures.AcmeID, auto.ID, fixtures.ContactAliceID)
+	clock := &harnessClock{now: time.Now()}
+	stepper := stepperAt(env, newMod(env, resolvingTo(&fakeSender{}), time.Now), clock.read)
+	require.True(t, env.RunNextStep(t, stepper), "the email Step ran")
+	w := waitingOnMessage{env: env, clock: clock, stepper: stepper, email: email, wait: wait, runID: runID}
+	recordOpen(t, env, w.messageID(t), browserUA)
+	return w
+}
 
+// An open recorded before the Enrollment reaches the wait takes arrived at once: the move that
+// reaches the wait decides it, read from the recorded open even before the open is stamped on the
+// message, and the job queued with it takes that path.
+func TestAWaitForAnOpenTakesArrivedAtOnceWhenTheMessageWasOpenedBeforeIt(t *testing.T) {
+	w := openedBeforeTheWait(t)
+
+	w.runWait(t) // the tag, whose move reaches the wait
+	w.runWait(t)
+
+	rec := recordOf(t, w.env, w.runID, w.wait.step.ID)
+	assert.Equal(t, w.wait.arrived, tookPath(rec))
+	assert.Nil(t, rec.DueAt, "it waited for no deadline")
+}
+
+// What the wait decided as the Enrollment reached it is the path its job takes: a refusal of
+// tracking that deletes the open before the job runs leaves it arrived, as the path an open took
+// stays when a later refusal deletes the open (ADR 0124).
+func TestTheWaitTakesThePathItDecidedOnReachingItWhateverHappenedSince(t *testing.T) {
+	w := openedBeforeTheWait(t)
+	w.runWait(t) // the tag, whose move reaches the wait
+
+	refuseTracking(t, w.env)
 	w.runWait(t)
 
 	assert.Equal(t, w.wait.arrived, w.took(t))

@@ -395,10 +395,8 @@ func (m *StepExecution) branch(ctx context.Context, s *ent.Scoped, run *ent.Auto
 }
 
 // messagesOf is what the Branch's tests of the Enrollment's own messages read (ADR 0122): the
-// message each send Step they name sent to the Enrollment run, by the Step. A message is read
-// tracked only when it went out (sent) tracked and its tracking was not withdrawn since (ADR 0120);
-// its opened and clicked are its stamps of the first human open and click, which no machine sets
-// (ADR 0053). A Step that sent the Enrollment no message (it was skipped, or the Enrollment never
+// message each send Step they name sent to the Enrollment run, by the Step, read as sentMessageOf
+// reads it. A Step that sent the Enrollment no message (it was skipped, or the Enrollment never
 // passed it) is absent, and so read unknown. None when the Branch tests no message of its own.
 func messagesOf(ctx context.Context, s *ent.Scoped, runID int64, b automationstep.Branch) (map[automationstep.ID]condition.SentMessage, error) {
 	var steps []automationstep.ID
@@ -420,13 +418,22 @@ func messagesOf(ctx context.Context, s *ent.Scoped, runID int64, b automationste
 	out := make(map[automationstep.ID]condition.SentMessage, len(sent))
 	for _, msg := range sent {
 		// The query names a Step, so every message it reads has one.
-		out[lo.FromPtr(msg.AutomationStepID)] = condition.SentMessage{
-			Tracked: msg.Status == outboundmessage.StatusSent && engagementtracking.IsTracked(msg),
-			Opened:  msg.OpenedAt != nil,
-			Clicked: msg.ClickedAt != nil,
-		}
+		out[lo.FromPtr(msg.AutomationStepID)] = sentMessageOf(msg)
 	}
 	return out, nil
+}
+
+// sentMessageOf is what a Step reads of the message msg a send Step sent to the Enrollment (ADR
+// 0122): tracked only when it went out (sent) tracked and its tracking was not withdrawn since
+// (engagementtracking.IsTracked, ADR 0120), and its stamps of the first human open and click, which
+// no machine sets (ADR 0053). A Branch's test of the message and a Wait for event on its open or
+// click read it alike.
+func sentMessageOf(msg *ent.OutboundMessage) condition.SentMessage {
+	return condition.SentMessage{
+		Tracked: msg.Status == outboundmessage.StatusSent && engagementtracking.IsTracked(msg),
+		Opened:  msg.OpenedAt != nil,
+		Clicked: msg.ClickedAt != nil,
+	}
 }
 
 // chosen is the path of the Branch its paths' truths send the Enrollment down (ADR 0124), with each
@@ -580,7 +587,7 @@ type place struct {
 // advance moves the Enrollment off the Step it stands on, in one transaction with mv's own writes
 // and the Step records of the move (ADR 0124): onto the next Step, which it reaches then, queueing
 // the job that runs it (at the due moment of a wait, which holds the Enrollment on itself until
-// then, and at once for a Wait for event on an open or a click, queuedAt), or, with no next Step,
+// then, and at once otherwise), or, with no next Step,
 // to its end: it completes, on the Step it left, and nothing is queued. The next Step is the one
 // after the Step left (Index.Next) or, down a fork's path, the path's first Step or, for an empty path, the Step after the fork (Index.Enter). A move that finds
 // the Enrollment gone or elsewhere, or its Contact gone, writes nothing and returns nil.
@@ -604,7 +611,10 @@ func (m *StepExecution) advance(ctx context.Context, s *ent.Scoped, runID int64,
 		var arrived automationstep.Due
 		if more {
 			var err error
-			arrived, err = arrive(next, now, func() (automationstep.Contact, error) { return runCalendar(ctx, ts, runID) })
+			arrived, err = arrive(next, now, arrival{
+				contact: func() (automationstep.Contact, error) { return runCalendar(ctx, ts, runID) },
+				message: func(a automationstep.AwaitedMessage) (heard, error) { return runHeard(ctx, ts, runID, a) },
+			})
 			if err != nil {
 				return err
 			}
@@ -628,7 +638,7 @@ func (m *StepExecution) advance(ctx context.Context, s *ent.Scoped, runID int64,
 		if err := reach(ctx, ts, runID, next.ID, now, arrived); err != nil {
 			return err
 		}
-		return q.Enqueue(ctx, RunStepArgs{WorkspaceID: ts.WorkspaceID(), RunID: runID, StepID: next.ID}, scheduled(queuedAt(next, arrived)))
+		return q.Enqueue(ctx, RunStepArgs{WorkspaceID: ts.WorkspaceID(), RunID: runID, StepID: next.ID}, scheduled(dueAt(arrived)))
 	})
 	return quiet(err)
 }

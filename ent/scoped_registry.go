@@ -648,6 +648,9 @@ func ScopedEntities() []*ScopedEntity {
 				if src.WentOn != nil {
 					b.SetWentOn(*src.WentOn)
 				}
+				if src.DecidedPathID != nil {
+					b.SetDecidedPathID(*src.DecidedPathID)
+				}
 				if src.AwaitedEventID != nil {
 					b.SetAwaitedEventID(*src.AwaitedEventID)
 				}

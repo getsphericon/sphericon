@@ -11018,6 +11018,7 @@ type AutomationStepRecordMutation struct {
 	path_outcomes            *map[automationstep.ID]conditiontree.Truth
 	due_at                   *time.Time
 	went_on                  *automationstep.WentOn
+	decided_path_id          *automationstep.ID
 	awaited_event_id         *int64
 	addawaited_event_id      *int64
 	awaited_action           *string
@@ -11697,6 +11698,55 @@ func (m *AutomationStepRecordMutation) ResetWentOn() {
 	delete(m.clearedFields, automationsteprecord.FieldWentOn)
 }
 
+// SetDecidedPathID sets the "decided_path_id" field.
+func (m *AutomationStepRecordMutation) SetDecidedPathID(a automationstep.ID) {
+	m.decided_path_id = &a
+}
+
+// DecidedPathID returns the value of the "decided_path_id" field in the mutation.
+func (m *AutomationStepRecordMutation) DecidedPathID() (r automationstep.ID, exists bool) {
+	v := m.decided_path_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDecidedPathID returns the old "decided_path_id" field's value of the AutomationStepRecord entity.
+// If the AutomationStepRecord object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationStepRecordMutation) OldDecidedPathID(ctx context.Context) (v *automationstep.ID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDecidedPathID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDecidedPathID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDecidedPathID: %w", err)
+	}
+	return oldValue.DecidedPathID, nil
+}
+
+// ClearDecidedPathID clears the value of the "decided_path_id" field.
+func (m *AutomationStepRecordMutation) ClearDecidedPathID() {
+	m.decided_path_id = nil
+	m.clearedFields[automationsteprecord.FieldDecidedPathID] = struct{}{}
+}
+
+// DecidedPathIDCleared returns if the "decided_path_id" field was cleared in this mutation.
+func (m *AutomationStepRecordMutation) DecidedPathIDCleared() bool {
+	_, ok := m.clearedFields[automationsteprecord.FieldDecidedPathID]
+	return ok
+}
+
+// ResetDecidedPathID resets all changes to the "decided_path_id" field.
+func (m *AutomationStepRecordMutation) ResetDecidedPathID() {
+	m.decided_path_id = nil
+	delete(m.clearedFields, automationsteprecord.FieldDecidedPathID)
+}
+
 // SetAwaitedEventID sets the "awaited_event_id" field.
 func (m *AutomationStepRecordMutation) SetAwaitedEventID(i int64) {
 	m.awaited_event_id = &i
@@ -12018,7 +12068,7 @@ func (m *AutomationStepRecordMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *AutomationStepRecordMutation) Fields() []string {
-	fields := make([]string, 0, 17)
+	fields := make([]string, 0, 18)
 	if m.created_at != nil {
 		fields = append(fields, automationsteprecord.FieldCreatedAt)
 	}
@@ -12057,6 +12107,9 @@ func (m *AutomationStepRecordMutation) Fields() []string {
 	}
 	if m.went_on != nil {
 		fields = append(fields, automationsteprecord.FieldWentOn)
+	}
+	if m.decided_path_id != nil {
+		fields = append(fields, automationsteprecord.FieldDecidedPathID)
 	}
 	if m.awaited_event_id != nil {
 		fields = append(fields, automationsteprecord.FieldAwaitedEventID)
@@ -12104,6 +12157,8 @@ func (m *AutomationStepRecordMutation) Field(name string) (ent.Value, bool) {
 		return m.DueAt()
 	case automationsteprecord.FieldWentOn:
 		return m.WentOn()
+	case automationsteprecord.FieldDecidedPathID:
+		return m.DecidedPathID()
 	case automationsteprecord.FieldAwaitedEventID:
 		return m.AwaitedEventID()
 	case automationsteprecord.FieldAwaitedAction:
@@ -12147,6 +12202,8 @@ func (m *AutomationStepRecordMutation) OldField(ctx context.Context, name string
 		return m.OldDueAt(ctx)
 	case automationsteprecord.FieldWentOn:
 		return m.OldWentOn(ctx)
+	case automationsteprecord.FieldDecidedPathID:
+		return m.OldDecidedPathID(ctx)
 	case automationsteprecord.FieldAwaitedEventID:
 		return m.OldAwaitedEventID(ctx)
 	case automationsteprecord.FieldAwaitedAction:
@@ -12255,6 +12312,13 @@ func (m *AutomationStepRecordMutation) SetField(name string, value ent.Value) er
 		}
 		m.SetWentOn(v)
 		return nil
+	case automationsteprecord.FieldDecidedPathID:
+		v, ok := value.(automationstep.ID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDecidedPathID(v)
+		return nil
 	case automationsteprecord.FieldAwaitedEventID:
 		v, ok := value.(int64)
 		if !ok {
@@ -12349,6 +12413,9 @@ func (m *AutomationStepRecordMutation) ClearedFields() []string {
 	if m.FieldCleared(automationsteprecord.FieldWentOn) {
 		fields = append(fields, automationsteprecord.FieldWentOn)
 	}
+	if m.FieldCleared(automationsteprecord.FieldDecidedPathID) {
+		fields = append(fields, automationsteprecord.FieldDecidedPathID)
+	}
 	if m.FieldCleared(automationsteprecord.FieldAwaitedEventID) {
 		fields = append(fields, automationsteprecord.FieldAwaitedEventID)
 	}
@@ -12395,6 +12462,9 @@ func (m *AutomationStepRecordMutation) ClearField(name string) error {
 		return nil
 	case automationsteprecord.FieldWentOn:
 		m.ClearWentOn()
+		return nil
+	case automationsteprecord.FieldDecidedPathID:
+		m.ClearDecidedPathID()
 		return nil
 	case automationsteprecord.FieldAwaitedEventID:
 		m.ClearAwaitedEventID()
@@ -12454,6 +12524,9 @@ func (m *AutomationStepRecordMutation) ResetField(name string) error {
 		return nil
 	case automationsteprecord.FieldWentOn:
 		m.ResetWentOn()
+		return nil
+	case automationsteprecord.FieldDecidedPathID:
+		m.ResetDecidedPathID()
 		return nil
 	case automationsteprecord.FieldAwaitedEventID:
 		m.ResetAwaitedEventID()

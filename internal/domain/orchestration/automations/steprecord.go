@@ -33,21 +33,38 @@ var _ = db.Declare(
 		"a Step record is written by the move that puts the Enrollment on the Step, which its cursor's compare-and-set lets happen once, and a version's Steps have no cycles"),
 )
 
+// arrival is what a Step reads, on demand, of the Enrollment that reaches it: its Contact's
+// calendar, which a Wait until reads, and the message a send Step sent it, which a Wait for event on
+// an open or a click reads (heardOf).
+type arrival struct {
+	contact func() (automationstep.Contact, error)
+	message func(automationstep.AwaitedMessage) (heard, error)
+}
+
 // arrive is what the Step st decides for an Enrollment that reaches it at now, computed once, then
-// kept on its Step record (ADR 0124, ADR 0126): a wait's delay after now, a Wait for event's
-// deadline, its timeout after now, and a Wait until's moment
-// for its Contact, in the Contact's zone or else the Workspace's, or why it goes on at once
-// (automationstep.Reach), which contact reads only for a Wait until. Any other Step decides
-// nothing (nil) and runs at once.
-func arrive(st *automationstep.Step, now time.Time, contact func() (automationstep.Contact, error)) (automationstep.Due, error) {
+// kept on its Step record (ADR 0124, ADR 0126): a wait's delay after now; a Wait for event's
+// deadline, its timeout after now, or, on an open or a click, the path it already knows of
+// (reachedPath); and a Wait until's moment for its Contact, in the Contact's zone or else the
+// Workspace's, or why it goes on at once (automationstep.Reach). Any other Step decides nothing
+// (nil) and runs at once.
+func arrive(st *automationstep.Step, now time.Time, a arrival) (automationstep.Due, error) {
 	switch p := st.Payload.(type) {
 	case automationstep.Wait:
 		return automationstep.WaitsUntil{At: now.Add(time.Duration(p.Seconds) * time.Second)}, nil
 	case automationstep.WaitForEvent:
+		if awaited, onMessage := p.Awaits.(automationstep.AwaitedMessage); onMessage {
+			h, err := a.message(awaited)
+			if err != nil {
+				return nil, err
+			}
+			if path, decided := reachedPath(p, h); decided {
+				return automationstep.GoesDown{Path: path}, nil
+			}
+		}
 		// Its deadline, kept as its due moment: the job that runs then takes the timeout.
 		return automationstep.WaitsUntil{At: now.Add(time.Duration(p.TimeoutSeconds) * time.Second)}, nil
 	case automationstep.WaitUntil:
-		c, err := contact()
+		c, err := a.contact()
 		if err != nil {
 			return nil, err
 		}
@@ -62,12 +79,13 @@ func arrive(st *automationstep.Step, now time.Time, contact func() (automationst
 }
 
 // dueAt is the moment a wait holds the Enrollment until, nil for a Step it does not hold (one that
-// decided nothing on arrival, nil, or a Wait until that went on at once).
+// decided nothing on arrival, nil, a Wait until that went on at once, or a Wait for event that knew
+// its path at once).
 func dueAt(d automationstep.Due) *time.Time {
 	switch d := d.(type) {
 	case automationstep.WaitsUntil:
 		return &d.At
-	case automationstep.GoesOn, nil:
+	case automationstep.GoesOn, automationstep.GoesDown, nil:
 	}
 	return nil
 }
@@ -77,7 +95,18 @@ func wentOn(d automationstep.Due) *automationstep.WentOn {
 	switch d := d.(type) {
 	case automationstep.GoesOn:
 		return &d.Reason
-	case automationstep.WaitsUntil, nil:
+	case automationstep.WaitsUntil, automationstep.GoesDown, nil:
+	}
+	return nil
+}
+
+// decidedPath is the path a Wait for event on an open or a click decided on arrival, nil for any
+// other arrival.
+func decidedPath(d automationstep.Due) *automationstep.ID {
+	switch d := d.(type) {
+	case automationstep.GoesDown:
+		return &d.Path
+	case automationstep.WaitsUntil, automationstep.GoesOn, nil:
 	}
 	return nil
 }
@@ -119,7 +148,8 @@ func runCalendar(ctx context.Context, s *ent.Scoped, runID int64) (automationste
 }
 
 // reach records that the Enrollment runID reached the Step of the id at now, with what the Step
-// decided then: a wait's due moment, or why a Wait until let it go on at once.
+// decided then: a wait's due moment, why a Wait until let it go on at once, or the path a Wait for
+// event on an open or a click knew of at once.
 func reach(ctx context.Context, s *ent.Scoped, runID int64, stepID automationstep.ID, now time.Time, d automationstep.Due) error {
 	return s.AutomationStepRecord().Create().
 		SetRunID(runID).
@@ -127,6 +157,7 @@ func reach(ctx context.Context, s *ent.Scoped, runID int64, stepID automationste
 		SetReachedAt(now).
 		SetNillableDueAt(dueAt(d)).
 		SetNillableWentOn(wentOn(d)).
+		SetNillableDecidedPathID(decidedPath(d)).
 		Exec(ctx)
 }
 

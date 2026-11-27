@@ -484,8 +484,8 @@ type SentMessage struct {
 	Tracked, Opened, Clicked bool
 }
 
-// stamped reports whether the engagement e is stamped on the message.
-func (m SentMessage) stamped(e conditiontree.Engagement) bool {
+// Stamped reports whether the engagement e is stamped on the message.
+func (m SentMessage) Stamped(e conditiontree.Engagement) bool {
 	switch e {
 	case conditiontree.MessageOpened:
 		return m.Opened
@@ -503,7 +503,7 @@ func (c *compiler) stepMessage(l stepMessageLeaf) predicate.Contact {
 	msg := c.messages[l.step]
 	var value any
 	if msg.Tracked || c.counted {
-		value = msg.stamped(l.engagement)
+		value = msg.Stamped(l.engagement)
 	}
 	return predicate.Contact(func(s *sql.Selector) {
 		// raw sql: ent has no predicate of a bound value; the cast types a NULL as a boolean.

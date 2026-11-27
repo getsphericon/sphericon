@@ -43,6 +43,8 @@ const (
 	FieldDueAt = "due_at"
 	// FieldWentOn holds the string denoting the went_on field in the database.
 	FieldWentOn = "went_on"
+	// FieldDecidedPathID holds the string denoting the decided_path_id field in the database.
+	FieldDecidedPathID = "decided_path_id"
 	// FieldAwaitedEventID holds the string denoting the awaited_event_id field in the database.
 	FieldAwaitedEventID = "awaited_event_id"
 	// FieldAwaitedAction holds the string denoting the awaited_action field in the database.
@@ -89,6 +91,7 @@ var Columns = []string{
 	FieldPathOutcomes,
 	FieldDueAt,
 	FieldWentOn,
+	FieldDecidedPathID,
 	FieldAwaitedEventID,
 	FieldAwaitedAction,
 	FieldAwaitedProperties,
@@ -224,6 +227,11 @@ func ByDueAt(opts ...sql.OrderTermOption) OrderOption {
 // ByWentOn orders the results by the went_on field.
 func ByWentOn(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldWentOn, opts...).ToFunc()
+}
+
+// ByDecidedPathID orders the results by the decided_path_id field.
+func ByDecidedPathID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDecidedPathID, opts...).ToFunc()
 }
 
 // ByAwaitedEventID orders the results by the awaited_event_id field.

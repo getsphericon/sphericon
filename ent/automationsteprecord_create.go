@@ -169,6 +169,20 @@ func (_c *AutomationStepRecordCreate) SetNillableWentOn(v *automationstep.WentOn
 	return _c
 }
 
+// SetDecidedPathID sets the "decided_path_id" field.
+func (_c *AutomationStepRecordCreate) SetDecidedPathID(v automationstep.ID) *AutomationStepRecordCreate {
+	_c.mutation.SetDecidedPathID(v)
+	return _c
+}
+
+// SetNillableDecidedPathID sets the "decided_path_id" field if the given value is not nil.
+func (_c *AutomationStepRecordCreate) SetNillableDecidedPathID(v *automationstep.ID) *AutomationStepRecordCreate {
+	if v != nil {
+		_c.SetDecidedPathID(*v)
+	}
+	return _c
+}
+
 // SetAwaitedEventID sets the "awaited_event_id" field.
 func (_c *AutomationStepRecordCreate) SetAwaitedEventID(v int64) *AutomationStepRecordCreate {
 	_c.mutation.SetAwaitedEventID(v)
@@ -387,6 +401,10 @@ func (_c *AutomationStepRecordCreate) createSpec() (*AutomationStepRecord, *sqlg
 	if value, ok := _c.mutation.WentOn(); ok {
 		_spec.SetField(automationsteprecord.FieldWentOn, field.TypeEnum, value)
 		_node.WentOn = &value
+	}
+	if value, ok := _c.mutation.DecidedPathID(); ok {
+		_spec.SetField(automationsteprecord.FieldDecidedPathID, field.TypeString, value)
+		_node.DecidedPathID = &value
 	}
 	if value, ok := _c.mutation.AwaitedEventID(); ok {
 		_spec.SetField(automationsteprecord.FieldAwaitedEventID, field.TypeInt64, value)
@@ -716,6 +734,9 @@ func (u *AutomationStepRecordUpsertOne) UpdateNewValues() *AutomationStepRecordU
 		}
 		if _, exists := u.create.mutation.WentOn(); exists {
 			s.SetIgnore(automationsteprecord.FieldWentOn)
+		}
+		if _, exists := u.create.mutation.DecidedPathID(); exists {
+			s.SetIgnore(automationsteprecord.FieldDecidedPathID)
 		}
 	}))
 	return u
@@ -1171,6 +1192,9 @@ func (u *AutomationStepRecordUpsertBulk) UpdateNewValues() *AutomationStepRecord
 			}
 			if _, exists := b.mutation.WentOn(); exists {
 				s.SetIgnore(automationsteprecord.FieldWentOn)
+			}
+			if _, exists := b.mutation.DecidedPathID(); exists {
+				s.SetIgnore(automationsteprecord.FieldDecidedPathID)
 			}
 		}
 	}))

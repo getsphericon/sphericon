@@ -11430,6 +11430,24 @@ func (x *AutomationStepRecordScopedCreate) SetNillableWentOn(v *automationstep.W
 
 const RoleOf_AutomationStepRecordScopedCreate_SetNillableWentOn = RoleStep
 
+// SetDecidedPathID sets the "decided_path_id" field.
+func (x *AutomationStepRecordScopedCreate) SetDecidedPathID(v automationstep.ID) *AutomationStepRecordScopedCreate {
+	x.set = append(x.set, func(b *AutomationStepRecordCreate) { b.SetDecidedPathID(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedCreate_SetDecidedPathID = RoleStep
+
+// SetNillableDecidedPathID sets the "decided_path_id" field if the given value is not nil.
+func (x *AutomationStepRecordScopedCreate) SetNillableDecidedPathID(v *automationstep.ID) *AutomationStepRecordScopedCreate {
+	if v != nil {
+		x.SetDecidedPathID(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedCreate_SetNillableDecidedPathID = RoleStep
+
 // SetAwaitedEventID sets the "awaited_event_id" field.
 func (x *AutomationStepRecordScopedCreate) SetAwaitedEventID(v int64) *AutomationStepRecordScopedCreate {
 	x.set = append(x.set, func(b *AutomationStepRecordCreate) { b.SetAwaitedEventID(v) })
