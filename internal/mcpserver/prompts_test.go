@@ -127,3 +127,31 @@ func TestMCPWinBackPromptNamesTheAudienceAndCountsItsRecipients(t *testing.T) {
 	assert.Contains(t, body, "`recipients`", "the count read back is the recipients")
 	assert.NotContains(t, body, "broadcasts_set_segment", "the audience is named at create, not after")
 }
+
+// The win-back prompt measures engagement by clicks or a product action, never by opens: a mail
+// client's privacy proxy opens messages no one read (ADR 0123).
+func TestMCPWinBackPromptMeasuresClicksNotOpens(t *testing.T) {
+	env := testhelper.Setup(t)
+	s := env.MCPClient(t, env.ScopedBearer(t, apitokens.ScopeContactsRead))
+
+	body := promptText(t, s, "win-back")
+
+	assert.Contains(t, body, "clicks or a product action", "engagement is clicks or a product action")
+	assert.NotRegexp(t, `opens, clicks|opens or clicks`, body, "opens are not offered as a measure")
+	assert.Contains(t, body, "Opens are not a reliable signal", "the prompt says why opens are left out")
+}
+
+// The set-up prompt proposes one subdomain per stream, so the Transactional stream's reputation is
+// kept apart from the marketing one's, and verifies both.
+func TestMCPSetUpSendingDomainPromptProposesASubdomainPerStream(t *testing.T) {
+	env := testhelper.Setup(t)
+	s := env.MCPClient(t, env.ScopedBearer(t, apitokens.ScopeContactsRead))
+
+	body := promptText(t, s, "set-up-sending-domain")
+
+	assert.Contains(t, body, "`mail.example.com`", "a subdomain for marketing mail")
+	assert.Contains(t, body, "`notify.example.com`", "a subdomain for Transactional mail")
+	assert.Contains(t, body, "verify both", "both subdomains are verified")
+	assert.NotContains(t, body, "a subdomain such as `mail.example.com` is the usual choice",
+		"no single subdomain for all mail")
+}
