@@ -301,6 +301,10 @@ var Bounds = []Bound{
 		Spec: site, Schema: "WaitForEventName", Owners: []string{automationVersion},
 	},
 	{
+		Name: "WaitForEventTimeout", Doc: "is how long a Wait for event waits, in seconds from the moment the Enrollment reaches it (ADR 0124).",
+		Spec: site, Schema: "WaitForEventStepInput", Property: "timeoutSeconds", Owners: []string{automationVersion},
+	},
+	{
 		Name: "AwaitedMatchers", Doc: "are the Event matchers a Wait for event waits for (ADR 0124, ADR 0180).",
 		Spec: site, Schema: "AwaitedEventInput", Property: "matchers", Owners: []string{automationVersion},
 	},

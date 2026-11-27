@@ -18434,6 +18434,7 @@
           "timeoutSeconds": {
             "type": "integer",
             "format": "int32",
+            "minimum": 1,
             "description": "How long the Step waits, in seconds from the moment the Enrollment reaches it"
           },
           "awaits": {
@@ -18498,7 +18499,8 @@
           "timeoutSeconds": {
             "type": "integer",
             "format": "int32",
-            "description": "How long the Step waits, in seconds, as a wait's delay is; zero or less is refused"
+            "minimum": 1,
+            "description": "How long the Step waits, in seconds, as a wait's delay is: at least one"
           },
           "awaits": {
             "allOf": [

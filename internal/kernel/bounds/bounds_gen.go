@@ -398,6 +398,12 @@ const (
 	WaitForEventNamePattern   = `^[a-z][a-z0-9_]*$`
 )
 
+// WaitForEventTimeout is how long a Wait for event waits, in seconds from the moment the Enrollment reaches it (ADR 0124).
+// From site WaitForEventStepInput.timeoutSeconds.
+const (
+	WaitForEventTimeoutMin = 1
+)
+
 // AwaitedMatchers are the Event matchers a Wait for event waits for (ADR 0124, ADR 0180).
 // From site AwaitedEventInput.matchers.
 const (
@@ -539,6 +545,7 @@ var Owners = map[string][]string{
 	"SplitWeightMin":                     {"AutomationVersion"},
 	"WaitForEventNameMaxLength":          {"AutomationVersion"},
 	"WaitForEventNamePattern":            {"AutomationVersion"},
+	"WaitForEventTimeoutMin":             {"AutomationVersion"},
 	"AwaitedMatchersMinItems":            {"AutomationVersion"},
 	"ConditionWithinDaysMin":             {"internal/domain/contacts/condition"},
 	"ConditionEventTimesMin":             {"internal/domain/contacts/condition"},

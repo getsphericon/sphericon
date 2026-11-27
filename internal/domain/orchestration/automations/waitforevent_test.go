@@ -425,3 +425,18 @@ func TestAContactEnrolledAgainWaitsOnTheNewEnrollmentOnly(t *testing.T) {
 		})
 	}
 }
+
+// A save is refused, naming the Step, when a Wait for event's timeout is below the contract's bound
+// of one second: the owner checks it, whatever surface wrote it.
+func TestAWaitForEventWithoutATimeoutIsRefused(t *testing.T) {
+	env := testhelper.Setup(t)
+	steps := automationstep.Root(automationstep.Step{ID: purchaseID, Payload: automationstep.WaitForEvent{
+		Name: "purchase", TimeoutSeconds: 0, Awaits: automationstep.AwaitedEvent{Matchers: []eventmatcher.Matcher{{Action: awaitedAction}}},
+		Arrived: automationstep.Root(), TimedOut: automationstep.Root(),
+	}})
+
+	err := saveVersion(t, env, steps)
+
+	require.ErrorIs(t, err, automations.ErrInvalidStep)
+	require.ErrorContains(t, err, "step "+string(purchaseID)+" (wait_for_event): the timeout is 0 seconds, and a wait for event waits at least 1")
+}

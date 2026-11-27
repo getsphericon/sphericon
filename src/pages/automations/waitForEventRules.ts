@@ -3,7 +3,11 @@ import { useTranslation } from 'react-i18next'
 import * as z from 'zod'
 
 import type { MessageStep } from '../../components/conditions/ConditionBuilder.tsx'
-import { zMessageEngagement, zWaitForEventName } from '../../generated/site/zod.gen.ts'
+import {
+  zMessageEngagement,
+  zWaitForEventName,
+  zWaitForEventStepInput,
+} from '../../generated/site/zod.gen.ts'
 import { AWAITED_FORMS, awaitedMatchersOf, waitForEventConditionOf } from './definition.ts'
 import type { WaitForEventDraft } from './definition.ts'
 
@@ -40,11 +44,11 @@ function waitForEventSchema(texts: WaitForEventTexts, messageSteps: AwaitableSte
           context.addIssue({ code: 'custom', message: texts.nameFormat })
         }
       }),
-      // In seconds, as a wait's delay, and more than zero.
+      // In whole seconds, as a wait's delay, within the contract's bound.
       timeoutSeconds: z.union([z.literal(''), z.number()]).superRefine((seconds, context) => {
         if (seconds === '') {
           context.addIssue({ code: 'custom', input: '' })
-        } else if (!Number.isInteger(seconds) || seconds < 1) {
+        } else if (!zWaitForEventStepInput.shape.timeoutSeconds.safeParse(seconds).success) {
           context.addIssue({ code: 'custom', message: texts.timeoutPositive })
         }
       }),

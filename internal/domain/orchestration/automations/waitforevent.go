@@ -33,9 +33,9 @@ import (
 // off the Step by the compare-and-set on its cursor (advanceRun), so the first to commit wins and
 // the other changes nothing.
 
-// validateWaitForEvent checks a Wait for event on its own (ADR 0124, ADR 0136): its timeout is
-// greater than zero, as a wait's delay is whole seconds; its name has its form (a bound of the
-// contract, in the kernel's form); and it awaits at least one Event matcher, each one a matcher an
+// validateWaitForEvent checks a Wait for event on its own (ADR 0124, ADR 0136): its timeout and its
+// name are within the contract's bounds (bounds.WaitForEventTimeout, and the name's form in the
+// kernel's form); and it awaits at least one Event matcher, each one a matcher an
 // Automation may start or end on (matcherProblem), and none twice. What the matchers' filters and
 // its Condition name in the Workspace is checkWaits'. Whether its name is its own across the
 // Automation is checkWaitNames' and checkWaitNamesHeld's, and whether an exit or goal ends the
@@ -43,8 +43,8 @@ import (
 // it could never take; whether the message one on an open or a click names can come before it is
 // checkStepMessages', and its unknown path is Publish's (checkUnknownPaths).
 func validateWaitForEvent(st *automationstep.Step, w automationstep.WaitForEvent) error {
-	if w.TimeoutSeconds <= 0 {
-		return refuse(st, "a wait for event needs a timeout greater than zero")
+	if w.TimeoutSeconds < bounds.WaitForEventTimeoutMin {
+		return refuse(st, fmt.Sprintf("the timeout is %d seconds, and a wait for event waits at least %d", w.TimeoutSeconds, bounds.WaitForEventTimeoutMin))
 	}
 	for _, err := range []error{
 		validation.MaxLength(fieldname.Name, w.Name, bounds.WaitForEventNameMaxLength),

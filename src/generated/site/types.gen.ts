@@ -11369,7 +11369,7 @@ export type WaitForEventStepInput = {
    */
   name: WaitForEventName;
   /**
-   * How long the Step waits, in seconds, as a wait's delay is; zero or less is refused
+   * How long the Step waits, in seconds, as a wait's delay is: at least one
    */
   timeoutSeconds: number;
   /**

@@ -161,20 +161,8 @@ func TestExternalAutomationKeepsAWaitForEventsNameAcrossEdits(t *testing.T) {
 	require.NoError(t, err)
 }
 
-// A zero timeout is refused by the save (422), naming the Step, as a wait's delay is checked.
-func TestExternalAutomationRefusesAWaitForEventWithAZeroTimeout(t *testing.T) {
-	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, stepAuthorScopes...)
-
-	_, err := saveWaitForEvent(t, c, nil, `{"id":"`+waitForEventID+`","type":"wait_for_event","name":"purchase","timeoutSeconds":0,`+
-		`"awaits":{"kind":"event","matchers":[{"action":"order.created"}]},"arrived":{"steps":[]},"timedOut":{"steps":[]}}`)
-
-	detail := refusedNaming(t, err, waitForEventID, "wait_for_event")
-	assert.Contains(t, detail, "timeout")
-}
-
 // What the contract does not admit in a Wait for event is refused with a 400 naming its path: a
-// missing timeout, a name not of lower-case letters, digits and underscores starting with a letter,
+// missing timeout, a timeout of zero, a name not of lower-case letters, digits and underscores starting with a letter,
 // no awaited matcher, a field it does not hold, and a test of the Enrollment's own message in its
 // Condition, which is a Branch's alone (ADR 0181).
 func TestExternalAutomationRefusesAWaitForEventOutsideTheContract(t *testing.T) {
@@ -184,6 +172,7 @@ func TestExternalAutomationRefusesAWaitForEventOutsideTheContract(t *testing.T) 
 		path string
 	}{
 		{"a missing timeout", func(step map[string]any) { delete(step, "timeoutSeconds") }, "steps.steps.0"},
+		{"a timeout of zero", func(step map[string]any) { step["timeoutSeconds"] = 0 }, "steps.steps.0.timeoutSeconds"},
 		{"a name of the wrong form", func(step map[string]any) { step["name"] = "1st Purchase" }, "steps.steps.0.name"},
 		{"no awaited matcher", func(step map[string]any) { step["awaits"].(map[string]any)["matchers"] = []any{} }, "steps.steps.0.awaits.matchers"},
 		{"an unknown field", func(step map[string]any) { step["seconds"] = 3 }, "steps.steps.0.seconds"},

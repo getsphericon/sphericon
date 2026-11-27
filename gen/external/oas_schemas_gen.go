@@ -36972,7 +36972,7 @@ type WaitForEventStepInput struct {
 	// The Step's name, fixed when it is created: a save that renames the Step, or gives two Wait for event
 	// Steps of the Automation the same name, is refused, naming the Step.
 	Name WaitForEventName `json:"name"`
-	// How long the Step waits, in seconds, as a wait's delay is; zero or less is refused.
+	// How long the Step waits, in seconds, as a wait's delay is: at least one.
 	TimeoutSeconds int32 `json:"timeoutSeconds"`
 	// What the Step waits for.
 	Awaits WaitForEventAwaitsInput `json:"awaits"`

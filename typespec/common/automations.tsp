@@ -605,6 +605,7 @@ model WaitForEventStep {
   name: WaitForEventName;
 
   /** How long the Step waits, in seconds from the moment the Enrollment reaches it */
+  @minValue(1)
   timeoutSeconds: int32;
 
   /** What the Step waits for */
@@ -634,7 +635,8 @@ model WaitForEventStepInput {
    * event Steps of the Automation the same name, is refused, naming the Step */
   name: WaitForEventName;
 
-  /** How long the Step waits, in seconds, as a wait's delay is; zero or less is refused */
+  /** How long the Step waits, in seconds, as a wait's delay is: at least one */
+  @minValue(1)
   timeoutSeconds: int32;
 
   /** What the Step waits for */

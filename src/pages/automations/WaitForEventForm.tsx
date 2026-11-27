@@ -6,10 +6,11 @@ import { useTranslation } from 'react-i18next'
 import { emptyGroup } from '../../components/conditions/condition.ts'
 import { ConditionBuilder } from '../../components/conditions/ConditionBuilder.tsx'
 import type { MessageStep } from '../../components/conditions/ConditionBuilder.tsx'
-import { zMessageEngagement } from '../../generated/site/zod.gen.ts'
+import { zMessageEngagement, zWaitForEventStepInput } from '../../generated/site/zod.gen.ts'
 import { useSchemaForm } from '../../resources/schemaForm.ts'
 import type { SchemaForm } from '../../resources/schemaForm.ts'
 import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
+import { boundsOf } from '../../utils/bounds.ts'
 import { AWAITED_FORMS, filterText, waitForEventConditionOf } from './definition.ts'
 import type { AwaitedForm, FlowPath, WaitForEventDraft, WaitForEventStep } from './definition.ts'
 import { MatcherListControl } from './EndEventControls.tsx'
@@ -20,6 +21,9 @@ import type { StepValidator } from './stepValidator.ts'
 import { useWaitForEventSchema } from './waitForEventRules.ts'
 
 type WaitForEventForm = SchemaForm<WaitForEventDraft, unknown>
+
+// How long a Wait for event waits, in seconds, as the contract bounds it.
+const TIMEOUT = boundsOf(zWaitForEventStepInput.shape.timeoutSeconds)
 
 // The Event form's fields: the Events awaited, each an Event matcher offered from the built-in
 // events as the Trigger's (ADR 0180), and the optional Condition, in the Condition builder of its
@@ -180,7 +184,7 @@ export function WaitForEventForm({
       <NumberInput
         label={t(($) => $.automations.waitForEvent.timeoutLabel)}
         description={t(($) => $.automations.waitForEvent.timeoutHint)}
-        min={1}
+        min={TIMEOUT.min}
         allowDecimal={false}
         allowNegative={false}
         {...form.getInputProps('timeoutSeconds')}
