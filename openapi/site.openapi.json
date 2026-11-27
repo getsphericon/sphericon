@@ -15171,7 +15171,14 @@
       },
       "ContactImportMapping": {
         "type": "object",
-        "required": ["columns", "decimalSeparator", "defaultCountry", "tag", "onlyAddNew"],
+        "required": [
+          "columns",
+          "decimalSeparator",
+          "defaultCountry",
+          "tag",
+          "onlyAddNew",
+          "asNewSignUps"
+        ],
         "properties": {
           "columns": {
             "type": "array",
@@ -15211,13 +15218,24 @@
           "onlyAddNew": {
             "type": "boolean",
             "description": "Leave a Contact the Workspace has as it is, writing only new ones"
+          },
+          "asNewSignUps": {
+            "type": "boolean",
+            "description": "Treat the rows as new sign-ups: their Events start what a sign-up starts (they enroll in Automations, fire Rules and reach Webhook endpoints), where an import otherwise starts nothing"
           }
         },
         "description": "How an import reads its file: what each column is, and the choices that hold for every row"
       },
       "ContactImportMappingInput": {
         "type": "object",
-        "required": ["columns", "decimalSeparator", "defaultCountry", "tag", "onlyAddNew"],
+        "required": [
+          "columns",
+          "decimalSeparator",
+          "defaultCountry",
+          "tag",
+          "onlyAddNew",
+          "asNewSignUps"
+        ],
         "properties": {
           "columns": {
             "type": "array",
@@ -15258,6 +15276,10 @@
           "onlyAddNew": {
             "type": "boolean",
             "description": "Leave a Contact the Workspace has as it is, writing only new ones"
+          },
+          "asNewSignUps": {
+            "type": "boolean",
+            "description": "Treat the rows as new sign-ups: their Events start what a sign-up starts (they enroll in Automations, fire Rules and reach Webhook endpoints), where an import otherwise starts nothing"
           }
         },
         "description": "How an import reads its file, as a request writes it",

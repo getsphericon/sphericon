@@ -10086,6 +10086,9 @@ type ContactImportMapping struct {
 	Tag NilName `json:"tag"`
 	// Leave a Contact the Workspace has as it is, writing only new ones.
 	OnlyAddNew bool `json:"onlyAddNew"`
+	// Treat the rows as new sign-ups: their Events start what a sign-up starts (they enroll in
+	// Automations, fire Rules and reach Webhook endpoints), where an import otherwise starts nothing.
+	AsNewSignUps bool `json:"asNewSignUps"`
 }
 
 // GetColumns returns the value of Columns.
@@ -10113,6 +10116,11 @@ func (s *ContactImportMapping) GetOnlyAddNew() bool {
 	return s.OnlyAddNew
 }
 
+// GetAsNewSignUps returns the value of AsNewSignUps.
+func (s *ContactImportMapping) GetAsNewSignUps() bool {
+	return s.AsNewSignUps
+}
+
 // SetColumns sets the value of Columns.
 func (s *ContactImportMapping) SetColumns(val []ContactImportColumn) {
 	s.Columns = val
@@ -10138,6 +10146,11 @@ func (s *ContactImportMapping) SetOnlyAddNew(val bool) {
 	s.OnlyAddNew = val
 }
 
+// SetAsNewSignUps sets the value of AsNewSignUps.
+func (s *ContactImportMapping) SetAsNewSignUps(val bool) {
+	s.AsNewSignUps = val
+}
+
 // How an import reads its file, as a request writes it.
 // Ref: #/components/schemas/ContactImportMappingInput
 type ContactImportMappingInput struct {
@@ -10152,6 +10165,9 @@ type ContactImportMappingInput struct {
 	Tag NilName `json:"tag"`
 	// Leave a Contact the Workspace has as it is, writing only new ones.
 	OnlyAddNew bool `json:"onlyAddNew"`
+	// Treat the rows as new sign-ups: their Events start what a sign-up starts (they enroll in
+	// Automations, fire Rules and reach Webhook endpoints), where an import otherwise starts nothing.
+	AsNewSignUps bool `json:"asNewSignUps"`
 }
 
 // GetColumns returns the value of Columns.
@@ -10179,6 +10195,11 @@ func (s *ContactImportMappingInput) GetOnlyAddNew() bool {
 	return s.OnlyAddNew
 }
 
+// GetAsNewSignUps returns the value of AsNewSignUps.
+func (s *ContactImportMappingInput) GetAsNewSignUps() bool {
+	return s.AsNewSignUps
+}
+
 // SetColumns sets the value of Columns.
 func (s *ContactImportMappingInput) SetColumns(val []ContactImportColumnInput) {
 	s.Columns = val
@@ -10202,6 +10223,11 @@ func (s *ContactImportMappingInput) SetTag(val NilName) {
 // SetOnlyAddNew sets the value of OnlyAddNew.
 func (s *ContactImportMappingInput) SetOnlyAddNew(val bool) {
 	s.OnlyAddNew = val
+}
+
+// SetAsNewSignUps sets the value of AsNewSignUps.
+func (s *ContactImportMappingInput) SetAsNewSignUps(val bool) {
+	s.AsNewSignUps = val
 }
 
 // A row of the file as the import would write it.
