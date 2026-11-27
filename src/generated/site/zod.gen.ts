@@ -181,8 +181,8 @@ export const zAuditActorKind = z.enum([
  */
 export const zAuditActor = z.object({
   kind: zAuditActorKind,
-  id: z.exactOptional(z.string().nullable()),
-  name: z.exactOptional(z.string().nullable())
+  id: z.string().nullable().exactOptional(),
+  name: z.string().nullable().exactOptional()
 });
 
 /**
@@ -190,8 +190,8 @@ export const zAuditActor = z.object({
  */
 export const zAuditTarget = z.object({
   type: z.string(),
-  id: z.exactOptional(z.string().nullable()),
-  name: z.exactOptional(z.string().nullable())
+  id: z.string().nullable().exactOptional(),
+  name: z.string().nullable().exactOptional()
 });
 
 /**
@@ -204,7 +204,7 @@ export const zAutomationHttpErrorKind = z.enum(['invalid_body']);
  */
 export const zAutomationHttpHeader = z.object({
   name: z.string(),
-  value: z.exactOptional(z.string())
+  value: z.string().exactOptional()
 });
 
 /**
@@ -212,7 +212,7 @@ export const zAutomationHttpHeader = z.object({
  */
 export const zAutomationHttpHeaderInput = z.strictObject({
   name: z.string(),
-  value: z.exactOptional(z.string())
+  value: z.string().exactOptional()
 });
 
 /**
@@ -399,7 +399,7 @@ export const zCountryCode = z.string().regex(/^[A-Z]{2}$/);
  */
 export const zCreateSendingDomainInput = z.strictObject({
   domain: z.string(),
-  dkimSelector: z.exactOptional(z.string())
+  dkimSelector: z.string().exactOptional()
 });
 
 /**
@@ -407,8 +407,8 @@ export const zCreateSendingDomainInput = z.strictObject({
  */
 export const zCreateWebhookInput = z.strictObject({
   url: z.string(),
-  eventTypes: z.exactOptional(z.array(z.string())),
-  enabled: z.exactOptional(z.boolean())
+  eventTypes: z.array(z.string()).exactOptional(),
+  enabled: z.boolean().exactOptional()
 });
 
 /**
@@ -506,9 +506,9 @@ export const zDnsRecord = z.object({
  * The body rendered for a Contact, or the kind of error that stopped it. Nothing is called.
  */
 export const zDryRunHttpStepResult = z.object({
-  body: z.exactOptional(z.string()),
-  errorKind: z.exactOptional(zAutomationHttpErrorKind),
-  detail: z.exactOptional(z.string())
+  body: z.string().exactOptional(),
+  errorKind: zAutomationHttpErrorKind.exactOptional(),
+  detail: z.string().exactOptional()
 });
 
 /**
@@ -525,11 +525,11 @@ export const zEmailAddress = z.email().max(320);
 export const zEmailBroadcastContent = z.object({
   channel: z.enum(['email']),
   subject: z.string(),
-  fromName: z.exactOptional(z.string().nullable()),
-  fromEmail: z.exactOptional(zEmailAddress.nullable()),
+  fromName: z.string().nullable().exactOptional(),
+  fromEmail: zEmailAddress.nullable().exactOptional(),
   body: z.string(),
-  doc: z.exactOptional(zEditorDocument.nullable()),
-  editorVersion: z.exactOptional(z.string().nullable())
+  doc: zEditorDocument.nullable().exactOptional(),
+  editorVersion: z.string().nullable().exactOptional()
 });
 
 /**
@@ -538,11 +538,11 @@ export const zEmailBroadcastContent = z.object({
  */
 export const zEmailBroadcastContentInput = z.strictObject({
   channel: z.enum(['email']),
-  subject: z.exactOptional(z.string()),
-  fromName: z.exactOptional(z.string().nullable()),
-  fromEmail: z.exactOptional(zEmailAddress.nullable()),
-  body: z.exactOptional(z.string()),
-  doc: z.exactOptional(zEditorDocument)
+  subject: z.string().exactOptional(),
+  fromName: z.string().nullable().exactOptional(),
+  fromEmail: zEmailAddress.nullable().exactOptional(),
+  body: z.string().exactOptional(),
+  doc: zEditorDocument.exactOptional()
 });
 
 /**
@@ -607,8 +607,8 @@ export const zEnrollmentFailureKind = z.enum([
  */
 export const zEnrollmentFailure = z.object({
   kind: zEnrollmentFailureKind,
-  status: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
-  excerpt: z.exactOptional(z.string())
+  status: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).exactOptional(),
+  excerpt: z.string().exactOptional()
 });
 
 /**
@@ -801,7 +801,7 @@ export const zIntegrationProvider = z.enum([
  * Request body for issuing a Telegram start link
  */
 export const zIssueTelegramStartLinkInput = z.strictObject({
-  integrationId: z.exactOptional(zEntityId.nullable())
+  integrationId: zEntityId.nullable().exactOptional()
 });
 
 /**
@@ -852,8 +852,8 @@ export const zLintCode = z.enum([
 export const zLintFinding = z.object({
   code: zLintCode,
   message: z.string(),
-  element: z.exactOptional(z.string()),
-  detail: z.exactOptional(z.string())
+  element: z.string().exactOptional(),
+  detail: z.string().exactOptional()
 });
 
 /**
@@ -1012,9 +1012,9 @@ export const zApplyTagInput = z.strictObject({
  */
 export const zCreateTemplateInput = z.strictObject({
   name: zName,
-  subject: z.exactOptional(z.string()),
-  body: z.exactOptional(z.string()),
-  doc: z.exactOptional(zEditorDocument)
+  subject: z.string().exactOptional(),
+  body: z.string().exactOptional(),
+  doc: zEditorDocument.exactOptional()
 });
 
 /**
@@ -1191,8 +1191,8 @@ export const zProblemCode = z.enum([
  */
 export const zProblemDebug = z.object({
   error: z.string(),
-  stack: z.exactOptional(z.string()),
-  requestId: z.exactOptional(z.string()),
+  stack: z.string().exactOptional(),
+  requestId: z.string().exactOptional(),
   method: z.string(),
   path: z.string()
 });
@@ -1296,7 +1296,7 @@ export const zRuleActionType = z.enum([
 export const zRuleActionResult = z.object({
   type: zRuleActionType,
   status: zRuleActionStatus,
-  detail: z.exactOptional(z.string())
+  detail: z.string().exactOptional()
 });
 
 /**
@@ -1399,10 +1399,10 @@ export const zSesConfig = z.object({
   kind: z.enum(['ses']),
   region: z.string(),
   from: zEmailAddress,
-  fromName: z.exactOptional(z.string().nullable()),
-  endpoint: z.exactOptional(z.string().nullable()),
-  accessKeyIdLast4: z.exactOptional(z.string().nullable()),
-  configurationSet: z.exactOptional(zSesConfigurationSetName.nullable()),
+  fromName: z.string().nullable().exactOptional(),
+  endpoint: z.string().nullable().exactOptional(),
+  accessKeyIdLast4: z.string().nullable().exactOptional(),
+  configurationSet: zSesConfigurationSetName.nullable().exactOptional(),
   configurationSetMissing: z.boolean()
 });
 
@@ -1415,9 +1415,9 @@ export const zSesConfigInput = z.strictObject({
   accessKeyId: z.string(),
   secretAccessKey: z.string(),
   from: zEmailAddress,
-  fromName: z.exactOptional(z.string().nullable()),
-  endpoint: z.exactOptional(z.string().nullable()),
-  configurationSet: z.exactOptional(zSesConfigurationSetName.nullable())
+  fromName: z.string().nullable().exactOptional(),
+  endpoint: z.string().nullable().exactOptional(),
+  configurationSet: zSesConfigurationSetName.nullable().exactOptional()
 });
 
 /**
@@ -1453,15 +1453,15 @@ export const zSigningSecret = z.string().regex(/^(?:whsec_)?(?:[A-Za-z0-9+\/]{4}
  */
 export const zRuleAction = z.object({
   type: zRuleActionType,
-  tag: z.exactOptional(z.string()),
-  automationId: z.exactOptional(zEntityId),
-  id: z.exactOptional(z.string()),
-  url: z.exactOptional(z.string()),
-  headers: z.exactOptional(z.array(zAutomationHttpHeader).max(5)),
-  body: z.exactOptional(z.string()),
-  secret: z.exactOptional(zSigningSecret),
-  clearSecret: z.exactOptional(z.boolean()),
-  hasSecret: z.exactOptional(z.boolean())
+  tag: z.string().exactOptional(),
+  automationId: zEntityId.exactOptional(),
+  id: z.string().exactOptional(),
+  url: z.string().exactOptional(),
+  headers: z.array(zAutomationHttpHeader).max(5).exactOptional(),
+  body: z.string().exactOptional(),
+  secret: zSigningSecret.exactOptional(),
+  clearSecret: z.boolean().exactOptional(),
+  hasSecret: z.boolean().exactOptional()
 });
 
 /**
@@ -1469,15 +1469,15 @@ export const zRuleAction = z.object({
  */
 export const zRuleActionInput = z.strictObject({
   type: zRuleActionType,
-  tag: z.exactOptional(z.string()),
-  automationId: z.exactOptional(zEntityId),
-  id: z.exactOptional(z.string()),
-  url: z.exactOptional(z.string()),
-  headers: z.exactOptional(z.array(zAutomationHttpHeaderInput).max(5)),
-  body: z.exactOptional(z.string()),
-  secret: z.exactOptional(zSigningSecret),
-  clearSecret: z.exactOptional(z.boolean()),
-  hasSecret: z.exactOptional(z.boolean())
+  tag: z.string().exactOptional(),
+  automationId: zEntityId.exactOptional(),
+  id: z.string().exactOptional(),
+  url: z.string().exactOptional(),
+  headers: z.array(zAutomationHttpHeaderInput).max(5).exactOptional(),
+  body: z.string().exactOptional(),
+  secret: zSigningSecret.exactOptional(),
+  clearSecret: z.boolean().exactOptional(),
+  hasSecret: z.boolean().exactOptional()
 });
 
 /**
@@ -1884,9 +1884,9 @@ export const zSiteCreateWorkspaceInput = z.strictObject({
  */
 export const zSiteDeleteUserInput = z.strictObject({
   email: zEmailAddress,
-  currentPassword: z.exactOptional(z.string()),
-  token: z.exactOptional(z.string()),
-  code: z.exactOptional(z.string())
+  currentPassword: z.string().exactOptional(),
+  token: z.string().exactOptional(),
+  code: z.string().exactOptional()
 });
 
 /**
@@ -1950,7 +1950,7 @@ export const zSiteForgotPasswordInput = z.strictObject({
  */
 export const zSiteIdentityLinkInput = z.strictObject({
   provider: z.string(),
-  currentPassword: z.exactOptional(z.string())
+  currentPassword: z.string().exactOptional()
 });
 
 /**
@@ -1965,7 +1965,7 @@ export const zSiteIdentityLinkStarted = z.object({
  * an identify from its site proves who is signed in. Owners and admins only
  */
 export const zSiteIdentitySecretResource = z.object({
-  secret: z.exactOptional(z.string())
+  secret: z.string().exactOptional()
 });
 
 /**
@@ -1973,7 +1973,7 @@ export const zSiteIdentitySecretResource = z.object({
  * sees. The Instance's settings are the Staff console's (ADR 0063).
  */
 export const zSiteInstanceRelease = z.object({
-  latestRelease: z.exactOptional(z.string())
+  latestRelease: z.string().exactOptional()
 });
 
 /**
@@ -2015,7 +2015,7 @@ export const zSiteLoginOutcome = z.enum(['session', 'challenge']);
 
 export const zSiteLoginResult = z.object({
   outcome: zSiteLoginOutcome,
-  challenge: z.exactOptional(z.string())
+  challenge: z.string().exactOptional()
 });
 
 /**
@@ -2069,7 +2069,7 @@ export const zSiteNewPeopleReport = z.object({
  */
 export const zSiteOAuthAuthorizationRequest = z.object({
   clientName: z.string(),
-  clientHost: z.exactOptional(z.string()),
+  clientHost: z.string().exactOptional(),
   redirectUri: z.string(),
   localRedirect: z.boolean(),
   scopes: z.array(zGrantableScope),
@@ -2135,18 +2135,18 @@ export const zSitePasskeyAssertion = z.record(z.string(), z.unknown());
  * verification is required (ADR 0051).
  */
 export const zSitePasskeyAuthenticatorSelection = z.object({
-  authenticatorAttachment: z.exactOptional(z.enum(['platform', 'cross-platform'])),
-  requireResidentKey: z.exactOptional(z.boolean()),
-  residentKey: z.exactOptional(z.enum([
+  authenticatorAttachment: z.enum(['platform', 'cross-platform']).exactOptional(),
+  requireResidentKey: z.boolean().exactOptional(),
+  residentKey: z.enum([
     'discouraged',
     'preferred',
     'required'
-  ])),
-  userVerification: z.exactOptional(z.enum([
+  ]).exactOptional(),
+  userVerification: z.enum([
     'required',
     'preferred',
     'discouraged'
-  ]))
+  ]).exactOptional()
 });
 
 /**
@@ -2162,13 +2162,13 @@ export const zSitePasskeyCheckInput = z.strictObject({
 export const zSitePasskeyDescriptor = z.object({
   type: z.enum(['public-key']),
   id: z.string(),
-  transports: z.exactOptional(z.array(z.enum([
+  transports: z.array(z.enum([
     'ble',
     'hybrid',
     'internal',
     'nfc',
     'usb'
-  ])))
+  ])).exactOptional()
 });
 
 /**
@@ -2196,7 +2196,7 @@ export const zSitePasskeyRegistrationResponse = z.record(z.string(), z.unknown()
  * The browser's response to a registration ceremony, with the proof of identity and a name
  */
 export const zSitePasskeyRegistrationInput = z.strictObject({
-  currentPassword: z.exactOptional(z.string()),
+  currentPassword: z.string().exactOptional(),
   name: zName,
   credential: zSitePasskeyRegistrationResponse
 });
@@ -2205,7 +2205,7 @@ export const zSitePasskeyRegistrationInput = z.strictObject({
  * The relying party of a Passkey ceremony: this Instance
  */
 export const zSitePasskeyRelyingParty = z.object({
-  id: z.exactOptional(z.string()),
+  id: z.string().exactOptional(),
   name: z.string()
 });
 
@@ -2213,7 +2213,7 @@ export const zSitePasskeyRelyingParty = z.object({
  * The proof of identity a removal asks for
  */
 export const zSitePasskeyRemoveInput = z.strictObject({
-  currentPassword: z.exactOptional(z.string())
+  currentPassword: z.string().exactOptional()
 });
 
 /**
@@ -2231,14 +2231,14 @@ export const zSitePasskeyRenameInput = z.strictObject({
  */
 export const zSitePasskeyRequestOptions = z.object({
   challenge: z.string(),
-  timeout: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
-  rpId: z.exactOptional(z.string()),
-  allowCredentials: z.exactOptional(z.array(zSitePasskeyDescriptor)),
-  userVerification: z.exactOptional(z.enum([
+  timeout: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).exactOptional(),
+  rpId: z.string().exactOptional(),
+  allowCredentials: z.array(zSitePasskeyDescriptor).exactOptional(),
+  userVerification: z.enum([
     'required',
     'preferred',
     'discouraged'
-  ]))
+  ]).exactOptional()
 });
 
 /**
@@ -2274,15 +2274,15 @@ export const zSitePasskeyCreationOptions = z.object({
   user: zSitePasskeyUserEntity,
   challenge: z.string(),
   pubKeyCredParams: z.array(zSitePasskeyParameter),
-  timeout: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
-  excludeCredentials: z.exactOptional(z.array(zSitePasskeyDescriptor)),
-  authenticatorSelection: z.exactOptional(zSitePasskeyAuthenticatorSelection),
-  attestation: z.exactOptional(z.enum([
+  timeout: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).exactOptional(),
+  excludeCredentials: z.array(zSitePasskeyDescriptor).exactOptional(),
+  authenticatorSelection: zSitePasskeyAuthenticatorSelection.exactOptional(),
+  attestation: z.enum([
     'none',
     'indirect',
     'direct',
     'enterprise'
-  ]))
+  ]).exactOptional()
 });
 
 /**
@@ -2308,8 +2308,8 @@ export const zSitePendingSignup = z.object({
 export const zSitePreviewSegmentResult = z.object({
   count: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   unknownEngagement: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  recipients: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
-  eventsKeptDays: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }))
+  recipients: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).exactOptional(),
+  eventsKeptDays: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).exactOptional()
 });
 
 /**
@@ -2354,7 +2354,7 @@ export const zSiteRecoveryCodes = z.object({
  * Proof of the User's password (or a fresh provider login or Passkey check), for regenerating Recovery codes
  */
 export const zSiteRecoveryCodesInput = z.strictObject({
-  currentPassword: z.exactOptional(z.string())
+  currentPassword: z.string().exactOptional()
 });
 
 /**
@@ -2423,7 +2423,7 @@ export const zSiteSaveBrandKitInput = z.strictObject({
  */
 export const zSiteSecondFactorConfirmInput = z.strictObject({
   enrollmentId: zEntityId,
-  currentPassword: z.exactOptional(z.string()),
+  currentPassword: z.string().exactOptional(),
   code: z.string()
 });
 
@@ -2431,7 +2431,7 @@ export const zSiteSecondFactorConfirmInput = z.strictObject({
  * Proof of password (or a fresh provider login or Passkey check) and possession, for disabling the Second factor
  */
 export const zSiteSecondFactorDisableInput = z.strictObject({
-  currentPassword: z.exactOptional(z.string()),
+  currentPassword: z.string().exactOptional(),
   code: z.string()
 });
 
@@ -2449,7 +2449,7 @@ export const zSiteSecondFactorEnrollment = z.object({
  * Proof of the User's password (or a fresh provider login or Passkey check), for starting an enrollment
  */
 export const zSiteSecondFactorStartInput = z.strictObject({
-  currentPassword: z.exactOptional(z.string())
+  currentPassword: z.string().exactOptional()
 });
 
 /**
@@ -2613,7 +2613,7 @@ export const zSiteSignupItem = z.object({
 export const zSiteSignupItemAnswer = z.strictObject({
   key: zSignupItemKey,
   version: zLegalDocumentLabel,
-  accepted: z.exactOptional(z.boolean())
+  accepted: z.boolean().exactOptional()
 });
 
 /**
@@ -2621,7 +2621,7 @@ export const zSiteSignupItemAnswer = z.strictObject({
  */
 export const zSiteSigninPendingSubmitInput = z.strictObject({
   token: z.string(),
-  signupItems: z.exactOptional(z.array(zSiteSignupItemAnswer))
+  signupItems: z.array(zSiteSignupItemAnswer).exactOptional()
 });
 
 /**
@@ -2638,13 +2638,13 @@ export const zSiteSignupItemList = z.object({
  */
 export const zSiteSignupSurveyInput = z.strictObject({
   role: zSignupRole,
-  roleOther: z.exactOptional(z.string().max(100)),
+  roleOther: z.string().max(100).exactOptional(),
   companySize: zSignupCompanySize,
-  companySizeOther: z.exactOptional(z.string().max(100)),
+  companySizeOther: z.string().max(100).exactOptional(),
   mainGoal: zSignupGoal,
-  mainGoalOther: z.exactOptional(z.string().max(100)),
-  heardFrom: z.exactOptional(zSignupSource),
-  heardFromOther: z.exactOptional(z.string().max(100))
+  mainGoalOther: z.string().max(100).exactOptional(),
+  heardFrom: zSignupSource.exactOptional(),
+  heardFromOther: z.string().max(100).exactOptional()
 });
 
 /**
@@ -2659,7 +2659,7 @@ export const zSiteSmsLengthLimit = z.object({
  * What a test send did: on email the address the preview went out from
  */
 export const zSiteTestSendBroadcastResult = z.object({
-  from: z.exactOptional(zEmailAddress),
+  from: zEmailAddress.exactOptional(),
   captured: z.boolean()
 });
 
@@ -2684,9 +2684,9 @@ export const zSiteTransactionalEmailStatus = z.enum([
 export const zSiteUpdateConfirmationEmailInput = z.strictObject({
   revision: zRevision,
   fromEmail: zEmailAddress,
-  fromName: z.exactOptional(z.string()),
-  subject: z.exactOptional(z.string()),
-  intro: z.exactOptional(z.string())
+  fromName: z.string().exactOptional(),
+  subject: z.string().exactOptional(),
+  intro: z.string().exactOptional()
 });
 
 /**
@@ -2701,8 +2701,8 @@ export const zSiteUpdateMembershipInput = z.strictObject({
  */
 export const zSiteUpdateRevenueSettingsInput = z.strictObject({
   revision: zRevision,
-  reportingCurrency: z.exactOptional(zCurrencyCode),
-  attributionWindowDays: z.exactOptional(zAttributionWindowDays)
+  reportingCurrency: zCurrencyCode.exactOptional(),
+  attributionWindowDays: zAttributionWindowDays.exactOptional()
 });
 
 /**
@@ -2718,7 +2718,7 @@ export const zSiteUpdateTokenInput = z.strictObject({
 export const zSiteUpdateWorkspaceInput = z.strictObject({
   revision: zRevision,
   name: zName,
-  postalAddress: z.exactOptional(z.string())
+  postalAddress: z.string().exactOptional()
 });
 
 /**
@@ -2726,7 +2726,7 @@ export const zSiteUpdateWorkspaceInput = z.strictObject({
  */
 export const zSiteVerifyEmailInput = z.strictObject({
   token: z.string(),
-  password: z.exactOptional(z.string())
+  password: z.string().exactOptional()
 });
 
 /**
@@ -2830,8 +2830,8 @@ export const zSmsBroadcastContent = z.object({
  */
 export const zSmsBroadcastContentInput = z.strictObject({
   channel: z.enum(['sms']),
-  text: z.exactOptional(z.string()),
-  linkTracking: z.exactOptional(z.boolean())
+  text: z.string().exactOptional(),
+  linkTracking: z.boolean().exactOptional()
 });
 
 /**
@@ -2868,9 +2868,9 @@ export const zSmtpConfig = z.object({
   kind: z.enum(['smtp']),
   host: z.string(),
   port: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  username: z.exactOptional(z.string().nullable()),
+  username: z.string().nullable().exactOptional(),
   from: zEmailAddress,
-  fromName: z.exactOptional(z.string().nullable())
+  fromName: z.string().nullable().exactOptional()
 });
 
 /**
@@ -2880,10 +2880,10 @@ export const zSmtpConfigInput = z.strictObject({
   kind: z.enum(['smtp']),
   host: z.string(),
   port: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  username: z.exactOptional(z.string().nullable()),
-  password: z.exactOptional(z.string().nullable()),
+  username: z.string().nullable().exactOptional(),
+  password: z.string().nullable().exactOptional(),
   from: zEmailAddress,
-  fromName: z.exactOptional(z.string().nullable())
+  fromName: z.string().nullable().exactOptional()
 });
 
 /**
@@ -2984,7 +2984,7 @@ export const zApplyTagStep = z.object({
  * A Step that applies a Tag, as a request writes it
  */
 export const zApplyTagStepInput = z.strictObject({
-  id: z.exactOptional(zStepId),
+  id: zStepId.exactOptional(),
   type: z.enum(['apply_tag']),
   tag: z.string()
 });
@@ -3062,21 +3062,21 @@ export const zEmailStep = z.object({
   type: z.enum(['email']),
   subject: z.string(),
   body: z.string(),
-  doc: z.exactOptional(zEditorDocument),
-  editorVersion: z.exactOptional(z.string()),
-  integrationId: z.exactOptional(zEntityId)
+  doc: zEditorDocument.exactOptional(),
+  editorVersion: z.string().exactOptional(),
+  integrationId: zEntityId.exactOptional()
 });
 
 /**
  * A Step that sends an email, as a request writes it
  */
 export const zEmailStepInput = z.strictObject({
-  id: z.exactOptional(zStepId),
+  id: zStepId.exactOptional(),
   type: z.enum(['email']),
   subject: z.string(),
-  body: z.exactOptional(z.string()),
-  doc: z.exactOptional(zEditorDocument),
-  integrationId: z.exactOptional(zEntityId.nullable())
+  body: z.string().exactOptional(),
+  doc: zEditorDocument.exactOptional(),
+  integrationId: zEntityId.nullable().exactOptional()
 });
 
 /**
@@ -3093,7 +3093,7 @@ export const zEndStep = z.object({
  * the save, naming that Step.
  */
 export const zEndStepInput = z.strictObject({
-  id: z.exactOptional(zStepId),
+  id: zStepId.exactOptional(),
   type: z.enum(['end'])
 });
 
@@ -3112,13 +3112,13 @@ export const zHttpStep = z.object({
  * A Step that POSTs a JSON body to a hook URL, as a request writes it. A secret omitted keeps the stored value of the Step with the same id.
  */
 export const zHttpStepInput = z.strictObject({
-  id: z.exactOptional(zStepId),
+  id: zStepId.exactOptional(),
   type: z.enum(['http']),
   body: z.string(),
-  url: z.exactOptional(z.string()),
-  headers: z.exactOptional(z.array(zAutomationHttpHeaderInput).max(5)),
-  secret: z.exactOptional(zSigningSecret),
-  clearSecret: z.exactOptional(z.boolean())
+  url: z.string().exactOptional(),
+  headers: z.array(zAutomationHttpHeaderInput).max(5).exactOptional(),
+  secret: zSigningSecret.exactOptional(),
+  clearSecret: z.boolean().exactOptional()
 });
 
 /**
@@ -3134,7 +3134,7 @@ export const zRemoveTagStep = z.object({
  * A Step that removes a Tag, as a request writes it
  */
 export const zRemoveTagStepInput = z.strictObject({
-  id: z.exactOptional(zStepId),
+  id: zStepId.exactOptional(),
   type: z.enum(['remove_tag']),
   tag: z.string()
 });
@@ -3147,18 +3147,18 @@ export const zSmsStep = z.object({
   type: z.enum(['sms']),
   text: z.string(),
   linkTracking: z.boolean(),
-  integrationId: z.exactOptional(zEntityId)
+  integrationId: zEntityId.exactOptional()
 });
 
 /**
  * A Step that sends an SMS, as a request writes it
  */
 export const zSmsStepInput = z.strictObject({
-  id: z.exactOptional(zStepId),
+  id: zStepId.exactOptional(),
   type: z.enum(['sms']),
   text: z.string(),
-  linkTracking: z.exactOptional(z.boolean()),
-  integrationId: z.exactOptional(zEntityId.nullable())
+  linkTracking: z.boolean().exactOptional(),
+  integrationId: zEntityId.nullable().exactOptional()
 });
 
 /**
@@ -3204,7 +3204,7 @@ export const zSuppressionChannel = z.enum([
  * Site request body for manually suppressing a destination
  */
 export const zSiteCreateSuppressionInput = z.strictObject({
-  channel: z.exactOptional(zSuppressionChannel),
+  channel: zSuppressionChannel.exactOptional(),
   destination: z.string()
 });
 
@@ -3299,10 +3299,10 @@ export const zTelegramButton = z.object({
 export const zTelegramBroadcastContent = z.object({
   channel: z.enum(['telegram']),
   text: z.string(),
-  imageUrl: z.exactOptional(z.string().nullable()),
+  imageUrl: z.string().nullable().exactOptional(),
   buttons: z.array(zTelegramButton),
   linkPreview: z.boolean(),
-  unsubscribeButton: z.exactOptional(z.string().nullable())
+  unsubscribeButton: z.string().nullable().exactOptional()
 });
 
 /**
@@ -3329,11 +3329,11 @@ export const zTelegramButtonInput = z.strictObject({
  */
 export const zTelegramBroadcastContentInput = z.strictObject({
   channel: z.enum(['telegram']),
-  text: z.exactOptional(z.string()),
-  imageUrl: z.exactOptional(z.string()),
-  buttons: z.exactOptional(z.array(zTelegramButtonInput).max(8)),
-  linkPreview: z.exactOptional(z.boolean()),
-  unsubscribeButton: z.exactOptional(z.string().max(64))
+  text: z.string().exactOptional(),
+  imageUrl: z.string().exactOptional(),
+  buttons: z.array(zTelegramButtonInput).max(8).exactOptional(),
+  linkPreview: z.boolean().exactOptional(),
+  unsubscribeButton: z.string().max(64).exactOptional()
 });
 
 /**
@@ -3352,7 +3352,7 @@ export const zCreateBroadcastInput = z.strictObject({
   name: zName,
   content: zBroadcastContentInput,
   segmentId: zEntityId.nullable(),
-  integrationId: z.exactOptional(zEntityId.nullable())
+  integrationId: zEntityId.nullable().exactOptional()
 });
 
 /**
@@ -3395,25 +3395,25 @@ export const zTelegramStep = z.object({
   id: zStepId,
   type: z.enum(['telegram']),
   text: z.string(),
-  unsubscribeButton: z.exactOptional(z.string()),
-  imageUrl: z.exactOptional(z.string()),
+  unsubscribeButton: z.string().exactOptional(),
+  imageUrl: z.string().exactOptional(),
   buttons: z.array(zTelegramButton),
   linkPreview: z.boolean(),
-  integrationId: z.exactOptional(zEntityId)
+  integrationId: zEntityId.exactOptional()
 });
 
 /**
  * A Step that sends a Telegram message, as a request writes it
  */
 export const zTelegramStepInput = z.strictObject({
-  id: z.exactOptional(zStepId),
+  id: zStepId.exactOptional(),
   type: z.enum(['telegram']),
   text: z.string(),
-  unsubscribeButton: z.exactOptional(z.string().max(64)),
-  imageUrl: z.exactOptional(z.string()),
-  buttons: z.exactOptional(z.array(zTelegramButtonInput).max(8)),
-  linkPreview: z.exactOptional(z.boolean()),
-  integrationId: z.exactOptional(zEntityId.nullable())
+  unsubscribeButton: z.string().max(64).exactOptional(),
+  imageUrl: z.string().exactOptional(),
+  buttons: z.array(zTelegramButtonInput).max(8).exactOptional(),
+  linkPreview: z.boolean().exactOptional(),
+  integrationId: zEntityId.nullable().exactOptional()
 });
 
 /**
@@ -3421,8 +3421,8 @@ export const zTelegramStepInput = z.strictObject({
  * The field of the other Channel is not read.
  */
 export const zTestSendBroadcastInput = z.strictObject({
-  email: z.exactOptional(zEmailAddress),
-  phone: z.exactOptional(z.string())
+  email: zEmailAddress.exactOptional(),
+  phone: z.string().exactOptional()
 });
 
 /**
@@ -3560,18 +3560,18 @@ export const zTimeZoneName = z.string();
  * Request body for creating a contact
  */
 export const zCreateContactInput = z.object({
-  subjectId: z.exactOptional(z.string().nullable()),
-  email: z.exactOptional(zEmailAddress.nullable()),
-  phone: z.exactOptional(z.string().nullable()),
-  firstName: z.exactOptional(z.string().nullable()),
-  lastName: z.exactOptional(z.string().nullable()),
-  timeZone: z.exactOptional(zTimeZoneName.nullable()),
-  country: z.exactOptional(zCountryCode.nullable()),
-  locale: z.exactOptional(zLocaleTag.nullable()),
-  birthday: z.exactOptional(z.iso.date().nullable()),
-  city: z.exactOptional(z.string().max(255).nullable()),
-  avatar: z.exactOptional(zImageUrl.nullable()),
-  customFields: z.exactOptional(zJsonObject.nullable())
+  subjectId: z.string().nullable().exactOptional(),
+  email: zEmailAddress.nullable().exactOptional(),
+  phone: z.string().nullable().exactOptional(),
+  firstName: z.string().nullable().exactOptional(),
+  lastName: z.string().nullable().exactOptional(),
+  timeZone: zTimeZoneName.nullable().exactOptional(),
+  country: zCountryCode.nullable().exactOptional(),
+  locale: zLocaleTag.nullable().exactOptional(),
+  birthday: z.iso.date().nullable().exactOptional(),
+  city: z.string().max(255).nullable().exactOptional(),
+  avatar: zImageUrl.nullable().exactOptional(),
+  customFields: zJsonObject.nullable().exactOptional()
 });
 
 /**
@@ -3580,19 +3580,19 @@ export const zCreateContactInput = z.object({
  * (`tags_apply`, `tags_remove`), which is why its body has no tags.
  */
 export const zSiteCreateContactInput = z.strictObject({
-  subjectId: z.exactOptional(z.string().nullable()),
-  email: z.exactOptional(zEmailAddress.nullable()),
-  phone: z.exactOptional(z.string().nullable()),
-  firstName: z.exactOptional(z.string().nullable()),
-  lastName: z.exactOptional(z.string().nullable()),
-  timeZone: z.exactOptional(zTimeZoneName.nullable()),
-  country: z.exactOptional(zCountryCode.nullable()),
-  locale: z.exactOptional(zLocaleTag.nullable()),
-  birthday: z.exactOptional(z.iso.date().nullable()),
-  city: z.exactOptional(z.string().max(255).nullable()),
-  avatar: z.exactOptional(zImageUrl.nullable()),
-  customFields: z.exactOptional(zJsonObject.nullable()),
-  tags: z.exactOptional(z.array(z.string()))
+  subjectId: z.string().nullable().exactOptional(),
+  email: zEmailAddress.nullable().exactOptional(),
+  phone: z.string().nullable().exactOptional(),
+  firstName: z.string().nullable().exactOptional(),
+  lastName: z.string().nullable().exactOptional(),
+  timeZone: zTimeZoneName.nullable().exactOptional(),
+  country: zCountryCode.nullable().exactOptional(),
+  locale: zLocaleTag.nullable().exactOptional(),
+  birthday: z.iso.date().nullable().exactOptional(),
+  city: z.string().max(255).nullable().exactOptional(),
+  avatar: zImageUrl.nullable().exactOptional(),
+  customFields: zJsonObject.nullable().exactOptional(),
+  tags: z.array(z.string()).exactOptional()
 });
 
 /**
@@ -3602,19 +3602,19 @@ export const zSiteCreateContactInput = z.strictObject({
  */
 export const zSiteUpdateContactInput = z.strictObject({
   revision: zRevision,
-  subjectId: z.exactOptional(z.string().nullable()),
-  email: z.exactOptional(zEmailAddress.nullable()),
-  phone: z.exactOptional(z.string().nullable()),
-  firstName: z.exactOptional(z.string().nullable()),
-  lastName: z.exactOptional(z.string().nullable()),
-  timeZone: z.exactOptional(zTimeZoneName.nullable()),
-  country: z.exactOptional(zCountryCode.nullable()),
-  locale: z.exactOptional(zLocaleTag.nullable()),
-  birthday: z.exactOptional(z.iso.date().nullable()),
-  city: z.exactOptional(z.string().max(255).nullable()),
-  avatar: z.exactOptional(zImageUrl.nullable()),
-  customFields: z.exactOptional(zJsonObject.nullable()),
-  tags: z.exactOptional(z.array(z.string()))
+  subjectId: z.string().nullable().exactOptional(),
+  email: zEmailAddress.nullable().exactOptional(),
+  phone: z.string().nullable().exactOptional(),
+  firstName: z.string().nullable().exactOptional(),
+  lastName: z.string().nullable().exactOptional(),
+  timeZone: zTimeZoneName.nullable().exactOptional(),
+  country: zCountryCode.nullable().exactOptional(),
+  locale: zLocaleTag.nullable().exactOptional(),
+  birthday: z.iso.date().nullable().exactOptional(),
+  city: z.string().max(255).nullable().exactOptional(),
+  avatar: zImageUrl.nullable().exactOptional(),
+  customFields: zJsonObject.nullable().exactOptional(),
+  tags: z.array(z.string()).exactOptional()
 });
 
 /**
@@ -3636,10 +3636,10 @@ export const zAuditEntryResource = z.object({
   actor: zAuditActor,
   action: zAuditAction,
   target: zAuditTarget,
-  diff: z.exactOptional(zJsonObject.nullable()),
-  requestId: z.exactOptional(z.string().nullable()),
-  ip: z.exactOptional(z.string().nullable()),
-  userAgent: z.exactOptional(z.string().nullable())
+  diff: zJsonObject.nullable().exactOptional(),
+  requestId: z.string().nullable().exactOptional(),
+  ip: z.string().nullable().exactOptional(),
+  userAgent: z.string().nullable().exactOptional()
 });
 
 /**
@@ -3647,7 +3647,7 @@ export const zAuditEntryResource = z.object({
  */
 export const zAuditEntryList = z.object({
   items: z.array(zAuditEntryResource),
-  nextCursor: z.exactOptional(z.string().nullable())
+  nextCursor: z.string().nullable().exactOptional()
 });
 
 /**
@@ -3667,7 +3667,7 @@ export const zBrandKitResource = z.object({
   buttonTextColor: z.string(),
   buttonRadius: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   footerText: z.string(),
-  updatedAt: z.exactOptional(zTimestamp.nullable()),
+  updatedAt: zTimestamp.nullable().exactOptional(),
   revision: zRevision
 });
 
@@ -3677,7 +3677,7 @@ export const zBrandKitResource = z.object({
 export const zContactExportBroadcastRecipient = z.object({
   id: zEntityId,
   broadcastId: zEntityId,
-  unsubscribedAt: z.exactOptional(zTimestamp.nullable()),
+  unsubscribedAt: zTimestamp.nullable().exactOptional(),
   createdAt: zTimestamp
 });
 
@@ -3689,9 +3689,9 @@ export const zContactExportConfirmation = z.object({
   channel: z.string(),
   destination: z.string(),
   provenance: z.string(),
-  wording: z.exactOptional(z.string().nullable()),
-  source: z.exactOptional(z.string().nullable()),
-  brand: z.exactOptional(z.string().nullable()),
+  wording: z.string().nullable().exactOptional(),
+  source: z.string().nullable().exactOptional(),
+  brand: z.string().nullable().exactOptional(),
   createdAt: zTimestamp
 });
 
@@ -3700,18 +3700,18 @@ export const zContactExportConfirmation = z.object({
  */
 export const zContactExportContact = z.object({
   id: zEntityId,
-  subjectId: z.exactOptional(z.string().nullable()),
-  email: z.exactOptional(z.string().nullable()),
-  phone: z.exactOptional(z.string().nullable()),
-  firstName: z.exactOptional(z.string().nullable()),
-  lastName: z.exactOptional(z.string().nullable()),
-  timeZone: z.exactOptional(z.string().nullable()),
-  country: z.exactOptional(z.string().nullable()),
-  locale: z.exactOptional(z.string().nullable()),
-  birthday: z.exactOptional(z.iso.date().nullable()),
-  city: z.exactOptional(z.string().nullable()),
-  avatar: z.exactOptional(z.string().nullable()),
-  customFields: z.exactOptional(zJsonObject.nullable()),
+  subjectId: z.string().nullable().exactOptional(),
+  email: z.string().nullable().exactOptional(),
+  phone: z.string().nullable().exactOptional(),
+  firstName: z.string().nullable().exactOptional(),
+  lastName: z.string().nullable().exactOptional(),
+  timeZone: z.string().nullable().exactOptional(),
+  country: z.string().nullable().exactOptional(),
+  locale: z.string().nullable().exactOptional(),
+  birthday: z.iso.date().nullable().exactOptional(),
+  city: z.string().nullable().exactOptional(),
+  avatar: z.string().nullable().exactOptional(),
+  customFields: zJsonObject.nullable().exactOptional(),
   source: zContactExportSource,
   createdAt: zTimestamp,
   updatedAt: zTimestamp
@@ -3722,13 +3722,13 @@ export const zContactExportContact = z.object({
  */
 export const zContactExportEvent = z.object({
   id: zEntityId,
-  sourceId: z.exactOptional(z.string().nullable()),
-  visitorId: z.exactOptional(z.string().nullable()),
+  sourceId: z.string().nullable().exactOptional(),
+  visitorId: z.string().nullable().exactOptional(),
   subjectId: z.string(),
-  email: z.exactOptional(z.string().nullable()),
-  phone: z.exactOptional(z.string().nullable()),
+  email: z.string().nullable().exactOptional(),
+  phone: z.string().nullable().exactOptional(),
   action: z.string(),
-  properties: z.exactOptional(zJsonObject.nullable()),
+  properties: zJsonObject.nullable().exactOptional(),
   occurredAt: zTimestamp,
   backfill: z.boolean(),
   createdAt: zTimestamp
@@ -3742,30 +3742,30 @@ export const zContactExportOutboundMessage = z.object({
   kind: z.string(),
   channel: z.string(),
   destination: z.string(),
-  destinations: z.exactOptional(z.array(z.string()).nullable()),
-  sendingSource: z.exactOptional(z.string().nullable()),
-  sendingDomain: z.exactOptional(z.string().nullable()),
-  providerMessageId: z.exactOptional(z.string().nullable()),
+  destinations: z.array(z.string()).nullable().exactOptional(),
+  sendingSource: z.string().nullable().exactOptional(),
+  sendingDomain: z.string().nullable().exactOptional(),
+  providerMessageId: z.string().nullable().exactOptional(),
   status: z.string(),
-  skippedReason: z.exactOptional(zSkippedReason.nullable()),
-  failure: z.exactOptional(z.string().nullable()),
+  skippedReason: zSkippedReason.nullable().exactOptional(),
+  failure: z.string().nullable().exactOptional(),
   claimedAt: zTimestamp,
-  sentAt: z.exactOptional(zTimestamp.nullable()),
-  deliveredAt: z.exactOptional(zTimestamp.nullable()),
-  bouncedAt: z.exactOptional(zTimestamp.nullable()),
-  undeliveredAt: z.exactOptional(zTimestamp.nullable()),
-  undeliveredCode: z.exactOptional(z.string().nullable()),
-  complainedAt: z.exactOptional(zTimestamp.nullable()),
-  openedAt: z.exactOptional(zTimestamp.nullable()),
-  clickedAt: z.exactOptional(zTimestamp.nullable()),
+  sentAt: zTimestamp.nullable().exactOptional(),
+  deliveredAt: zTimestamp.nullable().exactOptional(),
+  bouncedAt: zTimestamp.nullable().exactOptional(),
+  undeliveredAt: zTimestamp.nullable().exactOptional(),
+  undeliveredCode: z.string().nullable().exactOptional(),
+  complainedAt: zTimestamp.nullable().exactOptional(),
+  openedAt: zTimestamp.nullable().exactOptional(),
+  clickedAt: zTimestamp.nullable().exactOptional(),
   captured: z.boolean(),
   tracked: z.boolean(),
-  trackingDecidedAt: z.exactOptional(zTimestamp.nullable()),
-  trackingWithdrawnAt: z.exactOptional(zTimestamp.nullable()),
-  broadcastId: z.exactOptional(zEntityId.nullable()),
-  automationId: z.exactOptional(zEntityId.nullable()),
-  automationStepId: z.exactOptional(z.string().nullable()),
-  templateId: z.exactOptional(zEntityId.nullable()),
+  trackingDecidedAt: zTimestamp.nullable().exactOptional(),
+  trackingWithdrawnAt: zTimestamp.nullable().exactOptional(),
+  broadcastId: zEntityId.nullable().exactOptional(),
+  automationId: zEntityId.nullable().exactOptional(),
+  automationStepId: z.string().nullable().exactOptional(),
+  templateId: zEntityId.nullable().exactOptional(),
   createdAt: zTimestamp
 });
 
@@ -3777,7 +3777,7 @@ export const zContactExportSuppression = z.object({
   channel: z.string(),
   destination: z.string(),
   reason: z.string(),
-  liftedAt: z.exactOptional(zTimestamp.nullable()),
+  liftedAt: zTimestamp.nullable().exactOptional(),
   createdAt: zTimestamp
 });
 
@@ -3798,7 +3798,7 @@ export const zContactExportUnsubscribe = z.object({
   channel: z.string(),
   destination: z.string(),
   sendingSource: z.string(),
-  via: z.exactOptional(zOptOutVia.nullable()),
+  via: zOptOutVia.nullable().exactOptional(),
   createdAt: zTimestamp
 });
 
@@ -3836,9 +3836,9 @@ export const zEngagementTrackingConsent = z.object({
   channel: zEngagementTrackingChannel,
   destination: z.string(),
   state: zEngagementTrackingReading,
-  provenance: z.exactOptional(zEngagementTrackingProvenance.nullable()),
+  provenance: zEngagementTrackingProvenance.nullable().exactOptional(),
   effective: zEngagementTrackingDecision,
-  updatedAt: z.exactOptional(zTimestamp.nullable())
+  updatedAt: zTimestamp.nullable().exactOptional()
 });
 
 /**
@@ -3888,7 +3888,7 @@ export const zRuleFiringResource = z.object({
   action: z.string(),
   eventSourceId: z.string(),
   results: z.array(zRuleActionResult),
-  completedAt: z.exactOptional(zTimestamp),
+  completedAt: zTimestamp.exactOptional(),
   createdAt: zTimestamp
 });
 
@@ -3913,12 +3913,12 @@ export const zSendingDomainResource = z.object({
   dkimRecord: zDnsRecord,
   spfRecord: zDnsRecord,
   dmarcRecord: zDnsRecord,
-  dmarcCheckedAt: z.exactOptional(zTimestamp.nullable()),
-  dmarcFoundAt: z.exactOptional(zTimestamp.nullable()),
-  lastCheckedAt: z.exactOptional(zTimestamp.nullable()),
-  verifiedAt: z.exactOptional(zTimestamp.nullable()),
-  verificationLostAt: z.exactOptional(zTimestamp.nullable()),
-  discardedAt: z.exactOptional(zTimestamp.nullable()),
+  dmarcCheckedAt: zTimestamp.nullable().exactOptional(),
+  dmarcFoundAt: zTimestamp.nullable().exactOptional(),
+  lastCheckedAt: zTimestamp.nullable().exactOptional(),
+  verifiedAt: zTimestamp.nullable().exactOptional(),
+  verificationLostAt: zTimestamp.nullable().exactOptional(),
+  discardedAt: zTimestamp.nullable().exactOptional(),
   createdAt: zTimestamp,
   updatedAt: zTimestamp
 });
@@ -3973,9 +3973,9 @@ export const zSiteApiTokenResource = z.object({
   name: z.string(),
   prefix: z.string(),
   scopes: z.array(zApiTokenScope),
-  lastUsedAt: z.exactOptional(zTimestamp.nullable()),
-  expiresAt: z.exactOptional(zTimestamp.nullable()),
-  revokedAt: z.exactOptional(zTimestamp.nullable()),
+  lastUsedAt: zTimestamp.nullable().exactOptional(),
+  expiresAt: zTimestamp.nullable().exactOptional(),
+  revokedAt: zTimestamp.nullable().exactOptional(),
   createdAt: zTimestamp
 });
 
@@ -3985,12 +3985,12 @@ export const zSiteApiTokenResource = z.object({
 export const zSiteAttentionItem = z.object({
   kind: zSiteAttentionKind,
   severity: zSiteAttentionSeverity,
-  subject: z.exactOptional(zSiteAttentionSubject.nullable()),
+  subject: zSiteAttentionSubject.nullable().exactOptional(),
   count: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  since: z.exactOptional(zTimestamp.nullable()),
-  holdReason: z.exactOptional(zHoldReason.nullable()),
-  abuse: z.exactOptional(zAbuseWarning.nullable()),
-  estimatedCompletionAt: z.exactOptional(zTimestamp.nullable())
+  since: zTimestamp.nullable().exactOptional(),
+  holdReason: zHoldReason.nullable().exactOptional(),
+  abuse: zAbuseWarning.nullable().exactOptional(),
+  estimatedCompletionAt: zTimestamp.nullable().exactOptional()
 });
 
 /**
@@ -4009,7 +4009,7 @@ export const zSiteBindingResource = z.object({
   id: zEntityId,
   integrationId: zEntityId,
   integrationName: z.string(),
-  botUsername: z.exactOptional(z.string().nullable()),
+  botUsername: z.string().nullable().exactOptional(),
   boundAt: zTimestamp
 });
 
@@ -4018,7 +4018,7 @@ export const zSiteBindingResource = z.object({
  */
 export const zSiteBroadcastOutsideWindowResult = z.object({
   held: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  reachedAt: z.exactOptional(zTimestamp)
+  reachedAt: zTimestamp.exactOptional()
 });
 
 /**
@@ -4030,7 +4030,7 @@ export const zSiteBroadcastOutsideWindowResult = z.object({
 export const zSiteBroadcastProgress = z.object({
   processedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   remainingCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  estimatedCompletionAt: z.exactOptional(zTimestamp.nullable()),
+  estimatedCompletionAt: zTimestamp.nullable().exactOptional(),
   limitedBy: zSiteBroadcastLimit.nullable()
 });
 
@@ -4042,19 +4042,19 @@ export const zSiteBroadcastResource = z.object({
   name: z.string(),
   channel: zBroadcastChannel,
   content: zBroadcastContent,
-  warnings: z.exactOptional(z.array(zLintFinding)),
-  segmentId: z.exactOptional(zEntityId.nullable()),
-  integrationId: z.exactOptional(zEntityId.nullable()),
+  warnings: z.array(zLintFinding).exactOptional(),
+  segmentId: zEntityId.nullable().exactOptional(),
+  integrationId: zEntityId.nullable().exactOptional(),
   status: zBroadcastStatus,
-  holdReason: z.exactOptional(zHoldReason.nullable()),
-  scheduledAt: z.exactOptional(zTimestamp.nullable()),
-  recipients: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
-  unsent: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
-  sentAt: z.exactOptional(zTimestamp.nullable()),
-  failedAt: z.exactOptional(zTimestamp.nullable()),
+  holdReason: zHoldReason.nullable().exactOptional(),
+  scheduledAt: zTimestamp.nullable().exactOptional(),
+  recipients: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).exactOptional(),
+  unsent: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).exactOptional(),
+  sentAt: zTimestamp.nullable().exactOptional(),
+  failedAt: zTimestamp.nullable().exactOptional(),
   stats: zSiteBroadcastStats,
-  progress: z.exactOptional(zSiteBroadcastProgress.nullable()),
-  archivedAt: z.exactOptional(zTimestamp.nullable()),
+  progress: zSiteBroadcastProgress.nullable().exactOptional(),
+  archivedAt: zTimestamp.nullable().exactOptional(),
   revision: zRevision,
   createdAt: zTimestamp,
   updatedAt: zTimestamp
@@ -4135,18 +4135,18 @@ export const zSiteConnectionResource = z.object({
  */
 export const zSiteContactResource = z.object({
   id: zEntityId,
-  subjectId: z.exactOptional(z.string().nullable()),
-  email: z.exactOptional(zEmailAddress.nullable()),
-  phone: z.exactOptional(z.string().nullable()),
-  firstName: z.exactOptional(z.string().nullable()),
-  lastName: z.exactOptional(z.string().nullable()),
-  timeZone: z.exactOptional(zTimeZoneName.nullable()),
-  country: z.exactOptional(zCountryCode.nullable()),
-  locale: z.exactOptional(zLocaleTag.nullable()),
-  birthday: z.exactOptional(z.iso.date().nullable()),
-  city: z.exactOptional(z.string().max(255).nullable()),
-  avatar: z.exactOptional(zImageUrl.nullable()),
-  customFields: z.exactOptional(zJsonObject.nullable()),
+  subjectId: z.string().nullable().exactOptional(),
+  email: zEmailAddress.nullable().exactOptional(),
+  phone: z.string().nullable().exactOptional(),
+  firstName: z.string().nullable().exactOptional(),
+  lastName: z.string().nullable().exactOptional(),
+  timeZone: zTimeZoneName.nullable().exactOptional(),
+  country: zCountryCode.nullable().exactOptional(),
+  locale: zLocaleTag.nullable().exactOptional(),
+  birthday: z.iso.date().nullable().exactOptional(),
+  city: z.string().max(255).nullable().exactOptional(),
+  avatar: zImageUrl.nullable().exactOptional(),
+  customFields: zJsonObject.nullable().exactOptional(),
   tags: z.array(z.string()),
   revision: zRevision,
   createdAt: zTimestamp,
@@ -4159,7 +4159,7 @@ export const zSiteContactResource = z.object({
 export const zSiteCreatePersonalTokenInput = z.strictObject({
   name: zName,
   scopes: z.array(zPersonalScope),
-  expiresAt: z.exactOptional(zTimestamp.nullable())
+  expiresAt: zTimestamp.nullable().exactOptional()
 });
 
 /**
@@ -4168,7 +4168,7 @@ export const zSiteCreatePersonalTokenInput = z.strictObject({
 export const zSiteCreateTokenInput = z.strictObject({
   name: zName,
   scopes: z.array(zApiTokenScope),
-  expiresAt: z.exactOptional(zTimestamp.nullable())
+  expiresAt: zTimestamp.nullable().exactOptional()
 });
 
 /**
@@ -4202,9 +4202,9 @@ export const zSiteEmailTemplateResource = z.object({
   name: z.string(),
   subject: z.string(),
   body: z.string(),
-  doc: z.exactOptional(zEditorDocument.nullable()),
-  editorVersion: z.exactOptional(z.string().nullable()),
-  warnings: z.exactOptional(z.array(zLintFinding)),
+  doc: zEditorDocument.nullable().exactOptional(),
+  editorVersion: z.string().nullable().exactOptional(),
+  warnings: z.array(zLintFinding).exactOptional(),
   revision: zRevision,
   createdAt: zTimestamp,
   updatedAt: zTimestamp
@@ -4216,10 +4216,10 @@ export const zSiteEmailTemplateResource = z.object({
 export const zSiteEventResource = z.object({
   id: zEntityId,
   subjectId: z.string(),
-  email: z.exactOptional(z.string().nullable()),
+  email: z.string().nullable().exactOptional(),
   action: z.string(),
-  properties: z.exactOptional(zJsonObject.nullable()),
-  emailSubject: z.exactOptional(z.string().nullable()),
+  properties: zJsonObject.nullable().exactOptional(),
+  emailSubject: z.string().nullable().exactOptional(),
   occurredAt: zTimestamp,
   createdAt: zTimestamp
 });
@@ -4232,7 +4232,7 @@ export const zSiteInvitationResource = z.object({
   email: zEmailAddress,
   role: zSiteInvitableRole,
   expiresAt: zTimestamp,
-  invitedByEmail: z.exactOptional(z.string().nullable()),
+  invitedByEmail: z.string().nullable().exactOptional(),
   createdAt: zTimestamp
 });
 
@@ -4255,8 +4255,8 @@ export const zSiteJoinDomainResource = z.object({
   domain: z.string(),
   verified: z.boolean(),
   record: zDnsRecord,
-  lastCheckedAt: z.exactOptional(zTimestamp.nullable()),
-  verifiedAt: z.exactOptional(zTimestamp.nullable()),
+  lastCheckedAt: zTimestamp.nullable().exactOptional(),
+  verifiedAt: zTimestamp.nullable().exactOptional(),
   createdAt: zTimestamp,
   updatedAt: zTimestamp
 });
@@ -4312,8 +4312,8 @@ export const zSiteOptionalConsent = z.object({
   key: zSignupItemKey,
   title: z.string(),
   version: zLegalDocumentLabel,
-  decision: z.exactOptional(zSiteOptionalConsentDecision),
-  decidedAt: z.exactOptional(zTimestamp)
+  decision: zSiteOptionalConsentDecision.exactOptional(),
+  decidedAt: zTimestamp.exactOptional()
 });
 
 /**
@@ -4331,7 +4331,7 @@ export const zSitePasskey = z.object({
   id: zEntityId,
   name: zName,
   createdAt: zTimestamp,
-  lastUsedAt: z.exactOptional(zTimestamp)
+  lastUsedAt: zTimestamp.exactOptional()
 });
 
 /**
@@ -4356,7 +4356,7 @@ export const zSitePersonalTokenResource = z.object({
   name: z.string(),
   prefix: z.string(),
   scopes: z.array(zPersonalScope),
-  expiresAt: z.exactOptional(zTimestamp.nullable()),
+  expiresAt: zTimestamp.nullable().exactOptional(),
   userId: zEntityId,
   userName: z.string(),
   userEmail: zEmailAddress,
@@ -4377,7 +4377,7 @@ export const zSiteCreatePersonalTokenResponse = z.object({
  */
 export const zSiteSetupProgress = z.object({
   steps: zSiteSetupSteps,
-  completedAt: z.exactOptional(zTimestamp.nullable())
+  completedAt: zTimestamp.nullable().exactOptional()
 });
 
 /**
@@ -4388,7 +4388,7 @@ export const zSiteSuppressionResource = z.object({
   channel: zSuppressionChannel,
   destination: z.string(),
   reason: zSuppressionReason,
-  liftedAt: z.exactOptional(zTimestamp.nullable()),
+  liftedAt: zTimestamp.nullable().exactOptional(),
   createdAt: zTimestamp,
   updatedAt: zTimestamp
 });
@@ -4410,9 +4410,9 @@ export const zSiteTransactionalEmailResource = z.object({
   channel: zSiteTransactionalEmailChannel,
   destination: z.string(),
   templateId: zEntityId,
-  contactId: z.exactOptional(zEntityId.nullable()),
+  contactId: zEntityId.nullable().exactOptional(),
   status: zSiteTransactionalEmailStatus,
-  error: z.exactOptional(z.string().nullable()),
+  error: z.string().nullable().exactOptional(),
   captured: z.boolean(),
   createdAt: zTimestamp
 });
@@ -4442,7 +4442,7 @@ export const zSiteWorkspaceHold = z.object({
   reasonCode: z.string(),
   message: z.string(),
   since: zTimestamp,
-  actionUrl: z.exactOptional(z.string().nullable())
+  actionUrl: z.string().nullable().exactOptional()
 });
 
 /**
@@ -4454,8 +4454,8 @@ export const zSkippedEntryResource = z.object({
   automationId: zEntityId,
   contactId: zEntityId,
   reason: zSkippedEntryReason,
-  eventSourceId: z.exactOptional(z.string()),
-  firingId: z.exactOptional(zEntityId),
+  eventSourceId: z.string().exactOptional(),
+  firingId: zEntityId.exactOptional(),
   occurredAt: zTimestamp,
   createdAt: zTimestamp
 });
@@ -4465,9 +4465,9 @@ export const zSkippedEntryResource = z.object({
  */
 export const zSmsConfirmation = z.object({
   provenance: zConfirmationProvenance,
-  wording: z.exactOptional(z.string().nullable()),
-  source: z.exactOptional(z.string().nullable()),
-  brand: z.exactOptional(z.string().nullable()),
+  wording: z.string().nullable().exactOptional(),
+  source: z.string().nullable().exactOptional(),
+  brand: z.string().nullable().exactOptional(),
   confirmedAt: zTimestamp
 });
 
@@ -4483,9 +4483,9 @@ export const zSmsOptOut = z.object({
  * Whether a contact's phone may be texted (ADR 0077): its SMS Confirmation and its SMS opt-out, both keyed by the number
  */
 export const zSmsConsent = z.object({
-  phone: z.exactOptional(z.string().nullable()),
-  confirmation: z.exactOptional(zSmsConfirmation.nullable()),
-  optOut: z.exactOptional(zSmsOptOut.nullable())
+  phone: z.string().nullable().exactOptional(),
+  confirmation: zSmsConfirmation.nullable().exactOptional(),
+  optOut: zSmsOptOut.nullable().exactOptional()
 });
 
 /**
@@ -4542,12 +4542,12 @@ export const zTrackingDomainResource = z.object({
   host: z.string(),
   role: zTrackingDomainRole,
   state: zTrackingState,
-  reason: z.exactOptional(zTrackingReason),
+  reason: zTrackingReason.exactOptional(),
   record: zCnameRecord,
   ownershipRecord: zDnsRecord,
-  servedAt: z.exactOptional(zTimestamp.nullable()),
-  lastCheckedAt: z.exactOptional(zTimestamp.nullable()),
-  stateChangedAt: z.exactOptional(zTimestamp.nullable()),
+  servedAt: zTimestamp.nullable().exactOptional(),
+  lastCheckedAt: zTimestamp.nullable().exactOptional(),
+  stateChangedAt: zTimestamp.nullable().exactOptional(),
   createdAt: zTimestamp,
   updatedAt: zTimestamp
 });
@@ -4673,7 +4673,7 @@ export const zSiteIntegrationResource = z.object({
   params: zJsonObject,
   secretsRetiring: z.array(z.string()),
   hookUrl: z.string(),
-  discardedAt: z.exactOptional(zTimestamp.nullable()),
+  discardedAt: zTimestamp.nullable().exactOptional(),
   revision: zRevision,
   createdAt: zTimestamp,
   updatedAt: zTimestamp
@@ -4685,7 +4685,7 @@ export const zSiteIntegrationResource = z.object({
 export const zTwilioConfigInput = z.strictObject({
   kind: z.enum(['twilio']),
   accountSid: z.string(),
-  apiKeySid: z.exactOptional(z.string().nullable()),
+  apiKeySid: z.string().nullable().exactOptional(),
   secret: z.string(),
   from: z.string()
 });
@@ -4706,13 +4706,13 @@ export const zIntegrationConfigInput = z.discriminatedUnion('kind', [
  */
 export const zCreateIntegrationInput = z.strictObject({
   name: zName,
-  enabled: z.exactOptional(z.boolean()),
-  isDefault: z.exactOptional(z.boolean()),
-  maxPerSecond: z.exactOptional(zMaxPerSecond.nullable()),
-  maxPerDay: z.exactOptional(zMaxPerDay.nullable()),
+  enabled: z.boolean().exactOptional(),
+  isDefault: z.boolean().exactOptional(),
+  maxPerSecond: zMaxPerSecond.nullable().exactOptional(),
+  maxPerDay: zMaxPerDay.nullable().exactOptional(),
   config: zIntegrationConfigInput,
-  preset: z.exactOptional(z.string().nullable()),
-  params: z.exactOptional(zJsonObject)
+  preset: z.string().nullable().exactOptional(),
+  params: zJsonObject.exactOptional()
 });
 
 /**
@@ -4720,10 +4720,10 @@ export const zCreateIntegrationInput = z.strictObject({
  */
 export const zUpdateBroadcastInput = z.strictObject({
   revision: zRevision,
-  name: z.exactOptional(zName),
-  content: z.exactOptional(zBroadcastContentInput),
-  segmentId: z.exactOptional(zEntityId.nullable()),
-  integrationId: z.exactOptional(zEntityId.nullable())
+  name: zName.exactOptional(),
+  content: zBroadcastContentInput.exactOptional(),
+  segmentId: zEntityId.nullable().exactOptional(),
+  integrationId: zEntityId.nullable().exactOptional()
 });
 
 /**
@@ -4731,18 +4731,18 @@ export const zUpdateBroadcastInput = z.strictObject({
  */
 export const zUpdateContactInput = z.object({
   revision: zRevision,
-  subjectId: z.exactOptional(z.string().nullable()),
-  email: z.exactOptional(zEmailAddress.nullable()),
-  phone: z.exactOptional(z.string().nullable()),
-  firstName: z.exactOptional(z.string().nullable()),
-  lastName: z.exactOptional(z.string().nullable()),
-  timeZone: z.exactOptional(zTimeZoneName.nullable()),
-  country: z.exactOptional(zCountryCode.nullable()),
-  locale: z.exactOptional(zLocaleTag.nullable()),
-  birthday: z.exactOptional(z.iso.date().nullable()),
-  city: z.exactOptional(z.string().max(255).nullable()),
-  avatar: z.exactOptional(zImageUrl.nullable()),
-  customFields: z.exactOptional(zJsonObject.nullable())
+  subjectId: z.string().nullable().exactOptional(),
+  email: zEmailAddress.nullable().exactOptional(),
+  phone: z.string().nullable().exactOptional(),
+  firstName: z.string().nullable().exactOptional(),
+  lastName: z.string().nullable().exactOptional(),
+  timeZone: zTimeZoneName.nullable().exactOptional(),
+  country: zCountryCode.nullable().exactOptional(),
+  locale: zLocaleTag.nullable().exactOptional(),
+  birthday: z.iso.date().nullable().exactOptional(),
+  city: z.string().max(255).nullable().exactOptional(),
+  avatar: zImageUrl.nullable().exactOptional(),
+  customFields: zJsonObject.nullable().exactOptional()
 });
 
 /**
@@ -4750,8 +4750,8 @@ export const zUpdateContactInput = z.object({
  */
 export const zUpdateCustomFieldInput = z.strictObject({
   revision: zRevision,
-  name: z.exactOptional(zName),
-  type: z.exactOptional(zCustomFieldType)
+  name: zName.exactOptional(),
+  type: zCustomFieldType.exactOptional()
 });
 
 /**
@@ -4759,15 +4759,15 @@ export const zUpdateCustomFieldInput = z.strictObject({
  */
 export const zUpdateIntegrationInput = z.strictObject({
   revision: zRevision,
-  name: z.exactOptional(zName),
-  enabled: z.exactOptional(z.boolean()),
-  isDefault: z.exactOptional(z.boolean()),
-  maxPerSecond: z.exactOptional(zMaxPerSecond.nullable()),
-  maxPerDay: z.exactOptional(zMaxPerDay.nullable()),
-  config: z.exactOptional(zIntegrationConfigInput),
-  preset: z.exactOptional(z.string().nullable()),
-  params: z.exactOptional(zJsonObject),
-  retireSecrets: z.exactOptional(z.boolean())
+  name: zName.exactOptional(),
+  enabled: z.boolean().exactOptional(),
+  isDefault: z.boolean().exactOptional(),
+  maxPerSecond: zMaxPerSecond.nullable().exactOptional(),
+  maxPerDay: zMaxPerDay.nullable().exactOptional(),
+  config: zIntegrationConfigInput.exactOptional(),
+  preset: z.string().nullable().exactOptional(),
+  params: zJsonObject.exactOptional(),
+  retireSecrets: z.boolean().exactOptional()
 });
 
 /**
@@ -4775,10 +4775,10 @@ export const zUpdateIntegrationInput = z.strictObject({
  */
 export const zUpdateTemplateInput = z.strictObject({
   revision: zRevision,
-  name: z.exactOptional(zName),
-  subject: z.exactOptional(z.string()),
-  body: z.exactOptional(z.string()),
-  doc: z.exactOptional(zEditorDocument)
+  name: zName.exactOptional(),
+  subject: z.string().exactOptional(),
+  body: z.string().exactOptional(),
+  doc: zEditorDocument.exactOptional()
 });
 
 /**
@@ -4786,9 +4786,9 @@ export const zUpdateTemplateInput = z.strictObject({
  */
 export const zUpdateWebhookInput = z.strictObject({
   revision: zRevision,
-  url: z.exactOptional(z.string()),
-  eventTypes: z.exactOptional(z.array(z.string())),
-  enabled: z.exactOptional(z.boolean())
+  url: z.string().exactOptional(),
+  eventTypes: z.array(z.string()).exactOptional(),
+  enabled: z.boolean().exactOptional()
 });
 
 /**
@@ -4811,7 +4811,7 @@ export const zUsedBy = z.object({
   kind: zUsedByKind,
   id: zEntityId,
   name: z.string(),
-  count: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }))
+  count: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).exactOptional()
 });
 
 /**
@@ -4828,9 +4828,9 @@ export const zUserName = z.string().max(100);
  * follows the User, so nothing is asked again (ADR 0062).
  */
 export const zSiteAcceptInvitationInput = z.strictObject({
-  name: z.exactOptional(zUserName),
-  password: z.exactOptional(z.string()),
-  signupItems: z.exactOptional(z.array(zSiteSignupItemAnswer))
+  name: zUserName.exactOptional(),
+  password: z.string().exactOptional(),
+  signupItems: z.array(zSiteSignupItemAnswer).exactOptional()
 });
 
 /**
@@ -4841,8 +4841,8 @@ export const zSiteAcceptInvitationInput = z.strictObject({
 export const zSiteSignUpInput = z.strictObject({
   name: zUserName,
   email: zEmailAddress,
-  password: z.exactOptional(z.string()),
-  signupItems: z.exactOptional(z.array(zSiteSignupItemAnswer))
+  password: z.string().exactOptional(),
+  signupItems: z.array(zSiteSignupItemAnswer).exactOptional()
 });
 
 /**
@@ -4850,11 +4850,11 @@ export const zSiteSignUpInput = z.strictObject({
  * both currentPassword and newPassword.
  */
 export const zSiteUpdateMeInput = z.strictObject({
-  name: z.exactOptional(zUserName),
-  timezone: z.exactOptional(zTimeZoneName.nullable()),
-  regionalFormat: z.exactOptional(zRegionalFormat.nullable()),
-  currentPassword: z.exactOptional(z.string()),
-  newPassword: z.exactOptional(z.string())
+  name: zUserName.exactOptional(),
+  timezone: zTimeZoneName.nullable().exactOptional(),
+  regionalFormat: zRegionalFormat.nullable().exactOptional(),
+  currentPassword: z.string().exactOptional(),
+  newPassword: z.string().exactOptional()
 });
 
 /**
@@ -4870,7 +4870,7 @@ export const zWaitStep = z.object({
  * A Step that waits before the next one, as a request writes it
  */
 export const zWaitStepInput = z.strictObject({
-  id: z.exactOptional(zStepId),
+  id: zStepId.exactOptional(),
   type: z.enum(['wait']),
   seconds: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
 });
@@ -4935,7 +4935,7 @@ export const zWebhookFailure = z.object({
   since: zTimestamp,
   lastFailureAt: zTimestamp,
   kind: zWebhookErrorKind,
-  status: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }))
+  status: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).exactOptional()
 });
 
 /**
@@ -4947,9 +4947,9 @@ export const zSiteWebhookEndpointResource = z.object({
   secret: z.string(),
   eventTypes: z.array(z.string()),
   enabled: z.boolean(),
-  disabledAt: z.exactOptional(zTimestamp),
-  disabledReason: z.exactOptional(zWebhookDisabledReason),
-  failure: z.exactOptional(zWebhookFailure),
+  disabledAt: zTimestamp.exactOptional(),
+  disabledReason: zWebhookDisabledReason.exactOptional(),
+  failure: zWebhookFailure.exactOptional(),
   revision: zRevision,
   createdAt: zTimestamp,
   updatedAt: zTimestamp
@@ -4960,8 +4960,8 @@ export const zSiteWebhookEndpointResource = z.object({
  */
 export const zWebhookTestResult = z.object({
   delivered: z.boolean(),
-  status: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
-  kind: z.exactOptional(zWebhookErrorKind)
+  status: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).exactOptional(),
+  kind: zWebhookErrorKind.exactOptional()
 });
 
 /**
@@ -5081,7 +5081,7 @@ export const zWaitUntilStep = z.object({
 export const zWaitUntilTimeOfDayInput = z.strictObject({
   form: z.enum(['time_of_day']),
   localTime: zLocalTime,
-  weekdays: z.exactOptional(z.array(zWeekday))
+  weekdays: z.array(zWeekday).exactOptional()
 });
 
 /**
@@ -5096,7 +5096,7 @@ export const zWaitUntilMomentInput = z.discriminatedUnion('form', [
  * A Step that holds the Enrollment until a calendar moment, as a request writes it
  */
 export const zWaitUntilStepInput = z.strictObject({
-  id: z.exactOptional(zStepId),
+  id: zStepId.exactOptional(),
   type: z.enum(['wait_until']),
   until: zWaitUntilMomentInput
 });
@@ -5219,13 +5219,13 @@ export const zSiteDeletedWorkspaceResource = z.object({
 export const zSiteOAuthDecisionInput = z.strictObject({
   clientId: z.string(),
   redirectUri: z.string(),
-  state: z.exactOptional(z.string()),
+  state: z.string().exactOptional(),
   codeChallenge: z.string(),
-  scope: z.exactOptional(z.string()),
+  scope: z.string().exactOptional(),
   workspaceId: zWorkspaceId,
   approve: z.boolean(),
-  allowSend: z.exactOptional(z.boolean()),
-  allowSetup: z.exactOptional(z.boolean())
+  allowSend: z.boolean().exactOptional(),
+  allowSetup: z.boolean().exactOptional()
 });
 
 /**
@@ -5250,19 +5250,19 @@ export const zSiteWorkspaceResource = z.object({
   linkIdentityHosts: z.array(z.string()),
   role: zSiteMembershipRole,
   permissions: z.array(zPermission),
-  suspendedAt: z.exactOptional(zTimestamp.nullable()),
-  suspensionReason: z.exactOptional(z.string().nullable()),
-  supportEmail: z.exactOptional(z.string().nullable()),
+  suspendedAt: zTimestamp.nullable().exactOptional(),
+  suspensionReason: z.string().nullable().exactOptional(),
+  supportEmail: z.string().nullable().exactOptional(),
   mcpUrl: z.string(),
   trackerUrl: z.string(),
-  trackingTarget: z.exactOptional(z.string()),
+  trackingTarget: z.string().exactOptional(),
   shortLinkLength: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   smsMaxLength: zSiteSmsLengthLimit,
   holds: z.array(zSiteWorkspaceHold),
-  secondFactorRequiredAt: z.exactOptional(zTimestamp.nullable()),
-  secondFactorGraceEndsAt: z.exactOptional(zTimestamp.nullable()),
-  secondFactorRequirementGraceEndsAt: z.exactOptional(zTimestamp.nullable()),
-  sendCap: z.exactOptional(zSendCap.nullable()),
+  secondFactorRequiredAt: zTimestamp.nullable().exactOptional(),
+  secondFactorGraceEndsAt: zTimestamp.nullable().exactOptional(),
+  secondFactorRequirementGraceEndsAt: zTimestamp.nullable().exactOptional(),
+  sendCap: zSendCap.nullable().exactOptional(),
   accountLinkAvailable: z.boolean(),
   createdAt: zTimestamp,
   revision: zRevision
@@ -5280,19 +5280,19 @@ export const zSoleOwnedWorkspace = z.object({
  * RFC 7807 Problem Details
  */
 export const zProblemDetails = z.object({
-  code: z.exactOptional(zProblemCode),
-  type: z.exactOptional(z.string()),
-  title: z.exactOptional(z.string()),
-  status: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
-  detail: z.exactOptional(z.string()),
-  instance: z.exactOptional(z.string()),
-  errors: z.exactOptional(z.record(z.string(), z.array(z.string()))),
-  form: z.exactOptional(z.string()),
-  fields: z.exactOptional(z.record(z.string(), z.string())),
-  retryAfter: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
-  debug: z.exactOptional(zProblemDebug),
-  usedBy: z.exactOptional(z.array(zUsedBy)),
-  workspaces: z.exactOptional(z.array(zSoleOwnedWorkspace))
+  code: zProblemCode.exactOptional(),
+  type: z.string().exactOptional(),
+  title: z.string().exactOptional(),
+  status: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).exactOptional(),
+  detail: z.string().exactOptional(),
+  instance: z.string().exactOptional(),
+  errors: z.record(z.string(), z.array(z.string())).exactOptional(),
+  form: z.string().exactOptional(),
+  fields: z.record(z.string(), z.string()).exactOptional(),
+  retryAfter: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).exactOptional(),
+  debug: zProblemDebug.exactOptional(),
+  usedBy: z.array(zUsedBy).exactOptional(),
+  workspaces: z.array(zSoleOwnedWorkspace).exactOptional()
 });
 
 /**
@@ -5321,13 +5321,13 @@ export const zEnrollmentResource = z.object({
   contactId: zEntityId,
   status: zEnrollmentStatus,
   ordinal: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  keyValue: z.exactOptional(z.string()),
-  occurrence: z.exactOptional(zEnrollmentOccurrence),
-  currentStepId: z.exactOptional(zStepId),
-  resumeAt: z.exactOptional(zTimestamp),
-  deferredSince: z.exactOptional(zTimestamp),
-  deferralCause: z.exactOptional(zDeferralCause),
-  failure: z.exactOptional(zEnrollmentFailure),
+  keyValue: z.string().exactOptional(),
+  occurrence: zEnrollmentOccurrence.exactOptional(),
+  currentStepId: zStepId.exactOptional(),
+  resumeAt: zTimestamp.exactOptional(),
+  deferredSince: zTimestamp.exactOptional(),
+  deferralCause: zDeferralCause.exactOptional(),
+  failure: zEnrollmentFailure.exactOptional(),
   createdAt: zTimestamp,
   updatedAt: zTimestamp
 });
@@ -5344,7 +5344,7 @@ export const zAutomationPath = z.object({
  * A path of Steps, as a request writes it
  */
 export const zAutomationPathInput = z.strictObject({
-  id: z.exactOptional(zStepId),
+  id: zStepId.exactOptional(),
   steps: z.array(z.lazy((): any => zAutomationStepInput))
 });
 
@@ -5469,7 +5469,7 @@ export const zAutomationVersion = z.object({
 export const zBranchCondition = z.object({
   kind: z.enum(['group']),
   combinator: zConditionCombinator,
-  not: z.exactOptional(z.boolean()),
+  not: z.boolean().exactOptional(),
   entries: z.array(z.lazy((): any => zBranchConditionNode))
 });
 
@@ -5481,7 +5481,7 @@ export const zBranchCondition = z.object({
 export const zBranchConditionInput = z.strictObject({
   kind: z.enum(['group']),
   combinator: zConditionCombinator,
-  not: z.exactOptional(z.boolean()),
+  not: z.boolean().exactOptional(),
   entries: z.array(z.lazy((): any => zBranchConditionNodeInput))
 });
 
@@ -5578,7 +5578,7 @@ export const zBranchPath = z.object({
  * A path of a Branch, as a request writes it
  */
 export const zBranchPathInput = z.strictObject({
-  id: z.exactOptional(zStepId),
+  id: zStepId.exactOptional(),
   condition: zBranchConditionInput,
   steps: z.array(z.lazy((): any => zPathStepInput))
 });
@@ -5596,7 +5596,7 @@ export const zBranchStep = z.object({
   type: z.enum(['branch']),
   paths: z.array(zBranchPath),
   otherwise: zAutomationPath,
-  unknown: z.exactOptional(zAutomationPath)
+  unknown: zAutomationPath.exactOptional()
 });
 
 /**
@@ -5604,11 +5604,11 @@ export const zBranchStep = z.object({
  * an open or a click or tests the Enrollment's own message, and with `unknown` when none does.
  */
 export const zBranchStepInput = z.strictObject({
-  id: z.exactOptional(zStepId),
+  id: zStepId.exactOptional(),
   type: z.enum(['branch']),
   paths: z.array(zBranchPathInput).min(1).max(9),
   otherwise: zAutomationPathInput,
-  unknown: z.exactOptional(zAutomationPathInput)
+  unknown: zAutomationPathInput.exactOptional()
 });
 
 /**
@@ -5624,9 +5624,9 @@ export const zBranchUnknownPathInput = z.strictObject({
 export const zCreateAutomationInput = z.strictObject({
   name: zName,
   trigger: zAutomationTriggerInput,
-  exitEvents: z.exactOptional(z.array(z.lazy((): any => zEventMatcherInput))),
-  goalEvent: z.exactOptional(z.lazy((): any => zEventMatcherInput).nullable()),
-  steps: z.exactOptional(zAutomationPathInput)
+  exitEvents: z.array(z.lazy((): any => zEventMatcherInput)).exactOptional(),
+  goalEvent: z.lazy((): any => zEventMatcherInput).nullable().exactOptional(),
+  steps: zAutomationPathInput.exactOptional()
 });
 
 /**
@@ -5635,8 +5635,8 @@ export const zCreateAutomationInput = z.strictObject({
 export const zCreateRuleInput = z.strictObject({
   name: zName,
   triggerEvents: z.array(z.string()).min(1),
-  condition: z.exactOptional(z.lazy((): any => zRuleConditionInput)),
-  actions: z.exactOptional(z.array(zRuleActionInput))
+  condition: z.lazy((): any => zRuleConditionInput).exactOptional(),
+  actions: z.array(zRuleActionInput).exactOptional()
 });
 
 /**
@@ -5654,7 +5654,7 @@ export const zCreateSegmentInput = z.strictObject({
 export const zEventFilter = z.object({
   kind: z.enum(['group']),
   combinator: zConditionCombinator,
-  not: z.exactOptional(z.boolean()),
+  not: z.boolean().exactOptional(),
   entries: z.array(z.lazy((): any => zEventFilterNode))
 });
 
@@ -5665,7 +5665,7 @@ export const zEventFilter = z.object({
 export const zEventFilterInput = z.strictObject({
   kind: z.enum(['group']),
   combinator: zConditionCombinator,
-  not: z.exactOptional(z.boolean()),
+  not: z.boolean().exactOptional(),
   entries: z.array(z.lazy((): any => zEventFilterNodeInput))
 });
 
@@ -5703,8 +5703,8 @@ export const zEventLeaf = z.object({
   action: z.string(),
   operator: zEventCountOperator,
   times: z.int().gte(0).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  withinDays: z.exactOptional(z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
-  filter: z.exactOptional(zEventFilter)
+  withinDays: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).exactOptional(),
+  filter: zEventFilter.exactOptional()
 });
 
 /**
@@ -5719,8 +5719,8 @@ export const zEventLeafInput = z.strictObject({
   action: z.string(),
   operator: zEventCountOperator,
   times: z.int().gte(0).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  withinDays: z.exactOptional(z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
-  filter: z.exactOptional(zEventFilterInput)
+  withinDays: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).exactOptional(),
+  filter: zEventFilterInput.exactOptional()
 });
 
 /**
@@ -5730,7 +5730,7 @@ export const zEventLeafInput = z.strictObject({
  */
 export const zEventMatcher = z.object({
   action: z.string(),
-  filter: z.exactOptional(zEventFilter)
+  filter: zEventFilter.exactOptional()
 });
 
 /**
@@ -5738,7 +5738,7 @@ export const zEventMatcher = z.object({
  */
 export const zEventMatcherInput = z.strictObject({
   action: z.string(),
-  filter: z.exactOptional(zEventFilterInput)
+  filter: zEventFilterInput.exactOptional()
 });
 
 /**
@@ -5749,10 +5749,10 @@ export const zEventMatcherInput = z.strictObject({
 export const zEventTrigger = z.object({
   kind: z.enum(['event']),
   action: z.string(),
-  filter: z.exactOptional(zEventFilter),
+  filter: zEventFilter.exactOptional(),
   entryPolicy: zEntryPolicy,
   cooldown: zEntryCooldown,
-  enrollmentKey: z.exactOptional(z.string())
+  enrollmentKey: z.string().exactOptional()
 });
 
 /**
@@ -5761,10 +5761,10 @@ export const zEventTrigger = z.object({
 export const zEventTriggerInput = z.strictObject({
   kind: z.enum(['event']),
   action: z.string(),
-  filter: z.exactOptional(zEventFilterInput),
-  entryPolicy: z.exactOptional(zEntryPolicy),
-  cooldown: z.exactOptional(zEntryCooldown),
-  enrollmentKey: z.exactOptional(z.string())
+  filter: zEventFilterInput.exactOptional(),
+  entryPolicy: zEntryPolicy.exactOptional(),
+  cooldown: zEntryCooldown.exactOptional(),
+  enrollmentKey: z.string().exactOptional()
 });
 
 /**
@@ -5851,7 +5851,7 @@ export const zPathStepInput = z.union([
 export const zRuleCondition = z.object({
   kind: z.enum(['group']),
   combinator: zConditionCombinator,
-  not: z.exactOptional(z.boolean()),
+  not: z.boolean().exactOptional(),
   entries: z.array(z.lazy((): any => zRuleConditionNode))
 });
 
@@ -5861,7 +5861,7 @@ export const zRuleCondition = z.object({
 export const zRuleConditionInput = z.strictObject({
   kind: z.enum(['group']),
   combinator: zConditionCombinator,
-  not: z.exactOptional(z.boolean()),
+  not: z.boolean().exactOptional(),
   entries: z.array(z.lazy((): any => zRuleConditionNodeInput))
 });
 
@@ -5915,7 +5915,7 @@ export const zRuleVersion = z.object({
 export const zSegmentCondition = z.object({
   kind: z.enum(['group']),
   combinator: zConditionCombinator,
-  not: z.exactOptional(z.boolean()),
+  not: z.boolean().exactOptional(),
   entries: z.array(z.lazy((): any => zSegmentConditionNode))
 });
 
@@ -5925,7 +5925,7 @@ export const zSegmentCondition = z.object({
 export const zSegmentConditionInput = z.strictObject({
   kind: z.enum(['group']),
   combinator: zConditionCombinator,
-  not: z.exactOptional(z.boolean()),
+  not: z.boolean().exactOptional(),
   entries: z.array(z.lazy((): any => zSegmentConditionNodeInput))
 });
 
@@ -5970,8 +5970,8 @@ export const zSiteAutomationResource = z.object({
   status: zAutomationStatus,
   live: zAutomationVersion.nullable(),
   draft: zAutomationVersion.nullable(),
-  archivedAt: z.exactOptional(zTimestamp.nullable()),
-  revenue: z.exactOptional(zMessageRevenue),
+  archivedAt: zTimestamp.nullable().exactOptional(),
+  revenue: zMessageRevenue.exactOptional(),
   revision: zRevision,
   createdAt: zTimestamp,
   updatedAt: zTimestamp
@@ -5981,9 +5981,9 @@ export const zSiteAutomationResource = z.object({
  * Request body for the share of a broadcast's audience outside its Sending window: the audience, as the segment preview names it, and a moment
  */
 export const zSiteBroadcastOutsideWindowInput = z.strictObject({
-  condition: z.exactOptional(zSegmentConditionInput),
+  condition: zSegmentConditionInput.exactOptional(),
   channel: zBroadcastChannel,
-  integrationId: z.exactOptional(zEntityId.nullable()),
+  integrationId: zEntityId.nullable().exactOptional(),
   scheduledAt: zTimestamp
 });
 
@@ -5991,9 +5991,9 @@ export const zSiteBroadcastOutsideWindowInput = z.strictObject({
  * Request body for previewing a condition's segment
  */
 export const zSitePreviewSegmentInput = z.strictObject({
-  condition: z.exactOptional(zSegmentConditionInput),
-  channel: z.exactOptional(zBroadcastChannel),
-  integrationId: z.exactOptional(zEntityId.nullable())
+  condition: zSegmentConditionInput.exactOptional(),
+  channel: zBroadcastChannel.exactOptional(),
+  integrationId: zEntityId.nullable().exactOptional()
 });
 
 /**
@@ -6005,8 +6005,8 @@ export const zSiteRuleResource = z.object({
   status: zRuleStatus,
   live: zRuleVersion.nullable(),
   draft: zRuleVersion.nullable(),
-  activatedAt: z.exactOptional(zTimestamp.nullable()),
-  discardedAt: z.exactOptional(zTimestamp.nullable()),
+  activatedAt: zTimestamp.nullable().exactOptional(),
+  discardedAt: zTimestamp.nullable().exactOptional(),
   revision: zRevision,
   createdAt: zTimestamp,
   updatedAt: zTimestamp
@@ -6019,7 +6019,7 @@ export const zSiteSegmentResource = z.object({
   id: zEntityId,
   name: z.string(),
   condition: zSegmentCondition,
-  archivedAt: z.exactOptional(zTimestamp.nullable()),
+  archivedAt: zTimestamp.nullable().exactOptional(),
   revision: zRevision,
   createdAt: zTimestamp,
   updatedAt: zTimestamp
@@ -6038,7 +6038,7 @@ export const zSplitPath = z.object({
  * A path of a Split, as a request writes it
  */
 export const zSplitPathInput = z.strictObject({
-  id: z.exactOptional(zStepId),
+  id: zStepId.exactOptional(),
   weight: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   steps: z.array(z.lazy((): any => zSplitPathStepInput))
 });
@@ -6138,7 +6138,7 @@ export const zSplitStep = z.object({
  * A Split, as a request writes it. Its paths' weights sum to 100.
  */
 export const zSplitStepInput = z.strictObject({
-  id: z.exactOptional(zStepId),
+  id: zStepId.exactOptional(),
   type: z.enum(['split']),
   paths: z.array(zSplitPathInput).min(2).max(10)
 });
@@ -6150,11 +6150,11 @@ export const zSplitStepInput = z.strictObject({
  */
 export const zUpdateAutomationInput = z.strictObject({
   revision: zRevision,
-  name: z.exactOptional(zName),
-  trigger: z.exactOptional(zAutomationTriggerInput),
-  exitEvents: z.exactOptional(z.array(zEventMatcherInput)),
-  goalEvent: z.exactOptional(zEventMatcherInput.nullable()),
-  steps: z.exactOptional(zAutomationPathInput)
+  name: zName.exactOptional(),
+  trigger: zAutomationTriggerInput.exactOptional(),
+  exitEvents: z.array(zEventMatcherInput).exactOptional(),
+  goalEvent: zEventMatcherInput.nullable().exactOptional(),
+  steps: zAutomationPathInput.exactOptional()
 });
 
 /**
@@ -6162,10 +6162,10 @@ export const zUpdateAutomationInput = z.strictObject({
  */
 export const zUpdateRuleInput = z.strictObject({
   revision: zRevision,
-  name: z.exactOptional(zName),
-  triggerEvents: z.exactOptional(z.array(z.string()).min(1)),
-  condition: z.exactOptional(zRuleConditionInput),
-  actions: z.exactOptional(z.array(zRuleActionInput))
+  name: zName.exactOptional(),
+  triggerEvents: z.array(z.string()).min(1).exactOptional(),
+  condition: zRuleConditionInput.exactOptional(),
+  actions: z.array(zRuleActionInput).exactOptional()
 });
 
 /**
@@ -6173,8 +6173,8 @@ export const zUpdateRuleInput = z.strictObject({
  */
 export const zUpdateSegmentInput = z.strictObject({
   revision: zRevision,
-  name: z.exactOptional(zName),
-  condition: z.exactOptional(zSegmentConditionInput)
+  name: zName.exactOptional(),
+  condition: zSegmentConditionInput.exactOptional()
 });
 
 /**
@@ -6679,9 +6679,9 @@ export const zSiteAuthSigninCallbackPath = z.object({
 });
 
 export const zSiteAuthSigninCallbackQuery = z.object({
-  code: z.exactOptional(z.string()),
-  state: z.exactOptional(z.string()),
-  error: z.exactOptional(z.string())
+  code: z.string().exactOptional(),
+  state: z.string().exactOptional(),
+  error: z.string().exactOptional()
 });
 
 /**
@@ -6699,8 +6699,8 @@ export const zSiteAuthSigninStartPath = z.object({
 });
 
 export const zSiteAuthSigninStartQuery = z.object({
-  return_to: z.exactOptional(z.string()),
-  invitation: z.exactOptional(z.string())
+  return_to: z.string().exactOptional(),
+  invitation: z.string().exactOptional()
 });
 
 /**
@@ -6942,7 +6942,7 @@ export const zSiteSignupSurveySubmitResponse = z.void();
 export const zSiteOAuthDescribeQuery = z.object({
   clientId: z.string(),
   redirectUri: z.string(),
-  scope: z.exactOptional(z.string())
+  scope: z.string().exactOptional()
 });
 
 /**
@@ -7041,7 +7041,7 @@ export const zSiteAnalyticsClicksByLinkPath = z.object({
 });
 
 export const zSiteAnalyticsClicksByLinkQuery = z.object({
-  range: z.exactOptional(zSiteAnalyticsRange)
+  range: zSiteAnalyticsRange.exactOptional()
 });
 
 /**
@@ -7054,7 +7054,7 @@ export const zSiteAnalyticsDeliverabilityPath = z.object({
 });
 
 export const zSiteAnalyticsDeliverabilityQuery = z.object({
-  range: z.exactOptional(zSiteAnalyticsRange)
+  range: zSiteAnalyticsRange.exactOptional()
 });
 
 /**
@@ -7067,7 +7067,7 @@ export const zSiteAnalyticsEventsPath = z.object({
 });
 
 export const zSiteAnalyticsEventsQuery = z.object({
-  range: z.exactOptional(zSiteAnalyticsRange)
+  range: zSiteAnalyticsRange.exactOptional()
 });
 
 /**
@@ -7080,7 +7080,7 @@ export const zSiteAnalyticsNewPeoplePath = z.object({
 });
 
 export const zSiteAnalyticsNewPeopleQuery = z.object({
-  range: z.exactOptional(zSiteAnalyticsRange)
+  range: zSiteAnalyticsRange.exactOptional()
 });
 
 /**
@@ -7093,7 +7093,7 @@ export const zSiteAnalyticsOpensByHourPath = z.object({
 });
 
 export const zSiteAnalyticsOpensByHourQuery = z.object({
-  range: z.exactOptional(zSiteAnalyticsRange)
+  range: zSiteAnalyticsRange.exactOptional()
 });
 
 /**
@@ -7106,7 +7106,7 @@ export const zSiteAnalyticsOverviewPath = z.object({
 });
 
 export const zSiteAnalyticsOverviewQuery = z.object({
-  range: z.exactOptional(zSiteAnalyticsRange)
+  range: zSiteAnalyticsRange.exactOptional()
 });
 
 /**
@@ -7119,7 +7119,7 @@ export const zSiteAnalyticsRevenuePath = z.object({
 });
 
 export const zSiteAnalyticsRevenueQuery = z.object({
-  range: z.exactOptional(zSiteAnalyticsRange)
+  range: zSiteAnalyticsRange.exactOptional()
 });
 
 /**
@@ -7132,7 +7132,7 @@ export const zSiteAnalyticsSubscribedPeoplePath = z.object({
 });
 
 export const zSiteAnalyticsSubscribedPeopleQuery = z.object({
-  range: z.exactOptional(zSiteAnalyticsRange)
+  range: zSiteAnalyticsRange.exactOptional()
 });
 
 /**
@@ -7154,16 +7154,16 @@ export const zSiteAuditListPath = z.object({
 });
 
 export const zSiteAuditListQuery = z.object({
-  from: z.exactOptional(zTimestamp),
-  to: z.exactOptional(zTimestamp),
-  actorKind: z.exactOptional(zAuditActorKind),
-  actorId: z.exactOptional(z.string()),
-  action: z.exactOptional(zAuditAction),
-  targetType: z.exactOptional(z.string()),
-  targetId: z.exactOptional(z.string()),
-  ip: z.exactOptional(z.string()),
-  requestId: z.exactOptional(z.string()),
-  cursor: z.exactOptional(z.string()),
+  from: zTimestamp.exactOptional(),
+  to: zTimestamp.exactOptional(),
+  actorKind: zAuditActorKind.exactOptional(),
+  actorId: z.string().exactOptional(),
+  action: zAuditAction.exactOptional(),
+  targetType: z.string().exactOptional(),
+  targetId: z.string().exactOptional(),
+  ip: z.string().exactOptional(),
+  requestId: z.string().exactOptional(),
+  cursor: z.string().exactOptional(),
   limit: z.int().gte(1).lte(100).optional().default(25)
 });
 
@@ -7177,15 +7177,15 @@ export const zSiteAuditExportPath = z.object({
 });
 
 export const zSiteAuditExportQuery = z.object({
-  from: z.exactOptional(zTimestamp),
-  to: z.exactOptional(zTimestamp),
-  actorKind: z.exactOptional(zAuditActorKind),
-  actorId: z.exactOptional(z.string()),
-  action: z.exactOptional(zAuditAction),
-  targetType: z.exactOptional(z.string()),
-  targetId: z.exactOptional(z.string()),
-  ip: z.exactOptional(z.string()),
-  requestId: z.exactOptional(z.string())
+  from: zTimestamp.exactOptional(),
+  to: zTimestamp.exactOptional(),
+  actorKind: zAuditActorKind.exactOptional(),
+  actorId: z.string().exactOptional(),
+  action: zAuditAction.exactOptional(),
+  targetType: z.string().exactOptional(),
+  targetId: z.string().exactOptional(),
+  ip: z.string().exactOptional(),
+  requestId: z.string().exactOptional()
 });
 
 /**
@@ -7241,7 +7241,7 @@ export const zSiteEnrollmentsListPath = z.object({
 export const zSiteEnrollmentsListQuery = z.object({
   page: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
   pageSize: z.int().gte(1).lte(100).optional().default(25),
-  status: z.exactOptional(zEnrollmentStatus)
+  status: zEnrollmentStatus.exactOptional()
 });
 
 /**
@@ -7272,7 +7272,7 @@ export const zSiteAutomationReportsGetPath = z.object({
 });
 
 export const zSiteAutomationReportsGetQuery = z.object({
-  period: z.exactOptional(zAutomationReportPeriod)
+  period: zAutomationReportPeriod.exactOptional()
 });
 
 /**
@@ -7288,7 +7288,7 @@ export const zSiteSkippedEntriesListPath = z.object({
 export const zSiteSkippedEntriesListQuery = z.object({
   page: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
   pageSize: z.int().gte(1).lte(100).optional().default(25),
-  contactId: z.exactOptional(zEntityId)
+  contactId: zEntityId.exactOptional()
 });
 
 /**
@@ -7338,10 +7338,10 @@ export const zSiteBroadcastsListPath = z.object({
 export const zSiteBroadcastsListQuery = z.object({
   page: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
   pageSize: z.int().gte(1).lte(100).optional().default(25),
-  archived: z.exactOptional(z.boolean()),
-  status: z.exactOptional(z.array(zBroadcastStatus)),
-  channel: z.exactOptional(zBroadcastChannel),
-  order: z.exactOptional(zSiteBroadcastsOrder)
+  archived: z.boolean().exactOptional(),
+  status: z.array(zBroadcastStatus).exactOptional(),
+  channel: zBroadcastChannel.exactOptional(),
+  order: zSiteBroadcastsOrder.exactOptional()
 });
 
 /**
@@ -7570,9 +7570,9 @@ export const zSiteContactsListPath = z.object({
 export const zSiteContactsListQuery = z.object({
   page: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
   pageSize: z.int().gte(1).lte(100).optional().default(25),
-  email: z.exactOptional(z.string()),
-  tag: z.exactOptional(z.string()),
-  country: z.exactOptional(zCountryCode)
+  email: z.string().exactOptional(),
+  tag: z.string().exactOptional(),
+  country: zCountryCode.exactOptional()
 });
 
 /**
@@ -7615,8 +7615,8 @@ export const zSiteContactsExportPath = z.object({
 });
 
 export const zSiteContactsExportQuery = z.object({
-  id: z.exactOptional(zEntityId),
-  email: z.exactOptional(zEmailAddress)
+  id: zEntityId.exactOptional(),
+  email: zEmailAddress.exactOptional()
 });
 
 /**
@@ -7885,10 +7885,10 @@ export const zSiteEventsListPath = z.object({
 export const zSiteEventsListQuery = z.object({
   page: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
   pageSize: z.int().gte(1).lte(100).optional().default(25),
-  action: z.exactOptional(z.string()),
-  contactId: z.exactOptional(zEntityId),
-  email: z.exactOptional(z.string()),
-  includeMachine: z.exactOptional(z.boolean())
+  action: z.string().exactOptional(),
+  contactId: zEntityId.exactOptional(),
+  email: z.string().exactOptional(),
+  includeMachine: z.boolean().exactOptional()
 });
 
 /**
@@ -8375,7 +8375,7 @@ export const zSiteSuppressionsListPath = z.object({
 export const zSiteSuppressionsListQuery = z.object({
   page: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
   pageSize: z.int().gte(1).lte(100).optional().default(25),
-  lifted: z.exactOptional(z.boolean())
+  lifted: z.boolean().exactOptional()
 });
 
 /**
@@ -8708,11 +8708,11 @@ export const zSiteAutomationsListPath = z.object({
 export const zSiteAutomationsListQuery = z.object({
   page: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
   pageSize: z.int().gte(1).lte(100).optional().default(25),
-  archived: z.exactOptional(z.boolean()),
-  name: z.exactOptional(z.string()),
-  state: z.exactOptional(zSiteAutomationState),
-  sort: z.exactOptional(zSiteAutomationsSort),
-  direction: z.exactOptional(zSortDirection)
+  archived: z.boolean().exactOptional(),
+  name: z.string().exactOptional(),
+  state: zSiteAutomationState.exactOptional(),
+  sort: zSiteAutomationsSort.exactOptional(),
+  direction: zSortDirection.exactOptional()
 });
 
 /**
@@ -8929,7 +8929,7 @@ export const zSiteSegmentsListPath = z.object({
 export const zSiteSegmentsListQuery = z.object({
   page: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
   pageSize: z.int().gte(1).lte(100).optional().default(25),
-  archived: z.exactOptional(z.boolean())
+  archived: z.boolean().exactOptional()
 });
 
 /**
