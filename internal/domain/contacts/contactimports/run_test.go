@@ -10,6 +10,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/contactimport"
 	"github.com/getsphericon/sphericon/ent/contactimportchunk"
+	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contactimports"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/csvimport"
@@ -40,7 +41,7 @@ func TestARunReadsAFileOfSeveralChunksInBatches(t *testing.T) {
 		DecimalSeparator: csvimport.DecimalPoint,
 	}})
 	require.NoError(t, err)
-	_, err = imports.Run(ctx, acme, uploaded.Import.ID)
+	_, err = imports.Run(ctx, acme, uploaded.Import.ID, membership.RoleOwner)
 	require.NoError(t, err)
 	env.PerformEnqueuedJobs(t)
 	done, err := imports.Get(ctx, acme, uploaded.Import.ID)

@@ -514,8 +514,23 @@ func (c *InputsImpl) ContactImportMapping(source *site.ContactImportMappingInput
 	if source != nil {
 		contactimportsMappingInput.Mapping = contactImportMappingIn(c, source)
 		contactimportsMappingInput.OnlyAddNew = (*source).OnlyAddNew
+		// contactimportsMappingInput.Role: ignore
 	}
 	return contactimportsMappingInput
+}
+func (c *InputsImpl) ContactImportRefusalIn(source site.ContactImportRefusal) csvimport.Refusal {
+	var csvimportRefusal csvimport.Refusal
+	switch source {
+	case site.ContactImportRefusalSuppression:
+		csvimportRefusal = csvimport.RefusalSuppression
+	case site.ContactImportRefusalUnsubscribeBroadcasts:
+		csvimportRefusal = csvimport.RefusalBroadcasts
+	case site.ContactImportRefusalUnsubscribeEverything:
+		csvimportRefusal = csvimport.RefusalEverything
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return csvimportRefusal
 }
 func (c *InputsImpl) ContactImportReport(source site.SiteContactImportsReportParams) contactimports.ReportInput {
 	var contactimportsReportInput contactimports.ReportInput

@@ -12,16 +12,17 @@ const (
 
 // The names the lists repeat: a bound's, an owner's, a parameter's and a schema's.
 const (
-	contactCity       = "ContactCity"
-	city              = "city"
-	contactOwner      = "Contact"
-	limit             = "limit"
-	telemetryReport   = "TelemetryReport"
-	httpcallOwner     = "internal/infra/httpcall"
-	consentDest       = "ConsentDestination"
-	destination       = "destination"
-	automationVersion = "AutomationVersion"
-	workspaceOwner    = "Workspace"
+	contactCity        = "ContactCity"
+	city               = "city"
+	contactOwner       = "Contact"
+	limit              = "limit"
+	telemetryReport    = "TelemetryReport"
+	httpcallOwner      = "internal/infra/httpcall"
+	consentDest        = "ConsentDestination"
+	destination        = "destination"
+	automationVersion  = "AutomationVersion"
+	workspaceOwner     = "Workspace"
+	contactImportOwner = "ContactImport"
 )
 
 // Bounds are the contract's bounds on the input of a domain write, in the order they are written.
@@ -238,7 +239,36 @@ var Bounds = []Bound{
 	},
 	{
 		Name: "ContactImportColumns", Doc: "are the columns a CSV import of Contacts maps: a file of more is refused at upload.",
-		Spec: site, Schema: "ContactImportMappingInput", Property: "columns", Owners: []string{"ContactImport"},
+		Spec: site, Schema: "ContactImportMappingInput", Property: "columns", Owners: []string{contactImportOwner},
+	},
+	{
+		Name: "ContactImportRefusalValues", Doc: "are the values a refusal column of a CSV import lists.",
+		Spec: site, Schema: "ContactImportRefusalColumnInput", Property: "values", Owners: []string{contactImportOwner},
+	},
+	{
+		Name: "ContactImportRefusalValue", Doc: "is a value a refusal column of a CSV import lists.",
+		Spec: site, Schema: "ContactImportRefusalValueInput", Property: "value", Owners: []string{contactImportOwner},
+	},
+	{
+		Name: "ContactImportConsentValues", Doc: "are the values a consent column of a CSV import lists.",
+		Spec: site, Schema: "ContactImportConsentColumnInput", Property: "values", Owners: []string{contactImportOwner},
+	},
+	{
+		Name: "ContactImportTrackingValues", Doc: "are the values an Engagement tracking column of a CSV import lists for a grant or a refusal.",
+		Spec: site, Schema: "ContactImportEngagementTrackingColumnInput", Property: "granted", Owners: []string{contactImportOwner},
+	},
+	{Name: "ContactImportTrackingValues", Spec: site, Schema: "ContactImportEngagementTrackingColumnInput", Property: "denied"},
+	{
+		Name: "ContactImportEvidenceWording", Doc: "is the consent wording a consent column of a CSV import gives once.",
+		Spec: site, Schema: "ContactImportConsentEvidenceInput", Property: "wording", Owners: []string{contactImportOwner},
+	},
+	{
+		Name: "ContactImportEvidenceSource", Doc: "is the consent source a consent column of a CSV import gives once.",
+		Spec: site, Schema: "ContactImportConsentEvidenceInput", Property: "source", Owners: []string{contactImportOwner},
+	},
+	{
+		Name: "ContactImportEvidenceBrand", Doc: "is the consent brand a consent column of a CSV import gives once.",
+		Spec: site, Schema: "ContactImportConsentEvidenceInput", Property: "brand", Owners: []string{contactImportOwner},
 	},
 	{
 		Name: "IdentifyPhone", Doc: "is the phone an Identify of the tracker names its Contact by.",

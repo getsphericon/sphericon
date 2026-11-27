@@ -1092,6 +1092,8 @@ func (c *ConverterImpl) ContactImportCounts(source *ent.ContactImport) site.Cont
 		siteapiContactImportCounts.Updated = count((*source).Updated)
 		siteapiContactImportCounts.Refused = count((*source).Refused)
 		siteapiContactImportCounts.Dropped = count((*source).Dropped)
+		siteapiContactImportCounts.OptedOut = count((*source).OptedOut)
+		siteapiContactImportCounts.Suppressed = count((*source).Suppressed)
 	}
 	return siteapiContactImportCounts
 }
@@ -1140,8 +1142,14 @@ func (c *ConverterImpl) ContactImportIssueReason(source csvimport.Reason) site.C
 		siteapiContactImportIssueReason = site.ContactImportIssueReasonCellCount
 	case csvimport.ReasonKeysNameTwoContacts:
 		siteapiContactImportIssueReason = site.ContactImportIssueReasonKeysNameTwoContacts
+	case csvimport.ReasonNoDestination:
+		siteapiContactImportIssueReason = site.ContactImportIssueReasonNoDestination
+	case csvimport.ReasonNoEvidence:
+		siteapiContactImportIssueReason = site.ContactImportIssueReasonNoEvidence
 	case csvimport.ReasonNoKey:
 		siteapiContactImportIssueReason = site.ContactImportIssueReasonNoKey
+	case csvimport.ReasonNoTime:
+		siteapiContactImportIssueReason = site.ContactImportIssueReasonNoTime
 	case csvimport.ReasonNotBoolean:
 		siteapiContactImportIssueReason = site.ContactImportIssueReasonNotBoolean
 	case csvimport.ReasonNotCountry:
@@ -1162,8 +1170,12 @@ func (c *ConverterImpl) ContactImportIssueReason(source csvimport.Reason) site.C
 		siteapiContactImportIssueReason = site.ContactImportIssueReasonNotTag
 	case csvimport.ReasonNotTimeZone:
 		siteapiContactImportIssueReason = site.ContactImportIssueReasonNotTimeZone
+	case csvimport.ReasonRefusalNotRecorded:
+		siteapiContactImportIssueReason = site.ContactImportIssueReasonRefusalNotRecorded
 	case csvimport.ReasonRefused:
 		siteapiContactImportIssueReason = site.ContactImportIssueReasonRefused
+	case csvimport.ReasonTimeInFuture:
+		siteapiContactImportIssueReason = site.ContactImportIssueReasonTimeInFuture
 	case csvimport.ReasonTooLong:
 		siteapiContactImportIssueReason = site.ContactImportIssueReasonTooLong
 	default:
@@ -1206,7 +1218,23 @@ func (c *ConverterImpl) ContactImportPreviewToResource(source contactimports.Pre
 	siteapiSiteContactImportPreview.RowsWithoutKey = count(source.RowsWithoutKey)
 	siteapiSiteContactImportPreview.MalformedRows = count(source.MalformedRows)
 	siteapiSiteContactImportPreview.DistinctTags = count(source.DistinctTags)
+	siteapiSiteContactImportPreview.OptOuts = count(source.OptOuts)
+	siteapiSiteContactImportPreview.Suppressions = count(source.Suppressions)
 	return siteapiSiteContactImportPreview
+}
+func (c *ConverterImpl) ContactImportRefusal(source csvimport.Refusal) site.ContactImportRefusal {
+	var siteapiContactImportRefusal site.ContactImportRefusal
+	switch source {
+	case csvimport.RefusalBroadcasts:
+		siteapiContactImportRefusal = site.ContactImportRefusalUnsubscribeBroadcasts
+	case csvimport.RefusalEverything:
+		siteapiContactImportRefusal = site.ContactImportRefusalUnsubscribeEverything
+	case csvimport.RefusalSuppression:
+		siteapiContactImportRefusal = site.ContactImportRefusalSuppression
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiContactImportRefusal
 }
 func (c *ConverterImpl) ContactImportState(source contactimport.State) site.ContactImportState {
 	var siteapiContactImportState site.ContactImportState

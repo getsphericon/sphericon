@@ -546,14 +546,16 @@ type Handler interface {
 	// SiteContactImportsRun implements SiteContactImports_run operation.
 	//
 	// Run a `ready` import: its job writes the rows through the Contact intake, acting as the Member, and
-	// starts nothing (its Events are history). A date column without a format is refused (422).
+	// starts nothing (its Events are history). A date column without a format is refused (422), and a
+	// refusal column recording a Suppression without `suppressions:manage` (403).
 	//
 	// POST /workspaces/{workspaceId}/contact-imports/{importId}/run
 	SiteContactImportsRun(ctx context.Context, params SiteContactImportsRunParams) (*SiteContactImport, error)
 	// SiteContactImportsSaveMapping implements SiteContactImports_saveMapping operation.
 	//
 	// Save how the import reads its file, one entry per column; it is then `ready`. Refused before it runs
-	// only: a running or ended import keeps its mapping (409).
+	// only: a running or ended import keeps its mapping (409). A refusal column recording a Suppression
+	// needs `suppressions:manage` (403).
 	//
 	// PUT /workspaces/{workspaceId}/contact-imports/{importId}/mapping
 	SiteContactImportsSaveMapping(ctx context.Context, req *ContactImportMappingInput, params SiteContactImportsSaveMappingParams) (*SiteContactImport, error)

@@ -35,9 +35,11 @@ func (h *Handlers) SiteContactImportsGet(ctx context.Context, params siteapi.Sit
 	return &res, nil
 }
 
-// SiteContactImportsSaveMapping saves how an import reads its file.
+// SiteContactImportsSaveMapping saves how an import reads its file, as the caller's role may.
 func (h *Handlers) SiteContactImportsSaveMapping(ctx context.Context, req *siteapi.ContactImportMappingInput, params siteapi.SiteContactImportsSaveMappingParams) (*siteapi.SiteContactImport, error) {
-	v, err := h.contactImports.SaveMapping(ctx, workspaceScope(ctx), int64(params.ImportId), inputs.ContactImportMapping(req))
+	in := inputs.ContactImportMapping(req)
+	in.Role = callerMembership(ctx).Role
+	v, err := h.contactImports.SaveMapping(ctx, workspaceScope(ctx), int64(params.ImportId), in)
 	if err != nil {
 		return nil, err
 	}
@@ -55,9 +57,9 @@ func (h *Handlers) SiteContactImportsPreview(ctx context.Context, params siteapi
 	return &res, nil
 }
 
-// SiteContactImportsRun runs an import: its job writes the rows.
+// SiteContactImportsRun runs an import as the caller's role may: its job writes the rows.
 func (h *Handlers) SiteContactImportsRun(ctx context.Context, params siteapi.SiteContactImportsRunParams) (*siteapi.SiteContactImport, error) {
-	v, err := h.contactImports.Run(ctx, workspaceScope(ctx), int64(params.ImportId))
+	v, err := h.contactImports.Run(ctx, workspaceScope(ctx), int64(params.ImportId), callerMembership(ctx).Role)
 	if err != nil {
 		return nil, err
 	}

@@ -9,6 +9,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/channelstop"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contactimports"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -70,6 +71,21 @@ func (u *UseCase) OptOut(ctx context.Context, s *ent.Scoped, in OptOutInput) (*e
 	}
 	return u.unsubscribe(ctx, s, in.Destination, cmp.Or(in.Source, eligibility.SourceBroadcasts), st)
 }
+
+// OptOutImported records an opt-out a CSV import brings (ADR 0138): OptOut `via: imported`, at the
+// time the import states. It reports whether the opt-out stands: one older than the Destination's
+// return changes nothing (ADR 0154), and leaves no opt-out to read back.
+func (u *UseCase) OptOutImported(ctx context.Context, s *ent.Scoped, in contactimports.ImportedOptOut) (bool, error) {
+	_, err := u.OptOut(ctx, s, OptOutInput{
+		Channel: in.Channel, Destination: in.Destination, Source: in.Source, Via: events.UnsubscribedByImported, At: in.At,
+	})
+	if ent.IsNotFound(err) {
+		return false, nil
+	}
+	return err == nil, err
+}
+
+var _ contactimports.OptOuts = (*UseCase)(nil)
 
 // Unsubscribe records an opt-out of an email address from a sending source by hand, now (OptOut on
 // email).

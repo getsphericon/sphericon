@@ -440,6 +440,59 @@ export const zContactImportAttribute = z.enum([
 ]);
 
 /**
+ * The Channel of a consent or Engagement tracking column: its Destination is the row's email address or phone
+ */
+export const zContactImportConsentChannel = z.enum(['email', 'sms']);
+
+/**
+ * The evidence of the consent a consent column records (ADR 0077): each part given once for every
+ * row as text, or read from the column it names on each row, exactly one of the two
+ */
+export const zContactImportConsentEvidence = z.object({
+  wording: z.string().max(2000).nullable(),
+  wordingColumn: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
+  source: z.string().max(500).nullable(),
+  sourceColumn: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
+  brand: z.string().max(255).nullable(),
+  brandColumn: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable()
+});
+
+/**
+ * A column of the consent the Workspace collected: a row whose cell is one of the listed values
+ * records an imported Confirmation of its Destination on the Channel, which lifts no refusal; any
+ * other value records nothing
+ */
+export const zContactImportConsentColumn = z.object({
+  kind: z.enum(['consent']),
+  channel: zContactImportConsentChannel,
+  values: z.array(z.string()).min(1).max(50),
+  evidence: zContactImportConsentEvidence
+});
+
+/**
+ * The evidence of the consent a consent column records (ADR 0077): each part given once for every
+ * row as text, or read from the column it names on each row, exactly one of the two
+ */
+export const zContactImportConsentEvidenceInput = z.strictObject({
+  wording: z.string().max(2000).nullable(),
+  wordingColumn: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
+  source: z.string().max(500).nullable(),
+  sourceColumn: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
+  brand: z.string().max(255).nullable(),
+  brandColumn: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable()
+});
+
+/**
+ * A column of the consent the Workspace collected, as a request writes it
+ */
+export const zContactImportConsentColumnInput = z.strictObject({
+  kind: z.enum(['consent']),
+  channel: zContactImportConsentChannel,
+  values: z.array(z.string()).min(1).max(50),
+  evidence: zContactImportConsentEvidenceInput
+});
+
+/**
  * What an import's run has written so far
  */
 export const zContactImportCounts = z.object({
@@ -447,7 +500,9 @@ export const zContactImportCounts = z.object({
   created: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   updated: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   refused: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  dropped: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+  dropped: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  optedOut: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  suppressed: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
 });
 
 /**
@@ -517,6 +572,30 @@ export const zContactImportDelimiter = z.enum([
 ]);
 
 /**
+ * A column of Engagement tracking consent (ADR 0120): a row whose cell is one of the granted values
+ * records a grant at its Destination on the Channel, one of the denied values a refusal; any other
+ * value records nothing
+ */
+export const zContactImportEngagementTrackingColumn = z.object({
+  kind: z.enum(['engagementTracking']),
+  channel: zContactImportConsentChannel,
+  granted: z.array(z.string()).max(50),
+  denied: z.array(z.string()).max(50)
+});
+
+/**
+ * A column of Engagement tracking consent (ADR 0120): a row whose cell is one of the granted values
+ * records a grant at its Destination on the Channel, one of the denied values a refusal; any other
+ * value records nothing
+ */
+export const zContactImportEngagementTrackingColumnInput = z.strictObject({
+  kind: z.enum(['engagementTracking']),
+  channel: zContactImportConsentChannel,
+  granted: z.array(z.string()).max(50),
+  denied: z.array(z.string()).max(50)
+});
+
+/**
  * A column the import does not read
  */
 export const zContactImportIgnoreColumn = z.object({
@@ -548,6 +627,11 @@ export const zContactImportIssueReason = z.enum([
   'notLocale',
   'notImageUrl',
   'notTag',
+  'noTime',
+  'timeInFuture',
+  'noDestination',
+  'noEvidence',
+  'refusalNotRecorded',
   'keysNameTwoContacts'
 ]);
 
@@ -586,6 +670,62 @@ export const zContactImportKeyColumnInput = z.strictObject({
 });
 
 /**
+ * What a value of a refusal column records: an Unsubscribe of `everything` or of `broadcasts`
+ * (email only), recorded as imported, which only the person can lift; or a Suppression of the
+ * `manual` reason, which needs `suppressions:manage`
+ */
+export const zContactImportRefusal = z.enum([
+  'unsubscribeEverything',
+  'unsubscribeBroadcasts',
+  'suppression'
+]);
+
+/**
+ * The Channel of a refusal column: its Destination is the row's email address or phone, or on Telegram the users of the Contact's Bindings
+ */
+export const zContactImportRefusalChannel = z.enum([
+  'email',
+  'sms',
+  'telegram'
+]);
+
+/**
+ * A cell value of a refusal column and what it records
+ */
+export const zContactImportRefusalValue = z.object({
+  value: z.string().min(1).max(255),
+  refusal: zContactImportRefusal
+});
+
+/**
+ * A column of the old platform's refusals: a row whose cell is one of the listed values records
+ * that refusal at its Destination on the Channel, whether its Contact is new or not; any other
+ * value records nothing
+ */
+export const zContactImportRefusalColumn = z.object({
+  kind: z.enum(['refusal']),
+  channel: zContactImportRefusalChannel,
+  values: z.array(zContactImportRefusalValue).min(1).max(50)
+});
+
+/**
+ * A cell value of a refusal column and what it records
+ */
+export const zContactImportRefusalValueInput = z.strictObject({
+  value: z.string().min(1).max(255),
+  refusal: zContactImportRefusal
+});
+
+/**
+ * A column of the old platform's refusals, as a request writes it
+ */
+export const zContactImportRefusalColumnInput = z.strictObject({
+  kind: z.enum(['refusal']),
+  channel: zContactImportRefusalChannel,
+  values: z.array(zContactImportRefusalValueInput).min(1).max(50)
+});
+
+/**
  * Where an import stands: `uploaded` until a mapping is saved, `ready` to run, `running` while its
  * job writes the rows, then `done`; `cancelled` and `failed` end it early, keeping what it wrote.
  */
@@ -606,6 +746,24 @@ export const zContactImportTagsColumn = z.object({
 });
 
 /**
+ * A column whose cells name the Tags a row adds, separated by commas; a Tag holding a comma is quoted
+ */
+export const zContactImportTagsColumnInput = z.strictObject({
+  kind: z.enum(['tags'])
+});
+
+/**
+ * A column of when the fact of a refusal, consent or Engagement tracking column occurred (ADR
+ * 0154), so an older fact does not override a newer one: a time blank, unreadable or later than the
+ * run is dropped and reported, and the fact recorded as occurring now
+ */
+export const zContactImportTimeColumn = z.object({
+  kind: z.enum(['time']),
+  of: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  dateFormat: zContactImportDateFormat
+});
+
+/**
  * What a column of the file is, by `kind`
  */
 export const zContactImportColumn = z.discriminatedUnion('kind', [
@@ -613,14 +771,22 @@ export const zContactImportColumn = z.discriminatedUnion('kind', [
   zContactImportAttributeColumn.extend({ kind: z.literal('attribute') }),
   zContactImportCustomFieldColumn.extend({ kind: z.literal('customField') }),
   zContactImportTagsColumn.extend({ kind: z.literal('tags') }),
-  zContactImportIgnoreColumn.extend({ kind: z.literal('ignore') })
+  zContactImportIgnoreColumn.extend({ kind: z.literal('ignore') }),
+  zContactImportRefusalColumn.extend({ kind: z.literal('refusal') }),
+  zContactImportConsentColumn.extend({ kind: z.literal('consent') }),
+  zContactImportEngagementTrackingColumn.extend({ kind: z.literal('engagementTracking') }),
+  zContactImportTimeColumn.extend({ kind: z.literal('time') })
 ]);
 
 /**
- * A column whose cells name the Tags a row adds, separated by commas; a Tag holding a comma is quoted
+ * A column of when the fact of a refusal, consent or Engagement tracking column occurred (ADR
+ * 0154), so an older fact does not override a newer one: a time blank, unreadable or later than the
+ * run is dropped and reported, and the fact recorded as occurring now
  */
-export const zContactImportTagsColumnInput = z.strictObject({
-  kind: z.enum(['tags'])
+export const zContactImportTimeColumnInput = z.strictObject({
+  kind: z.enum(['time']),
+  of: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  dateFormat: zContactImportDateFormat
 });
 
 /**
@@ -631,7 +797,11 @@ export const zContactImportColumnInput = z.discriminatedUnion('kind', [
   zContactImportAttributeColumnInput.extend({ kind: z.literal('attribute') }),
   zContactImportCustomFieldColumnInput.extend({ kind: z.literal('customField') }),
   zContactImportTagsColumnInput.extend({ kind: z.literal('tags') }),
-  zContactImportIgnoreColumnInput.extend({ kind: z.literal('ignore') })
+  zContactImportIgnoreColumnInput.extend({ kind: z.literal('ignore') }),
+  zContactImportRefusalColumnInput.extend({ kind: z.literal('refusal') }),
+  zContactImportConsentColumnInput.extend({ kind: z.literal('consent') }),
+  zContactImportEngagementTrackingColumnInput.extend({ kind: z.literal('engagementTracking') }),
+  zContactImportTimeColumnInput.extend({ kind: z.literal('time') })
 ]);
 
 /**
@@ -2181,7 +2351,9 @@ export const zSiteContactImportPreview = z.object({
   totalRows: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   rowsWithoutKey: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   malformedRows: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  distinctTags: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+  distinctTags: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  optOuts: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  suppressions: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
 });
 
 /**

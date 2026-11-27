@@ -19,10 +19,12 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contactimportreportrow"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 	"github.com/getsphericon/sphericon/internal/domain/identity/downloadlinks"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/csvimport"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -39,19 +41,40 @@ var ErrNotFound = validation.NotFound("contactimports: import not found", i18n.E
 
 // Module is the CSV import.
 type Module struct {
-	bus      *events.Bus
-	contacts *contacts.Module
-	members  *memberships.Module
-	links    *downloadlinks.Module
-	now      func() time.Time
+	bus          *events.Bus
+	contacts     *contacts.Module
+	members      *memberships.Module
+	links        *downloadlinks.Module
+	optOuts      OptOuts
+	suppressions *suppressions.Module
+	now          func() time.Time
+}
+
+// OptOuts records the opt-outs an import's refusal columns bring, each with its effects as any
+// opt-out has them (ADR 0138): the unsubscribe use case, which sits above this module.
+type OptOuts interface {
+	// OptOutImported records an opt-out `via: imported`, at the time it occurred (the zero time
+	// is now), and reports whether it stands: one older than the Destination's later return
+	// changes nothing (ADR 0154). It is idempotent.
+	OptOutImported(ctx context.Context, s *ent.Scoped, in ImportedOptOut) (bool, error)
+}
+
+// ImportedOptOut is an opt-out a row of an import records: the Channel, the Destination, the
+// sending source (`everything` or `broadcasts`) and when it occurred.
+type ImportedOptOut struct {
+	Channel     channels.Channel
+	Destination string
+	Source      string
+	At          time.Time
 }
 
 // New builds the module. The bus opens the transactions of an import's writes and queues its job;
 // people is the Contacts module whose readers read the cells and whose intake writes the rows;
 // members builds the scope of the Member a job acts as; links issues and claims the report's
-// download link; now is the Instance clock.
-func New(bus *events.Bus, people *contacts.Module, members *memberships.Module, links *downloadlinks.Module, now func() time.Time) *Module {
-	return &Module{bus: bus, contacts: people, members: members, links: links, now: now}
+// download link; optOuts records the opt-outs its rows bring; now is the Instance clock, which
+// also stamps its Suppressions' module.
+func New(bus *events.Bus, people *contacts.Module, members *memberships.Module, links *downloadlinks.Module, optOuts OptOuts, now func() time.Time) *Module {
+	return &Module{bus: bus, contacts: people, members: members, links: links, optOuts: optOuts, suppressions: suppressions.New(now), now: now}
 }
 
 // View is an import as a Member sees it: its row, the mapping it reads its file by (the saved one,

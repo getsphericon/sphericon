@@ -39,12 +39,16 @@ func (RunArgs) Kind() string { return "run_contact_import" }
 // write its report rows and counts twice; resuming from its checkpoint is ADR 0138's next step.
 func (RunArgs) InsertOpts() river.InsertOpts { return river.InsertOpts{MaxAttempts: 1} }
 
-// Run runs the ready import id: it is `running`, its start stamped, and its job queued in the
-// same transaction. An import not ready (no mapping saved, running or ended) is lifecycle's
-// ErrInvalidTransition.
-func (m *Module) Run(ctx context.Context, s *ent.Scoped, id int64) (View, error) {
+// Run runs the ready import id as a Member of role: it is `running`, its start stamped, and its
+// job queued in the same transaction. An import not ready (no mapping saved, running or ended) is
+// lifecycle's ErrInvalidTransition; one whose mapping records a Suppression needs role to hold
+// suppressions:manage (ADR 0138).
+func (m *Module) Run(ctx context.Context, s *ent.Scoped, id int64, role membership.Role) (View, error) {
 	imp, err := load(ctx, s, id)
 	if err != nil {
+		return View{}, err
+	}
+	if err := mayRecord(imp.Mapping, role); err != nil {
 		return View{}, err
 	}
 	err = m.bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher, q events.Enqueuer) error {
@@ -86,6 +90,7 @@ func (m *Module) Work(ctx context.Context, s *ent.Scoped, id int64) error {
 	if err != nil {
 		return err
 	}
+	rd.now = m.now()
 	cause := events.Import(imp.ID)
 	if imp.AsNewSignUps {
 		cause = events.ImportAsNew(imp.ID)
@@ -161,6 +166,8 @@ func (m *Module) end(ctx context.Context, s *ent.Scoped, imp *ent.ContactImport,
 				contactimport.FieldUpdated:      done.Updated,
 				contactimport.FieldRefused:      done.Refused,
 				contactimport.FieldDropped:      done.Dropped,
+				contactimport.FieldOptedOut:     done.OptedOut,
+				contactimport.FieldSuppressed:   done.Suppressed,
 				contactimport.FieldMapping:      mappingSummary(done.Header, done.Mapping),
 				contactimport.FieldOnlyAddNew:   done.OnlyAddNew,
 				contactimport.FieldAsNewSignUps: done.AsNewSignUps,
@@ -181,6 +188,10 @@ func mappingSummary(header []string, mapping csvimport.Mapping) []string {
 			target = string(c.Kind) + " " + c.Attribute
 		case csvimport.KindTags:
 			target = string(c.Kind)
+		case csvimport.KindRefusal, csvimport.KindConsent, csvimport.KindEngagementTracking:
+			target = string(c.Kind) + " " + lo.FromPtr(c.Fact).Channel
+		case csvimport.KindTime:
+			target = string(c.Kind) + " of " + cellAt(header, lo.FromPtr(lo.FromPtr(c.Fact).Of))
 		case csvimport.KindIgnore:
 			return "", false
 		}
@@ -201,6 +212,7 @@ type batchRun struct {
 // tally is what a batch wrote.
 type tally struct {
 	created, updated, refused, dropped int
+	optedOut, suppressed               int
 	report                             []*ent.ContactImportReportRowScopedCreate
 }
 
@@ -230,6 +242,11 @@ func (b batchRun) write(ctx context.Context, recs []record) error {
 			return err
 		}
 		for i, item := range out.Items {
+			notRecorded, err := b.refuse(ctx, &t, written[i], item)
+			if err != nil {
+				return err
+			}
+			written[i].read.dropped = append(written[i].read.dropped, notRecorded...)
 			if err := t.add(b, written[i], item.Value, item.Err); err != nil {
 				return err
 			}
@@ -256,6 +273,8 @@ func (b batchRun) write(ctx context.Context, recs []record) error {
 			AddUpdated(t.updated).
 			AddRefused(t.refused).
 			AddDropped(t.dropped).
+			AddOptedOut(t.optedOut).
+			AddSuppressed(t.suppressed).
 			Exec(ctx)
 	})
 }

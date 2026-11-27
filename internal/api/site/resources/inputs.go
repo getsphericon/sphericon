@@ -363,13 +363,17 @@ type Inputs interface {
 	// goverter:map Data File | fileIn
 	// goverter:ignore MembershipID
 	ContactImportUpload(source siteapi.SiteContactImportsUploadReq) contactimports.UploadInput
+	// The role a mapping is saved with is the caller's, which the handler sets.
 	// goverter:map . Mapping | contactImportMappingIn
+	// goverter:ignore Role
 	ContactImportMapping(source *siteapi.ContactImportMappingInput) contactimports.MappingInput
 	// The session a link is followed in is the request's, which the handler sets.
 	// goverter:ignore Session
 	ContactImportReport(source siteapi.SiteContactImportsReportParams) contactimports.ReportInput
 	// goverter:enum:transform value
 	ContactImportDateFormatIn(source siteapi.ContactImportDateFormat) csvimport.DateFormat
+	// goverter:enum:transform value
+	ContactImportRefusalIn(source siteapi.ContactImportRefusal) csvimport.Refusal
 	// The optional consent changed is the path's key, not the request's: the handler sets it.
 	// goverter:ignore Key
 	OptionalConsentChange(source *siteapi.SiteOptionalConsentChange) consentrecords.SetOptionalConsentInput

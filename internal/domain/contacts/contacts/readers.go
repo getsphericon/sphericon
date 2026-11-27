@@ -115,6 +115,20 @@ func ReadDate(cell string, f csvimport.DateFormat, loc *time.Location) (time.Tim
 	return time.Date(year, month, day, 0, 0, 0, 0, time.UTC), ""
 }
 
+// ReadMoment is when a consent fact occurred, written in format f (ADR 0154): a date and time
+// (rfc3339) at its offset, a date alone at the start of that day in loc, the Workspace's time zone.
+func ReadMoment(cell string, f csvimport.DateFormat, loc *time.Location) (time.Time, csvimport.Reason) {
+	t, dated, reason := parseDate(cell, f)
+	if reason != "" {
+		return time.Time{}, reason
+	}
+	if dated {
+		year, month, day := t.Date()
+		return time.Date(year, month, day, 0, 0, 0, 0, loc), ""
+	}
+	return t, ""
+}
+
 // ReadDatetime is the value of a datetime Custom field written in format f, in an ISO form the
 // field's type reads (TypeReads): a date as `2006-01-02`, which is read in the Workspace time zone
 // as every value without an offset is, and a date and time (rfc3339) with its offset.

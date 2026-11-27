@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contactimport"
 	"github.com/getsphericon/sphericon/ent/customfield"
+	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/bounds"
@@ -53,6 +54,9 @@ var (
 type MappingInput struct {
 	Mapping    csvimport.Mapping
 	OnlyAddNew bool
+	// Role is the saving Member's: a mapping that records a Suppression needs
+	// suppressions:manage (ADR 0138).
+	Role membership.Role
 }
 
 // SaveMapping saves how the import id reads its file and makes it `ready`. A column per column of
@@ -69,6 +73,9 @@ func (m *Module) SaveMapping(ctx context.Context, s *ent.Scoped, id int64, in Ma
 	}
 	mapping, err := checkedMapping(ctx, s, imp, in.Mapping)
 	if err != nil {
+		return View{}, err
+	}
+	if err := mayRecord(mapping, in.Role); err != nil {
 		return View{}, err
 	}
 	err = m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
@@ -126,6 +133,9 @@ func checkedMapping(ctx context.Context, s *ent.Scoped, imp *ent.ContactImport, 
 		written[target] = target != ""
 		out.Columns[i] = checked
 	}
+	if err := pairs(out.Columns); err != nil {
+		return csvimport.Mapping{}, err
+	}
 	return out, nil
 }
 
@@ -173,6 +183,12 @@ func checkedColumn(col csvimport.Column, fields map[string]customfield.Type) (cs
 		return out, "customField:" + col.Key, nil
 	case csvimport.KindTags, csvimport.KindIgnore:
 		return csvimport.Column{Kind: col.Kind}, "", nil
+	case csvimport.KindRefusal, csvimport.KindTime:
+		out, err := checkedFactColumn(&col)
+		return out, "", err
+	case csvimport.KindConsent, csvimport.KindEngagementTracking:
+		out, err := checkedFactColumn(&col)
+		return out, string(col.Kind) + ":" + lo.FromPtr(col.Fact).Channel, err
 	}
 	return col, "", ErrUnknownTarget
 }
