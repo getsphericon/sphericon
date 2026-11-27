@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
@@ -28,7 +29,7 @@ func TestAnImportThatOnlyAddsNewLeavesAKnownContactButForItsRefusals(t *testing.
 	refusal := &engagementtracking.Observation{State: engagementtracking.Denied}
 
 	out, err := intake.Import(ctx, acme, contacts.ImportInput{
-		Source:     contact.SourceManual,
+		Cause:      events.Import(42),
 		OnlyAddNew: true,
 		Rows: []contacts.IntakeInput{
 			{
@@ -67,23 +68,27 @@ func TestAnImportThatOnlyAddsNewLeavesAKnownContactButForItsRefusals(t *testing.
 	assert.Equal(t, "Tess", lo.FromPtr(texter.FirstName))
 }
 
-// What an import's rows publish carries the job's cause (here the send lock's mark stands in for
-// it), and the rows record no Audit entry: the job records one for the whole import.
+// What an import's rows publish carries the job's cause, as history, a Contact it creates has the
+// source `import`, and the rows record no Audit entry: the job records one for the whole import.
 func TestAnImportMarksWhatItsRowsPublishAndAuditsNothingItself(t *testing.T) {
 	env := testhelper.Setup(t)
 	intake := testhelper.Module[*contacts.Module](env)
 
 	out, err := intake.Import(t.Context(), env.DB.Scoped(fixtures.AcmeID), contacts.ImportInput{
-		Source: contact.SourceManual,
-		Cause:  events.SendLocked,
-		Rows:   []contacts.IntakeInput{{Email: new("caused@example.com")}},
+		Cause: events.Import(42),
+		Rows:  []contacts.IntakeInput{{Email: new("caused@example.com")}},
 	})
 	require.NoError(t, err)
-	created := env.QueuedEnvelopes(t, systemevent.ContactCreated)
+	live := env.QueuedEnvelopes(t, systemevent.ContactCreated)
+	created := lo.Filter(env.StoredEvents(t, systemevent.ContactCreated), func(e *ent.Event, _ int) bool {
+		return lo.FromPtr(e.ContactID) == out.Items[0].Value.Contact.ID
+	})
 	audited := testhelper.Queued[*events.AuditEntry](t, env, events.NameAuditEntry)
 
 	require.NoError(t, out.Items[0].Err)
 	require.Len(t, created, 1)
-	assert.True(t, created[0].SendLocked)
+	assert.True(t, events.WasHistory(created[0]), "history")
+	assert.Empty(t, live, "history is queued for no live consumer")
+	assert.Equal(t, contact.SourceImport, out.Items[0].Value.Contact.Source)
 	assert.Empty(t, audited)
 }

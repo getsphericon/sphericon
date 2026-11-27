@@ -1974,7 +1974,8 @@ export type ContactExportOutboundMessage = {
 export const ContactExportSource = {
   MANUAL: 'manual',
   API: 'api',
-  TRACKER: 'tracker'
+  TRACKER: 'tracker',
+  IMPORT: 'import'
 } as const;
 
 /**
@@ -7780,6 +7781,10 @@ export type SiteNewPeoplePoint = {
    * Contacts created by the tracker that day
    */
   tracker: number;
+  /**
+   * Contacts created by a CSV import that day
+   */
+  import: number;
 };
 
 /**

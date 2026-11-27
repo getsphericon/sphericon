@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/consentstamps"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
+	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 )
 
@@ -46,11 +47,14 @@ func (m *Module) Grandfather(ctx context.Context, s *ent.Scoped, after int64, li
 	}
 	done := Grandfathered{Last: after, More: len(found) == limit}
 	at := consentstamps.At(m.now())
+	// A grandfathered Confirmation is asserted, not given by the person now: its proof is history
+	// that triggers nothing (events.Backfill).
+	history := events.WithCause(ctx, events.Backfill())
 	for _, c := range found {
 		done.Last = c.ID
-		_, wrote, err := m.recordIn(ctx, s, grant{
+		_, wrote, err := m.recordIn(history, s, grant{
 			channel: channels.Email, destination: *c.Email, provenance: confirmation.ProvenanceGrandfathered,
-			contactID: c.ID, at: at, history: true,
+			contactID: c.ID, at: at,
 		})
 		switch {
 		case errors.Is(err, ErrSuperseded):

@@ -8184,6 +8184,7 @@ const (
 	ContactExportSourceManual  ContactExportSource = "manual"
 	ContactExportSourceAPI     ContactExportSource = "api"
 	ContactExportSourceTracker ContactExportSource = "tracker"
+	ContactExportSourceImport  ContactExportSource = "import"
 )
 
 // AllValues returns all ContactExportSource values.
@@ -8192,6 +8193,7 @@ func (ContactExportSource) AllValues() []ContactExportSource {
 		ContactExportSourceManual,
 		ContactExportSourceAPI,
 		ContactExportSourceTracker,
+		ContactExportSourceImport,
 	}
 }
 
@@ -8203,6 +8205,8 @@ func (s ContactExportSource) MarshalText() ([]byte, error) {
 	case ContactExportSourceAPI:
 		return []byte(s), nil
 	case ContactExportSourceTracker:
+		return []byte(s), nil
+	case ContactExportSourceImport:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -8220,6 +8224,9 @@ func (s *ContactExportSource) UnmarshalText(data []byte) error {
 		return nil
 	case ContactExportSourceTracker:
 		*s = ContactExportSourceTracker
+		return nil
+	case ContactExportSourceImport:
+		*s = ContactExportSourceImport
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -34236,6 +34243,8 @@ type SiteNewPeoplePoint struct {
 	API int32 `json:"api"`
 	// Contacts created by the tracker that day.
 	Tracker int32 `json:"tracker"`
+	// Contacts created by a CSV import that day.
+	Import int32 `json:"import"`
 }
 
 // GetDate returns the value of Date.
@@ -34258,6 +34267,11 @@ func (s *SiteNewPeoplePoint) GetTracker() int32 {
 	return s.Tracker
 }
 
+// GetImport returns the value of Import.
+func (s *SiteNewPeoplePoint) GetImport() int32 {
+	return s.Import
+}
+
 // SetDate sets the value of Date.
 func (s *SiteNewPeoplePoint) SetDate(val string) {
 	s.Date = val
@@ -34276,6 +34290,11 @@ func (s *SiteNewPeoplePoint) SetAPI(val int32) {
 // SetTracker sets the value of Tracker.
 func (s *SiteNewPeoplePoint) SetTracker(val int32) {
 	s.Tracker = val
+}
+
+// SetImport sets the value of Import.
+func (s *SiteNewPeoplePoint) SetImport(val int32) {
+	s.Import = val
 }
 
 // New people: Contacts created in the selected range, per Report day and by Contact source.

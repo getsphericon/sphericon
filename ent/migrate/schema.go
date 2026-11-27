@@ -1141,7 +1141,7 @@ var (
 		{Name: "birthday", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "date"}},
 		{Name: "city", Type: field.TypeString, Nullable: true},
 		{Name: "avatar", Type: field.TypeString, Nullable: true},
-		{Name: "source", Type: field.TypeEnum, Enums: []string{"manual", "api", "tracker"}},
+		{Name: "source", Type: field.TypeEnum, Enums: []string{"manual", "api", "tracker", "import"}},
 		{Name: "custom_fields", Type: field.TypeJSON, Nullable: true},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
@@ -4159,7 +4159,7 @@ func init() {
 		"contacts_country_format": "country ~ '^[A-Z]{2}$'",
 		"contacts_email_lower":    "email = lower(email)",
 		"contacts_phone_format":   "phone ~ '^\\+[1-9]\\d{1,14}$'",
-		"contacts_source_check":   "source IN ('manual', 'api', 'tracker')",
+		"contacts_source_check":   "source IN ('manual', 'api', 'tracker', 'import')",
 	}
 	ContactDatesTable.ForeignKeys[0].RefTable = ContactsTable
 	ContactDatesTable.ForeignKeys[1].RefTable = WorkspacesTable

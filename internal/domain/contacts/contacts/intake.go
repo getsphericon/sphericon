@@ -95,17 +95,13 @@ func (m *Module) UpsertBatch(ctx context.Context, s *ent.Scoped, src contact.Sou
 	return out, nil
 }
 
-// Cause marks what an import's rows publish with the job that brought them (ADR 0138): it returns
-// the context the rows are written in, whose Events carry the job's cause on their envelope.
-type Cause func(context.Context) context.Context
-
-// ImportInput is one batch of a CSV import's job (ADR 0138): its rows, typed already, the Contact
-// source of the Contacts it creates, the job's cause and the "only add new Contacts" choice.
+// ImportInput is one batch of a CSV import's job (ADR 0138): its rows, typed already, the job's
+// cause and the "only add new Contacts" choice.
 type ImportInput struct {
-	Rows   []IntakeInput
-	Source contact.Source
-	// Cause marks every Event the rows publish with the job; nil marks none.
-	Cause Cause
+	Rows []IntakeInput
+	// Cause names the job on every Event the rows publish: events.Import, history that starts
+	// nothing, or events.ImportAsNew when its Member chose to treat them as new sign-ups.
+	Cause events.Cause
 	// OnlyAddNew leaves a Contact the Workspace has as it is but for the refusals its row carries,
 	// which narrow consent and are always recorded (Result.Kept).
 	OnlyAddNew bool
@@ -114,12 +110,9 @@ type ImportInput struct {
 // Import is the Contact intake's entry for a CSV import's job (ADR 0138): the rows of
 // UpsertBatch, written through the scope s, which acts as the Member who ran the import, under the
 // job's cause, with no Audit entry of its own: the job records one contact.import for the whole
-// import.
+// import. A Contact it creates has the source `import`.
 func (m *Module) Import(ctx context.Context, s *ent.Scoped, in ImportInput) (batch.Result[Result], error) {
-	if in.Cause != nil {
-		ctx = in.Cause(ctx)
-	}
-	return m.rows(ctx, s, in.Source, in.Rows, in.OnlyAddNew)
+	return m.rows(events.WithCause(ctx, in.Cause), s, contact.SourceImport, in.Rows, in.OnlyAddNew)
 }
 
 // rows writes each item through an unaudited scope, in order, each in a transaction of its own

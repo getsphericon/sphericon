@@ -82,7 +82,7 @@ func (Contact) Fields() []ent.Field {
 		// How the Contact first came to exist (GLOSSARY: Contact source). Set once at
 		// creation and never rewritten.
 		field.Enum("source").
-			Values("manual", "api", "tracker").
+			Values("manual", "api", "tracker", "import").
 			Immutable(),
 		// Typed Custom field values keyed by the field's machine key. The typed
 		// definitions live in CustomField; values are widened to any to carry

@@ -106,6 +106,11 @@ type Envelope struct {
 	// and still reaches the Webhook endpoints: the mark only stops sends from starting. Its stored
 	// Event keeps it (events.send_locked).
 	SendLocked bool `json:"sendLocked,omitempty"`
+	// Cause is what brought the event in when it was not a live happening: an import job or a
+	// Backfill (ADR 0138), stamped from the context made by WithCause. Whether the event is history,
+	// never a trigger, is read from it by IsHistory alone; its stored Event keeps that
+	// (events.backfill).
+	Cause Cause `json:"cause,omitzero"`
 	// CorrelationID is shared by every event of one chain: what a request, or the handling of
 	// an event, published (correlation.go). CausationID is the id of the event whose handling
 	// published this one, empty at the start of a chain.
@@ -265,18 +270,6 @@ type observed interface {
 // stays a fresh ULID, independent of that upstream identity.
 type identifiable interface {
 	EventID() string
-}
-
-// backfilled is an optional DomainEvent capability: an event that is history, recorded but
-// never reacted to, so the webhooks and automations consumers skip it.
-type backfilled interface {
-	Backfilled() bool
-}
-
-// IsBackfill reports whether ev is a Backfill: recorded without triggering automations or webhooks.
-func IsBackfill(ev DomainEvent) bool {
-	b, ok := ev.(backfilled)
-	return ok && b.Backfilled()
 }
 
 // registry maps a bus event name to a constructor for its concrete type, so a
@@ -556,7 +549,9 @@ func (e *EmailDelivery) Project() Projection {
 // GDPR Art. 7 proof: when, how (provenance), and the confirming IP. Publishing it
 // also lets a welcome automation trigger on "marketing.confirmed". It is email's
 // alone: an SMS Confirmation publishes SmsConfirmed, since a trigger is an action with
-// no property filter and a welcome email's Automation must not enroll a phone's consent.
+// no property filter and a welcome email's Automation must not enroll a phone's consent. A
+// grandfathered one is recorded as history (ADR 0013): its envelope's Cause is a Backfill, so it
+// triggers nothing (IsHistory).
 type MarketingConfirmed struct {
 	WorkspaceID int64  `json:"workspaceId"`
 	ContactID   int64  `json:"contactId,omitempty"`
@@ -568,15 +563,7 @@ type MarketingConfirmed struct {
 	Wording string `json:"wording,omitempty"`
 	Source  string `json:"source,omitempty"`
 	Brand   string `json:"brand,omitempty"`
-	// History marks a Confirmation recorded as history rather than given now: the grandfathered
-	// ones turning confirmed opt-in on records (ADR 0013). Segmentation sees it, and like a
-	// Backfill (ADR 0044) it triggers no Automation and reaches no webhook. It travels in the
-	// envelope, so the consumers that decode it see it too.
-	History bool `json:"history,omitempty"`
 }
-
-// Backfilled reports whether the Confirmation is history (History): recorded, never reacted to.
-func (e *MarketingConfirmed) Backfilled() bool { return e.History }
 
 func (*MarketingConfirmed) EventName() string  { return systemevent.MarketingConfirmed }
 func (*MarketingConfirmed) EventVersion() int  { return 1 }
@@ -640,16 +627,12 @@ type CollectedEvent struct {
 	// DedupID is the upstream identity when the client gave it a clientEventId
 	// (DedupKey: the source, the Workspace and that id). Empty for an event without one.
 	DedupID string `json:"dedupId,omitempty"`
-	// Backfill marks an event loaded from history: it is recorded, but no Automation enrolls
-	// on it and no webhook endpoint receives it.
-	Backfill bool `json:"backfill,omitempty"`
 }
 
 func (*CollectedEvent) EventName() string  { return NameCollected }
 func (*CollectedEvent) EventVersion() int  { return 1 }
 func (e *CollectedEvent) Workspace() int64 { return e.WorkspaceID }
 func (e *CollectedEvent) EventID() string  { return e.DedupID }
-func (e *CollectedEvent) Backfilled() bool { return e.Backfill }
 func (e *CollectedEvent) Project() Projection {
 	return Projection{
 		Subject:    e.SubjectID,

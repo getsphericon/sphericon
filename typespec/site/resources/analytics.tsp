@@ -197,6 +197,9 @@ model SiteNewPeoplePoint {
 
   /** Contacts created by the tracker that day */
   tracker: int32;
+
+  /** Contacts created by a CSV import that day */
+  `import`: int32;
 }
 
 /** New people: Contacts created in the selected range, per Report day and by Contact source */

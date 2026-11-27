@@ -84,9 +84,6 @@ type grant struct {
 	ip string
 	// at is when the consent was given (ADR 0154).
 	at consentstamps.Occurrence
-	// history records the proof as history that triggers nothing (events.MarketingConfirmed.History):
-	// a grandfathered Confirmation is asserted, not given by the person now.
-	history bool
 }
 
 // ErrSuperseded refuses a Confirmation given before the destination's consent was withdrawn: it
@@ -204,7 +201,7 @@ func (g grant) proof(workspaceID int64) (events.DomainEvent, error) {
 	case channels.Email:
 		e := &events.MarketingConfirmed{
 			WorkspaceID: workspaceID, ContactID: g.contactID, Email: g.destination,
-			Provenance: string(g.provenance), IP: g.ip, History: g.history,
+			Provenance: string(g.provenance), IP: g.ip,
 		}
 		if ev := g.evidence; ev != nil {
 			e.Wording, e.Source, e.Brand = ev.Wording, ev.Source, ev.Brand

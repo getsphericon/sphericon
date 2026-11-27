@@ -1,0 +1,30 @@
+id: stored-history-through-the-predicate
+language: Go
+severity: error
+message: "rule 6: the stored Event's history flag (events.backfill) is read or written outside the one predicate; fix: read it through events.IsHistory (an envelope), events.Live() (a query) or events.WasHistory (a stored Event), and set it only from the envelope's Cause (events.WithCause)"
+note: >-
+  Whether an Event is history, never a trigger, is one predicate (ADR 0138 as amended): the cause on
+  its envelope (events.Cause), read by events.IsHistory, and stored as events.backfill, read by
+  events.Live and events.WasHistory (internal/infra/events/history.go). Enrollment, the Rules and
+  their dry run, exits and goals, Wait for event and Webhook delivery read only that predicate, so a
+  new kind of history (an import's) holds everywhere at once. The flag is written in one place, the
+  Event's store (internal/infra/events/store.go). The rule is syntactic: a `.Backfill` of a value
+  that is not a stored Event (the Event recording input `in`, the API request `req`, the Rule dry
+  run's outcome `rules.Backfill`, the cause `events.Backfill()`) is let through by its operand's name.
+rule:
+  kind: selector_expression
+  has:
+    field: field
+    regex: ^(Backfill|BackfillEQ|BackfillNEQ|FieldBackfill|SetBackfill|SetNillableBackfill)$
+  not:
+    has:
+      field: operand
+      regex: ^(in|req|rules|events)$
+files:
+  - '**/*.go'
+ignores:
+  - ent/**
+  - gen/**
+  - '**/*_gen.go'
+  - internal/infra/events/history.go
+  - internal/infra/events/store.go

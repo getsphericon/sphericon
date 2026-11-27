@@ -377,7 +377,7 @@ func endedSince(ctx context.Context, s *ent.Scoped, v *ent.AutomationVersion, co
 		event.ContactID(contactID),
 		event.Or(ending...),
 		event.OccurredAtGTE(o.OccurredAt),
-		event.Backfill(false),
+		events.Live(),
 	}
 	if o.BegunOnSourceID != "" {
 		where = append(where, event.Or(event.SourceIDIsNil(), event.SourceIDNEQ(o.BegunOnSourceID)))

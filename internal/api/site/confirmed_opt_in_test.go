@@ -152,7 +152,7 @@ func TestTurningConfirmedOptInOnGrandfathersTheMailableListAsHistory(t *testing.
 	require.NotEmpty(t, before)
 	historyOf := func() int {
 		n, err := env.DB.Event.Query().
-			Where(event.WorkspaceID(fixtures.AcmeID), event.Action(systemevent.MarketingConfirmed), event.Backfill(true)).
+			Where(event.WorkspaceID(fixtures.AcmeID), event.Action(systemevent.MarketingConfirmed), event.Not(events.Live())).
 			Count(t.Context())
 		require.NoError(t, err)
 		return n
