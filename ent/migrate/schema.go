@@ -1334,6 +1334,44 @@ var (
 		Columns:    DefaultSendCapColumns,
 		PrimaryKey: []*schema.Column{DefaultSendCapColumns[0]},
 	}
+	// DownloadLinksColumns holds the columns for the "download_links" table.
+	DownloadLinksColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "purpose", Type: field.TypeEnum, Enums: []string{"contacts_export", "import_report"}},
+		{Name: "token_hash", Type: field.TypeString},
+		{Name: "session_hash", Type: field.TypeString},
+		{Name: "payload", Type: field.TypeJSON},
+		{Name: "expires_at", Type: field.TypeTime},
+		{Name: "workspace_id", Type: field.TypeInt64},
+	}
+	// DownloadLinksTable holds the schema information for the "download_links" table.
+	DownloadLinksTable = &schema.Table{
+		Name:       "download_links",
+		Columns:    DownloadLinksColumns,
+		PrimaryKey: []*schema.Column{DownloadLinksColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "download_links_workspaces_download_links",
+				Columns:    []*schema.Column{DownloadLinksColumns[8]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "download_links_token_hash",
+				Unique:  true,
+				Columns: []*schema.Column{DownloadLinksColumns[8], DownloadLinksColumns[4]},
+			},
+			{
+				Name:    "download_links_workspace_id_expires_at",
+				Unique:  false,
+				Columns: []*schema.Column{DownloadLinksColumns[8], DownloadLinksColumns[7]},
+			},
+		},
+	}
 	// EmailTemplatesColumns holds the columns for the "email_templates" table.
 	EmailTemplatesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -3891,6 +3929,7 @@ var (
 		ContactTagsTable,
 		CustomFieldsTable,
 		DefaultSendCapTable,
+		DownloadLinksTable,
 		EmailTemplatesTable,
 		EngagementTrackingConsentsTable,
 		ErasuresTable,
@@ -4186,6 +4225,14 @@ func init() {
 	}
 	DefaultSendCapTable.Annotation = &entsql.Annotation{
 		Table: "default_send_cap",
+	}
+	DownloadLinksTable.ForeignKeys[0].RefTable = WorkspacesTable
+	DownloadLinksTable.Annotation = &entsql.Annotation{
+		Table: "download_links",
+	}
+	DownloadLinksTable.Annotation.Checks = map[string]string{
+		"download_links_payload_check": "jsonb_typeof(payload) = 'object'",
+		"download_links_purpose_check": "purpose IN ('contacts_export', 'import_report')",
 	}
 	EmailTemplatesTable.ForeignKeys[0].RefTable = WorkspacesTable
 	EmailTemplatesTable.Annotation = &entsql.Annotation{

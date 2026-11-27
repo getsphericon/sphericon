@@ -28,6 +28,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contactdate"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/defaultsendcap"
+	"github.com/getsphericon/sphericon/ent/downloadlink"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
 	"github.com/getsphericon/sphericon/ent/erasure"
@@ -819,6 +820,29 @@ func init() {
 	defaultsendcapDescPerDay := defaultsendcapFields[1].Descriptor()
 	// defaultsendcap.PerDayValidator is a validator for the "per_day" field. It is called by the builders before save.
 	defaultsendcap.PerDayValidator = defaultsendcapDescPerDay.Validators[0].(func(int) error)
+	downloadlinkMixin := schema.DownloadLink{}.Mixin()
+	downloadlinkMixinFields0 := downloadlinkMixin[0].Fields()
+	_ = downloadlinkMixinFields0
+	downloadlinkFields := schema.DownloadLink{}.Fields()
+	_ = downloadlinkFields
+	// downloadlinkDescCreatedAt is the schema descriptor for created_at field.
+	downloadlinkDescCreatedAt := downloadlinkMixinFields0[0].Descriptor()
+	// downloadlink.DefaultCreatedAt holds the default value on creation for the created_at field.
+	downloadlink.DefaultCreatedAt = downloadlinkDescCreatedAt.Default.(func() time.Time)
+	// downloadlinkDescUpdatedAt is the schema descriptor for updated_at field.
+	downloadlinkDescUpdatedAt := downloadlinkMixinFields0[1].Descriptor()
+	// downloadlink.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	downloadlink.DefaultUpdatedAt = downloadlinkDescUpdatedAt.Default.(func() time.Time)
+	// downloadlink.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	downloadlink.UpdateDefaultUpdatedAt = downloadlinkDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// downloadlinkDescTokenHash is the schema descriptor for token_hash field.
+	downloadlinkDescTokenHash := downloadlinkFields[2].Descriptor()
+	// downloadlink.TokenHashValidator is a validator for the "token_hash" field. It is called by the builders before save.
+	downloadlink.TokenHashValidator = downloadlinkDescTokenHash.Validators[0].(func(string) error)
+	// downloadlinkDescSessionHash is the schema descriptor for session_hash field.
+	downloadlinkDescSessionHash := downloadlinkFields[3].Descriptor()
+	// downloadlink.SessionHashValidator is a validator for the "session_hash" field. It is called by the builders before save.
+	downloadlink.SessionHashValidator = downloadlinkDescSessionHash.Validators[0].(func(string) error)
 	emailtemplateMixin := schema.EmailTemplate{}.Mixin()
 	emailtemplateMixinFields0 := emailtemplateMixin[0].Fields()
 	_ = emailtemplateMixinFields0

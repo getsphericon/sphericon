@@ -297,6 +297,18 @@ func (f DefaultSendCapFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Val
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.DefaultSendCapMutation", m)
 }
 
+// The DownloadLinkFunc type is an adapter to allow the use of ordinary
+// function as DownloadLink mutator.
+type DownloadLinkFunc func(context.Context, *ent.DownloadLinkMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f DownloadLinkFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.DownloadLinkMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.DownloadLinkMutation", m)
+}
+
 // The EmailTemplateFunc type is an adapter to allow the use of ordinary
 // function as EmailTemplate mutator.
 type EmailTemplateFunc func(context.Context, *ent.EmailTemplateMutation) (ent.Value, error)

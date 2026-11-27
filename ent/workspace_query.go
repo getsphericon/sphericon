@@ -34,6 +34,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contactdate"
 	"github.com/getsphericon/sphericon/ent/contacttag"
 	"github.com/getsphericon/sphericon/ent/customfield"
+	"github.com/getsphericon/sphericon/ent/downloadlink"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
 	"github.com/getsphericon/sphericon/ent/erasure"
@@ -98,6 +99,7 @@ type WorkspaceQuery struct {
 	withVisitors                    *VisitorQuery
 	withBindings                    *BindingQuery
 	withStartTokens                 *StartTokenQuery
+	withDownloadLinks               *DownloadLinkQuery
 	withAPITokens                   *ApiTokenQuery
 	withOauthCodes                  *OAuthCodeQuery
 	withIntegrations                *IntegrationQuery
@@ -482,6 +484,28 @@ func (_q *WorkspaceQuery) QueryStartTokens() *StartTokenQuery {
 			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
 			sqlgraph.To(starttoken.Table, starttoken.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, workspace.StartTokensTable, workspace.StartTokensColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryDownloadLinks chains the current query on the "download_links" edge.
+func (_q *WorkspaceQuery) QueryDownloadLinks() *DownloadLinkQuery {
+	query := (&DownloadLinkClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
+			sqlgraph.To(downloadlink.Table, downloadlink.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.DownloadLinksTable, workspace.DownloadLinksColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -1707,6 +1731,7 @@ func (_q *WorkspaceQuery) Clone() *WorkspaceQuery {
 		withVisitors:                    _q.withVisitors.Clone(),
 		withBindings:                    _q.withBindings.Clone(),
 		withStartTokens:                 _q.withStartTokens.Clone(),
+		withDownloadLinks:               _q.withDownloadLinks.Clone(),
 		withAPITokens:                   _q.withAPITokens.Clone(),
 		withOauthCodes:                  _q.withOauthCodes.Clone(),
 		withIntegrations:                _q.withIntegrations.Clone(),
@@ -1911,6 +1936,17 @@ func (_q *WorkspaceQuery) WithStartTokens(opts ...func(*StartTokenQuery)) *Works
 		opt(query)
 	}
 	_q.withStartTokens = query
+	return _q
+}
+
+// WithDownloadLinks tells the query-builder to eager-load the nodes that are connected to
+// the "download_links" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *WorkspaceQuery) WithDownloadLinks(opts ...func(*DownloadLinkQuery)) *WorkspaceQuery {
+	query := (&DownloadLinkClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withDownloadLinks = query
 	return _q
 }
 
@@ -2498,7 +2534,7 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 	var (
 		nodes       = []*Workspace{}
 		_spec       = _q.querySpec()
-		loadedTypes = [60]bool{
+		loadedTypes = [61]bool{
 			_q.withContacts != nil,
 			_q.withCustomFields != nil,
 			_q.withTags != nil,
@@ -2513,6 +2549,7 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 			_q.withVisitors != nil,
 			_q.withBindings != nil,
 			_q.withStartTokens != nil,
+			_q.withDownloadLinks != nil,
 			_q.withAPITokens != nil,
 			_q.withOauthCodes != nil,
 			_q.withIntegrations != nil,
@@ -2679,6 +2716,13 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 		if err := _q.loadStartTokens(ctx, query, nodes,
 			func(n *Workspace) { n.Edges.StartTokens = []*StartToken{} },
 			func(n *Workspace, e *StartToken) { n.Edges.StartTokens = append(n.Edges.StartTokens, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withDownloadLinks; query != nil {
+		if err := _q.loadDownloadLinks(ctx, query, nodes,
+			func(n *Workspace) { n.Edges.DownloadLinks = []*DownloadLink{} },
+			func(n *Workspace, e *DownloadLink) { n.Edges.DownloadLinks = append(n.Edges.DownloadLinks, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -3434,6 +3478,36 @@ func (_q *WorkspaceQuery) loadStartTokens(ctx context.Context, query *StartToken
 	}
 	query.Where(predicate.StartToken(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(workspace.StartTokensColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.WorkspaceID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "workspace_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *WorkspaceQuery) loadDownloadLinks(ctx context.Context, query *DownloadLinkQuery, nodes []*Workspace, init func(*Workspace), assign func(*Workspace, *DownloadLink)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Workspace)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(downloadlink.FieldWorkspaceID)
+	}
+	query.Where(predicate.DownloadLink(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(workspace.DownloadLinksColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

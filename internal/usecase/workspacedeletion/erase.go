@@ -25,6 +25,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/contactdate"
 	"github.com/getsphericon/sphericon/ent/customfield"
+	"github.com/getsphericon/sphericon/ent/downloadlink"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
 	"github.com/getsphericon/sphericon/ent/erasure"
@@ -269,6 +270,7 @@ func eraseSteps() []eraseStep {
 		stepOf((*ent.Scoped).Invitation, invitation.IDIn),
 		stepOf((*ent.Scoped).OAuthCode, oauthcode.IDIn),
 		stepOf((*ent.Scoped).ApiToken, apitoken.IDIn),
+		stepOf((*ent.Scoped).DownloadLink, downloadlink.IDIn),
 		keptStepOf((*ent.Scoped).Broadcast, (*ent.BroadcastScoped).QueryWithArchived, (*ent.BroadcastScoped).Purge, broadcast.IDIn),
 		keptStepOf((*ent.Scoped).Automation, (*ent.AutomationScoped).QueryWithArchived, (*ent.AutomationScoped).Purge, automation.IDIn),
 		keptStepOf((*ent.Scoped).Segment, (*ent.SegmentScoped).QueryWithArchived, (*ent.SegmentScoped).Purge, segment.IDIn),

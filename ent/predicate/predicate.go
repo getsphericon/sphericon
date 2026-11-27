@@ -78,6 +78,9 @@ type CustomField func(*sql.Selector)
 // DefaultSendCap is the predicate function for defaultsendcap builders.
 type DefaultSendCap func(*sql.Selector)
 
+// DownloadLink is the predicate function for downloadlink builders.
+type DownloadLink func(*sql.Selector)
+
 // EmailTemplate is the predicate function for emailtemplate builders.
 type EmailTemplate func(*sql.Selector)
 

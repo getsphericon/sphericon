@@ -32,6 +32,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contactdate"
 	"github.com/getsphericon/sphericon/ent/contacttag"
 	"github.com/getsphericon/sphericon/ent/customfield"
+	"github.com/getsphericon/sphericon/ent/downloadlink"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
 	"github.com/getsphericon/sphericon/ent/erasure"
@@ -491,6 +492,22 @@ func (s *Scoped) verifyCustomField(ctx context.Context, ids []int64) error {
 	}
 	if n != len(ids) {
 		return fmt.Errorf("CustomField: %w", ErrNotInWorkspace)
+	}
+	return nil
+}
+
+// verifyDownloadLink fails with ErrNotInWorkspace unless every id is a DownloadLink of the Workspace.
+func (s *Scoped) verifyDownloadLink(ctx context.Context, ids []int64) error {
+	ids = uniqueIDs(ids)
+	if len(ids) == 0 {
+		return nil
+	}
+	n, err := s.c.DownloadLink.Query().Where(s.inDownloadLink(downloadlink.IDIn(ids...))...).Count(ctx)
+	if err != nil {
+		return err
+	}
+	if n != len(ids) {
+		return fmt.Errorf("DownloadLink: %w", ErrNotInWorkspace)
 	}
 	return nil
 }
@@ -30815,6 +30832,705 @@ const (
 	RoleOf_CustomFieldScopedUpdate_Modify = RoleStep
 	RoleOf_CustomFieldScopedUpdate_Save   = RoleStep
 	RoleOf_CustomFieldScopedUpdate_Exec   = RoleStep
+)
+
+// DownloadLinkScoped reaches DownloadLink entities of one Workspace.
+type DownloadLinkScoped struct{ s *Scoped }
+
+// DownloadLink returns the DownloadLink entities of the Workspace.
+func (s *Scoped) DownloadLink() *DownloadLinkScoped { return &DownloadLinkScoped{s: s} }
+
+const (
+	TypeOf_DownloadLinkScoped             = TypeWrapper
+	EntityOf_DownloadLinkScoped           = "DownloadLink"
+	RoleOf_Scoped_DownloadLink            = RoleNone
+	RoleOf_DownloadLinkScoped_Query       = RoleRead
+	RoleOf_DownloadLinkScoped_Get         = RoleRead
+	RoleOf_DownloadLinkScoped_DeleteOneID = RoleStart
+	RoleOf_DownloadLinkScoped_UpdateOneID = RoleStart
+	RoleOf_DownloadLinkScoped_Delete      = RoleStart
+	RoleOf_DownloadLinkScoped_Create      = RoleStart
+	RoleOf_DownloadLinkScoped_CreateBulk  = RoleStart
+	RoleOf_DownloadLinkScoped_Update      = RoleStart
+)
+
+// inDownloadLink confines predicates of DownloadLink rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inDownloadLink(ps ...predicate.DownloadLink) []predicate.DownloadLink {
+	return append([]predicate.DownloadLink{downloadlink.WorkspaceID(s.ws)}, ps...)
+}
+
+// Query returns a DownloadLink query already confined to the Workspace.
+func (t *DownloadLinkScoped) Query() *DownloadLinkQuery {
+	return t.s.c.DownloadLink.Query().Where(t.s.inDownloadLink()...)
+}
+
+// Get returns the DownloadLink with the id; a row of another Workspace is not found.
+func (t *DownloadLinkScoped) Get(ctx context.Context, id int64) (*DownloadLink, error) {
+	return t.Query().Where(downloadlink.ID(id)).Only(ctx)
+}
+
+// writeDownloadLink runs a write of DownloadLink rows: run builds it on the client of the scope it is
+// given and executes it, and reaches no other client. The
+// entity is not audited, so run gets the scope itself.
+func (s *Scoped) writeDownloadLink(ctx context.Context, verb string, where []predicate.DownloadLink, unchanged unchangedRows, run func(s *Scoped) ([]int64, error)) error {
+	_, _, _ = verb, where, unchanged
+	_, err := run(s)
+	return err
+}
+
+// checkDownloadLink verifies every reference the mutations set against the Workspace of s, one query per
+// reference for all of them.
+func (s *Scoped) checkDownloadLink(ctx context.Context, ms ...*DownloadLinkMutation) error {
+	return nil
+}
+
+// DownloadLinkScopedDeleteOne deletes one DownloadLink: it keeps the row's id and its fences, and builds the
+// ent delete on the client the delete runs on.
+type DownloadLinkScopedDeleteOne struct {
+	s     *Scoped
+	id    int64
+	where []predicate.DownloadLink
+}
+
+// DeleteOneID deletes the DownloadLink with the id; a row of another Workspace is not found.
+func (t *DownloadLinkScoped) DeleteOneID(id int64) *DownloadLinkScopedDeleteOne {
+	return &DownloadLinkScopedDeleteOne{s: t.s, id: id}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *DownloadLinkScopedDeleteOne) Where(ps ...predicate.DownloadLink) *DownloadLinkScopedDeleteOne {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+const (
+	TypeOf_DownloadLinkScopedDeleteOne       = TypeScopedDelete
+	EntityOf_DownloadLinkScopedDeleteOne     = "DownloadLink"
+	RoleOf_DownloadLinkScopedDeleteOne_Where = RoleStep
+	RoleOf_DownloadLinkScopedDeleteOne_Exec  = RoleStep
+)
+
+// Exec deletes the row; a missing row is a NotFoundError.
+func (x *DownloadLinkScopedDeleteOne) Exec(ctx context.Context) error {
+	where := x.s.inDownloadLink(x.where...)
+	return x.s.writeDownloadLink(ctx, "delete", append([]predicate.DownloadLink{downloadlink.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
+		return nil, s.c.DownloadLink.DeleteOneID(x.id).Where(where...).Exec(ctx)
+	})
+}
+
+// DownloadLinkScopedDelete deletes the DownloadLink rows of one Workspace that match its predicates, which it
+// keeps until the delete is built on the client it runs on.
+type DownloadLinkScopedDelete struct {
+	s     *Scoped
+	where []predicate.DownloadLink
+}
+
+// Delete deletes the DownloadLink entities of the Workspace that match the predicates.
+func (t *DownloadLinkScoped) Delete() *DownloadLinkScopedDelete {
+	return &DownloadLinkScopedDelete{s: t.s}
+}
+
+// Where appends predicates the rows must match.
+func (x *DownloadLinkScopedDelete) Where(ps ...predicate.DownloadLink) *DownloadLinkScopedDelete {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+const (
+	TypeOf_DownloadLinkScopedDelete       = TypeScopedDelete
+	EntityOf_DownloadLinkScopedDelete     = "DownloadLink"
+	RoleOf_DownloadLinkScopedDelete_Where = RoleStep
+	RoleOf_DownloadLinkScopedDelete_Exec  = RoleStep
+)
+
+// Exec deletes the rows and returns how many were deleted.
+func (x *DownloadLinkScopedDelete) Exec(ctx context.Context) (int, error) {
+	where := x.s.inDownloadLink(x.where...)
+	var n int
+	err := x.s.writeDownloadLink(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		var err error
+		n, err = s.c.DownloadLink.Delete().Where(where...).Exec(ctx)
+		return nil, err
+	})
+	return written(n, err)
+}
+
+// ---------------------------------------------------------------- create
+
+// DownloadLinkScopedCreate creates a DownloadLink of one Workspace. It has no way to name a Workspace: it
+// keeps what its setters set and builds the ent create, in its Workspace, on the client the create
+// runs on.
+type DownloadLinkScopedCreate struct {
+	s   *Scoped
+	set []func(*DownloadLinkCreate)
+}
+
+// Create starts a DownloadLink in the Workspace.
+func (t *DownloadLinkScoped) Create() *DownloadLinkScopedCreate {
+	return &DownloadLinkScopedCreate{s: t.s}
+}
+
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *DownloadLinkScopedCreate) raw(s *Scoped) *DownloadLinkCreate {
+	b := s.c.DownloadLink.Create().SetWorkspaceID(s.ws)
+	for _, set := range x.set {
+		set(b)
+	}
+	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *DownloadLinkScopedCreate) build(ctx context.Context, s *Scoped) (*DownloadLinkCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkDownloadLink(ctx, b.Mutation()))
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (x *DownloadLinkScopedCreate) SetCreatedAt(v time.Time) *DownloadLinkScopedCreate {
+	x.set = append(x.set, func(b *DownloadLinkCreate) { b.SetCreatedAt(v) })
+	return x
+}
+
+const RoleOf_DownloadLinkScopedCreate_SetCreatedAt = RoleStep
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (x *DownloadLinkScopedCreate) SetNillableCreatedAt(v *time.Time) *DownloadLinkScopedCreate {
+	if v != nil {
+		x.SetCreatedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_DownloadLinkScopedCreate_SetNillableCreatedAt = RoleStep
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *DownloadLinkScopedCreate) SetUpdatedAt(v time.Time) *DownloadLinkScopedCreate {
+	x.set = append(x.set, func(b *DownloadLinkCreate) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_DownloadLinkScopedCreate_SetUpdatedAt = RoleStep
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (x *DownloadLinkScopedCreate) SetNillableUpdatedAt(v *time.Time) *DownloadLinkScopedCreate {
+	if v != nil {
+		x.SetUpdatedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_DownloadLinkScopedCreate_SetNillableUpdatedAt = RoleStep
+
+// SetPurpose sets the "purpose" field.
+func (x *DownloadLinkScopedCreate) SetPurpose(v downloadlink.Purpose) *DownloadLinkScopedCreate {
+	x.set = append(x.set, func(b *DownloadLinkCreate) { b.SetPurpose(v) })
+	return x
+}
+
+const RoleOf_DownloadLinkScopedCreate_SetPurpose = RoleStep
+
+// SetTokenHash sets the "token_hash" field.
+func (x *DownloadLinkScopedCreate) SetTokenHash(v string) *DownloadLinkScopedCreate {
+	x.set = append(x.set, func(b *DownloadLinkCreate) { b.SetTokenHash(v) })
+	return x
+}
+
+const RoleOf_DownloadLinkScopedCreate_SetTokenHash = RoleStep
+
+// SetSessionHash sets the "session_hash" field.
+func (x *DownloadLinkScopedCreate) SetSessionHash(v string) *DownloadLinkScopedCreate {
+	x.set = append(x.set, func(b *DownloadLinkCreate) { b.SetSessionHash(v) })
+	return x
+}
+
+const RoleOf_DownloadLinkScopedCreate_SetSessionHash = RoleStep
+
+// SetPayload sets the "payload" field.
+func (x *DownloadLinkScopedCreate) SetPayload(v json.RawMessage) *DownloadLinkScopedCreate {
+	x.set = append(x.set, func(b *DownloadLinkCreate) { b.SetPayload(v) })
+	return x
+}
+
+const RoleOf_DownloadLinkScopedCreate_SetPayload = RoleStep
+
+// SetExpiresAt sets the "expires_at" field.
+func (x *DownloadLinkScopedCreate) SetExpiresAt(v time.Time) *DownloadLinkScopedCreate {
+	x.set = append(x.set, func(b *DownloadLinkCreate) { b.SetExpiresAt(v) })
+	return x
+}
+
+const RoleOf_DownloadLinkScopedCreate_SetExpiresAt = RoleStep
+
+const (
+	TypeOf_DownloadLinkScopedCreate                        = TypeScopedCreate
+	EntityOf_DownloadLinkScopedCreate                      = "DownloadLink"
+	RoleOf_DownloadLinkScopedCreate_Save                   = RoleStep
+	RoleOf_DownloadLinkScopedCreate_Exec                   = RoleStep
+	RoleOf_DownloadLinkScopedCreate_OnConflictColumns      = RoleStart
+	RoleOf_DownloadLinkScopedCreate_OnConflictColumnsWhere = RoleStart
+)
+
+// Save verifies the references against the Workspace, then creates the DownloadLink.
+func (x *DownloadLinkScopedCreate) Save(ctx context.Context) (*DownloadLink, error) {
+	var created *DownloadLink
+	err := x.s.writeDownloadLink(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if created, err = b.Save(ctx); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+	return written(created, err)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *DownloadLinkScopedCreate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- create bulk
+
+// DownloadLinkScopedCreateBulk creates several DownloadLink entities of one Workspace at once.
+type DownloadLinkScopedCreateBulk struct {
+	s  *Scoped
+	xs []*DownloadLinkScopedCreate
+}
+
+// CreateBulk batches creates started on this Workspace.
+func (t *DownloadLinkScoped) CreateBulk(xs ...*DownloadLinkScopedCreate) *DownloadLinkScopedCreateBulk {
+	return &DownloadLinkScopedCreateBulk{s: t.s, xs: xs}
+}
+
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *DownloadLinkScopedCreateBulk) refuseForeign() error {
+	for _, x := range b.xs {
+		if x.s.ws != b.s.ws {
+			return fmt.Errorf("DownloadLink: builder of another scope: %w", ErrNotInWorkspace)
+		}
+	}
+	return nil
+}
+
+// build makes the ent bulk create on the client of s, every create of it in the Workspace, and
+// verifies the references of all of them, one query per reference rather than one per row.
+func (b *DownloadLinkScopedCreateBulk) build(ctx context.Context, s *Scoped) (*DownloadLinkCreateBulk, error) {
+	builders := make([]*DownloadLinkCreate, len(b.xs))
+	ms := make([]*DownloadLinkMutation, len(b.xs))
+	for i, x := range b.xs {
+		builders[i] = x.raw(s)
+		ms[i] = builders[i].Mutation()
+	}
+	if err := s.checkDownloadLink(ctx, ms...); err != nil {
+		return nil, err
+	}
+	return s.c.DownloadLink.CreateBulk(builders...), nil
+}
+
+// Save verifies every builder's references, then creates the DownloadLink entities.
+func (b *DownloadLinkScopedCreateBulk) Save(ctx context.Context) ([]*DownloadLink, error) {
+	if err := b.refuseForeign(); err != nil {
+		return nil, err
+	}
+	var created []*DownloadLink
+	err := b.s.writeDownloadLink(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		raw, err := b.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if created, err = raw.Save(ctx); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+	return written(created, err)
+}
+
+// Exec is like Save, discarding the entities.
+func (b *DownloadLinkScopedCreateBulk) Exec(ctx context.Context) error {
+	_, err := b.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_DownloadLinkScopedCreateBulk                   = TypeScopedCreate
+	EntityOf_DownloadLinkScopedCreateBulk                 = "DownloadLink"
+	RoleOf_DownloadLinkScopedCreateBulk_Save              = RoleStep
+	RoleOf_DownloadLinkScopedCreateBulk_Exec              = RoleStep
+	RoleOf_DownloadLinkScopedCreateBulk_OnConflictColumns = RoleStart
+)
+
+// ---------------------------------------------------------------- upsert
+
+// DownloadLinkScopedUpsert is the "ON CONFLICT ... DO UPDATE" setter. It cannot move a row to
+// another Workspace or point a reference at a value that was not verified on create.
+type DownloadLinkScopedUpsert struct{ u *sql.UpdateSet }
+
+const (
+	TypeOf_DownloadLinkScopedUpsert   = TypeScopedUpsert
+	EntityOf_DownloadLinkScopedUpsert = "DownloadLink"
+)
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *DownloadLinkScopedUpsert) SetUpdatedAt(v time.Time) *DownloadLinkScopedUpsert {
+	u.u.Set(downloadlink.FieldUpdatedAt, v)
+	return u
+}
+
+const RoleOf_DownloadLinkScopedUpsert_SetUpdatedAt = RoleStep
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *DownloadLinkScopedUpsert) UpdateUpdatedAt() *DownloadLinkScopedUpsert {
+	u.u.SetExcluded(downloadlink.FieldUpdatedAt)
+	return u
+}
+
+const RoleOf_DownloadLinkScopedUpsert_UpdateUpdatedAt = RoleStep
+
+// conflictOptions confines the DO UPDATE part to rows of the Workspace.
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *DownloadLinkScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
+		sql.ConflictColumns(columns...),
+		sql.UpdateWhere(sql.EQ(downloadlink.FieldWorkspaceID, t.s.ws)),
+	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
+}
+
+// DownloadLinkScopedUpsertOne is the "upsert" of one DownloadLink: the create it was started on, which a setter
+// called later still changes, and what to do on a conflict.
+type DownloadLinkScopedUpsertOne struct {
+	x        *DownloadLinkScopedCreate
+	conflict []sql.ConflictOption
+	set      []func(*DownloadLinkUpsertOne)
+	// doNothing: the conflict action is DO NOTHING (the only upsert an audited entity allows).
+	doNothing bool
+}
+
+const (
+	TypeOf_DownloadLinkScopedUpsertOne                 = TypeScopedUpsert
+	EntityOf_DownloadLinkScopedUpsertOne               = "DownloadLink"
+	RoleOf_DownloadLinkScopedUpsertOne_UpdateNewValues = RoleStep
+	RoleOf_DownloadLinkScopedUpsertOne_Ignore          = RoleStep
+	RoleOf_DownloadLinkScopedUpsertOne_DoNothing       = RoleStep
+	RoleOf_DownloadLinkScopedUpsertOne_Update          = RoleStep
+	RoleOf_DownloadLinkScopedUpsertOne_Exec            = RoleStep
+	RoleOf_DownloadLinkScopedUpsertOne_ID              = RoleStep
+)
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (x *DownloadLinkScopedCreate) OnConflictColumns(columns ...string) *DownloadLinkScopedUpsertOne {
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *DownloadLinkScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *DownloadLinkScopedUpsertOne {
+	return &DownloadLinkScopedUpsertOne{x: x, conflict: (&DownloadLinkScoped{s: x.s}).conflictOptions(columns, target)}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *DownloadLinkScopedUpsertOne) UpdateNewValues() *DownloadLinkScopedUpsertOne {
+	u.set = append(u.set, func(r *DownloadLinkUpsertOne) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *DownloadLinkScopedUpsertOne) Ignore() *DownloadLinkScopedUpsertOne {
+	u.set = append(u.set, func(r *DownloadLinkUpsertOne) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *DownloadLinkScopedUpsertOne) DoNothing() *DownloadLinkScopedUpsertOne {
+	u.set = append(u.set, func(r *DownloadLinkUpsertOne) { r.DoNothing() })
+	u.doNothing = true
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *DownloadLinkScopedUpsertOne) Update(set func(*DownloadLinkScopedUpsert)) *DownloadLinkScopedUpsertOne {
+	u.set = append(u.set, func(r *DownloadLinkUpsertOne) {
+		r.Update(func(s *DownloadLinkUpsert) { set(&DownloadLinkScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// build makes the ent upsert on the client of s and verifies the create's references.
+func (u *DownloadLinkScopedUpsertOne) build(ctx context.Context, s *Scoped) (*DownloadLinkUpsertOne, error) {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
+		return nil, err
+	}
+	r := b.OnConflict(u.conflict...)
+	for _, set := range u.set {
+		set(r)
+	}
+	return r, nil
+}
+
+// Exec verifies the references, then executes the upsert.
+func (u *DownloadLinkScopedUpsertOne) Exec(ctx context.Context) error {
+	_, err := u.ID(ctx)
+	return err
+}
+
+// ID is like Exec, returning the inserted or updated id.
+func (u *DownloadLinkScopedUpsertOne) ID(ctx context.Context) (int64, error) {
+	var id int64
+	err := u.x.s.writeDownloadLink(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		r, err := u.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if id, err = r.ID(ctx); err != nil {
+			return nil, err
+		}
+		return []int64{id}, nil
+	})
+	return written(id, err)
+}
+
+// DownloadLinkScopedUpsertBulk is the "upsert" of several DownloadLink entities.
+type DownloadLinkScopedUpsertBulk struct {
+	b       *DownloadLinkScopedCreateBulk
+	t       *DownloadLinkScoped
+	columns []string
+	set     []func(*DownloadLinkUpsertBulk)
+}
+
+const (
+	TypeOf_DownloadLinkScopedUpsertBulk                 = TypeScopedUpsert
+	EntityOf_DownloadLinkScopedUpsertBulk               = "DownloadLink"
+	RoleOf_DownloadLinkScopedUpsertBulk_UpdateNewValues = RoleStep
+	RoleOf_DownloadLinkScopedUpsertBulk_Ignore          = RoleStep
+	RoleOf_DownloadLinkScopedUpsertBulk_DoNothing       = RoleStep
+	RoleOf_DownloadLinkScopedUpsertBulk_Update          = RoleStep
+	RoleOf_DownloadLinkScopedUpsertBulk_Exec            = RoleStep
+)
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (b *DownloadLinkScopedCreateBulk) OnConflictColumns(columns ...string) *DownloadLinkScopedUpsertBulk {
+	return &DownloadLinkScopedUpsertBulk{b: b, t: &DownloadLinkScoped{s: b.s}, columns: columns}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *DownloadLinkScopedUpsertBulk) UpdateNewValues() *DownloadLinkScopedUpsertBulk {
+	u.set = append(u.set, func(r *DownloadLinkUpsertBulk) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *DownloadLinkScopedUpsertBulk) Ignore() *DownloadLinkScopedUpsertBulk {
+	u.set = append(u.set, func(r *DownloadLinkUpsertBulk) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *DownloadLinkScopedUpsertBulk) DoNothing() *DownloadLinkScopedUpsertBulk {
+	u.set = append(u.set, func(r *DownloadLinkUpsertBulk) { r.DoNothing() })
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *DownloadLinkScopedUpsertBulk) Update(set func(*DownloadLinkScopedUpsert)) *DownloadLinkScopedUpsertBulk {
+	u.set = append(u.set, func(r *DownloadLinkUpsertBulk) {
+		r.Update(func(s *DownloadLinkUpsert) { set(&DownloadLinkScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// Exec verifies every builder's references, then executes the upsert.
+func (u *DownloadLinkScopedUpsertBulk) Exec(ctx context.Context) error {
+	if err := u.b.refuseForeign(); err != nil {
+		return err
+	}
+	return u.b.s.writeDownloadLink(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		raw, err := u.b.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
+		for _, set := range u.set {
+			set(r)
+		}
+		return nil, r.Exec(ctx)
+	})
+}
+
+// ---------------------------------------------------------------- update
+
+// DownloadLinkScopedUpdateOne updates one DownloadLink. It has no way to move the row to another Workspace: it
+// keeps the row's id, its fences and what its setters set, and builds the ent update on the client
+// the update runs on.
+type DownloadLinkScopedUpdateOne struct {
+	s     *Scoped
+	id    int64
+	where []predicate.DownloadLink
+	set   []func(*DownloadLinkUpdateOne)
+}
+
+// UpdateOneID updates the DownloadLink with the id; a row of another Workspace is not found.
+func (t *DownloadLinkScoped) UpdateOneID(id int64) *DownloadLinkScopedUpdateOne {
+	return &DownloadLinkScopedUpdateOne{s: t.s, id: id}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *DownloadLinkScopedUpdateOne) Where(ps ...predicate.DownloadLink) *DownloadLinkScopedUpdateOne {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *DownloadLinkScopedUpdateOne) SetUpdatedAt(v time.Time) *DownloadLinkScopedUpdateOne {
+	x.set = append(x.set, func(b *DownloadLinkUpdateOne) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_DownloadLinkScopedUpdateOne_SetUpdatedAt = RoleStep
+
+// Save verifies the references against the Workspace, then updates the DownloadLink.
+func (x *DownloadLinkScopedUpdateOne) Save(ctx context.Context) (*DownloadLink, error) {
+	return x.save(ctx, "update", skipUnchanged)
+}
+
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *DownloadLinkScopedUpdateOne) build(ctx context.Context, s *Scoped) (*DownloadLinkUpdateOne, error) {
+	b := s.c.DownloadLink.UpdateOneID(x.id).Where(s.inDownloadLink(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkDownloadLink(ctx, b.Mutation()))
+}
+
+// save is Save under a verb, doing with an unchanged row what unchanged says.
+func (x *DownloadLinkScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*DownloadLink, error) {
+	where := x.s.inDownloadLink(x.where...)
+	var updated *DownloadLink
+	err := x.s.writeDownloadLink(ctx, verb, append([]predicate.DownloadLink{downloadlink.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		updated, err = b.Save(ctx)
+		return nil, err
+	})
+	return written(updated, err)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *DownloadLinkScopedUpdateOne) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_DownloadLinkScopedUpdateOne       = TypeScopedUpdate
+	EntityOf_DownloadLinkScopedUpdateOne     = "DownloadLink"
+	RoleOf_DownloadLinkScopedUpdateOne_Where = RoleStep
+	RoleOf_DownloadLinkScopedUpdateOne_Save  = RoleStep
+	RoleOf_DownloadLinkScopedUpdateOne_Exec  = RoleStep
+)
+
+// DownloadLinkScopedUpdate is a conditional bulk update of one Workspace: it keeps its predicates and
+// what its setters and modifiers set, and builds the ent update on the client the update runs on.
+type DownloadLinkScopedUpdate struct {
+	s     *Scoped
+	where []predicate.DownloadLink
+	set   []func(*DownloadLinkUpdate)
+	// modErr is set when a Modify modifier tried to assign workspace_id.
+	modErr error
+}
+
+// Update updates the DownloadLink entities of the Workspace that match the predicates.
+func (t *DownloadLinkScoped) Update() *DownloadLinkScopedUpdate {
+	return &DownloadLinkScopedUpdate{s: t.s}
+}
+
+// Where appends predicates the rows must match.
+func (x *DownloadLinkScopedUpdate) Where(ps ...predicate.DownloadLink) *DownloadLinkScopedUpdate {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+// Modify adds a statement modifier for computed assignments the typed setters cannot
+// express (SET col = LEAST(col + ..., ...)). A modifier gets assignment-only access
+// (ScopedAssign), so it cannot widen the Workspace predicate; an assignment to
+// workspace_id is refused: each modifier is probed against a scratch statement here, and
+// Save fails with ErrWorkspaceAssign.
+func (x *DownloadLinkScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *DownloadLinkScopedUpdate {
+	for _, m := range modifiers {
+		probe := &ScopedAssign{u: sql.Update(downloadlink.Table)}
+		m(probe)
+		if probe.workspace {
+			x.modErr = ErrWorkspaceAssign
+		}
+		x.set = append(x.set, func(b *DownloadLinkUpdate) {
+			b.Modify(func(u *sql.UpdateBuilder) { m(&ScopedAssign{u: u}) })
+		})
+	}
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *DownloadLinkScopedUpdate) SetUpdatedAt(v time.Time) *DownloadLinkScopedUpdate {
+	x.set = append(x.set, func(b *DownloadLinkUpdate) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_DownloadLinkScopedUpdate_SetUpdatedAt = RoleStep
+
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *DownloadLinkScopedUpdate) build(ctx context.Context, s *Scoped) (*DownloadLinkUpdate, error) {
+	b := s.c.DownloadLink.Update().Where(s.inDownloadLink(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkDownloadLink(ctx, b.Mutation()))
+}
+
+// Save verifies the references against the Workspace, then updates the rows and
+// returns how many changed.
+func (x *DownloadLinkScopedUpdate) Save(ctx context.Context) (int, error) {
+	if x.modErr != nil {
+		return 0, x.modErr
+	}
+	where := x.s.inDownloadLink(x.where...)
+	var n int
+	err := x.s.writeDownloadLink(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		n, err = b.Save(ctx)
+		return nil, err
+	})
+	return written(n, err)
+}
+
+// Exec is like Save, discarding the count.
+func (x *DownloadLinkScopedUpdate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_DownloadLinkScopedUpdate        = TypeScopedUpdate
+	EntityOf_DownloadLinkScopedUpdate      = "DownloadLink"
+	RoleOf_DownloadLinkScopedUpdate_Where  = RoleStep
+	RoleOf_DownloadLinkScopedUpdate_Modify = RoleStep
+	RoleOf_DownloadLinkScopedUpdate_Save   = RoleStep
+	RoleOf_DownloadLinkScopedUpdate_Exec   = RoleStep
 )
 
 // EmailTemplateScoped reaches EmailTemplate entities of one Workspace.

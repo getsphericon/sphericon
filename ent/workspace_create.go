@@ -31,6 +31,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/contactdate"
 	"github.com/getsphericon/sphericon/ent/customfield"
+	"github.com/getsphericon/sphericon/ent/downloadlink"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
 	"github.com/getsphericon/sphericon/ent/erasure"
@@ -668,6 +669,21 @@ func (_c *WorkspaceCreate) AddStartTokens(v ...*StartToken) *WorkspaceCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddStartTokenIDs(ids...)
+}
+
+// AddDownloadLinkIDs adds the "download_links" edge to the DownloadLink entity by IDs.
+func (_c *WorkspaceCreate) AddDownloadLinkIDs(ids ...int64) *WorkspaceCreate {
+	_c.mutation.AddDownloadLinkIDs(ids...)
+	return _c
+}
+
+// AddDownloadLinks adds the "download_links" edges to the DownloadLink entity.
+func (_c *WorkspaceCreate) AddDownloadLinks(v ...*DownloadLink) *WorkspaceCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddDownloadLinkIDs(ids...)
 }
 
 // AddAPITokenIDs adds the "api_tokens" edge to the ApiToken entity by IDs.
@@ -1910,6 +1926,22 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(starttoken.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.DownloadLinksIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.DownloadLinksTable,
+			Columns: []string{workspace.DownloadLinksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(downloadlink.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

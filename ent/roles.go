@@ -1679,6 +1679,68 @@ const (
 	RoleOf_DefaultSendCapCreateBulk_OnConflictColumns = RoleStart
 )
 
+// The types ent generates for DownloadLink.
+const (
+	TypeOf_DownloadLink             = TypeEntity
+	TypeOf_DownloadLinks            = TypeOther
+	TypeOf_DownloadLinkEdges        = TypeOther
+	EntityOf_DownloadLinkEdges      = "DownloadLink"
+	TypeOf_DownloadLinkMutation     = TypeOther
+	TypeOf_DownloadLinkClient       = TypeClient
+	TypeOf_DownloadLinkQuery        = TypeQuery
+	TypeOf_DownloadLinkSelect       = TypeQuery
+	TypeOf_DownloadLinkGroupBy      = TypeQuery
+	TypeOf_DownloadLinkCreate       = TypeCreate
+	TypeOf_DownloadLinkCreateBulk   = TypeCreate
+	TypeOf_DownloadLinkUpdate       = TypeUpdate
+	TypeOf_DownloadLinkUpdateOne    = TypeUpdate
+	TypeOf_DownloadLinkDelete       = TypeDelete
+	TypeOf_DownloadLinkDeleteOne    = TypeDelete
+	TypeOf_DownloadLinkUpsert       = TypeUpsert
+	TypeOf_DownloadLinkUpsertOne    = TypeUpsert
+	TypeOf_DownloadLinkUpsertBulk   = TypeUpsert
+	EntityOf_DownloadLinks          = "DownloadLink"
+	EntityOf_DownloadLink           = "DownloadLink"
+	EntityOf_DownloadLinkMutation   = "DownloadLink"
+	EntityOf_DownloadLinkClient     = "DownloadLink"
+	EntityOf_DownloadLinkQuery      = "DownloadLink"
+	EntityOf_DownloadLinkSelect     = "DownloadLink"
+	EntityOf_DownloadLinkGroupBy    = "DownloadLink"
+	EntityOf_DownloadLinkCreate     = "DownloadLink"
+	EntityOf_DownloadLinkCreateBulk = "DownloadLink"
+	EntityOf_DownloadLinkUpdate     = "DownloadLink"
+	EntityOf_DownloadLinkUpdateOne  = "DownloadLink"
+	EntityOf_DownloadLinkDelete     = "DownloadLink"
+	EntityOf_DownloadLinkDeleteOne  = "DownloadLink"
+	EntityOf_DownloadLinkUpsert     = "DownloadLink"
+	EntityOf_DownloadLinkUpsertOne  = "DownloadLink"
+	EntityOf_DownloadLinkUpsertBulk = "DownloadLink"
+)
+
+// The reads and the writes ent's methods for DownloadLink start.
+const (
+	RoleOf_DownloadLinkClient_Create                = RoleStart
+	RoleOf_DownloadLinkClient_CreateBulk            = RoleStart
+	RoleOf_DownloadLinkClient_MapCreateBulk         = RoleStart
+	RoleOf_DownloadLinkClient_Update                = RoleStart
+	RoleOf_DownloadLinkClient_UpdateOne             = RoleStart
+	RoleOf_DownloadLinkClient_Delete                = RoleStart
+	RoleOf_DownloadLinkClient_Query                 = RoleRead
+	RoleOf_DownloadLinkClient_UpdateOneID           = RoleStart
+	RoleOf_DownloadLinkClient_DeleteOne             = RoleStart
+	RoleOf_DownloadLinkClient_DeleteOneID           = RoleStart
+	RoleOf_DownloadLinkClient_Get                   = RoleRead
+	RoleOf_DownloadLinkClient_GetX                  = RoleRead
+	RoleOf_DownloadLinkClient_QueryWorkspace        = RoleRead
+	RoleOf_DownloadLink_QueryWorkspace              = RoleRead
+	RoleOf_DownloadLinkQuery_QueryWorkspace         = RoleRead
+	RoleOf_DownloadLink_Update                      = RoleStart
+	RoleOf_DownloadLinkCreate_OnConflict            = RoleStart
+	RoleOf_DownloadLinkCreate_OnConflictColumns     = RoleStart
+	RoleOf_DownloadLinkCreateBulk_OnConflict        = RoleStart
+	RoleOf_DownloadLinkCreateBulk_OnConflictColumns = RoleStart
+)
+
 // The types ent generates for EmailTemplate.
 const (
 	TypeOf_EmailTemplate             = TypeEntity
@@ -5658,6 +5720,9 @@ const (
 	RoleOf_WorkspaceClient_QueryStartTokens                 = RoleRead
 	RoleOf_Workspace_QueryStartTokens                       = RoleRead
 	RoleOf_WorkspaceQuery_QueryStartTokens                  = RoleRead
+	RoleOf_WorkspaceClient_QueryDownloadLinks               = RoleRead
+	RoleOf_Workspace_QueryDownloadLinks                     = RoleRead
+	RoleOf_WorkspaceQuery_QueryDownloadLinks                = RoleRead
 	RoleOf_WorkspaceClient_QueryAPITokens                   = RoleRead
 	RoleOf_Workspace_QueryAPITokens                         = RoleRead
 	RoleOf_WorkspaceQuery_QueryAPITokens                    = RoleRead

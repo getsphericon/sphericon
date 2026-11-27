@@ -42,6 +42,7 @@ const (
 	ClosesAt                  = "closesAt"
 	Code                      = "code"
 	CodeChallenge             = "codeChallenge"
+	Columns                   = "columns"
 	Combinator                = "combinator"
 	CompanySize               = "companySize"
 	CompanySizeOther          = "companySizeOther"

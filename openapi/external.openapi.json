@@ -6062,6 +6062,7 @@
           "workspace.send_cap_change",
           "workspace.sending_rules_change",
           "contact.import",
+          "contact.export",
           "audit_log.export",
           "webhook_endpoint.test",
           "api_token.create",

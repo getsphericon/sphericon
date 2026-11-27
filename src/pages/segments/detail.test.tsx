@@ -1,19 +1,25 @@
 import { HttpResponse } from 'msw'
-import { expect, test } from 'vitest'
+import { beforeEach, expect, test } from 'vitest'
 
 import {
   handleSiteSegmentContactsList,
   handleSiteSegmentsGet,
+  handleSiteWorkspacesList,
 } from '../../generated/site/msw.gen.ts'
 import type { SiteContactResource } from '../../generated/site/types.gen.ts'
 import { Route as segmentsDetailRoute } from '../../routes/workspaces/$workspaceId/segments/$segmentId/index.tsx'
-import { EMPTY_CONDITION, testId, TIMESTAMPS } from '../../test/payloads.ts'
+import { EMPTY_CONDITION, testId, TIMESTAMPS, workspace } from '../../test/payloads.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
 import { SegmentDetailPage } from './detail.tsx'
 
 const MOUNT = routeMount(segmentsDetailRoute, { workspaceId: 'TestWs01', segmentId: testId(1) })
+
+// The Workspace as its Owner sees it, who may export the Segment's contacts.
+beforeEach(() => {
+  worker.use(handleSiteWorkspacesList({ body: [workspace({ permissions: ['contacts:export'] })] }))
+})
 
 function contact(id: number, email: string): SiteContactResource {
   return { id: testId(id), email, tags: [], revision: 1, ...TIMESTAMPS }

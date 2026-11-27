@@ -43,6 +43,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/channelstop"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contactsexport"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eventrecording"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/identitytokens"
@@ -58,6 +60,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/admission"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
+	"github.com/getsphericon/sphericon/internal/domain/identity/downloadlinks"
 	"github.com/getsphericon/sphericon/internal/domain/identity/invitations"
 	"github.com/getsphericon/sphericon/internal/domain/identity/joindomains"
 	"github.com/getsphericon/sphericon/internal/domain/identity/login"
@@ -895,6 +898,13 @@ var audiencePackage = do.Package(
 	do.Lazy(func(i do.Injector) (*segments.Module, error) {
 		return segments.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i), do.MustInvoke[*config.Config](i).EventsRetention), nil
 	}),
+	do.Lazy(func(i do.Injector) (*downloadlinks.Module, error) {
+		return downloadlinks.New(do.MustInvoke[Clock](i)), nil
+	}),
+	do.Lazy(func(i do.Injector) (*contactsexport.Module, error) {
+		return contactsexport.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*segments.Module](i), eligibility.New(),
+			do.MustInvoke[*downloadlinks.Module](i), do.MustInvoke[Clock](i)), nil
+	}),
 	do.Lazy(func(i do.Injector) (*contacts.Module, error) {
 		return contacts.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*tags.Module](i),
 			do.MustInvoke[*confirmations.Module](i), do.MustInvoke[*engagementtracking.Module](i), do.MustInvoke[addresscheck.Resolver](i), do.MustInvoke[Clock](i)), nil
@@ -1289,7 +1299,7 @@ func externalDeps(i do.Injector) (apiexternal.Deps, error) {
 		Confirmations:         do.MustInvoke[*confirmations.Module](i),
 		ConfirmationRequests:  do.MustInvoke[*confirmationrequests.Module](i),
 		Tracking:              do.MustInvoke[*engagementtracking.Module](i),
-		Exports:               dataexport.New(externalresources.ExportMapper{Converter: &externalresources.ConverterImpl{}}),
+		Exports:               dataexport.New(externalresources.ExportMapper{Converter: &externalresources.ConverterImpl{}}, do.MustInvoke[*events.Bus](i)),
 
 		Unsubscribe: do.MustInvoke[*unsubscriberecording.UseCase](i),
 	}, nil
@@ -1327,6 +1337,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		IdentityTokens:        do.MustInvoke[*identitytokens.Module](i),
 		Outbound:              do.MustInvoke[*outboundmessages.Module](i),
 		Segments:              do.MustInvoke[*segments.Module](i),
+		ContactsExport:        do.MustInvoke[*contactsexport.Module](i),
 		SegmentSaving:         do.MustInvoke[*segmentsaving.UseCase](i),
 		Contacts:              do.MustInvoke[*contacts.Module](i),
 		Erasure:               do.MustInvoke[*contacterasure.UseCase](i),
@@ -1339,7 +1350,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		ConfirmationRequests:  do.MustInvoke[*confirmationrequests.Module](i),
 		Tracking:              do.MustInvoke[*engagementtracking.Module](i),
 		ChannelStops:          do.MustInvoke[*channelstop.Module](i),
-		Exports:               dataexport.New(siteresources.ExportMapper{Converter: &siteresources.ConverterImpl{}}),
+		Exports:               dataexport.New(siteresources.ExportMapper{Converter: &siteresources.ConverterImpl{}}, bus),
 		Bindings:              do.MustInvoke[*bindings.Module](i),
 		Templates:             do.MustInvoke[*emailtemplates.Module](i),
 		TemplateViews:         do.MustInvoke[*emailtemplates.Views](i),

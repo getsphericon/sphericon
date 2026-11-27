@@ -15,6 +15,7 @@ import (
 	site "github.com/getsphericon/sphericon/gen/site"
 	confirmations "github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	contacts "github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	contactsexport "github.com/getsphericon/sphericon/internal/domain/contacts/contactsexport"
 	engagementtracking "github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	segments "github.com/getsphericon/sphericon/internal/domain/contacts/segments"
 	brandkits "github.com/getsphericon/sphericon/internal/domain/content/brandkits"
@@ -409,6 +410,72 @@ func (c *InputsImpl) ContactCreate(source *site.SiteCreateContactInput) contacts
 		}
 	}
 	return contactsCreateInput
+}
+func (c *InputsImpl) ContactCsvColumn(source site.ContactCsvColumn) contactsexport.Column {
+	var contactsexportColumn contactsexport.Column
+	switch source {
+	case site.ContactCsvColumnAvatar:
+		contactsexportColumn = contactsexport.ColumnAvatar
+	case site.ContactCsvColumnBirthday:
+		contactsexportColumn = contactsexport.ColumnBirthday
+	case site.ContactCsvColumnCity:
+		contactsexportColumn = contactsexport.ColumnCity
+	case site.ContactCsvColumnCountry:
+		contactsexportColumn = contactsexport.ColumnCountry
+	case site.ContactCsvColumnCreatedAt:
+		contactsexportColumn = contactsexport.ColumnCreatedAt
+	case site.ContactCsvColumnCustomFields:
+		contactsexportColumn = contactsexport.ColumnCustomFields
+	case site.ContactCsvColumnEmail:
+		contactsexportColumn = contactsexport.ColumnEmail
+	case site.ContactCsvColumnEmailChannel:
+		contactsexportColumn = contactsexport.ColumnEmailChannel
+	case site.ContactCsvColumnFirstName:
+		contactsexportColumn = contactsexport.ColumnFirstName
+	case site.ContactCsvColumnLastName:
+		contactsexportColumn = contactsexport.ColumnLastName
+	case site.ContactCsvColumnLocale:
+		contactsexportColumn = contactsexport.ColumnLocale
+	case site.ContactCsvColumnPhone:
+		contactsexportColumn = contactsexport.ColumnPhone
+	case site.ContactCsvColumnSmsChannel:
+		contactsexportColumn = contactsexport.ColumnSMSChannel
+	case site.ContactCsvColumnSource:
+		contactsexportColumn = contactsexport.ColumnSource
+	case site.ContactCsvColumnSubjectId:
+		contactsexportColumn = contactsexport.ColumnSubjectID
+	case site.ContactCsvColumnTags:
+		contactsexportColumn = contactsexport.ColumnTags
+	case site.ContactCsvColumnTelegramChannel:
+		contactsexportColumn = contactsexport.ColumnTelegramChannel
+	case site.ContactCsvColumnTimeZone:
+		contactsexportColumn = contactsexport.ColumnTimeZone
+	case site.ContactCsvColumnUpdatedAt:
+		contactsexportColumn = contactsexport.ColumnUpdatedAt
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return contactsexportColumn
+}
+func (c *InputsImpl) ContactCsvExport(source *site.SiteContactCsvExportInput) contactsexport.LinkInput {
+	var contactsexportLinkInput contactsexport.LinkInput
+	if source != nil {
+		contactsexportLinkInput.SegmentID = entityIDPtrIn((*source).SegmentId)
+		if (*source).Columns != nil {
+			contactsexportLinkInput.Columns = make([]contactsexport.Column, len((*source).Columns))
+			for i := 0; i < len((*source).Columns); i++ {
+				contactsexportLinkInput.Columns[i] = c.ContactCsvColumn((*source).Columns[i])
+			}
+		}
+		// contactsexportLinkInput.Session: ignore
+	}
+	return contactsexportLinkInput
+}
+func (c *InputsImpl) ContactCsvExportFollow(source site.SiteContactCsvExportsDownloadParams) contactsexport.OpenInput {
+	var contactsexportOpenInput contactsexport.OpenInput
+	contactsexportOpenInput.Token = source.Token
+	// contactsexportOpenInput.Session: ignore
+	return contactsexportOpenInput
 }
 func (c *InputsImpl) ContactExport(source site.SiteContactsExportParams) dataexport.OpenInput {
 	var dataexportOpenInput dataexport.OpenInput

@@ -36,6 +36,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contacttag"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/defaultsendcap"
+	"github.com/getsphericon/sphericon/ent/downloadlink"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
 	"github.com/getsphericon/sphericon/ent/erasure"
@@ -147,6 +148,7 @@ const (
 	TypeContactTag                 = "ContactTag"
 	TypeCustomField                = "CustomField"
 	TypeDefaultSendCap             = "DefaultSendCap"
+	TypeDownloadLink               = "DownloadLink"
 	TypeEmailTemplate              = "EmailTemplate"
 	TypeEngagementTrackingConsent  = "EngagementTrackingConsent"
 	TypeErasure                    = "Erasure"
@@ -31670,6 +31672,789 @@ func (m *DefaultSendCapMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *DefaultSendCapMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown DefaultSendCap edge %s", name)
+}
+
+// DownloadLinkMutation represents an operation that mutates the DownloadLink nodes in the graph.
+type DownloadLinkMutation struct {
+	config
+	op               Op
+	typ              string
+	id               *int64
+	created_at       *time.Time
+	updated_at       *time.Time
+	purpose          *downloadlink.Purpose
+	token_hash       *string
+	session_hash     *string
+	payload          *json.RawMessage
+	appendpayload    json.RawMessage
+	expires_at       *time.Time
+	clearedFields    map[string]struct{}
+	workspace        *int64
+	clearedworkspace bool
+	done             bool
+	oldValue         func(context.Context) (*DownloadLink, error)
+	predicates       []predicate.DownloadLink
+}
+
+var _ ent.Mutation = (*DownloadLinkMutation)(nil)
+
+// downloadlinkOption allows management of the mutation configuration using functional options.
+type downloadlinkOption func(*DownloadLinkMutation)
+
+// newDownloadLinkMutation creates new mutation for the DownloadLink entity.
+func newDownloadLinkMutation(c config, op Op, opts ...downloadlinkOption) *DownloadLinkMutation {
+	m := &DownloadLinkMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeDownloadLink,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withDownloadLinkID sets the ID field of the mutation.
+func withDownloadLinkID(id int64) downloadlinkOption {
+	return func(m *DownloadLinkMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *DownloadLink
+		)
+		m.oldValue = func(ctx context.Context) (*DownloadLink, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().DownloadLink.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withDownloadLink sets the old DownloadLink of the mutation.
+func withDownloadLink(node *DownloadLink) downloadlinkOption {
+	return func(m *DownloadLinkMutation) {
+		m.oldValue = func(context.Context) (*DownloadLink, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m DownloadLinkMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m DownloadLinkMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of DownloadLink entities.
+func (m *DownloadLinkMutation) SetID(id int64) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *DownloadLinkMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *DownloadLinkMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().DownloadLink.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *DownloadLinkMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *DownloadLinkMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the DownloadLink entity.
+// If the DownloadLink object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DownloadLinkMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *DownloadLinkMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *DownloadLinkMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *DownloadLinkMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the DownloadLink entity.
+// If the DownloadLink object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DownloadLinkMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *DownloadLinkMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetWorkspaceID sets the "workspace_id" field.
+func (m *DownloadLinkMutation) SetWorkspaceID(i int64) {
+	m.workspace = &i
+}
+
+// WorkspaceID returns the value of the "workspace_id" field in the mutation.
+func (m *DownloadLinkMutation) WorkspaceID() (r int64, exists bool) {
+	v := m.workspace
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWorkspaceID returns the old "workspace_id" field's value of the DownloadLink entity.
+// If the DownloadLink object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DownloadLinkMutation) OldWorkspaceID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWorkspaceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWorkspaceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWorkspaceID: %w", err)
+	}
+	return oldValue.WorkspaceID, nil
+}
+
+// ResetWorkspaceID resets all changes to the "workspace_id" field.
+func (m *DownloadLinkMutation) ResetWorkspaceID() {
+	m.workspace = nil
+}
+
+// SetPurpose sets the "purpose" field.
+func (m *DownloadLinkMutation) SetPurpose(d downloadlink.Purpose) {
+	m.purpose = &d
+}
+
+// Purpose returns the value of the "purpose" field in the mutation.
+func (m *DownloadLinkMutation) Purpose() (r downloadlink.Purpose, exists bool) {
+	v := m.purpose
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPurpose returns the old "purpose" field's value of the DownloadLink entity.
+// If the DownloadLink object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DownloadLinkMutation) OldPurpose(ctx context.Context) (v downloadlink.Purpose, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPurpose is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPurpose requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPurpose: %w", err)
+	}
+	return oldValue.Purpose, nil
+}
+
+// ResetPurpose resets all changes to the "purpose" field.
+func (m *DownloadLinkMutation) ResetPurpose() {
+	m.purpose = nil
+}
+
+// SetTokenHash sets the "token_hash" field.
+func (m *DownloadLinkMutation) SetTokenHash(s string) {
+	m.token_hash = &s
+}
+
+// TokenHash returns the value of the "token_hash" field in the mutation.
+func (m *DownloadLinkMutation) TokenHash() (r string, exists bool) {
+	v := m.token_hash
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTokenHash returns the old "token_hash" field's value of the DownloadLink entity.
+// If the DownloadLink object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DownloadLinkMutation) OldTokenHash(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTokenHash is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTokenHash requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTokenHash: %w", err)
+	}
+	return oldValue.TokenHash, nil
+}
+
+// ResetTokenHash resets all changes to the "token_hash" field.
+func (m *DownloadLinkMutation) ResetTokenHash() {
+	m.token_hash = nil
+}
+
+// SetSessionHash sets the "session_hash" field.
+func (m *DownloadLinkMutation) SetSessionHash(s string) {
+	m.session_hash = &s
+}
+
+// SessionHash returns the value of the "session_hash" field in the mutation.
+func (m *DownloadLinkMutation) SessionHash() (r string, exists bool) {
+	v := m.session_hash
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSessionHash returns the old "session_hash" field's value of the DownloadLink entity.
+// If the DownloadLink object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DownloadLinkMutation) OldSessionHash(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSessionHash is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSessionHash requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSessionHash: %w", err)
+	}
+	return oldValue.SessionHash, nil
+}
+
+// ResetSessionHash resets all changes to the "session_hash" field.
+func (m *DownloadLinkMutation) ResetSessionHash() {
+	m.session_hash = nil
+}
+
+// SetPayload sets the "payload" field.
+func (m *DownloadLinkMutation) SetPayload(jm json.RawMessage) {
+	m.payload = &jm
+	m.appendpayload = nil
+}
+
+// Payload returns the value of the "payload" field in the mutation.
+func (m *DownloadLinkMutation) Payload() (r json.RawMessage, exists bool) {
+	v := m.payload
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPayload returns the old "payload" field's value of the DownloadLink entity.
+// If the DownloadLink object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DownloadLinkMutation) OldPayload(ctx context.Context) (v json.RawMessage, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPayload is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPayload requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPayload: %w", err)
+	}
+	return oldValue.Payload, nil
+}
+
+// AppendPayload adds jm to the "payload" field.
+func (m *DownloadLinkMutation) AppendPayload(jm json.RawMessage) {
+	m.appendpayload = append(m.appendpayload, jm...)
+}
+
+// AppendedPayload returns the list of values that were appended to the "payload" field in this mutation.
+func (m *DownloadLinkMutation) AppendedPayload() (json.RawMessage, bool) {
+	if len(m.appendpayload) == 0 {
+		return nil, false
+	}
+	return m.appendpayload, true
+}
+
+// ResetPayload resets all changes to the "payload" field.
+func (m *DownloadLinkMutation) ResetPayload() {
+	m.payload = nil
+	m.appendpayload = nil
+}
+
+// SetExpiresAt sets the "expires_at" field.
+func (m *DownloadLinkMutation) SetExpiresAt(t time.Time) {
+	m.expires_at = &t
+}
+
+// ExpiresAt returns the value of the "expires_at" field in the mutation.
+func (m *DownloadLinkMutation) ExpiresAt() (r time.Time, exists bool) {
+	v := m.expires_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExpiresAt returns the old "expires_at" field's value of the DownloadLink entity.
+// If the DownloadLink object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DownloadLinkMutation) OldExpiresAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExpiresAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExpiresAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExpiresAt: %w", err)
+	}
+	return oldValue.ExpiresAt, nil
+}
+
+// ResetExpiresAt resets all changes to the "expires_at" field.
+func (m *DownloadLinkMutation) ResetExpiresAt() {
+	m.expires_at = nil
+}
+
+// ClearWorkspace clears the "workspace" edge to the Workspace entity.
+func (m *DownloadLinkMutation) ClearWorkspace() {
+	m.clearedworkspace = true
+	m.clearedFields[downloadlink.FieldWorkspaceID] = struct{}{}
+}
+
+// WorkspaceCleared reports if the "workspace" edge to the Workspace entity was cleared.
+func (m *DownloadLinkMutation) WorkspaceCleared() bool {
+	return m.clearedworkspace
+}
+
+// WorkspaceIDs returns the "workspace" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// WorkspaceID instead. It exists only for internal usage by the builders.
+func (m *DownloadLinkMutation) WorkspaceIDs() (ids []int64) {
+	if id := m.workspace; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetWorkspace resets all changes to the "workspace" edge.
+func (m *DownloadLinkMutation) ResetWorkspace() {
+	m.workspace = nil
+	m.clearedworkspace = false
+}
+
+// Where appends a list predicates to the DownloadLinkMutation builder.
+func (m *DownloadLinkMutation) Where(ps ...predicate.DownloadLink) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the DownloadLinkMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *DownloadLinkMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.DownloadLink, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *DownloadLinkMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *DownloadLinkMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (DownloadLink).
+func (m *DownloadLinkMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *DownloadLinkMutation) Fields() []string {
+	fields := make([]string, 0, 8)
+	if m.created_at != nil {
+		fields = append(fields, downloadlink.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, downloadlink.FieldUpdatedAt)
+	}
+	if m.workspace != nil {
+		fields = append(fields, downloadlink.FieldWorkspaceID)
+	}
+	if m.purpose != nil {
+		fields = append(fields, downloadlink.FieldPurpose)
+	}
+	if m.token_hash != nil {
+		fields = append(fields, downloadlink.FieldTokenHash)
+	}
+	if m.session_hash != nil {
+		fields = append(fields, downloadlink.FieldSessionHash)
+	}
+	if m.payload != nil {
+		fields = append(fields, downloadlink.FieldPayload)
+	}
+	if m.expires_at != nil {
+		fields = append(fields, downloadlink.FieldExpiresAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *DownloadLinkMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case downloadlink.FieldCreatedAt:
+		return m.CreatedAt()
+	case downloadlink.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case downloadlink.FieldWorkspaceID:
+		return m.WorkspaceID()
+	case downloadlink.FieldPurpose:
+		return m.Purpose()
+	case downloadlink.FieldTokenHash:
+		return m.TokenHash()
+	case downloadlink.FieldSessionHash:
+		return m.SessionHash()
+	case downloadlink.FieldPayload:
+		return m.Payload()
+	case downloadlink.FieldExpiresAt:
+		return m.ExpiresAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *DownloadLinkMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case downloadlink.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case downloadlink.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case downloadlink.FieldWorkspaceID:
+		return m.OldWorkspaceID(ctx)
+	case downloadlink.FieldPurpose:
+		return m.OldPurpose(ctx)
+	case downloadlink.FieldTokenHash:
+		return m.OldTokenHash(ctx)
+	case downloadlink.FieldSessionHash:
+		return m.OldSessionHash(ctx)
+	case downloadlink.FieldPayload:
+		return m.OldPayload(ctx)
+	case downloadlink.FieldExpiresAt:
+		return m.OldExpiresAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown DownloadLink field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *DownloadLinkMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case downloadlink.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case downloadlink.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case downloadlink.FieldWorkspaceID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWorkspaceID(v)
+		return nil
+	case downloadlink.FieldPurpose:
+		v, ok := value.(downloadlink.Purpose)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPurpose(v)
+		return nil
+	case downloadlink.FieldTokenHash:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTokenHash(v)
+		return nil
+	case downloadlink.FieldSessionHash:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSessionHash(v)
+		return nil
+	case downloadlink.FieldPayload:
+		v, ok := value.(json.RawMessage)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPayload(v)
+		return nil
+	case downloadlink.FieldExpiresAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExpiresAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown DownloadLink field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *DownloadLinkMutation) AddedFields() []string {
+	var fields []string
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *DownloadLinkMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *DownloadLinkMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown DownloadLink numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *DownloadLinkMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *DownloadLinkMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *DownloadLinkMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown DownloadLink nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *DownloadLinkMutation) ResetField(name string) error {
+	switch name {
+	case downloadlink.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case downloadlink.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case downloadlink.FieldWorkspaceID:
+		m.ResetWorkspaceID()
+		return nil
+	case downloadlink.FieldPurpose:
+		m.ResetPurpose()
+		return nil
+	case downloadlink.FieldTokenHash:
+		m.ResetTokenHash()
+		return nil
+	case downloadlink.FieldSessionHash:
+		m.ResetSessionHash()
+		return nil
+	case downloadlink.FieldPayload:
+		m.ResetPayload()
+		return nil
+	case downloadlink.FieldExpiresAt:
+		m.ResetExpiresAt()
+		return nil
+	}
+	return fmt.Errorf("unknown DownloadLink field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *DownloadLinkMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.workspace != nil {
+		edges = append(edges, downloadlink.EdgeWorkspace)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *DownloadLinkMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case downloadlink.EdgeWorkspace:
+		if id := m.workspace; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *DownloadLinkMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *DownloadLinkMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *DownloadLinkMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedworkspace {
+		edges = append(edges, downloadlink.EdgeWorkspace)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *DownloadLinkMutation) EdgeCleared(name string) bool {
+	switch name {
+	case downloadlink.EdgeWorkspace:
+		return m.clearedworkspace
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *DownloadLinkMutation) ClearEdge(name string) error {
+	switch name {
+	case downloadlink.EdgeWorkspace:
+		m.ClearWorkspace()
+		return nil
+	}
+	return fmt.Errorf("unknown DownloadLink unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *DownloadLinkMutation) ResetEdge(name string) error {
+	switch name {
+	case downloadlink.EdgeWorkspace:
+		m.ResetWorkspace()
+		return nil
+	}
+	return fmt.Errorf("unknown DownloadLink edge %s", name)
 }
 
 // EmailTemplateMutation represents an operation that mutates the EmailTemplate nodes in the graph.
@@ -88790,6 +89575,9 @@ type WorkspaceMutation struct {
 	start_tokens                         map[int64]struct{}
 	removedstart_tokens                  map[int64]struct{}
 	clearedstart_tokens                  bool
+	download_links                       map[int64]struct{}
+	removeddownload_links                map[int64]struct{}
+	cleareddownload_links                bool
 	api_tokens                           map[int64]struct{}
 	removedapi_tokens                    map[int64]struct{}
 	clearedapi_tokens                    bool
@@ -91134,6 +91922,60 @@ func (m *WorkspaceMutation) ResetStartTokens() {
 	m.start_tokens = nil
 	m.clearedstart_tokens = false
 	m.removedstart_tokens = nil
+}
+
+// AddDownloadLinkIDs adds the "download_links" edge to the DownloadLink entity by ids.
+func (m *WorkspaceMutation) AddDownloadLinkIDs(ids ...int64) {
+	if m.download_links == nil {
+		m.download_links = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.download_links[ids[i]] = struct{}{}
+	}
+}
+
+// ClearDownloadLinks clears the "download_links" edge to the DownloadLink entity.
+func (m *WorkspaceMutation) ClearDownloadLinks() {
+	m.cleareddownload_links = true
+}
+
+// DownloadLinksCleared reports if the "download_links" edge to the DownloadLink entity was cleared.
+func (m *WorkspaceMutation) DownloadLinksCleared() bool {
+	return m.cleareddownload_links
+}
+
+// RemoveDownloadLinkIDs removes the "download_links" edge to the DownloadLink entity by IDs.
+func (m *WorkspaceMutation) RemoveDownloadLinkIDs(ids ...int64) {
+	if m.removeddownload_links == nil {
+		m.removeddownload_links = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.download_links, ids[i])
+		m.removeddownload_links[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedDownloadLinks returns the removed IDs of the "download_links" edge to the DownloadLink entity.
+func (m *WorkspaceMutation) RemovedDownloadLinksIDs() (ids []int64) {
+	for id := range m.removeddownload_links {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// DownloadLinksIDs returns the "download_links" edge IDs in the mutation.
+func (m *WorkspaceMutation) DownloadLinksIDs() (ids []int64) {
+	for id := range m.download_links {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetDownloadLinks resets all changes to the "download_links" edge.
+func (m *WorkspaceMutation) ResetDownloadLinks() {
+	m.download_links = nil
+	m.cleareddownload_links = false
+	m.removeddownload_links = nil
 }
 
 // AddAPITokenIDs adds the "api_tokens" edge to the ApiToken entity by ids.
@@ -94387,7 +95229,7 @@ func (m *WorkspaceMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *WorkspaceMutation) AddedEdges() []string {
-	edges := make([]string, 0, 59)
+	edges := make([]string, 0, 60)
 	if m.contacts != nil {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -94426,6 +95268,9 @@ func (m *WorkspaceMutation) AddedEdges() []string {
 	}
 	if m.start_tokens != nil {
 		edges = append(edges, workspace.EdgeStartTokens)
+	}
+	if m.download_links != nil {
+		edges = append(edges, workspace.EdgeDownloadLinks)
 	}
 	if m.api_tokens != nil {
 		edges = append(edges, workspace.EdgeAPITokens)
@@ -94647,6 +95492,12 @@ func (m *WorkspaceMutation) AddedIDs(name string) []ent.Value {
 	case workspace.EdgeStartTokens:
 		ids := make([]ent.Value, 0, len(m.start_tokens))
 		for id := range m.start_tokens {
+			ids = append(ids, id)
+		}
+		return ids
+	case workspace.EdgeDownloadLinks:
+		ids := make([]ent.Value, 0, len(m.download_links))
+		for id := range m.download_links {
 			ids = append(ids, id)
 		}
 		return ids
@@ -94930,7 +95781,7 @@ func (m *WorkspaceMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *WorkspaceMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 59)
+	edges := make([]string, 0, 60)
 	if m.removedcontacts != nil {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -94969,6 +95820,9 @@ func (m *WorkspaceMutation) RemovedEdges() []string {
 	}
 	if m.removedstart_tokens != nil {
 		edges = append(edges, workspace.EdgeStartTokens)
+	}
+	if m.removeddownload_links != nil {
+		edges = append(edges, workspace.EdgeDownloadLinks)
 	}
 	if m.removedapi_tokens != nil {
 		edges = append(edges, workspace.EdgeAPITokens)
@@ -95187,6 +96041,12 @@ func (m *WorkspaceMutation) RemovedIDs(name string) []ent.Value {
 	case workspace.EdgeStartTokens:
 		ids := make([]ent.Value, 0, len(m.removedstart_tokens))
 		for id := range m.removedstart_tokens {
+			ids = append(ids, id)
+		}
+		return ids
+	case workspace.EdgeDownloadLinks:
+		ids := make([]ent.Value, 0, len(m.removeddownload_links))
+		for id := range m.removeddownload_links {
 			ids = append(ids, id)
 		}
 		return ids
@@ -95466,7 +96326,7 @@ func (m *WorkspaceMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *WorkspaceMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 59)
+	edges := make([]string, 0, 60)
 	if m.clearedcontacts {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -95505,6 +96365,9 @@ func (m *WorkspaceMutation) ClearedEdges() []string {
 	}
 	if m.clearedstart_tokens {
 		edges = append(edges, workspace.EdgeStartTokens)
+	}
+	if m.cleareddownload_links {
+		edges = append(edges, workspace.EdgeDownloadLinks)
 	}
 	if m.clearedapi_tokens {
 		edges = append(edges, workspace.EdgeAPITokens)
@@ -95677,6 +96540,8 @@ func (m *WorkspaceMutation) EdgeCleared(name string) bool {
 		return m.clearedbindings
 	case workspace.EdgeStartTokens:
 		return m.clearedstart_tokens
+	case workspace.EdgeDownloadLinks:
+		return m.cleareddownload_links
 	case workspace.EdgeAPITokens:
 		return m.clearedapi_tokens
 	case workspace.EdgeOauthCodes:
@@ -95826,6 +96691,9 @@ func (m *WorkspaceMutation) ResetEdge(name string) error {
 		return nil
 	case workspace.EdgeStartTokens:
 		m.ResetStartTokens()
+		return nil
+	case workspace.EdgeDownloadLinks:
+		m.ResetDownloadLinks()
 		return nil
 	case workspace.EdgeAPITokens:
 		m.ResetAPITokens()

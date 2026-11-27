@@ -944,6 +944,7 @@ const (
 	AuditActionWorkspaceSendCapChange      AuditAction = "workspace.send_cap_change"
 	AuditActionWorkspaceSendingRulesChange AuditAction = "workspace.sending_rules_change"
 	AuditActionContactImport               AuditAction = "contact.import"
+	AuditActionContactExport               AuditAction = "contact.export"
 	AuditActionAuditLogExport              AuditAction = "audit_log.export"
 	AuditActionWebhookEndpointTest         AuditAction = "webhook_endpoint.test"
 	AuditActionAPITokenCreate              AuditAction = "api_token.create"
@@ -1039,6 +1040,7 @@ func (AuditAction) AllValues() []AuditAction {
 		AuditActionWorkspaceSendCapChange,
 		AuditActionWorkspaceSendingRulesChange,
 		AuditActionContactImport,
+		AuditActionContactExport,
 		AuditActionAuditLogExport,
 		AuditActionWebhookEndpointTest,
 		AuditActionAPITokenCreate,
@@ -1162,6 +1164,8 @@ func (s AuditAction) MarshalText() ([]byte, error) {
 	case AuditActionWorkspaceSendingRulesChange:
 		return []byte(s), nil
 	case AuditActionContactImport:
+		return []byte(s), nil
+	case AuditActionContactExport:
 		return []byte(s), nil
 	case AuditActionAuditLogExport:
 		return []byte(s), nil
@@ -1378,6 +1382,9 @@ func (s *AuditAction) UnmarshalText(data []byte) error {
 		return nil
 	case AuditActionContactImport:
 		*s = AuditActionContactImport
+		return nil
+	case AuditActionContactExport:
+		*s = AuditActionContactExport
 		return nil
 	case AuditActionAuditLogExport:
 		*s = AuditActionAuditLogExport
@@ -7162,6 +7169,177 @@ func (s *ContactAttribute) UnmarshalText(data []byte) error {
 		return nil
 	case ContactAttributeCity:
 		*s = ContactAttributeCity
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A choice of columns of the CSV export of contacts. A key or a core attribute is one column, under
+// its own name. `customFields` is a column per custom field of the workspace, `customFields.<key>`, in
+// the order of the keys. `tags` is one column holding the contact's tag names as one CSV record. A
+// channel (`email`, `sms`, `telegram`) is six columns of its state as a broadcast meets it:
+// `<channel>.state` (`may_receive`, `needs_confirmation`, `opted_out`, `suppressed`, empty for no
+// destination), `<channel>.optedOutScopes` (one CSV record of the scopes opted out of: `everything`,
+// `broadcasts`, `automation:<id>`), `<channel>.optedOutAt` (the latest of them),
+// `<channel>.suppressionReason`, `<channel>.confirmation` (its provenance) and
+// `<channel>.confirmedAt`. Times are RFC 3339 in UTC. The headers are the import's own, so an export
+// maps onto an import by itself.
+// Ref: #/components/schemas/ContactCsvColumn
+type ContactCsvColumn string
+
+const (
+	ContactCsvColumnSubjectId       ContactCsvColumn = "subjectId"
+	ContactCsvColumnEmail           ContactCsvColumn = "email"
+	ContactCsvColumnPhone           ContactCsvColumn = "phone"
+	ContactCsvColumnFirstName       ContactCsvColumn = "firstName"
+	ContactCsvColumnLastName        ContactCsvColumn = "lastName"
+	ContactCsvColumnTimeZone        ContactCsvColumn = "timeZone"
+	ContactCsvColumnCountry         ContactCsvColumn = "country"
+	ContactCsvColumnLocale          ContactCsvColumn = "locale"
+	ContactCsvColumnBirthday        ContactCsvColumn = "birthday"
+	ContactCsvColumnCity            ContactCsvColumn = "city"
+	ContactCsvColumnAvatar          ContactCsvColumn = "avatar"
+	ContactCsvColumnSource          ContactCsvColumn = "source"
+	ContactCsvColumnCreatedAt       ContactCsvColumn = "createdAt"
+	ContactCsvColumnUpdatedAt       ContactCsvColumn = "updatedAt"
+	ContactCsvColumnCustomFields    ContactCsvColumn = "customFields"
+	ContactCsvColumnTags            ContactCsvColumn = "tags"
+	ContactCsvColumnEmailChannel    ContactCsvColumn = "emailChannel"
+	ContactCsvColumnSmsChannel      ContactCsvColumn = "smsChannel"
+	ContactCsvColumnTelegramChannel ContactCsvColumn = "telegramChannel"
+)
+
+// AllValues returns all ContactCsvColumn values.
+func (ContactCsvColumn) AllValues() []ContactCsvColumn {
+	return []ContactCsvColumn{
+		ContactCsvColumnSubjectId,
+		ContactCsvColumnEmail,
+		ContactCsvColumnPhone,
+		ContactCsvColumnFirstName,
+		ContactCsvColumnLastName,
+		ContactCsvColumnTimeZone,
+		ContactCsvColumnCountry,
+		ContactCsvColumnLocale,
+		ContactCsvColumnBirthday,
+		ContactCsvColumnCity,
+		ContactCsvColumnAvatar,
+		ContactCsvColumnSource,
+		ContactCsvColumnCreatedAt,
+		ContactCsvColumnUpdatedAt,
+		ContactCsvColumnCustomFields,
+		ContactCsvColumnTags,
+		ContactCsvColumnEmailChannel,
+		ContactCsvColumnSmsChannel,
+		ContactCsvColumnTelegramChannel,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ContactCsvColumn) MarshalText() ([]byte, error) {
+	switch s {
+	case ContactCsvColumnSubjectId:
+		return []byte(s), nil
+	case ContactCsvColumnEmail:
+		return []byte(s), nil
+	case ContactCsvColumnPhone:
+		return []byte(s), nil
+	case ContactCsvColumnFirstName:
+		return []byte(s), nil
+	case ContactCsvColumnLastName:
+		return []byte(s), nil
+	case ContactCsvColumnTimeZone:
+		return []byte(s), nil
+	case ContactCsvColumnCountry:
+		return []byte(s), nil
+	case ContactCsvColumnLocale:
+		return []byte(s), nil
+	case ContactCsvColumnBirthday:
+		return []byte(s), nil
+	case ContactCsvColumnCity:
+		return []byte(s), nil
+	case ContactCsvColumnAvatar:
+		return []byte(s), nil
+	case ContactCsvColumnSource:
+		return []byte(s), nil
+	case ContactCsvColumnCreatedAt:
+		return []byte(s), nil
+	case ContactCsvColumnUpdatedAt:
+		return []byte(s), nil
+	case ContactCsvColumnCustomFields:
+		return []byte(s), nil
+	case ContactCsvColumnTags:
+		return []byte(s), nil
+	case ContactCsvColumnEmailChannel:
+		return []byte(s), nil
+	case ContactCsvColumnSmsChannel:
+		return []byte(s), nil
+	case ContactCsvColumnTelegramChannel:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ContactCsvColumn) UnmarshalText(data []byte) error {
+	switch ContactCsvColumn(data) {
+	case ContactCsvColumnSubjectId:
+		*s = ContactCsvColumnSubjectId
+		return nil
+	case ContactCsvColumnEmail:
+		*s = ContactCsvColumnEmail
+		return nil
+	case ContactCsvColumnPhone:
+		*s = ContactCsvColumnPhone
+		return nil
+	case ContactCsvColumnFirstName:
+		*s = ContactCsvColumnFirstName
+		return nil
+	case ContactCsvColumnLastName:
+		*s = ContactCsvColumnLastName
+		return nil
+	case ContactCsvColumnTimeZone:
+		*s = ContactCsvColumnTimeZone
+		return nil
+	case ContactCsvColumnCountry:
+		*s = ContactCsvColumnCountry
+		return nil
+	case ContactCsvColumnLocale:
+		*s = ContactCsvColumnLocale
+		return nil
+	case ContactCsvColumnBirthday:
+		*s = ContactCsvColumnBirthday
+		return nil
+	case ContactCsvColumnCity:
+		*s = ContactCsvColumnCity
+		return nil
+	case ContactCsvColumnAvatar:
+		*s = ContactCsvColumnAvatar
+		return nil
+	case ContactCsvColumnSource:
+		*s = ContactCsvColumnSource
+		return nil
+	case ContactCsvColumnCreatedAt:
+		*s = ContactCsvColumnCreatedAt
+		return nil
+	case ContactCsvColumnUpdatedAt:
+		*s = ContactCsvColumnUpdatedAt
+		return nil
+	case ContactCsvColumnCustomFields:
+		*s = ContactCsvColumnCustomFields
+		return nil
+	case ContactCsvColumnTags:
+		*s = ContactCsvColumnTags
+		return nil
+	case ContactCsvColumnEmailChannel:
+		*s = ContactCsvColumnEmailChannel
+		return nil
+	case ContactCsvColumnSmsChannel:
+		*s = ContactCsvColumnSmsChannel
+		return nil
+	case ContactCsvColumnTelegramChannel:
+		*s = ContactCsvColumnTelegramChannel
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -31480,6 +31658,105 @@ func (s *SiteConnectionResource) SetCreatedAt(val Timestamp) {
 
 // SiteConnectionsDeleteNoContent is response for SiteConnectionsDelete operation.
 type SiteConnectionsDeleteNoContent struct{}
+
+// What to export: a segment's contacts, or all of them, with the columns chosen.
+// Ref: #/components/schemas/SiteContactCsvExportInput
+type SiteContactCsvExportInput struct {
+	// The segment whose contacts are exported, evaluated as the file is read; every contact of the
+	// workspace when absent.
+	SegmentId OptEntityId `json:"segmentId"`
+	// The columns, in the order the file has them; a column named twice comes once. At least one.
+	Columns []ContactCsvColumn `json:"columns"`
+}
+
+// GetSegmentId returns the value of SegmentId.
+func (s *SiteContactCsvExportInput) GetSegmentId() OptEntityId {
+	return s.SegmentId
+}
+
+// GetColumns returns the value of Columns.
+func (s *SiteContactCsvExportInput) GetColumns() []ContactCsvColumn {
+	return s.Columns
+}
+
+// SetSegmentId sets the value of SegmentId.
+func (s *SiteContactCsvExportInput) SetSegmentId(val OptEntityId) {
+	s.SegmentId = val
+}
+
+// SetColumns sets the value of Columns.
+func (s *SiteContactCsvExportInput) SetColumns(val []ContactCsvColumn) {
+	s.Columns = val
+}
+
+// A one-time link to the file: it works once, for the session that asked for it, within a minute.
+// Ref: #/components/schemas/SiteContactCsvExportLink
+type SiteContactCsvExportLink struct {
+	// The link to follow in the browser, a path of this server.
+	URL string `json:"url"`
+	// When the link lapses.
+	ExpiresAt Timestamp `json:"expiresAt"`
+}
+
+// GetURL returns the value of URL.
+func (s *SiteContactCsvExportLink) GetURL() string {
+	return s.URL
+}
+
+// GetExpiresAt returns the value of ExpiresAt.
+func (s *SiteContactCsvExportLink) GetExpiresAt() Timestamp {
+	return s.ExpiresAt
+}
+
+// SetURL sets the value of URL.
+func (s *SiteContactCsvExportLink) SetURL(val string) {
+	s.URL = val
+}
+
+// SetExpiresAt sets the value of ExpiresAt.
+func (s *SiteContactCsvExportLink) SetExpiresAt(val Timestamp) {
+	s.ExpiresAt = val
+}
+
+type SiteContactCsvExportsDownloadOK struct {
+	Data io.Reader
+}
+
+// Read reads data from the Data reader.
+//
+// Kept to satisfy the io.Reader interface.
+func (s SiteContactCsvExportsDownloadOK) Read(p []byte) (n int, err error) {
+	if s.Data == nil {
+		return 0, io.EOF
+	}
+	return s.Data.Read(p)
+}
+
+// SiteContactCsvExportsDownloadOKHeaders wraps SiteContactCsvExportsDownloadOK with response headers.
+type SiteContactCsvExportsDownloadOKHeaders struct {
+	ContentDisposition string
+	Response           SiteContactCsvExportsDownloadOK
+}
+
+// GetContentDisposition returns the value of ContentDisposition.
+func (s *SiteContactCsvExportsDownloadOKHeaders) GetContentDisposition() string {
+	return s.ContentDisposition
+}
+
+// GetResponse returns the value of Response.
+func (s *SiteContactCsvExportsDownloadOKHeaders) GetResponse() SiteContactCsvExportsDownloadOK {
+	return s.Response
+}
+
+// SetContentDisposition sets the value of ContentDisposition.
+func (s *SiteContactCsvExportsDownloadOKHeaders) SetContentDisposition(val string) {
+	s.ContentDisposition = val
+}
+
+// SetResponse sets the value of Response.
+func (s *SiteContactCsvExportsDownloadOKHeaders) SetResponse(val SiteContactCsvExportsDownloadOK) {
+	s.Response = val
+}
 
 // What a Workspace holds for one email address, as counts only (a Privacy request lookup). Nothing
 // held is all zeros and `contactHeld: false`.

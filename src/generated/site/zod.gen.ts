@@ -102,6 +102,7 @@ export const zAuditAction = z.enum([
   'workspace.send_cap_change',
   'workspace.sending_rules_change',
   'contact.import',
+  'contact.export',
   'audit_log.export',
   'webhook_endpoint.test',
   'api_token.create',
@@ -378,6 +379,40 @@ export const zContactAttribute = z.enum([
   'country',
   'locale',
   'city'
+]);
+
+/**
+ * A choice of columns of the CSV export of contacts. A key or a core attribute is one column, under
+ * its own name. `customFields` is a column per custom field of the workspace, `customFields.<key>`,
+ * in the order of the keys. `tags` is one column holding the contact's tag names as one CSV record.
+ * A channel (`email`, `sms`, `telegram`) is six columns of its state as a broadcast meets it:
+ * `<channel>.state` (`may_receive`, `needs_confirmation`, `opted_out`, `suppressed`, empty for no
+ * destination), `<channel>.optedOutScopes` (one CSV record of the scopes opted out of:
+ * `everything`, `broadcasts`, `automation:<id>`), `<channel>.optedOutAt` (the latest of them),
+ * `<channel>.suppressionReason`, `<channel>.confirmation` (its provenance) and
+ * `<channel>.confirmedAt`. Times are RFC 3339 in UTC. The headers are the import's own, so an
+ * export maps onto an import by itself.
+ */
+export const zContactCsvColumn = z.enum([
+  'subjectId',
+  'email',
+  'phone',
+  'firstName',
+  'lastName',
+  'timeZone',
+  'country',
+  'locale',
+  'birthday',
+  'city',
+  'avatar',
+  'source',
+  'createdAt',
+  'updatedAt',
+  'customFields',
+  'tags',
+  'emailChannel',
+  'smsChannel',
+  'telegramChannel'
 ]);
 
 /**
@@ -1867,6 +1902,14 @@ export const zSiteConfirmationEmailResource = z.object({
   intro: z.string().nullable(),
   defaults: zSiteConfirmationEmailDefaults,
   revision: zRevision
+});
+
+/**
+ * What to export: a segment's contacts, or all of them, with the columns chosen
+ */
+export const zSiteContactCsvExportInput = z.strictObject({
+  segmentId: zEntityId.exactOptional(),
+  columns: z.array(zContactCsvColumn)
 });
 
 /**
@@ -4172,6 +4215,14 @@ export const zSiteConnectionResource = z.object({
   userName: z.string(),
   userEmail: zEmailAddress,
   createdAt: zTimestamp
+});
+
+/**
+ * A one-time link to the file: it works once, for the session that asked for it, within a minute
+ */
+export const zSiteContactCsvExportLink = z.object({
+  url: z.string(),
+  expiresAt: zTimestamp
 });
 
 /**
@@ -7842,6 +7893,27 @@ export const zSiteConnectionsDeletePath = z.object({
  * There is no content to send for this request, but the headers may be useful.
  */
 export const zSiteConnectionsDeleteResponse = z.void();
+
+export const zSiteContactCsvExportsCreateBody = zSiteContactCsvExportInput;
+
+export const zSiteContactCsvExportsCreatePath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded and a new resource has been created as a result.
+ */
+export const zSiteContactCsvExportsCreateResponse = zSiteContactCsvExportLink;
+
+export const zSiteContactCsvExportsDownloadPath = z.object({
+  workspaceId: zWorkspaceId,
+  token: z.string()
+});
+
+/**
+ * The CSV file of the export, streamed as it is read
+ */
+export const zSiteContactCsvExportsDownloadResponse = z.string();
 
 export const zSiteContactsListPath = z.object({
   workspaceId: zWorkspaceId

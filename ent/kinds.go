@@ -44,6 +44,7 @@ var Kinds = map[string]Kind{
 	"ContactTag":                 {Table: "contact_tags", Kind: schema.Kind{WorkspaceOwned: true}},
 	"CustomField":                {Table: "custom_fields", Kind: schema.Kind{WorkspaceOwned: true, Revised: true}},
 	"DefaultSendCap":             {Table: "default_send_cap", Kind: schema.Kind{}},
+	"DownloadLink":               {Table: "download_links", Kind: schema.Kind{WorkspaceOwned: true}},
 	"EmailTemplate":              {Table: "email_templates", Kind: schema.Kind{WorkspaceOwned: true, Revised: true}},
 	"EngagementTrackingConsent":  {Table: "engagement_tracking_consents", Kind: schema.Kind{WorkspaceOwned: true}},
 	"Erasure":                    {Table: "erasures", Kind: schema.Kind{WorkspaceOwned: true}},

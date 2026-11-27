@@ -153,6 +153,7 @@ var (
 	ErrorsConsentWordingEmpty                             = ID{key: "errors.consent_wording_empty"}
 	ErrorsContactEmailMissing                             = ID{key: "errors.contact_email_missing"}
 	ErrorsContactExportIdentifier                         = ID{key: "errors.contact_export_identifier"}
+	ErrorsContactExportNoColumns                          = ID{key: "errors.contact_export_no_columns"}
 	ErrorsContactIdentityRequired                         = ID{key: "errors.contact_identity_required"}
 	ErrorsContactNotFound                                 = ID{key: "errors.contact_not_found"}
 	ErrorsContactPhoneMissing                             = ID{key: "errors.contact_phone_missing"}
@@ -171,6 +172,7 @@ var (
 	ErrorsDestinationEmpty                                = ID{key: "errors.destination_empty"}
 	ErrorsDestinationInvalid                              = ID{key: "errors.destination_invalid"}
 	ErrorsDkimSelectorInvalid                             = ID{key: "errors.dkim_selector_invalid"}
+	ErrorsDownloadLinkInvalid                             = ID{key: "errors.download_link_invalid"}
 	ErrorsEmailDomainNoMail                               = ID{key: "errors.email_domain_no_mail"}
 	ErrorsEmailEmpty                                      = ID{key: "errors.email_empty"}
 	ErrorsEmailExists                                     = ID{key: "errors.email_exists"}

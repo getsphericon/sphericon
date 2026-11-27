@@ -2,12 +2,15 @@ package csvfile_test
 
 import (
 	"bytes"
+	"encoding/csv"
 	"errors"
 	"iter"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"pgregory.net/rapid"
 
 	"github.com/getsphericon/sphericon/internal/kernel/csvfile"
 )
@@ -128,4 +131,25 @@ func TestAReaderThatStopsStopsThePages(t *testing.T) {
 	}
 
 	assert.True(t, p.stopped)
+}
+
+// A list held in one cell (a Contact's Tags) is one CSV record, which a CSV reader gives back as the
+// list whatever its names hold: a comma, a quote or a line feed. A carriage return is left out: a
+// CSV reader folds a quoted CRLF into a line feed, whoever wrote it.
+func TestAListInOneCellReadsBackAsTheList(t *testing.T) {
+	rapid.Check(t, func(t *rapid.T) {
+		names := rapid.SliceOfN(rapid.StringMatching(`[^\x00\r]{1,12}`), 1, 6).Draw(t, "names")
+
+		cell := csvfile.List(names)
+
+		read, err := csv.NewReader(strings.NewReader(cell)).Read()
+		require.NoError(t, err)
+		assert.Equal(t, names, read)
+	})
+}
+
+func TestAListOfPlainNamesIsTheNamesJoinedByCommas(t *testing.T) {
+	assert.Equal(t, "VIP,from Mailchimp", csvfile.List([]string{"VIP", "from Mailchimp"}))
+	assert.Equal(t, `"a, b",c`, csvfile.List([]string{"a, b", "c"}))
+	assert.Empty(t, csvfile.List(nil))
 }

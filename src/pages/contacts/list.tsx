@@ -6,6 +6,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { ContactCsvExportModal } from '../../components/ContactCsvExportModal.tsx'
 import { CountryFlag } from '../../components/CountryFlag.tsx'
 import { PagedTable } from '../../components/PagedTable.tsx'
 import { RelativeTime } from '../../components/RelativeTime.tsx'
@@ -23,6 +24,8 @@ import { withPage } from '../../searchSchemas.ts'
 import { maxPageSize } from '../../utils/bounds.ts'
 import { contactFullName, contactIdentifier, contactName } from '../../utils/contactName.ts'
 import { countryOptions } from '../../utils/countries.ts'
+import { can } from '../../utils/permissions.ts'
+import { workspaceOptions } from '../../utils/workspace.ts'
 import { ContactCreateModal } from './resource.tsx'
 
 // The Workspace's Tags to filter by (the first hundred). The Tag in the URL is always an option, so a link to a Tag
@@ -96,6 +99,8 @@ export function ContactsListPage() {
   const { email, tag, country, page } = contactsRoute.useSearch()
   const navigate = useNavigate({ from: contactsRoute.fullPath })
   const [createOpened, { open: openCreate, close: closeCreate }] = useDisclosure(false)
+  const [exportOpened, { open: openExport, close: closeExport }] = useDisclosure(false)
+  const { data: workspace } = useQuery(workspaceOptions(workspaceId))
   const [search, setSearch] = useState(email ?? '')
   // Back/forward or a link changes the URL search: the field follows it, unless it already
   // shows that search (typing trims before it navigates).
@@ -124,9 +129,22 @@ export function ContactsListPage() {
   return (
     <Stack flex={1}>
       <ContactCreateModal opened={createOpened} onClose={closeCreate} />
+      <ContactCsvExportModal
+        workspaceId={workspaceId}
+        opened={exportOpened}
+        onClose={closeExport}
+      />
       <Group justify="space-between" align="center">
         <Title order={2}>{t(($) => $.nav.contacts)}</Title>
-        <Button onClick={openCreate}>{t(($) => $.contacts.addContact)}</Button>
+        <Group gap="xs">
+          {/* The bulk export is offered only with contacts:export, which the server checks too. */}
+          {can(workspace, 'contacts:export') ? (
+            <Button variant="default" onClick={openExport}>
+              {t(($) => $.contactCsvExport.action)}
+            </Button>
+          ) : null}
+          <Button onClick={openCreate}>{t(($) => $.contacts.addContact)}</Button>
+        </Group>
       </Group>
 
       <TextInput

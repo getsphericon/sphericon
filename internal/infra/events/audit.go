@@ -97,7 +97,10 @@ const (
 	// Sending windows (ADR 0134, ADR 0137); the diff names each list that changed.
 	ActionWorkspaceSendingRulesChange = "workspace.sending_rules_change"
 	ActionContactImport               = "contact.import"
-	ActionAuditLogExport              = "audit_log.export"
+	// ActionContactExport: a Member took Contacts out: one Contact's Data export (ADR 0021), or a
+	// Segment's or every Contact as CSV (ADR 0138), recorded as the stream starts.
+	ActionContactExport  = "contact.export"
+	ActionAuditLogExport = "audit_log.export"
 	// ActionWebhookEndpointTest: a sample event was sent to a Webhook endpoint (ADR 0039): no row changes.
 	ActionWebhookEndpointTest = "webhook_endpoint.test"
 )
@@ -132,6 +135,7 @@ var ExplicitAuditActions = []string{
 	ActionWorkspaceSendCapChange,
 	ActionWorkspaceSendingRulesChange,
 	ActionContactImport,
+	ActionContactExport,
 	ActionAuditLogExport,
 	ActionWebhookEndpointTest,
 }

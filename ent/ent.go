@@ -36,6 +36,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contacttag"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/defaultsendcap"
+	"github.com/getsphericon/sphericon/ent/downloadlink"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
 	"github.com/getsphericon/sphericon/ent/erasure"
@@ -182,6 +183,7 @@ func checkColumn(t, c string) error {
 			contacttag.Table:                 contacttag.ValidColumn,
 			customfield.Table:                customfield.ValidColumn,
 			defaultsendcap.Table:             defaultsendcap.ValidColumn,
+			downloadlink.Table:               downloadlink.ValidColumn,
 			emailtemplate.Table:              emailtemplate.ValidColumn,
 			engagementtrackingconsent.Table:  engagementtrackingconsent.ValidColumn,
 			erasure.Table:                    erasure.ValidColumn,

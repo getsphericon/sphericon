@@ -103,6 +103,8 @@ const (
 	EdgeBindings = "bindings"
 	// EdgeStartTokens holds the string denoting the start_tokens edge name in mutations.
 	EdgeStartTokens = "start_tokens"
+	// EdgeDownloadLinks holds the string denoting the download_links edge name in mutations.
+	EdgeDownloadLinks = "download_links"
 	// EdgeAPITokens holds the string denoting the api_tokens edge name in mutations.
 	EdgeAPITokens = "api_tokens"
 	// EdgeOauthCodes holds the string denoting the oauth_codes edge name in mutations.
@@ -295,6 +297,13 @@ const (
 	StartTokensInverseTable = "start_tokens"
 	// StartTokensColumn is the table column denoting the start_tokens relation/edge.
 	StartTokensColumn = "workspace_id"
+	// DownloadLinksTable is the table that holds the download_links relation/edge.
+	DownloadLinksTable = "download_links"
+	// DownloadLinksInverseTable is the table name for the DownloadLink entity.
+	// It exists in this package in order to avoid circular dependency with the "downloadlink" package.
+	DownloadLinksInverseTable = "download_links"
+	// DownloadLinksColumn is the table column denoting the download_links relation/edge.
+	DownloadLinksColumn = "workspace_id"
 	// APITokensTable is the table that holds the api_tokens relation/edge.
 	APITokensTable = "api_tokens"
 	// APITokensInverseTable is the table name for the ApiToken entity.
@@ -1112,6 +1121,20 @@ func ByStartTokens(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// ByDownloadLinksCount orders the results by download_links count.
+func ByDownloadLinksCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newDownloadLinksStep(), opts...)
+	}
+}
+
+// ByDownloadLinks orders the results by download_links terms.
+func ByDownloadLinks(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newDownloadLinksStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByAPITokensCount orders the results by api_tokens count.
 func ByAPITokensCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -1844,6 +1867,13 @@ func newStartTokensStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(StartTokensInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, StartTokensTable, StartTokensColumn),
+	)
+}
+func newDownloadLinksStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(DownloadLinksInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, DownloadLinksTable, DownloadLinksColumn),
 	)
 }
 func newAPITokensStep() *sqlgraph.Step {

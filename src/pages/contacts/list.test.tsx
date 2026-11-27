@@ -1,9 +1,13 @@
 import { HttpResponse } from 'msw'
-import { expect, test } from 'vitest'
+import { beforeEach, expect, test } from 'vitest'
 
-import { handleSiteContactsList, handleSiteTagsList } from '../../generated/site/msw.gen.ts'
+import {
+  handleSiteContactsList,
+  handleSiteTagsList,
+  handleSiteWorkspacesList,
+} from '../../generated/site/msw.gen.ts'
 import { Route as contactsRoute } from '../../routes/workspaces/$workspaceId/contacts/index.tsx'
-import { page, TIMESTAMPS, testId } from '../../test/payloads.ts'
+import { page, TIMESTAMPS, testId, workspace } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -11,6 +15,11 @@ import { worker } from '../../test/worker.ts'
 import { ContactsListPage } from './list.tsx'
 
 const LIST_ROUTE = routeMount(contactsRoute, { workspaceId: 'TestWs01' })
+
+// The Workspace as its Owner sees it, who may export its contacts.
+beforeEach(() => {
+  worker.use(handleSiteWorkspacesList({ body: [workspace({ permissions: ['contacts:export'] })] }))
+})
 
 // Opens a column's filter: the button in its header, named by what it filters.
 type Screen = Awaited<ReturnType<typeof renderWithRouter>>['screen']
@@ -333,4 +342,30 @@ test('Clear filter in the zero-results state takes every filter out of the URL s
   await expect
     .poll(() => searches(navigate, { tag: 'vip', country: 'DE', page: 2 }))
     .toContainEqual({ email: undefined, tag: undefined, country: undefined, page: undefined })
+})
+
+// The CSV export of every contact is offered with contacts:export, and opens the column choice.
+test('Export CSV opens the choice of columns', async () => {
+  worker.use(handleSiteContactsList({ body: page([BOB]) }))
+
+  const { screen } = await renderWithRouter(<ContactsListPage />, LIST_ROUTE)
+  await screen.getByRole('button', { name: 'Export CSV' }).click()
+
+  await expect
+    .element(screen.getByRole('dialog', { name: 'Export contacts as CSV' }))
+    .toBeInTheDocument()
+  await expect.element(screen.getByRole('checkbox', { name: 'Custom fields' })).toBeChecked()
+})
+
+// Without contacts:export the bulk export is not offered.
+test('Export CSV is not offered without contacts:export', async () => {
+  worker.use(
+    handleSiteWorkspacesList({ body: [workspace({ permissions: [] })] }),
+    handleSiteContactsList({ body: page([BOB]) }),
+  )
+
+  const { screen } = await renderWithRouter(<ContactsListPage />, LIST_ROUTE)
+
+  await expect.element(screen.getByText('bob@example.com')).toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Export CSV' })).not.toBeInTheDocument()
 })
