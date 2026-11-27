@@ -110,6 +110,12 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   transaction `in` is bound to (a domain operation that took the bus in its constructor): a call of
   `RecordAudit` on any other receiver is a finding. Package `events` calls it
   unqualified for the generated wrappers; `ent/` and `gen/` are not read.
+- **Rule 6, `one-csv-writer` (ast-grep).** Every CSV the app writes goes through
+  `internal/kernel/csvfile` (ADR 0138), which begins the file with a UTF-8 BOM and writes a cell a
+  spreadsheet would run (beginning with `=`, `+`, `-`, `@`, a tab or a carriage return) with a leading
+  apostrophe: `csvfile.NewWriter` over the response a driver streams, or `csvfile.Chunks` for a module
+  that yields its file (ADR 0111). A `csv.NewWriter` anywhere else is a finding; a test, which may build
+  a CSV to read in, is not read.
 - **Rule 7, a state is moved by a conditional write.** Each state-shaped field in `ent/schema` carries `schema.Machine()`, `schema.Latch()` or `schema.Attribute(reason)`, a `schema.State` (`ent/schema/state.go`, ADR 0109); the generation (`internal/entgen`) fails on a `_at` field, a `status` or `state` enum or a bool without one. It generates the machine and latch fields into `ent/stateform.go`, with the methods of the update and upsert builders that set or clear each (`SetsState_<Type>_<Method>`, `ClearsState_<Type>_<Method>`, the manifest of roles), and the analyzer `statemoment` reads them, never a method's name: a machine field is set or cleared only inside the `Write` of a `lifecycle.Storage{...}` literal, with a `.Where(...)` on the state it leaves (a machine constructor takes the `lifecycle.Storage` from its caller, as `newMachine` of `secondfactors` does), and a latch only inside the closure passed to `lifecycle.Latch`, conditioned on `<Field>IsNil()`, and never cleared. A lost race is `lifecycle.ErrInvalidTransition`, which the caller handles. Creation, the generated `ent` package and test code (the harness included) are not checked.
 - **Rule 10, `testwrites`.** A call that starts a create through ent (`Create`, `CreateBulk`, `MapCreateBulk` of the
   raw client, a transaction's client or a scoped wrapper: a method the manifest of roles gives the role Start
