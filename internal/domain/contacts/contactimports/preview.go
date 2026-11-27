@@ -25,6 +25,8 @@ type Preview struct {
 	// the values that mean one on rows with a Destination on the column's Channel, a Telegram
 	// refusal on rows that reach the intake.
 	OptOuts, Suppressions int
+	// NewCustomFields are the Custom fields its run would create.
+	NewCustomFields int
 }
 
 // PreviewRow is a row of the file as the import would write it: its cells as written, why it
@@ -42,8 +44,9 @@ type PreviewRow struct {
 // nothing: the first rows, each read as the run reads it and, when it reaches the Contact intake,
 // judged by it as it would be (contacts.Module.Verdicts: the address check of ADR 0117 among
 // them), and over the whole file the rows, the rows without a key, the rows of another cell count,
-// the distinct Tags and the opt-outs and Suppressions its refusal columns would record. Whether a
-// row is new to the Workspace is not counted: it needs a lookup per row.
+// the distinct Tags, the opt-outs and Suppressions its refusal columns would record and the Custom
+// fields its run would create. Whether a row is new to the Workspace is not counted: it needs a
+// lookup per row.
 func (m *Module) Preview(ctx context.Context, s *ent.Scoped, id int64) (Preview, error) {
 	v, err := m.Get(ctx, s, id)
 	if err != nil {
@@ -82,6 +85,7 @@ func (m *Module) Preview(ctx context.Context, s *ent.Scoped, id int64) (Preview,
 		}
 	}
 	out.DistinctTags = len(tags)
+	out.NewCustomFields = len(newCustomFields(v.Mapping))
 	return out, m.judge(ctx, s, out.Rows, read)
 }
 

@@ -16,6 +16,9 @@ const (
 	KindAttribute Kind = "attribute"
 	// KindCustomField writes a Custom field the Workspace has (Column.Key).
 	KindCustomField Kind = "customField"
+	// KindNewCustomField writes a Custom field the import creates when it runs (Column.Key, Label
+	// and FieldType), read in the type the Member chose.
+	KindNewCustomField Kind = "newCustomField"
 	// KindTags adds the Tags its cell names.
 	KindTags Kind = "tags"
 	// KindIgnore is not read.
@@ -71,13 +74,17 @@ type Evidence struct {
 }
 
 // Column is what one column of the file is. Key names the alias key of a key column and the Custom
-// field of a customField one; Attribute the core attribute; DateFormat how a date or time column
-// writes its dates.
+// field of a customField or newCustomField one; Attribute the core attribute; DateFormat how a date
+// or time column writes its dates. Label and FieldType are the display name and the type (a Custom
+// field type's value: string, number, bool or datetime) of the field a newCustomField column
+// creates.
 type Column struct {
 	Kind       Kind       `json:"kind"`
 	Key        string     `json:"key,omitempty"`
 	Attribute  string     `json:"attribute,omitempty"`
 	DateFormat DateFormat `json:"dateFormat,omitempty"`
+	Label      string     `json:"label,omitempty"`
+	FieldType  string     `json:"fieldType,omitempty"`
 	// Fact is what a refusal, consent, Engagement tracking or time column records; nil on a
 	// column of another kind.
 	Fact *Fact `json:"fact,omitempty"`

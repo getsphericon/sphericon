@@ -51,19 +51,21 @@ var (
 )
 
 // MappingInput is a mapping a Member saves, the "only add new Contacts" choice and the "treat
-// them as new sign-ups" one, which makes the run's Events live (events.ImportAsNew).
+// them as new sign-ups" one, which makes the run's Events live (events.ImportAsNew). Role is the
+// Role of the Member who saves it, whose Permissions a column that creates a Custom field asks.
 type MappingInput struct {
 	Mapping      csvimport.Mapping
 	OnlyAddNew   bool
 	AsNewSignUps bool
-	// Role is the saving Member's: a mapping that records a Suppression needs
+	// Role is the saving Member's: a new Custom field needs custom_fields:manage, a Suppression
 	// suppressions:manage (ADR 0138).
 	Role membership.Role
 }
 
 // SaveMapping saves how the import id reads its file and makes it `ready`. A column per column of
 // the file, each naming what it writes: a key or an attribute by the contract's name, a Custom field
-// the Workspace has by its key, Tags, or nothing; no two writing the same value; a date column (the
+// the Workspace has by its key, a new Custom field (checkedNewCustomField, which needs
+// custom_fields:manage of the Member's Role), Tags, or nothing; no two writing the same value; a date column (the
 // birthday, a datetime Custom field) with its format and no other column with one. The decimal
 // separator is a point or a comma, the default country a country code or none, the Tag for every
 // row a Tag's name or none. An import that runs or ran keeps its mapping (lifecycle's
@@ -71,6 +73,9 @@ type MappingInput struct {
 func (m *Module) SaveMapping(ctx context.Context, s *ent.Scoped, id int64, in MappingInput) (View, error) {
 	imp, err := load(ctx, s, id)
 	if err != nil {
+		return View{}, err
+	}
+	if err := mayCreateFields(in.Role, in.Mapping); err != nil {
 		return View{}, err
 	}
 	mapping, err := checkedMapping(ctx, s, imp, in.Mapping)
@@ -183,6 +188,8 @@ func checkedColumn(col csvimport.Column, fields map[string]customfield.Type) (cs
 			out.DateFormat = col.DateFormat
 		}
 		return out, "customField:" + col.Key, nil
+	case csvimport.KindNewCustomField:
+		return checkedNewCustomField(col, fields)
 	case csvimport.KindTags, csvimport.KindIgnore:
 		return csvimport.Column{Kind: col.Kind}, "", nil
 	case csvimport.KindRefusal, csvimport.KindTime:
@@ -197,7 +204,12 @@ func checkedColumn(col csvimport.Column, fields map[string]customfield.Type) (cs
 
 // customFieldTypes are the types of the Workspace's Custom fields the columns name, by key.
 func customFieldTypes(ctx context.Context, s *ent.Scoped, columns []csvimport.Column) (map[string]customfield.Type, error) {
-	named := lo.FilterMap(columns, func(c csvimport.Column, _ int) (string, bool) { return c.Key, c.Kind == csvimport.KindCustomField })
+	named := lo.FilterMap(columns, func(c csvimport.Column, _ int) (string, bool) {
+		if c.Kind == csvimport.KindNewCustomField {
+			return contacts.NewCustomFieldKey(c.Key), true
+		}
+		return c.Key, c.Kind == csvimport.KindCustomField
+	})
 	defined, err := s.CustomField().Query().Where(customfield.KeyIn(named...)).All(ctx)
 	if err != nil {
 		return nil, err

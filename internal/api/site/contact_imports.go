@@ -57,7 +57,8 @@ func (h *Handlers) SiteContactImportsPreview(ctx context.Context, params siteapi
 	return &res, nil
 }
 
-// SiteContactImportsRun runs an import as the caller's role may: its job writes the rows.
+// SiteContactImportsRun runs an import as the caller, whose Role creating its new Custom fields
+// and recording its Suppressions asks: its job writes the rows.
 func (h *Handlers) SiteContactImportsRun(ctx context.Context, params siteapi.SiteContactImportsRunParams) (*siteapi.SiteContactImport, error) {
 	v, err := h.contactImports.Run(ctx, workspaceScope(ctx), int64(params.ImportId), callerMembership(ctx).Role)
 	if err != nil {

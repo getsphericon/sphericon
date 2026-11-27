@@ -199,7 +199,9 @@ var (
 	ErrorsCurrencyUnknown                                 = ID{key: "errors.currency_unknown"}
 	ErrorsCurrentPasswordIncorrect                        = ID{key: "errors.current_password_incorrect"}
 	ErrorsCurrentPasswordRequired                         = ID{key: "errors.current_password_required"}
+	ErrorsCustomFieldKeyBlank                             = ID{key: "errors.custom_field_key_blank"}
 	ErrorsCustomFieldKeyReserved                          = ID{key: "errors.custom_field_key_reserved"}
+	ErrorsCustomFieldKeyTaken                             = ID{key: "errors.custom_field_key_taken"}
 	ErrorsCustomFieldNotFound                             = ID{key: "errors.custom_field_not_found"}
 	ErrorsCustomFieldRevisionChanged                      = ID{key: "errors.custom_field_revision_changed"}
 	ErrorsCustomFieldTypeMismatch                         = ID{key: "errors.custom_field_type_mismatch"}

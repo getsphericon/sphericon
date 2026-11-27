@@ -1220,6 +1220,7 @@ func (c *ConverterImpl) ContactImportPreviewToResource(source contactimports.Pre
 	siteapiSiteContactImportPreview.DistinctTags = count(source.DistinctTags)
 	siteapiSiteContactImportPreview.OptOuts = count(source.OptOuts)
 	siteapiSiteContactImportPreview.Suppressions = count(source.Suppressions)
+	siteapiSiteContactImportPreview.NewCustomFields = count(source.NewCustomFields)
 	return siteapiSiteContactImportPreview
 }
 func (c *ConverterImpl) ContactImportRefusal(source csvimport.Refusal) site.ContactImportRefusal {

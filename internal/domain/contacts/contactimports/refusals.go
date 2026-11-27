@@ -69,7 +69,7 @@ func checkedFactColumn(col *csvimport.Column) (csvimport.Column, error) {
 			return *col, ErrDateFormatRequired
 		}
 		return csvimport.Column{Kind: col.Kind, DateFormat: col.DateFormat, Fact: &csvimport.Fact{Of: in.Of}}, nil
-	case csvimport.KindKey, csvimport.KindAttribute, csvimport.KindCustomField, csvimport.KindTags, csvimport.KindIgnore:
+	case csvimport.KindKey, csvimport.KindAttribute, csvimport.KindCustomField, csvimport.KindNewCustomField, csvimport.KindTags, csvimport.KindIgnore:
 		return *col, ErrUnknownTarget
 	}
 	if err != nil {

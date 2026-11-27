@@ -365,6 +365,7 @@ type Inputs interface {
 	ContactImportUpload(source siteapi.SiteContactImportsUploadReq) contactimports.UploadInput
 	// The role a mapping is saved with is the caller's, which the handler sets.
 	// goverter:map . Mapping | contactImportMappingIn
+	// The Role of the Member who saves is the caller's, which the handler sets.
 	// goverter:ignore Role
 	ContactImportMapping(source *siteapi.ContactImportMappingInput) contactimports.MappingInput
 	// The session a link is followed in is the request's, which the handler sets.

@@ -2493,8 +2493,9 @@ export const siteContactImportsGet = <ThrowOnError extends boolean = false>(opti
 
 /**
  * Save how the import reads its file, one entry per column; it is then `ready`. Refused before it
- * runs only: a running or ended import keeps its mapping (409). A refusal column recording a
- * Suppression needs `suppressions:manage` (403).
+ * runs only: a running or ended import keeps its mapping (409). A column mapped to a new Custom
+ * field needs `custom_fields:manage` (403), and its key must be new to the Workspace (409); a
+ * refusal column recording a Suppression needs `suppressions:manage` (403).
  */
 export const siteContactImportsSaveMapping = <ThrowOnError extends boolean = false>(options: Options<SiteContactImportsSaveMappingData, ThrowOnError>): RequestResult<SiteContactImportsSaveMappingResponses, SiteContactImportsSaveMappingErrors, ThrowOnError> => (options.client ?? client).put<SiteContactImportsSaveMappingResponses, SiteContactImportsSaveMappingErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({
@@ -2575,6 +2576,8 @@ export const siteContactImportsReport = <ThrowOnError extends boolean = false>(o
  * Run a `ready` import: its job writes the rows through the Contact intake, acting as the Member,
  * and starts nothing (its Events are history). A date column without a format is refused (422),
  * and a refusal column recording a Suppression without `suppressions:manage` (403).
+ * The new Custom fields its mapping names are created first, which needs `custom_fields:manage`
+ * again (403); a key the Workspace has taken since the mapping was saved is refused (409).
  */
 export const siteContactImportsRun = <ThrowOnError extends boolean = false>(options: Options<SiteContactImportsRunData, ThrowOnError>): RequestResult<SiteContactImportsRunResponses, SiteContactImportsRunErrors, ThrowOnError> => (options.client ?? client).post<SiteContactImportsRunResponses, SiteContactImportsRunErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({

@@ -569,15 +569,18 @@ type Invoker interface {
 	//
 	// Run a `ready` import: its job writes the rows through the Contact intake, acting as the Member, and
 	// starts nothing (its Events are history). A date column without a format is refused (422), and a
-	// refusal column recording a Suppression without `suppressions:manage` (403).
+	// refusal column recording a Suppression without `suppressions:manage` (403). The new Custom fields
+	// its mapping names are created first, which needs `custom_fields:manage` again (403); a key the
+	// Workspace has taken since the mapping was saved is refused (409).
 	//
 	// POST /workspaces/{workspaceId}/contact-imports/{importId}/run
 	SiteContactImportsRun(ctx context.Context, params SiteContactImportsRunParams) (*SiteContactImport, error)
 	// SiteContactImportsSaveMapping invokes SiteContactImports_saveMapping operation.
 	//
 	// Save how the import reads its file, one entry per column; it is then `ready`. Refused before it runs
-	// only: a running or ended import keeps its mapping (409). A refusal column recording a Suppression
-	// needs `suppressions:manage` (403).
+	// only: a running or ended import keeps its mapping (409). A column mapped to a new Custom field needs
+	// `custom_fields:manage` (403), and its key must be new to the Workspace (409); a refusal column
+	// recording a Suppression needs `suppressions:manage` (403).
 	//
 	// PUT /workspaces/{workspaceId}/contact-imports/{importId}/mapping
 	SiteContactImportsSaveMapping(ctx context.Context, request *ContactImportMappingInput, params SiteContactImportsSaveMappingParams) (*SiteContactImport, error)
@@ -12226,7 +12229,9 @@ func (c *Client) sendSiteContactImportsReportLink(ctx context.Context, params Si
 //
 // Run a `ready` import: its job writes the rows through the Contact intake, acting as the Member, and
 // starts nothing (its Events are history). A date column without a format is refused (422), and a
-// refusal column recording a Suppression without `suppressions:manage` (403).
+// refusal column recording a Suppression without `suppressions:manage` (403). The new Custom fields
+// its mapping names are created first, which needs `custom_fields:manage` again (403); a key the
+// Workspace has taken since the mapping was saved is refused (409).
 //
 // POST /workspaces/{workspaceId}/contact-imports/{importId}/run
 func (c *Client) SiteContactImportsRun(ctx context.Context, params SiteContactImportsRunParams) (*SiteContactImport, error) {
@@ -12384,8 +12389,9 @@ func (c *Client) sendSiteContactImportsRun(ctx context.Context, params SiteConta
 // SiteContactImportsSaveMapping invokes SiteContactImports_saveMapping operation.
 //
 // Save how the import reads its file, one entry per column; it is then `ready`. Refused before it runs
-// only: a running or ended import keeps its mapping (409). A refusal column recording a Suppression
-// needs `suppressions:manage` (403).
+// only: a running or ended import keeps its mapping (409). A column mapped to a new Custom field needs
+// `custom_fields:manage` (403), and its key must be new to the Workspace (409); a refusal column
+// recording a Suppression needs `suppressions:manage` (403).
 //
 // PUT /workspaces/{workspaceId}/contact-imports/{importId}/mapping
 func (c *Client) SiteContactImportsSaveMapping(ctx context.Context, request *ContactImportMappingInput, params SiteContactImportsSaveMappingParams) (*SiteContactImport, error) {

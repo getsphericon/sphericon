@@ -13,8 +13,8 @@ import { factColumnOf, factOf, factTargets, time } from './importFacts.ts'
 import type { FactSettings } from './importFacts.ts'
 
 // What a column of a CSV import writes, as the value of its type control: `ignore`, `tags`,
-// `key:<key>`, `attribute:<attribute>`, `customField:<key>`, or a fact kind of importFacts.ts
-// (`refusal`, `consent`, `engagementTracking`, `time`) (ADR 0138). The control and the
+// `key:<key>`, `attribute:<attribute>`, `customField:<key>`, `newCustomField`, or a fact kind of
+// importFacts.ts (`refusal`, `consent`, `engagementTracking`, `time`) (ADR 0138). The control and the
 // mapping a request saves are both read from it, so the two never disagree.
 export type Target = string
 
@@ -24,10 +24,20 @@ export interface FieldOption {
   type: CustomFieldType
 }
 
-// A column as the mapping form holds it: what it writes and, for a date, its format.
-interface ColumnChoice {
+// A Custom field a column creates when the import runs: its key, label and type, which the
+// Member chooses.
+export interface NewFieldChoice {
+  key: string
+  label: string
+  type: CustomFieldType
+}
+
+// A column as the mapping form holds it: what it writes, for a date its format and, for a new
+// Custom field, the field.
+export interface ColumnChoice {
   target: Target
   dateFormat: ContactImportDateFormat | null
+  newField?: NewFieldChoice
   // What a refusal, consent, tracking or time column records; undefined for any other target.
   fact?: FactSettings | undefined
 }
@@ -41,6 +51,26 @@ export type MappingValues = Omit<ContactImportMappingInput, 'columns' | 'tag'> &
 
 export const ignore: Target = 'ignore'
 export const tags: Target = 'tags'
+export const newCustomField: Target = 'newCustomField'
+
+// The new Custom field proposed for a column: its header as the label, the header in lower case
+// with every run of other characters than letters and digits an underscore as the key, and text.
+export function newFieldFor(header: string): NewFieldChoice {
+  const label = header.trim()
+  const key = label
+    .toLowerCase()
+    .replaceAll(/[^\p{L}\p{N}]+/gu, '_')
+    .replaceAll(/^_+|_+$/g, '')
+  return { key, label, type: 'string' }
+}
+
+// Whether a column's choice writes a date: a new datetime field, or a target that writes one.
+export function choiceWritesDate(choice: ColumnChoice, fields: readonly FieldOption[]): boolean {
+  if (choice.target === newCustomField) {
+    return choice.newField?.type === 'datetime'
+  }
+  return writesDate(choice.target, fields)
+}
 
 // The targets a column may write, in the control's order: the alias keys, the core attributes,
 // then the Workspace's Custom fields by key, each with what it names.
@@ -70,6 +100,9 @@ function targetOf(column: ContactImportColumn): Target {
   if (column.kind === 'customField') {
     return `customField:${column.key}`
   }
+  if (column.kind === 'newCustomField') {
+    return newCustomField
+  }
   if (factTargets.includes(column.kind)) {
     return column.kind
   }
@@ -92,6 +125,9 @@ export function valuesOf(mapping: ContactImportMapping): MappingValues {
       target: targetOf(column),
       dateFormat: 'dateFormat' in column ? column.dateFormat : null,
       fact: factOf(column),
+      ...(column.kind === 'newCustomField'
+        ? { newField: { key: column.key, label: column.label, type: column.type } }
+        : {}),
     })),
     decimalSeparator: mapping.decimalSeparator,
     defaultCountry: mapping.defaultCountry,
@@ -103,7 +139,7 @@ export function valuesOf(mapping: ContactImportMapping): MappingValues {
 
 // The column a request saves for a choice; a date format is sent with a date column only.
 function columnOf(choice: ColumnChoice, fields: readonly FieldOption[]): ContactImportColumnInput {
-  const dateFormat = writesDate(choice.target, fields) ? choice.dateFormat : null
+  const dateFormat = choiceWritesDate(choice, fields) ? choice.dateFormat : null
   const at = choice.target.indexOf(':')
   const kind = at < 0 ? choice.target : choice.target.slice(0, at)
   const name = at < 0 ? '' : choice.target.slice(at + 1)
@@ -115,6 +151,10 @@ function columnOf(choice: ColumnChoice, fields: readonly FieldOption[]): Contact
   }
   if (kind === 'customField') {
     return { kind: 'customField', key: name, dateFormat }
+  }
+  if (kind === newCustomField) {
+    const field = choice.newField ?? newFieldFor('')
+    return { kind: 'newCustomField', ...field, dateFormat }
   }
   const fact = choice.fact === undefined ? undefined : factColumnOf(kind, choice.fact, dateFormat)
   if (fact !== undefined) {
@@ -145,6 +185,6 @@ export function columnsMissingDateFormat(
   fields: readonly FieldOption[],
 ): number[] {
   return values.columns.flatMap((choice, at) =>
-    writesDate(choice.target, fields) && choice.dateFormat === null ? [at] : [],
+    choiceWritesDate(choice, fields) && choice.dateFormat === null ? [at] : [],
   )
 }
