@@ -89,7 +89,7 @@ func TestAWaitForEventsMessageIsOfASendStepThatCanComeBeforeIt(t *testing.T) {
 // refused naming the wait.
 func TestAnEditCannotTakeTheSendStepAWaitForEventWaitsOnFromBeforeIt(t *testing.T) {
 	for name, edited := range map[string]automationstep.Path{
-		"the send Step removed":         automationstep.Root(waitingFor(emailID, conditiontree.MessageOpened)),
+		"the send Step removed":          automationstep.Root(waitingFor(emailID, conditiontree.MessageOpened)),
 		"the wait moved before the send": automationstep.Root(waitingFor(emailID, conditiontree.MessageOpened), emailStep(emailID)),
 	} {
 		t.Run(name, func(t *testing.T) {
