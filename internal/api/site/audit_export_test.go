@@ -31,7 +31,10 @@ func auditCSV(t *testing.T, res *siteapi.SiteAuditExportOKHeaders) [][]string {
 	assert.Contains(t, ok.ContentDisposition, ".csv")
 	body, err := io.ReadAll(ok.Response.Data)
 	require.NoError(t, err)
-	rows, err := csv.NewReader(strings.NewReader(string(body))).ReadAll()
+	file, found := strings.CutPrefix(string(body), "\xEF\xBB\xBF")
+	require.True(t, found, "the file begins with a UTF-8 BOM")
+	require.NotContains(t, file, "\xEF\xBB\xBF", "one BOM, however many pages")
+	rows, err := csv.NewReader(strings.NewReader(file)).ReadAll()
 	require.NoError(t, err)
 	return rows
 }

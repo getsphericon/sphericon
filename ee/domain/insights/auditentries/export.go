@@ -1,13 +1,10 @@
 package auditentries
 
 import (
-	"bytes"
 	"context"
-	"encoding/csv"
 	"encoding/json"
 	"iter"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/samber/lo"
@@ -15,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/csvfile"
 )
 
 // exportPageSize is how many entries one query fetches while an export streams.
@@ -74,12 +72,12 @@ func exportFilters(f events.AuditFilter) map[string]any {
 }
 
 // exportCSV yields the scoped Workspace's Audit log entries matching the filter, newest first,
-// as CSV: a header row, then the rows of each page of entries, a chunk per page. It pages
-// through Entries, so a long log never sits in memory, and it shows a Staff member as
-// "Sphericon staff" like every read surface. A failed read ends it with the error.
+// as a CSV file (internal/kernel/csvfile): a header row, then the rows of each page of entries, a
+// chunk per page. It pages through Entries, so a long log never sits in memory, and it shows a
+// Staff member as "Sphericon staff" like every read surface. A failed read ends it with the error.
 func (l *Log) exportCSV(ctx context.Context, s *ent.Scoped, f events.AuditFilter) iter.Seq2[[]byte, error] {
-	return func(yield func([]byte, error) bool) {
-		if !yieldCSV(yield, [][]string{exportHeader}) {
+	return csvfile.Chunks(func(yield func([][]string, error) bool) {
+		if !yield([][]string{exportHeader}, nil) {
 			return
 		}
 		var cursor int64
@@ -89,27 +87,12 @@ func (l *Log) exportCSV(ctx context.Context, s *ent.Scoped, f events.AuditFilter
 				yield(nil, err)
 				return
 			}
-			rows := make([][]string, 0, len(page.Items))
-			for _, e := range page.Items {
-				rows = append(rows, exportRow(e))
-			}
-			if !yieldCSV(yield, rows) || page.Next == 0 {
+			if !yield(lo.Map(page.Items, func(e *ent.AuditEntry, _ int) []string { return exportRow(e) }), nil) || page.Next == 0 {
 				return
 			}
 			cursor = page.Next
 		}
-	}
-}
-
-// yieldCSV yields rows as one chunk of CSV; false once the reader stopped or the rows could not
-// be encoded.
-func yieldCSV(yield func([]byte, error) bool, rows [][]string) bool {
-	var buf bytes.Buffer
-	if err := csv.NewWriter(&buf).WriteAll(rows); err != nil {
-		yield(nil, err)
-		return false
-	}
-	return yield(buf.Bytes(), nil)
+	})
 }
 
 func exportRow(e *ent.AuditEntry) []string {
@@ -120,23 +103,9 @@ func exportRow(e *ent.AuditEntry) []string {
 			diff = string(b)
 		}
 	}
-	row := []string{
+	return []string{
 		strconv.FormatInt(v.ID, 10), v.OccurredAt.UTC().Format(time.RFC3339), v.ActorKind, lo.FromPtr(v.ActorID), lo.FromPtr(v.ActorName),
 		v.Action, v.TargetType, lo.FromPtr(v.TargetID), lo.FromPtr(v.TargetName), diff,
 		lo.FromPtr(v.RequestID), lo.FromPtr(v.IP), lo.FromPtr(v.UserAgent),
 	}
-	for i, cell := range row {
-		row[i] = defuseFormula(cell)
-	}
-	return row
-}
-
-// defuseFormula defuses CSV formula injection: a spreadsheet evaluates a cell that
-// starts with one of = + - @ (or a tab or carriage return), and actor and target
-// names are free text, so such a cell is prefixed with an apostrophe.
-func defuseFormula(cell string) string {
-	if cell != "" && strings.ContainsRune("=+-@\t\r", rune(cell[0])) {
-		return "'" + cell
-	}
-	return cell
 }
