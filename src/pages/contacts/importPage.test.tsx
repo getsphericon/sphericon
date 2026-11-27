@@ -26,6 +26,7 @@ const RUNNING: SiteContactImport = {
     defaultCountry: null,
     tag: null,
     onlyAddNew: false,
+    asNewSignUps: false,
   },
   counts: { processed: 1000, created: 999, updated: 0, refused: 1, dropped: 0 },
   reportRows: 1,
