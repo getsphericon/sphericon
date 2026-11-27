@@ -25481,9 +25481,9 @@ type SendingDomainResource struct {
 	DmarcRecord DnsRecord `json:"dmarcRecord"`
 	// When a DMARC lookup of the domain most recently answered, the record found or not (null = none has).
 	DmarcCheckedAt OptNilTimestamp `json:"dmarcCheckedAt"`
-	// When a lookup first found a DMARC record published for the domain, at the domain or its
-	// organizational domain (null = the last lookup found none, or none has answered). The domain is
-	// bulk-ready while it is set (ADR 0012); it never gates sending.
+	// When a lookup first found a DMARC record published for the domain, at the domain or a parent of it
+	// (the DNS tree walk of RFC 9989) (null = the last lookup found none, or none has answered). The
+	// domain is bulk-ready while it is set (ADR 0012); it never gates sending.
 	DmarcFoundAt OptNilTimestamp `json:"dmarcFoundAt"`
 	// When the DKIM DNS was most recently checked (null = never).
 	LastCheckedAt OptNilTimestamp `json:"lastCheckedAt"`
