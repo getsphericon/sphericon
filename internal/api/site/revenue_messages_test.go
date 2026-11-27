@@ -2,6 +2,7 @@ package site_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -60,6 +61,12 @@ func automationRevenue(t *testing.T, c *siteapi.Client, ws siteapi.WorkspaceId, 
 	return r.Revenue, listed, a.Revenue.Value
 }
 
+// fixtureDay is the report day, in a UTC Workspace, of a fixture row dated '{{daysAgo n}}': the date
+// n days before the instant the fixtures count from, not before now, which may be past midnight.
+func fixtureDay(env *testhelper.TestEnv, n int) string {
+	return env.FixturesNow().UTC().Add(-time.Duration(n) * 24 * time.Hour).Format(time.DateOnly)
+}
+
 // Bazaar's Broadcast earned B-1, 20.00 three days ago, refunded 5.00 a day ago, and B-2 in EUR.
 func TestABroadcastShowsItsOrdersAndNetRevenueAndARefundLowersItOnItsDay(t *testing.T) {
 	env := testhelper.Setup(t)
@@ -73,8 +80,8 @@ func TestABroadcastShowsItsOrdersAndNetRevenueAndARefundLowersItOnItsDay(t *test
 	assert.EqualValues(t, 1500, got.Amount)
 	assert.Equal(t, got, broadcastListRevenue(t, c, fixtures.BazaarPublicID, id))
 	_, days := byDayOf(t, c, fixtures.BazaarPublicID)
-	assert.EqualValues(t, 2000, days[reportDay(3)], "the day of the sale is left alone")
-	assert.EqualValues(t, -500, days[reportDay(1)])
+	assert.EqualValues(t, 2000, days[fixtureDay(env, 3)], "the day of the sale is left alone")
+	assert.EqualValues(t, -500, days[fixtureDay(env, 1)])
 }
 
 // Emporium's revenue Automation earned A-1, 40.00 cancelled the next day, and A-2, 10.00.

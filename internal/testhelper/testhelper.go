@@ -714,7 +714,34 @@ func loadFixtures(ctx context.Context, sqlDB *sql.DB, cfg *config.Config, projec
 	if err != nil {
 		return err
 	}
-	return fixtures.Load(ctx, sqlDB, cipher, filepath.Join(projectRoot, "fixtures"))
+	now, err := fixturesNow(ctx, sqlDB)
+	if err != nil {
+		return err
+	}
+	return fixtures.LoadAt(ctx, sqlDB, cipher, filepath.Join(projectRoot, "fixtures"), now)
+}
+
+// fixturesAt is the instant the process's fixtures are dated from, read from the database's clock
+// by the first load and reused by the second: the baseline RealDB clones is loaded when a test
+// first needs it, minutes after Setup's database maybe, and both must date a row on the same day.
+var fixturesAt struct {
+	once sync.Once
+	at   time.Time
+	err  error
+}
+
+// fixturesNow is fixturesAt, read on sqlDB by the first call of the process.
+func fixturesNow(ctx context.Context, sqlDB *sql.DB) (time.Time, error) {
+	fixturesAt.once.Do(func() { fixturesAt.at, fixturesAt.err = fixtures.DatabaseNow(ctx, sqlDB) })
+	return fixturesAt.at, fixturesAt.err
+}
+
+// FixturesNow is the instant the fixtures' relative dates count from: a row dated '{{daysAgo 3}}'
+// fell on the UTC date of FixturesNow less three days. A test that expects the day a fixture row
+// falls on computes it from here, never from time.Now(): the package may have run past midnight
+// since its fixtures were loaded.
+func (env *TestEnv) FixturesNow() time.Time {
+	return fixturesAt.at
 }
 
 // migrated is the schema watch of the test server: every test database is cloned from the
