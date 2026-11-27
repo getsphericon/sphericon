@@ -8927,12 +8927,13 @@ func (s *ContactImportColumnInput) SetOneOf(val ContactImportColumnInputSum) {
 // ContactImportColumnInputSum represents sum type.
 type ContactImportColumnInputSum struct {
 	// Type selects the active sum variant, switch on this field.
-	Type                                ContactImportColumnInputSumType
-	ContactImportKeyColumnInput         ContactImportKeyColumnInput
-	ContactImportAttributeColumnInput   ContactImportAttributeColumnInput
-	ContactImportCustomFieldColumnInput ContactImportCustomFieldColumnInput
-	ContactImportTagsColumnInput        ContactImportTagsColumnInput
-	ContactImportIgnoreColumnInput      ContactImportIgnoreColumnInput
+	Type                                   ContactImportColumnInputSumType
+	ContactImportKeyColumnInput            ContactImportKeyColumnInput
+	ContactImportAttributeColumnInput      ContactImportAttributeColumnInput
+	ContactImportCustomFieldColumnInput    ContactImportCustomFieldColumnInput
+	ContactImportNewCustomFieldColumnInput ContactImportNewCustomFieldColumnInput
+	ContactImportTagsColumnInput           ContactImportTagsColumnInput
+	ContactImportIgnoreColumnInput         ContactImportIgnoreColumnInput
 }
 
 // ContactImportColumnInputSumType is oneOf type of ContactImportColumnInputSum.
@@ -8940,11 +8941,12 @@ type ContactImportColumnInputSumType string
 
 // Possible values for ContactImportColumnInputSumType.
 const (
-	ContactImportKeyColumnInputContactImportColumnInputSum         ContactImportColumnInputSumType = "key"
-	ContactImportAttributeColumnInputContactImportColumnInputSum   ContactImportColumnInputSumType = "attribute"
-	ContactImportCustomFieldColumnInputContactImportColumnInputSum ContactImportColumnInputSumType = "customField"
-	ContactImportTagsColumnInputContactImportColumnInputSum        ContactImportColumnInputSumType = "tags"
-	ContactImportIgnoreColumnInputContactImportColumnInputSum      ContactImportColumnInputSumType = "ignore"
+	ContactImportKeyColumnInputContactImportColumnInputSum            ContactImportColumnInputSumType = "key"
+	ContactImportAttributeColumnInputContactImportColumnInputSum      ContactImportColumnInputSumType = "attribute"
+	ContactImportCustomFieldColumnInputContactImportColumnInputSum    ContactImportColumnInputSumType = "customField"
+	ContactImportNewCustomFieldColumnInputContactImportColumnInputSum ContactImportColumnInputSumType = "newCustomField"
+	ContactImportTagsColumnInputContactImportColumnInputSum           ContactImportColumnInputSumType = "tags"
+	ContactImportIgnoreColumnInputContactImportColumnInputSum         ContactImportColumnInputSumType = "ignore"
 )
 
 // IsContactImportKeyColumnInput reports whether ContactImportColumnInputSum is ContactImportKeyColumnInput.
@@ -8960,6 +8962,11 @@ func (s ContactImportColumnInputSum) IsContactImportAttributeColumnInput() bool 
 // IsContactImportCustomFieldColumnInput reports whether ContactImportColumnInputSum is ContactImportCustomFieldColumnInput.
 func (s ContactImportColumnInputSum) IsContactImportCustomFieldColumnInput() bool {
 	return s.Type == ContactImportCustomFieldColumnInputContactImportColumnInputSum
+}
+
+// IsContactImportNewCustomFieldColumnInput reports whether ContactImportColumnInputSum is ContactImportNewCustomFieldColumnInput.
+func (s ContactImportColumnInputSum) IsContactImportNewCustomFieldColumnInput() bool {
+	return s.Type == ContactImportNewCustomFieldColumnInputContactImportColumnInputSum
 }
 
 // IsContactImportTagsColumnInput reports whether ContactImportColumnInputSum is ContactImportTagsColumnInput.
@@ -9035,6 +9042,27 @@ func NewContactImportCustomFieldColumnInputContactImportColumnInputSum(v Contact
 	return s
 }
 
+// SetContactImportNewCustomFieldColumnInput sets ContactImportColumnInputSum to ContactImportNewCustomFieldColumnInput.
+func (s *ContactImportColumnInputSum) SetContactImportNewCustomFieldColumnInput(v ContactImportNewCustomFieldColumnInput) {
+	s.Type = ContactImportNewCustomFieldColumnInputContactImportColumnInputSum
+	s.ContactImportNewCustomFieldColumnInput = v
+}
+
+// GetContactImportNewCustomFieldColumnInput returns ContactImportNewCustomFieldColumnInput and true boolean if ContactImportColumnInputSum is ContactImportNewCustomFieldColumnInput.
+func (s ContactImportColumnInputSum) GetContactImportNewCustomFieldColumnInput() (v ContactImportNewCustomFieldColumnInput, ok bool) {
+	if !s.IsContactImportNewCustomFieldColumnInput() {
+		return v, false
+	}
+	return s.ContactImportNewCustomFieldColumnInput, true
+}
+
+// NewContactImportNewCustomFieldColumnInputContactImportColumnInputSum returns new ContactImportColumnInputSum from ContactImportNewCustomFieldColumnInput.
+func NewContactImportNewCustomFieldColumnInputContactImportColumnInputSum(v ContactImportNewCustomFieldColumnInput) ContactImportColumnInputSum {
+	var s ContactImportColumnInputSum
+	s.SetContactImportNewCustomFieldColumnInput(v)
+	return s
+}
+
 // SetContactImportTagsColumnInput sets ContactImportColumnInputSum to ContactImportTagsColumnInput.
 func (s *ContactImportColumnInputSum) SetContactImportTagsColumnInput(v ContactImportTagsColumnInput) {
 	s.Type = ContactImportTagsColumnInputContactImportColumnInputSum
@@ -9080,12 +9108,13 @@ func NewContactImportIgnoreColumnInputContactImportColumnInputSum(v ContactImpor
 // ContactImportColumnSum represents sum type.
 type ContactImportColumnSum struct {
 	// Type selects the active sum variant, switch on this field.
-	Type                           ContactImportColumnSumType
-	ContactImportKeyColumn         ContactImportKeyColumn
-	ContactImportAttributeColumn   ContactImportAttributeColumn
-	ContactImportCustomFieldColumn ContactImportCustomFieldColumn
-	ContactImportTagsColumn        ContactImportTagsColumn
-	ContactImportIgnoreColumn      ContactImportIgnoreColumn
+	Type                              ContactImportColumnSumType
+	ContactImportKeyColumn            ContactImportKeyColumn
+	ContactImportAttributeColumn      ContactImportAttributeColumn
+	ContactImportCustomFieldColumn    ContactImportCustomFieldColumn
+	ContactImportNewCustomFieldColumn ContactImportNewCustomFieldColumn
+	ContactImportTagsColumn           ContactImportTagsColumn
+	ContactImportIgnoreColumn         ContactImportIgnoreColumn
 }
 
 // ContactImportColumnSumType is oneOf type of ContactImportColumnSum.
@@ -9093,11 +9122,12 @@ type ContactImportColumnSumType string
 
 // Possible values for ContactImportColumnSumType.
 const (
-	ContactImportKeyColumnContactImportColumnSum         ContactImportColumnSumType = "key"
-	ContactImportAttributeColumnContactImportColumnSum   ContactImportColumnSumType = "attribute"
-	ContactImportCustomFieldColumnContactImportColumnSum ContactImportColumnSumType = "customField"
-	ContactImportTagsColumnContactImportColumnSum        ContactImportColumnSumType = "tags"
-	ContactImportIgnoreColumnContactImportColumnSum      ContactImportColumnSumType = "ignore"
+	ContactImportKeyColumnContactImportColumnSum            ContactImportColumnSumType = "key"
+	ContactImportAttributeColumnContactImportColumnSum      ContactImportColumnSumType = "attribute"
+	ContactImportCustomFieldColumnContactImportColumnSum    ContactImportColumnSumType = "customField"
+	ContactImportNewCustomFieldColumnContactImportColumnSum ContactImportColumnSumType = "newCustomField"
+	ContactImportTagsColumnContactImportColumnSum           ContactImportColumnSumType = "tags"
+	ContactImportIgnoreColumnContactImportColumnSum         ContactImportColumnSumType = "ignore"
 )
 
 // IsContactImportKeyColumn reports whether ContactImportColumnSum is ContactImportKeyColumn.
@@ -9113,6 +9143,11 @@ func (s ContactImportColumnSum) IsContactImportAttributeColumn() bool {
 // IsContactImportCustomFieldColumn reports whether ContactImportColumnSum is ContactImportCustomFieldColumn.
 func (s ContactImportColumnSum) IsContactImportCustomFieldColumn() bool {
 	return s.Type == ContactImportCustomFieldColumnContactImportColumnSum
+}
+
+// IsContactImportNewCustomFieldColumn reports whether ContactImportColumnSum is ContactImportNewCustomFieldColumn.
+func (s ContactImportColumnSum) IsContactImportNewCustomFieldColumn() bool {
+	return s.Type == ContactImportNewCustomFieldColumnContactImportColumnSum
 }
 
 // IsContactImportTagsColumn reports whether ContactImportColumnSum is ContactImportTagsColumn.
@@ -9185,6 +9220,27 @@ func (s ContactImportColumnSum) GetContactImportCustomFieldColumn() (v ContactIm
 func NewContactImportCustomFieldColumnContactImportColumnSum(v ContactImportCustomFieldColumn) ContactImportColumnSum {
 	var s ContactImportColumnSum
 	s.SetContactImportCustomFieldColumn(v)
+	return s
+}
+
+// SetContactImportNewCustomFieldColumn sets ContactImportColumnSum to ContactImportNewCustomFieldColumn.
+func (s *ContactImportColumnSum) SetContactImportNewCustomFieldColumn(v ContactImportNewCustomFieldColumn) {
+	s.Type = ContactImportNewCustomFieldColumnContactImportColumnSum
+	s.ContactImportNewCustomFieldColumn = v
+}
+
+// GetContactImportNewCustomFieldColumn returns ContactImportNewCustomFieldColumn and true boolean if ContactImportColumnSum is ContactImportNewCustomFieldColumn.
+func (s ContactImportColumnSum) GetContactImportNewCustomFieldColumn() (v ContactImportNewCustomFieldColumn, ok bool) {
+	if !s.IsContactImportNewCustomFieldColumn() {
+		return v, false
+	}
+	return s.ContactImportNewCustomFieldColumn, true
+}
+
+// NewContactImportNewCustomFieldColumnContactImportColumnSum returns new ContactImportColumnSum from ContactImportNewCustomFieldColumn.
+func NewContactImportNewCustomFieldColumnContactImportColumnSum(v ContactImportNewCustomFieldColumn) ContactImportColumnSum {
+	var s ContactImportColumnSum
+	s.SetContactImportNewCustomFieldColumn(v)
 	return s
 }
 
@@ -10228,6 +10284,206 @@ func (s *ContactImportMappingInput) SetOnlyAddNew(val bool) {
 // SetAsNewSignUps sets the value of AsNewSignUps.
 func (s *ContactImportMappingInput) SetAsNewSignUps(val bool) {
 	s.AsNewSignUps = val
+}
+
+// A column whose cells write a Custom field the import creates (ADR 0138): its key, its label and the
+// type the Member chooses, created when the import runs. Mapping one needs `custom_fields:manage`; a
+// key the Workspace has already is refused.
+// Ref: #/components/schemas/ContactImportNewCustomFieldColumn
+type ContactImportNewCustomFieldColumn struct {
+	Kind ContactImportNewCustomFieldColumnKind `json:"kind"`
+	// The new field's key, which a Contact's values and a Condition address it by.
+	Key string `json:"key"`
+	// The new field's display name.
+	Label Name `json:"label"`
+	// The type the cells are read in.
+	Type CustomFieldType `json:"type"`
+	// How the cells write a date: required for a `datetime` field, null for any other type.
+	DateFormat NilContactImportDateFormat `json:"dateFormat"`
+}
+
+// GetKind returns the value of Kind.
+func (s *ContactImportNewCustomFieldColumn) GetKind() ContactImportNewCustomFieldColumnKind {
+	return s.Kind
+}
+
+// GetKey returns the value of Key.
+func (s *ContactImportNewCustomFieldColumn) GetKey() string {
+	return s.Key
+}
+
+// GetLabel returns the value of Label.
+func (s *ContactImportNewCustomFieldColumn) GetLabel() Name {
+	return s.Label
+}
+
+// GetType returns the value of Type.
+func (s *ContactImportNewCustomFieldColumn) GetType() CustomFieldType {
+	return s.Type
+}
+
+// GetDateFormat returns the value of DateFormat.
+func (s *ContactImportNewCustomFieldColumn) GetDateFormat() NilContactImportDateFormat {
+	return s.DateFormat
+}
+
+// SetKind sets the value of Kind.
+func (s *ContactImportNewCustomFieldColumn) SetKind(val ContactImportNewCustomFieldColumnKind) {
+	s.Kind = val
+}
+
+// SetKey sets the value of Key.
+func (s *ContactImportNewCustomFieldColumn) SetKey(val string) {
+	s.Key = val
+}
+
+// SetLabel sets the value of Label.
+func (s *ContactImportNewCustomFieldColumn) SetLabel(val Name) {
+	s.Label = val
+}
+
+// SetType sets the value of Type.
+func (s *ContactImportNewCustomFieldColumn) SetType(val CustomFieldType) {
+	s.Type = val
+}
+
+// SetDateFormat sets the value of DateFormat.
+func (s *ContactImportNewCustomFieldColumn) SetDateFormat(val NilContactImportDateFormat) {
+	s.DateFormat = val
+}
+
+// A column whose cells write a Custom field the import creates (ADR 0138): its key, its label and the
+// type the Member chooses, created when the import runs. Mapping one needs `custom_fields:manage`; a
+// key the Workspace has already is refused.
+// Ref: #/components/schemas/ContactImportNewCustomFieldColumnInput
+type ContactImportNewCustomFieldColumnInput struct {
+	Kind ContactImportNewCustomFieldColumnInputKind `json:"kind"`
+	// The new field's key, which a Contact's values and a Condition address it by.
+	Key string `json:"key"`
+	// The new field's display name.
+	Label Name `json:"label"`
+	// The type the cells are read in.
+	Type CustomFieldType `json:"type"`
+	// How the cells write a date: required for a `datetime` field, null for any other type.
+	DateFormat NilContactImportDateFormat `json:"dateFormat"`
+}
+
+// GetKind returns the value of Kind.
+func (s *ContactImportNewCustomFieldColumnInput) GetKind() ContactImportNewCustomFieldColumnInputKind {
+	return s.Kind
+}
+
+// GetKey returns the value of Key.
+func (s *ContactImportNewCustomFieldColumnInput) GetKey() string {
+	return s.Key
+}
+
+// GetLabel returns the value of Label.
+func (s *ContactImportNewCustomFieldColumnInput) GetLabel() Name {
+	return s.Label
+}
+
+// GetType returns the value of Type.
+func (s *ContactImportNewCustomFieldColumnInput) GetType() CustomFieldType {
+	return s.Type
+}
+
+// GetDateFormat returns the value of DateFormat.
+func (s *ContactImportNewCustomFieldColumnInput) GetDateFormat() NilContactImportDateFormat {
+	return s.DateFormat
+}
+
+// SetKind sets the value of Kind.
+func (s *ContactImportNewCustomFieldColumnInput) SetKind(val ContactImportNewCustomFieldColumnInputKind) {
+	s.Kind = val
+}
+
+// SetKey sets the value of Key.
+func (s *ContactImportNewCustomFieldColumnInput) SetKey(val string) {
+	s.Key = val
+}
+
+// SetLabel sets the value of Label.
+func (s *ContactImportNewCustomFieldColumnInput) SetLabel(val Name) {
+	s.Label = val
+}
+
+// SetType sets the value of Type.
+func (s *ContactImportNewCustomFieldColumnInput) SetType(val CustomFieldType) {
+	s.Type = val
+}
+
+// SetDateFormat sets the value of DateFormat.
+func (s *ContactImportNewCustomFieldColumnInput) SetDateFormat(val NilContactImportDateFormat) {
+	s.DateFormat = val
+}
+
+type ContactImportNewCustomFieldColumnInputKind string
+
+const (
+	ContactImportNewCustomFieldColumnInputKindNewCustomField ContactImportNewCustomFieldColumnInputKind = "newCustomField"
+)
+
+// AllValues returns all ContactImportNewCustomFieldColumnInputKind values.
+func (ContactImportNewCustomFieldColumnInputKind) AllValues() []ContactImportNewCustomFieldColumnInputKind {
+	return []ContactImportNewCustomFieldColumnInputKind{
+		ContactImportNewCustomFieldColumnInputKindNewCustomField,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ContactImportNewCustomFieldColumnInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case ContactImportNewCustomFieldColumnInputKindNewCustomField:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ContactImportNewCustomFieldColumnInputKind) UnmarshalText(data []byte) error {
+	switch ContactImportNewCustomFieldColumnInputKind(data) {
+	case ContactImportNewCustomFieldColumnInputKindNewCustomField:
+		*s = ContactImportNewCustomFieldColumnInputKindNewCustomField
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type ContactImportNewCustomFieldColumnKind string
+
+const (
+	ContactImportNewCustomFieldColumnKindNewCustomField ContactImportNewCustomFieldColumnKind = "newCustomField"
+)
+
+// AllValues returns all ContactImportNewCustomFieldColumnKind values.
+func (ContactImportNewCustomFieldColumnKind) AllValues() []ContactImportNewCustomFieldColumnKind {
+	return []ContactImportNewCustomFieldColumnKind{
+		ContactImportNewCustomFieldColumnKindNewCustomField,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ContactImportNewCustomFieldColumnKind) MarshalText() ([]byte, error) {
+	switch s {
+	case ContactImportNewCustomFieldColumnKindNewCustomField:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ContactImportNewCustomFieldColumnKind) UnmarshalText(data []byte) error {
+	switch ContactImportNewCustomFieldColumnKind(data) {
+	case ContactImportNewCustomFieldColumnKindNewCustomField:
+		*s = ContactImportNewCustomFieldColumnKindNewCustomField
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
 }
 
 // A row of the file as the import would write it.
@@ -34035,6 +34291,8 @@ type SiteContactImportPreview struct {
 	MalformedRows int32 `json:"malformedRows"`
 	// Distinct Tags the rows would add, the Tag for every row included.
 	DistinctTags int32 `json:"distinctTags"`
+	// Custom fields the run would create: the columns mapped to a new field.
+	NewCustomFields int32 `json:"newCustomFields"`
 }
 
 // GetRows returns the value of Rows.
@@ -34062,6 +34320,11 @@ func (s *SiteContactImportPreview) GetDistinctTags() int32 {
 	return s.DistinctTags
 }
 
+// GetNewCustomFields returns the value of NewCustomFields.
+func (s *SiteContactImportPreview) GetNewCustomFields() int32 {
+	return s.NewCustomFields
+}
+
 // SetRows sets the value of Rows.
 func (s *SiteContactImportPreview) SetRows(val []ContactImportPreviewRow) {
 	s.Rows = val
@@ -34085,6 +34348,11 @@ func (s *SiteContactImportPreview) SetMalformedRows(val int32) {
 // SetDistinctTags sets the value of DistinctTags.
 func (s *SiteContactImportPreview) SetDistinctTags(val int32) {
 	s.DistinctTags = val
+}
+
+// SetNewCustomFields sets the value of NewCustomFields.
+func (s *SiteContactImportPreview) SetNewCustomFields(val int32) {
+	s.NewCustomFields = val
 }
 
 type SiteContactImportsReportOK struct {

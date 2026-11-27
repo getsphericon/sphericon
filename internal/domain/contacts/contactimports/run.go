@@ -56,11 +56,13 @@ func (RunArgs) Kind() string { return "run_contact_import" }
 // import's checkpoint by the next, and the last one's failure fails the import.
 func (RunArgs) InsertOpts() river.InsertOpts { return river.InsertOpts{MaxAttempts: RunAttempts} }
 
-// Run runs the ready import id: it is `running`, its start stamped and the Workspace's newest
-// Contact kept as its checkpoint's floor, and its job queued in the same transaction. An import
-// not ready (no mapping saved, running or ended) is lifecycle's ErrInvalidTransition; another
-// import of the Workspace running is ErrAlreadyRunning.
-func (m *Module) Run(ctx context.Context, s *ent.Scoped, id int64) (View, error) {
+// Run runs the ready import id as a Member of role: it is `running`, its start stamped and the
+// Workspace's newest Contact kept as its checkpoint's floor, the Custom fields its mapping creates
+// created (which needs custom_fields:manage of role, and keys the Workspace has not taken since the
+// mapping was saved), and its job queued, in one transaction. An import not ready (no mapping
+// saved, running or ended) is lifecycle's ErrInvalidTransition; another import of the Workspace
+// running is ErrAlreadyRunning.
+func (m *Module) Run(ctx context.Context, s *ent.Scoped, id int64, role membership.Role) (View, error) {
 	imp, err := load(ctx, s, id)
 	if err != nil {
 		return View{}, err
@@ -76,6 +78,9 @@ func (m *Module) Run(ctx context.Context, s *ent.Scoped, id int64) (View, error)
 			}).FireCtx(ctx, triggerRun)
 		})
 		if err != nil {
+			return err
+		}
+		if err := m.createNewCustomFields(ctx, ts, role, imp.Mapping); err != nil {
 			return err
 		}
 		return q.Enqueue(ctx, RunArgs{WorkspaceID: ts.WorkspaceID(), ImportID: imp.ID}, nil)
@@ -308,6 +313,8 @@ func mappingSummary(header []string, mapping csvimport.Mapping) []string {
 			target = string(c.Kind) + " " + c.Key
 		case csvimport.KindAttribute:
 			target = string(c.Kind) + " " + c.Attribute
+		case csvimport.KindNewCustomField:
+			target = string(c.Kind) + " " + c.Key + " (" + c.FieldType + ")"
 		case csvimport.KindTags:
 			target = string(c.Kind)
 		case csvimport.KindIgnore:

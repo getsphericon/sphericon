@@ -50,7 +50,7 @@ func TestARunReadsAFileOfSeveralChunksInBatches(t *testing.T) {
 		DecimalSeparator: csvimport.DecimalPoint,
 	}})
 	require.NoError(t, err)
-	_, err = imports.Run(ctx, acme, uploaded.Import.ID)
+	_, err = imports.Run(ctx, acme, uploaded.Import.ID, membership.RoleOwner)
 	require.NoError(t, err)
 	env.PerformEnqueuedJobs(t)
 	done, err := imports.Get(ctx, acme, uploaded.Import.ID)
@@ -83,7 +83,9 @@ func runningImport(t *testing.T, env *testhelper.TestEnv, file string, membershi
 		DecimalSeparator: csvimport.DecimalPoint,
 	}})
 	require.NoError(t, err)
-	_, err = imports.Run(ctx, acme, uploaded.Import.ID)
+	ms, err := env.DB.Membership.Get(ctx, membershipID)
+	require.NoError(t, err)
+	_, err = imports.Run(ctx, acme, uploaded.Import.ID, ms.Role)
 	require.NoError(t, err)
 	return uploaded.Import.ID
 }
@@ -267,7 +269,7 @@ func TestASecondImportIsNotRunWhileOneRuns(t *testing.T) {
 	}})
 	require.NoError(t, err)
 
-	_, err = imports.Run(t.Context(), acme, uploaded.Import.ID)
+	_, err = imports.Run(t.Context(), acme, uploaded.Import.ID, membership.RoleOwner)
 
 	require.ErrorIs(t, err, contactimports.ErrAlreadyRunning)
 }

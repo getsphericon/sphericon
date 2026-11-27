@@ -1206,6 +1206,7 @@ func (c *ConverterImpl) ContactImportPreviewToResource(source contactimports.Pre
 	siteapiSiteContactImportPreview.RowsWithoutKey = count(source.RowsWithoutKey)
 	siteapiSiteContactImportPreview.MalformedRows = count(source.MalformedRows)
 	siteapiSiteContactImportPreview.DistinctTags = count(source.DistinctTags)
+	siteapiSiteContactImportPreview.NewCustomFields = count(source.NewCustomFields)
 	return siteapiSiteContactImportPreview
 }
 func (c *ConverterImpl) ContactImportState(source contactimport.State) site.ContactImportState {
