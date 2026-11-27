@@ -364,6 +364,8 @@ type Inputs interface {
 	// goverter:ignore MembershipID
 	ContactImportUpload(source siteapi.SiteContactImportsUploadReq) contactimports.UploadInput
 	// goverter:map . Mapping | contactImportMappingIn
+	// The Role of the Member who saves is the caller's, which the handler sets.
+	// goverter:ignore Role
 	ContactImportMapping(source *siteapi.ContactImportMappingInput) contactimports.MappingInput
 	// The session a link is followed in is the request's, which the handler sets.
 	// goverter:ignore Session

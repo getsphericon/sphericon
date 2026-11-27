@@ -3865,6 +3865,11 @@ func (s ContactImportColumnInputSum) Validate() error {
 			return err
 		}
 		return nil
+	case ContactImportNewCustomFieldColumnInputContactImportColumnInputSum:
+		if err := s.ContactImportNewCustomFieldColumnInput.Validate(); err != nil {
+			return err
+		}
+		return nil
 	case ContactImportTagsColumnInputContactImportColumnInputSum:
 		if err := s.ContactImportTagsColumnInput.Validate(); err != nil {
 			return err
@@ -3894,6 +3899,11 @@ func (s ContactImportColumnSum) Validate() error {
 		return nil
 	case ContactImportCustomFieldColumnContactImportColumnSum:
 		if err := s.ContactImportCustomFieldColumn.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case ContactImportNewCustomFieldColumnContactImportColumnSum:
+		if err := s.ContactImportNewCustomFieldColumn.Validate(); err != nil {
 			return err
 		}
 		return nil
@@ -4462,6 +4472,150 @@ func (s *ContactImportMappingInput) Validate() error {
 		return &validate.Error{Fields: failures}
 	}
 	return nil
+}
+
+func (s *ContactImportNewCustomFieldColumn) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Kind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "kind",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Label.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "label",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Type.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "type",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.DateFormat.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "dateFormat",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *ContactImportNewCustomFieldColumnInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Kind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "kind",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Label.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "label",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Type.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "type",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.DateFormat.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "dateFormat",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s ContactImportNewCustomFieldColumnInputKind) Validate() error {
+	switch s {
+	case "newCustomField":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s ContactImportNewCustomFieldColumnKind) Validate() error {
+	switch s {
+	case "newCustomField":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
 }
 
 func (s *ContactImportPreviewRow) Validate() error {

@@ -2191,6 +2191,8 @@ export type ContactImportColumn = ({
 } & ContactImportAttributeColumn) | ({
   kind: 'customField';
 } & ContactImportCustomFieldColumn) | ({
+  kind: 'newCustomField';
+} & ContactImportNewCustomFieldColumn) | ({
   kind: 'tags';
 } & ContactImportTagsColumn) | ({
   kind: 'ignore';
@@ -2206,6 +2208,8 @@ export type ContactImportColumnInput = ({
 } & ContactImportAttributeColumnInput) | ({
   kind: 'customField';
 } & ContactImportCustomFieldColumnInput) | ({
+  kind: 'newCustomField';
+} & ContactImportNewCustomFieldColumnInput) | ({
   kind: 'tags';
 } & ContactImportTagsColumnInput) | ({
   kind: 'ignore';
@@ -2455,6 +2459,56 @@ export type ContactImportMappingInput = {
    * Leave a Contact the Workspace has as it is, writing only new ones
    */
   onlyAddNew: boolean;
+};
+
+/**
+ * A column whose cells write a Custom field the import creates (ADR 0138): its key, its label and
+ * the type the Member chooses, created when the import runs. Mapping one needs
+ * `custom_fields:manage`; a key the Workspace has already is refused.
+ */
+export type ContactImportNewCustomFieldColumn = {
+  kind: 'newCustomField';
+  /**
+   * The new field's key, which a Contact's values and a Condition address it by
+   */
+  key: string;
+  /**
+   * The new field's display name
+   */
+  label: Name;
+  /**
+   * The type the cells are read in
+   */
+  type: CustomFieldType;
+  /**
+   * How the cells write a date: required for a `datetime` field, null for any other type
+   */
+  dateFormat: ContactImportDateFormat | null;
+};
+
+/**
+ * A column whose cells write a Custom field the import creates (ADR 0138): its key, its label and
+ * the type the Member chooses, created when the import runs. Mapping one needs
+ * `custom_fields:manage`; a key the Workspace has already is refused.
+ */
+export type ContactImportNewCustomFieldColumnInput = {
+  kind: 'newCustomField';
+  /**
+   * The new field's key, which a Contact's values and a Condition address it by
+   */
+  key: string;
+  /**
+   * The new field's display name
+   */
+  label: Name;
+  /**
+   * The type the cells are read in
+   */
+  type: CustomFieldType;
+  /**
+   * How the cells write a date: required for a `datetime` field, null for any other type
+   */
+  dateFormat: ContactImportDateFormat | null;
 };
 
 /**
@@ -7453,6 +7507,10 @@ export type SiteContactImportPreview = {
    * Distinct Tags the rows would add, the Tag for every row included
    */
   distinctTags: number;
+  /**
+   * Custom fields the run would create: the columns mapped to a new field
+   */
+  newCustomFields: number;
 };
 
 /**

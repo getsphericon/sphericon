@@ -514,6 +514,7 @@ func (c *InputsImpl) ContactImportMapping(source *site.ContactImportMappingInput
 	if source != nil {
 		contactimportsMappingInput.Mapping = contactImportMappingIn(c, source)
 		contactimportsMappingInput.OnlyAddNew = (*source).OnlyAddNew
+		// contactimportsMappingInput.Role: ignore
 	}
 	return contactimportsMappingInput
 }
