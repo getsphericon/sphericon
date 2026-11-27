@@ -3517,7 +3517,7 @@ var (
 		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email", "telegram", "sms"}, Default: "email"},
 		{Name: "destination", Type: field.TypeString},
 		{Name: "sending_source", Type: field.TypeString},
-		{Name: "via", Type: field.TypeEnum, Nullable: true, Enums: []string{"keyword", "button", "block", "link", "refused_send", "manual"}},
+		{Name: "via", Type: field.TypeEnum, Nullable: true, Enums: []string{"keyword", "button", "block", "link", "refused_send", "manual", "imported"}},
 		{Name: "contact_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
@@ -4555,7 +4555,7 @@ func init() {
 	UnsubscribesTable.Annotation.Checks = map[string]string{
 		"unsubscribes_channel_check":     "channel IN ('email', 'telegram', 'sms')",
 		"unsubscribes_destination_lower": "destination = lower(destination)",
-		"unsubscribes_via_check":         "via IN ('keyword', 'button', 'block', 'link', 'refused_send', 'manual')",
+		"unsubscribes_via_check":         "via IN ('keyword', 'button', 'block', 'link', 'refused_send', 'manual', 'imported')",
 	}
 	UsagesTable.ForeignKeys[0].RefTable = WorkspacesTable
 	UsagesTable.Annotation = &entsql.Annotation{

@@ -23,20 +23,24 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
-// SMS consent (ADR 0077): a text goes only to a number with a Confirmation on sms and no opt-out
-// there. sphericon sends no code or confirmation text of its own: the Confirmation is recorded from
-// the evidence of consent the Workspace collected (imported), or from a START the person texts
-// (keyword). Both the Confirmation and the opt-out are keyed by the number in E.164.
+// Consent recorded from evidence (ADR 0077): a text goes only to a number with a Confirmation on
+// sms and no opt-out there. sphericon sends no code or confirmation text of its own: the
+// Confirmation is recorded from the evidence of consent the Workspace collected (imported), or from
+// a START the person texts (keyword). Both the Confirmation and the opt-out are keyed by the number
+// in E.164. On email the evidence records an imported Confirmation too (ADR 0138), beside the one
+// the person's double opt-in click records.
 
 var (
-	// ErrConfirmationChannel: a Confirmation is recorded by hand or by the API only on sms.
-	ErrConfirmationChannel = validation.RefuseField(fieldname.Channel, "consent: only sms takes a recorded confirmation", i18n.ErrorsConfirmationChannel)
+	// ErrConfirmationChannel: a Confirmation is recorded by hand or by the API only on email and sms.
+	ErrConfirmationChannel = validation.RefuseField(fieldname.Channel, "consent: only email and sms take a recorded confirmation", i18n.ErrorsConfirmationChannel)
 	// ErrWordingEmpty, ErrSourceEmpty, ErrBrandEmpty: the evidence lacks a part.
 	ErrWordingEmpty = validation.RefuseField(fieldname.Wording, "consent: wording must not be empty", i18n.ErrorsConsentWordingEmpty)
 	ErrSourceEmpty  = validation.RefuseField(fieldname.Source, "consent: source must not be empty", i18n.ErrorsConsentSourceEmpty)
 	ErrBrandEmpty   = validation.RefuseField(fieldname.Brand, "consent: brand must not be empty", i18n.ErrorsConsentBrandEmpty)
 	// ErrNoPhone: SMS consent or an SMS opt-out for a Contact that has no phone.
 	ErrNoPhone = validation.RefuseField(fieldname.Phone, "consent: the contact has no phone", i18n.ErrorsContactPhoneMissing)
+	// ErrNoEmail: email consent for a Contact that has no email address.
+	ErrNoEmail = validation.RefuseField(fieldname.Email, "consent: the contact has no email", i18n.ErrorsContactEmailMissing)
 	// ErrContactNotFound: no such Contact in the Workspace.
 	ErrContactNotFound = validation.NotFound("consent: contact not found", i18n.ErrorsContactNotFound)
 )
@@ -48,26 +52,19 @@ type ConfirmInput struct {
 	Evidence    Evidence
 }
 
-// Confirm records consent a destination gave outside sphericon on a Channel, with its evidence, as
-// an imported Confirmation, and returns the Confirmation that stands: a stronger one already on
-// the destination stays. Only sms takes one: email is confirmed by its own double opt-in link and a
-// Telegram chat is its own opt-in. It never lifts an opt-out. The consent is given now, by the
-// module's clock: the evidence reaching sphericon. One older than a withdrawal of the number's
-// consent is ErrSuperseded.
+// Confirm records consent a destination gave outside sphericon on email or sms, with its
+// evidence, as an imported Confirmation (ADR 0077, ADR 0138), and returns the Confirmation that
+// stands: a stronger one already on the destination stays. A Telegram chat is its own opt-in and
+// takes none. It never lifts an opt-out (ADR 0121). The consent occurred when its evidence says,
+// else now (occurred); one older than a withdrawal of the destination's consent is ErrSuperseded.
 func (m *Module) Confirm(ctx context.Context, s *ent.Scoped, in ConfirmInput) (*ent.Confirmation, error) {
-	if in.Channel != channels.SMS {
-		return nil, ErrConfirmationChannel
-	}
-	if err := validation.MaxLength(fieldname.Destination, in.Destination, bounds.ConsentDestinationMaxLength); err != nil {
-		return nil, err
-	}
-	number, err := unsubscribes.SMSNumber(in.Destination)
+	destination, err := confirmable(in.Channel, in.Destination)
 	if err != nil {
 		return nil, err
 	}
 	var standing *ent.Confirmation
 	err = m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
-		standing, err = m.ConfirmSMSIn(ctx, ts, number, in.Evidence)
+		standing, err = m.confirmIn(ctx, ts, in.Channel, destination, in.Evidence)
 		return err
 	})
 	if err != nil {
@@ -76,37 +73,113 @@ func (m *Module) Confirm(ctx context.Context, s *ent.Scoped, in ConfirmInput) (*
 	return standing, nil
 }
 
-// ConfirmContactSMSIn is ConfirmSMSIn for the phone of a Contact: ErrNoPhone when the Contact has
-// none (number is empty), as the SMS consent an intake carries for a Contact.
-func (m *Module) ConfirmContactSMSIn(ctx context.Context, s *ent.Scoped, number string, ev Evidence) (*ent.Confirmation, error) {
-	if number == "" {
-		return nil, ErrNoPhone
+// confirmable is raw as the Destinations of channel are stored, refused on a Channel that takes no
+// recorded Confirmation.
+func confirmable(channel channels.Channel, raw string) (string, error) {
+	switch channel {
+	case channels.Email, channels.SMS:
+		return unsubscribes.Destination(channel, raw)
+	case channels.Telegram:
+		// A Binding is Telegram's opt-in.
 	}
-	return m.ConfirmSMSIn(ctx, s, number, ev)
+	return "", ErrConfirmationChannel
 }
 
-// ConfirmSMSIn records an imported SMS Confirmation of number with its evidence, given now by the
-// module's clock, inside the bus transaction s is bound to, and returns the Confirmation that
-// stands (see Confirm). The Confirmation names the Contact whose phone the number is, when there
-// is one.
+// ConfirmSMSIn records an imported SMS Confirmation of number with its evidence inside the bus
+// transaction s is bound to, and returns the Confirmation that stands (see Confirm).
 func (m *Module) ConfirmSMSIn(ctx context.Context, s *ent.Scoped, number string, ev Evidence) (*ent.Confirmation, error) {
 	number, err := unsubscribes.SMSNumber(number)
 	if err != nil {
 		return nil, err
 	}
-	ev, err = ev.checked()
+	return m.confirmIn(ctx, s, channels.SMS, number, ev)
+}
+
+// confirmIn records an imported Confirmation of the stored destination on channel with its
+// evidence, given when occurred says, inside the bus transaction s is bound to. The Confirmation
+// names the Contact whose address or phone the destination is, when there is one.
+func (m *Module) confirmIn(ctx context.Context, s *ent.Scoped, channel channels.Channel, destination string, ev Evidence) (*ent.Confirmation, error) {
+	ev, err := ev.checked()
 	if err != nil {
 		return nil, err
 	}
-	holder, err := holderOf(ctx, s, number)
+	holder, err := holderOf(ctx, s, channel, destination)
 	if err != nil {
 		return nil, err
 	}
 	standing, _, err := m.recordIn(ctx, s, grant{
-		channel: channels.SMS, destination: number, provenance: confirmation.ProvenanceImported,
-		evidence: &ev, contactID: holder, at: consentstamps.At(m.now()),
+		channel: channel, destination: destination, provenance: confirmation.ProvenanceImported,
+		evidence: &ev, contactID: holder, at: consentstamps.At(m.occurred(ev)),
 	})
 	return standing, err
+}
+
+// occurred is when the consent of ev was given (ADR 0154): the time its evidence states, or now
+// when it states none or one later than now, so consent can never outrank a refusal yet to come.
+func (m *Module) occurred(ev Evidence) time.Time {
+	now := m.now()
+	if ev.OccurredAt.IsZero() || ev.OccurredAt.After(now) {
+		return now
+	}
+	return ev.OccurredAt
+}
+
+// ImportInput is the consent a Contact intake row carries for one Destination of its Contact: the
+// Channel, the Contact's address or phone on it ("" when it has none) and the evidence.
+type ImportInput struct {
+	Channel     channels.Channel
+	Destination string
+	Evidence    Evidence
+}
+
+// ImportIn records the consent an intake row carries (ADR 0077, ADR 0138) as an imported
+// Confirmation inside the bus transaction s is bound to. Consent for a Destination the Contact
+// lacks is refused (ErrNoEmail, ErrNoPhone), so an import row never drops it silently. It lifts no
+// opt-out, and a stronger Confirmation stands. Consent given before the Destination's consent was
+// last withdrawn changes nothing and is no refusal of the row: it joins the Contact's history as
+// contact.consent_superseded (ADR 0154).
+func (m *Module) ImportIn(ctx context.Context, s *ent.Scoped, in ImportInput) error {
+	if in.Destination == "" {
+		return missingDestination(in.Channel)
+	}
+	destination, err := confirmable(in.Channel, in.Destination)
+	if err != nil {
+		return err
+	}
+	_, err = m.confirmIn(ctx, s, in.Channel, destination, in.Evidence)
+	if !errors.Is(err, ErrSuperseded) {
+		return err
+	}
+	holder, err := holderOf(ctx, s, in.Channel, destination)
+	if err != nil || holder == 0 {
+		return err
+	}
+	superseded := &events.ConsentSuperseded{
+		WorkspaceID: s.WorkspaceID(), ContactID: holder, Channel: string(in.Channel),
+		Observation: events.ObservationStart, Provenance: string(confirmation.ProvenanceImported),
+		ObservedAt: m.occurred(in.Evidence),
+	}
+	switch in.Channel {
+	case channels.Email:
+		superseded.Email = destination
+	case channels.SMS:
+		superseded.Phone = destination
+	case channels.Telegram:
+		// confirmable refused it.
+	}
+	return m.bus.PublishIn(ctx, s, superseded)
+}
+
+// missingDestination is the refusal of consent for a Destination a Contact lacks on channel.
+func missingDestination(channel channels.Channel) error {
+	switch channel {
+	case channels.Email:
+		return ErrNoEmail
+	case channels.SMS:
+		return ErrNoPhone
+	case channels.Telegram:
+	}
+	return ErrConfirmationChannel
 }
 
 // StartSMSIn reads a START the number texted, which occurred at the given time (ADR 0077): it lifts
@@ -125,7 +198,7 @@ func (m *Module) StartSMSIn(ctx context.Context, s *ent.Scoped, number string, a
 	if err != nil || !applied {
 		return false, err
 	}
-	holder, err := holderOf(ctx, s, number)
+	holder, err := holderOf(ctx, s, channels.SMS, number)
 	if err != nil {
 		return false, err
 	}
@@ -140,14 +213,19 @@ func (m *Module) StartSMSIn(ctx context.Context, s *ent.Scoped, number string, a
 	return true, err
 }
 
-// holderOf is the id of the Contact whose phone number is, 0 when no Contact has it.
-func holderOf(ctx context.Context, s *ent.Scoped, number string) (int64, error) {
-	id, err := s.Contact().Query().Where(contact.Phone(number)).OnlyID(ctx)
+// holderOf is the id of the Contact whose address (on email) or phone (on sms) destination is, 0
+// when no Contact has it.
+func holderOf(ctx context.Context, s *ent.Scoped, channel channels.Channel, destination string) (int64, error) {
+	q := s.Contact().Query().Where(contact.Phone(destination))
+	if channel == channels.Email {
+		q = s.Contact().Query().Where(contact.Email(destination))
+	}
+	id, err := q.OnlyID(ctx)
 	if ent.IsNotFound(err) {
 		return 0, nil
 	}
 	if err != nil {
-		return 0, fmt.Errorf("find the number's contact: %w", err)
+		return 0, fmt.Errorf("find the destination's contact: %w", err)
 	}
 	return id, nil
 }
@@ -226,9 +304,10 @@ func (m *Module) ContactPhone(ctx context.Context, s *ent.Scoped, contactID int6
 // checked is the evidence trimmed, refused when a part is empty.
 func (ev Evidence) checked() (Evidence, error) {
 	out := Evidence{
-		Wording: strings.TrimSpace(ev.Wording),
-		Source:  strings.TrimSpace(ev.Source),
-		Brand:   strings.TrimSpace(ev.Brand),
+		Wording:    strings.TrimSpace(ev.Wording),
+		Source:     strings.TrimSpace(ev.Source),
+		Brand:      strings.TrimSpace(ev.Brand),
+		OccurredAt: ev.OccurredAt,
 	}
 	switch {
 	case out.Wording == "":

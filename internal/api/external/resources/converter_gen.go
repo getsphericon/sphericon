@@ -27,6 +27,7 @@ import (
 	external "github.com/getsphericon/sphericon/gen/external"
 	condition "github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	confirmations "github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
+	contacts "github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	engagementtracking "github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	orders "github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	brandkits "github.com/getsphericon/sphericon/internal/domain/content/brandkits"
@@ -45,7 +46,6 @@ import (
 	trackingdomains "github.com/getsphericon/sphericon/internal/domain/sending/trackingdomains"
 	messaging "github.com/getsphericon/sphericon/internal/infra/messaging"
 	webhook "github.com/getsphericon/sphericon/internal/infra/webhook"
-	addresscheck "github.com/getsphericon/sphericon/internal/kernel/addresscheck"
 	automationstep "github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	channels "github.com/getsphericon/sphericon/internal/kernel/channels"
 	conditiontree "github.com/getsphericon/sphericon/internal/kernel/conditiontree"
@@ -679,19 +679,21 @@ func (c *ConverterImpl) ConsentChannelToResource(source channels.Channel) extern
 	}
 	return externalapiConsentChannel
 }
-func (c *ConverterImpl) ContactBatchWarning(source addresscheck.Flag) external.ContactBatchWarning {
+func (c *ConverterImpl) ContactBatchWarning(source contacts.Warning) external.ContactBatchWarning {
 	var externalapiContactBatchWarning external.ContactBatchWarning
 	switch source {
-	case addresscheck.Disposable:
+	case contacts.WarningConsentTimeInFuture:
+		externalapiContactBatchWarning = external.ContactBatchWarningConsentTimeInFuture
+	case contacts.WarningDisposableEmail:
 		externalapiContactBatchWarning = external.ContactBatchWarningDisposableEmail
-	case addresscheck.Role:
+	case contacts.WarningRoleEmail:
 		externalapiContactBatchWarning = external.ContactBatchWarningRoleEmail
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return externalapiContactBatchWarning
 }
-func (c *ConverterImpl) ContactBatchWarnings(source []addresscheck.Flag) []external.ContactBatchWarning {
+func (c *ConverterImpl) ContactBatchWarnings(source []contacts.Warning) []external.ContactBatchWarning {
 	var externalapiContactBatchWarningList []external.ContactBatchWarning
 	if source != nil {
 		externalapiContactBatchWarningList = make([]external.ContactBatchWarning, len(source))
@@ -1386,6 +1388,8 @@ func (c *ConverterImpl) OptOutViaToResource(source unsubscribe.Via) external.Opt
 		externalapiOptOutVia = external.OptOutViaBlock
 	case unsubscribe.ViaButton:
 		externalapiOptOutVia = external.OptOutViaButton
+	case unsubscribe.ViaImported:
+		externalapiOptOutVia = external.OptOutViaImported
 	case unsubscribe.ViaKeyword:
 		externalapiOptOutVia = external.OptOutViaKeyword
 	case unsubscribe.ViaLink:

@@ -7624,6 +7624,8 @@ func (s OptOutVia) Validate() error {
 		return nil
 	case "manual":
 		return nil
+	case "imported":
+		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
 	}

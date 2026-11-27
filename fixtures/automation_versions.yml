@@ -949,6 +949,14 @@
   workspace_id: 99
   created_at: '{{daysAgo 12}}'
   updated_at: '{{daysAgo 12}}'
+- id: 9905 # fixture: AutomationHalcyonOnConfirmedVersion
+  automation_id: 9905
+  trigger_action: marketing.confirmed
+  version: 1
+  steps: '{"id":"832abcc5-2b7c-4d17-a3f8-9de734b35e8b","steps":[{"id":"a2887b9a-3f75-4448-95ab-c3f2c71c7e52","type":"wait","seconds":3600}]}'
+  workspace_id: 99
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
 
 # Ouroboros (workspace 1553): the versions of the cycle guard's Automations.
 - id: 15530 # fixture: AutomationOuroborosUntagRingVersion

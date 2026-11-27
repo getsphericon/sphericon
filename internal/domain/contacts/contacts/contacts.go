@@ -165,9 +165,12 @@ type Result struct {
 	// reads it), nil when it asserted none. It is not the Contact's when the Contact had one
 	// already: an upsert fills an alias key, never overwrites it.
 	Phone *string
-	// Flags are the traits of the address a Contact intake row asserted that the importer should
-	// see (ADR 0117): a disposable address, a role's. Only UpsertBatch sets them.
-	Flags []addresscheck.Flag
+	// Warnings are what of a Contact intake row the importer should see (ADR 0117, ADR 0138): a
+	// disposable address, a role's, a consent time dropped. Only the Contact intake sets them.
+	Warnings []Warning
+	// Kept is true when a Contact intake row that only adds new Contacts found the Contact it names
+	// and left it as it was but for the refusals the row carries (ImportInput.OnlyAddNew).
+	Kept bool
 }
 
 // Module is the contacts module.

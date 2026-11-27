@@ -49,6 +49,7 @@ export function SmsSection({ workspaceId, contactId }: Props) {
     link: t(($) => $.contacts.smsOptOutViaLink),
     refused_send: t(($) => $.contacts.smsOptOutViaRefusedSend),
     manual: t(($) => $.contacts.smsOptOutViaManual),
+    imported: t(($) => $.contacts.smsOptOutViaImported),
   }
 
   const provenances: Record<ConfirmationProvenance, string> = {

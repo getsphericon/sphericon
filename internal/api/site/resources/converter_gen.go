@@ -1936,6 +1936,8 @@ func (c *ConverterImpl) OptOutViaToResource(source unsubscribe.Via) site.OptOutV
 		siteapiOptOutVia = site.OptOutViaBlock
 	case unsubscribe.ViaButton:
 		siteapiOptOutVia = site.OptOutViaButton
+	case unsubscribe.ViaImported:
+		siteapiOptOutVia = site.OptOutViaImported
 	case unsubscribe.ViaKeyword:
 		siteapiOptOutVia = site.OptOutViaKeyword
 	case unsubscribe.ViaLink:

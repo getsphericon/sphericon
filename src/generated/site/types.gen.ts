@@ -4061,7 +4061,7 @@ export type OnceEnrollmentOccurrence = {
 };
 
 /**
- * How a person stopped on a Channel other than email (ADR 0077): a STOP keyword or `/stop` (keyword), a message's unsubscribe button (button) or link (link), a blocked bot (block), a send the provider refused because the person had stopped at the provider (refused_send), or an opt-out recorded by hand in the app or through the API, which reached the Workspace by another route (manual)
+ * How a person stopped on a Channel other than email (ADR 0077): a STOP keyword or `/stop` (keyword), a message's unsubscribe button (button) or link (link), a blocked bot (block), a send the provider refused because the person had stopped at the provider (refused_send), an opt-out recorded by hand in the app or through the API, which reached the Workspace by another route (manual), or one brought by an import from another platform (imported)
  */
 export const OptOutVia = {
   KEYWORD: 'keyword',
@@ -4069,11 +4069,12 @@ export const OptOutVia = {
   BLOCK: 'block',
   LINK: 'link',
   REFUSED_SEND: 'refused_send',
-  MANUAL: 'manual'
+  MANUAL: 'manual',
+  IMPORTED: 'imported'
 } as const;
 
 /**
- * How a person stopped on a Channel other than email (ADR 0077): a STOP keyword or `/stop` (keyword), a message's unsubscribe button (button) or link (link), a blocked bot (block), a send the provider refused because the person had stopped at the provider (refused_send), or an opt-out recorded by hand in the app or through the API, which reached the Workspace by another route (manual)
+ * How a person stopped on a Channel other than email (ADR 0077): a STOP keyword or `/stop` (keyword), a message's unsubscribe button (button) or link (link), a blocked bot (block), a send the provider refused because the person had stopped at the provider (refused_send), an opt-out recorded by hand in the app or through the API, which reached the Workspace by another route (manual), or one brought by an import from another platform (imported)
  */
 export type OptOutVia = typeof OptOutVia[keyof typeof OptOutVia];
 
@@ -9923,7 +9924,7 @@ export type SmsLeafInput = {
  */
 export type SmsOptOut = {
   /**
-   * How the person stopped: a STOP texted to the Workspace (keyword), a text's unsubscribe link (link), a send Twilio refused because the number had texted STOP to the sender there (refused_send), or recorded by hand (manual)
+   * How the person stopped: a STOP texted to the Workspace (keyword), a text's unsubscribe link (link), a send Twilio refused because the number had texted STOP to the sender there (refused_send), recorded by hand (manual), or brought by an import (imported)
    */
   via: OptOutVia;
   /**

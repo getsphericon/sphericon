@@ -212,6 +212,8 @@ type Inputs interface {
 	TemplateCreate(source *siteapi.CreateTemplateInput) emailtemplates.CreateInput
 	TemplateUpdate(source *siteapi.UpdateTemplateInput) emailtemplates.UpdateInput
 
+	// The app records SMS consent as given now: it states no time.
+	// goverter:ignore OccurredAt
 	ConsentEvidence(source *siteapi.ConsentEvidence) confirmations.Evidence
 	// A member's Engagement tracking observation of one of a Contact's Destinations (ADR 0120).
 	EngagementTrackingByMember(source *siteapi.SiteRecordEngagementTrackingInput) engagementtracking.MemberInput

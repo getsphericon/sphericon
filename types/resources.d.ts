@@ -1290,6 +1290,7 @@ export default interface Resources {
       "smsOptOutVia": "How they opted out: {{via}}",
       "smsOptOutViaBlock": "Blocked the bot.",
       "smsOptOutViaButton": "Pressed the unsubscribe button.",
+      "smsOptOutViaImported": "Brought by an import from another platform.",
       "smsOptOutViaKeyword": "Texted STOP.",
       "smsOptOutViaLink": "Followed the unsubscribe link in a text.",
       "smsOptOutViaManual": "Recorded by hand, after the opt-out reached you by another route.",

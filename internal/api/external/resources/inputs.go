@@ -113,15 +113,17 @@ import (
 // goverter:extend broadcastContentIn
 // goverter:extend broadcastContentPatch
 // goverter:extend broadcastChannelPtrIn
-// goverter:extend smsConsentIn
+// goverter:extend consentIn
 // goverter:extend engagementTrackingIn
 // goverter:extend engagementTrackingObservationIn
 // goverter:extend timeIn
 // goverter:extend enrollmentStatusIn
 type Inputs interface {
-	// The Channel defaults to email, which the handler picks with ConsentChannel and assigns.
+	// The Channel defaults to email, which the handler picks with ConsentChannel and assigns. How
+	// and when an opt-out was made are an internal caller's (a CSV import): the API's is by hand,
+	// now.
 	// goverter:map SendingSource Source
-	// goverter:ignore Channel
+	// goverter:ignore Channel Via At
 	OptOut(source *externalapi.CreateUnsubscribeInput) unsubscriberecording.OptOutInput
 
 	TemplateCreate(source *externalapi.CreateTemplateInput) emailtemplates.CreateInput
@@ -173,7 +175,8 @@ type Inputs interface {
 	// goverter:map . Core
 	// goverter:ignore GuessedTimeZone GuessedLocale Claimed
 	ContactUpsert(source externalapi.UpsertContactInput) contacts.UpsertInput
-	// An import row: the Contact it asserts and the SMS and Engagement tracking consent it carries.
+	// An import row: the Contact it asserts, the Tags it adds and the email, SMS and Engagement
+	// tracking consent it carries.
 	// goverter:map . UpsertInput
 	ContactIntake(source externalapi.UpsertContactInput) contacts.IntakeInput
 	ContactIntakes(source []externalapi.UpsertContactInput) []contacts.IntakeInput
@@ -275,8 +278,8 @@ type Inputs interface {
 	// The consent a customer collected, with its evidence: a Confirmation's body.
 	// goverter:map . Evidence
 	Confirmation(source *externalapi.CreateConfirmationInput) confirmations.ConfirmInput
-	// The evidence of consent a batch item carries.
-	ConsentEvidence(source externalapi.ConsentEvidence) confirmations.Evidence
+	// The evidence of consent a batch item carries, with when it was given.
+	ConsentEvidence(source externalapi.ImportedConsentEvidence) confirmations.Evidence
 	// An Engagement tracking observation: the provenance is the surface's, imported on /api, which
 	// the handler assigns.
 	// goverter:ignore Provenance
@@ -294,8 +297,8 @@ type Inputs interface {
 	TestAddress(source *externalapi.TestSendBroadcastInput) outboundmessages.TestAddress
 }
 
-// smsConsentIn is the SMS consent a batch item carries, nil when it carries none.
-func smsConsentIn(c Inputs, o externalapi.OptConsentEvidence) *confirmations.Evidence {
+// consentIn is the email or SMS consent a batch item carries, nil when it carries none.
+func consentIn(c Inputs, o externalapi.OptImportedConsentEvidence) *confirmations.Evidence {
 	return convert.PtrVia(o, c.ConsentEvidence)
 }
 

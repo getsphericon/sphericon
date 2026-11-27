@@ -8382,48 +8382,6 @@ func (s *ConsentChannel) UnmarshalText(data []byte) error {
 	}
 }
 
-// The evidence of consent collected outside sphericon (ADR 0077), kept in the immutable
-// `sms.confirmed` Event to answer a proof request.
-// Ref: #/components/schemas/ConsentEvidence
-type ConsentEvidence struct {
-	// The consent wording the person was shown and agreed to.
-	Wording string `json:"wording"`
-	// Where the consent was collected: a form, a page, a checkout, a verification service.
-	Source string `json:"source"`
-	// The brand the person agreed to hear from.
-	Brand string `json:"brand"`
-}
-
-// GetWording returns the value of Wording.
-func (s *ConsentEvidence) GetWording() string {
-	return s.Wording
-}
-
-// GetSource returns the value of Source.
-func (s *ConsentEvidence) GetSource() string {
-	return s.Source
-}
-
-// GetBrand returns the value of Brand.
-func (s *ConsentEvidence) GetBrand() string {
-	return s.Brand
-}
-
-// SetWording sets the value of Wording.
-func (s *ConsentEvidence) SetWording(val string) {
-	s.Wording = val
-}
-
-// SetSource sets the value of Source.
-func (s *ConsentEvidence) SetSource(val string) {
-	s.Source = val
-}
-
-// SetBrand sets the value of Brand.
-func (s *ConsentEvidence) SetBrand(val string) {
-	s.Brand = val
-}
-
 // A text attribute of a Contact.
 // Ref: #/components/schemas/ContactAttribute
 type ContactAttribute string
@@ -8527,7 +8485,7 @@ type ContactBatchItemResult struct {
 	ContactId OptEntityId `json:"contactId"`
 	// Why the item failed; absent on success.
 	Error OptString `json:"error"`
-	// Traits of the item's email address worth a look; absent when there are none or the item failed.
+	// Traits of the item worth a look; absent when there are none or the item failed.
 	Warnings []ContactBatchWarning `json:"warnings"`
 }
 
@@ -8631,15 +8589,16 @@ func (s *ContactBatchStatus) UnmarshalText(data []byte) error {
 	}
 }
 
-// A trait of an item's email address worth the importer's attention; the contact is stored all the
-// same. `disposable_email`: an address at a throwaway mailbox provider. `role_email`: an address of a
+// A trait of an item worth the importer's attention; the contact is stored all the same.
+// `disposable_email`: an address at a throwaway mailbox provider. `role_email`: an address of a
 // function rather than a person, such as info.
 // Ref: #/components/schemas/ContactBatchWarning
 type ContactBatchWarning string
 
 const (
-	ContactBatchWarningDisposableEmail ContactBatchWarning = "disposable_email"
-	ContactBatchWarningRoleEmail       ContactBatchWarning = "role_email"
+	ContactBatchWarningDisposableEmail     ContactBatchWarning = "disposable_email"
+	ContactBatchWarningRoleEmail           ContactBatchWarning = "role_email"
+	ContactBatchWarningConsentTimeInFuture ContactBatchWarning = "consent_time_in_future"
 )
 
 // AllValues returns all ContactBatchWarning values.
@@ -8647,6 +8606,7 @@ func (ContactBatchWarning) AllValues() []ContactBatchWarning {
 	return []ContactBatchWarning{
 		ContactBatchWarningDisposableEmail,
 		ContactBatchWarningRoleEmail,
+		ContactBatchWarningConsentTimeInFuture,
 	}
 }
 
@@ -8656,6 +8616,8 @@ func (s ContactBatchWarning) MarshalText() ([]byte, error) {
 	case ContactBatchWarningDisposableEmail:
 		return []byte(s), nil
 	case ContactBatchWarningRoleEmail:
+		return []byte(s), nil
+	case ContactBatchWarningConsentTimeInFuture:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -8670,6 +8632,9 @@ func (s *ContactBatchWarning) UnmarshalText(data []byte) error {
 		return nil
 	case ContactBatchWarningRoleEmail:
 		*s = ContactBatchWarningRoleEmail
+		return nil
+	case ContactBatchWarningConsentTimeInFuture:
+		*s = ContactBatchWarningConsentTimeInFuture
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -10512,10 +10477,10 @@ func (s *CreateBroadcastInput) SetIntegrationId(val OptNilEntityId) {
 // Request body for recording consent collected outside sphericon.
 // Ref: #/components/schemas/CreateConfirmationInput
 type CreateConfirmationInput struct {
-	// The Channel the consent is for. Only `sms` takes a recorded consent: email is confirmed by its own
-	// double opt-in link, and a Telegram chat is its own opt-in.
+	// The Channel the consent is for: `email` or `sms`. A Telegram chat is its own opt-in and takes none.
 	Channel ConsentChannel `json:"channel"`
-	// The phone number that consented, with its country code; stored in E.164.
+	// What consented: an email address on `email`, a phone number with its country code on `sms` (stored
+	// in E.164).
 	Destination string `json:"destination"`
 	// The consent wording the person was shown and agreed to.
 	Wording string `json:"wording"`
@@ -10523,6 +10488,9 @@ type CreateConfirmationInput struct {
 	Source string `json:"source"`
 	// The brand the person agreed to hear from.
 	Brand string `json:"brand"`
+	// When the person gave the consent; now when omitted. A time in the future is taken as now. Consent
+	// given before the destination last withdrew it changes nothing.
+	OccurredAt OptNilTimestamp `json:"occurredAt"`
 }
 
 // GetChannel returns the value of Channel.
@@ -10550,6 +10518,11 @@ func (s *CreateConfirmationInput) GetBrand() string {
 	return s.Brand
 }
 
+// GetOccurredAt returns the value of OccurredAt.
+func (s *CreateConfirmationInput) GetOccurredAt() OptNilTimestamp {
+	return s.OccurredAt
+}
+
 // SetChannel sets the value of Channel.
 func (s *CreateConfirmationInput) SetChannel(val ConsentChannel) {
 	s.Channel = val
@@ -10573,6 +10546,11 @@ func (s *CreateConfirmationInput) SetSource(val string) {
 // SetBrand sets the value of Brand.
 func (s *CreateConfirmationInput) SetBrand(val string) {
 	s.Brand = val
+}
+
+// SetOccurredAt sets the value of OccurredAt.
+func (s *CreateConfirmationInput) SetOccurredAt(val OptNilTimestamp) {
+	s.OccurredAt = val
 }
 
 // Request body for creating a contact.
@@ -17092,6 +17070,61 @@ func (s *HttpStepType) UnmarshalText(data []byte) error {
 
 type ImageUrl string
 
+// The evidence of consent collected outside sphericon (ADR 0077), with when the person gave it (ADR
+// 0154).
+// Ref: #/components/schemas/ImportedConsentEvidence
+type ImportedConsentEvidence struct {
+	// The consent wording the person was shown and agreed to.
+	Wording string `json:"wording"`
+	// Where the consent was collected: a form, a page, a checkout, a verification service.
+	Source string `json:"source"`
+	// The brand the person agreed to hear from.
+	Brand string `json:"brand"`
+	// When the person gave the consent; now when omitted. A time in the future is taken as now. Consent
+	// given before the destination last withdrew it changes nothing.
+	OccurredAt OptNilTimestamp `json:"occurredAt"`
+}
+
+// GetWording returns the value of Wording.
+func (s *ImportedConsentEvidence) GetWording() string {
+	return s.Wording
+}
+
+// GetSource returns the value of Source.
+func (s *ImportedConsentEvidence) GetSource() string {
+	return s.Source
+}
+
+// GetBrand returns the value of Brand.
+func (s *ImportedConsentEvidence) GetBrand() string {
+	return s.Brand
+}
+
+// GetOccurredAt returns the value of OccurredAt.
+func (s *ImportedConsentEvidence) GetOccurredAt() OptNilTimestamp {
+	return s.OccurredAt
+}
+
+// SetWording sets the value of Wording.
+func (s *ImportedConsentEvidence) SetWording(val string) {
+	s.Wording = val
+}
+
+// SetSource sets the value of Source.
+func (s *ImportedConsentEvidence) SetSource(val string) {
+	s.Source = val
+}
+
+// SetBrand sets the value of Brand.
+func (s *ImportedConsentEvidence) SetBrand(val string) {
+	s.Brand = val
+}
+
+// SetOccurredAt sets the value of OccurredAt.
+func (s *ImportedConsentEvidence) SetOccurredAt(val OptNilTimestamp) {
+	s.OccurredAt = val
+}
+
 // The Test inbox has no settings.
 // Ref: #/components/schemas/InboxConfig
 type InboxConfig struct {
@@ -19962,52 +19995,6 @@ func (o OptConsentChannel) Or(d ConsentChannel) ConsentChannel {
 	return d
 }
 
-// NewOptConsentEvidence returns new OptConsentEvidence with value set to v.
-func NewOptConsentEvidence(v ConsentEvidence) OptConsentEvidence {
-	return OptConsentEvidence{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptConsentEvidence is optional ConsentEvidence.
-type OptConsentEvidence struct {
-	Value ConsentEvidence
-	Set   bool
-}
-
-// IsSet returns true if OptConsentEvidence was set.
-func (o OptConsentEvidence) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptConsentEvidence) Reset() {
-	var v ConsentEvidence
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptConsentEvidence) SetTo(v ConsentEvidence) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptConsentEvidence) Get() (v ConsentEvidence, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptConsentEvidence) Or(d ConsentEvidence) ConsentEvidence {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
 // NewOptContactEngagementTrackingInput returns new OptContactEngagementTrackingInput with value set to v.
 func NewOptContactEngagementTrackingInput(v ContactEngagementTrackingInput) OptContactEngagementTrackingInput {
 	return OptContactEngagementTrackingInput{
@@ -20600,6 +20587,52 @@ func (o OptEventTriggerInputEntryPolicy) Get() (v EventTriggerInputEntryPolicy, 
 
 // Or returns value if set, or given parameter if does not.
 func (o OptEventTriggerInputEntryPolicy) Or(d EventTriggerInputEntryPolicy) EventTriggerInputEntryPolicy {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptImportedConsentEvidence returns new OptImportedConsentEvidence with value set to v.
+func NewOptImportedConsentEvidence(v ImportedConsentEvidence) OptImportedConsentEvidence {
+	return OptImportedConsentEvidence{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptImportedConsentEvidence is optional ImportedConsentEvidence.
+type OptImportedConsentEvidence struct {
+	Value ImportedConsentEvidence
+	Set   bool
+}
+
+// IsSet returns true if OptImportedConsentEvidence was set.
+func (o OptImportedConsentEvidence) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptImportedConsentEvidence) Reset() {
+	var v ImportedConsentEvidence
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptImportedConsentEvidence) SetTo(v ImportedConsentEvidence) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptImportedConsentEvidence) Get() (v ImportedConsentEvidence, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptImportedConsentEvidence) Or(d ImportedConsentEvidence) ImportedConsentEvidence {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -22356,8 +22389,9 @@ func (o OptNilTimestamp) Or(d Timestamp) Timestamp {
 
 // How a person stopped on a Channel other than email (ADR 0077): a STOP keyword or `/stop` (keyword),
 // a message's unsubscribe button (button) or link (link), a blocked bot (block), a send the provider
-// refused because the person had stopped at the provider (refused_send), or an opt-out recorded by
-// hand in the app or through the API, which reached the Workspace by another route (manual).
+// refused because the person had stopped at the provider (refused_send), an opt-out recorded by hand
+// in the app or through the API, which reached the Workspace by another route (manual), or one brought
+// by an import from another platform (imported).
 // Ref: #/components/schemas/OptOutVia
 type OptOutVia string
 
@@ -22368,6 +22402,7 @@ const (
 	OptOutViaLink        OptOutVia = "link"
 	OptOutViaRefusedSend OptOutVia = "refused_send"
 	OptOutViaManual      OptOutVia = "manual"
+	OptOutViaImported    OptOutVia = "imported"
 )
 
 // AllValues returns all OptOutVia values.
@@ -22379,6 +22414,7 @@ func (OptOutVia) AllValues() []OptOutVia {
 		OptOutViaLink,
 		OptOutViaRefusedSend,
 		OptOutViaManual,
+		OptOutViaImported,
 	}
 }
 
@@ -22396,6 +22432,8 @@ func (s OptOutVia) MarshalText() ([]byte, error) {
 	case OptOutViaRefusedSend:
 		return []byte(s), nil
 	case OptOutViaManual:
+		return []byte(s), nil
+	case OptOutViaImported:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -22422,6 +22460,9 @@ func (s *OptOutVia) UnmarshalText(data []byte) error {
 		return nil
 	case OptOutViaManual:
 		*s = OptOutViaManual
+		return nil
+	case OptOutViaImported:
+		*s = OptOutViaImported
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -30337,8 +30378,8 @@ func (s *SmsLeafKind) UnmarshalText(data []byte) error {
 // Ref: #/components/schemas/SmsOptOut
 type SmsOptOut struct {
 	// How the person stopped: a STOP texted to the Workspace (keyword), a text's unsubscribe link (link),
-	// a send Twilio refused because the number had texted STOP to the sender there (refused_send), or
-	// recorded by hand (manual).
+	// a send Twilio refused because the number had texted STOP to the sender there (refused_send),
+	// recorded by hand (manual), or brought by an import (imported).
 	Via OptOutVia `json:"via"`
 	// When the phone opted out.
 	OptedOutAt Timestamp `json:"optedOutAt"`
@@ -35228,12 +35269,22 @@ type UpsertContactInput struct {
 	// first value sets the field's type: a boolean, a number, a date (an ISO string:
 	// `2026-01-15T10:00:00Z`, `2026-01-15T10:00:00` or `2026-01-15`, the last two read in the Workspace
 	// time zone) or text. Send a date without time as a `YYYY-MM-DD` string, not a JavaScript `Date`: that
-	// serializes as UTC and lands on the previous day east of UTC.
+	// serializes as UTC and lands on the previous day east of UTC. A value of a field the workspace has
+	// whose type does not read it (`"42"` for a number field, any object, list or null) fails the item,
+	// naming the field.
 	CustomFields OptNilJsonObject `json:"customFields"`
+	// Names of Tags to add to the contact, each created on first use. A Tag the contact has stays as it
+	// is, and none is removed.
+	Tags []string `json:"tags"`
+	// The evidence of the email consent the contact's address gave outside sphericon: records an
+	// `imported` email confirmation for the address, as `POST /confirmations` does, which a workspace
+	// requiring confirmed opt-in needs to mail it. It lifts no opt-out, and a confirmation already
+	// standing that is stronger stays. An item with it and no email fails.
+	EmailConsent OptImportedConsentEvidence `json:"emailConsent"`
 	// The evidence of the SMS consent the contact's phone gave outside sphericon: records an `imported`
 	// SMS confirmation for the phone, as `POST /confirmations` does. Without it a phone stays unreachable
 	// on SMS. An item with it and no phone fails.
-	SmsConsent OptConsentEvidence `json:"smsConsent"`
+	SmsConsent OptImportedConsentEvidence `json:"smsConsent"`
 	// The Engagement tracking consent the contact's Destinations gave outside sphericon, recorded as
 	// `imported`, as `POST /engagement-tracking-consents` does. An item with consent for its email and no
 	// email fails, and so does one with consent for its phone and no phone.
@@ -35300,8 +35351,18 @@ func (s *UpsertContactInput) GetCustomFields() OptNilJsonObject {
 	return s.CustomFields
 }
 
+// GetTags returns the value of Tags.
+func (s *UpsertContactInput) GetTags() []string {
+	return s.Tags
+}
+
+// GetEmailConsent returns the value of EmailConsent.
+func (s *UpsertContactInput) GetEmailConsent() OptImportedConsentEvidence {
+	return s.EmailConsent
+}
+
 // GetSmsConsent returns the value of SmsConsent.
-func (s *UpsertContactInput) GetSmsConsent() OptConsentEvidence {
+func (s *UpsertContactInput) GetSmsConsent() OptImportedConsentEvidence {
 	return s.SmsConsent
 }
 
@@ -35370,8 +35431,18 @@ func (s *UpsertContactInput) SetCustomFields(val OptNilJsonObject) {
 	s.CustomFields = val
 }
 
+// SetTags sets the value of Tags.
+func (s *UpsertContactInput) SetTags(val []string) {
+	s.Tags = val
+}
+
+// SetEmailConsent sets the value of EmailConsent.
+func (s *UpsertContactInput) SetEmailConsent(val OptImportedConsentEvidence) {
+	s.EmailConsent = val
+}
+
 // SetSmsConsent sets the value of SmsConsent.
-func (s *UpsertContactInput) SetSmsConsent(val OptConsentEvidence) {
+func (s *UpsertContactInput) SetSmsConsent(val OptImportedConsentEvidence) {
 	s.SmsConsent = val
 }
 

@@ -163,13 +163,25 @@ model UpsertContactInput {
    * key's first value sets the field's type: a boolean, a number, a date (an ISO string:
    * `2026-01-15T10:00:00Z`, `2026-01-15T10:00:00` or `2026-01-15`, the last two read in the
    * Workspace time zone) or text. Send a date without time as a `YYYY-MM-DD` string, not a
-   * JavaScript `Date`: that serializes as UTC and lands on the previous day east of UTC */
+   * JavaScript `Date`: that serializes as UTC and lands on the previous day east of UTC. A value
+   * of a field the workspace has whose type does not read it (`"42"` for a number field, any
+   * object, list or null) fails the item, naming the field */
   customFields?: JsonObject | null;
+
+  /** Names of Tags to add to the contact, each created on first use. A Tag the contact has stays as
+   * it is, and none is removed */
+  tags?: string[];
+
+  /** The evidence of the email consent the contact's address gave outside sphericon: records an
+   * `imported` email confirmation for the address, as `POST /confirmations` does, which a workspace
+   * requiring confirmed opt-in needs to mail it. It lifts no opt-out, and a confirmation already
+   * standing that is stronger stays. An item with it and no email fails */
+  emailConsent?: ImportedConsentEvidence;
 
   /** The evidence of the SMS consent the contact's phone gave outside sphericon: records an
    * `imported` SMS confirmation for the phone, as `POST /confirmations` does. Without it a phone
    * stays unreachable on SMS. An item with it and no phone fails */
-  smsConsent?: ConsentEvidence;
+  smsConsent?: ImportedConsentEvidence;
 
   /** The Engagement tracking consent the contact's Destinations gave outside sphericon, recorded as
    * `imported`, as `POST /engagement-tracking-consents` does. An item with consent for its email
@@ -211,13 +223,15 @@ enum ContactBatchStatus {
 }
 
 /**
- * A trait of an item's email address worth the importer's attention; the contact is stored all the
- * same. `disposable_email`: an address at a throwaway mailbox provider. `role_email`: an address of
- * a function rather than a person, such as info@ or sales@.
+ * A trait of an item worth the importer's attention; the contact is stored all the same.
+ * `disposable_email`: an address at a throwaway mailbox provider. `role_email`: an address of a
+ * function rather than a person, such as info@ or sales@. `consent_time_in_future`: a consent's
+ * `occurredAt` was in the future, so it was dropped and the consent recorded as given now.
  */
 enum ContactBatchWarning {
   disposable_email,
   role_email,
+  consent_time_in_future,
 }
 
 /** Per-item result of a contacts batch, in request order */
@@ -234,7 +248,7 @@ model ContactBatchItemResult {
   /** Why the item failed; absent on success */
   error?: string;
 
-  /** Traits of the item's email address worth a look; absent when there are none or the item failed */
+  /** Traits of the item worth a look; absent when there are none or the item failed */
   warnings?: ContactBatchWarning[];
 }
 

@@ -104,7 +104,7 @@ func (h *Handlers) ContactsBatchUpsert(ctx context.Context, req *externalapi.Ups
 		}
 		if o.Err == nil {
 			results[i].ContactId = externalapi.NewOptEntityId(externalapi.EntityId(o.Value.Contact.ID))
-			results[i].Warnings = mapper.ContactBatchWarnings(o.Value.Flags)
+			results[i].Warnings = mapper.ContactBatchWarnings(o.Value.Warnings)
 		}
 	}
 	return &externalapi.UpsertContactsResult{Results: results}, nil

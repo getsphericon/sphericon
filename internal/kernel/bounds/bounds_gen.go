@@ -209,21 +209,21 @@ const (
 )
 
 // ConsentWording is the wording a person consented to.
-// From site ConsentEvidence.wording, external CreateConfirmationInput.wording.
+// From site ConsentEvidence.wording, external CreateConfirmationInput.wording, external ImportedConsentEvidence.wording.
 const (
 	ConsentWordingMinLength = 1
 	ConsentWordingMaxLength = 2000
 )
 
 // ConsentSource is where a person consented.
-// From site ConsentEvidence.source, external CreateConfirmationInput.source.
+// From site ConsentEvidence.source, external CreateConfirmationInput.source, external ImportedConsentEvidence.source.
 const (
 	ConsentSourceMinLength = 1
 	ConsentSourceMaxLength = 500
 )
 
 // ConsentBrand is the brand a person consented to hear from.
-// From site ConsentEvidence.brand, external CreateConfirmationInput.brand.
+// From site ConsentEvidence.brand, external CreateConfirmationInput.brand, external ImportedConsentEvidence.brand.
 const (
 	ConsentBrandMinLength = 1
 	ConsentBrandMaxLength = 255

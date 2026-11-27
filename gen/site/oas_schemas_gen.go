@@ -19618,8 +19618,9 @@ func (o OptNilTimestamp) Or(d Timestamp) Timestamp {
 
 // How a person stopped on a Channel other than email (ADR 0077): a STOP keyword or `/stop` (keyword),
 // a message's unsubscribe button (button) or link (link), a blocked bot (block), a send the provider
-// refused because the person had stopped at the provider (refused_send), or an opt-out recorded by
-// hand in the app or through the API, which reached the Workspace by another route (manual).
+// refused because the person had stopped at the provider (refused_send), an opt-out recorded by hand
+// in the app or through the API, which reached the Workspace by another route (manual), or one brought
+// by an import from another platform (imported).
 // Ref: #/components/schemas/OptOutVia
 type OptOutVia string
 
@@ -19630,6 +19631,7 @@ const (
 	OptOutViaLink        OptOutVia = "link"
 	OptOutViaRefusedSend OptOutVia = "refused_send"
 	OptOutViaManual      OptOutVia = "manual"
+	OptOutViaImported    OptOutVia = "imported"
 )
 
 // AllValues returns all OptOutVia values.
@@ -19641,6 +19643,7 @@ func (OptOutVia) AllValues() []OptOutVia {
 		OptOutViaLink,
 		OptOutViaRefusedSend,
 		OptOutViaManual,
+		OptOutViaImported,
 	}
 }
 
@@ -19658,6 +19661,8 @@ func (s OptOutVia) MarshalText() ([]byte, error) {
 	case OptOutViaRefusedSend:
 		return []byte(s), nil
 	case OptOutViaManual:
+		return []byte(s), nil
+	case OptOutViaImported:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -19684,6 +19689,9 @@ func (s *OptOutVia) UnmarshalText(data []byte) error {
 		return nil
 	case OptOutViaManual:
 		*s = OptOutViaManual
+		return nil
+	case OptOutViaImported:
+		*s = OptOutViaImported
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -41056,8 +41064,8 @@ func (s *SmsLeafKind) UnmarshalText(data []byte) error {
 // Ref: #/components/schemas/SmsOptOut
 type SmsOptOut struct {
 	// How the person stopped: a STOP texted to the Workspace (keyword), a text's unsubscribe link (link),
-	// a send Twilio refused because the number had texted STOP to the sender there (refused_send), or
-	// recorded by hand (manual).
+	// a send Twilio refused because the number had texted STOP to the sender there (refused_send),
+	// recorded by hand (manual), or brought by an import (imported).
 	Via OptOutVia `json:"via"`
 	// When the phone opted out.
 	OptedOutAt Timestamp `json:"optedOutAt"`

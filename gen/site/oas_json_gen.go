@@ -31622,6 +31622,8 @@ func (s *OptOutVia) Decode(d *jx.Decoder) error {
 		*s = OptOutViaRefusedSend
 	case OptOutViaManual:
 		*s = OptOutViaManual
+	case OptOutViaImported:
+		*s = OptOutViaImported
 	default:
 		*s = OptOutVia(v)
 	}

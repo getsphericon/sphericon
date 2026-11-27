@@ -44,6 +44,7 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
@@ -61,7 +62,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/dkimstate"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
-	"github.com/getsphericon/sphericon/internal/kernel/addresscheck"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
@@ -461,11 +461,10 @@ type Converter interface {
 	// goverter:useEmptyOnNil:slice
 	EmailTemplatesToResources(source []*ent.EmailTemplate) []externalapi.TemplateResource
 
-	// The traits of a batch item's address (ADR 0117); goverter checks each member.
-	// goverter:enum:map Disposable ContactBatchWarningDisposableEmail
-	// goverter:enum:map Role ContactBatchWarningRoleEmail
-	ContactBatchWarning(source addresscheck.Flag) externalapi.ContactBatchWarning
-	ContactBatchWarnings(source []addresscheck.Flag) []externalapi.ContactBatchWarning
+	// The traits of a batch item worth a look (ADR 0117, ADR 0138); goverter checks each member.
+	// goverter:enum:transform value
+	ContactBatchWarning(source contacts.Warning) externalapi.ContactBatchWarning
+	ContactBatchWarnings(source []contacts.Warning) []externalapi.ContactBatchWarning
 
 	// A lint finding (ADR 0040) names its element and detail only when the check has one.
 	// goverter:map Element Element | optNonEmpty
