@@ -266,9 +266,10 @@ test('a Wait for event round-trips with its matchers, Condition and paths', () =
   expect(pathInputOf(flow)).toEqual({ id: ROOT, steps: [wait, plain] })
 })
 
-// The editor edits a Wait for event on an Event; one on an open or click of a message is kept as
-// stored, so nothing can drop it.
-test('a Wait for event on an open or click keeps the version unsaved', () => {
+// A Wait for event on an open or click of a message (ADR 0124) round-trips with its send Step, its
+// engagement and its unknown path, and so does one stored without the unknown path: a save keeps
+// it, and Publish refuses it.
+test('a Wait for event on an open or click round-trips, with its unknown path or without it', () => {
   const onOpen: AutomationStep = {
     id: stepId(44),
     type: 'wait_for_event',
@@ -277,13 +278,22 @@ test('a Wait for event on an open or click keeps the version unsaved', () => {
     awaits: { kind: 'message', step: stepId(11), engagement: 'opened' },
     arrived: { id: stepId(45), steps: [] },
     timedOut: { id: stepId(46), steps: [] },
-    unknown: { id: stepId(47), steps: [] },
+    unknown: { id: stepId(47), steps: [{ id: stepId(48), type: 'apply_tag', tag: 'untracked' }] },
+  }
+  const onClick: AutomationStep = {
+    id: stepId(50),
+    type: 'wait_for_event',
+    name: 'clicked',
+    timeoutSeconds: 7200,
+    awaits: { kind: 'message', step: stepId(11), engagement: 'clicked' },
+    arrived: { id: stepId(51), steps: [] },
+    timedOut: { id: stepId(52), steps: [] },
   }
 
-  const flow = flowOf(version([...STEPS, onOpen]))
+  const flow = flowOf(version([...STEPS, onOpen, onClick]))
 
-  expect(holdsKept(flow)).toBe(true)
-  expect(pathInputOf(flow)).toBeNull()
+  expect(holdsKept(flow)).toBe(false)
+  expect(pathInputOf(flow)).toEqual({ id: ROOT, steps: [...STEPS, onOpen, onClick] })
 })
 
 // A Wait until (ADR 0126) round-trips in each of its forms, every Step keeping its id.

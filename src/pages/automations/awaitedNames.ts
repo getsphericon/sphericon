@@ -8,10 +8,11 @@ import type { FlowPath, FlowStep } from './definition.ts'
 // editor offers only a name that can come before a Step and warns of one not every path before it
 // passes. The warning refuses nothing.
 
-// keptName is the name a Wait for event keeps its arrived Event under; null for any other Step, and
-// for a name not of the form the contract takes, which no later Step can read.
+// keptName is the name a Wait for event on an Event keeps its arrived Event under; null for any
+// other Step, for one on an open or click, which keeps none (ADR 0136), and for a name not of the
+// form the contract takes, which no later Step can read.
 function keptName(step: FlowStep): string | null {
-  if (step.kind !== 'wait_for_event') {
+  if (step.kind !== 'wait_for_event' || step.draft.form !== 'event') {
     return null
   }
   const { name } = step.draft
@@ -79,7 +80,8 @@ function namesUsed(step: FlowStep): string[] {
       names = step.paths.flatMap((path) => namesInCondition(path.conditionText))
       break
     case 'wait_for_event':
-      names = namesInCondition(step.draft.conditionText)
+      // Only the Event form saves its Condition.
+      names = step.draft.form === 'event' ? namesInCondition(step.draft.conditionText) : []
       break
     case 'wait':
     case 'wait_until':

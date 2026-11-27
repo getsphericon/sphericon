@@ -19,6 +19,7 @@ import { automationTags } from '../../utils/mergeTags.ts'
 import { awaitedBefore, awaitedWarnings } from './awaitedNames.ts'
 import { allSteps, forkPaths } from './definition.ts'
 import type {
+  AwaitedForm,
   EditedStep,
   Flow,
   FlowPath,
@@ -38,12 +39,14 @@ import { WaitForEventForm } from './WaitForEventForm.tsx'
 
 // What the panel does to a fork of the id (ForkForms.tsx, WaitForEventForm.tsx), whether a node was
 // checked (on blur or on Save), which then shows its errors: a fork, a Wait until or the Trigger, and
-// the name a Wait for event is stored with under its id, which is fixed (ADR 0136).
+// the name a Wait for event is stored with under its id, which is fixed (ADR 0136). Switching what a
+// Wait for event awaits (onAwaitedForm) adds or removes its unknown path.
 export interface ForkControls {
   checked: (id: string) => boolean
   onChecked: (id: string) => void
   storedName: (id: string) => string | undefined
   onWaitForEvent: (id: string, draft: WaitForEventDraft) => void
+  onAwaitedForm: (id: string, form: AwaitedForm) => void
   onPaths: (id: string, patches: PathPatch[]) => void
   onAddPath: (id: string) => void
   onRemovePath: (id: string, pathId: string) => void
@@ -94,11 +97,15 @@ function StepBody({
   if (step.kind === 'wait_for_event') {
     return (
       <WaitForEventForm
+        // It opens anew when what it awaits is switched: the switch is the flow's edit, not its form's.
+        key={`${key}:${step.draft.form}`}
+        root={root}
         step={step}
         storedName={forks.storedName(step.id)}
         checked={forks.checked(step.id)}
         validatorRef={validatorRef}
         onEdit={(draft) => forks.onWaitForEvent(step.id, draft)}
+        onForm={(form) => forks.onAwaitedForm(step.id, form)}
         onChecked={() => forks.onChecked(step.id)}
       />
     )

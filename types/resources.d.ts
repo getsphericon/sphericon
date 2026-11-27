@@ -586,20 +586,35 @@ export default interface Resources {
         "conditionHint": "Optional. An awaited event counts only while the contact matches it; leave it empty to count every one.",
         "conditionIncomplete": "Finish every test of the condition: each needs a value.",
         "conditionLabel": "Condition",
+        "engagementLabel": "Wait for the message to be",
+        "engagements": {
+          "clicked": "Clicked",
+          "opened": "Opened"
+        },
+        "formLabel": "Wait for",
+        "forms": {
+          "event": "An event",
+          "message": "An open or click"
+        },
         "matcherAdd": "Add event",
         "matcherFilterIncomplete": "Finish every test of the filters of the events: each needs a property key and a value.",
         "matchersHint": "Any of these events, recorded for the contact while it waits, takes the arrived path.",
         "matchersLabel": "Events to wait for",
         "matchersRequired": "Name an event to wait for.",
+        "messageStepHint": "A message a send step before this wait sent. Only an email's opens are tracked; any message's clicks are.",
+        "messageStepLabel": "Message",
+        "messageStepNotBefore": "Choose a send step that comes before this wait.",
         "nameFormat": "Use lower-case letters, digits and underscores, starting with a letter.",
         "nameHint": "Later steps read the event it arrived on by this name. Lower-case letters, digits and underscores, starting with a letter.",
         "nameLabel": "Name",
         "nameLocked": "The name is fixed once the step is saved, so that later steps reading the event by it keep working.",
+        "openNotTracked": "Only an email's opens are tracked. Wait for a click of this message.",
+        "removeUnknownPathConfirm": "An event is never unknown, so this wait needs no unknown path. Removing it also removes the step it holds." | "An event is never unknown, so this wait needs no unknown path. Removing it also removes the {{count, number}} steps it holds.",
         "timeoutHint": "How long a contact waits before taking the timed out path.",
         "timeoutLabel": "Timeout (seconds)",
         "timeoutPositive": "The timeout must be at least 1 second."
       },
-      "waitForEventNodeDescription": "Wait for an event, then take the arrived or the timed out path.",
+      "waitForEventNodeDescription": "Wait for an event, or an open or click of a message, then take the path of what happened.",
       "waitNodeDescription": "Pause before the next step.",
       "waitSecondsLabel": "Wait (seconds)",
       "waitUntilFigures": {

@@ -1,5 +1,13 @@
-import { allSteps, forkPaths, isFork, newDateDraft, newTimeOfDayDraft } from './definition.ts'
+import {
+  allSteps,
+  forkPaths,
+  isFork,
+  newAwaitedDrafts,
+  newDateDraft,
+  newTimeOfDayDraft,
+} from './definition.ts'
 import type {
+  AwaitedForm,
   BranchPathDraft,
   EditedKind,
   EditedStep,
@@ -78,12 +86,7 @@ function newEditedStep(kind: EditedKind): EditedStep {
 // A new Wait for event asks for its name and the Event it awaits, a row of which it starts with,
 // and waits a day for it.
 function newWaitForEventDraft(): WaitForEventDraft {
-  return {
-    name: '',
-    timeoutSeconds: NEW_TIMEOUT_SECONDS,
-    matchers: [{ action: '', filterText: '' }],
-    conditionText: '',
-  }
+  return { name: '', timeoutSeconds: NEW_TIMEOUT_SECONDS, form: 'event', ...newAwaitedDrafts() }
 }
 
 // A new Step of the kind. A Branch starts with one path to give a Condition and an empty
@@ -98,7 +101,7 @@ function newStep(kind: InsertedKind): FlowStep {
   }
   if (kind === 'wait_for_event') {
     const draft = newWaitForEventDraft()
-    return { id: newId(), kind, draft, arrived: newPath(), timedOut: newPath() }
+    return { id: newId(), kind, draft, arrived: newPath(), timedOut: newPath(), unknown: null }
   }
   return kind === 'end' ? { id: newId(), kind } : newEditedStep(kind)
 }
@@ -114,7 +117,12 @@ function withPaths(step: ForkStep, change: (path: FlowPath) => FlowPath): ForkSt
         unknown: step.unknown === null ? null : change(step.unknown),
       }
     case 'wait_for_event':
-      return { ...step, arrived: change(step.arrived), timedOut: change(step.timedOut) }
+      return {
+        ...step,
+        arrived: change(step.arrived),
+        timedOut: change(step.timedOut),
+        unknown: step.unknown === null ? null : change(step.unknown),
+      }
     case 'split':
     default:
       return { ...step, paths: step.paths.map((path) => ({ ...path, ...change(path) })) }
@@ -196,6 +204,7 @@ function copyOf(step: FlowStep): FlowStep {
       draft: { ...structuredClone(step.draft), name: '' },
       arrived: copyPath(step.arrived),
       timedOut: copyPath(step.timedOut),
+      unknown: step.unknown === null ? null : copyPath(step.unknown),
     }
   }
   if (isFork(step)) {
@@ -232,6 +241,22 @@ export function updateStep(flow: Flow, edited: EditedStep): Flow {
 // hold are the flow's own, which the canvas may have changed meanwhile.
 export function updateWaitForEvent(flow: Flow, id: string, draft: WaitForEventDraft): Flow {
   return mapStep(flow, id, (step) => (step.kind === 'wait_for_event' ? { ...step, draft } : step))
+}
+
+// setAwaitedForm switches what the Wait for event of the id awaits to the form given, keeping the
+// other form's draft: the open or click form gains an empty unknown path, and the Event form, which
+// is never unknown, loses it with what it holds.
+export function setAwaitedForm(flow: Flow, id: string, form: AwaitedForm): Flow {
+  return mapStep(flow, id, (step) => {
+    if (step.kind !== 'wait_for_event' || step.draft.form === form) {
+      return step
+    }
+    return {
+      ...step,
+      draft: { ...step.draft, form },
+      unknown: form === 'message' ? newPath() : null,
+    }
+  })
 }
 
 // What a fork's panel edits of its paths, each by its id: a Branch path's Condition, a Split

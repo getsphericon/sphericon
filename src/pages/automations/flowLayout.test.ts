@@ -168,3 +168,29 @@ test("a Wait for event's arrived and timed out paths hang under it and rejoin af
   ])
   expect(into.toSorted()).toEqual([`insert-${stepId(41)}-1`, `insert-${stepId(42)}-0`].toSorted())
 })
+
+// A Wait for event on an open or click hangs its unknown path last, headed as a Branch's is.
+test("a Wait for event's unknown path hangs under it after timed out", () => {
+  const wait: AutomationStep = {
+    id: stepId(40),
+    type: 'wait_for_event',
+    name: 'opened',
+    timeoutSeconds: 3600,
+    awaits: { kind: 'message', step: stepId(30), engagement: 'opened' },
+    arrived: { id: stepId(41), steps: [] },
+    timedOut: { id: stepId(42), steps: [] },
+    unknown: { id: stepId(43), steps: [] },
+  }
+  const email: AutomationStep = { id: stepId(30), type: 'email', subject: 'Hi', body: '<p></p>' }
+  const { nodes } = layoutFlow(flowOf(version([email, wait])))
+
+  const heads = nodes.flatMap((node) =>
+    node.type === 'path' ? [[node.data.pathId, node.data.role.kind]] : [],
+  )
+
+  expect(heads).toEqual([
+    [stepId(41), 'arrived'],
+    [stepId(42), 'timedOut'],
+    [stepId(43), 'unknown'],
+  ])
+})

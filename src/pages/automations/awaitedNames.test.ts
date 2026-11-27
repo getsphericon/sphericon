@@ -176,3 +176,20 @@ test('an HTTP step, an SMS and a Telegram message using a name are read too', ()
     ]),
   )
 })
+
+test('a Wait for event on an open or click keeps no Event: none offers its name, and it passes none', () => {
+  const opened: AutomationStep = {
+    id: stepId(20),
+    type: 'wait_for_event',
+    name: 'opened',
+    timeoutSeconds: 86_400,
+    awaits: { kind: 'message', step: stepId(10), engagement: 'opened' },
+    arrived: { id: stepId(21), steps: [] },
+    timedOut: { id: stepId(22), steps: [] },
+    unknown: { id: stepId(23), steps: [] },
+  }
+  const root = rootOf([email(10, 'Hi'), opened, email(30, '{{ awaited.opened.action }}')])
+
+  expect(awaitedBefore(root, stepId(30))).toEqual([])
+  expect(awaitedWarnings(root)).toEqual(new Map([[stepId(30), ['opened']]]))
+})

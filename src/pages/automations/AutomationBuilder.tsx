@@ -38,6 +38,7 @@ import {
   nestedSteps,
   removePath,
   removeStep,
+  setAwaitedForm,
   setUnknownPath,
   updateFork,
   updateStep,
@@ -288,6 +289,25 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
     onWaitForEvent: (id, draft) => {
       unrefuse(id)
       edit((current) => updateWaitForEvent(current, id, draft))
+    },
+    // The Event form is never unknown: switching to it removes the unknown path, asking first when
+    // the path holds Steps, naming how many go with it.
+    onAwaitedForm: (id, awaited) => {
+      unrefuse(id)
+      const switched = () => edit((current) => setAwaitedForm(current, id, awaited))
+      const step = allSteps(latest.current.path).find((s) => s.id === id)
+      const unknown = step?.kind === 'wait_for_event' ? step.unknown : null
+      const count = awaited === 'event' && unknown !== null ? allSteps(unknown).length : 0
+      if (count === 0) {
+        switched()
+        return
+      }
+      confirm({
+        title: t(($) => $.automations.removeUnknownPathTitle),
+        description: t(($) => $.automations.waitForEvent.removeUnknownPathConfirm, { count }),
+        confirmLabel: t(($) => $.automations.removeConfirm),
+        onConfirm: switched,
+      })
     },
     onPaths: (id, patches) => edit((current) => updateFork(current, id, patches)),
     onAddPath: (id) => edit((current) => addPath(current, id).flow),
