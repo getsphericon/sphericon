@@ -120,10 +120,11 @@ func TestAnEmailAfterTheWaitPrintsTheAwaitedEvent(t *testing.T) {
 		prints string
 	}{
 		"arrived": {func(t *testing.T, f awaitedFlow, c *ent.Contact) {
+			t.Helper()
 			f.clock.Advance(time.Minute)
 			f.order(t, c, "Lamp")
 		}, "Thanks for [Lamp] of [order.created], since trial.started on pro"},
-		"timed out": {func(t *testing.T, f awaitedFlow, _ *ent.Contact) {
+		"timed out": {func(_ *testing.T, f awaitedFlow, _ *ent.Contact) {
 			f.clock.Advance(waitTimeout)
 		}, "Thanks for [] of [], since trial.started on pro"},
 	} {
@@ -203,10 +204,11 @@ func TestAnHTTPStepAfterTheWaitSendsTheAwaitedEvent(t *testing.T) {
 		sends string
 	}{
 		"arrived": {func(t *testing.T, f awaitedFlow, c *ent.Contact) {
+			t.Helper()
 			f.clock.Advance(time.Minute)
 			f.order(t, c, `Lamp "XL"`)
 		}, `{"product": "Lamp \"XL\"", "trigger": "trial.started"}`},
-		"timed out": {func(t *testing.T, f awaitedFlow, _ *ent.Contact) {
+		"timed out": {func(_ *testing.T, f awaitedFlow, _ *ent.Contact) {
 			f.clock.Advance(waitTimeout)
 		}, `{"product": "", "trigger": "trial.started"}`},
 	} {
@@ -294,17 +296,21 @@ func TestTheKeptEventIsClearedWhenTheEnrollmentEnds(t *testing.T) {
 		ends automationrun.Status
 	}{
 		"an exit event": {func(t *testing.T, f awaitedFlow, c *ent.Contact, _ int64) {
+			t.Helper()
 			handStored(t, f.env, c.ID, cancelled, collected(c.ID, cancelled, f.clock.Now(), nil))
 		}, automationrun.StatusExited},
 		"the goal event": {func(t *testing.T, f awaitedFlow, c *ent.Contact, _ int64) {
+			t.Helper()
 			handStored(t, f.env, c.ID, upgraded, collected(c.ID, upgraded, f.clock.Now(), nil))
 		}, automationrun.StatusGoalReached},
 		"a refused call": {func(t *testing.T, f awaitedFlow, _ *ent.Contact, runID int64) {
+			t.Helper()
 			f.clock.Advance(2 * time.Hour)
 			f.run(t)
 			f.callHook(t, runID, http.StatusNotFound)
 		}, automationrun.StatusFailed},
 		"the last step done": {func(t *testing.T, f awaitedFlow, _ *ent.Contact, runID int64) {
+			t.Helper()
 			f.clock.Advance(2 * time.Hour)
 			f.run(t)
 			f.callHook(t, runID, http.StatusOK)
