@@ -17,6 +17,9 @@ import (
 const (
 	dmarcSub = "_dmarc.mail.acme.com."
 	dmarcOrg = "_dmarc.acme.com."
+	// longDomain is RFC 9989 §4.10's example of a walk capped at eight names: after the domain
+	// itself it asks _dmarc.g.h.i.j.mail.example.com and each parent down to _dmarc.com.
+	longDomain = "a.b.c.d.e.f.g.h.i.j.mail.example.com"
 )
 
 // The record is looked up the way a receiver does, by the DNS tree walk of RFC 9989 §4.10: at the
@@ -77,6 +80,33 @@ func TestLookupDMARC(t *testing.T) {
 			want:   false,
 		},
 		{
+			name:   "a record at the domain ends the walk: a parent that fails is never asked",
+			domain: "mail.acme.com",
+			zones: map[string]mockdns.Zone{
+				dmarcSub: {TXT: []string{"v=DMARC1; p=none;"}},
+				dmarcOrg: {Err: errors.New("server misbehaving")},
+			},
+			want: true,
+		},
+		{
+			name:   "a long domain skips to its right-most seven labels",
+			domain: longDomain,
+			zones:  map[string]mockdns.Zone{"_dmarc.g.h.i.j.mail.example.com.": {TXT: []string{"v=DMARC1; p=none;"}}},
+			want:   true,
+		},
+		{
+			name:   "a long domain's skipped parents are never asked, the eight-label one too",
+			domain: longDomain,
+			zones:  map[string]mockdns.Zone{"_dmarc.f.g.h.i.j.mail.example.com.": {TXT: []string{"v=DMARC1; p=none;"}}},
+			want:   false,
+		},
+		{
+			name:   "the walk ends at the top-level domain",
+			domain: longDomain,
+			zones:  map[string]mockdns.Zone{"_dmarc.com.": {TXT: []string{"v=DMARC1; p=none; psd=y"}}},
+			want:   true,
+		},
+		{
 			name:   "two records at the domain are discarded and the walk goes on to the parent",
 			domain: "mail.acme.com",
 			zones: map[string]mockdns.Zone{
@@ -97,46 +127,6 @@ func TestLookupDMARC(t *testing.T) {
 			require.Equal(t, tt.want, got)
 		})
 	}
-}
-
-// The walk asks at most eight names: a long domain skips to its right-most seven labels and goes on
-// to the top-level domain. The names are RFC 9989 §4.10's own example.
-func TestLookupDMARCWalksAtMostEightNames(t *testing.T) {
-	var asked []string
-	lookup := func(_ context.Context, name string) ([]string, error) {
-		asked = append(asked, name)
-		return nil, nil
-	}
-
-	got, err := sendingdomains.NewDNS(lookup).LookupDMARC(t.Context(), "a.b.c.d.e.f.g.h.i.j.mail.example.com")
-
-	require.NoError(t, err)
-	assert.False(t, got)
-	assert.Equal(t, []string{
-		"_dmarc.a.b.c.d.e.f.g.h.i.j.mail.example.com.",
-		"_dmarc.g.h.i.j.mail.example.com.",
-		"_dmarc.h.i.j.mail.example.com.",
-		"_dmarc.i.j.mail.example.com.",
-		"_dmarc.j.mail.example.com.",
-		"_dmarc.mail.example.com.",
-		"_dmarc.example.com.",
-		"_dmarc.com.",
-	}, asked)
-}
-
-// A record at the domain itself ends the walk: no parent is asked.
-func TestLookupDMARCStopsAtTheFirstRecord(t *testing.T) {
-	var asked []string
-	lookup := func(_ context.Context, name string) ([]string, error) {
-		asked = append(asked, name)
-		return []string{"v=DMARC1; p=none;"}, nil
-	}
-
-	got, err := sendingdomains.NewDNS(lookup).LookupDMARC(t.Context(), "mail.acme.com")
-
-	require.NoError(t, err)
-	assert.True(t, got)
-	assert.Equal(t, []string{dmarcSub}, asked)
 }
 
 // FuzzLookupDMARC states what holds for any TXT record a DNS server returns: the lookup never

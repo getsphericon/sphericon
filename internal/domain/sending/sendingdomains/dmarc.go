@@ -10,7 +10,7 @@ import (
 
 // LookupDMARC reports whether a DMARC record is published for the domain, found the way a
 // receiver finds it: by the DNS tree walk of RFC 9989 §4.10, which asks _dmarc.<domain> and then
-// _dmarc.<parent> for each parent up to the top-level domain, at most eight names (dmarcTargets).
+// _dmarc.<parent> for each parent down to the top-level domain, at most eight names (dmarcTargets).
 // A name holds a record when exactly one TXT record there starts with v=DMARC1; two or more are
 // discarded and the walk goes on to the parent, as RFC 9989 says. The first name that holds a
 // record ends the walk: any policy counts, p=none too (ADR 0012), whether it is the domain's own,
