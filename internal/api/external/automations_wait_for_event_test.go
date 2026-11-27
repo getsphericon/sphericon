@@ -190,3 +190,60 @@ func TestExternalAutomationRefusesAWaitForEventOutsideTheContract(t *testing.T) 
 		})
 	}
 }
+
+// welcomeID is the email Step a Wait for event on an open of its message names.
+const welcomeID = "7d2a4b3c-9e5f-4a6b-8c7d-2e3f4a5b6c06"
+
+// openWait is a Wait for event that waits two days for an open of the email welcomeID, its unknown
+// path holding the Steps written as unknown ("" for none).
+func openWait(unknown string) string {
+	doc := `{"id":"` + waitForEventID + `","type":"wait_for_event","name":"welcome_open","timeoutSeconds":172800,` +
+		`"awaits":{"kind":"message","step":"` + welcomeID + `","engagement":"opened"},` +
+		`"arrived":{"id":"` + arrivedPathID + `","steps":[]},"timedOut":{"id":"` + timedOutPathID + `","steps":[]}`
+	if unknown != "" {
+		doc += `,"unknown":` + unknown
+	}
+	return doc + `}`
+}
+
+// saveOpenWait creates an Automation whose root path sends the welcome email, then waits for its
+// open as the Wait for event written as doc.
+func saveOpenWait(t *testing.T, c *externalapi.Client, doc string) (*externalapi.AutomationResource, error) {
+	t.Helper()
+	welcome := externalapi.EmailStepInput{ID: externalapi.NewOptStepId(welcomeID), Subject: "Welcome", Body: externalapi.NewOptString("<p>Hi</p>")}
+	return c.AutomationsCreate(t.Context(), &externalapi.CreateAutomationInput{
+		Name: "Waits for an open", Trigger: testhelper.ExternalTrigger("signup"),
+		Steps: externalapi.NewOptAutomationPathInput(testhelper.ExternalPath(welcome, testhelper.ExternalWaitForEvent(t, doc))),
+	})
+}
+
+// A Wait for event on an open of a message round-trips through /api as {awaits: {kind: "message",
+// step, engagement}} with its unknown path.
+func TestExternalAutomationKeepsAWaitForAnOpenWithItsUnknownPath(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.ExternalScoped(t, stepAuthorScopes...)
+	written := openWait(`{"id":"` + otherWaitID + `","steps":[{"id":"` + thankedID + `","type":"apply_tag","tag":"untracked"}]}`)
+	created, err := saveOpenWait(t, c, written)
+	require.NoError(t, err)
+
+	got, err := c.AutomationsGet(t.Context(), externalapi.AutomationsGetParams{ID: created.ID})
+
+	require.NoError(t, err)
+	steps := got.Draft.Value.Steps.Steps
+	require.Len(t, steps, 2)
+	assert.JSONEq(t, written, testhelper.JSONOf(t, &steps[1].OneOf.WaitForEventStep))
+}
+
+// Publish refuses a Wait for event on an open without its unknown path (422), naming it; the draft
+// keeps it.
+func TestExternalPublishRefusesAWaitForAnOpenWithoutItsUnknownPath(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.ExternalScoped(t, append(slices.Clone(stepAuthorScopes), apitokens.ScopeAutomationsPublish)...)
+	a, err := saveOpenWait(t, c, openWait(""))
+	require.NoError(t, err)
+
+	_, err = c.AutomationsPublish(t.Context(), &externalapi.RevisionInput{Revision: a.Revision}, externalapi.AutomationsPublishParams{ID: a.ID})
+
+	detail := refusedNaming(t, err, waitForEventID, "wait_for_event")
+	assert.Contains(t, detail, "unknown path")
+}
