@@ -232,7 +232,7 @@ func (m *StepExecution) timeout(ctx context.Context, s *ent.Scoped, run *ent.Aut
 	if arrived {
 		path = w.Arrived.ID
 	}
-	return m.advance(ctx, s, run.ID, at, stepMove{leaving: leaving{path: &pathTaken{id: path}}})
+	return m.advance(ctx, s, run.ID, at, stepMove{path: &pathTaken{id: path}})
 }
 
 // wake moves down `arrived` each of the Contact's active Enrollments that stands on a Wait for
@@ -274,7 +274,7 @@ func (m *StepExecution) wake(ctx context.Context, s *ent.Scoped, contactID int64
 			continue
 		}
 		at := place{index: index, step: st.ID}
-		if err := m.advance(ctx, s, run.ID, at, stepMove{leaving: leaving{path: &pathTaken{id: w.Arrived.ID}}}); err != nil {
+		if err := m.advance(ctx, s, run.ID, at, stepMove{path: &pathTaken{id: w.Arrived.ID}}); err != nil {
 			return err
 		}
 	}

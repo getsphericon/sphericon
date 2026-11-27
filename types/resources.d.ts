@@ -551,6 +551,7 @@ export default interface Resources {
       "stepTelegram": "Send Telegram message",
       "stepTrigger": "Trigger",
       "stepWait": "Wait",
+      "stepWaitForEvent": "Wait for event",
       "stepWaitUntil": "Wait until",
       "stepsLabel": "Steps",
       "tagNameLabel": "Tag",

@@ -65,7 +65,7 @@ func waitFor(t *testing.T, trigger string, actions []string, goal *eventmatcher.
 
 // enroll enrolls a free Contact on the Trigger's Event, occurred now, and returns it and its
 // Enrollment, standing on the Wait for event.
-func (w waiting) enroll(t *testing.T, trigger string) (*ent.Contact, int64) {
+func (w waiting) enroll(t *testing.T, trigger string) (contact *ent.Contact, runID int64) {
 	t.Helper()
 	c := enrollable(t, w.env.DB.Scoped(fixtures.AcmeID), 0)
 	handStored(t, w.env, c.ID, trigger, collected(c.ID, trigger, w.clock.Now(), nil))

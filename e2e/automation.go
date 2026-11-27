@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/kernel/narrow"
 )
 
 // Automation is what a scenario chooses about an Automation: one email step, no waits.
@@ -317,7 +318,7 @@ func (w *Workspace) PublishWaitForEventAutomation(a WaitForEventAutomation) exte
 	wait := externalapi.WaitForEventStepInput{
 		Type:           externalapi.WaitForEventStepInputTypeWaitForEvent,
 		Name:           "awaited",
-		TimeoutSeconds: int32(a.Timeout / time.Second),
+		TimeoutSeconds: narrow.Int32(int64(a.Timeout / time.Second)),
 		Awaits: externalapi.WaitForEventAwaitsInput{OneOf: externalapi.NewAwaitedEventInputWaitForEventAwaitsInputSum(
 			externalapi.AwaitedEventInput{Kind: externalapi.AwaitedEventInputKindEvent, Actions: []string{a.Awaited}},
 		)},

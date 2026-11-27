@@ -1092,24 +1092,36 @@ func (v versioned) Merge(ctx context.Context, l *ent.WorkspaceLocked, base *ent.
 			return definition{}, err
 		}
 	}
+	return v.mergeTree(ctx, ts, base, e, def, stored)
+}
+
+// mergeTree lays the steps the edit writes over def (mergeSteps), each Wait for event keeping the
+// name its Step id holds in the Automation (checkWaitNamesHeld), and checks, once the steps, the
+// exits or the goal changed, that no Wait for event awaits what an exit or the goal ends the
+// Enrollment on with no filter (checkAwaitedEndings). A refusal of a Step is placed at its location
+// in the request.
+func (v versioned) mergeTree(ctx context.Context, ts *ent.Scoped, base *ent.AutomationVersion, e edit, def definition, stored automationstep.Path) (definition, error) {
+	place := func(err error) error {
+		if e.steps == nil {
+			return err
+		}
+		return placeStep(err, *e.steps)
+	}
 	if e.steps != nil {
 		steps, err := v.mergeSteps(ctx, ts, *e.steps, stored)
 		if err != nil {
-			return definition{}, placeStep(err, *e.steps)
+			return definition{}, place(err)
 		}
 		if base != nil {
 			if err := checkWaitNamesHeld(ctx, ts, base.AutomationID, steps); err != nil {
-				return definition{}, placeStep(err, *e.steps)
+				return definition{}, place(err)
 			}
 		}
 		def.steps = steps
 	}
 	if e.steps != nil || e.exits != nil || e.goal.Changes() {
 		if err := checkAwaitedEndings(def); err != nil {
-			if e.steps != nil {
-				return definition{}, placeStep(err, *e.steps)
-			}
-			return definition{}, err
+			return definition{}, place(err)
 		}
 	}
 	return def, nil
