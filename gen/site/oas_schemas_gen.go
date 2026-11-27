@@ -2230,11 +2230,11 @@ type AutomationReport struct {
 	// The send Steps' messages by version and Step id, in version order and, within a version, in its Step
 	// order.
 	VersionSteps []AutomationVersionStepFigures `json:"versionSteps"`
-	// Each path of a Branch (its unknown path included) and of a Split by its fork's Step id and its own
-	// id: the enrollments that took it and how many of them reached the goal, over the automation's whole
-	// history, each summed over every version that had the path. Sorted by the newest of those versions,
-	// then by the fork's place there and the path's place in the fork: one entry per path an enrollment
-	// took, so a path none took has none.
+	// Each path of a Branch (its unknown path included), of a Split and of a Wait for event by its fork's
+	// Step id and its own id: the enrollments that took it and how many of them reached the goal, over the
+	// automation's whole history, each summed over every version that had the path. Sorted by the newest
+	// of those versions, then by the fork's place there and the path's place in the fork: one entry per
+	// path an enrollment took, so a path none took has none.
 	Paths []AutomationPathFigures `json:"paths"`
 	// Each Wait until by its Step id, summed over every version that had it: the enrollments that left it
 	// in the current period without waiting, because its date had no moment ahead within 366 days (ADR

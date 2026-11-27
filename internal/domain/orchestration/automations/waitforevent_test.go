@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationsteprecord"
+	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -37,13 +38,26 @@ type waiting struct {
 // first Step waits an hour for an Event of the actions, ended by the version's goal (nil for none).
 func waitFor(t *testing.T, trigger string, actions []string, goal *eventmatcher.Matcher) waiting {
 	t.Helper()
+	return waitWith(t, trigger, actions, func(in *automations.CreateInput) { in.GoalEvent = goal })
+}
+
+// waitWith is waitFor's Automation, its definition otherwise as with sets it (its entry, exits and
+// goal).
+func waitWith(t *testing.T, trigger string, actions []string, with func(in *automations.CreateInput)) waiting {
+	t.Helper()
 	matchers := lo.Map(actions, func(action string, _ int) eventmatcher.Matcher { return eventmatcher.Matcher{Action: action} })
-	return awaiting(t, trigger, automationstep.AwaitedEvent{Matchers: matchers}, goal)
+	return awaitingWith(t, trigger, automationstep.AwaitedEvent{Matchers: matchers}, with)
 }
 
 // awaiting is waitFor of a Wait for event that awaits what awaited says: its matchers and its
 // Condition.
 func awaiting(t *testing.T, trigger string, awaited automationstep.AwaitedEvent, goal *eventmatcher.Matcher) waiting {
+	t.Helper()
+	return awaitingWith(t, trigger, awaited, func(in *automations.CreateInput) { in.GoalEvent = goal })
+}
+
+// awaitingWith is waitWith of a Wait for event that awaits what awaited says.
+func awaitingWith(t *testing.T, trigger string, awaited automationstep.AwaitedEvent, with func(in *automations.CreateInput)) waiting {
 	t.Helper()
 	clock := testhelper.NewClock(time.Now().UTC().Truncate(time.Second))
 	env := testhelper.Setup(t, testhelper.WithClock(clock.Now))
@@ -56,10 +70,12 @@ func awaiting(t *testing.T, trigger string, awaited automationstep.AwaitedEvent,
 		Arrived:  automationstep.Root(automationstep.New(automationstep.ApplyTag{Tag: "buyer"})),
 		TimedOut: automationstep.Root(automationstep.New(automationstep.ApplyTag{Tag: "reminded"})),
 	}
-	a, err := m.Create(ctx, s, automations.CreateInput{
-		Name: "Waits for a purchase", Trigger: automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: trigger}}, GoalEvent: goal,
+	in := automations.CreateInput{
+		Name: "Waits for a purchase", Trigger: automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: trigger}},
 		Steps: steps(wait, automationstep.Wait{Seconds: 3600}),
-	})
+	}
+	with(&in)
+	a, err := m.Create(ctx, s, in)
 	require.NoError(t, err)
 	_, err = m.Publish(ctx, s, a.ID, testhelper.AutomationRevisionIn(ctx, t, s, a.ID))
 	require.NoError(t, err)
@@ -80,6 +96,19 @@ func (w waiting) enroll(t *testing.T, trigger string) (contact *ent.Contact, run
 	runs := runsOf(t, w.env, w.automationID, c.ID)
 	require.Len(t, runs, 1)
 	return c, runs[0].ID
+}
+
+// handSendLocked stores ev as a write through a Connection without mcp:send stores it, with the
+// send lock's mark (ADR 0132), and hands it to the Automations as its trigger job does.
+func handSendLocked(t *testing.T, env *testhelper.TestEnv, contactID int64, action string, ev events.DomainEvent) {
+	t.Helper()
+	require.NoError(t, env.Publisher().Publish(events.SendLocked(t.Context()), ev))
+	stored := env.StoredEvents(t, action)
+	require.NotEmpty(t, stored)
+	last := stored[len(stored)-1]
+	require.True(t, last.SendLocked)
+	in := automations.OnEventInput{ContactID: contactID, Event: automations.Event{Action: last.Action, SourceID: *last.SourceID, OccurredAt: last.OccurredAt, SendLocked: true}}
+	require.NoError(t, testhelper.Module[*automations.StepExecution](env).OnEvent(t.Context(), env.DB.Scoped(fixtures.AcmeID), in))
 }
 
 // timeout runs the Wait for event's job, as it runs at the clock's moment.
@@ -120,6 +149,14 @@ func (w waiting) pathOf(t *testing.T, first automationstep.ID) automationstep.ID
 	version, _ := automations.LiveAndDraft(live)
 	held := version.Steps.Steps[0].Payload.(automationstep.WaitForEvent)
 	return lo.Ternary(held.Arrived.Steps[0].ID == first, held.Arrived.ID, held.TimedOut.ID)
+}
+
+// outcome names the path the Enrollment's one record of the Wait for event says it took: "arrived"
+// or "timed out".
+func (w waiting) outcome(t *testing.T, runID int64) string {
+	t.Helper()
+	names := map[automationstep.ID]string{w.pathOf(t, w.arrived): "arrived", w.pathOf(t, w.timedOut): "timed out"}
+	return names[w.pathTaken(t, runID)]
 }
 
 // Reaching a Wait for event records its deadline, the reached moment plus the timeout, on the
@@ -182,7 +219,8 @@ func TestWithNoEventTheWaitTimesOutAtTheDeadlineAndNotBefore(t *testing.T) {
 }
 
 // An Event that occurred before the Enrollment reached the Step, the Enrollment's own triggering
-// Event, a machine open and loaded history each leave the Enrollment waiting, and it times out.
+// Event, a machine open, loaded history and an Event written through a Connection without mcp:send
+// (ADR 0132) each leave the Enrollment waiting, and it times out.
 func TestEventsThatDoNotCountLeaveTheEnrollmentWaiting(t *testing.T) {
 	for name, c := range map[string]struct {
 		trigger, awaited string
@@ -209,6 +247,10 @@ func TestEventsThatDoNotCountLeaveTheEnrollmentWaiting(t *testing.T) {
 			history := collected(contact.ID, "order.created", w.clock.Now(), nil)
 			history.Backfill = true
 			handStored(t, w.env, contact.ID, "order.created", history)
+		}},
+		"written through a connection without mcp:send": {"trial.started", "order.created", func(t *testing.T, w waiting, contact *ent.Contact) {
+			t.Helper()
+			handSendLocked(t, w.env, contact.ID, "order.created", collected(contact.ID, "order.created", w.clock.Now(), nil))
 		}},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -301,6 +343,85 @@ func TestAnEventMatchingAFilteredGoalAndTheWaitReachesTheGoal(t *testing.T) {
 			handStored(t, w.env, contact.ID, "order.created", collected(contact.ID, "order.created", w.clock.Now(), map[string]any{"status": c.status}))
 
 			assert.Equal(t, c.ends, statusOf(t, w.env, runID))
+		})
+	}
+}
+
+// With an Enrollment key (ADR 0165), an awaited Event carrying another value wakes nothing and the
+// timeout does not count it; one carrying an Enrollment's value wakes that Enrollment only; one
+// without the property wakes every Enrollment of the Contact.
+func TestAnAwaitedEventWakesTheEnrollmentOfItsKeyOnly(t *testing.T) {
+	for name, c := range map[string]struct {
+		paid map[string]any
+		want map[string]string
+	}{
+		"another value":   {keyed("C"), map[string]string{"A": "timed out", "B": "timed out"}},
+		"order A's value": {keyed("A"), map[string]string{"A": "arrived", "B": "timed out"}},
+		"no order":        {map[string]any{"total": 30}, map[string]string{"A": "arrived", "B": "arrived"}},
+	} {
+		t.Run(name, func(t *testing.T) {
+			w := waitWith(t, orderPlaced, []string{orderPaid}, func(in *automations.CreateInput) {
+				in.Entry = automations.Entry{Policy: automationversion.EntryPolicyOnce, Key: new("order_id")}
+			})
+			contact := enrollable(t, w.env.DB.Scoped(fixtures.AcmeID), 0)
+			order(t, w.env, contact.ID, orderPlaced, w.clock.Now(), keyed("A"))
+			order(t, w.env, contact.ID, orderPlaced, w.clock.Now(), keyed("B"))
+			runByKey := lo.SliceToMap(runsOf(t, w.env, w.automationID, contact.ID), func(r *ent.AutomationRun) (string, int64) {
+				return lo.FromPtr(r.KeyValue), r.ID
+			})
+			require.Len(t, runByKey, 2)
+
+			w.clock.Advance(time.Minute)
+			order(t, w.env, contact.ID, orderPaid, w.clock.Now(), c.paid)
+			w.clock.Advance(waitTimeout)
+			w.timeout(t, runByKey["A"])
+			w.timeout(t, runByKey["B"])
+
+			assert.Equal(t, c.want, map[string]string{"A": w.outcome(t, runByKey["A"]), "B": w.outcome(t, runByKey["B"])})
+		})
+	}
+}
+
+// A Contact enrolled again waits on their own new Enrollment only: the purchase that moved the
+// first Enrollment down `arrived` does not count for the second, which times out, and a purchase
+// during the second's wait moves the second alone.
+func TestAContactEnrolledAgainWaitsOnTheNewEnrollmentOnly(t *testing.T) {
+	for name, c := range map[string]struct {
+		inTheSecondWait func(t *testing.T, w waiting, contactID int64)
+		want            string
+	}{
+		"no purchase in the second wait": {func(*testing.T, waiting, int64) {}, "timed out"},
+		"a purchase in the second wait": {func(t *testing.T, w waiting, contactID int64) {
+			t.Helper()
+			handStored(t, w.env, contactID, "order.created", collected(contactID, "order.created", w.clock.Now(), nil))
+		}, "arrived"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			w := waitWith(t, "trial.started", []string{"order.created"}, func(in *automations.CreateInput) {
+				in.Entry = automations.Entry{Policy: automationversion.EntryPolicyAgain}
+				in.ExitEvents = []eventmatcher.Matcher{{Action: "trial.cancelled"}}
+			})
+			contact, first := w.enroll(t, "trial.started")
+			w.clock.Advance(time.Minute)
+			handStored(t, w.env, contact.ID, "order.created", collected(contact.ID, "order.created", w.clock.Now(), nil))
+			w.clock.Advance(time.Minute)
+			handStored(t, w.env, contact.ID, "trial.cancelled", collected(contact.ID, "trial.cancelled", w.clock.Now(), nil))
+			// Past the Entry cooldown, an hour from the first Enrollment's beginning.
+			w.clock.Advance(time.Hour)
+			handStored(t, w.env, contact.ID, "trial.started", collected(contact.ID, "trial.started", w.clock.Now(), nil))
+			second, ok := lo.Find(runsOf(t, w.env, w.automationID, contact.ID), func(r *ent.AutomationRun) bool { return r.ID != first })
+			require.True(t, ok, "enrolled again")
+			firstTook := w.outcome(t, first)
+
+			w.clock.Advance(time.Minute)
+			c.inTheSecondWait(t, w, contact.ID)
+			w.clock.Advance(waitTimeout)
+			w.timeout(t, second.ID)
+
+			assert.Equal(t, c.want, w.outcome(t, second.ID))
+			assert.Equal(t, "arrived", firstTook)
+			assert.Equal(t, "arrived", w.outcome(t, first), "the first Enrollment's wait is as it was")
+			assert.Equal(t, automationrun.StatusExited, statusOf(t, w.env, first))
 		})
 	}
 }

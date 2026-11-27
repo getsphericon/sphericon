@@ -1103,11 +1103,11 @@ model AutomationReport {
    * its Step order */
   versionSteps: AutomationVersionStepFigures[];
 
-  /** Each path of a Branch (its unknown path included) and of a Split by its fork's Step id and
-   * its own id: the enrollments that took it and how many of them reached the goal, over the
-   * automation's whole history, each summed over every version that had the path. Sorted by the
-   * newest of those versions, then by the fork's place there and the path's place in the fork:
-   * one entry per path an enrollment took, so a path none took has none */
+  /** Each path of a Branch (its unknown path included), of a Split and of a Wait for event by its
+   * fork's Step id and its own id: the enrollments that took it and how many of them reached the
+   * goal, over the automation's whole history, each summed over every version that had the path.
+   * Sorted by the newest of those versions, then by the fork's place there and the path's place in
+   * the fork: one entry per path an enrollment took, so a path none took has none */
   paths: AutomationPathFigures[];
 
   /** Each Wait until by its Step id, summed over every version that had it: the enrollments that
