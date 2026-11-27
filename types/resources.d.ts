@@ -1297,6 +1297,8 @@ export default interface Resources {
     },
     "contactImports": {
       "addressWarning": "The address looks like a disposable or a role address.",
+      "asNewSignUps": "Treat them as new sign-ups",
+      "asNewSignUpsHint": "Automations start for these contacts, rules fire and webhooks are sent, as for anyone who signs up. Left off, the import starts nothing.",
       "attributes": {
         "avatar": "Avatar",
         "birthday": "Birthday",

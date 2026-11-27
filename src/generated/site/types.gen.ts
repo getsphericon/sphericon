@@ -2433,6 +2433,10 @@ export type ContactImportMapping = {
    * Leave a Contact the Workspace has as it is, writing only new ones
    */
   onlyAddNew: boolean;
+  /**
+   * Treat the rows as new sign-ups: their Events start what a sign-up starts (they enroll in Automations, fire Rules and reach Webhook endpoints), where an import otherwise starts nothing
+   */
+  asNewSignUps: boolean;
 };
 
 /**
@@ -2459,6 +2463,10 @@ export type ContactImportMappingInput = {
    * Leave a Contact the Workspace has as it is, writing only new ones
    */
   onlyAddNew: boolean;
+  /**
+   * Treat the rows as new sign-ups: their Events start what a sign-up starts (they enroll in Automations, fire Rules and reach Webhook endpoints), where an import otherwise starts nothing
+   */
+  asNewSignUps: boolean;
 };
 
 /**

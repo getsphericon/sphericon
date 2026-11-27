@@ -32,6 +32,7 @@ func contactImportMapping(c Converter, v contactimports.View) siteapi.ContactImp
 		DefaultCountry:   convert.Nil[siteapi.NilCountryCode](optionalCountry(v.Mapping.DefaultCountry)),
 		Tag:              convert.Nil[siteapi.NilName](optionalName(v.Mapping.Tag)),
 		OnlyAddNew:       v.Import.OnlyAddNew,
+		AsNewSignUps:     v.Import.AsNewSignUps,
 	}
 }
 

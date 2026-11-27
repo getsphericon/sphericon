@@ -33,6 +33,7 @@ const UPLOADED: SiteContactImport = {
     defaultCountry: null,
     tag: null,
     onlyAddNew: false,
+    asNewSignUps: false,
   },
   counts: { processed: 0, created: 0, updated: 0, refused: 0, dropped: 0 },
   reportRows: 0,

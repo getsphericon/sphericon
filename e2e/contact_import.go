@@ -18,6 +18,19 @@ import (
 // every row, runs the import and waits until its job is done. It returns the import as it ended.
 func (w *Workspace) ImportCSV(file, tag string) *siteapi.SiteContactImport {
 	w.t.Helper()
+	return w.importCSV(file, tag, false)
+}
+
+// ImportCSVAsNewSignUps is ImportCSV with "treat them as new sign-ups" ticked: the import's
+// Events start what a sign-up starts.
+func (w *Workspace) ImportCSVAsNewSignUps(file, tag string) *siteapi.SiteContactImport {
+	w.t.Helper()
+	return w.importCSV(file, tag, true)
+}
+
+// importCSV is ImportCSV with the choice of treating the file's Contacts as new sign-ups.
+func (w *Workspace) importCSV(file, tag string, asNewSignUps bool) *siteapi.SiteContactImport {
+	w.t.Helper()
 	ctx := w.t.Context()
 	ws := siteapi.WorkspaceId(w.publicID)
 	uploaded, err := w.site.SiteContactImportsUpload(ctx, siteapi.SiteContactImportsUploadReq{Data: strings.NewReader(file)},
@@ -29,6 +42,7 @@ func (w *Workspace) ImportCSV(file, tag string) *siteapi.SiteContactImport {
 	var mapping siteapi.ContactImportMappingInput
 	require.NoError(w.t, mapping.UnmarshalJSON(raw), "the proposal as a request saves it")
 	mapping.Tag = siteapi.NewNilName(siteapi.Name(tag))
+	mapping.AsNewSignUps = asNewSignUps
 	_, err = w.site.SiteContactImportsSaveMapping(ctx, &mapping, siteapi.SiteContactImportsSaveMappingParams{WorkspaceId: ws, ImportId: uploaded.ID})
 	require.NoError(w.t, err, "save the mapping")
 	_, err = w.site.SiteContactImportsRun(ctx, siteapi.SiteContactImportsRunParams{WorkspaceId: ws, ImportId: uploaded.ID})

@@ -26,6 +26,7 @@ const saved: ContactImportMapping = {
   defaultCountry: null,
   tag: null,
   onlyAddNew: false,
+  asNewSignUps: false,
 }
 
 test('a new Custom field read back is the column a request saves', () => {

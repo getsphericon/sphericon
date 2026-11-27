@@ -124,6 +124,7 @@ export function valuesOf(mapping: ContactImportMapping): MappingValues {
     defaultCountry: mapping.defaultCountry,
     tag: mapping.tag ?? '',
     onlyAddNew: mapping.onlyAddNew,
+    asNewSignUps: mapping.asNewSignUps,
   }
 }
 
@@ -163,6 +164,7 @@ export function mappingInputOf(
     defaultCountry: values.defaultCountry,
     tag: values.tag.trim() === '' ? null : values.tag.trim(),
     onlyAddNew: values.onlyAddNew,
+    asNewSignUps: values.asNewSignUps,
   }
 }
 

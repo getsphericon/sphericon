@@ -50,12 +50,14 @@ var (
 	}
 )
 
-// MappingInput is a mapping a Member saves and the "only add new Contacts" choice. Role is the Role
-// of the Member who saves it, whose Permissions a column that creates a Custom field asks.
+// MappingInput is a mapping a Member saves, the "only add new Contacts" choice and the "treat
+// them as new sign-ups" one, which makes the run's Events live (events.ImportAsNew). Role is the
+// Role of the Member who saves it, whose Permissions a column that creates a Custom field asks.
 type MappingInput struct {
-	Mapping    csvimport.Mapping
-	OnlyAddNew bool
-	Role       membership.Role
+	Mapping      csvimport.Mapping
+	OnlyAddNew   bool
+	AsNewSignUps bool
+	Role         membership.Role
 }
 
 // SaveMapping saves how the import id reads its file and makes it `ready`. A column per column of
@@ -80,7 +82,7 @@ func (m *Module) SaveMapping(ctx context.Context, s *ent.Scoped, id int64, in Ma
 	}
 	err = m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		return m.machine(ts, imp.ID, func(q *ent.ContactImportScopedUpdate) {
-			q.SetMapping(mapping).SetOnlyAddNew(in.OnlyAddNew)
+			q.SetMapping(mapping).SetOnlyAddNew(in.OnlyAddNew).SetAsNewSignUps(in.AsNewSignUps)
 		}).FireCtx(ctx, triggerSaveMapping)
 	})
 	if err != nil {
