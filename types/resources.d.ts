@@ -246,6 +246,7 @@ export default interface Resources {
       "broadcastUpdate": "Changed a broadcast",
       "contactCreate": "Created a contact",
       "contactDelete": "Deleted a contact",
+      "contactExport": "Exported contacts",
       "contactImport": "Imported contacts",
       "contactUpdate": "Changed a contact",
       "customFieldCreate": "Created a custom field",
@@ -1256,6 +1257,43 @@ export default interface Resources {
         "title": "Workspaces",
         "warned": "Warned"
       }
+    },
+    "contactCsvExport": {
+      "action": "Export CSV",
+      "allDescription": "Every contact of the workspace, one row each, with the columns you choose. The link to the file works once, for a minute.",
+      "columns": {
+        "avatar": "Photo",
+        "birthday": "Birthday",
+        "city": "City",
+        "country": "Country",
+        "createdAt": "Created",
+        "customFields": "Custom fields",
+        "email": "Email",
+        "emailChannel": "Email",
+        "firstName": "First name",
+        "lastName": "Last name",
+        "locale": "Language",
+        "phone": "Phone",
+        "smsChannel": "SMS",
+        "source": "Source",
+        "subjectId": "Subject ID",
+        "tags": "Tags",
+        "telegramChannel": "Telegram",
+        "timeZone": "Time zone",
+        "updatedAt": "Updated"
+      },
+      "errorTitle": "Could not export the contacts",
+      "forbidden": "You need the contacts:export permission to export contacts.",
+      "groups": {
+        "attributes": "Attributes",
+        "channels": "Channel states",
+        "fields": "Custom fields and tags",
+        "keys": "Keys"
+      },
+      "noColumns": "Choose at least one column.",
+      "segmentDescription": "The contacts this segment matches now, one row each, with the columns you choose. The link to the file works once, for a minute.",
+      "submit": "Export",
+      "title": "Export contacts as CSV"
     },
     "contactImports": {
       "addressWarning": "The address looks like a disposable or a role address.",

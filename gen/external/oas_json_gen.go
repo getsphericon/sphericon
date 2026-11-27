@@ -1585,6 +1585,8 @@ func (s *AuditAction) Decode(d *jx.Decoder) error {
 		*s = AuditActionWorkspaceSendingRulesChange
 	case AuditActionContactImport:
 		*s = AuditActionContactImport
+	case AuditActionContactExport:
+		*s = AuditActionContactExport
 	case AuditActionAuditLogExport:
 		*s = AuditActionAuditLogExport
 	case AuditActionWebhookEndpointTest:

@@ -87,6 +87,23 @@ func Chunks(pages iter.Seq2[[][]string, error]) iter.Seq2[[]byte, error] {
 	}
 }
 
+// List is a list of values held in one cell (a Contact's Tags, the scopes of its opt-outs): one
+// CSV record, quoted as CSV requires, with no line end. A CSV reader gives the list back; the cell
+// itself is neutralised as any other when a Writer writes it. No values is "".
+func List(values []string) string {
+	if len(values) == 0 {
+		return ""
+	}
+	var b strings.Builder
+	w := csv.NewWriter(&b)
+	// A strings.Builder takes every write, so neither Write nor Flush can fail here.
+	if err := w.Write(values); err != nil {
+		panic("csvfile: a record written to memory failed: " + err.Error())
+	}
+	w.Flush()
+	return strings.TrimSuffix(b.String(), "\n")
+}
+
 // writePage writes the records of a page and flushes them.
 func (w *Writer) writePage(page [][]string) error {
 	for _, record := range page {

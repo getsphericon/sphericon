@@ -501,6 +501,22 @@ type Handler interface {
 	//
 	// GET /workspaces/{workspaceId}/connections
 	SiteConnectionsList(ctx context.Context, params SiteConnectionsListParams) ([]SiteConnectionResource, error)
+	// SiteContactCsvExportsCreate implements SiteContactCsvExports_create operation.
+	//
+	// Ask for the CSV export of a segment's contacts, or of all of them, with the columns chosen. The
+	// answer is a one-time link the browser follows to download the file, which is written as it is read:
+	// no file is kept. An unknown segment is a 404, no column a 422. Owners and admins only.
+	//
+	// POST /workspaces/{workspaceId}/contact-exports
+	SiteContactCsvExportsCreate(ctx context.Context, req *SiteContactCsvExportInput, params SiteContactCsvExportsCreateParams) (*SiteContactCsvExportLink, error)
+	// SiteContactCsvExportsDownload implements SiteContactCsvExports_download operation.
+	//
+	// Download the CSV export a link was issued for. The link works once, for the session that asked for
+	// it, within a minute of being issued; any other is a 400. The export is recorded in the Audit log as
+	// it starts. Owners and admins only.
+	//
+	// GET /workspaces/{workspaceId}/contact-exports/{token}
+	SiteContactCsvExportsDownload(ctx context.Context, params SiteContactCsvExportsDownloadParams) (*SiteContactCsvExportsDownloadOKHeaders, error)
 	// SiteContactImportsGet implements SiteContactImports_get operation.
 	//
 	// Read an import: its state, its mapping and how far its run is.

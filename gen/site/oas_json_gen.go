@@ -1468,6 +1468,8 @@ func (s *AuditAction) Decode(d *jx.Decoder) error {
 		*s = AuditActionWorkspaceSendingRulesChange
 	case AuditActionContactImport:
 		*s = AuditActionContactImport
+	case AuditActionContactExport:
+		*s = AuditActionContactExport
 	case AuditActionAuditLogExport:
 		*s = AuditActionAuditLogExport
 	case AuditActionWebhookEndpointTest:
@@ -12186,6 +12188,80 @@ func (s ContactAttribute) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *ContactAttribute) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ContactCsvColumn as json.
+func (s ContactCsvColumn) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes ContactCsvColumn from json.
+func (s *ContactCsvColumn) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ContactCsvColumn to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch ContactCsvColumn(v) {
+	case ContactCsvColumnSubjectId:
+		*s = ContactCsvColumnSubjectId
+	case ContactCsvColumnEmail:
+		*s = ContactCsvColumnEmail
+	case ContactCsvColumnPhone:
+		*s = ContactCsvColumnPhone
+	case ContactCsvColumnFirstName:
+		*s = ContactCsvColumnFirstName
+	case ContactCsvColumnLastName:
+		*s = ContactCsvColumnLastName
+	case ContactCsvColumnTimeZone:
+		*s = ContactCsvColumnTimeZone
+	case ContactCsvColumnCountry:
+		*s = ContactCsvColumnCountry
+	case ContactCsvColumnLocale:
+		*s = ContactCsvColumnLocale
+	case ContactCsvColumnBirthday:
+		*s = ContactCsvColumnBirthday
+	case ContactCsvColumnCity:
+		*s = ContactCsvColumnCity
+	case ContactCsvColumnAvatar:
+		*s = ContactCsvColumnAvatar
+	case ContactCsvColumnSource:
+		*s = ContactCsvColumnSource
+	case ContactCsvColumnCreatedAt:
+		*s = ContactCsvColumnCreatedAt
+	case ContactCsvColumnUpdatedAt:
+		*s = ContactCsvColumnUpdatedAt
+	case ContactCsvColumnCustomFields:
+		*s = ContactCsvColumnCustomFields
+	case ContactCsvColumnTags:
+		*s = ContactCsvColumnTags
+	case ContactCsvColumnEmailChannel:
+		*s = ContactCsvColumnEmailChannel
+	case ContactCsvColumnSmsChannel:
+		*s = ContactCsvColumnSmsChannel
+	case ContactCsvColumnTelegramChannel:
+		*s = ContactCsvColumnTelegramChannel
+	default:
+		*s = ContactCsvColumn(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s ContactCsvColumn) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ContactCsvColumn) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -54566,6 +54642,240 @@ func (s *SiteConnectionResource) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *SiteConnectionResource) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *SiteContactCsvExportInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SiteContactCsvExportInput) encodeFields(e *jx.Encoder) {
+	{
+		if s.SegmentId.Set {
+			e.FieldStart("segmentId")
+			s.SegmentId.Encode(e)
+		}
+	}
+	{
+		e.FieldStart("columns")
+		e.ArrStart()
+		for _, elem := range s.Columns {
+			elem.Encode(e)
+		}
+		e.ArrEnd()
+	}
+}
+
+var jsonFieldsNameOfSiteContactCsvExportInput = [2]string{
+	0: "segmentId",
+	1: "columns",
+}
+
+// Decode decodes SiteContactCsvExportInput from json.
+func (s *SiteContactCsvExportInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteContactCsvExportInput to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "segmentId":
+			if err := func() error {
+				s.SegmentId.Reset()
+				if err := s.SegmentId.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"segmentId\"")
+			}
+		case "columns":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				s.Columns = make([]ContactCsvColumn, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem ContactCsvColumn
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.Columns = append(s.Columns, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"columns\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SiteContactCsvExportInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000010,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSiteContactCsvExportInput) {
+					name = jsonFieldsNameOfSiteContactCsvExportInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteContactCsvExportInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteContactCsvExportInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *SiteContactCsvExportLink) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SiteContactCsvExportLink) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("url")
+		e.Str(s.URL)
+	}
+	{
+		e.FieldStart("expiresAt")
+		s.ExpiresAt.Encode(e)
+	}
+}
+
+var jsonFieldsNameOfSiteContactCsvExportLink = [2]string{
+	0: "url",
+	1: "expiresAt",
+}
+
+// Decode decodes SiteContactCsvExportLink from json.
+func (s *SiteContactCsvExportLink) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteContactCsvExportLink to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "url":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := d.Str()
+				s.URL = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"url\"")
+			}
+		case "expiresAt":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.ExpiresAt.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"expiresAt\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SiteContactCsvExportLink")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000011,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSiteContactCsvExportLink) {
+					name = jsonFieldsNameOfSiteContactCsvExportLink[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteContactCsvExportLink) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteContactCsvExportLink) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

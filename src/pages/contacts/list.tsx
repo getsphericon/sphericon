@@ -6,6 +6,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { ContactCsvExportModal } from '../../components/ContactCsvExportModal.tsx'
 import { CountryFlag } from '../../components/CountryFlag.tsx'
 import { PagedTable } from '../../components/PagedTable.tsx'
 import { RelativeTime } from '../../components/RelativeTime.tsx'
@@ -99,6 +100,7 @@ export function ContactsListPage() {
   const { email, tag, country, page } = contactsRoute.useSearch()
   const navigate = useNavigate({ from: contactsRoute.fullPath })
   const [createOpened, { open: openCreate, close: closeCreate }] = useDisclosure(false)
+  const [exportOpened, { open: openExport, close: closeExport }] = useDisclosure(false)
   // Importing a file is offered only with contacts:import (the API refuses everyone else).
   const { data: workspace } = useQuery(workspaceOptions(workspaceId))
   const [search, setSearch] = useState(email ?? '')
@@ -129,9 +131,20 @@ export function ContactsListPage() {
   return (
     <Stack flex={1}>
       <ContactCreateModal opened={createOpened} onClose={closeCreate} />
+      <ContactCsvExportModal
+        workspaceId={workspaceId}
+        opened={exportOpened}
+        onClose={closeExport}
+      />
       <Group justify="space-between" align="center">
         <Title order={2}>{t(($) => $.nav.contacts)}</Title>
-        <Group gap="sm">
+        <Group gap="xs">
+          {/* The bulk export is offered only with contacts:export, which the server checks too. */}
+          {can(workspace, 'contacts:export') ? (
+            <Button variant="default" onClick={openExport}>
+              {t(($) => $.contactCsvExport.action)}
+            </Button>
+          ) : null}
           {can(workspace, 'contacts:import') ? (
             <ButtonLink variant="default" to={importRoute.to} params={{ workspaceId }}>
               {t(($) => $.contacts.importContacts)}

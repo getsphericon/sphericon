@@ -507,6 +507,8 @@ func (s AuditAction) Validate() error {
 		return nil
 	case "contact.import":
 		return nil
+	case "contact.export":
+		return nil
 	case "audit_log.export":
 		return nil
 	case "webhook_endpoint.test":

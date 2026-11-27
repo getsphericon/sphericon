@@ -168,6 +168,7 @@ var (
 	ErrorsConsentWordingEmpty                             = ID{key: "errors.consent_wording_empty"}
 	ErrorsContactEmailMissing                             = ID{key: "errors.contact_email_missing"}
 	ErrorsContactExportIdentifier                         = ID{key: "errors.contact_export_identifier"}
+	ErrorsContactExportNoColumns                          = ID{key: "errors.contact_export_no_columns"}
 	ErrorsContactIdentityRequired                         = ID{key: "errors.contact_identity_required"}
 	ErrorsContactImportColumnCount                        = ID{key: "errors.contact_import_column_count"}
 	ErrorsContactImportDateFormatRequired                 = ID{key: "errors.contact_import_date_format_required"}

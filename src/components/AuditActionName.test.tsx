@@ -37,6 +37,7 @@ const names: Record<AnyAuditAction, string> = {
   'workspace.send_cap_change': 'Changed the Send cap',
   'workspace.sending_rules_change': 'Changed the sending rules',
   'contact.import': 'Imported contacts',
+  'contact.export': 'Exported contacts',
   'audit_log.export': 'Exported the audit log',
   'webhook_endpoint.test': 'Sent a test event to a webhook endpoint',
   'instance.default_send_cap_change': 'Changed the default Send cap',

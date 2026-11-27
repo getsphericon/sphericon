@@ -70,6 +70,8 @@ const (
 	SiteConfirmationRequestsCreateOperation             OperationName = "SiteConfirmationRequestsCreate"
 	SiteConnectionsDeleteOperation                      OperationName = "SiteConnectionsDelete"
 	SiteConnectionsListOperation                        OperationName = "SiteConnectionsList"
+	SiteContactCsvExportsCreateOperation                OperationName = "SiteContactCsvExportsCreate"
+	SiteContactCsvExportsDownloadOperation              OperationName = "SiteContactCsvExportsDownload"
 	SiteContactImportsGetOperation                      OperationName = "SiteContactImportsGet"
 	SiteContactImportsPreviewOperation                  OperationName = "SiteContactImportsPreview"
 	SiteContactImportsReportOperation                   OperationName = "SiteContactImportsReport"

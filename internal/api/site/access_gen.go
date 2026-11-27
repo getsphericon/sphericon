@@ -76,6 +76,8 @@ var operationAccess = map[siteapi.OperationName]access{
 	siteapi.SiteConfirmationRequestsCreateOperation:             {workspace: true},
 	siteapi.SiteConnectionsDeleteOperation:                      {workspace: true},
 	siteapi.SiteConnectionsListOperation:                        {workspace: true},
+	siteapi.SiteContactCsvExportsCreateOperation:                {workspace: true, permissions: []memberships.Permission{memberships.PermContactsExport}},
+	siteapi.SiteContactCsvExportsDownloadOperation:              {workspace: true, permissions: []memberships.Permission{memberships.PermContactsExport}},
 	siteapi.SiteContactImportsGetOperation:                      {workspace: true, permissions: []memberships.Permission{memberships.PermContactsImport}},
 	siteapi.SiteContactImportsPreviewOperation:                  {workspace: true, permissions: []memberships.Permission{memberships.PermContactsImport}},
 	siteapi.SiteContactImportsReportLinkOperation:               {workspace: true, permissions: []memberships.Permission{memberships.PermContactsImport}},

@@ -1,10 +1,12 @@
-import { Avatar, Group, Stack, Text, Title } from '@mantine/core'
-import { useSuspenseInfiniteQuery, useSuspenseQuery } from '@tanstack/react-query'
+import { Avatar, Button, Group, Stack, Text, Title } from '@mantine/core'
+import { useDisclosure } from '@mantine/hooks'
+import { useQuery, useSuspenseInfiniteQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { DataTable } from 'mantine-datatable'
 import { useTranslation } from 'react-i18next'
 
 import { CenteredEmptyState } from '../../components/CenteredEmptyState.tsx'
+import { ContactCsvExportModal } from '../../components/ContactCsvExportModal.tsx'
 import { LoadMore } from '../../components/LoadMore.tsx'
 import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
@@ -20,8 +22,10 @@ import { Route as segmentsEditRoute } from '../../routes/workspaces/$workspaceId
 import { Route as segmentsDetailRoute } from '../../routes/workspaces/$workspaceId/segments/$segmentId/index.tsx'
 import { Route as segmentsRoute } from '../../routes/workspaces/$workspaceId/segments/index.tsx'
 import { contactName } from '../../utils/contactName.ts'
+import { can } from '../../utils/permissions.ts'
 import { suspenseInfinite } from '../../utils/suspenseInfinite.ts'
 import type { FieldColumn } from '../../utils/tableColumns.ts'
+import { workspaceOptions } from '../../utils/workspace.ts'
 
 const PAGE_SIZE = 25
 
@@ -43,13 +47,27 @@ function SegmentDetail() {
   const segmentQuery = useSuspenseQuery(
     siteSegmentsGetOptions({ path: { workspaceId, id: segmentId } }),
   )
+  const { data: workspace } = useQuery(workspaceOptions(workspaceId))
+  const [exportOpened, { open: openExport, close: closeExport }] = useDisclosure(false)
 
   return (
     // It grows into the page's free height, so an empty list's state sits in the page's middle.
     <Stack flex={1}>
+      <ContactCsvExportModal
+        workspaceId={workspaceId}
+        segmentId={segmentId}
+        opened={exportOpened}
+        onClose={closeExport}
+      />
       <Group justify="space-between" align="flex-start" wrap="wrap">
         <Title order={4}>{segmentQuery.data.name}</Title>
         <Group gap="xs">
+          {/* The export of the Segment's Contacts is offered only with contacts:export. */}
+          {can(workspace, 'contacts:export') ? (
+            <Button variant="default" onClick={openExport}>
+              {t(($) => $.contactCsvExport.action)}
+            </Button>
+          ) : null}
           {segmentQuery.data.archivedAt ? null : (
             <ButtonLink
               variant="default"

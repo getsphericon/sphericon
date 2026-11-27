@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contactimports"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contactsexport"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
 	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
@@ -260,6 +261,16 @@ type Inputs interface {
 	// goverter:map Cursor After | segmentCursorIn
 	// goverter:map Limit | limitIn
 	SegmentContactsPage(source siteapi.SiteSegmentContactsListParams) (segments.ContactsInput, error)
+	// The Contacts a CSV export takes and its columns (ADR 0138). The session is the request's,
+	// which the handler assigns.
+	// goverter:map SegmentId SegmentID
+	// goverter:ignore Session
+	ContactCsvExport(source *siteapi.SiteContactCsvExportInput) contactsexport.LinkInput
+	// goverter:enum:transform value
+	ContactCsvColumn(source siteapi.ContactCsvColumn) contactsexport.Column
+	// The link of a CSV export followed. The session is the request's, which the handler assigns.
+	// goverter:ignore Session
+	ContactCsvExportFollow(source siteapi.SiteContactCsvExportsDownloadParams) contactsexport.OpenInput
 
 	WebhookCreate(source *siteapi.CreateWebhookInput) webhookendpoints.CreateInput
 	WebhookUpdate(source *siteapi.UpdateWebhookInput) webhookendpoints.UpdateInput

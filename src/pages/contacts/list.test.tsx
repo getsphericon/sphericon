@@ -16,10 +16,13 @@ import { ContactsListPage } from './list.tsx'
 
 const LIST_ROUTE = routeMount(contactsRoute, { workspaceId: 'TestWs01' })
 
-// The page reads the signed-in User's Permissions, which offer the import to those holding
-// contacts:import.
+// The Workspace as its Owner sees it, who may export its contacts and import them.
 beforeEach(() => {
-  worker.use(handleSiteWorkspacesList({ body: [workspace({ permissions: ['contacts:import'] })] }))
+  worker.use(
+    handleSiteWorkspacesList({
+      body: [workspace({ permissions: ['contacts:export', 'contacts:import'] })],
+    }),
+  )
 })
 
 test('offers the import to a Member holding contacts:import', async () => {
@@ -350,4 +353,30 @@ test('Clear filter in the zero-results state takes every filter out of the URL s
   await expect
     .poll(() => searches(navigate, { tag: 'vip', country: 'DE', page: 2 }))
     .toContainEqual({ email: undefined, tag: undefined, country: undefined, page: undefined })
+})
+
+// The CSV export of every contact is offered with contacts:export, and opens the column choice.
+test('Export CSV opens the choice of columns', async () => {
+  worker.use(handleSiteContactsList({ body: page([BOB]) }))
+
+  const { screen } = await renderWithRouter(<ContactsListPage />, LIST_ROUTE)
+  await screen.getByRole('button', { name: 'Export CSV' }).click()
+
+  await expect
+    .element(screen.getByRole('dialog', { name: 'Export contacts as CSV' }))
+    .toBeInTheDocument()
+  await expect.element(screen.getByRole('checkbox', { name: 'Custom fields' })).toBeChecked()
+})
+
+// Without contacts:export the bulk export is not offered.
+test('Export CSV is not offered without contacts:export', async () => {
+  worker.use(
+    handleSiteWorkspacesList({ body: [workspace({ permissions: [] })] }),
+    handleSiteContactsList({ body: page([BOB]) }),
+  )
+
+  const { screen } = await renderWithRouter(<ContactsListPage />, LIST_ROUTE)
+
+  await expect.element(screen.getByText('bob@example.com')).toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Export CSV' })).not.toBeInTheDocument()
 })
