@@ -19,8 +19,8 @@ type NewPeople struct {
 
 // NewPeoplePoint is one Report day of the New people report, zero-filled across the window.
 type NewPeoplePoint struct {
-	Date                 string
-	Manual, API, Tracker int
+	Date                         string
+	Manual, API, Tracker, Import int
 }
 
 // NewPeople reports the Contacts of the Workspace behind s created in the window.
@@ -56,6 +56,8 @@ func (m *UseCase) NewPeople(ctx context.Context, s *ent.Scoped, w Window) (*NewP
 			p.API += r.Count
 		case contact.SourceTracker:
 			p.Tracker += r.Count
+		case contact.SourceImport:
+			p.Import += r.Count
 		}
 		byDay[r.Day] = p
 		report.Total += r.Count

@@ -112,13 +112,12 @@ func TestRecordMarksBackfilledEvents(t *testing.T) {
 	}))
 
 	// History is stored marked and handed to no consumer; the live Event is both.
-	backfill := lo.SliceToMap(env.StoredEvents(t, "purchase"), func(e *ent.Event) (string, bool) { return e.SubjectID, e.Backfill })
+	backfill := lo.SliceToMap(env.StoredEvents(t, "purchase"), func(e *ent.Event) (string, bool) { return e.SubjectID, events.WasHistory(e) })
 	assert.True(t, backfill["s-1"])
 	assert.False(t, backfill["s-2"])
 	got := queuedCollected(t, env)
 	require.Len(t, got, 1)
 	assert.Equal(t, "s-2", got[0].SubjectID)
-	assert.False(t, got[0].Backfill)
 }
 
 // A resent Event with the same client id changes nothing once the first one is stored, and

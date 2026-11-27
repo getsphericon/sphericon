@@ -9721,6 +9721,7 @@ const (
 	ContactExportSourceManual  ContactExportSource = "manual"
 	ContactExportSourceAPI     ContactExportSource = "api"
 	ContactExportSourceTracker ContactExportSource = "tracker"
+	ContactExportSourceImport  ContactExportSource = "import"
 )
 
 // AllValues returns all ContactExportSource values.
@@ -9729,6 +9730,7 @@ func (ContactExportSource) AllValues() []ContactExportSource {
 		ContactExportSourceManual,
 		ContactExportSourceAPI,
 		ContactExportSourceTracker,
+		ContactExportSourceImport,
 	}
 }
 
@@ -9740,6 +9742,8 @@ func (s ContactExportSource) MarshalText() ([]byte, error) {
 	case ContactExportSourceAPI:
 		return []byte(s), nil
 	case ContactExportSourceTracker:
+		return []byte(s), nil
+	case ContactExportSourceImport:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -9757,6 +9761,9 @@ func (s *ContactExportSource) UnmarshalText(data []byte) error {
 		return nil
 	case ContactExportSourceTracker:
 		*s = ContactExportSourceTracker
+		return nil
+	case ContactExportSourceImport:
+		*s = ContactExportSourceImport
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)

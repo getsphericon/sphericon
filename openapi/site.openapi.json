@@ -14166,7 +14166,7 @@
       },
       "ContactExportSource": {
         "type": "string",
-        "enum": ["manual", "api", "tracker"],
+        "enum": ["manual", "api", "tracker", "import"],
         "description": "How the contact first came to exist"
       },
       "ContactExportSuppression": {
@@ -22298,7 +22298,7 @@
       },
       "SiteNewPeoplePoint": {
         "type": "object",
-        "required": ["date", "manual", "api", "tracker"],
+        "required": ["date", "manual", "api", "tracker", "import"],
         "properties": {
           "date": {
             "type": "string",
@@ -22318,6 +22318,11 @@
             "type": "integer",
             "format": "int32",
             "description": "Contacts created by the tracker that day"
+          },
+          "import": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Contacts created by a CSV import that day"
           }
         },
         "description": "One Report day of the New people report: the Contacts created that day by the door they\ncame through, zero-filled across the range."

@@ -106,7 +106,7 @@ func heardOf(ctx context.Context, s *ent.Scoped, run *ent.AutomationRun, a autom
 			event.ActionIn(engagementActions(a.Engagement)...),
 			events.NamesMessageIn([]int64{msg.ID}),
 			events.HumanOnly(),
-			event.Backfill(false),
+			events.Live(),
 		).
 		Exist(ctx)
 	if err != nil {
@@ -196,7 +196,7 @@ func (m *StepExecution) wakeOnMessage(ctx context.Context, s *ent.Scoped, contac
 		return nil
 	}
 	stored, err := s.Event().Query().
-		Where(event.ContactID(contactID), event.SourceID(ev.SourceID), events.HumanOnly(), event.Backfill(false)).
+		Where(event.ContactID(contactID), event.SourceID(ev.SourceID), events.HumanOnly(), events.Live()).
 		First(ctx)
 	if ent.IsNotFound(err) {
 		return nil

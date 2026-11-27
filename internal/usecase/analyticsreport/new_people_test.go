@@ -30,8 +30,8 @@ func byDay(report *analyticsreport.NewPeople) map[string]analyticsreport.NewPeop
 }
 
 // Fixtures (Gotham, America/New_York): sign-ups at 2026-03-08 04:59Z (23:59 EST on 7 March, manual),
-// 05:00Z (midnight EST, api), 12:00Z (8 March, api), and 2026-03-09 03:59Z (23:59 EDT on 8 March,
-// tracker) and 04:00Z (9 March, manual).
+// 05:00Z (midnight EST, api), 12:00Z (8 March, api), 15:00Z (8 March, import), and 2026-03-09 03:59Z
+// (23:59 EDT on 8 March, tracker) and 04:00Z (9 March, manual).
 func TestNewPeopleAreCountedPerReportDayAndSplitBySource(t *testing.T) {
 	env := testhelper.Setup(t)
 	report := newPeopleAt(t, env, fixtures.GothamID, analyticsreport.Window7Days, time.Date(2026, 3, 10, 12, 0, 0, 0, time.UTC))
@@ -39,17 +39,17 @@ func TestNewPeopleAreCountedPerReportDayAndSplitBySource(t *testing.T) {
 	require.Len(t, report.Series, 7, "one point per day, the 23-hour day included once")
 	days := byDay(report)
 	assert.Equal(t, analyticsreport.NewPeoplePoint{Date: "2026-03-07", Manual: 1}, days["2026-03-07"])
-	assert.Equal(t, analyticsreport.NewPeoplePoint{Date: "2026-03-08", API: 2, Tracker: 1}, days["2026-03-08"])
+	assert.Equal(t, analyticsreport.NewPeoplePoint{Date: "2026-03-08", API: 2, Tracker: 1, Import: 1}, days["2026-03-08"])
 	assert.Equal(t, analyticsreport.NewPeoplePoint{Date: "2026-03-09", Manual: 1}, days["2026-03-09"])
 	assert.Equal(t, analyticsreport.NewPeoplePoint{Date: "2026-03-10"}, days["2026-03-10"], "an empty day is all zeros")
-	assert.Equal(t, 5, report.Total)
+	assert.Equal(t, 6, report.Total)
 }
 
 func TestNewPeopleOfAWindowLeavesOutContactsBeforeIt(t *testing.T) {
 	env := testhelper.Setup(t)
 	report := newPeopleAt(t, env, fixtures.GothamID, analyticsreport.Window7Days, time.Date(2026, 3, 8, 12, 0, 0, 0, time.UTC))
 
-	assert.Equal(t, 4, report.Total, "the last day of the window ends at midnight EDT; the 9 March sign-up and the 2 January ones are outside it")
+	assert.Equal(t, 5, report.Total, "the last day of the window ends at midnight EDT; the 9 March sign-up and the 2 January ones are outside it")
 }
 
 func TestAZoneChangeMovesNewPeopleToOtherDays(t *testing.T) {
@@ -62,7 +62,7 @@ func TestAZoneChangeMovesNewPeopleToOtherDays(t *testing.T) {
 
 	assert.Equal(t, analyticsreport.NewPeoplePoint{Date: "2026-03-07", Manual: 1}, inNewYork["2026-03-07"], "23:59 EST on the 7th")
 	assert.Equal(t, analyticsreport.NewPeoplePoint{Date: "2026-03-07"}, days["2026-03-07"])
-	assert.Equal(t, analyticsreport.NewPeoplePoint{Date: "2026-03-08", Manual: 1, API: 2}, days["2026-03-08"])
+	assert.Equal(t, analyticsreport.NewPeoplePoint{Date: "2026-03-08", Manual: 1, API: 2, Import: 1}, days["2026-03-08"])
 	assert.Equal(t, analyticsreport.NewPeoplePoint{Date: "2026-03-09", Manual: 1, Tracker: 1}, days["2026-03-09"])
 }
 

@@ -1062,6 +1062,8 @@ func (c *ConverterImpl) ContactExportSourceToResource(source contact.Source) sit
 	switch source {
 	case contact.SourceAPI:
 		siteapiContactExportSource = site.ContactExportSourceAPI
+	case contact.SourceImport:
+		siteapiContactExportSource = site.ContactExportSourceImport
 	case contact.SourceManual:
 		siteapiContactExportSource = site.ContactExportSourceManual
 	case contact.SourceTracker:
@@ -3601,6 +3603,7 @@ func (c *ConverterImpl) analyticsreportNewPeoplePointToSiteapiSiteNewPeoplePoint
 	siteapiSiteNewPeoplePoint.Manual = count(source.Manual)
 	siteapiSiteNewPeoplePoint.API = count(source.API)
 	siteapiSiteNewPeoplePoint.Tracker = count(source.Tracker)
+	siteapiSiteNewPeoplePoint.Import = count(source.Import)
 	return siteapiSiteNewPeoplePoint
 }
 func (c *ConverterImpl) analyticsreportOwnerClicksToSiteapiSiteAnalyticsLinkOwner(source analyticsreport.OwnerClicks) site.SiteAnalyticsLinkOwner {
