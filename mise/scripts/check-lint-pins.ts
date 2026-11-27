@@ -54,16 +54,27 @@ if (lintGoMod === undefined) {
 }
 
 const lintRequires = requirements(lintGoMod)
+// --fix moves the analyzers to golangci-lint's versions instead of failing: `update:go` runs it
+// after taking every module to its latest release.
+const fix = process.argv.includes('--fix')
 let failed = false
 for (const path of shared) {
   const theirs = lintRequires.get(path)
   const ours = output('go', ['list', '-m', '-f', '{{.Version}}', path], 'tools/analyzers')
-  if (theirs !== ours) {
+  if (fix && theirs !== undefined && theirs !== ours) {
+    output('go', ['get', `${path}@${theirs}`], 'tools/analyzers')
+    process.stdout.write(
+      `tools/analyzers: ${path} ${ours} => ${theirs} (golangci-lint v${release})\n`,
+    )
+  } else if (theirs !== ours) {
     process.stderr.write(
       `error: tools/analyzers requires ${path} ${ours} but golangci-lint v${release} uses ${theirs ?? '?'}; ` +
         `run 'cd tools/analyzers && go get ${path}@${theirs ?? '<version>'} && go mod tidy'\n`,
     )
     failed = true
   }
+}
+if (fix) {
+  output('go', ['mod', 'tidy'], 'tools/analyzers')
 }
 process.exit(failed ? 1 : 0)

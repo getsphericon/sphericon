@@ -504,6 +504,8 @@ run = "pnpm exec ncu -u --workspaces --root --reject @hey-api/openapi-ts,playwri
 # latest release; @upgrade keeps one a dependency already needs past it, such as a pseudo-version of
 # golang.org/x/tools. Any other indirect module takes the version its dependents ask for:
 # `go get -u ./...` moved those too, past what they were built against.
+# tools/analyzers is compiled into golangci-lint, so its x/tools and plugin-module-register then go
+# back to the versions of the pinned golangci-lint (check:lint-pins --fix).
 run = '''
 #!/usr/bin/env bash
 set -euo pipefail
@@ -517,6 +519,7 @@ for dir in . tools/analyzers; do
     go mod tidy
   )
 done
+node mise/scripts/check-lint-pins.ts --fix
 '''
 
 # Named like a personal global `upgrade` task a developer may have, so that inside the repository

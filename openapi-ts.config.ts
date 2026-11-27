@@ -74,7 +74,7 @@ const surface = (name: 'site' | 'staff' | 'staffee'): UserConfig => ({
                 return ctx.applyModifiers(result, opts)
               }
               const { chain } = ctx.applyModifiers(result, { ...opts, optional: false })
-              return { chain: ctx.$(ctx.plugin.imports.z).attr('exactOptional').call(chain) }
+              return { chain: chain.attr('exactOptional').call() }
             },
           }),
       },

@@ -121,8 +121,8 @@ export const zAuditAction = z.enum([
  */
 export const zAuditTarget = z.object({
   type: z.string(),
-  id: z.exactOptional(z.string().nullable()),
-  name: z.exactOptional(z.string().nullable())
+  id: z.string().nullable().exactOptional(),
+  name: z.string().nullable().exactOptional()
 });
 
 /**
@@ -196,8 +196,8 @@ export const zProblemCode = z.enum([
  */
 export const zProblemDebug = z.object({
   error: z.string(),
-  stack: z.exactOptional(z.string()),
-  requestId: z.exactOptional(z.string()),
+  stack: z.string().exactOptional(),
+  requestId: z.string().exactOptional(),
   method: z.string(),
   path: z.string()
 });
@@ -287,8 +287,8 @@ export const zStaffAuditActorKind = z.enum([
  */
 export const zStaffAuditActor = z.object({
   kind: zStaffAuditActorKind,
-  id: z.exactOptional(z.string().nullable()),
-  name: z.exactOptional(z.string().nullable())
+  id: z.string().nullable().exactOptional(),
+  name: z.string().nullable().exactOptional()
 });
 
 /**
@@ -424,7 +424,7 @@ export const zStaffSuspensionActorKind = z.enum([
  */
 export const zStaffSuspensionActor = z.object({
   kind: zStaffSuspensionActorKind,
-  id: z.exactOptional(z.string().nullable())
+  id: z.string().nullable().exactOptional()
 });
 
 /**
@@ -445,10 +445,10 @@ export const zTimestamp = z.iso.datetime();
  */
 export const zStaffAbuse = z.object({
   exempt: z.boolean(),
-  clearedAt: z.exactOptional(zTimestamp.nullable()),
-  warningNotifiedAt: z.exactOptional(zTimestamp.nullable()),
-  freezeNotifiedAt: z.exactOptional(zTimestamp.nullable()),
-  warning: z.exactOptional(zAbuseWarning.nullable())
+  clearedAt: zTimestamp.nullable().exactOptional(),
+  warningNotifiedAt: zTimestamp.nullable().exactOptional(),
+  freezeNotifiedAt: zTimestamp.nullable().exactOptional(),
+  warning: zAbuseWarning.nullable().exactOptional()
 });
 
 /**
@@ -460,10 +460,10 @@ export const zStaffAuditEntryResource = z.object({
   actor: zStaffAuditActor,
   action: zAuditAction,
   target: zAuditTarget,
-  diff: z.exactOptional(zJsonObject.nullable()),
-  requestId: z.exactOptional(z.string().nullable()),
-  ip: z.exactOptional(z.string().nullable()),
-  userAgent: z.exactOptional(z.string().nullable())
+  diff: zJsonObject.nullable().exactOptional(),
+  requestId: z.string().nullable().exactOptional(),
+  ip: z.string().nullable().exactOptional(),
+  userAgent: z.string().nullable().exactOptional()
 });
 
 /**
@@ -471,7 +471,7 @@ export const zStaffAuditEntryResource = z.object({
  */
 export const zStaffAuditEntryList = z.object({
   items: z.array(zStaffAuditEntryResource),
-  nextCursor: z.exactOptional(z.string().nullable())
+  nextCursor: z.string().nullable().exactOptional()
 });
 
 /**
@@ -484,7 +484,7 @@ export const zStaffHold = z.object({
   createdAt: zTimestamp,
   expiresAt: zTimestamp,
   setBy: z.string(),
-  actionUrl: z.exactOptional(z.string().nullable())
+  actionUrl: z.string().nullable().exactOptional()
 });
 
 /**
@@ -493,13 +493,13 @@ export const zStaffHold = z.object({
 export const zStaffSignupSurveyResponseResource = z.object({
   userId: zEntityId,
   role: zSignupRole,
-  roleOtherText: z.exactOptional(z.string().nullable()),
+  roleOtherText: z.string().nullable().exactOptional(),
   companySize: zSignupCompanySize,
-  companySizeOtherText: z.exactOptional(z.string().nullable()),
+  companySizeOtherText: z.string().nullable().exactOptional(),
   mainGoal: zSignupGoal,
-  mainGoalOtherText: z.exactOptional(z.string().nullable()),
-  heardFrom: z.exactOptional(zSignupSource.nullable()),
-  heardFromOtherText: z.exactOptional(z.string().nullable()),
+  mainGoalOtherText: z.string().nullable().exactOptional(),
+  heardFrom: zSignupSource.nullable().exactOptional(),
+  heardFromOtherText: z.string().nullable().exactOptional(),
   answeredAt: zTimestamp
 });
 
@@ -509,7 +509,7 @@ export const zStaffSignupSurveyResponseResource = z.object({
 export const zStaffSuspension = z.object({
   at: zTimestamp,
   actor: zStaffSuspensionActor,
-  reason: z.exactOptional(z.string().nullable())
+  reason: z.string().nullable().exactOptional()
 });
 
 /**
@@ -532,7 +532,7 @@ export const zUsedBy = z.object({
   kind: zUsedByKind,
   id: zEntityId,
   name: z.string(),
-  count: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }))
+  count: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).exactOptional()
 });
 
 /**
@@ -553,19 +553,19 @@ export const zSoleOwnedWorkspace = z.object({
  * RFC 7807 Problem Details
  */
 export const zProblemDetails = z.object({
-  code: z.exactOptional(zProblemCode),
-  type: z.exactOptional(z.string()),
-  title: z.exactOptional(z.string()),
-  status: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
-  detail: z.exactOptional(z.string()),
-  instance: z.exactOptional(z.string()),
-  errors: z.exactOptional(z.record(z.string(), z.array(z.string()))),
-  form: z.exactOptional(z.string()),
-  fields: z.exactOptional(z.record(z.string(), z.string())),
-  retryAfter: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
-  debug: z.exactOptional(zProblemDebug),
-  usedBy: z.exactOptional(z.array(zUsedBy)),
-  workspaces: z.exactOptional(z.array(zSoleOwnedWorkspace))
+  code: zProblemCode.exactOptional(),
+  type: z.string().exactOptional(),
+  title: z.string().exactOptional(),
+  status: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).exactOptional(),
+  detail: z.string().exactOptional(),
+  instance: z.string().exactOptional(),
+  errors: z.record(z.string(), z.array(z.string())).exactOptional(),
+  form: z.string().exactOptional(),
+  fields: z.record(z.string(), z.string()).exactOptional(),
+  retryAfter: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).exactOptional(),
+  debug: zProblemDebug.exactOptional(),
+  usedBy: z.array(zUsedBy).exactOptional(),
+  workspaces: z.array(zSoleOwnedWorkspace).exactOptional()
 });
 
 /**
@@ -575,15 +575,15 @@ export const zStaffWorkspaceDetailResource = z.object({
   id: zWorkspaceId,
   name: z.string(),
   createdAt: zTimestamp,
-  discardedAt: z.exactOptional(zTimestamp.nullable()),
-  erasedAt: z.exactOptional(zTimestamp.nullable()),
-  suspension: z.exactOptional(zStaffSuspension.nullable()),
+  discardedAt: zTimestamp.nullable().exactOptional(),
+  erasedAt: zTimestamp.nullable().exactOptional(),
+  suspension: zStaffSuspension.nullable().exactOptional(),
   exempt: z.boolean(),
   warned: z.boolean(),
   holds: z.array(zStaffHold),
   deliverability: zStaffDeliverability,
   abuse: zStaffAbuse,
-  sendCap: z.exactOptional(zStaffSendCap)
+  sendCap: zStaffSendCap.exactOptional()
 });
 
 /**
@@ -594,9 +594,9 @@ export const zStaffWorkspaceResource = z.object({
   id: zWorkspaceId,
   name: z.string(),
   createdAt: zTimestamp,
-  discardedAt: z.exactOptional(zTimestamp.nullable()),
-  erasedAt: z.exactOptional(zTimestamp.nullable()),
-  suspension: z.exactOptional(zStaffSuspension.nullable()),
+  discardedAt: zTimestamp.nullable().exactOptional(),
+  erasedAt: zTimestamp.nullable().exactOptional(),
+  suspension: zStaffSuspension.nullable().exactOptional(),
   exempt: z.boolean(),
   warned: z.boolean()
 });
@@ -647,8 +647,8 @@ export const zStaffSignupSurveyGetPath = z.object({
 export const zStaffSignupSurveyGetResponse = zStaffSignupSurveyResponseResource;
 
 export const zStaffWorkspacesListQuery = z.object({
-  review: z.exactOptional(zStaffWorkspaceReview),
-  search: z.exactOptional(z.string()),
+  review: zStaffWorkspaceReview.exactOptional(),
+  search: z.string().exactOptional(),
   page: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
   pageSize: z.int().gte(1).lte(100).optional().default(25)
 });
@@ -678,7 +678,7 @@ export const zStaffWorkspaceAuditListPath = z.object({
 });
 
 export const zStaffWorkspaceAuditListQuery = z.object({
-  cursor: z.exactOptional(z.string()),
+  cursor: z.string().exactOptional(),
   limit: z.int().gte(1).lte(100).optional().default(25)
 });
 

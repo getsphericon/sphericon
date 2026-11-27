@@ -369,7 +369,7 @@ export function FlowCanvas(controls: CanvasControls) {
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
-        colorMode={scheme}
+        forceColorMode={scheme}
         nodesDraggable={false}
         nodesConnectable={false}
         nodesFocusable={false}
