@@ -43,6 +43,12 @@ const (
 	FieldDueAt = "due_at"
 	// FieldWentOn holds the string denoting the went_on field in the database.
 	FieldWentOn = "went_on"
+	// FieldAwaitedEventID holds the string denoting the awaited_event_id field in the database.
+	FieldAwaitedEventID = "awaited_event_id"
+	// FieldAwaitedAction holds the string denoting the awaited_action field in the database.
+	FieldAwaitedAction = "awaited_action"
+	// FieldAwaitedProperties holds the string denoting the awaited_properties field in the database.
+	FieldAwaitedProperties = "awaited_properties"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
 	EdgeWorkspace = "workspace"
 	// EdgeRun holds the string denoting the run edge name in mutations.
@@ -81,6 +87,9 @@ var Columns = []string{
 	FieldPathOutcomes,
 	FieldDueAt,
 	FieldWentOn,
+	FieldAwaitedEventID,
+	FieldAwaitedAction,
+	FieldAwaitedProperties,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -212,6 +221,16 @@ func ByDueAt(opts ...sql.OrderTermOption) OrderOption {
 // ByWentOn orders the results by the went_on field.
 func ByWentOn(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldWentOn, opts...).ToFunc()
+}
+
+// ByAwaitedEventID orders the results by the awaited_event_id field.
+func ByAwaitedEventID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAwaitedEventID, opts...).ToFunc()
+}
+
+// ByAwaitedAction orders the results by the awaited_action field.
+func ByAwaitedAction(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAwaitedAction, opts...).ToFunc()
 }
 
 // ByWorkspaceField orders the results by workspace field.

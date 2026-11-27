@@ -1095,6 +1095,7 @@ func (c *ConverterImpl) EnrollmentToResource(source *ent.AutomationRun) external
 		externalapiEnrollmentResource.DeferredSince = optTimestamp((*source).DeferredSince)
 		externalapiEnrollmentResource.DeferralCause = optDeferralCause(c, (*source).DeferralCause)
 		externalapiEnrollmentResource.Failure = enrollmentFailure(c, (*source))
+		externalapiEnrollmentResource.Awaited = enrollmentAwaited(c, (*source))
 		externalapiEnrollmentResource.CreatedAt = timestamp((*source).CreatedAt)
 		externalapiEnrollmentResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
@@ -1281,6 +1282,21 @@ func (c *ConverterImpl) IntegrationsListPage(source pagination.Page[external.Int
 	externalapiIntegrationsListOK.TotalItems = count(source.TotalItems)
 	externalapiIntegrationsListOK.TotalPages = count(source.TotalPages)
 	return &externalapiIntegrationsListOK
+}
+func (c *ConverterImpl) KeptEventToResource(source automations.KeptEvent) external.KeptEvent {
+	var externalapiKeptEvent external.KeptEvent
+	externalapiKeptEvent.Name = source.Name
+	externalapiKeptEvent.Action = source.Action
+	externalapiKeptEvent.Properties = awaitedProperties(source.Properties)
+	return externalapiKeptEvent
+}
+func (c *ConverterImpl) KeptEventsToResources(source []automations.KeptEvent) []external.KeptEvent {
+	var externalapiKeptEventList []external.KeptEvent
+	externalapiKeptEventList = make([]external.KeptEvent, len(source))
+	for i := 0; i < len(source); i++ {
+		externalapiKeptEventList[i] = c.KeptEventToResource(source[i])
+	}
+	return externalapiKeptEventList
 }
 func (c *ConverterImpl) LintCodeToResource(source emailrender.Code) external.LintCode {
 	var externalapiLintCode external.LintCode

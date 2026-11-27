@@ -1122,13 +1122,30 @@ func EventVariables(action string, properties map[string]any) map[string]any {
 	return map[string]any{"event": map[string]any{"action": action, "properties": systemevent.PublicProperties(action, properties)}}
 }
 
+// AwaitedEvent is the copy an Enrollment keeps of the Event one of its Wait for event Steps arrived
+// on (ADR 0136): its action and its properties.
+type AwaitedEvent struct {
+	Action     string
+	Properties map[string]any
+}
+
 // EnrollmentVariables are the merge tags an Automation's steps bind besides the Contact's: `event`,
-// the copy of the Event the Enrollment began on (#752); empty for a nil run or one no Event began.
-func EnrollmentVariables(run *ent.AutomationRun) map[string]any {
-	if run == nil {
-		return EventVariables("", nil)
+// the copy of the Event the Enrollment began on (#752), empty for a nil run or one no Event began;
+// and `awaited`, the copies of the Events its Wait for event Steps arrived on, by each Step's name
+// (ADR 0136), as `event` is: `awaited.<name>.action` and `awaited.<name>.properties.<key>`. A name
+// with no copy is absent, and `awaited` is bound even when it holds none, so every `awaited.*` tag
+// then renders empty and a Contact's custom field named `awaited` never stands in for it.
+func EnrollmentVariables(run *ent.AutomationRun, awaited map[string]AwaitedEvent) map[string]any {
+	kept := make(map[string]any, len(awaited))
+	for name, a := range awaited {
+		kept[name] = EventVariables(a.Action, a.Properties)["event"]
 	}
-	return EventVariables(lo.FromPtr(run.EventAction), run.EventProperties)
+	vars := EventVariables("", nil)
+	if run != nil {
+		vars = EventVariables(lo.FromPtr(run.EventAction), run.EventProperties)
+	}
+	vars["awaited"] = kept
+	return vars
 }
 
 // recordSent marks the claim Sent and publishes the Channel's sent Event in one transaction, so

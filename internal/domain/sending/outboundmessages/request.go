@@ -110,11 +110,12 @@ func (w Waited) restamp(u *ent.OutboundMessageScopedUpdate) {
 // Channel's default, ADR 0081). The Destination is the Contact's on that Channel; a Contact with
 // none is Skipped with skipreason.NoDestination, recorded for the step like any other skip. Each
 // Automation is its own unsubscribe Sending source; the unsubscribe click exits the enrollment (ADR
-// 0001). The message binds the Event the run began on as `event` (#752). Its key names the run and
-// the Step id, which every version keeps, so a Step inserted above it never changes the key (ADR
-// 0122). waited is how the send has waited at the Step so far (the zero Waited: not at all), which
-// its message keeps.
-func AutomationStep(a *ent.Automation, run *ent.AutomationRun, stepID automationstep.ID, integrationID *int64, c *ent.Contact, content Content, waited Waited) Request {
+// 0001). The message binds the Event the run began on as `event` (#752), and the Events its Wait for
+// event Steps arrived on, awaited by their names, as `awaited` (ADR 0136). Its key names the run
+// and the Step id, which every version keeps, so a Step inserted above it never changes the key
+// (ADR 0122). waited is how the send has waited at the Step so far (the zero Waited: not at all),
+// which its message keeps.
+func AutomationStep(a *ent.Automation, run *ent.AutomationRun, awaited map[string]AwaitedEvent, stepID automationstep.ID, integrationID *int64, c *ent.Contact, content Content, waited Waited) Request {
 	return Request{
 		Key:           fmt.Sprintf("automation:%d:%s", run.ID, stepID),
 		Destination:   contactDestination(content.Channel(), c),
@@ -123,7 +124,7 @@ func AutomationStep(a *ent.Automation, run *ent.AutomationRun, stepID automation
 		Track:         true,
 		Ref:           AutomationRef{AutomationID: a.ID, VersionID: run.VersionID, RunID: run.ID, StepID: stepID},
 		IntegrationID: integrationID,
-		Variables:     EnrollmentVariables(run),
+		Variables:     EnrollmentVariables(run, awaited),
 		Waited:        waited,
 	}
 }

@@ -127,9 +127,15 @@ func (e *lifecycleEvent) in(ctx context.Context) context.Context {
 // moved fires t on one Enrollment as move does, and returns the System event that records the
 // end, nil for a move that records none: the caller publishes it in the transaction of the move,
 // in the Enrollment's chain (lifecycleEvent.in).
-// An end other than a completion leaves the Step the Enrollment stood on (leaveOnEnd).
+// An end other than a completion leaves the Step the Enrollment stood on (leaveOnEnd), and every end
+// clears the Events its Wait for event Steps kept (clearKept).
 func moved(ctx context.Context, s *ent.Scoped, runID int64, t trigger, endedAt time.Time, extra func(*ent.AutomationRunScopedUpdate)) (*lifecycleEvent, error) {
 	if err := machine(s, runID, endedAt, extra).FireCtx(ctx, t); err != nil {
+		return nil, err
+	}
+	// Whatever the end, the copies of the Events its Wait for event Steps arrived on go with it
+	// (ADR 0136).
+	if err := clearKept(ctx, s, runID); err != nil {
 		return nil, err
 	}
 	// A completion leaves its last Step with how it did it (completeOn); any other end leaves the

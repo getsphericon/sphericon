@@ -11841,6 +11841,9 @@ type EnrollmentResource struct {
 	DeferralCause OptDeferralCause `json:"deferralCause"`
 	// Present on a failed Enrollment whose failure an HTTP step recorded.
 	Failure OptEnrollmentFailure `json:"failure"`
+	// The Events its Wait for event Steps arrived on, by name (ADR 0136): kept while the Enrollment runs,
+	// and cleared when it ends, so empty once it ended.
+	Awaited []KeptEvent `json:"awaited"`
 	// When the Contact was enrolled.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -11905,6 +11908,11 @@ func (s *EnrollmentResource) GetDeferralCause() OptDeferralCause {
 // GetFailure returns the value of Failure.
 func (s *EnrollmentResource) GetFailure() OptEnrollmentFailure {
 	return s.Failure
+}
+
+// GetAwaited returns the value of Awaited.
+func (s *EnrollmentResource) GetAwaited() []KeptEvent {
+	return s.Awaited
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -11975,6 +11983,11 @@ func (s *EnrollmentResource) SetDeferralCause(val OptDeferralCause) {
 // SetFailure sets the value of Failure.
 func (s *EnrollmentResource) SetFailure(val OptEnrollmentFailure) {
 	s.Failure = val
+}
+
+// SetAwaited sets the value of Awaited.
+func (s *EnrollmentResource) SetAwaited(val []KeptEvent) {
+	s.Awaited = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.
@@ -14565,6 +14578,49 @@ func (s *JsonObject) init() JsonObject {
 		*s = m
 	}
 	return m
+}
+
+// The copy an Enrollment keeps of the Event one of its Wait for event Steps arrived on (ADR 0136),
+// which later Steps read as `awaited.<name>`.
+// Ref: #/components/schemas/KeptEvent
+type KeptEvent struct {
+	// The name of the Wait for event that arrived on it.
+	Name string `json:"name"`
+	// The Event's action.
+	Action string `json:"action"`
+	// The Event's properties, bounded at 32 KiB as the triggering Event's copy is: empty when they weighed
+	// more.
+	Properties JsonObject `json:"properties"`
+}
+
+// GetName returns the value of Name.
+func (s *KeptEvent) GetName() string {
+	return s.Name
+}
+
+// GetAction returns the value of Action.
+func (s *KeptEvent) GetAction() string {
+	return s.Action
+}
+
+// GetProperties returns the value of Properties.
+func (s *KeptEvent) GetProperties() JsonObject {
+	return s.Properties
+}
+
+// SetName sets the value of Name.
+func (s *KeptEvent) SetName(val string) {
+	s.Name = val
+}
+
+// SetAction sets the value of Action.
+func (s *KeptEvent) SetAction(val string) {
+	s.Action = val
+}
+
+// SetProperties sets the value of Properties.
+func (s *KeptEvent) SetProperties(val JsonObject) {
+	s.Properties = val
 }
 
 type LegalDocumentLabel string

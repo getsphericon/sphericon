@@ -35,15 +35,17 @@ func (AutomationStepRecord) Annotations() []schema.Annotation {
 	a.Checks["automation_step_records_reason_check"] = "outcome IS NOT NULL OR skip_reason IS NULL"
 	a.Checks["automation_step_records_skipped_check"] = variantCheck("outcome", stepOutcome)
 	a.Checks["automation_step_records_wait_check"] = "due_at IS NULL OR went_on IS NULL"
+	a.Checks["automation_step_records_awaited_check"] = "(awaited_event_id IS NULL) = (awaited_action IS NULL)"
 	return []schema.Annotation{a}
 }
 
 // stepOutcome is the column that explains each outcome: a skipped Step its reason, a fork the
-// path it sent the Enrollment down and, at a Branch, each path's outcome.
+// path it sent the Enrollment down and, at a Branch, each path's outcome and, at a Wait for event
+// that arrived on an Event, the copy of that Event.
 var stepOutcome = []variant{
 	{value: "done"},
 	{value: "skipped", required: []string{"skip_reason"}},
-	{value: "path", required: []string{"path_id"}, optional: []string{"path_outcomes"}},
+	{value: "path", required: []string{"path_id"}, optional: []string{"path_outcomes", "awaited_event_id", "awaited_action", "awaited_properties"}},
 }
 
 func (AutomationStepRecord) Mixin() []ent.Mixin {
@@ -115,6 +117,25 @@ func (AutomationStepRecord) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			Immutable(),
+		// At a Wait for event that took `arrived` on an Event, the copy of that Event the Steps
+		// after it read under its name (ADR 0136): its action and its properties, bounded as the
+		// Enrollment's own `event` is (events.BoundedProperties, none when the Event weighed more),
+		// and the id of the Event it was copied from. Written once, in the latch of left_at with path_id; cleared, all three, in the
+		// move that ends the Enrollment, whatever its end, since nothing reads it after and it may
+		// hold the person's own words. Null for any other Step.
+		field.Int64("awaited_event_id").
+			Optional().
+			Nillable().
+			Annotations(ScopedRef{
+				Unchecked: true,
+				Reason: "a snapshot of the Event the copy was taken from, as the Enrollment's own triggering " +
+					"Event's source id is: Retention may delete the Event during the wait while the copy stays",
+			}),
+		field.String("awaited_action").
+			Optional().
+			Nillable(),
+		field.JSON("awaited_properties", map[string]any{}).
+			Optional(),
 	}
 }
 

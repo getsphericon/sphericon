@@ -15,6 +15,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/automationsteprecord"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
@@ -93,6 +94,9 @@ func TestAnErasureRemovesThePersonsDataAndKeepsTheFactsAnonymous(t *testing.T) {
 	kept, err := stepRecords()
 	require.NoError(t, err)
 	require.NotEmpty(t, kept, "the erasable run keeps a record of the Step it stands on")
+	// A Wait for event's copy of the Event it arrived on (ADR 0136) is of the Contact's runs alone.
+	awaited := env.DB.AutomationStepRecord.Query().Where(automationsteprecord.WorkspaceID(fixtures.InitechID), automationsteprecord.AwaitedEventIDNotNil())
+	require.True(t, awaited.Clone().ExistX(ctx), "the erasable run keeps a copy of the Event a Wait for event arrived on")
 
 	eraseErasable(t, env)
 
@@ -106,6 +110,7 @@ func TestAnErasureRemovesThePersonsDataAndKeepsTheFactsAnonymous(t *testing.T) {
 	assert.False(t, env.DB.AutomationRun.Query().Where(automationrun.ID(fixtures.AutomationRunErasableID)).ExistX(ctx), "automation runs")
 	_, err = stepRecords()
 	require.ErrorIs(t, err, automations.ErrEnrollmentNotFound, "the run goes, and its Step records with it")
+	assert.False(t, awaited.Clone().ExistX(ctx), "no copy of an awaited Event is left")
 
 	// Events: customer-tracked and marketing.confirmed are deleted ...
 	for _, id := range []int64{

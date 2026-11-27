@@ -535,6 +535,12 @@ func ScopedEntities() []*ScopedEntity {
 						return s.AutomationRun().UpdateOneID(id).SetContactID(target).Exec(ctx)
 					},
 				},
+				{
+					Name: "step_records", Target: "AutomationStepRecord",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.AutomationRun().UpdateOneID(id).AddStepRecordIDs(target).Exec(ctx)
+					},
+				},
 			},
 		},
 		{
@@ -641,6 +647,15 @@ func ScopedEntities() []*ScopedEntity {
 				}
 				if src.WentOn != nil {
 					b.SetWentOn(*src.WentOn)
+				}
+				if src.AwaitedEventID != nil {
+					b.SetAwaitedEventID(*src.AwaitedEventID)
+				}
+				if src.AwaitedAction != nil {
+					b.SetAwaitedAction(*src.AwaitedAction)
+				}
+				if !reflect.ValueOf(src.AwaitedProperties).IsZero() {
+					b.SetAwaitedProperties(src.AwaitedProperties)
 				}
 				created, err := b.Save(ctx)
 				if err != nil {

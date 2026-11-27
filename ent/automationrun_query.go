@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"fmt"
 	"math"
 
@@ -14,6 +15,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/automationsteprecord"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/predicate"
@@ -24,16 +26,17 @@ import (
 // AutomationRunQuery is the builder for querying AutomationRun entities.
 type AutomationRunQuery struct {
 	config
-	ctx            *QueryContext
-	order          []automationrun.OrderOption
-	inters         []Interceptor
-	predicates     []predicate.AutomationRun
-	withWorkspace  *WorkspaceQuery
-	withAutomation *AutomationQuery
-	withVersion    *AutomationVersionQuery
-	withContact    *ContactQuery
-	withFiring     *RuleFiringQuery
-	modifiers      []func(*sql.Selector)
+	ctx             *QueryContext
+	order           []automationrun.OrderOption
+	inters          []Interceptor
+	predicates      []predicate.AutomationRun
+	withWorkspace   *WorkspaceQuery
+	withAutomation  *AutomationQuery
+	withVersion     *AutomationVersionQuery
+	withContact     *ContactQuery
+	withFiring      *RuleFiringQuery
+	withStepRecords *AutomationStepRecordQuery
+	modifiers       []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -173,6 +176,28 @@ func (_q *AutomationRunQuery) QueryFiring() *RuleFiringQuery {
 			sqlgraph.From(automationrun.Table, automationrun.FieldID, selector),
 			sqlgraph.To(rulefiring.Table, rulefiring.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, automationrun.FiringTable, automationrun.FiringColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryStepRecords chains the current query on the "step_records" edge.
+func (_q *AutomationRunQuery) QueryStepRecords() *AutomationStepRecordQuery {
+	query := (&AutomationStepRecordClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(automationrun.Table, automationrun.FieldID, selector),
+			sqlgraph.To(automationsteprecord.Table, automationsteprecord.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, automationrun.StepRecordsTable, automationrun.StepRecordsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -367,16 +392,17 @@ func (_q *AutomationRunQuery) Clone() *AutomationRunQuery {
 		return nil
 	}
 	return &AutomationRunQuery{
-		config:         _q.config,
-		ctx:            _q.ctx.Clone(),
-		order:          append([]automationrun.OrderOption{}, _q.order...),
-		inters:         append([]Interceptor{}, _q.inters...),
-		predicates:     append([]predicate.AutomationRun{}, _q.predicates...),
-		withWorkspace:  _q.withWorkspace.Clone(),
-		withAutomation: _q.withAutomation.Clone(),
-		withVersion:    _q.withVersion.Clone(),
-		withContact:    _q.withContact.Clone(),
-		withFiring:     _q.withFiring.Clone(),
+		config:          _q.config,
+		ctx:             _q.ctx.Clone(),
+		order:           append([]automationrun.OrderOption{}, _q.order...),
+		inters:          append([]Interceptor{}, _q.inters...),
+		predicates:      append([]predicate.AutomationRun{}, _q.predicates...),
+		withWorkspace:   _q.withWorkspace.Clone(),
+		withAutomation:  _q.withAutomation.Clone(),
+		withVersion:     _q.withVersion.Clone(),
+		withContact:     _q.withContact.Clone(),
+		withFiring:      _q.withFiring.Clone(),
+		withStepRecords: _q.withStepRecords.Clone(),
 		// clone intermediate query.
 		sql:       _q.sql.Clone(),
 		path:      _q.path,
@@ -436,6 +462,17 @@ func (_q *AutomationRunQuery) WithFiring(opts ...func(*RuleFiringQuery)) *Automa
 		opt(query)
 	}
 	_q.withFiring = query
+	return _q
+}
+
+// WithStepRecords tells the query-builder to eager-load the nodes that are connected to
+// the "step_records" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *AutomationRunQuery) WithStepRecords(opts ...func(*AutomationStepRecordQuery)) *AutomationRunQuery {
+	query := (&AutomationStepRecordClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withStepRecords = query
 	return _q
 }
 
@@ -517,12 +554,13 @@ func (_q *AutomationRunQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([
 	var (
 		nodes       = []*AutomationRun{}
 		_spec       = _q.querySpec()
-		loadedTypes = [5]bool{
+		loadedTypes = [6]bool{
 			_q.withWorkspace != nil,
 			_q.withAutomation != nil,
 			_q.withVersion != nil,
 			_q.withContact != nil,
 			_q.withFiring != nil,
+			_q.withStepRecords != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -573,6 +611,13 @@ func (_q *AutomationRunQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([
 	if query := _q.withFiring; query != nil {
 		if err := _q.loadFiring(ctx, query, nodes, nil,
 			func(n *AutomationRun, e *RuleFiring) { n.Edges.Firing = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withStepRecords; query != nil {
+		if err := _q.loadStepRecords(ctx, query, nodes,
+			func(n *AutomationRun) { n.Edges.StepRecords = []*AutomationStepRecord{} },
+			func(n *AutomationRun, e *AutomationStepRecord) { n.Edges.StepRecords = append(n.Edges.StepRecords, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -724,6 +769,36 @@ func (_q *AutomationRunQuery) loadFiring(ctx context.Context, query *RuleFiringQ
 		for i := range nodes {
 			assign(nodes[i], n)
 		}
+	}
+	return nil
+}
+func (_q *AutomationRunQuery) loadStepRecords(ctx context.Context, query *AutomationStepRecordQuery, nodes []*AutomationRun, init func(*AutomationRun), assign func(*AutomationRun, *AutomationStepRecord)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*AutomationRun)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(automationsteprecord.FieldRunID)
+	}
+	query.Where(predicate.AutomationStepRecord(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(automationrun.StepRecordsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.RunID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "run_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
 	}
 	return nil
 }

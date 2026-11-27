@@ -8302,6 +8302,15 @@ func (s *Scoped) checkAutomationRun(ctx context.Context, ms ...*AutomationRunMut
 			return fmt.Errorf("firing: %w", err)
 		}
 	}
+	{
+		var ids []int64
+		for _, m := range ms {
+			ids = append(ids, m.StepRecordsIDs()...)
+		}
+		if err := s.verifyAutomationStepRecord(ctx, ids); err != nil {
+			return fmt.Errorf("step_records: %w", err)
+		}
+	}
 	return nil
 }
 
@@ -8792,6 +8801,22 @@ func (x *AutomationRunScopedCreate) SetFiring(v *RuleFiring) *AutomationRunScope
 }
 
 const RoleOf_AutomationRunScopedCreate_SetFiring = RoleStep
+
+// AddStepRecordIDs adds the "step_records" edge to the AutomationStepRecord entity by IDs.
+func (x *AutomationRunScopedCreate) AddStepRecordIDs(ids ...int64) *AutomationRunScopedCreate {
+	x.set = append(x.set, func(b *AutomationRunCreate) { b.AddStepRecordIDs(ids...) })
+	return x
+}
+
+const RoleOf_AutomationRunScopedCreate_AddStepRecordIDs = RoleStep
+
+// AddStepRecords adds the "step_records" edges to the AutomationStepRecord entity.
+func (x *AutomationRunScopedCreate) AddStepRecords(v ...*AutomationStepRecord) *AutomationRunScopedCreate {
+	x.set = append(x.set, func(b *AutomationRunCreate) { b.AddStepRecords(v...) })
+	return x
+}
+
+const RoleOf_AutomationRunScopedCreate_AddStepRecords = RoleStep
 
 const (
 	TypeOf_AutomationRunScopedCreate                        = TypeScopedCreate
@@ -9713,6 +9738,46 @@ func (x *AutomationRunScopedUpdateOne) ClearContact() *AutomationRunScopedUpdate
 
 const RoleOf_AutomationRunScopedUpdateOne_ClearContact = RoleStep
 
+// AddStepRecordIDs adds the "step_records" edge to the AutomationStepRecord entity by IDs.
+func (x *AutomationRunScopedUpdateOne) AddStepRecordIDs(ids ...int64) *AutomationRunScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationRunUpdateOne) { b.AddStepRecordIDs(ids...) })
+	return x
+}
+
+const RoleOf_AutomationRunScopedUpdateOne_AddStepRecordIDs = RoleStep
+
+// AddStepRecords adds the "step_records" edges to the AutomationStepRecord entity.
+func (x *AutomationRunScopedUpdateOne) AddStepRecords(v ...*AutomationStepRecord) *AutomationRunScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationRunUpdateOne) { b.AddStepRecords(v...) })
+	return x
+}
+
+const RoleOf_AutomationRunScopedUpdateOne_AddStepRecords = RoleStep
+
+// ClearStepRecords clears the "step_records" edges to the AutomationStepRecord entity.
+func (x *AutomationRunScopedUpdateOne) ClearStepRecords() *AutomationRunScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationRunUpdateOne) { b.ClearStepRecords() })
+	return x
+}
+
+const RoleOf_AutomationRunScopedUpdateOne_ClearStepRecords = RoleStep
+
+// RemoveStepRecordIDs removes the "step_records" edge to AutomationStepRecord entities by IDs.
+func (x *AutomationRunScopedUpdateOne) RemoveStepRecordIDs(ids ...int64) *AutomationRunScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationRunUpdateOne) { b.RemoveStepRecordIDs(ids...) })
+	return x
+}
+
+const RoleOf_AutomationRunScopedUpdateOne_RemoveStepRecordIDs = RoleStep
+
+// RemoveStepRecords removes "step_records" edges to AutomationStepRecord entities.
+func (x *AutomationRunScopedUpdateOne) RemoveStepRecords(v ...*AutomationStepRecord) *AutomationRunScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationRunUpdateOne) { b.RemoveStepRecords(v...) })
+	return x
+}
+
+const RoleOf_AutomationRunScopedUpdateOne_RemoveStepRecords = RoleStep
+
 // Save verifies the references against the Workspace, then updates the AutomationRun.
 func (x *AutomationRunScopedUpdateOne) Save(ctx context.Context) (*AutomationRun, error) {
 	return x.save(ctx, "update", skipUnchanged)
@@ -10143,6 +10208,46 @@ func (x *AutomationRunScopedUpdate) ClearContact() *AutomationRunScopedUpdate {
 }
 
 const RoleOf_AutomationRunScopedUpdate_ClearContact = RoleStep
+
+// AddStepRecordIDs adds the "step_records" edge to the AutomationStepRecord entity by IDs.
+func (x *AutomationRunScopedUpdate) AddStepRecordIDs(ids ...int64) *AutomationRunScopedUpdate {
+	x.set = append(x.set, func(b *AutomationRunUpdate) { b.AddStepRecordIDs(ids...) })
+	return x
+}
+
+const RoleOf_AutomationRunScopedUpdate_AddStepRecordIDs = RoleStep
+
+// AddStepRecords adds the "step_records" edges to the AutomationStepRecord entity.
+func (x *AutomationRunScopedUpdate) AddStepRecords(v ...*AutomationStepRecord) *AutomationRunScopedUpdate {
+	x.set = append(x.set, func(b *AutomationRunUpdate) { b.AddStepRecords(v...) })
+	return x
+}
+
+const RoleOf_AutomationRunScopedUpdate_AddStepRecords = RoleStep
+
+// ClearStepRecords clears the "step_records" edges to the AutomationStepRecord entity.
+func (x *AutomationRunScopedUpdate) ClearStepRecords() *AutomationRunScopedUpdate {
+	x.set = append(x.set, func(b *AutomationRunUpdate) { b.ClearStepRecords() })
+	return x
+}
+
+const RoleOf_AutomationRunScopedUpdate_ClearStepRecords = RoleStep
+
+// RemoveStepRecordIDs removes the "step_records" edge to AutomationStepRecord entities by IDs.
+func (x *AutomationRunScopedUpdate) RemoveStepRecordIDs(ids ...int64) *AutomationRunScopedUpdate {
+	x.set = append(x.set, func(b *AutomationRunUpdate) { b.RemoveStepRecordIDs(ids...) })
+	return x
+}
+
+const RoleOf_AutomationRunScopedUpdate_RemoveStepRecordIDs = RoleStep
+
+// RemoveStepRecords removes "step_records" edges to AutomationStepRecord entities.
+func (x *AutomationRunScopedUpdate) RemoveStepRecords(v ...*AutomationStepRecord) *AutomationRunScopedUpdate {
+	x.set = append(x.set, func(b *AutomationRunUpdate) { b.RemoveStepRecords(v...) })
+	return x
+}
+
+const RoleOf_AutomationRunScopedUpdate_RemoveStepRecords = RoleStep
 
 // build makes the ent update on the client of s and verifies the references it sets.
 func (x *AutomationRunScopedUpdate) build(ctx context.Context, s *Scoped) (*AutomationRunUpdate, error) {
@@ -11325,6 +11430,50 @@ func (x *AutomationStepRecordScopedCreate) SetNillableWentOn(v *automationstep.W
 
 const RoleOf_AutomationStepRecordScopedCreate_SetNillableWentOn = RoleStep
 
+// SetAwaitedEventID sets the "awaited_event_id" field.
+func (x *AutomationStepRecordScopedCreate) SetAwaitedEventID(v int64) *AutomationStepRecordScopedCreate {
+	x.set = append(x.set, func(b *AutomationStepRecordCreate) { b.SetAwaitedEventID(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedCreate_SetAwaitedEventID = RoleStep
+
+// SetNillableAwaitedEventID sets the "awaited_event_id" field if the given value is not nil.
+func (x *AutomationStepRecordScopedCreate) SetNillableAwaitedEventID(v *int64) *AutomationStepRecordScopedCreate {
+	if v != nil {
+		x.SetAwaitedEventID(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedCreate_SetNillableAwaitedEventID = RoleStep
+
+// SetAwaitedAction sets the "awaited_action" field.
+func (x *AutomationStepRecordScopedCreate) SetAwaitedAction(v string) *AutomationStepRecordScopedCreate {
+	x.set = append(x.set, func(b *AutomationStepRecordCreate) { b.SetAwaitedAction(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedCreate_SetAwaitedAction = RoleStep
+
+// SetNillableAwaitedAction sets the "awaited_action" field if the given value is not nil.
+func (x *AutomationStepRecordScopedCreate) SetNillableAwaitedAction(v *string) *AutomationStepRecordScopedCreate {
+	if v != nil {
+		x.SetAwaitedAction(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedCreate_SetNillableAwaitedAction = RoleStep
+
+// SetAwaitedProperties sets the "awaited_properties" field.
+func (x *AutomationStepRecordScopedCreate) SetAwaitedProperties(v map[string]interface{}) *AutomationStepRecordScopedCreate {
+	x.set = append(x.set, func(b *AutomationStepRecordCreate) { b.SetAwaitedProperties(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedCreate_SetAwaitedProperties = RoleStep
+
 // SetRun sets the "run" edge to the AutomationRun entity.
 func (x *AutomationStepRecordScopedCreate) SetRun(v *AutomationRun) *AutomationStepRecordScopedCreate {
 	x.set = append(x.set, func(b *AutomationStepRecordCreate) { b.SetRun(v) })
@@ -11593,6 +11742,86 @@ func (u *AutomationStepRecordScopedUpsert) ClearPathOutcomes() *AutomationStepRe
 }
 
 const RoleOf_AutomationStepRecordScopedUpsert_ClearPathOutcomes = RoleStep
+
+// SetAwaitedEventID sets the "awaited_event_id" field.
+func (u *AutomationStepRecordScopedUpsert) SetAwaitedEventID(v int64) *AutomationStepRecordScopedUpsert {
+	u.u.Set(automationsteprecord.FieldAwaitedEventID, v)
+	return u
+}
+
+const RoleOf_AutomationStepRecordScopedUpsert_SetAwaitedEventID = RoleStep
+
+// AddAwaitedEventID adds v to the "awaited_event_id" field.
+func (u *AutomationStepRecordScopedUpsert) AddAwaitedEventID(v int64) *AutomationStepRecordScopedUpsert {
+	u.u.Add(automationsteprecord.FieldAwaitedEventID, v)
+	return u
+}
+
+const RoleOf_AutomationStepRecordScopedUpsert_AddAwaitedEventID = RoleStep
+
+// UpdateAwaitedEventID sets the "awaited_event_id" field to the value that was provided on create.
+func (u *AutomationStepRecordScopedUpsert) UpdateAwaitedEventID() *AutomationStepRecordScopedUpsert {
+	u.u.SetExcluded(automationsteprecord.FieldAwaitedEventID)
+	return u
+}
+
+const RoleOf_AutomationStepRecordScopedUpsert_UpdateAwaitedEventID = RoleStep
+
+// ClearAwaitedEventID clears the value of the "awaited_event_id" field.
+func (u *AutomationStepRecordScopedUpsert) ClearAwaitedEventID() *AutomationStepRecordScopedUpsert {
+	u.u.SetNull(automationsteprecord.FieldAwaitedEventID)
+	return u
+}
+
+const RoleOf_AutomationStepRecordScopedUpsert_ClearAwaitedEventID = RoleStep
+
+// SetAwaitedAction sets the "awaited_action" field.
+func (u *AutomationStepRecordScopedUpsert) SetAwaitedAction(v string) *AutomationStepRecordScopedUpsert {
+	u.u.Set(automationsteprecord.FieldAwaitedAction, v)
+	return u
+}
+
+const RoleOf_AutomationStepRecordScopedUpsert_SetAwaitedAction = RoleStep
+
+// UpdateAwaitedAction sets the "awaited_action" field to the value that was provided on create.
+func (u *AutomationStepRecordScopedUpsert) UpdateAwaitedAction() *AutomationStepRecordScopedUpsert {
+	u.u.SetExcluded(automationsteprecord.FieldAwaitedAction)
+	return u
+}
+
+const RoleOf_AutomationStepRecordScopedUpsert_UpdateAwaitedAction = RoleStep
+
+// ClearAwaitedAction clears the value of the "awaited_action" field.
+func (u *AutomationStepRecordScopedUpsert) ClearAwaitedAction() *AutomationStepRecordScopedUpsert {
+	u.u.SetNull(automationsteprecord.FieldAwaitedAction)
+	return u
+}
+
+const RoleOf_AutomationStepRecordScopedUpsert_ClearAwaitedAction = RoleStep
+
+// SetAwaitedProperties sets the "awaited_properties" field.
+func (u *AutomationStepRecordScopedUpsert) SetAwaitedProperties(v map[string]interface{}) *AutomationStepRecordScopedUpsert {
+	u.u.Set(automationsteprecord.FieldAwaitedProperties, v)
+	return u
+}
+
+const RoleOf_AutomationStepRecordScopedUpsert_SetAwaitedProperties = RoleStep
+
+// UpdateAwaitedProperties sets the "awaited_properties" field to the value that was provided on create.
+func (u *AutomationStepRecordScopedUpsert) UpdateAwaitedProperties() *AutomationStepRecordScopedUpsert {
+	u.u.SetExcluded(automationsteprecord.FieldAwaitedProperties)
+	return u
+}
+
+const RoleOf_AutomationStepRecordScopedUpsert_UpdateAwaitedProperties = RoleStep
+
+// ClearAwaitedProperties clears the value of the "awaited_properties" field.
+func (u *AutomationStepRecordScopedUpsert) ClearAwaitedProperties() *AutomationStepRecordScopedUpsert {
+	u.u.SetNull(automationsteprecord.FieldAwaitedProperties)
+	return u
+}
+
+const RoleOf_AutomationStepRecordScopedUpsert_ClearAwaitedProperties = RoleStep
 
 // conflictOptions confines the DO UPDATE part to rows of the Workspace.
 // target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
@@ -11933,6 +12162,82 @@ func (x *AutomationStepRecordScopedUpdateOne) ClearPathOutcomes() *AutomationSte
 
 const RoleOf_AutomationStepRecordScopedUpdateOne_ClearPathOutcomes = RoleStep
 
+// SetAwaitedEventID sets the "awaited_event_id" field.
+func (x *AutomationStepRecordScopedUpdateOne) SetAwaitedEventID(v int64) *AutomationStepRecordScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdateOne) { b.SetAwaitedEventID(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdateOne_SetAwaitedEventID = RoleStep
+
+// SetNillableAwaitedEventID sets the "awaited_event_id" field if the given value is not nil.
+func (x *AutomationStepRecordScopedUpdateOne) SetNillableAwaitedEventID(v *int64) *AutomationStepRecordScopedUpdateOne {
+	if v != nil {
+		x.SetAwaitedEventID(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdateOne_SetNillableAwaitedEventID = RoleStep
+
+// AddAwaitedEventID adds value to the "awaited_event_id" field.
+func (x *AutomationStepRecordScopedUpdateOne) AddAwaitedEventID(v int64) *AutomationStepRecordScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdateOne) { b.AddAwaitedEventID(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdateOne_AddAwaitedEventID = RoleStep
+
+// ClearAwaitedEventID clears the value of the "awaited_event_id" field.
+func (x *AutomationStepRecordScopedUpdateOne) ClearAwaitedEventID() *AutomationStepRecordScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdateOne) { b.ClearAwaitedEventID() })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdateOne_ClearAwaitedEventID = RoleStep
+
+// SetAwaitedAction sets the "awaited_action" field.
+func (x *AutomationStepRecordScopedUpdateOne) SetAwaitedAction(v string) *AutomationStepRecordScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdateOne) { b.SetAwaitedAction(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdateOne_SetAwaitedAction = RoleStep
+
+// SetNillableAwaitedAction sets the "awaited_action" field if the given value is not nil.
+func (x *AutomationStepRecordScopedUpdateOne) SetNillableAwaitedAction(v *string) *AutomationStepRecordScopedUpdateOne {
+	if v != nil {
+		x.SetAwaitedAction(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdateOne_SetNillableAwaitedAction = RoleStep
+
+// ClearAwaitedAction clears the value of the "awaited_action" field.
+func (x *AutomationStepRecordScopedUpdateOne) ClearAwaitedAction() *AutomationStepRecordScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdateOne) { b.ClearAwaitedAction() })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdateOne_ClearAwaitedAction = RoleStep
+
+// SetAwaitedProperties sets the "awaited_properties" field.
+func (x *AutomationStepRecordScopedUpdateOne) SetAwaitedProperties(v map[string]interface{}) *AutomationStepRecordScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdateOne) { b.SetAwaitedProperties(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdateOne_SetAwaitedProperties = RoleStep
+
+// ClearAwaitedProperties clears the value of the "awaited_properties" field.
+func (x *AutomationStepRecordScopedUpdateOne) ClearAwaitedProperties() *AutomationStepRecordScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdateOne) { b.ClearAwaitedProperties() })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdateOne_ClearAwaitedProperties = RoleStep
+
 // Save verifies the references against the Workspace, then updates the AutomationStepRecord.
 func (x *AutomationStepRecordScopedUpdateOne) Save(ctx context.Context) (*AutomationStepRecord, error) {
 	return x.save(ctx, "update", skipUnchanged)
@@ -12155,6 +12460,82 @@ func (x *AutomationStepRecordScopedUpdate) ClearPathOutcomes() *AutomationStepRe
 }
 
 const RoleOf_AutomationStepRecordScopedUpdate_ClearPathOutcomes = RoleStep
+
+// SetAwaitedEventID sets the "awaited_event_id" field.
+func (x *AutomationStepRecordScopedUpdate) SetAwaitedEventID(v int64) *AutomationStepRecordScopedUpdate {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdate) { b.SetAwaitedEventID(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdate_SetAwaitedEventID = RoleStep
+
+// SetNillableAwaitedEventID sets the "awaited_event_id" field if the given value is not nil.
+func (x *AutomationStepRecordScopedUpdate) SetNillableAwaitedEventID(v *int64) *AutomationStepRecordScopedUpdate {
+	if v != nil {
+		x.SetAwaitedEventID(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdate_SetNillableAwaitedEventID = RoleStep
+
+// AddAwaitedEventID adds value to the "awaited_event_id" field.
+func (x *AutomationStepRecordScopedUpdate) AddAwaitedEventID(v int64) *AutomationStepRecordScopedUpdate {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdate) { b.AddAwaitedEventID(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdate_AddAwaitedEventID = RoleStep
+
+// ClearAwaitedEventID clears the value of the "awaited_event_id" field.
+func (x *AutomationStepRecordScopedUpdate) ClearAwaitedEventID() *AutomationStepRecordScopedUpdate {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdate) { b.ClearAwaitedEventID() })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdate_ClearAwaitedEventID = RoleStep
+
+// SetAwaitedAction sets the "awaited_action" field.
+func (x *AutomationStepRecordScopedUpdate) SetAwaitedAction(v string) *AutomationStepRecordScopedUpdate {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdate) { b.SetAwaitedAction(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdate_SetAwaitedAction = RoleStep
+
+// SetNillableAwaitedAction sets the "awaited_action" field if the given value is not nil.
+func (x *AutomationStepRecordScopedUpdate) SetNillableAwaitedAction(v *string) *AutomationStepRecordScopedUpdate {
+	if v != nil {
+		x.SetAwaitedAction(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdate_SetNillableAwaitedAction = RoleStep
+
+// ClearAwaitedAction clears the value of the "awaited_action" field.
+func (x *AutomationStepRecordScopedUpdate) ClearAwaitedAction() *AutomationStepRecordScopedUpdate {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdate) { b.ClearAwaitedAction() })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdate_ClearAwaitedAction = RoleStep
+
+// SetAwaitedProperties sets the "awaited_properties" field.
+func (x *AutomationStepRecordScopedUpdate) SetAwaitedProperties(v map[string]interface{}) *AutomationStepRecordScopedUpdate {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdate) { b.SetAwaitedProperties(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdate_SetAwaitedProperties = RoleStep
+
+// ClearAwaitedProperties clears the value of the "awaited_properties" field.
+func (x *AutomationStepRecordScopedUpdate) ClearAwaitedProperties() *AutomationStepRecordScopedUpdate {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdate) { b.ClearAwaitedProperties() })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdate_ClearAwaitedProperties = RoleStep
 
 // build makes the ent update on the client of s and verifies the references it sets.
 func (x *AutomationStepRecordScopedUpdate) build(ctx context.Context, s *Scoped) (*AutomationStepRecordUpdate, error) {

@@ -3094,6 +3094,10 @@ export type EnrollmentResource = {
    */
   failure?: EnrollmentFailure;
   /**
+   * The Events its Wait for event Steps arrived on, by name (ADR 0136): kept while the Enrollment runs, and cleared when it ends, so empty once it ended
+   */
+  awaited: Array<KeptEvent>;
+  /**
    * When the Contact was enrolled
    */
   createdAt: Timestamp;
@@ -3740,6 +3744,24 @@ export type IssueTelegramStartLinkInput = {
  */
 export type JsonObject = {
   [key: string]: unknown;
+};
+
+/**
+ * The copy an Enrollment keeps of the Event one of its Wait for event Steps arrived on (ADR 0136), which later Steps read as `awaited.<name>`.
+ */
+export type KeptEvent = {
+  /**
+   * The name of the Wait for event that arrived on it
+   */
+  name: string;
+  /**
+   * The Event's action
+   */
+  action: string;
+  /**
+   * The Event's properties, bounded at 32 KiB as the triggering Event's copy is: empty when they weighed more
+   */
+  properties: JsonObject;
 };
 
 /**
