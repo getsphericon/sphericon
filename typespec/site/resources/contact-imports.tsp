@@ -94,6 +94,27 @@ model ContactImportCustomFieldColumn {
   dateFormat: ContactImportDateFormat | null;
 }
 
+/**
+ * A column whose cells write a Custom field the import creates (ADR 0138): its key, its label and
+ * the type the Member chooses, created when the import runs. Mapping one needs
+ * `custom_fields:manage`; a key the Workspace has already is refused.
+ */
+model ContactImportNewCustomFieldColumn {
+  kind: "newCustomField";
+
+  /** The new field's key, which a Contact's values and a Condition address it by */
+  key: string;
+
+  /** The new field's display name */
+  label: Name;
+
+  /** The type the cells are read in */
+  type: CustomFieldType;
+
+  /** How the cells write a date: required for a `datetime` field, null for any other type */
+  dateFormat: ContactImportDateFormat | null;
+}
+
 /** A column whose cells name the Tags a row adds, separated by commas; a Tag holding a comma is quoted */
 model ContactImportTagsColumn {
   kind: "tags";
@@ -107,6 +128,8 @@ model ContactImportIgnoreColumn {
 model ContactImportKeyColumnInput is ContactImportKeyColumn;
 model ContactImportAttributeColumnInput is ContactImportAttributeColumn;
 model ContactImportCustomFieldColumnInput is ContactImportCustomFieldColumn;
+model ContactImportNewCustomFieldColumnInput
+  is ContactImportNewCustomFieldColumn;
 model ContactImportTagsColumnInput is ContactImportTagsColumn;
 model ContactImportIgnoreColumnInput is ContactImportIgnoreColumn;
 
@@ -116,6 +139,7 @@ union ContactImportColumn {
   key: ContactImportKeyColumn,
   attribute: ContactImportAttributeColumn,
   customField: ContactImportCustomFieldColumn,
+  newCustomField: ContactImportNewCustomFieldColumn,
   tags: ContactImportTagsColumn,
   ignore: ContactImportIgnoreColumn,
 }
@@ -126,6 +150,7 @@ union ContactImportColumnInput {
   key: ContactImportKeyColumnInput,
   attribute: ContactImportAttributeColumnInput,
   customField: ContactImportCustomFieldColumnInput,
+  newCustomField: ContactImportNewCustomFieldColumnInput,
   tags: ContactImportTagsColumnInput,
   ignore: ContactImportIgnoreColumnInput,
 }
@@ -330,6 +355,9 @@ model SiteContactImportPreview {
 
   /** Distinct Tags the rows would add, the Tag for every row included */
   distinctTags: int32;
+
+  /** Custom fields the run would create: the columns mapped to a new field */
+  newCustomFields: int32;
 }
 
 /** A link a browser follows once, in the session that asked for it, within a minute */
@@ -368,7 +396,8 @@ namespace SiteContactImports {
 
   /**
    * Save how the import reads its file, one entry per column; it is then `ready`. Refused before it
-   * runs only: a running or ended import keeps its mapping (409).
+   * runs only: a running or ended import keeps its mapping (409). A column mapped to a new Custom
+   * field needs `custom_fields:manage` (403), and its key must be new to the Workspace (409).
    */
   @put
   @route("/{importId}/mapping")
@@ -390,6 +419,8 @@ namespace SiteContactImports {
   /**
    * Run a `ready` import: its job writes the rows through the Contact intake, acting as the Member,
    * and starts nothing (its Events are history). A date column without a format is refused (422).
+   * The new Custom fields its mapping names are created first, which needs `custom_fields:manage`
+   * again (403); a key the Workspace has taken since the mapping was saved is refused (409).
    */
   @post
   @route("/{importId}/run")

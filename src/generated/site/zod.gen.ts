@@ -606,33 +606,11 @@ export const zContactImportTagsColumn = z.object({
 });
 
 /**
- * What a column of the file is, by `kind`
- */
-export const zContactImportColumn = z.discriminatedUnion('kind', [
-  zContactImportKeyColumn.extend({ kind: z.literal('key') }),
-  zContactImportAttributeColumn.extend({ kind: z.literal('attribute') }),
-  zContactImportCustomFieldColumn.extend({ kind: z.literal('customField') }),
-  zContactImportTagsColumn.extend({ kind: z.literal('tags') }),
-  zContactImportIgnoreColumn.extend({ kind: z.literal('ignore') })
-]);
-
-/**
  * A column whose cells name the Tags a row adds, separated by commas; a Tag holding a comma is quoted
  */
 export const zContactImportTagsColumnInput = z.strictObject({
   kind: z.enum(['tags'])
 });
-
-/**
- * What a column of the file is, by `kind`, as a request writes it
- */
-export const zContactImportColumnInput = z.discriminatedUnion('kind', [
-  zContactImportKeyColumnInput.extend({ kind: z.literal('key') }),
-  zContactImportAttributeColumnInput.extend({ kind: z.literal('attribute') }),
-  zContactImportCustomFieldColumnInput.extend({ kind: z.literal('customField') }),
-  zContactImportTagsColumnInput.extend({ kind: z.literal('tags') }),
-  zContactImportIgnoreColumnInput.extend({ kind: z.literal('ignore') })
-]);
 
 /**
  * A trait of a previewed row worth a look; the row is written all the same. `disposable_email` and
@@ -1279,6 +1257,31 @@ export const zApplyTagInput = z.strictObject({
 });
 
 /**
+ * A column whose cells write a Custom field the import creates (ADR 0138): its key, its label and
+ * the type the Member chooses, created when the import runs. Mapping one needs
+ * `custom_fields:manage`; a key the Workspace has already is refused.
+ */
+export const zContactImportNewCustomFieldColumn = z.object({
+  kind: z.enum(['newCustomField']),
+  key: z.string(),
+  label: zName,
+  type: zCustomFieldType,
+  dateFormat: zContactImportDateFormat.nullable()
+});
+
+/**
+ * What a column of the file is, by `kind`
+ */
+export const zContactImportColumn = z.discriminatedUnion('kind', [
+  zContactImportKeyColumn.extend({ kind: z.literal('key') }),
+  zContactImportAttributeColumn.extend({ kind: z.literal('attribute') }),
+  zContactImportCustomFieldColumn.extend({ kind: z.literal('customField') }),
+  zContactImportNewCustomFieldColumn.extend({ kind: z.literal('newCustomField') }),
+  zContactImportTagsColumn.extend({ kind: z.literal('tags') }),
+  zContactImportIgnoreColumn.extend({ kind: z.literal('ignore') })
+]);
+
+/**
  * How an import reads its file: what each column is, and the choices that hold for every row
  */
 export const zContactImportMapping = z.object({
@@ -1289,6 +1292,31 @@ export const zContactImportMapping = z.object({
   onlyAddNew: z.boolean(),
   asNewSignUps: z.boolean()
 });
+
+/**
+ * A column whose cells write a Custom field the import creates (ADR 0138): its key, its label and
+ * the type the Member chooses, created when the import runs. Mapping one needs
+ * `custom_fields:manage`; a key the Workspace has already is refused.
+ */
+export const zContactImportNewCustomFieldColumnInput = z.strictObject({
+  kind: z.enum(['newCustomField']),
+  key: z.string(),
+  label: zName,
+  type: zCustomFieldType,
+  dateFormat: zContactImportDateFormat.nullable()
+});
+
+/**
+ * What a column of the file is, by `kind`, as a request writes it
+ */
+export const zContactImportColumnInput = z.discriminatedUnion('kind', [
+  zContactImportKeyColumnInput.extend({ kind: z.literal('key') }),
+  zContactImportAttributeColumnInput.extend({ kind: z.literal('attribute') }),
+  zContactImportCustomFieldColumnInput.extend({ kind: z.literal('customField') }),
+  zContactImportNewCustomFieldColumnInput.extend({ kind: z.literal('newCustomField') }),
+  zContactImportTagsColumnInput.extend({ kind: z.literal('tags') }),
+  zContactImportIgnoreColumnInput.extend({ kind: z.literal('ignore') })
+]);
 
 /**
  * How an import reads its file, as a request writes it
@@ -2183,7 +2211,8 @@ export const zSiteContactImportPreview = z.object({
   totalRows: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   rowsWithoutKey: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   malformedRows: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  distinctTags: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+  distinctTags: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  newCustomFields: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
 });
 
 /**

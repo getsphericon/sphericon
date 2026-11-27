@@ -72,6 +72,11 @@ func contactImportColumn(c Converter, col csvimport.Column) siteapi.ContactImpor
 		return siteapi.ContactImportColumn{OneOf: siteapi.NewContactImportCustomFieldColumnContactImportColumnSum(siteapi.ContactImportCustomFieldColumn{
 			Kind: siteapi.ContactImportCustomFieldColumnKindCustomField, Key: col.Key, DateFormat: format,
 		})}
+	case csvimport.KindNewCustomField:
+		return siteapi.ContactImportColumn{OneOf: siteapi.NewContactImportNewCustomFieldColumnContactImportColumnSum(siteapi.ContactImportNewCustomFieldColumn{
+			Kind: siteapi.ContactImportNewCustomFieldColumnKindNewCustomField, Key: col.Key, Label: siteapi.Name(col.Label),
+			Type: siteapi.CustomFieldType(col.FieldType), DateFormat: format,
+		})}
 	case csvimport.KindTags:
 		return siteapi.ContactImportColumn{OneOf: siteapi.NewContactImportTagsColumnContactImportColumnSum(siteapi.ContactImportTagsColumn{
 			Kind: siteapi.ContactImportTagsColumnKindTags,
@@ -128,6 +133,12 @@ func contactImportColumnIn(c Inputs, col *siteapi.ContactImportColumnInput) csvi
 	case siteapi.ContactImportCustomFieldColumnInputContactImportColumnInputSum:
 		v := col.OneOf.ContactImportCustomFieldColumnInput
 		return csvimport.Column{Kind: csvimport.KindCustomField, Key: v.Key, DateFormat: dateFormat(v.DateFormat)}
+	case siteapi.ContactImportNewCustomFieldColumnInputContactImportColumnInputSum:
+		v := col.OneOf.ContactImportNewCustomFieldColumnInput
+		return csvimport.Column{
+			Kind: csvimport.KindNewCustomField, Key: v.Key, Label: string(v.Label),
+			FieldType: string(v.Type), DateFormat: dateFormat(v.DateFormat),
+		}
 	case siteapi.ContactImportTagsColumnInputContactImportColumnInputSum:
 		return csvimport.Column{Kind: csvimport.KindTags}
 	case siteapi.ContactImportIgnoreColumnInputContactImportColumnInputSum:

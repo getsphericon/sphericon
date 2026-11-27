@@ -43,7 +43,7 @@ func readingOf(ctx context.Context, s *ent.Scoped, header []string, mapping csvi
 	if err != nil {
 		return reading{}, err
 	}
-	fields := lo.SliceToMap(defined, func(f *ent.CustomField) (string, customfield.Type) { return f.Key, f.Type })
+	fields := withNewFields(lo.SliceToMap(defined, func(f *ent.CustomField) (string, customfield.Type) { return f.Key, f.Type }), mapping)
 	return reading{mapping: mapping, header: header, fields: fields, zone: zone}, nil
 }
 
@@ -81,8 +81,10 @@ var cellReaders = map[csvimport.Kind]cellReader{
 	csvimport.KindKey:         readKey,
 	csvimport.KindAttribute:   readAttribute,
 	csvimport.KindCustomField: readCustomField,
-	csvimport.KindTags:        readTags,
-	csvimport.KindIgnore:      func(*rowState, csvimport.Column, int, string) {},
+	// A new Custom field is read in the type the Member chose, before the run creates it too.
+	csvimport.KindNewCustomField: readCustomField,
+	csvimport.KindTags:           readTags,
+	csvimport.KindIgnore:         func(*rowState, csvimport.Column, int, string) {},
 }
 
 // row reads the cells of a row: a row with another number of cells than the header is refused as

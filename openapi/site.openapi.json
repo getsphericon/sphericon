@@ -5616,7 +5616,7 @@
     "/workspaces/{workspaceId}/contact-imports/{importId}/mapping": {
       "put": {
         "operationId": "SiteContactImports_saveMapping",
-        "description": "Save how the import reads its file, one entry per column; it is then `ready`. Refused before it\nruns only: a running or ended import keeps its mapping (409).",
+        "description": "Save how the import reads its file, one entry per column; it is then `ready`. Refused before it\nruns only: a running or ended import keeps its mapping (409). A column mapped to a new Custom\nfield needs `custom_fields:manage` (403), and its key must be new to the Workspace (409).",
         "parameters": [
           {
             "name": "workspaceId",
@@ -5835,7 +5835,7 @@
     "/workspaces/{workspaceId}/contact-imports/{importId}/run": {
       "post": {
         "operationId": "SiteContactImports_run",
-        "description": "Run a `ready` import: its job writes the rows through the Contact intake, acting as the Member,\nand starts nothing (its Events are history). A date column without a format is refused (422).",
+        "description": "Run a `ready` import: its job writes the rows through the Contact intake, acting as the Member,\nand starts nothing (its Events are history). A date column without a format is refused (422).\nThe new Custom fields its mapping names are created first, which needs `custom_fields:manage`\nagain (403); a key the Workspace has taken since the mapping was saved is refused (409).",
         "parameters": [
           {
             "name": "workspaceId",
@@ -14907,6 +14907,9 @@
             "$ref": "#/components/schemas/ContactImportCustomFieldColumn"
           },
           {
+            "$ref": "#/components/schemas/ContactImportNewCustomFieldColumn"
+          },
+          {
             "$ref": "#/components/schemas/ContactImportTagsColumn"
           },
           {
@@ -14919,6 +14922,7 @@
             "key": "#/components/schemas/ContactImportKeyColumn",
             "attribute": "#/components/schemas/ContactImportAttributeColumn",
             "customField": "#/components/schemas/ContactImportCustomFieldColumn",
+            "newCustomField": "#/components/schemas/ContactImportNewCustomFieldColumn",
             "tags": "#/components/schemas/ContactImportTagsColumn",
             "ignore": "#/components/schemas/ContactImportIgnoreColumn"
           }
@@ -14938,6 +14942,9 @@
             "$ref": "#/components/schemas/ContactImportCustomFieldColumnInput"
           },
           {
+            "$ref": "#/components/schemas/ContactImportNewCustomFieldColumnInput"
+          },
+          {
             "$ref": "#/components/schemas/ContactImportTagsColumnInput"
           },
           {
@@ -14950,6 +14957,7 @@
             "key": "#/components/schemas/ContactImportKeyColumnInput",
             "attribute": "#/components/schemas/ContactImportAttributeColumnInput",
             "customField": "#/components/schemas/ContactImportCustomFieldColumnInput",
+            "newCustomField": "#/components/schemas/ContactImportNewCustomFieldColumnInput",
             "tags": "#/components/schemas/ContactImportTagsColumnInput",
             "ignore": "#/components/schemas/ContactImportIgnoreColumnInput"
           }
@@ -15283,6 +15291,87 @@
           }
         },
         "description": "How an import reads its file, as a request writes it",
+        "additionalProperties": false
+      },
+      "ContactImportNewCustomFieldColumn": {
+        "type": "object",
+        "required": ["kind", "key", "label", "type", "dateFormat"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["newCustomField"]
+          },
+          "key": {
+            "type": "string",
+            "description": "The new field's key, which a Contact's values and a Condition address it by"
+          },
+          "label": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Name"
+              }
+            ],
+            "description": "The new field's display name"
+          },
+          "type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CustomFieldType"
+              }
+            ],
+            "description": "The type the cells are read in"
+          },
+          "dateFormat": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContactImportDateFormat"
+              }
+            ],
+            "nullable": true,
+            "description": "How the cells write a date: required for a `datetime` field, null for any other type"
+          }
+        },
+        "description": "A column whose cells write a Custom field the import creates (ADR 0138): its key, its label and\nthe type the Member chooses, created when the import runs. Mapping one needs\n`custom_fields:manage`; a key the Workspace has already is refused."
+      },
+      "ContactImportNewCustomFieldColumnInput": {
+        "type": "object",
+        "required": ["kind", "key", "label", "type", "dateFormat"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["newCustomField"]
+          },
+          "key": {
+            "type": "string",
+            "description": "The new field's key, which a Contact's values and a Condition address it by"
+          },
+          "label": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Name"
+              }
+            ],
+            "description": "The new field's display name"
+          },
+          "type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CustomFieldType"
+              }
+            ],
+            "description": "The type the cells are read in"
+          },
+          "dateFormat": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContactImportDateFormat"
+              }
+            ],
+            "nullable": true,
+            "description": "How the cells write a date: required for a `datetime` field, null for any other type"
+          }
+        },
+        "description": "A column whose cells write a Custom field the import creates (ADR 0138): its key, its label and\nthe type the Member chooses, created when the import runs. Mapping one needs\n`custom_fields:manage`; a key the Workspace has already is refused.",
         "additionalProperties": false
       },
       "ContactImportPreviewRow": {
@@ -22183,7 +22272,14 @@
       },
       "SiteContactImportPreview": {
         "type": "object",
-        "required": ["rows", "totalRows", "rowsWithoutKey", "malformedRows", "distinctTags"],
+        "required": [
+          "rows",
+          "totalRows",
+          "rowsWithoutKey",
+          "malformedRows",
+          "distinctTags",
+          "newCustomFields"
+        ],
         "properties": {
           "rows": {
             "type": "array",
@@ -22212,6 +22308,11 @@
             "type": "integer",
             "format": "int32",
             "description": "Distinct Tags the rows would add, the Tag for every row included"
+          },
+          "newCustomFields": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Custom fields the run would create: the columns mapped to a new field"
           }
         },
         "description": "What an import would do with its saved mapping (ADR 0138): its first rows, and counts over the whole file"

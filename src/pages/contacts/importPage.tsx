@@ -34,6 +34,7 @@ import {
 import type {
   ContactImportAttribute,
   ContactImportDateFormat,
+  CustomFieldType,
   ContactImportIssue,
   ContactImportKey,
   ContactImportState,
@@ -43,19 +44,24 @@ import type {
 import {
   zContactImportDateFormat,
   zContactImportDecimalSeparator,
+  zCustomFieldType,
 } from '../../generated/site/zod.gen.ts'
 import { Route as importPageRoute } from '../../routes/workspaces/$workspaceId/contacts/imports/$importId.tsx'
 import { countryOptions } from '../../utils/countries.ts'
+import { can } from '../../utils/permissions.ts'
+import { workspaceOptions } from '../../utils/workspace.ts'
 import {
+  choiceWritesDate,
   columnsMissingDateFormat,
   ignore,
   mappingInputOf,
+  newCustomField,
+  newFieldFor,
   tags,
   targets,
   valuesOf,
-  writesDate,
 } from './importMapping.ts'
-import type { FieldOption, MappingValues } from './importMapping.ts'
+import type { FieldOption, MappingValues, NewFieldChoice } from './importMapping.ts'
 
 // A CSV import's page (ADR 0138): the mapping of its columns and its preview before it runs, its
 // progress while it runs, and what it wrote with its refused rows' report after.
@@ -150,6 +156,10 @@ function MappingForm({ workspaceId, imp }: { workspaceId: string; imp: SiteConta
     key: field.key,
     type: field.type,
   }))
+  // A column creates a Custom field only for a Member who manages them, as the API refuses
+  // everyone else.
+  const { data: workspace } = useQuery(workspaceOptions(workspaceId))
+  const canCreateFields = can(workspace, 'custom_fields:manage')
   const [values, setValues] = useState<MappingValues>(() => valuesOf(imp.mapping))
   const [previewed, setPreviewed] = useState(false)
   // Edits not saved yet, which leaving the page would lose.
@@ -188,7 +198,14 @@ function MappingForm({ workspaceId, imp }: { workspaceId: string; imp: SiteConta
     },
     {
       group: t(($) => $.contactImports.customFieldsGroup),
-      items: all.customFields.map(({ value, key }) => ({ value, label: key })),
+      items: [
+        ...all.customFields.map(({ value, key }) => ({ value, label: key })),
+        {
+          value: newCustomField,
+          label: t(($) => $.contactImports.newCustomField),
+          disabled: !canCreateFields,
+        },
+      ],
     },
   ]
   const dateFormats = zContactImportDateFormat.options.map((format) => ({
@@ -237,13 +254,26 @@ function MappingForm({ workspaceId, imp }: { workspaceId: string; imp: SiteConta
                     allowDeselect={false}
                     searchable
                     onChange={(target) => {
-                      setColumn(at, { target: target ?? ignore })
+                      setColumn(at, {
+                        target: target ?? ignore,
+                        newField: choice.newField ?? newFieldFor(header),
+                      })
                       setPreviewed(false)
                     }}
                   />
+                  {choice.target === newCustomField ? (
+                    <NewFieldInputs
+                      column={header}
+                      field={choice.newField ?? newFieldFor(header)}
+                      onChange={(newField) => {
+                        setColumn(at, { newField })
+                        setPreviewed(false)
+                      }}
+                    />
+                  ) : null}
                 </Table.Td>
                 <Table.Td>
-                  {writesDate(choice.target, fields) ? (
+                  {choiceWritesDate(choice, fields) ? (
                     <Select
                       aria-label={t(($) => $.contactImports.dateFormatColumn, { column: header })}
                       placeholder={t(($) => $.contactImports.chooseDateFormat)}
@@ -315,6 +345,9 @@ function MappingForm({ workspaceId, imp }: { workspaceId: string; imp: SiteConta
       {run.isError ? (
         <ApiErrorAlert error={run.error} title={t(($) => $.contactImports.runError)} />
       ) : null}
+      {canCreateFields ? null : (
+        <Text c="dimmed">{t(($) => $.contactImports.newCustomFieldNeedsPermission)}</Text>
+      )}
       {missing.length > 0 ? (
         <Text c="dimmed">{t(($) => $.contactImports.runNeedsDateFormats)}</Text>
       ) : null}
@@ -344,6 +377,50 @@ function MappingForm({ workspaceId, imp }: { workspaceId: string; imp: SiteConta
   )
 }
 
+// The key, label and type of the Custom field a column creates when the import runs.
+function NewFieldInputs({
+  column,
+  field,
+  onChange,
+}: {
+  column: string
+  field: NewFieldChoice
+  onChange: (field: NewFieldChoice) => void
+}) {
+  const { t } = useTranslation()
+  const types: Record<CustomFieldType, string> = {
+    string: t(($) => $.customFields.types.string),
+    number: t(($) => $.customFields.types.number),
+    bool: t(($) => $.customFields.types.bool),
+    datetime: t(($) => $.customFields.types.datetime),
+  }
+  return (
+    <Stack gap="xs" mt="xs">
+      <TextInput
+        label={t(($) => $.contactImports.newFieldKey)}
+        aria-label={t(($) => $.contactImports.newFieldKeyColumn, { column })}
+        description={t(($) => $.contactImports.newFieldKeyHint)}
+        value={field.key}
+        onChange={(event) => onChange({ ...field, key: event.currentTarget.value })}
+      />
+      <TextInput
+        label={t(($) => $.contactImports.newFieldLabel)}
+        aria-label={t(($) => $.contactImports.newFieldLabelColumn, { column })}
+        value={field.label}
+        onChange={(event) => onChange({ ...field, label: event.currentTarget.value })}
+      />
+      <Select
+        label={t(($) => $.contactImports.newFieldType)}
+        aria-label={t(($) => $.contactImports.newFieldTypeColumn, { column })}
+        data={zCustomFieldType.options.map((type) => ({ value: type, label: types[type] }))}
+        value={field.type}
+        allowDeselect={false}
+        onChange={(type) => onChange({ ...field, type: zCustomFieldType.parse(type) })}
+      />
+    </Stack>
+  )
+}
+
 // What a row's issues say, joined: why it is refused, and each value it drops.
 function issuesText(issues: ContactImportIssue[]): string {
   return issues.map((issue) => issue.message).join('; ')
@@ -360,6 +437,7 @@ function PreviewView({ header, preview }: { header: string[]; preview: SiteConta
           withoutKey: preview.rowsWithoutKey,
           malformed: preview.malformedRows,
           tags: preview.distinctTags,
+          newFields: preview.newCustomFields,
         })}
       </Text>
       <Table.ScrollContainer minWidth={600}>
