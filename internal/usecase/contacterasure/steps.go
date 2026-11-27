@@ -161,7 +161,7 @@ func (u *UseCase) withdrawFrom(ctx context.Context, s *ent.Scoped, d heldDestina
 		}
 		// A message of the Destination may have gone to another Contact that held it before, whose
 		// Enrollment kept one of these Events as `awaited.<name>` (ADR 0136): its copy goes too.
-		if err := u.kept.ForgetKept(ctx, s, deleted); err != nil {
+		if err := u.automationsModule.ForgetKept(ctx, s, deleted); err != nil {
 			return err
 		}
 		if err := u.credits.ClearCredits(ctx, s, ids); err != nil {

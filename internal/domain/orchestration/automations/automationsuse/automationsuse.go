@@ -94,8 +94,8 @@ func stepConditions(v *ent.AutomationVersion) []conditiontree.Group {
 				out = append(out, c.Group)
 			}
 		case automationstep.WaitForEvent:
-			if a, ok := p.Awaits.(automationstep.AwaitedEvent); ok && a.Condition != nil {
-				out = append(out, a.Condition.Group)
+			if cond := p.Condition(); cond != nil {
+				out = append(out, cond.Group)
 			}
 		}
 	}
@@ -144,9 +144,7 @@ func matcherNames(v *ent.AutomationVersion) condition.Definitions {
 		matchers = append(matchers, *v.Goal)
 	}
 	for _, w := range automationstep.WaitsForEvents(v.Steps) {
-		if a, ok := w.Awaits.(automationstep.AwaitedEvent); ok {
-			matchers = append(matchers, a.Matchers...)
-		}
+		matchers = append(matchers, w.Matchers()...)
 	}
 	var named condition.Definitions
 	for _, m := range matchers {

@@ -37,6 +37,10 @@ type Awaits interface {
 	AwaitsKind() AwaitsKind
 	// stored is what is awaited as a version stores it.
 	stored() Awaits
+	// eventMatchers and eventCondition are the Event matchers and the Condition of what is awaited
+	// on an Event; none for any other kind.
+	eventMatchers() []eventmatcher.Matcher
+	eventCondition() *conditiontree.WaitForEvent
 }
 
 // AwaitedEvent waits for an Event one of Matchers matches (ADR 0124, ADR 0180): of the matcher's
@@ -50,6 +54,9 @@ type AwaitedEvent struct {
 
 func (AwaitedEvent) AwaitsKind() AwaitsKind { return AwaitsEvent }
 
+func (a AwaitedEvent) eventMatchers() []eventmatcher.Matcher       { return a.Matchers }
+func (a AwaitedEvent) eventCondition() *conditiontree.WaitForEvent { return a.Condition }
+
 // stored trims each matcher's action, as an Event matcher's action is stored.
 func (a AwaitedEvent) stored() Awaits {
 	matchers := make([]eventmatcher.Matcher, len(a.Matchers))
@@ -61,8 +68,13 @@ func (a AwaitedEvent) stored() Awaits {
 
 // Actions are the Event actions the matchers name, each once, in their order.
 func (a AwaitedEvent) Actions() []string {
+	return actionsOf(a.Matchers)
+}
+
+// actionsOf are the Event actions the matchers name, each once, in their order.
+func actionsOf(matchers []eventmatcher.Matcher) []string {
 	var out []string
-	for _, m := range a.Matchers {
+	for _, m := range matchers {
 		if !slices.Contains(out, m.Action) {
 			out = append(out, m.Action)
 		}
@@ -80,6 +92,39 @@ type AwaitedMessage struct {
 func (AwaitedMessage) AwaitsKind() AwaitsKind { return AwaitsMessage }
 
 func (a AwaitedMessage) stored() Awaits { return a }
+
+func (AwaitedMessage) eventMatchers() []eventmatcher.Matcher       { return nil }
+func (AwaitedMessage) eventCondition() *conditiontree.WaitForEvent { return nil }
+
+// Matchers are the Event matchers the Wait for event waits for: none when it waits for an open or
+// a click, or for nothing yet (a request not checked).
+func (w WaitForEvent) Matchers() []eventmatcher.Matcher {
+	if w.Awaits == nil {
+		return nil
+	}
+	return w.Awaits.eventMatchers()
+}
+
+// Actions are the Event actions the Wait for event's matchers name, each once, in their order.
+func (w WaitForEvent) Actions() []string {
+	return actionsOf(w.Matchers())
+}
+
+// Condition is the Condition of a Wait for event on an Event, nil for none and for one on an open
+// or a click.
+func (w WaitForEvent) Condition() *conditiontree.WaitForEvent {
+	if w.Awaits == nil {
+		return nil
+	}
+	return w.Awaits.eventCondition()
+}
+
+// Message is the open or click of a message the Wait for event waits for, false when it waits for
+// an Event (or nothing yet). Only one on an Event keeps a copy of what it arrived on (ADR 0136).
+func (w WaitForEvent) Message() (AwaitedMessage, bool) {
+	m, ok := w.Awaits.(AwaitedMessage)
+	return m, ok
+}
 
 // The places of a Wait for event's paths in its Step's document, which are its fields.
 const (

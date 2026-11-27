@@ -37,18 +37,18 @@ const Batch = 500
 // UseCase is the reach-back of a refusal of tracking over the event bus, the Outbound messages, the
 // Orders and the Automations' kept Events.
 type UseCase struct {
-	bus      *events.Bus
-	messages *outboundmessages.Module
-	orders   *orders.Module
-	kept     *automations.Module
-	events   *eventsunchecked.Module
-	batch    int
+	bus         *events.Bus
+	messages    *outboundmessages.Module
+	orders      *orders.Module
+	automations *automations.Module
+	events      *eventsunchecked.Module
+	batch       int
 }
 
 // New returns the reach-back, batch messages to a transaction (Batch; a test passes 1 to turn
 // every loop).
-func New(bus *events.Bus, messages *outboundmessages.Module, credits *orders.Module, kept *automations.Module, batch int) *UseCase {
-	return &UseCase{bus: bus, messages: messages, orders: credits, kept: kept, events: eventsunchecked.New(), batch: batch}
+func New(bus *events.Bus, messages *outboundmessages.Module, credits *orders.Module, flows *automations.Module, batch int) *UseCase {
+	return &UseCase{bus: bus, messages: messages, orders: credits, automations: flows, events: eventsunchecked.New(), batch: batch}
 }
 
 // Refusal is the Destination that refused tracking, in the form its consent is stored in.
@@ -98,7 +98,7 @@ func (u *UseCase) forget(ctx context.Context, ts *ent.Scoped, msgs []*ent.Outbou
 	if err != nil {
 		return fmt.Errorf("delete the opens and clicks: %w", err)
 	}
-	if err := u.kept.ForgetKept(ctx, ts, deleted); err != nil {
+	if err := u.automations.ForgetKept(ctx, ts, deleted); err != nil {
 		return fmt.Errorf("clear the kept copies of the opens and clicks: %w", err)
 	}
 	return u.orders.ClearCredits(ctx, ts, ids)

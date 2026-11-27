@@ -52,7 +52,7 @@ func arrive(st *automationstep.Step, now time.Time, a arrival) (automationstep.D
 	case automationstep.Wait:
 		return automationstep.WaitsUntil{At: now.Add(time.Duration(p.Seconds) * time.Second)}, nil
 	case automationstep.WaitForEvent:
-		if awaited, onMessage := p.Awaits.(automationstep.AwaitedMessage); onMessage {
+		if awaited, onMessage := p.Message(); onMessage {
 			h, err := a.message(awaited)
 			if err != nil {
 				return nil, err

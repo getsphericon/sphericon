@@ -21,7 +21,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/bounds"
-	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -113,31 +112,28 @@ func sameMatcherIn(seen []eventmatcher.Matcher, m eventmatcher.Matcher) (bool, e
 // does not have is ErrUnknownSender (ADR 0153).
 func (m *Module) checkWaits(ctx context.Context, s *ent.Scoped, steps automationstep.Path) error {
 	for st, w := range automationstep.WaitsForEvents(steps) {
-		a, ok := w.Awaits.(automationstep.AwaitedEvent)
-		if !ok {
-			continue
-		}
-		for _, matcher := range a.Matchers {
+		for _, matcher := range w.Matchers() {
 			refusal := func(why string) error { return refuse(st, "an awaited event: "+why) }
 			at := fmt.Sprintf("step %s (%s): an awaited event: ", st.ID, st.Kind())
 			if err := m.checkNamed(ctx, s, matcher, at, refusal); err != nil {
 				return err
 			}
 		}
-		if a.Condition == nil {
+		cond := w.Condition()
+		if cond == nil {
 			continue
 		}
-		if size := a.Condition.Size(); size > rules.MaxConditionNodes {
+		if size := cond.Size(); size > rules.MaxConditionNodes {
 			return refuse(st, fmt.Sprintf("a condition has at most %d groups and tests, this one has %d", rules.MaxConditionNodes, size))
 		}
-		err := m.conditions.CheckWaitForEvent(ctx, s, *a.Condition)
+		err := m.conditions.CheckWaitForEvent(ctx, s, *cond)
 		if errors.Is(err, condition.ErrStorage) {
 			return err
 		}
 		if err != nil {
 			return refuse(st, "the condition: "+err.Error())
 		}
-		unknown, err := m.senders.Unknown(ctx, s, condition.NamedSenders(a.Condition.Group))
+		unknown, err := m.senders.Unknown(ctx, s, condition.NamedSenders(cond.Group))
 		if err != nil {
 			return err
 		}
@@ -208,42 +204,11 @@ func checkAwaitedEndings(def definition) error {
 		}
 	}
 	for st, w := range automationstep.WaitsForEvents(def.steps) {
-		for _, action := range awaitedActions(*w) {
+		for _, action := range w.Actions() {
 			if unfiltered[action] {
 				return refuse(st, fmt.Sprintf("it awaits %q, which an exit or the goal ends the enrollment on with no filter, so it would never arrive", action))
 			}
 		}
-	}
-	return nil
-}
-
-// awaitedActions are the Event actions the Wait for event's matchers name.
-func awaitedActions(w automationstep.WaitForEvent) []string {
-	switch a := w.Awaits.(type) {
-	case automationstep.AwaitedEvent:
-		return a.Actions()
-	case automationstep.AwaitedMessage, nil:
-		// An open or a click of a message is no action: it wakes by the message (wakeOnMessage).
-	}
-	return nil
-}
-
-// awaitedMatchers are the Event matchers the Wait for event waits for.
-func awaitedMatchers(w automationstep.WaitForEvent) []eventmatcher.Matcher {
-	switch a := w.Awaits.(type) {
-	case automationstep.AwaitedEvent:
-		return a.Matchers
-	case automationstep.AwaitedMessage, nil:
-	}
-	return nil
-}
-
-// awaitedCondition is the Wait for event's Condition, nil for none.
-func awaitedCondition(w automationstep.WaitForEvent) *conditiontree.WaitForEvent {
-	switch a := w.Awaits.(type) {
-	case automationstep.AwaitedEvent:
-		return a.Condition
-	case automationstep.AwaitedMessage, nil:
 	}
 	return nil
 }
@@ -269,7 +234,7 @@ func anyMatcher(matchers []eventmatcher.Matcher) (predicate.Event, error) {
 // Condition that no longer compiles (a Custom field it tests was retyped since), which fails the
 // Enrollment, as a Branch's does.
 func (m *StepExecution) conditionHolds(ctx context.Context, s *ent.Scoped, run *ent.AutomationRun, index *automationstep.Index, w automationstep.WaitForEvent) (bool, error) {
-	cond := awaitedCondition(w)
+	cond := w.Condition()
 	if cond == nil {
 		return true, nil
 	}
@@ -343,11 +308,11 @@ func (m *StepExecution) windowOf(ctx context.Context, s *ent.Scoped, run *ent.Au
 	if rec.DueAt == nil {
 		return awaitWindow{}, false, fmt.Errorf("wait for event step %s of run %d has no deadline", step, run.ID)
 	}
-	begunOn, err := begunOnSource(ctx, s, m, run)
+	begunOn, err := m.begunOnSource(ctx, s, run)
 	if err != nil {
 		return awaitWindow{}, false, err
 	}
-	matched, err := anyMatcher(awaitedMatchers(w))
+	matched, err := anyMatcher(w.Matchers())
 	if err != nil {
 		return awaitWindow{}, false, err
 	}
@@ -359,7 +324,7 @@ func (m *StepExecution) windowOf(ctx context.Context, s *ent.Scoped, run *ent.Au
 
 // begunOnSource is the source id of the Event the Enrollment began on: its Trigger's, or the one
 // the Rule whose Firing enrolled it fired on; "" for none.
-func begunOnSource(ctx context.Context, s *ent.Scoped, m *StepExecution, run *ent.AutomationRun) (string, error) {
+func (m *StepExecution) begunOnSource(ctx context.Context, s *ent.Scoped, run *ent.AutomationRun) (string, error) {
 	if run.TriggerSourceID != nil {
 		return *run.TriggerSourceID, nil
 	}
@@ -439,7 +404,7 @@ func (m *StepExecution) wake(ctx context.Context, s *ent.Scoped, contactID int64
 			continue
 		}
 		w, waits := st.Payload.(automationstep.WaitForEvent)
-		if !waits || !slices.Contains(awaitedActions(w), ev.Action) {
+		if !waits || !slices.Contains(w.Actions(), ev.Action) {
 			continue
 		}
 		win, open, err := m.windowOf(ctx, s, run, run.Edges.Version.EnrollmentKey, st.ID, w)

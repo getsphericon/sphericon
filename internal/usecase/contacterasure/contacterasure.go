@@ -207,8 +207,9 @@ type UseCase struct {
 	// Erasure come before the refusal's reach-back.
 	messages *outboundmessages.Module
 	credits  *orders.Module
-	// kept clears the copies Enrollments kept of the opens and clicks that refusal deletes.
-	kept *automations.Module
+	// automationsModule clears the copies Enrollments kept of the opens and clicks that refusal
+	// deletes.
+	automationsModule *automations.Module
 }
 
 // New builds the Contact erasure use case over the bus whose transaction every erasure runs in,
@@ -217,27 +218,27 @@ type UseCase struct {
 // to the Contact it reads, the Engagement tracking consent whose refusals it keeps, the Outbound
 // messages and Orders whose tracked engagement a refusal deletes, and the Automations whose kept
 // copies of it go too; now is the Instance clock the Broadcasts' unchecked operations read.
-func New(bus *events.Bus, catalogue *broadcasts.Module, people *contacts.Module, unsubs *unsubscribes.Module, chats *bindings.Chats, tracking *engagementtracking.Module, messages *outboundmessages.Module, credits *orders.Module, kept *automations.Module, now func() time.Time) *UseCase {
+func New(bus *events.Bus, catalogue *broadcasts.Module, people *contacts.Module, unsubs *unsubscribes.Module, chats *bindings.Chats, tracking *engagementtracking.Module, messages *outboundmessages.Module, credits *orders.Module, flows *automations.Module, now func() time.Time) *UseCase {
 	return &UseCase{
 		bus: bus, broadcasts: broadcastsunchecked.New(catalogue, bus, now), unsubs: unsubs,
 		automations: automationsunchecked.New(bus), rules: rulesunchecked.New(bus),
-		locks:         contactlock.New(),
-		contacts:      contactsunchecked.New(people),
-		visitors:      visitorsunchecked.New(),
-		stamps:        consentstampsunchecked.New(),
-		outbound:      outboundmessagesunchecked.New(),
-		counts:        frequencycapunchecked.New(),
-		captured:      capturedmessagesunchecked.New(),
-		optOuts:       unsubscribesunchecked.New(),
-		suppressions:  suppressionsunchecked.New(),
-		confirmations: confirmationsunchecked.New(),
-		events:        eventsunchecked.New(),
-		chats:         chats,
-		tracking:      tracking,
-		trackingSteps: engagementtrackingunchecked.New(),
-		messages:      messages,
-		credits:       credits,
-		kept:          kept,
+		locks:             contactlock.New(),
+		contacts:          contactsunchecked.New(people),
+		visitors:          visitorsunchecked.New(),
+		stamps:            consentstampsunchecked.New(),
+		outbound:          outboundmessagesunchecked.New(),
+		counts:            frequencycapunchecked.New(),
+		captured:          capturedmessagesunchecked.New(),
+		optOuts:           unsubscribesunchecked.New(),
+		suppressions:      suppressionsunchecked.New(),
+		confirmations:     confirmationsunchecked.New(),
+		events:            eventsunchecked.New(),
+		chats:             chats,
+		tracking:          tracking,
+		trackingSteps:     engagementtrackingunchecked.New(),
+		messages:          messages,
+		credits:           credits,
+		automationsModule: flows,
 	}
 }
 

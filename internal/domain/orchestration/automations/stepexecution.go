@@ -321,7 +321,7 @@ func (m *StepExecution) Step(ctx context.Context, s *ent.Scoped, runID int64, st
 		return m.branch(ctx, s, run, at, p)
 
 	case automationstep.WaitForEvent:
-		if a, onMessage := p.Awaits.(automationstep.AwaitedMessage); onMessage {
+		if a, onMessage := p.Message(); onMessage {
 			return m.awaitMessage(ctx, s, run, at, p, a)
 		}
 		return m.timeout(ctx, s, run, version, at, p)

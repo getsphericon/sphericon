@@ -126,7 +126,7 @@ func checkAwaitedTests(steps automationstep.Path) error {
 				}
 			}
 		case automationstep.WaitForEvent:
-			cond := awaitedCondition(p)
+			cond := p.Condition()
 			if cond == nil {
 				continue
 			}
@@ -150,8 +150,8 @@ func awaitedProblem(steps automationstep.Path, at automationstep.ID, g condition
 	keeps := map[string]bool{}
 	for _, st := range automationstep.Before(steps, at) {
 		if w, ok := st.Payload.(automationstep.WaitForEvent); ok {
-			_, onEvent := w.Awaits.(automationstep.AwaitedEvent)
-			keeps[w.Name] = onEvent
+			_, onMessage := w.Message()
+			keeps[w.Name] = !onMessage
 		}
 	}
 	for _, name := range names {

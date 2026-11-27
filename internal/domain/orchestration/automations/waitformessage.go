@@ -227,7 +227,7 @@ func (m *StepExecution) wakeOnMessage(ctx context.Context, s *ent.Scoped, contac
 	if !waits {
 		return nil
 	}
-	a, onMessage := w.Awaits.(automationstep.AwaitedMessage)
+	a, onMessage := w.Message()
 	if !onMessage || a.Step != *msg.AutomationStepID || !slices.Contains(engagementActions(a.Engagement), stored.Action) {
 		return nil
 	}

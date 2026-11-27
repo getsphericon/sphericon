@@ -345,7 +345,7 @@ func NeedsUnknownPath(conditions []conditiontree.Branch) bool {
 func checkUnknownPaths(steps automationstep.Path) error {
 	for _, st := range automationstep.All(steps) {
 		if w, ok := st.Payload.(automationstep.WaitForEvent); ok {
-			if _, onMessage := w.Awaits.(automationstep.AwaitedMessage); onMessage && w.Unknown == nil {
+			if _, onMessage := w.Message(); onMessage && w.Unknown == nil {
 				return refuse(st, "a wait for an open or a click needs an unknown path, taken when the app cannot know whether one happened")
 			}
 			continue
@@ -383,19 +383,19 @@ func checkStepMessages(steps automationstep.Path) error {
 			passed := before()
 			for i, path := range p.Paths {
 				for _, test := range condition.StepMessageTests(path.Condition.Group) {
-					reader := messageReader{names: "the message test names step", before: "the branch"}
-					if why := reader.problem(passed[test.Step], test.Step, test.Engagement); why != "" {
+					refusal := messageRefusal{names: "the message test names step", before: "the branch"}
+					if why := refusal.problem(passed[test.Step], test.Step, test.Engagement); why != "" {
 						return refuse(st, fmt.Sprintf("path %d: %s", i+1, why))
 					}
 				}
 			}
 		case automationstep.WaitForEvent:
-			m, ok := p.Awaits.(automationstep.AwaitedMessage)
+			m, ok := p.Message()
 			if !ok {
 				continue
 			}
-			reader := messageReader{names: "it waits for the message of step", before: "it"}
-			if why := reader.problem(before()[m.Step], m.Step, m.Engagement); why != "" {
+			refusal := messageRefusal{names: "it waits for the message of step", before: "it"}
+			if why := refusal.problem(before()[m.Step], m.Step, m.Engagement); why != "" {
 				return refuse(st, why)
 			}
 		}
@@ -403,15 +403,15 @@ func checkStepMessages(steps automationstep.Path) error {
 	return nil
 }
 
-// messageReader is a Step that reads the message of a send Step before it, as its refusals name
-// that Step (names) and itself (before).
-type messageReader struct {
+// messageRefusal is how the refusal of a Step that reads the message of a send Step before it words
+// that send Step (names) and the Step itself (before).
+type messageRefusal struct {
 	names, before string
 }
 
 // problem is why the reader cannot read the open or click (e) of the message of the Step named,
 // which is sent, one of the Steps before the reader (nil for none of them); "" when it can.
-func (r messageReader) problem(sent *automationstep.Step, named automationstep.ID, e conditiontree.Engagement) string {
+func (r messageRefusal) problem(sent *automationstep.Step, named automationstep.ID, e conditiontree.Engagement) string {
 	if sent == nil {
 		return fmt.Sprintf("%s %s, which is no send step before %s", r.names, named, r.before)
 	}
