@@ -115,6 +115,11 @@ export default defineConfig({
         // worktree's own slot in a linked one.
         port: Number(process.env.FRONTEND_PORT ?? 5173),
         strictPort: true,
+        // The dev server listens on every interface (host: true), so it serves only what
+        // index.html reaches: the modules it imports and the assets they reference, transitively.
+        // Any other file of the checkout is a 403. `strict: 'extended'` (plugin-loaded modules
+        // too) refuses @vitejs/plugin-react 6.3's /@react-refresh on the first load.
+        fs: { allow: [] },
         // Worktrees are full repo copies and `test:cover` rewrites coverage/ (HTML files
         // Vite treats as pages): watching either triggers spurious full reloads.
         watch: { ignored: ['**/.worktrees/**', '**/.claude/worktrees/**', '**/coverage/**'] },

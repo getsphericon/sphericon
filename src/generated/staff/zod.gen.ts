@@ -96,8 +96,8 @@ export const zProblemCode = z.enum([
  */
 export const zProblemDebug = z.object({
   error: z.string(),
-  stack: z.exactOptional(z.string()),
-  requestId: z.exactOptional(z.string()),
+  stack: z.string().exactOptional(),
+  requestId: z.string().exactOptional(),
   method: z.string(),
   path: z.string()
 });
@@ -195,7 +195,7 @@ export const zStaffInstanceTelemetryLock = z.enum(['environment', 'do_not_track'
 export const zStaffInstanceTelemetry = z.object({
   enabled: z.boolean(),
   locked: z.boolean(),
-  lockedBy: z.exactOptional(zStaffInstanceTelemetryLock)
+  lockedBy: zStaffInstanceTelemetryLock.exactOptional()
 });
 
 /**
@@ -232,7 +232,7 @@ export const zStaffLoginOutcome = z.enum(['challenge', 'enrolment']);
 export const zStaffLoginResult = z.object({
   outcome: zStaffLoginOutcome,
   challenge: z.string(),
-  enrolment: z.exactOptional(zStaffEnrolment)
+  enrolment: zStaffEnrolment.exactOptional()
 });
 
 /**
@@ -258,7 +258,7 @@ export const zStaffSignupItemInput = z.strictObject({
   key: zSignupItemKey,
   title: zSignupItemTitle,
   kind: zSignupItemKind,
-  mailingsConsent: z.exactOptional(z.boolean())
+  mailingsConsent: z.boolean().exactOptional()
 });
 
 /**
@@ -273,8 +273,8 @@ export const zStaffSignupItemOrder = z.strictObject({
  * Change a Sign-up item
  */
 export const zStaffSignupItemUpdate = z.strictObject({
-  title: z.exactOptional(zSignupItemTitle),
-  mailingsConsent: z.exactOptional(z.boolean())
+  title: zSignupItemTitle.exactOptional(),
+  mailingsConsent: z.boolean().exactOptional()
 });
 
 export const zTimeZoneName = z.string();
@@ -298,7 +298,7 @@ export const zStaffInstanceAuditEntryResource = z.object({
  */
 export const zStaffInstanceAuditEntryList = z.object({
   items: z.array(zStaffInstanceAuditEntryResource),
-  nextCursor: z.exactOptional(z.string().nullable())
+  nextCursor: z.string().nullable().exactOptional()
 });
 
 /**
@@ -308,10 +308,10 @@ export const zStaffInstanceAuditEntryList = z.object({
 export const zStaffInstanceState = z.object({
   telemetry: zStaffInstanceTelemetry,
   noticeAcknowledged: z.boolean(),
-  latestRelease: z.exactOptional(z.string()),
-  licenseExpiredAt: z.exactOptional(zTimestamp),
+  latestRelease: z.string().exactOptional(),
+  licenseExpiredAt: zTimestamp.exactOptional(),
   telemetrySchemaUrl: z.string(),
-  defaultSendCap: z.exactOptional(zStaffDefaultSendCap)
+  defaultSendCap: zStaffDefaultSendCap.exactOptional()
 });
 
 /**
@@ -341,9 +341,9 @@ export const zStaffSignupItemResource = z.object({
   kind: zSignupItemKind,
   position: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   mailingsConsent: z.boolean(),
-  draft: z.exactOptional(zLegalDocumentMarkdown),
-  currentVersion: z.exactOptional(zStaffLegalDocumentVersion),
-  discardedAt: z.exactOptional(zTimestamp),
+  draft: zLegalDocumentMarkdown.exactOptional(),
+  currentVersion: zStaffLegalDocumentVersion.exactOptional(),
+  discardedAt: zTimestamp.exactOptional(),
   createdAt: zTimestamp
 });
 
@@ -374,7 +374,7 @@ export const zUsedBy = z.object({
   kind: zUsedByKind,
   id: zEntityId,
   name: z.string(),
-  count: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }))
+  count: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).exactOptional()
 });
 
 /**
@@ -395,19 +395,19 @@ export const zSoleOwnedWorkspace = z.object({
  * RFC 7807 Problem Details
  */
 export const zProblemDetails = z.object({
-  code: z.exactOptional(zProblemCode),
-  type: z.exactOptional(z.string()),
-  title: z.exactOptional(z.string()),
-  status: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
-  detail: z.exactOptional(z.string()),
-  instance: z.exactOptional(z.string()),
-  errors: z.exactOptional(z.record(z.string(), z.array(z.string()))),
-  form: z.exactOptional(z.string()),
-  fields: z.exactOptional(z.record(z.string(), z.string())),
-  retryAfter: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
-  debug: z.exactOptional(zProblemDebug),
-  usedBy: z.exactOptional(z.array(zUsedBy)),
-  workspaces: z.exactOptional(z.array(zSoleOwnedWorkspace))
+  code: zProblemCode.exactOptional(),
+  type: z.string().exactOptional(),
+  title: z.string().exactOptional(),
+  status: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).exactOptional(),
+  detail: z.string().exactOptional(),
+  instance: z.string().exactOptional(),
+  errors: z.record(z.string(), z.array(z.string())).exactOptional(),
+  form: z.string().exactOptional(),
+  fields: z.record(z.string(), z.string()).exactOptional(),
+  retryAfter: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).exactOptional(),
+  debug: zProblemDebug.exactOptional(),
+  usedBy: z.array(zUsedBy).exactOptional(),
+  workspaces: z.array(zSoleOwnedWorkspace).exactOptional()
 });
 
 export const zStaffAuthLoginBody = zStaffLoginInput;
@@ -435,7 +435,7 @@ export const zStaffAuthSecondFactorResponse = zStaffResource;
 export const zStaffInstanceGetStateResponse = zStaffInstanceState;
 
 export const zStaffInstanceListAuditEntriesQuery = z.object({
-  cursor: z.exactOptional(z.string()),
+  cursor: z.string().exactOptional(),
   limit: z.int().gte(1).lte(100).optional().default(25)
 });
 
