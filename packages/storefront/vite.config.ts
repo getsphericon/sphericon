@@ -15,6 +15,9 @@ export default defineConfig({
     host: true,
     port: Number(requiredEnv('DEMO_PORT')),
     strictPort: true,
+    // Listening on every interface, it serves only what index.html reaches, transitively; any
+    // other file of the checkout is a 403 (not `strict: 'extended'`: see the app's vite.config.ts).
+    fs: { allow: [] },
     // Worktrees are full repo copies; watching them triggers spurious reloads.
     watch: { ignored: ['**/.worktrees/**', '**/.claude/worktrees/**'] },
     allowedHosts: ['.localhost'],
