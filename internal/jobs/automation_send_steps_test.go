@@ -1,7 +1,6 @@
 package jobs_test
 
 import (
-	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -80,7 +79,7 @@ func tagNames(t *testing.T, env *testhelper.TestEnv, contactID int64) []string {
 		Where(tag.HasContactsWith(contact.ID(contactID))).
 		Order(ent.Asc(tag.FieldName)).
 		Select(tag.FieldName).
-		Strings(context.Background())
+		Strings(t.Context())
 	require.NoError(t, err)
 	return names
 }

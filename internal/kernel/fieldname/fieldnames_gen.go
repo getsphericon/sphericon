@@ -113,6 +113,8 @@ const (
 	Label                     = "label"
 	LastName                  = "lastName"
 	Limit                     = "limit"
+	LinkIdentityEnabled       = "linkIdentityEnabled"
+	LinkIdentityHosts         = "linkIdentityHosts"
 	LinkPreview               = "linkPreview"
 	LinkTracking              = "linkTracking"
 	LocalTime                 = "localTime"

@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -20,7 +19,7 @@ func TestSiteBroadcastsRefuseABlankNameWith422(t *testing.T) {
 			env := testhelper.Setup(t)
 			c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-			_, err := c.SiteBroadcastsCreate(context.Background(), &siteapi.CreateBroadcastInput{Name: siteapi.Name(name), Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{}), SegmentId: siteapi.NilEntityId{Null: true}},
+			_, err := c.SiteBroadcastsCreate(t.Context(), &siteapi.CreateBroadcastInput{Name: siteapi.Name(name), Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{}), SegmentId: siteapi.NilEntityId{Null: true}},
 				siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 			refused := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 			assert.Equal(t, "name must not be empty", refused.Detail.Value)
@@ -28,7 +27,7 @@ func TestSiteBroadcastsRefuseABlankNameWith422(t *testing.T) {
 		t.Run("update "+name, func(t *testing.T) {
 			env := testhelper.Setup(t)
 			c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-			ctx := context.Background()
+			ctx := t.Context()
 
 			_, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(idStr(fixtures.BroadcastDraftID)))), Name: siteapi.NewOptName(siteapi.Name(name))},
 				siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastDraftID)})

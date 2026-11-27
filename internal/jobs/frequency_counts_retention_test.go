@@ -1,7 +1,6 @@
 package jobs_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -18,7 +17,7 @@ import (
 // countedSince is how many places the count of the Acme address holds after since.
 func countedSince(t *testing.T, env *testhelper.TestEnv, address string, since time.Time) int {
 	t.Helper()
-	n, err := testhelper.Module[*frequencycap.Module](env).Counted(context.Background(), env.DB.Scoped(fixtures.AcmeID),
+	n, err := testhelper.Module[*frequencycap.Module](env).Counted(t.Context(), env.DB.Scoped(fixtures.AcmeID),
 		frequencycap.CountedInput{Channel: channels.Email, Destination: address, Since: since})
 	require.NoError(t, err)
 	return n
@@ -31,7 +30,7 @@ func TestPruneFrequencyCountsDeletesTheRowsOlderThanSevenDays(t *testing.T) {
 	monthAgo := time.Now().AddDate(0, -1, 0)
 	w := jobs.NewPruneFrequencyCountsWorker(testhelper.Module[*frequencycap.Module](env), env.DB)
 
-	require.NoError(t, w.Work(context.Background(), job(jobs.PruneFrequencyCountsArgs{})))
+	require.NoError(t, w.Work(t.Context(), job(jobs.PruneFrequencyCountsArgs{})))
 
 	assert.Zero(t, countedSince(t, env, fixtures.FrequencyCountExpiredDestination, monthAgo), "the row counted eight days ago goes")
 	assert.Equal(t, 1, countedSince(t, env, fixtures.FrequencyCountRecentDestination, monthAgo), "the row counted an hour ago stays")

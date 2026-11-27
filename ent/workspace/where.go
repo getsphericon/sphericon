@@ -150,6 +150,11 @@ func DomainJoinEnabled(v bool) predicate.Workspace {
 	return predicate.Workspace(sql.FieldEQ(FieldDomainJoinEnabled, v))
 }
 
+// LinkIdentityEnabled applies equality check predicate on the "link_identity_enabled" field. It's identical to LinkIdentityEnabledEQ.
+func LinkIdentityEnabled(v bool) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEQ(FieldLinkIdentityEnabled, v))
+}
+
 // SecondFactorRequiredAt applies equality check predicate on the "second_factor_required_at" field. It's identical to SecondFactorRequiredAtEQ.
 func SecondFactorRequiredAt(v time.Time) predicate.Workspace {
 	return predicate.Workspace(sql.FieldEQ(FieldSecondFactorRequiredAt, v))
@@ -1253,6 +1258,16 @@ func DomainJoinEnabledEQ(v bool) predicate.Workspace {
 // DomainJoinEnabledNEQ applies the NEQ predicate on the "domain_join_enabled" field.
 func DomainJoinEnabledNEQ(v bool) predicate.Workspace {
 	return predicate.Workspace(sql.FieldNEQ(FieldDomainJoinEnabled, v))
+}
+
+// LinkIdentityEnabledEQ applies the EQ predicate on the "link_identity_enabled" field.
+func LinkIdentityEnabledEQ(v bool) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEQ(FieldLinkIdentityEnabled, v))
+}
+
+// LinkIdentityEnabledNEQ applies the NEQ predicate on the "link_identity_enabled" field.
+func LinkIdentityEnabledNEQ(v bool) predicate.Workspace {
+	return predicate.Workspace(sql.FieldNEQ(FieldLinkIdentityEnabled, v))
 }
 
 // SecondFactorRequiredAtEQ applies the EQ predicate on the "second_factor_required_at" field.

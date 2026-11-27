@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -18,7 +17,7 @@ import (
 func TestSiteSegmentSaveOnAStaleRevisionIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	params := siteapi.SiteSegmentsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.SegmentProPlanID)}
 	read, err := c.SiteSegmentsGet(ctx, siteapi.SiteSegmentsGetParams(params))
 	require.NoError(t, err)
@@ -45,7 +44,7 @@ func TestSiteSegmentSaveOnAStaleRevisionIsRefused(t *testing.T) {
 func TestSiteSegmentUpdateWithoutARevisionIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActorVia(t, fixtures.OwnerJohnEmail, testhelper.DropField("revision"))
-	ctx := context.Background()
+	ctx := t.Context()
 	before := env.DB.Segment.GetX(ctx, fixtures.SegmentProPlanID)
 
 	_, err := c.SiteSegmentsUpdate(ctx, &siteapi.UpdateSegmentInput{Revision: siteapi.Revision(before.Revision), Name: siteapi.NewOptName("Blind")},

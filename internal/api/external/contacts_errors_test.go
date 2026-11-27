@@ -22,7 +22,7 @@ import (
 
 func TestExternalContactsUpdatePersistsAttributesAndCustomFields(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.ExternalScoped(t, apitokens.ScopeContactsRead, apitokens.ScopeContactsWrite)
 
 	got, err := c.ContactsUpdate(ctx, &externalapi.UpdateContactInput{Revision: externalapi.Revision(env.ContactRevision(ctx, t, int64(entityIDString(fixtures.ContactAliceID)))),
@@ -50,7 +50,7 @@ func TestExternalContactsUpdateConflictNamesTheField(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 
-	_, err := c.ContactsUpdate(context.Background(), &externalapi.UpdateContactInput{Revision: externalapi.Revision(env.ContactRevision(context.Background(), t, int64(entityIDString(fixtures.ContactAliceID)))),
+	_, err := c.ContactsUpdate(t.Context(), &externalapi.UpdateContactInput{Revision: externalapi.Revision(env.ContactRevision(t.Context(), t, int64(entityIDString(fixtures.ContactAliceID)))),
 		Email: externalapi.NewOptNilEmailAddress(fixtures.ContactBobEmail),
 	}, externalapi.ContactsUpdateParams{ID: entityIDString(fixtures.ContactAliceID)})
 	conflict := testhelper.ExternalRefusal(t, err, http.StatusConflict)
@@ -59,7 +59,7 @@ func TestExternalContactsUpdateConflictNamesTheField(t *testing.T) {
 
 func TestExternalContactsAreWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	foreign := entityIDString(fixtures.ContactGlobexID)
 	c := env.ExternalScoped(t, apitokens.ScopeContactsRead, apitokens.ScopeContactsWrite, apitokens.ScopeContactsErase)
 	before := env.DB.Contact.GetX(ctx, int64(foreign))
@@ -83,7 +83,7 @@ func TestExternalContactsAreWorkspaceScoped(t *testing.T) {
 
 func TestExternalContactsListRequiresReadScopeAndPaginates(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := env.ExternalScoped(t, apitokens.ScopeContactsWrite).ContactsList(ctx, externalapi.ContactsListParams{})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
@@ -103,7 +103,7 @@ func TestExternalContactsListRequiresReadScopeAndPaginates(t *testing.T) {
 
 func TestExternalContactsBatchUpsertCarriesCustomFields(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 
 	out, err := c.ContactsBatchUpsert(ctx, &externalapi.UpsertContactsInput{Contacts: []externalapi.UpsertContactInput{{
@@ -166,7 +166,7 @@ func TestABatchItemStorageFailureHidesTheCause(t *testing.T) {
 // and an absent key leaves it unchanged. The contract declares every field nullable.
 func TestExternalContactsUpdateNullClearsAbsentKeeps(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.ExternalScoped(t, apitokens.ScopeContactsRead, apitokens.ScopeContactsWrite)
 
 	var null externalapi.OptNilString

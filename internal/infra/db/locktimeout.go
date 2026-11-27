@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jpillora/backoff"
 	"github.com/pressly/goose/v3"
@@ -29,9 +30,6 @@ const (
 	lockRetryMax   = 30 * time.Second
 )
 
-// lockNotAvailable is the SQLSTATE of a lock wait cut short by lock_timeout.
-const lockNotAvailable = "55P03"
-
 // setLockTimeout bounds the lock waits of the transaction it runs in.
 var setLockTimeout = fmt.Sprintf("SET LOCAL lock_timeout = '%dms';", lockTimeout.Milliseconds())
 
@@ -43,8 +41,8 @@ func upWithLockRetries(ctx context.Context, provider *goose.Provider) (int, erro
 	for {
 		results, err := provider.Up(ctx)
 		applied += len(results)
-		var partial *goose.PartialError
-		if !errors.As(err, &partial) || !lockTimedOut(err) {
+		partial, ok := errors.AsType[*goose.PartialError](err)
+		if !ok || !lockTimedOut(err) {
 			return applied, err
 		}
 		applied += len(partial.Applied)
@@ -61,8 +59,8 @@ func upWithLockRetries(ctx context.Context, provider *goose.Provider) (int, erro
 }
 
 func lockTimedOut(err error) bool {
-	var pgErr *pgconn.PgError
-	return errors.As(err, &pgErr) && pgErr.Code == lockNotAvailable
+	pgErr, ok := errors.AsType[*pgconn.PgError](err)
+	return ok && pgErr.Code == pgerrcode.LockNotAvailable
 }
 
 // lockBoundedFS is the migrations as goose reads them: a SQL file that runs in a transaction

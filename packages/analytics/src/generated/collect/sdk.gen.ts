@@ -3,7 +3,7 @@
 
 import { client } from './client.gen.ts';
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client/index.ts';
-import type { CollectEventsCreateData, CollectEventsCreateErrors, CollectEventsCreateResponses, CollectIdentifyCreateData, CollectIdentifyCreateErrors, CollectIdentifyCreateResponses, CollectTelegramStartLinksCreateData, CollectTelegramStartLinksCreateErrors, CollectTelegramStartLinksCreateResponses } from './types.gen.ts';
+import type { CollectEventsCreateData, CollectEventsCreateErrors, CollectEventsCreateResponses, CollectIdentifyCreateData, CollectIdentifyCreateErrors, CollectIdentifyCreateResponses, CollectLinkIdentitiesCreateData, CollectLinkIdentitiesCreateErrors, CollectLinkIdentitiesCreateResponses, CollectTelegramStartLinksCreateData, CollectTelegramStartLinksCreateErrors, CollectTelegramStartLinksCreateResponses } from './types.gen.ts';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
   /**
@@ -32,6 +32,23 @@ export const collectEventsCreate = <ThrowOnError extends boolean = false>(option
 export const collectIdentifyCreate = <ThrowOnError extends boolean = false>(options: Options<CollectIdentifyCreateData, ThrowOnError>): RequestResult<CollectIdentifyCreateResponses, CollectIdentifyCreateErrors, ThrowOnError> => (options.client ?? client).post<CollectIdentifyCreateResponses, CollectIdentifyCreateErrors, ThrowOnError>({
   security: [{ name: 'x-collect-key', type: 'apiKey' }],
   url: '/identify',
+  ...options,
+  headers: {
+    'Content-Type': 'application/json',
+    ...options.headers
+  }
+});
+
+/**
+ * Binds the visitor to the contact a Link identity token names, as a claim binds: only while the
+ * visitor is anonymous or already that contact's, stitching its anonymous events onto the contact
+ * and handing it none of the visitor's chats. It answers 204 whatever it binds: an invalid,
+ * expired or foreign token, a contact that no longer exists, a visitor of another contact, or a
+ * request whose User-Agent names a known crawler binds nothing and says so to no one.
+ */
+export const collectLinkIdentitiesCreate = <ThrowOnError extends boolean = false>(options: Options<CollectLinkIdentitiesCreateData, ThrowOnError>): RequestResult<CollectLinkIdentitiesCreateResponses, CollectLinkIdentitiesCreateErrors, ThrowOnError> => (options.client ?? client).post<CollectLinkIdentitiesCreateResponses, CollectLinkIdentitiesCreateErrors, ThrowOnError>({
+  security: [{ name: 'x-collect-key', type: 'apiKey' }],
+  url: '/link-identities',
   ...options,
   headers: {
     'Content-Type': 'application/json',

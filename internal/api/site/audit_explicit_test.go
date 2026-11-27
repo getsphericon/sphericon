@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"os"
@@ -41,7 +40,7 @@ func entriesNamed(t *testing.T, env *testhelper.TestEnv, ownerEmail string, work
 
 func TestAuditInvitationCreateAndRevokeAreRecorded(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
 	res, err := owner.SiteInvitationsCreate(ctx,
@@ -74,7 +73,7 @@ func TestAuditInvitationCreateAndRevokeAreRecorded(t *testing.T) {
 
 func TestAuditInvitationAcceptIsAttributedToTheNewMember(t *testing.T) {
 	env := testhelper.Setup(t)
-	err := env.SiteAnonymous(t).SitePublicInvitationsAccept(context.Background(),
+	err := env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
 		&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptUserName("Ivy"), Password: siteapi.NewOptString("ivy-password-1")},
 		siteapi.SitePublicInvitationsAcceptParams{Token: "inv_fixture_token_acme"})
 	require.NoError(t, err)
@@ -112,7 +111,7 @@ func TestAuditLoginDuplicatesIntoEachOfTheUsersWorkspacesOnly(t *testing.T) {
 
 func TestAuditPasswordChangeDuplicatesIntoEachOfTheUsersWorkspaces(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	mary := env.SiteActor(t, fixtures.MemberMaryEmail)
 
 	_, err := mary.SiteUserUpdateMe(ctx, &siteapi.SiteUpdateMeInput{
@@ -138,7 +137,7 @@ func TestAuditPasswordChangeDuplicatesIntoEachOfTheUsersWorkspaces(t *testing.T)
 
 func TestAuditPasswordResetIsRecorded(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.SiteAnonymous(t)
 	err := c.SiteAuthForgotPassword(ctx, &siteapi.SiteForgotPasswordInput{Email: fixtures.MemberMaryEmail})
 	require.NoError(t, err)
@@ -153,7 +152,7 @@ func TestAuditPasswordResetIsRecorded(t *testing.T) {
 
 func TestAuditStaffSuspensionShowsOnlySphericonStaff(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := testhelper.Module[*suspension.Suspender](env).Suspend(ctx, fixtures.AcmeID, suspension.SuspendInput{By: suspension.StaffMember("op-42"), Reason: "abuse report"})
 	require.NoError(t, err)
@@ -177,7 +176,7 @@ func TestAuditStaffSuspensionShowsOnlySphericonStaff(t *testing.T) {
 
 func TestAuditAutomaticSuspensionIsAttributedToSystem(t *testing.T) {
 	env := testhelper.Setup(t)
-	_, err := testhelper.Module[*suspension.Suspender](env).Suspend(context.Background(), fixtures.AcmeID, suspension.SuspendInput{By: suspension.System, Reason: "complaint rate"})
+	_, err := testhelper.Module[*suspension.Suspender](env).Suspend(t.Context(), fixtures.AcmeID, suspension.SuspendInput{By: suspension.System, Reason: "complaint rate"})
 	require.NoError(t, err)
 
 	got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, events.ActionWorkspaceSuspend)
@@ -187,7 +186,7 @@ func TestAuditAutomaticSuspensionIsAttributedToSystem(t *testing.T) {
 
 func TestAuditCLISuspensionShowsSphericonStaff(t *testing.T) {
 	env := testhelper.Setup(t)
-	_, err := testhelper.Module[*suspension.Suspender](env).Suspend(context.Background(), fixtures.AcmeID, suspension.SuspendInput{By: suspension.CLI, Reason: "abuse"})
+	_, err := testhelper.Module[*suspension.Suspender](env).Suspend(t.Context(), fixtures.AcmeID, suspension.SuspendInput{By: suspension.CLI, Reason: "abuse"})
 	require.NoError(t, err)
 
 	got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, events.ActionWorkspaceSuspend)
@@ -199,7 +198,7 @@ func TestAuditCLISuspensionShowsSphericonStaff(t *testing.T) {
 
 func TestAuditSuspensionNoOpRecordsNothing(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	_, err := testhelper.Module[*suspension.Suspender](env).Suspend(ctx, fixtures.AcmeID, suspension.SuspendInput{By: suspension.System, Reason: "first"})
 	require.NoError(t, err)
 	changed, err := testhelper.Module[*suspension.Suspender](env).Suspend(ctx, fixtures.AcmeID, suspension.SuspendInput{By: suspension.StaffMember("op-42"), Reason: "second"})
@@ -217,7 +216,7 @@ func TestAuditSuspensionNoOpRecordsNothing(t *testing.T) {
 // call in a file this list does not know about.
 func TestExplicitAuditPathsAreAllListed(t *testing.T) {
 	env, fake := signinEnv(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
 	promoteMary(t, env)                                                          // membership.update
@@ -354,7 +353,7 @@ func recordAuditCallSites(t *testing.T) []string {
 // staff member kind the id filter is ignored, on the list and on the export alike.
 func TestAuditStaffIdCannotBeProbed(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	_, err := testhelper.Module[*suspension.Suspender](env).Suspend(ctx, fixtures.AcmeID, suspension.SuspendInput{By: suspension.StaffMember("op-42"), Reason: "abuse report"})
 	require.NoError(t, err)
 	env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)

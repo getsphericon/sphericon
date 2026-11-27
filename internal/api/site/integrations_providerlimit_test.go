@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"maps"
 	"net/http"
 	"slices"
@@ -18,7 +17,7 @@ import (
 func TestSiteIntegrationsProviderLimitRoundTrips(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// Unlimited by default: both limits read back as null.
 	def, err := c.SiteIntegrationsGet(ctx, siteapi.SiteIntegrationsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: 1})
@@ -59,7 +58,7 @@ func TestSiteIntegrationsProviderLimitRoundTrips(t *testing.T) {
 func TestSiteIntegrationsProviderLimitIsBounded(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	upd := siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: 1}
 
 	for name, in := range map[string]*siteapi.UpdateIntegrationInput{
@@ -88,7 +87,7 @@ func TestSiteIntegrationsProviderLimitIsBounded(t *testing.T) {
 func TestSiteIntegrationsReportEffectiveLimitAndUsage(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	params := siteapi.SiteIntegrationsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: 1}
 
 	// No limit: nothing effective, no source, an "unlimited" warning, and the two
@@ -148,7 +147,7 @@ func refusedFields(t *testing.T, err error) []string {
 func TestSiteIntegrationsSesCompatibleRequiresTheProviderLimit(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	params := siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID}
 
 	for name, tc := range map[string]struct {
@@ -185,7 +184,7 @@ func TestSiteIntegrationsSesCompatibleRequiresTheProviderLimit(t *testing.T) {
 func TestSiteIntegrationsSesCompatibleKeepsTheProviderLimit(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	// The fixture's AWS SES Integration has no endpoint and no limit.
 	params := siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.IntegrationAcmeSesID}
 

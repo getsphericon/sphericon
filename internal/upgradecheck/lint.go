@@ -72,8 +72,8 @@ func squawk(ctx context.Context, flagName string, files []string) ([]Finding, er
 		return nil, nil
 	}
 	report, err := output(ctx, "squawk", append([]string{"--reporter", "json", flagName}, files...)...)
-	var exit *exec.ExitError
-	if err != nil && (!errors.As(err, &exit) || !strings.HasPrefix(strings.TrimSpace(report), "[")) {
+	_, exited := errors.AsType[*exec.ExitError](err)
+	if err != nil && (!exited || !strings.HasPrefix(strings.TrimSpace(report), "[")) {
 		return nil, err
 	}
 	return Findings([]byte(report))

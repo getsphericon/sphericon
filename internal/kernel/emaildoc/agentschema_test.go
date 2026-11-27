@@ -1,7 +1,6 @@
 package emaildoc_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
@@ -14,17 +13,17 @@ import (
 func TestAgentSchemaExampleAndAllowedValuesRender(t *testing.T) {
 	schema := emaildoc.AgentSchema()
 
-	_, err := shared().Render(context.Background(), schema.Example)
+	_, err := shared().Render(t.Context(), schema.Example)
 	require.NoError(t, err, "the example document is valid")
 
 	allowed := schema.Nodes["paragraph"].Attrs["alignment"].Allowed
 	require.NotEmpty(t, allowed)
 	for _, value := range allowed {
-		_, err := shared().Render(context.Background(),
+		_, err := shared().Render(t.Context(),
 			doc(node{"type": "paragraph", "attrs": node{"alignment": value}, "content": []any{text("x")}}))
 		require.NoErrorf(t, err, "alignment %q is allowed", value)
 	}
-	_, err = shared().Render(context.Background(),
+	_, err = shared().Render(t.Context(),
 		doc(node{"type": "paragraph", "attrs": node{"alignment": "justify"}, "content": []any{text("x")}}))
 	require.ErrorIs(t, err, emaildoc.ErrInvalid)
 }
@@ -36,7 +35,7 @@ func TestAgentSchemaAllowedValuesAreACopy(t *testing.T) {
 	handed.Nodes["paragraph"].Attrs["alignment"].Allowed[0] = "justify"
 	handed.Nodes["orderedList"].Attrs["type"].Allowed[0] = "x"
 
-	_, err := shared().Render(context.Background(),
+	_, err := shared().Render(t.Context(),
 		doc(node{"type": "paragraph", "attrs": node{"alignment": "justify"}, "content": []any{text("x")}}))
 	require.ErrorIs(t, err, emaildoc.ErrInvalid)
 	next := emaildoc.AgentSchema()

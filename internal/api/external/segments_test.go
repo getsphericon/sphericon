@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -20,7 +19,7 @@ import (
 // scoped to the token's workspace.
 func TestExternalSegmentsRead(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.ExternalScoped(t, apitokens.ScopeSegmentsRead)
 
 	list, err := c.SegmentsList(ctx, externalapi.SegmentsListParams{})
@@ -41,7 +40,7 @@ func TestExternalSegmentsRead(t *testing.T) {
 // the Contact schema is a 422, and a valid one is stored.
 func TestExternalSegmentsWrite(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.ExternalScoped(t, apitokens.ScopeSegmentsRead, apitokens.ScopeSegmentsWrite)
 
 	_, err := c.SegmentsCreate(ctx, &externalapi.CreateSegmentInput{
@@ -101,7 +100,7 @@ func TestExternalSegmentsPreviewCountsTheRecipientsOfABroadcast(t *testing.T) {
 // Preview matches the segments module's count for the same definition.
 func TestExternalSegmentsPreview(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.ExternalScoped(t, apitokens.ScopeSegmentsRead)
 
 	const def = `{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":"plan","test":{"kind":"text","operator":"eq","value":"pro"}}]}`
@@ -125,7 +124,7 @@ func TestExternalSegmentsPreviewCountsEvents(t *testing.T) {
 		// Liam did rule_url three times yesterday.
 		def := `{"kind":"group","combinator":"and","entries":[{"kind":"attribute","attribute":"email","test":{"kind":"text","operator":"eq","value":"` +
 			fixtures.ContactLiamEmail + `"}},` + leaf + `]}`
-		return c.SegmentsPreview(context.Background(), &externalapi.PreviewSegmentInput{
+		return c.SegmentsPreview(t.Context(), &externalapi.PreviewSegmentInput{
 			Condition: externalapi.NewOptSegmentConditionInput(testhelper.ConditionInput[externalapi.SegmentConditionInput](t, def)),
 		})
 	}
@@ -149,7 +148,7 @@ func TestExternalSegmentsPreviewCountsEvents(t *testing.T) {
 // A Segment created with an event count reads back as it was sent.
 func TestExternalSegmentsStoreAnEventCount(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.ExternalScoped(t, apitokens.ScopeSegmentsRead, apitokens.ScopeSegmentsWrite)
 	sent := testhelper.ConditionInput[externalapi.SegmentConditionInput](t, `{"kind":"group","combinator":"and","entries":[{"kind":"event","action":"pricing_viewed","operator":"atMost","times":0,"withinDays":30}]}`)
 
@@ -169,7 +168,7 @@ func TestExternalSegmentsPreviewFitsNumberAndDateLeavesToTheFieldType(t *testing
 	c := env.ExternalScoped(t, apitokens.ScopeSegmentsRead)
 	preview := func(leaf string) error {
 		t.Helper()
-		_, err := c.SegmentsPreview(context.Background(), &externalapi.PreviewSegmentInput{
+		_, err := c.SegmentsPreview(t.Context(), &externalapi.PreviewSegmentInput{
 			Condition: externalapi.NewOptSegmentConditionInput(testhelper.ConditionInput[externalapi.SegmentConditionInput](t, `{"kind":"group","combinator":"and","entries":[`+leaf+`]}`)),
 		})
 		return err
@@ -187,7 +186,7 @@ func TestExternalSegmentsPreviewFitsNumberAndDateLeavesToTheFieldType(t *testing
 // A Segment created with a number test reads back as it was sent.
 func TestExternalSegmentsStoreANumberLeaf(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.ExternalScoped(t, apitokens.ScopeSegmentsRead, apitokens.ScopeSegmentsWrite)
 	sent := testhelper.ConditionInput[externalapi.SegmentConditionInput](t, `{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":"courses_completed","test":{"kind":"number","operator":"lt","value":1.5}}]}`)
 
@@ -202,7 +201,7 @@ func TestExternalSegmentsStoreANumberLeaf(t *testing.T) {
 
 func TestExternalSegmentsScopes(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	none := env.ExternalScoped(t, apitokens.ScopeContactsRead)
 	_, err := none.SegmentsList(ctx, externalapi.SegmentsListParams{})
@@ -231,7 +230,7 @@ func TestExternalSegmentsScopes(t *testing.T) {
 // Another tenant's segment is invisible and immutable through this token.
 func TestExternalSegmentsWorkspaceIsolation(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	id := externalapi.EntityId(fixtures.SegmentGlobexID)
 
@@ -255,7 +254,7 @@ func TestExternalSegmentsWorkspaceIsolation(t *testing.T) {
 // Texter only once an API client has recorded the consent of the Texter's phone.
 func TestExternalSegmentsTakeTheCanBeTextedCondition(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.ExternalScoped(t, apitokens.ScopeSegmentsRead, apitokens.ScopeSegmentsWrite, apitokens.ScopeContactsWrite)
 	const def = `{"kind":"group","combinator":"and","entries":[{"kind":"attribute","attribute":"email","test":{"kind":"text","operator":"eq","value":"` +
 		fixtures.ContactTexterEmail + `"}},{"kind":"sms","operator":"has"}]}`

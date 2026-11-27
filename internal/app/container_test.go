@@ -26,7 +26,7 @@ func TestQueueingWorkNeedsNoJobClient(t *testing.T) {
 	cfg, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 	injector := app.Container(cfg)
-	t.Cleanup(func() { cleanup.Shutdown(injector.ShutdownWithContext(context.Background())) })
+	t.Cleanup(func() { cleanup.Shutdown(injector.ShutdownWithContext(context.WithoutCancel(t.Context()))) })
 
 	_, err = do.Invoke[*integrations.Module](injector)
 	require.NoError(t, err)

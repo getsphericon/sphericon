@@ -1,7 +1,6 @@
 package apitokens_test
 
 import (
-	"context"
 	"errors"
 	"testing"
 	"time"
@@ -21,7 +20,7 @@ import (
 func TestMintStoresAHashedTokenAndReturnsTheValueOnce(t *testing.T) {
 	env := testhelper.Setup(t)
 	tokens := testhelper.Module[*apitokens.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	expires := time.Now().Add(time.Hour)
 
@@ -45,7 +44,7 @@ func TestMintStoresAHashedTokenAndReturnsTheValueOnce(t *testing.T) {
 func TestMintRefusesABlankNameAndUnknownScopes(t *testing.T) {
 	env := testhelper.Setup(t)
 	tokens := testhelper.Module[*apitokens.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
 	_, err := tokens.Mint(ctx, s, apitokens.Input{Name: "  ", Scopes: []string{"contacts:read"}})
@@ -61,7 +60,7 @@ func TestMintRefusesABlankNameAndUnknownScopes(t *testing.T) {
 func TestMintWithinNeverGrantsAScopeTheMinterLacks(t *testing.T) {
 	env := testhelper.Setup(t)
 	tokens := testhelper.Module[*apitokens.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	minter := []string{"tokens:write", "contacts:read"}
 
@@ -85,7 +84,7 @@ func TestMintWithinNeverGrantsAScopeTheMinterLacks(t *testing.T) {
 func TestRevokeRetiresOnceAndIsWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
 	tokens := testhelper.Module[*apitokens.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
 	minted, err := tokens.Mint(ctx, s, apitokens.Input{Name: "short-lived", Scopes: []string{"contacts:read"}})

@@ -1,7 +1,6 @@
 package events_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -20,7 +19,7 @@ import (
 // empty and must keep falling back to the ULID — unchanged behavior.
 func TestEmailEngagementDedupIDBecomesDedupKey(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	require.NoError(t, env.Bus.WithinTx(ctx, func(_ *ent.Client, pub events.Publisher) error {
 		if err := pub.Publish(ctx, &events.EmailEngagement{

@@ -1,7 +1,6 @@
 package app_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -56,7 +55,7 @@ func TestNewStartsASaaSInstanceLicensedForStaff(t *testing.T) {
 	a, err := app.New("test")
 
 	require.NoError(t, err)
-	cleanup.Shutdown(a.Shutdown(context.Background()))
+	cleanup.Shutdown(a.Shutdown(t.Context()))
 }
 
 func TestNewStartsASelfHostedInstanceWithoutALicenseKey(t *testing.T) {
@@ -67,5 +66,5 @@ func TestNewStartsASelfHostedInstanceWithoutALicenseKey(t *testing.T) {
 	a, err := app.New("test")
 
 	require.NoError(t, err)
-	cleanup.Shutdown(a.Shutdown(context.Background()))
+	cleanup.Shutdown(a.Shutdown(t.Context()))
 }

@@ -1,7 +1,6 @@
 package outboundmessages_test
 
 import (
-	"context"
 	"encoding/json"
 	"testing"
 	"time"
@@ -17,7 +16,7 @@ import (
 
 func TestSendTransactionalRefusesARequestThatCannotBeSent(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	m := newModule(env, time.Now)
 	acme := env.DB.Scoped(fixtures.AcmeID)
 
@@ -44,7 +43,7 @@ func TestSendTransactionalRefusesARequestThatCannotBeSent(t *testing.T) {
 // recorded as one Transactional Outbound message.
 func TestSendTransactionalSendsTheTemplateToTheNormalizedAddress(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	res, err := newModule(env, time.Now).SendTransactional(ctx, env.DB.Scoped(fixtures.AcmeID), outboundmessages.TransactionalRequest{
 		TemplateID: fixtures.TemplateWithVariablesID, Destination: "  Receipt@Example.com ",
@@ -64,7 +63,7 @@ func TestSendTransactionalSendsTheTemplateToTheNormalizedAddress(t *testing.T) {
 // it is refused, and nothing is sent for it.
 func TestSendTransactionalReplaysAKeyOnlyForTheSameRequest(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	m := newModule(env, time.Now)
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	request := func(destination, vars string, track bool) outboundmessages.TransactionalRequest {

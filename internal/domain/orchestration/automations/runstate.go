@@ -44,8 +44,8 @@ type failure struct {
 // delivery error, with the answer's status and excerpt where the receiver gave one. An error that
 // is not a delivery error is a network failure.
 func failureOfDelivery(sendErr error) failure {
-	var delivery *webhook.DeliveryError
-	if !errors.As(sendErr, &delivery) {
+	delivery, ok := errors.AsType[*webhook.DeliveryError](sendErr)
+	if !ok {
 		delivery = &webhook.DeliveryError{Kind: webhook.KindNetwork}
 	}
 	f := failure{Kind: automationrun.FailureKind(delivery.Kind), Excerpt: delivery.Excerpt}

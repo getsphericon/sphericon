@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 	"time"
@@ -20,7 +19,7 @@ import (
 func TestSiteWorkspacesUpdateRenames(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	updated, err := c.SiteWorkspacesUpdate(ctx,
 		&siteapi.SiteUpdateWorkspaceInput{Revision: siteapi.Revision(env.WorkspaceRevision(ctx, t, string(fixtures.AcmePublicID))), Name: "Acme Inc"},
@@ -39,7 +38,7 @@ func TestSiteWorkspacesUpdateRenames(t *testing.T) {
 // A single-Workspace response lists the active Staff holds like the list does.
 func TestSiteWorkspacesUpdateResponseListsActiveStaffHolds(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	env.ExtendHold(ctx, fixtures.AcmeID, fixtures.HoldAcmeLapsedID, time.Now().Add(time.Hour))
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
@@ -56,8 +55,8 @@ func TestSiteWorkspacesUpdateNotOwned(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	_, err := c.SiteWorkspacesUpdate(context.Background(),
-		&siteapi.SiteUpdateWorkspaceInput{Revision: siteapi.Revision(env.WorkspaceRevision(context.Background(), t, string("NoSuchWs"))), Name: "Hijacked"},
+	_, err := c.SiteWorkspacesUpdate(t.Context(),
+		&siteapi.SiteUpdateWorkspaceInput{Revision: siteapi.Revision(env.WorkspaceRevision(t.Context(), t, string("NoSuchWs"))), Name: "Hijacked"},
 		siteapi.SiteWorkspacesUpdateParams{WorkspaceId: "NoSuchWs"})
 	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 }
@@ -66,8 +65,8 @@ func TestSiteWorkspacesUpdateRejectsBlankName(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	_, err := c.SiteWorkspacesUpdate(context.Background(),
-		&siteapi.SiteUpdateWorkspaceInput{Revision: siteapi.Revision(env.WorkspaceRevision(context.Background(), t, string(fixtures.AcmePublicID))), Name: "   "},
+	_, err := c.SiteWorkspacesUpdate(t.Context(),
+		&siteapi.SiteUpdateWorkspaceInput{Revision: siteapi.Revision(env.WorkspaceRevision(t.Context(), t, string(fixtures.AcmePublicID))), Name: "   "},
 		siteapi.SiteWorkspacesUpdateParams{WorkspaceId: fixtures.AcmePublicID})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 }
@@ -77,7 +76,7 @@ func TestSiteWorkspacesUpdateRejectsBlankName(t *testing.T) {
 func TestSiteWorkspacesListExposesSuspension(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	list, err := c.SiteWorkspacesList(ctx)
 	require.NoError(t, err)
@@ -101,7 +100,7 @@ func TestSiteWorkspacesListExposesSuspension(t *testing.T) {
 // (SPHERICON_TRACKER_URL) and on the app origin otherwise.
 func TestSiteWorkspacesListExposesTrackerURL(t *testing.T) {
 	const trackerURL = "https://t.sphericon.example"
-	ctx := context.Background()
+	ctx := t.Context()
 
 	env := testhelper.Setup(t)
 	list, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteWorkspacesList(ctx)
@@ -121,7 +120,7 @@ func TestSiteWorkspacesListExposesTrackerURL(t *testing.T) {
 // lapsed hold is not listed, and an unaffected Workspace lists none.
 func TestSiteWorkspacesListExposesActiveStaffHolds(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	const message = "Sending is paused for now."
 	env.ExtendHold(ctx, fixtures.AcmeID, fixtures.HoldAcmeLapsedID, time.Now().Add(time.Hour))
 
@@ -142,7 +141,7 @@ func TestSiteWorkspacesListShowsNoHoldsForAnUnaffectedWorkspace(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	assert.Empty(t, workspaceOf(t, c, fixtures.AcmePublicID).Holds, "only a lapsed hold exists")
 
-	env.ExtendHold(context.Background(), fixtures.GlobexID, fixtures.HoldGlobexLapsedID, time.Now().Add(time.Hour))
+	env.ExtendHold(t.Context(), fixtures.GlobexID, fixtures.HoldGlobexLapsedID, time.Now().Add(time.Hour))
 	assert.Empty(t, workspaceOf(t, c, fixtures.AcmePublicID).Holds, "another Workspace's hold does not leak")
 }
 
@@ -150,7 +149,7 @@ func TestSiteWorkspacesListShowsNoHoldsForAnUnaffectedWorkspace(t *testing.T) {
 // Workspace is shown alike: an unlicensed instance lists none.
 func TestSiteWorkspacesListShowsNoHoldsWithoutTheStaffLicense(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithoutLicense())
-	env.ExtendHold(context.Background(), fixtures.AcmeID, fixtures.HoldAcmeLapsedID, time.Now().Add(time.Hour))
+	env.ExtendHold(t.Context(), fixtures.AcmeID, fixtures.HoldAcmeLapsedID, time.Now().Add(time.Hour))
 	assert.Empty(t, workspaceOf(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmePublicID).Holds)
 }
 
@@ -158,7 +157,7 @@ func TestSiteWorkspacesListCarriesTheWorkspaceId(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	list, err := c.SiteWorkspacesList(context.Background())
+	list, err := c.SiteWorkspacesList(t.Context())
 	require.NoError(t, err)
 
 	require.Len(t, list, 1)
@@ -168,7 +167,7 @@ func TestSiteWorkspacesListCarriesTheWorkspaceId(t *testing.T) {
 func TestSiteWorkspacesCreateMakesTheCallerOwner(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	created, err := c.SiteWorkspacesCreate(ctx, &siteapi.SiteCreateWorkspaceInput{Name: "  Second Brand  "})
 	require.NoError(t, err)
@@ -218,7 +217,7 @@ func TestSiteWorkspacesCreateRejectsBlankName(t *testing.T) {
 
 func TestSiteWorkspacesUpdateIsForOwnerAndAdminOnly(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	params := siteapi.SiteWorkspacesUpdateParams{WorkspaceId: fixtures.InitechPublicID}
 
 	for _, email := range []string{fixtures.InitechOwnerOlgaEmail, fixtures.InitechAdminAdaEmail} {

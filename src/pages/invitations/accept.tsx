@@ -1,6 +1,6 @@
 import { Alert, Button, Divider, Loader, Stack, Text, TextInput, Title } from '@mantine/core'
 import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query'
-import { useLocation, useNavigate, useSearch } from '@tanstack/react-router'
+import { useLocation, useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import * as z from 'zod'
 
@@ -16,11 +16,7 @@ import {
   sitePublicInvitationsLookupOptions,
   siteWorkspacesListOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import {
-  zSiteAcceptInvitationInput,
-  zSiteSigninError,
-  zUserName,
-} from '../../generated/site/zod.gen.ts'
+import { zSiteAcceptInvitationInput, zUserName } from '../../generated/site/zod.gen.ts'
 import { useAcceptanceWatch } from '../../hooks/useAcceptanceWatch.ts'
 import { useApiErrorMessage } from '../../hooks/useApiErrorMessage.ts'
 import { useNotify } from '../../hooks/useNotify.ts'
@@ -81,7 +77,7 @@ function AcceptInvitation() {
   const { token } = acceptInvitationRoute.useParams()
   const location = useLocation()
   // Set when the server's provider callback sent the person back here without joining.
-  const signinError = zSiteSigninError.safeParse(useSearch({ strict: false }).error).data
+  const { error: signinError } = acceptInvitationRoute.useSearch()
 
   const invite = useSuspenseQuery({
     ...sitePublicInvitationsLookupOptions({ path: { token } }),

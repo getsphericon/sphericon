@@ -57,14 +57,14 @@ func machine(r *row) *stateless.StateMachine {
 
 func TestLegalMoveWritesTheNewState(t *testing.T) {
 	r := &row{state: draft}
-	err := machine(r).FireCtx(context.Background(), send)
+	err := machine(r).FireCtx(t.Context(), send)
 	require.NoError(t, err)
 	assert.Equal(t, sent, r.state)
 }
 
 func TestUnpermittedTriggerIsInvalidTransition(t *testing.T) {
 	r := &row{state: failed}
-	err := machine(r).FireCtx(context.Background(), send)
+	err := machine(r).FireCtx(t.Context(), send)
 	require.ErrorIs(t, err, lifecycle.ErrInvalidTransition)
 	assert.Equal(t, failed, r.state)
 }
@@ -73,7 +73,7 @@ func TestUnpermittedTriggerIsInvalidTransition(t *testing.T) {
 // miss makes the fire call return the error and leaves the state unchanged.
 func TestCompareAndSwapMissIsInvalidTransitionAndKeepsState(t *testing.T) {
 	r := &row{state: draft, lost: true}
-	err := machine(r).FireCtx(context.Background(), send)
+	err := machine(r).FireCtx(t.Context(), send)
 	require.ErrorIs(t, err, lifecycle.ErrInvalidTransition)
 	assert.Equal(t, draft, r.state)
 }
@@ -81,7 +81,7 @@ func TestCompareAndSwapMissIsInvalidTransitionAndKeepsState(t *testing.T) {
 func TestStorageFaultIsReturnedAsIs(t *testing.T) {
 	boom := errors.New("boom")
 	r := &row{state: draft, fault: boom}
-	err := machine(r).FireCtx(context.Background(), send)
+	err := machine(r).FireCtx(t.Context(), send)
 	require.ErrorIs(t, err, boom)
 	require.NotErrorIs(t, err, lifecycle.ErrInvalidTransition)
 	assert.Equal(t, draft, r.state)

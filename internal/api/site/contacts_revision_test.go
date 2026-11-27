@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -21,7 +20,7 @@ import (
 func TestSiteContactSaveAfterATagWasAppliedIsRefusedAndTheTagStays(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	params := siteapi.SiteContactsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.ContactAliceID)}
 	form, err := c.SiteContactsGet(ctx, params)
 	require.NoError(t, err)

@@ -1,7 +1,6 @@
 package invitations_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -76,7 +75,7 @@ func TestAnAcceptedInvitationCannotBeRevoked(t *testing.T) {
 func TestInviteOwnsTokenHashAndExpiry(t *testing.T) {
 	env := testhelper.Setup(t)
 	invites := invitations.New(env.DB, env.Bus, time.Now)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	actor := events.Actor{Kind: events.ActorUser}
 	in := invitations.InviteInput{Email: "newbie@acme.test", Role: invitation.RoleAdmin, InvitedBy: fixtures.OwnerJohnID}

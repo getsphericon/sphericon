@@ -1,7 +1,6 @@
 package automations_test
 
 import (
-	"context"
 	"encoding/json"
 	"testing"
 	"time"
@@ -33,7 +32,7 @@ func propertyEq(t *testing.T, key, value string) *conditiontree.EventFilter {
 // enrolls (and completes at once). It returns its id.
 func liveOn(t *testing.T, env *testhelper.TestEnv, trigger eventmatcher.Matcher) int64 {
 	t.Helper()
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := testhelper.Module[*automations.Module](env)
 	a, err := m.Create(ctx, s, automations.CreateInput{Name: "Filtered " + trigger.Action, Trigger: automations.EventTrigger{Matcher: trigger}})
@@ -47,12 +46,12 @@ func liveOn(t *testing.T, env *testhelper.TestEnv, trigger eventmatcher.Matcher)
 // to the Automations as its trigger job does.
 func handStored(t *testing.T, env *testhelper.TestEnv, contactID int64, action string, ev events.DomainEvent) {
 	t.Helper()
-	require.NoError(t, env.Publisher().Publish(context.Background(), ev))
+	require.NoError(t, env.Publisher().Publish(t.Context(), ev))
 	stored := env.StoredEvents(t, action)
 	require.NotEmpty(t, stored)
 	last := stored[len(stored)-1]
 	in := automations.OnEventInput{ContactID: contactID, Event: automations.Event{Action: last.Action, SourceID: *last.SourceID, OccurredAt: last.OccurredAt}}
-	require.NoError(t, testhelper.Module[*automations.StepExecution](env).OnEvent(context.Background(), env.DB.Scoped(fixtures.AcmeID), in))
+	require.NoError(t, testhelper.Module[*automations.StepExecution](env).OnEvent(t.Context(), env.DB.Scoped(fixtures.AcmeID), in))
 }
 
 // tagged is contact.tagged of the Tag for the Contact.
@@ -65,7 +64,7 @@ func tagged(contactID int64, tag string) *events.ContactTagChange {
 func TestATriggerFilterOnTheTagEnrollsOnThatTagOnly(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
-	_, err := tags.New().EnsureIn(context.Background(), s, "trial")
+	_, err := tags.New().EnsureIn(t.Context(), s, "trial")
 	require.NoError(t, err)
 	id := liveOn(t, env, eventmatcher.Matcher{Action: systemevent.ContactTagged, Filter: propertyEq(t, "tag", "trial")})
 	onTrial, onVip := enrollable(t, s, 0), enrollable(t, s, 1)

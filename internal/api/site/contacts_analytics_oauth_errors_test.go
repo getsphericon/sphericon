@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"net/url"
 	"testing"
@@ -20,7 +19,7 @@ import (
 func TestSiteContactsErrorBranches(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	acme, foreign := siteapi.WorkspaceId(fixtures.AcmePublicID), siteapi.WorkspaceId(fixtures.GlobexPublicID)
 	alice := idStr(fixtures.ContactAliceID)
 	missing := idStr(99999)
@@ -67,7 +66,7 @@ func TestSiteContactsErrorBranches(t *testing.T) {
 
 func TestSiteAnalyticsRangesAndEmptyWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// Globex has no delivery rows: every rate is 0 (zero denominators), and the
 	// series is zero-filled for the whole window.
@@ -103,7 +102,7 @@ func TestSiteAnalyticsRangesAndEmptyWorkspace(t *testing.T) {
 func TestSiteOAuthConsentErrorBranches(t *testing.T) {
 	env := testhelper.Setup(t)
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	const clientID, redirect = "fixture-client", "https://connector.example/callback"
 	const verifier = "0123456789012345678901234567890123456789012"
 

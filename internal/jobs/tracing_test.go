@@ -28,7 +28,7 @@ func TestAJobLinksToTheSpanThatInsertedIt(t *testing.T) {
 	testhelper.IsolateOtel(t)
 	spans := tracetest.NewSpanRecorder()
 	otel.SetTracerProvider(sdktrace.NewTracerProvider(sdktrace.WithSpanProcessor(spans)))
-	ctx := context.Background()
+	ctx := t.Context()
 	sqlDB := testhelper.RealDB(t)
 	inserter, err := jobs.NewInserter(sqlDB)
 	require.NoError(t, err)

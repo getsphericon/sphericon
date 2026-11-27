@@ -1,7 +1,6 @@
 package suspension_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -15,7 +14,7 @@ import (
 
 func TestSuspendWorkspaceRecordsAttribution(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	changed, err := testhelper.Module[*suspension.Suspender](env).Suspend(ctx, fixtures.AcmeID, suspension.SuspendInput{By: suspension.CLI, Reason: "complaint rate 0.9%"})
 	require.NoError(t, err)
@@ -34,7 +33,7 @@ func TestSuspendWorkspaceRecordsAttribution(t *testing.T) {
 // whoever asks.
 func TestSuspendWorkspaceRequiresAReason(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	changed, err := testhelper.Module[*suspension.Suspender](env).Suspend(ctx, fixtures.AcmeID, suspension.SuspendInput{By: suspension.CLI, Reason: "   "})
 
@@ -47,7 +46,7 @@ func TestSuspendWorkspaceRequiresAReason(t *testing.T) {
 // reason (the ones the owner was told about) are never overwritten.
 func TestSuspendWorkspaceIsIdempotent(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := testhelper.Module[*suspension.Suspender](env).Suspend(ctx, fixtures.AcmeID, suspension.SuspendInput{By: suspension.System, Reason: "first"})
 	require.NoError(t, err)
@@ -62,7 +61,7 @@ func TestSuspendWorkspaceIsIdempotent(t *testing.T) {
 
 func TestUnsuspendWorkspaceClearsEverything(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := testhelper.Module[*suspension.Suspender](env).Suspend(ctx, fixtures.AcmeID, suspension.SuspendInput{By: suspension.CLI, Reason: "abuse"})
 	require.NoError(t, err)
@@ -84,7 +83,7 @@ func TestUnsuspendWorkspaceClearsEverything(t *testing.T) {
 // A Staff member's real id is kept on the internal record; it is the only actor with one.
 func TestSuspendWorkspaceKeepsTheStaffId(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := testhelper.Module[*suspension.Suspender](env).Suspend(ctx, fixtures.AcmeID, suspension.SuspendInput{By: suspension.StaffMember("op-42"), Reason: "abuse report"})
 	require.NoError(t, err)
@@ -98,7 +97,7 @@ func TestSuspendWorkspaceKeepsTheStaffId(t *testing.T) {
 
 func TestSuspendWorkspaceRejectsAnInvalidActor(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := testhelper.Module[*suspension.Suspender](env).Suspend(ctx, fixtures.AcmeID, suspension.SuspendInput{By: suspension.StaffMember(""), Reason: "abuse"})
 	require.Error(t, err, "a StaffMember without an id")
@@ -112,7 +111,7 @@ func TestSuspendWorkspaceRejectsAnInvalidActor(t *testing.T) {
 // its structured actor cleared.
 func TestUnsuspendFixtureWorkspaceClearsTheStructuredActor(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	ws := env.DB.Workspace.GetX(ctx, fixtures.HooliID)
 	require.NotNil(t, ws.SuspendedByKind)
 	require.Equal(t, workspace.SuspendedByKindStaff, *ws.SuspendedByKind)
@@ -127,7 +126,7 @@ func TestUnsuspendFixtureWorkspaceClearsTheStructuredActor(t *testing.T) {
 
 func TestSuspendedPredicatesFollowTheSuspension(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	_, err := testhelper.Module[*suspension.Suspender](env).Suspend(ctx, fixtures.AcmeID, suspension.SuspendInput{By: suspension.System, Reason: "complaint rate 0.9%"})
 	require.NoError(t, err)
 

@@ -50,7 +50,7 @@ func queuedSends(t *testing.T, env *testhelper.TestEnv, recipient int64) int {
 // roll back with it.
 func TestPublishInAndEnqueueInJoinTheScopesTransaction(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	scope := env.DB.Scoped(fixtures.AcmeID)
 	boom := errors.New("producer failed")
 
@@ -73,7 +73,7 @@ func TestPublishInAndEnqueueInJoinTheScopesTransaction(t *testing.T) {
 // both scopes of a hand-over and the scope that holds the Workspace lock.
 func TestPublishInReachesEveryClientOfABusTransaction(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	scope := env.DB.Scoped(fixtures.AcmeID)
 
 	require.NoError(t, env.Bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
@@ -101,7 +101,7 @@ func TestPublishInReachesEveryClientOfABusTransaction(t *testing.T) {
 // stored runs once that transaction committed.
 func TestPublishInRunsOnStoredAfterTheCommit(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	var stored []string
 	env.Bus.OnStored(func(_ context.Context, ev events.DomainEvent) {
 		if c, ok := ev.(*events.ContactCreated); ok {
@@ -120,7 +120,7 @@ func TestPublishInRunsOnStoredAfterTheCommit(t *testing.T) {
 // A client bound to no transaction of the bus is refused: the bus never opens one for it.
 func TestPublishInRefusesAClientOutsideABusTransaction(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	other := events.New(env.SQLDB, entclient.Core.NewTx, time.Now)
 
 	refused := func(t *testing.T, in events.InTx) {
@@ -145,7 +145,7 @@ func TestPublishInRefusesAClientOutsideABusTransaction(t *testing.T) {
 // refused.
 func TestRecordAuditInRecordsInTheTransactionOfItsClient(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	scope := env.DB.Scoped(fixtures.AcmeID)
 	boom := errors.New("mutation failed")
 

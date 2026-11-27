@@ -1,7 +1,6 @@
 package broadcasts_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -22,7 +21,7 @@ import (
 // Send route cannot send: the Broadcast stays a draft with no time and no job.
 func TestScheduleIsRefusedWhileTheBroadcastsIntegrationCannotSend(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := testhelper.Module[*broadcasts.Module](env)
 	_, err := m.Update(ctx, s, fixtures.BroadcastDraftID, broadcasts.UpdateInput{Revision: testhelper.BroadcastRevisionIn(ctx, t, s, fixtures.BroadcastDraftID), IntegrationID: patch.Set[int64](fixtures.IntegrationAcmeSesID)})

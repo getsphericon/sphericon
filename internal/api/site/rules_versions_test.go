@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -17,7 +16,7 @@ func TestSiteRuleReadsItsLiveVersionAndItsDraft(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	got, err := c.SiteRulesGet(context.Background(), siteapi.SiteRulesGetParams{
+	got, err := c.SiteRulesGet(t.Context(), siteapi.SiteRulesGetParams{
 		WorkspaceId: siteapi.WorkspaceId(fixtures.AcmePublicID), ID: siteapi.EntityId(fixtures.RuleTagClickedID),
 	})
 
@@ -40,7 +39,7 @@ func TestSiteSavingALiveRuleUnchangedMakesNoDraft(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	updated, err := c.SiteRulesUpdate(context.Background(), &siteapi.UpdateRuleInput{Revision: siteapi.Revision(env.RuleRevision(t.Context(), t, int64(siteapi.EntityId(fixtures.RuleMultiTriggerID)))),
+	updated, err := c.SiteRulesUpdate(t.Context(), &siteapi.UpdateRuleInput{Revision: siteapi.Revision(env.RuleRevision(t.Context(), t, int64(siteapi.EntityId(fixtures.RuleMultiTriggerID)))),
 		Name:          siteapi.NewOptName("Either of two events"),
 		TriggerEvents: []string{"rule_multi_a", "rule_multi_b"},
 		Condition:     siteapi.NewOptRuleConditionInput(testhelper.ConditionInput[siteapi.RuleConditionInput](t, `{"kind":"group","combinator":"and","entries":[]}`)),
@@ -59,7 +58,7 @@ func TestSiteRevertRefusesARuleNeverPublished(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	_, err := c.SiteRulesRevert(context.Background(), &siteapi.RevisionInput{Revision: siteapi.Revision(env.RuleRevision(t.Context(), t, int64(siteapi.EntityId(fixtures.RuleInactiveID))))}, siteapi.SiteRulesRevertParams{
+	_, err := c.SiteRulesRevert(t.Context(), &siteapi.RevisionInput{Revision: siteapi.Revision(env.RuleRevision(t.Context(), t, int64(siteapi.EntityId(fixtures.RuleInactiveID))))}, siteapi.SiteRulesRevertParams{
 		WorkspaceId: siteapi.WorkspaceId(fixtures.AcmePublicID), ID: siteapi.EntityId(fixtures.RuleInactiveID),
 	})
 

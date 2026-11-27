@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -17,7 +16,7 @@ import (
 // The external API refuses the same removals as /site with a 409 that names the users (ADR 0049).
 func TestExternalDeletesRefusedWhileLiveWorkUsesTheRow(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite, apitokens.ScopeIntegrationsWrite, apitokens.ScopeSendingDomainsWrite)
 
 	err := c.TagsDelete(ctx, externalapi.TagsDeleteParams{ID: externalapi.EntityId(fixtures.TagVipID)})

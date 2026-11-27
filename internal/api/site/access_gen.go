@@ -234,6 +234,7 @@ var operationAccess = map[siteapi.OperationName]access{
 	siteapi.SiteWorkspacesRestoreOperation:                      {},
 	siteapi.SiteWorkspacesSetConfirmedOptInOperation:            {workspace: true, permissions: []memberships.Permission{memberships.PermWorkspaceUpdate}},
 	siteapi.SiteWorkspacesSetEngagementTrackingDefaultOperation: {workspace: true, permissions: []memberships.Permission{memberships.PermWorkspaceUpdate}},
+	siteapi.SiteWorkspacesSetLinkIdentityOperation:              {workspace: true, permissions: []memberships.Permission{memberships.PermWorkspaceUpdate}},
 	siteapi.SiteWorkspacesSetTimezoneOperation:                  {workspace: true, permissions: []memberships.Permission{memberships.PermWorkspaceTimezone}},
 	siteapi.SiteWorkspacesUpdateConfirmationEmailOperation:      {workspace: true, permissions: []memberships.Permission{memberships.PermWorkspaceUpdate}},
 	siteapi.SiteWorkspacesUpdateOperation:                       {workspace: true, permissions: []memberships.Permission{memberships.PermWorkspaceUpdate}},

@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -18,7 +17,7 @@ func TestExternalTelegramConnectsABot(t *testing.T) {
 	c := env.ExternalScoped(t, apitokens.ScopeIntegrationsWrite)
 	token := env.Telegram.AddBot(7000000002, "acme_api_bot")
 
-	res, err := c.IntegrationsCreate(context.Background(), &externalapi.CreateIntegrationInput{
+	res, err := c.IntegrationsCreate(t.Context(), &externalapi.CreateIntegrationInput{
 		Name: "Bot", Config: externalapi.IntegrationConfigInput{OneOf: externalapi.NewTelegramConfigInputIntegrationConfigInputSum(
 			externalapi.TelegramConfigInput{Kind: externalapi.TelegramConfigInputKindTelegram, Token: token})},
 	})
@@ -37,7 +36,7 @@ func TestExternalTelegramConnectsABot(t *testing.T) {
 func TestExternalPresetsLeaveOutTheFixedTelegramPreset(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	res, err := env.ExternalScoped(t, apitokens.ScopeIntegrationsRead).PresetsList(context.Background())
+	res, err := env.ExternalScoped(t, apitokens.ScopeIntegrationsRead).PresetsList(t.Context())
 	require.NoError(t, err)
 
 	page := res

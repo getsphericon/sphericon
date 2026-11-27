@@ -1,7 +1,6 @@
 package events_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/samber/lo"
@@ -37,7 +36,7 @@ func suppressJob(t *testing.T, workspaceID, contactID int64, email, id string) j
 // alike; a running one is left to finish, and a job of another Contact or another Workspace stays.
 func TestPurgeEventJobsRemovesTheJobsThatNameTheContact(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	kind := jobs.SuppressEventArgs{}.Kind()
 	publishAlone(t, env, hardBounce(fixtures.InitechID, fixtures.ContactErasableID, "queued@example.com", "queued"))
 	env.EnqueueDiscardedJob(t, suppressJob(t, fixtures.InitechID, 0, "ERASABLE@example.com", "discarded"))
@@ -63,7 +62,7 @@ func TestPurgeEventJobsRemovesTheJobsThatNameTheContact(t *testing.T) {
 // erased Contact's.
 func TestPurgeEventJobsLeavesAnInvitationToTheContactsAddress(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	const address = "erasable@example.com"
 	publishAlone(t, env, &events.InvitationCreated{WorkspaceID: fixtures.InitechID, InvitationID: 1, Email: address, Token: "invite"})
 	publishAlone(t, env, &events.SmsStopObserved{WorkspaceID: fixtures.InitechID, Phone: "+14155550123", Via: events.UnsubscribedByKeyword, DedupID: "stop"})

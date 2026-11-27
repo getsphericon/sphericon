@@ -23,7 +23,6 @@ import {
   siteBrandKitGetOptions,
   siteBrandKitRecreateStarterTemplatesMutation,
   siteTemplatesListQueryKey,
-  siteWorkspacesListOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { siteBrandKitSave } from '../../generated/site/sdk.gen.ts'
 import type { BrandKitResource } from '../../generated/site/types.gen.ts'
@@ -36,6 +35,7 @@ import type { ResourceFormSchema } from '../../resources/resourceFormSchema.ts'
 import { Route as brandKitRoute } from '../../routes/workspaces/$workspaceId/brand-kit.tsx'
 import { boundsOf } from '../../utils/bounds.ts'
 import { can } from '../../utils/permissions.ts'
+import { workspaceOptions } from '../../utils/workspace.ts'
 
 // The contract's bounds (TypeSpec -> zod) are the single source for the inputs' range.
 const RADIUS = boundsOf(zSiteSaveBrandKitInput.shape.buttonRadius)
@@ -274,10 +274,9 @@ export function BrandKitPage() {
 // BrandKit reads the kit and the caller's Workspace; the page's boundary shows the load and its
 // failure.
 function BrandKit({ workspaceId }: { workspaceId: string }) {
-  const [{ data: workspaces }, { data: kit }] = useSuspenseQueries({
-    queries: [siteWorkspacesListOptions(), siteBrandKitGetOptions({ path: { workspaceId } })],
+  const [{ data: workspace }, { data: kit }] = useSuspenseQueries({
+    queries: [workspaceOptions(workspaceId), siteBrandKitGetOptions({ path: { workspaceId } })],
   })
-  const workspace = workspaces.find((w) => w.id === workspaceId)
 
   const queryClient = useQueryClient()
   if (!workspace) {

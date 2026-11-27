@@ -1,7 +1,6 @@
 package outboundmessages_test
 
 import (
-	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -18,7 +17,7 @@ import (
 // twice deduplicates: the second Send replays the first and the provider sees one mail.
 func TestRequestConstructorsDeduplicateTheSameLogicalSend(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
 	// A recipient still to be sent (the fixture recipients already have their message).
@@ -63,7 +62,7 @@ func TestRequestConstructorsDeduplicateTheSameLogicalSend(t *testing.T) {
 // A Transactional send without a client key is its own send every time.
 func TestTransactionalWithoutClientKeyIsAlwaysANewSend(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	msg := outboundmessages.TransactionalMessage{Destination: "a@example.com",
 		Content: outboundmessages.EmailContent{Subject: "Receipt", Body: "<p>Hi</p>"}}
@@ -81,7 +80,7 @@ func TestTransactionalWithoutClientKeyIsAlwaysANewSend(t *testing.T) {
 // the stored formats are pinned here: an Automation step's names its run and its Step id (ADR 0122).
 func TestConstructorsKeepTheStoredKeyFormats(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	// A recipient still to be sent (the fixture recipients already have their message).
 	rec := env.DB.BroadcastRecipient.GetX(ctx, fixtures.BroadcastRecipientParkedAliceID)

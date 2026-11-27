@@ -5,7 +5,6 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -13,7 +12,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/sending/confirmationrequests"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/linktarget"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
@@ -22,10 +20,6 @@ import (
 
 // confirmLinkToken is the token of the confirmation link in a message.
 var confirmLinkToken = regexp.MustCompile(`/e/confirm/([A-Za-z0-9_\-.]+)`)
-
-func confirmationMailTo(env *testhelper.TestEnv, address string) []messaging.EmailMessage {
-	return lo.Filter(env.CustomerMail.Messages(), func(m messaging.EmailMessage, _ int) bool { return m.To == address })
-}
 
 // A Member sends a Contact the confirmation email from its page in the console (ADR 0013).
 func TestAMemberSendsAConfirmationRequestFromTheConsole(t *testing.T) {
@@ -38,7 +32,7 @@ func TestAMemberSendsAConfirmationRequestFromTheConsole(t *testing.T) {
 	assert.Equal(t, &siteapi.SiteConfirmationRequestsCreateAccepted{Status: siteapi.ConfirmationRequestStatusAccepted}, res)
 	env.PerformEnqueuedJobs(t, confirmationrequests.SendArgs{})
 
-	mail := confirmationMailTo(env, fixtures.ContactAliceEmail)
+	mail := env.CustomerMail.To(fixtures.ContactAliceEmail)
 	assert.Len(t, mail, 1)
 }
 
@@ -65,7 +59,7 @@ func TestTheRenewalOfAnExpiredLinkReachesAnAddressThatLeftEverything(t *testing.
 	require.NoError(t, err)
 	assert.Equal(t, siteapi.ConfirmationRequestStatusAccepted, renewed.Status)
 	env.PerformEnqueuedJobs(t, confirmationrequests.SendArgs{})
-	mail := confirmationMailTo(env, fixtures.ContactAliceEmail)
+	mail := env.CustomerMail.To(fixtures.ContactAliceEmail)
 	require.Len(t, mail, 1, "the opt-out of everything does not stop the person's request")
 	link := confirmLinkToken.FindStringSubmatch(mail[0].HTML)
 	require.Len(t, link, 2)

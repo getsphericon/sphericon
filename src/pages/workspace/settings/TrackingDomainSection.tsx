@@ -4,7 +4,6 @@ import {
   Button,
   Card,
   Code,
-  CopyButton,
   Group,
   Modal,
   Stack,
@@ -17,6 +16,7 @@ import { useSuspenseQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import * as z from 'zod'
 
+import { CopyTextButton } from '../../../components/CopyTextButton.tsx'
 import { QueryBoundary } from '../../../components/QueryBoundary.tsx'
 import { TableSkeleton } from '../../../components/Skeletons.tsx'
 import {
@@ -70,17 +70,10 @@ function HostTakenNote({ domain }: { domain: TrackingDomainResource }) {
 }
 
 function CopyValue({ value }: { value: string }) {
-  const { t } = useTranslation()
   return (
     <Group gap="xs" wrap="nowrap" align="center">
       <Code>{value}</Code>
-      <CopyButton value={value}>
-        {({ copied, copy }) => (
-          <Button size="compact-xs" variant="light" aria-label={value} onClick={copy}>
-            {copied ? t(($) => $.settings.copied) : t(($) => $.settings.copy)}
-          </Button>
-        )}
-      </CopyButton>
+      <CopyTextButton value={value} size="compact-xs" aria-label={value} />
     </Group>
   )
 }

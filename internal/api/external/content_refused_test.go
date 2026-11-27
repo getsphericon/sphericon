@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -16,7 +15,7 @@ import (
 func TestExternalRefusesContentThatCannotRender(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeTemplatesWrite, apitokens.ScopeBroadcastsWrite)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := c.TemplatesCreate(ctx, &externalapi.CreateTemplateInput{
 		Name: "Broken", Body: externalapi.NewOptString("<p>{% if %}</p>"),

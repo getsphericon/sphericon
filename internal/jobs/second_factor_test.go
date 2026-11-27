@@ -1,13 +1,11 @@
 package jobs_test
 
 import (
-	"context"
 	"errors"
 	"testing"
 	"time"
 
 	"github.com/pquerna/otp/totp"
-	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -16,7 +14,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -35,7 +32,7 @@ func remind(t *testing.T, env *testhelper.TestEnv, now time.Time) {
 	keys := testhelper.Module[*passkeys.Module](env)
 	factors := secondfactors.New(env.DB, env.Bus, env.Cipher, testhelper.Module[*users.Module](env), keys, memberships.New(env.DB, env.Bus, nil, nil, func() time.Time { return now }), func() time.Time { return now })
 	sweep := jobs.NewRemindSecondFactorWorker(factors)
-	require.NoError(t, sweep.Work(context.Background(), job(jobs.RemindSecondFactorArgs{})))
+	require.NoError(t, sweep.Work(t.Context(), job(jobs.RemindSecondFactorArgs{})))
 }
 
 func recipients(env *testhelper.TestEnv) []string {
@@ -102,7 +99,7 @@ func TestSecondFactorReminderIsSentAgainForARestartedRequirement(t *testing.T) {
 
 	// Switched off and on again a month later: a new grace for everyone.
 	restart := time.Date(2026, 4, 1, 0, 0, 0, 0, time.UTC)
-	_, err := env.DB.Workspace.UpdateOneID(fixtures.UmbrellaID).SetSecondFactorRequiredAt(restart).Save(context.Background())
+	_, err := env.DB.Workspace.UpdateOneID(fixtures.UmbrellaID).SetSecondFactorRequiredAt(restart).Save(t.Context())
 	require.NoError(t, err)
 
 	remind(t, env, restart.Add(6*24*time.Hour+time.Hour))
@@ -136,7 +133,7 @@ func TestAPasskeyHolderWithoutASecondFactorIsRemindedAndToldBothWaysOut(t *testi
 
 	remind(t, env, started.Add(6*24*time.Hour+time.Hour))
 
-	pat := lo.Filter(env.SystemMail.Messages(), func(m messaging.EmailMessage, _ int) bool { return m.To == fixtures.PasskeyPatEmail })
+	pat := env.SystemMail.To(fixtures.PasskeyPatEmail)
 	require.Len(t, pat, 1, "Pat holds a Passkey and no Second factor: her password sessions are withheld")
 	assert.Contains(t, pat[0].Text, "Passkey")
 	assert.Contains(t, pat[0].Text, env.AppURL+"/account/security")

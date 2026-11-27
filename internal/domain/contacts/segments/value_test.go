@@ -1,7 +1,6 @@
 package segments_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -21,7 +20,7 @@ import (
 func TestSavingTheSameConditionSpelledOtherwiseChangesNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 	save := testhelper.Module[*segmentsaving.UseCase](env)
-	ctx := context.Background()
+	ctx := t.Context()
 	acting := env.Bus.Act(env.DB.Scoped(fixtures.AcmeID), events.Actor{Kind: events.ActorUser, ID: "7", Name: "John"})
 	created, err := save.Create(ctx, acting, segments.CreateInput{Name: "VIPs", Condition: new(testhelper.SegmentCondition(t,
 		`{"kind":"group","combinator":"and","entries":[{"kind":"tag","name":"vip","operator":"has"}]}`))})
@@ -42,7 +41,7 @@ func TestASegmentWithNoTestsMatchesEveryContact(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*segments.Module](env)
 	save := testhelper.Module[*segmentsaving.UseCase](env)
-	ctx := context.Background()
+	ctx := t.Context()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	everyone, err := acme.Contact().Query().Count(ctx)
 	require.NoError(t, err)

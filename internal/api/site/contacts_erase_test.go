@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -18,7 +17,7 @@ import (
 // Erasure is irreversible, so a plain member is refused and nothing is touched.
 func TestSiteContactsEraseIsRefusedForMembers(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.SiteActor(t, fixtures.MemberMaryEmail)
 
 	err := c.SiteContactsDelete(ctx, siteapi.SiteContactsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.ContactBobID)})
@@ -33,7 +32,7 @@ func TestSiteContactsEraseIsRefusedForMembers(t *testing.T) {
 // anonymized, not left behind.
 func TestSiteContactsDeleteByOwnerErases(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
 	err := c.SiteContactsDelete(ctx, siteapi.SiteContactsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.ContactLiamID)})
@@ -50,7 +49,7 @@ func TestSiteContactsEraseRecordsTheUserRequester(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	err := c.SiteContactsDelete(context.Background(), siteapi.SiteContactsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.ContactLiamID)})
+	err := c.SiteContactsDelete(t.Context(), siteapi.SiteContactsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.ContactLiamID)})
 	require.NoError(t, err)
 
 	msgs := env.QueuedMessages(t, systemevent.ContactErased)

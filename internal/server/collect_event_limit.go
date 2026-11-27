@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/getsphericon/sphericon/internal/api/problem"
 	"github.com/getsphericon/sphericon/internal/kernel/paths"
 )
 
@@ -26,11 +27,11 @@ func collectEventLimit(limit int64) func(http.Handler) http.Handler {
 			}
 			raw, err := io.ReadAll(r.Body)
 			if _, ok := errors.AsType[*http.MaxBytesError](err); ok {
-				writeProblem(r.Context(), w, http.StatusRequestEntityTooLarge, err.Error())
+				problem.WriteDetail(r.Context(), w, http.StatusRequestEntityTooLarge, err.Error())
 				return
 			}
 			if err == nil && eventOverLimit(raw, limit) {
-				writeProblem(r.Context(), w, http.StatusRequestEntityTooLarge,
+				problem.WriteDetail(r.Context(), w, http.StatusRequestEntityTooLarge,
 					(&http.MaxBytesError{Limit: limit}).Error())
 				return
 			}

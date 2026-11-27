@@ -95,7 +95,7 @@ func TestARuleTriggeredByACompletedEnrollmentFiresAndItsTagFiresNoRule(t *testin
 	tagged := onlyEnvelope(t, env, systemevent.ContactTagged)
 	taggedEvaluations := lo.Filter(queuedArgs[jobs.EvaluateRulesArgs](t, env, jobkind.RuleEvaluate.Kind),
 		func(args jobs.EvaluateRulesArgs, _ int) bool { return args.Action == systemevent.ContactTagged })
-	aliceTags := tagsOf(t, env, fixtures.ContactAliceID)
+	aliceTags := tagNames(t, env, fixtures.ContactAliceID)
 	firing := env.DB.RuleFiring.GetX(ctx, fired[0])
 
 	assert.EqualValues(t, fixtures.RuleEnrollmentCompletedID, firing.RuleID)

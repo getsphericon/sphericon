@@ -40,7 +40,7 @@ func waitingFor(counted map[externalapi.DeferralCause]int32) []externalapi.Defer
 // cap spent and waits for it. Every other reason and cause reads zero.
 func TestExternalBroadcastReportCountsTheSkippedByReasonAndTheWaitingByCause(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	alice := env.PlaceRecipient(ctx, fixtures.BroadcastSendingID, fixtures.ContactAliceID)
 	carol := env.PlaceRecipient(ctx, fixtures.BroadcastSendingID, fixtures.ContactCarolID)
@@ -64,7 +64,7 @@ func TestExternalBroadcastReportCountsTheSkippedByReasonAndTheWaitingByCause(t *
 // receipt spent, Alice, suppressed, is Skipped by Send-eligibility.
 func TestExternalAutomationReportCountsEachStepsSkippedByReasonAndItsWaitingByCause(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerDay(1).ExecX(ctx)
 	receipt, err := env.OutboundModule().Send(ctx, acme, outboundmessages.Request{
@@ -106,7 +106,7 @@ func unfencedStepper(env *testhelper.TestEnv) *automations.StepExecution {
 // window and no such count.
 func TestExternalBroadcastReportCountsTheSendsJudgedByASingleZone(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.ExternalScoped(t, apitokens.ScopeBroadcastsRead)
 
 	sms, err := c.BroadcastsReport(ctx, externalapi.BroadcastsReportParams{ID: entityIDString(fixtures.BroadcastSmsSentID)})

@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 	"time"
@@ -32,7 +31,7 @@ func TestSiteCustomFieldUpdateOnAStaleRevisionIsRefused(t *testing.T) {
 
 	refused := testhelper.SiteRefusal(t, err, http.StatusConflict)
 	assert.Equal(t, siteapi.ProblemCodeRevisionChanged, refused.Code.Value)
-	stored := env.DB.CustomField.GetX(context.Background(), int64(field.ID))
+	stored := env.DB.CustomField.GetX(t.Context(), int64(field.ID))
 	assert.Equal(t, "First", stored.Name)
 	assert.EqualValues(t, first.Revision, stored.Revision)
 }
@@ -42,7 +41,7 @@ func TestSiteCustomFieldUpdateOnAStaleRevisionIsRefused(t *testing.T) {
 func TestSiteWebhookUpdateOnAStaleRevisionIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	params := siteapi.SiteWebhooksUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.WebhookCodebasicsID)}
 	read, err := c.SiteWebhooksGet(ctx, siteapi.SiteWebhooksGetParams(params))
 	require.NoError(t, err)
@@ -65,7 +64,7 @@ func TestSiteWebhookUpdateOnAStaleRevisionIsRefused(t *testing.T) {
 func TestSiteWebhookSaveSurvivesAFailureRecordButNotATurnOff(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	params := siteapi.SiteWebhooksUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.WebhookCodebasicsID)}
 	read, err := c.SiteWebhooksGet(ctx, siteapi.SiteWebhooksGetParams(params))
 	require.NoError(t, err)
@@ -96,7 +95,7 @@ func TestSiteWebhookSaveSurvivesAFailureRecordButNotATurnOff(t *testing.T) {
 func TestSiteBrandKitSaveOnAStaleRevisionIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.InitechOwnerOlgaEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	read := getBrandKit(t, c, fixtures.InitechPublicID)
 	first, second := brandKitInput(), brandKitInput()
 	first.Revision, first.AccentColor = read.Revision, "#111111"
@@ -121,7 +120,7 @@ func TestSiteBrandKitSaveOnAStaleRevisionIsRefused(t *testing.T) {
 func TestSiteIntegrationUpdateOnAStaleRevisionIsRefusedButNotOverAQuotaRead(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	env.SES.SetQuota(messaging.Quota{PerSecond: new(14), PerDay: new(50000)})
 	created, err := c.SiteIntegrationsCreate(ctx, &siteapi.CreateIntegrationInput{
 		Params: sesTopicParams, Name: "SES", Config: sesInput("eu-west-1", "AKIA1234", "secret"),
@@ -153,7 +152,7 @@ func TestSiteIntegrationUpdateOnAStaleRevisionIsRefusedButNotOverAQuotaRead(t *t
 func TestSiteIntegrationRegeneratedKeyMovesTheRevision(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	id := idStr(fixtures.IntegrationAcmeGenericAID)
 	read, err := c.SiteIntegrationsGet(ctx, siteapi.SiteIntegrationsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
 	require.NoError(t, err)

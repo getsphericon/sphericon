@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -18,7 +17,7 @@ import (
 func TestSiteInvitationsCreateAndList(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail) // owner
-	ctx := context.Background()
+	ctx := t.Context()
 
 	created, err := c.SiteInvitationsCreate(ctx,
 		&siteapi.SiteCreateInvitationInput{Email: "newbie@acme.test", Role: siteapi.SiteInvitableRoleMember},
@@ -40,7 +39,7 @@ func TestSiteInvitationsForbiddenForMember(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.MemberMaryEmail)
 
-	_, err := c.SiteInvitationsCreate(context.Background(),
+	_, err := c.SiteInvitationsCreate(t.Context(),
 		&siteapi.SiteCreateInvitationInput{Email: "x@acme.test", Role: siteapi.SiteInvitableRoleMember},
 		siteapi.SiteInvitationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	testhelper.SiteRefusal(t, err, http.StatusForbidden)
@@ -49,7 +48,7 @@ func TestSiteInvitationsForbiddenForMember(t *testing.T) {
 func TestSiteInvitationAcceptNewUser(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// The fixture invite (raw token below) targets an email with no account yet.
 	found, err := c.SitePublicInvitationsLookup(ctx, siteapi.SitePublicInvitationsLookupParams{Token: "inv_fixture_token_acme"})
@@ -79,7 +78,7 @@ func TestSiteInvitationAcceptNewUser(t *testing.T) {
 
 func TestSiteInvitationAcceptExistingUser(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// An account exists but is not yet a member.
 	existing, err := env.DB.User.Query().Where(entuser.Email(fixtures.OutsiderOscarEmail)).Only(ctx)
@@ -98,7 +97,7 @@ func TestSiteInvitationAcceptExistingUser(t *testing.T) {
 func TestSiteInvitationExpiredRejected(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := c.SitePublicInvitationsLookup(ctx, siteapi.SitePublicInvitationsLookupParams{Token: "inv_fixture_token_expired"})
 	testhelper.SiteRefusal(t, err, http.StatusNotFound)
@@ -111,7 +110,7 @@ func TestSiteMembershipsList(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	items, err := c.SiteMembershipsList(context.Background(), siteapi.SiteMembershipsListParams{WorkspaceId: fixtures.AcmePublicID})
+	items, err := c.SiteMembershipsList(t.Context(), siteapi.SiteMembershipsListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	roles := map[siteapi.EmailAddress]siteapi.SiteMembershipRole{}
 	for _, m := range items {
@@ -127,7 +126,7 @@ func TestSiteMembershipsList(t *testing.T) {
 func TestSiteMembershipsLastOwnerGuard(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// the Acme owner membership is the sole owner (fixture).
 	err := c.SiteMembershipsDelete(ctx, siteapi.SiteMembershipsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.AcmeOwnerMembershipID)})
@@ -141,7 +140,7 @@ func TestSiteMembershipsLastOwnerGuard(t *testing.T) {
 
 func TestSiteMembershipsRoleManagement(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	memberID := int64(fixtures.AcmeMemberMembershipID)
 
 	// A plain member cannot manage roles.
@@ -164,7 +163,7 @@ func TestSiteMembershipsRoleManagement(t *testing.T) {
 // needs owners:manage, which only an owner holds (ADR 0061).
 func TestSiteMembershipsAdminCannotTouchOwner(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	targetID := int64(fixtures.AcmeMemberMembershipID)
 
 	admin := env.SiteActor(t, fixtures.AdminAliceEmail)

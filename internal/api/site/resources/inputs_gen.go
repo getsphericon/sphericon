@@ -668,6 +668,20 @@ func (c *InputsImpl) InvitationCreate(source *site.SiteCreateInvitationInput) in
 	}
 	return invitationsInviteInput
 }
+func (c *InputsImpl) LinkIdentitySet(source *site.SiteSetLinkIdentityInput) workspaceview.SetLinkIdentityInput {
+	var workspaceviewSetLinkIdentityInput workspaceview.SetLinkIdentityInput
+	if source != nil {
+		workspaceviewSetLinkIdentityInput.Revision = revisionIn((*source).Revision)
+		workspaceviewSetLinkIdentityInput.LinkIdentityEnabled = (*source).LinkIdentityEnabled
+		if (*source).LinkIdentityHosts != nil {
+			workspaceviewSetLinkIdentityInput.LinkIdentityHosts = make([]string, len((*source).LinkIdentityHosts))
+			for i := 0; i < len((*source).LinkIdentityHosts); i++ {
+				workspaceviewSetLinkIdentityInput.LinkIdentityHosts[i] = string((*source).LinkIdentityHosts[i])
+			}
+		}
+	}
+	return workspaceviewSetLinkIdentityInput
+}
 func (c *InputsImpl) MembershipRole(source site.SiteMembershipRole) membership.Role {
 	var membershipRole membership.Role
 	switch source {

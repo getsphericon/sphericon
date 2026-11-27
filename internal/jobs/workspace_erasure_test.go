@@ -1,7 +1,6 @@
 package jobs_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -24,7 +23,7 @@ func TestErasureJobTriggersTheModuleAtItsClock(t *testing.T) {
 	clock := func() time.Time { return now }
 	w := jobs.NewEraseWorkspacesWorker(workspacedeletion.New(env.DB, env.Bus, workspaces.New(env.DB, env.Bus, clock), testhelper.Module[*memberships.Module](env), clock))
 
-	require.NoError(t, w.Work(context.Background(), job(jobs.EraseWorkspacesArgs{})))
+	require.NoError(t, w.Work(t.Context(), job(jobs.EraseWorkspacesArgs{})))
 
 	ws := env.DB.Workspace.GetX(t.Context(), fixtures.UmbrellaID)
 	require.NotNil(t, ws.ErasedAt)

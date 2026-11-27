@@ -24,7 +24,7 @@ import (
 func TestTelegramResumeFailureRollsBackTokenBindingConsentAndReceipt(t *testing.T) {
 	env := testhelper.Setup(t)
 	bot := env.AcmeTelegram(t)
-	stop := env.PostTelegramUpdate(t, bot, said(1, optOutUser, "/stop"))
+	stop := env.PostTelegramUpdate(t, bot, testhelper.TelegramMessage(1, optOutUser, "/stop"))
 	require.Equal(t, http.StatusOK, stop.Code)
 	fail := true
 	env.Bus.UseSubscribers(events.Subscriber{
@@ -39,7 +39,7 @@ func TestTelegramResumeFailureRollsBackTokenBindingConsentAndReceipt(t *testing.
 			return nil
 		},
 	})
-	update := said(2, optOutUser, "/start "+fixtures.StartTokenAcmeOpenToken)
+	update := testhelper.TelegramMessage(2, optOutUser, "/start "+fixtures.StartTokenAcmeOpenToken)
 
 	failed := env.PostTelegramUpdate(t, bot, update)
 
@@ -67,7 +67,7 @@ func TestTelegramResumeFailureRollsBackTokenBindingConsentAndReceipt(t *testing.
 	assert.False(t, stopped)
 	boundCount := env.QueuedCount(t, systemevent.TelegramBound, map[string]any{"contactId": fixtures.ContactLiamID})
 	assert.Equal(t, 1, boundCount)
-	stop = env.PostTelegramUpdate(t, bot, said(3, optOutUser, "/stop"))
+	stop = env.PostTelegramUpdate(t, bot, testhelper.TelegramMessage(3, optOutUser, "/stop"))
 	require.Equal(t, http.StatusOK, stop.Code)
 	duplicate := env.PostTelegramUpdate(t, bot, update)
 	require.Equal(t, http.StatusOK, duplicate.Code)
@@ -123,7 +123,7 @@ func TestTelegramButtonRollbackRetryAndDuplicateAcknowledgement(t *testing.T) {
 		"contactId": fixtures.ContactLiamID, "broadcastId": fixtures.BroadcastArchivedID, "via": events.UnsubscribedByButton,
 	})
 	assert.Equal(t, 1, attributed)
-	start := env.PostTelegramUpdate(t, bot, said(6, user, "/start"))
+	start := env.PostTelegramUpdate(t, bot, testhelper.TelegramMessage(6, user, "/start"))
 	require.Equal(t, http.StatusOK, start.Code)
 	duplicate := env.PostTelegramUpdate(t, bot, update)
 	require.Equal(t, http.StatusOK, duplicate.Code)

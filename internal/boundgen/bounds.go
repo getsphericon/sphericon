@@ -21,6 +21,7 @@ const (
 	consentDest       = "ConsentDestination"
 	destination       = "destination"
 	automationVersion = "AutomationVersion"
+	workspaceOwner    = "Workspace"
 )
 
 // Bounds are the contract's bounds on the input of a domain write, in the order they are written.
@@ -53,7 +54,7 @@ var Bounds = []Bound{
 	},
 	{
 		Name: "MaxPerDay", Doc: "is a rolling 24-hour limit: a Provider limit's daily value or a Send cap.",
-		Spec: site, Schema: "MaxPerDay", Owners: []string{"Workspace", "DefaultSendCap", "Integration"},
+		Spec: site, Schema: "MaxPerDay", Owners: []string{workspaceOwner, "DefaultSendCap", "Integration"},
 	},
 	{
 		Name: "MaxPerSecond", Doc: "is a Provider limit's value per second.",
@@ -65,11 +66,11 @@ var Bounds = []Bound{
 	},
 	{
 		Name: "AttributionWindowDays", Doc: "is how many days a Workspace's Attribution window lasts.",
-		Spec: site, Schema: "AttributionWindowDays", Owners: []string{"Workspace"},
+		Spec: site, Schema: "AttributionWindowDays", Owners: []string{workspaceOwner},
 	},
 	{
 		Name: "RetentionDays", Doc: "is how many days a Workspace's Audit log is kept.",
-		Spec: site, Schema: "RetentionDays", Owners: []string{"Workspace"},
+		Spec: site, Schema: "RetentionDays", Owners: []string{workspaceOwner},
 	},
 	{
 		Name: "HTTPCallHeaders", Doc: "are the headers of an http Action or step.",
@@ -204,6 +205,15 @@ var Bounds = []Bound{
 	},
 	{Name: "VisitorID", Spec: collect, Schema: "CollectIdentifyInput", Property: "visitorId"},
 	{Name: "VisitorID", Spec: collect, Schema: "CollectTelegramStartLinkInput", Property: "visitorId"},
+	{Name: "VisitorID", Spec: collect, Schema: "CollectLinkIdentityInput", Property: "visitorId"},
+	{
+		Name: "LinkIdentityHost", Doc: "is a hostname of a Workspace's own site a Link identity token may go to.",
+		Spec: site, Schema: "LinkIdentityHost", Owners: []string{workspaceOwner},
+	},
+	{
+		Name: "LinkIdentityHosts", Doc: "are the hostnames of a Workspace's own sites a Link identity token may go to.",
+		Spec: site, Schema: "SiteSetLinkIdentityInput", Property: "linkIdentityHosts", Owners: []string{workspaceOwner},
+	},
 	{
 		Name: "CollectEventAction", Doc: "is the action of an Event the tracker collects.",
 		Spec: collect, Schema: "CollectEventInput", Property: "action", Owners: []string{"internal/domain/contacts/visitors"},
@@ -303,7 +313,7 @@ var Bounds = []Bound{
 	},
 	{
 		Name: "CurrencyCode", Doc: "is an ISO 4217 currency code, a Workspace's reporting currency.",
-		Spec: site, Schema: "CurrencyCode", Owners: []string{"Workspace"},
+		Spec: site, Schema: "CurrencyCode", Owners: []string{workspaceOwner},
 	},
 	{
 		Name: "RegionalFormat", Doc: "is the BCP 47 tag of how the app shows a User dates, times and numbers.",
@@ -340,6 +350,10 @@ var TransportOnly = []TransportBound{
 	{
 		Spec: collect, Schema: "CollectTelegramStartLinkInput", Property: "identityToken",
 		Doc: "is an Identity token, which the module verifies and never stores: its length caps only what the transport reads.",
+	},
+	{
+		Spec: collect, Schema: "CollectLinkIdentityInput", Property: "token",
+		Doc: "is a Link identity token, which the use case verifies and never stores: its length caps only what the transport reads.",
 	},
 	{Spec: telemetry, Schema: telemetryReport, Property: "appVersion", Doc: telemetryDoc},
 	{Spec: telemetry, Schema: telemetryReport, Property: "arch", Doc: telemetryDoc},

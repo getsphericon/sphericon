@@ -75,7 +75,7 @@ func TestPropertyNotSetMeansAnExplicitNullNotAMissingKey(t *testing.T) {
 func TestPropertyTestFoldsIntoTheRestOfTheTree(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.OscorpID)
-	anna := env.DB.Contact.Query().Where(contact.Email(fixtures.OscorpAnnaEmail)).OnlyX(context.Background()).ID
+	anna := env.DB.Contact.Query().Where(contact.Email(fixtures.OscorpAnnaEmail)).OnlyX(t.Context()).ID
 	props := map[string]any{"url": "https://x.test/pricing"}
 	hit := property("url", text("contains", "pricing"))
 	miss := property("url", text("contains", "docs"))
@@ -96,7 +96,7 @@ func TestPropertyTestFoldsIntoTheRestOfTheTree(t *testing.T) {
 // with no key is refused.
 func TestARulesPropertyTestTakesAnyKey(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
 	_, anyKey := condition.New(time.Now).RulePredicate(ctx, s, ruleOf(property("amount", text("eq", "10"))), nil)

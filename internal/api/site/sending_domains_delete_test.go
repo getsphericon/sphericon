@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -16,7 +15,7 @@ import (
 
 func listSendingDomains(t *testing.T, c *siteapi.Client) []int64 {
 	t.Helper()
-	list, err := c.SiteSendingDomainsList(context.Background(), siteapi.SiteSendingDomainsListParams{
+	list, err := c.SiteSendingDomainsList(t.Context(), siteapi.SiteSendingDomainsListParams{
 		WorkspaceId: fixtures.AcmePublicID,
 		PageSize:    siteapi.NewOptInt32(100),
 	})
@@ -40,7 +39,7 @@ func deleteSendingDomainOf(t *testing.T, c *siteapi.Client, ws siteapi.Workspace
 func TestSiteSendingDomainsDelete(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	id := int64(fixtures.SendingDomainUnverifiedID)
 
 	assert.NotContains(t, listSendingDomains(t, c), int64(fixtures.SendingDomainArchivedID), "a deleted fixture row is hidden")
@@ -59,7 +58,7 @@ func TestSiteSendingDomainsDelete(t *testing.T) {
 func TestSiteSendingDomainsDeletedNameIsReusable(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	require.NoError(t, deleteSendingDomain(t, c, fixtures.SendingDomainUnverifiedID))
 
 	_, err := c.SiteSendingDomainsCreate(ctx, &siteapi.CreateSendingDomainInput{Domain: fixtures.SendingDomainUnverifiedDomain},
@@ -71,7 +70,7 @@ func TestSiteSendingDomainsDeletedNameIsReusable(t *testing.T) {
 func TestSiteSendingDomainsDeletedOneIsNotVerified(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	id := idStr(fixtures.SendingDomainArchivedID)
 
 	_, err := c.SiteSendingDomainsVerify(ctx, siteapi.SiteSendingDomainsVerifyParams{WorkspaceId: fixtures.AcmePublicID, ID: id})

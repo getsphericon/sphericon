@@ -1,7 +1,6 @@
 package broadcasts_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/samber/lo"
@@ -20,7 +19,7 @@ import (
 func TestViewsCarryTheFigures(t *testing.T) {
 	env := testhelper.Setup(t)
 	v := broadcasts.NewViews(testhelper.Module[*broadcasts.Module](env))
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
 	page, err := v.List(ctx, s, pagination.Params{Page: 1, PageSize: 100}, broadcasts.ListFilter{})
@@ -44,7 +43,7 @@ func TestViewsCreateReturnsTheWarningsOfTheBodyAsWritten(t *testing.T) {
 	name, subject, from := "Warned", "Hi", "a@"+fixtures.SendingDomainVerifiedDomain
 	body := `<p style="font-family:Georgia, serif">Sale</p><img src="https://cdn.example.com/a.png">`
 
-	got, err := v.Create(context.Background(), env.DB.Scoped(fixtures.AcmeID),
+	got, err := v.Create(t.Context(), env.DB.Scoped(fixtures.AcmeID),
 		broadcasts.CreateInput{Name: &name, Content: broadcasts.EmailContentInput{Subject: &subject, Body: &body, FromEmail: &from}})
 	require.NoError(t, err)
 	codes := lo.Map(got.Warnings, func(f emailrender.Finding, _ int) emailrender.Code { return f.Code })

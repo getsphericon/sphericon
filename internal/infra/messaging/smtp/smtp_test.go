@@ -171,7 +171,7 @@ func TestSendDeliversWithConfiguredDefaults(t *testing.T) {
 	srv := newTestServer(t.Context(), t, false)
 	sender := build(t, smtp.Config{Host: "127.0.0.1", Port: srv.port, From: "noreply@acme.com", FromName: "Acme"})
 
-	receipt, err := sender.Send(context.Background(), messaging.EmailMessage{
+	receipt, err := sender.Send(t.Context(), messaging.EmailMessage{
 		To: "rcpt@example.com", Subject: "Hello", Text: "plain body",
 	})
 	require.NoError(t, err)
@@ -242,7 +242,7 @@ func TestSendMessageFromOverridesDefault(t *testing.T) {
 	srv := newTestServer(t.Context(), t, false)
 	sender := build(t, smtp.Config{Host: "127.0.0.1", Port: srv.port, From: "noreply@acme.com", FromName: "Acme"})
 
-	_, err := sender.Send(context.Background(), messaging.EmailMessage{
+	_, err := sender.Send(t.Context(), messaging.EmailMessage{
 		From: "news@acme.com", FromName: "News", To: "rcpt@example.com", Subject: "s", HTML: "<p>x</p>",
 	})
 	require.NoError(t, err)
@@ -259,7 +259,7 @@ func TestSendAuthenticatesWhenCredentialsSet(t *testing.T) {
 		Host: "127.0.0.1", Port: srv.port, Username: "user", Password: "secret", From: "noreply@acme.com",
 	})
 
-	_, err := sender.Send(context.Background(), messaging.EmailMessage{To: "rcpt@example.com", Subject: "s", Text: "x"})
+	_, err := sender.Send(t.Context(), messaging.EmailMessage{To: "rcpt@example.com", Subject: "s", Text: "x"})
 	require.NoError(t, err)
 
 	got := srv.captured()
@@ -381,7 +381,7 @@ func TestSendRefusesAPrivateHostUnlessAllowed(t *testing.T) {
 	built, err := smtp.Descriptor().Build([]byte(raw), messaging.Deps{})
 	require.NoError(t, err)
 
-	_, err = built.(messaging.EmailSender).Send(context.Background(), messaging.EmailMessage{To: "r@example.com", Subject: "s", Text: "t"})
+	_, err = built.(messaging.EmailSender).Send(t.Context(), messaging.EmailMessage{To: "r@example.com", Subject: "s", Text: "t"})
 	require.ErrorContains(t, err, "non-public address")
 	assert.Empty(t, srv.captured())
 }
@@ -406,9 +406,9 @@ func TestSendPutsTheConfiguredReplyToOnTheMessage(t *testing.T) {
 	srv := newTestServer(t.Context(), t, false)
 	sender := build(t, smtp.Config{Host: "127.0.0.1", Port: srv.port, From: "noreply@acme.com", ReplyTo: "help@acme.com"})
 
-	_, err := sender.Send(context.Background(), messaging.EmailMessage{To: "rcpt@example.com", Subject: "s", Text: "x"})
+	_, err := sender.Send(t.Context(), messaging.EmailMessage{To: "rcpt@example.com", Subject: "s", Text: "x"})
 	require.NoError(t, err)
-	_, err = sender.Send(context.Background(), messaging.EmailMessage{
+	_, err = sender.Send(t.Context(), messaging.EmailMessage{
 		To: "rcpt@example.com", Subject: "s", Text: "x", ReplyTo: "other@acme.com",
 	})
 	require.NoError(t, err)

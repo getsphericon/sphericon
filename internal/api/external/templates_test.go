@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -21,7 +20,7 @@ func entityIDString(id int64) externalapi.EntityId {
 func TestExternalTemplatesCRUD(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeTemplatesRead, apitokens.ScopeTemplatesWrite)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	page, err := c.TemplatesList(ctx, externalapi.TemplatesListParams{})
 	require.NoError(t, err)
@@ -58,7 +57,7 @@ func TestExternalTemplatesCRUD(t *testing.T) {
 
 func TestExternalTemplatesScopes(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := env.ExternalAnonymous(t).TemplatesList(ctx, externalapi.TemplatesListParams{})
 	testhelper.ExternalRefusal(t, err, http.StatusUnauthorized)
@@ -83,7 +82,7 @@ func TestExternalTemplatesScopes(t *testing.T) {
 
 func TestExternalTemplatesAreWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	id := entityIDString(fixtures.TemplateGlobexID)
 

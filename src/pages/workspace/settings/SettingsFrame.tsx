@@ -4,8 +4,8 @@ import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { BlockSkeleton } from '../../../components/Skeletons.tsx'
-import { siteWorkspacesListOptions } from '../../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteWorkspaceResource } from '../../../generated/site/types.gen.ts'
+import { workspaceOptions } from '../../../utils/workspace.ts'
 
 // SettingsFrame is the chrome every settings page shares: its title, with the page's actions
 // beside it, then the loaded workspace handed to `children` (or the load error / spinner while
@@ -22,8 +22,8 @@ export function SettingsFrame({
   children: (workspace: SiteWorkspaceResource) => ReactNode
 }) {
   const { t } = useTranslation()
-  const workspacesQuery = useQuery(siteWorkspacesListOptions())
-  const workspace = workspacesQuery.data?.find((w) => w.id === workspaceId)
+  const workspaceQuery = useQuery(workspaceOptions(workspaceId))
+  const workspace = workspaceQuery.data
 
   return (
     <Stack>
@@ -32,13 +32,13 @@ export function SettingsFrame({
         {workspace && renderActions ? renderActions(workspace) : null}
       </Group>
 
-      {workspacesQuery.isError ? (
+      {workspaceQuery.isError ? (
         <Alert color="red" title={t(($) => $.settings.loadErrorTitle)}>
           {t(($) => $.settings.loadErrorTitle)}
         </Alert>
       ) : null}
 
-      {workspacesQuery.isLoading ? <BlockSkeleton /> : null}
+      {workspaceQuery.isLoading ? <BlockSkeleton /> : null}
 
       {workspace ? children(workspace) : null}
     </Stack>

@@ -25727,6 +25727,46 @@ func (s *LinkClicks) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes LinkIdentityHost as json.
+func (s LinkIdentityHost) Encode(e *jx.Encoder) {
+	unwrapped := string(s)
+
+	e.Str(unwrapped)
+}
+
+// Decode decodes LinkIdentityHost from json.
+func (s *LinkIdentityHost) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode LinkIdentityHost to nil")
+	}
+	var unwrapped string
+	if err := func() error {
+		v, err := d.Str()
+		unwrapped = string(v)
+		if err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = LinkIdentityHost(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s LinkIdentityHost) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *LinkIdentityHost) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes LintCode as json.
 func (s LintCode) Encode(e *jx.Encoder) {
 	e.Str(string(s))
@@ -64665,6 +64705,144 @@ func (s *SiteSetEngagementTrackingDefaultInput) UnmarshalJSON(data []byte) error
 }
 
 // Encode implements json.Marshaler.
+func (s *SiteSetLinkIdentityInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SiteSetLinkIdentityInput) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("revision")
+		s.Revision.Encode(e)
+	}
+	{
+		e.FieldStart("linkIdentityEnabled")
+		e.Bool(s.LinkIdentityEnabled)
+	}
+	{
+		e.FieldStart("linkIdentityHosts")
+		e.ArrStart()
+		for _, elem := range s.LinkIdentityHosts {
+			elem.Encode(e)
+		}
+		e.ArrEnd()
+	}
+}
+
+var jsonFieldsNameOfSiteSetLinkIdentityInput = [3]string{
+	0: "revision",
+	1: "linkIdentityEnabled",
+	2: "linkIdentityHosts",
+}
+
+// Decode decodes SiteSetLinkIdentityInput from json.
+func (s *SiteSetLinkIdentityInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteSetLinkIdentityInput to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "revision":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Revision.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"revision\"")
+			}
+		case "linkIdentityEnabled":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Bool()
+				s.LinkIdentityEnabled = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"linkIdentityEnabled\"")
+			}
+		case "linkIdentityHosts":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				s.LinkIdentityHosts = make([]LinkIdentityHost, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem LinkIdentityHost
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.LinkIdentityHosts = append(s.LinkIdentityHosts, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"linkIdentityHosts\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SiteSetLinkIdentityInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSiteSetLinkIdentityInput) {
+					name = jsonFieldsNameOfSiteSetLinkIdentityInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteSetLinkIdentityInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteSetLinkIdentityInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
 func (s *SiteSetupProgress) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
@@ -70263,6 +70441,18 @@ func (s *SiteWorkspaceResource) encodeFields(e *jx.Encoder) {
 		s.EngagementTrackingDefault.Encode(e)
 	}
 	{
+		e.FieldStart("linkIdentityEnabled")
+		e.Bool(s.LinkIdentityEnabled)
+	}
+	{
+		e.FieldStart("linkIdentityHosts")
+		e.ArrStart()
+		for _, elem := range s.LinkIdentityHosts {
+			e.Str(elem)
+		}
+		e.ArrEnd()
+	}
+	{
 		e.FieldStart("role")
 		s.Role.Encode(e)
 	}
@@ -70360,7 +70550,7 @@ func (s *SiteWorkspaceResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteWorkspaceResource = [25]string{
+var jsonFieldsNameOfSiteWorkspaceResource = [27]string{
 	0:  "id",
 	1:  "name",
 	2:  "collectKey",
@@ -70368,24 +70558,26 @@ var jsonFieldsNameOfSiteWorkspaceResource = [25]string{
 	4:  "timezone",
 	5:  "requireConfirmedOptIn",
 	6:  "engagementTrackingDefault",
-	7:  "role",
-	8:  "permissions",
-	9:  "suspendedAt",
-	10: "suspensionReason",
-	11: "supportEmail",
-	12: "mcpUrl",
-	13: "trackerUrl",
-	14: "trackingTarget",
-	15: "shortLinkLength",
-	16: "smsMaxLength",
-	17: "holds",
-	18: "secondFactorRequiredAt",
-	19: "secondFactorGraceEndsAt",
-	20: "secondFactorRequirementGraceEndsAt",
-	21: "sendCap",
-	22: "accountLinkAvailable",
-	23: "createdAt",
-	24: "revision",
+	7:  "linkIdentityEnabled",
+	8:  "linkIdentityHosts",
+	9:  "role",
+	10: "permissions",
+	11: "suspendedAt",
+	12: "suspensionReason",
+	13: "supportEmail",
+	14: "mcpUrl",
+	15: "trackerUrl",
+	16: "trackingTarget",
+	17: "shortLinkLength",
+	18: "smsMaxLength",
+	19: "holds",
+	20: "secondFactorRequiredAt",
+	21: "secondFactorGraceEndsAt",
+	22: "secondFactorRequirementGraceEndsAt",
+	23: "sendCap",
+	24: "accountLinkAvailable",
+	25: "createdAt",
+	26: "revision",
 }
 
 // Decode decodes SiteWorkspaceResource from json.
@@ -70475,8 +70667,40 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"engagementTrackingDefault\"")
 			}
-		case "role":
+		case "linkIdentityEnabled":
 			requiredBitSet[0] |= 1 << 7
+			if err := func() error {
+				v, err := d.Bool()
+				s.LinkIdentityEnabled = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"linkIdentityEnabled\"")
+			}
+		case "linkIdentityHosts":
+			requiredBitSet[1] |= 1 << 0
+			if err := func() error {
+				s.LinkIdentityHosts = make([]string, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem string
+					v, err := d.Str()
+					elem = string(v)
+					if err != nil {
+						return err
+					}
+					s.LinkIdentityHosts = append(s.LinkIdentityHosts, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"linkIdentityHosts\"")
+			}
+		case "role":
+			requiredBitSet[1] |= 1 << 1
 			if err := func() error {
 				if err := s.Role.Decode(d); err != nil {
 					return err
@@ -70486,7 +70710,7 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"role\"")
 			}
 		case "permissions":
-			requiredBitSet[1] |= 1 << 0
+			requiredBitSet[1] |= 1 << 2
 			if err := func() error {
 				s.Permissions = make([]Permission, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
@@ -70534,7 +70758,7 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"supportEmail\"")
 			}
 		case "mcpUrl":
-			requiredBitSet[1] |= 1 << 4
+			requiredBitSet[1] |= 1 << 6
 			if err := func() error {
 				v, err := d.Str()
 				s.McpUrl = string(v)
@@ -70546,7 +70770,7 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"mcpUrl\"")
 			}
 		case "trackerUrl":
-			requiredBitSet[1] |= 1 << 5
+			requiredBitSet[1] |= 1 << 7
 			if err := func() error {
 				v, err := d.Str()
 				s.TrackerUrl = string(v)
@@ -70568,7 +70792,7 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"trackingTarget\"")
 			}
 		case "shortLinkLength":
-			requiredBitSet[1] |= 1 << 7
+			requiredBitSet[2] |= 1 << 1
 			if err := func() error {
 				v, err := d.Int32()
 				s.ShortLinkLength = int32(v)
@@ -70580,7 +70804,7 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"shortLinkLength\"")
 			}
 		case "smsMaxLength":
-			requiredBitSet[2] |= 1 << 0
+			requiredBitSet[2] |= 1 << 2
 			if err := func() error {
 				if err := s.SmsMaxLength.Decode(d); err != nil {
 					return err
@@ -70590,7 +70814,7 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"smsMaxLength\"")
 			}
 		case "holds":
-			requiredBitSet[2] |= 1 << 1
+			requiredBitSet[2] |= 1 << 3
 			if err := func() error {
 				s.Holds = make([]SiteWorkspaceHold, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
@@ -70648,7 +70872,7 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"sendCap\"")
 			}
 		case "accountLinkAvailable":
-			requiredBitSet[2] |= 1 << 6
+			requiredBitSet[3] |= 1 << 0
 			if err := func() error {
 				v, err := d.Bool()
 				s.AccountLinkAvailable = bool(v)
@@ -70660,7 +70884,7 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"accountLinkAvailable\"")
 			}
 		case "createdAt":
-			requiredBitSet[2] |= 1 << 7
+			requiredBitSet[3] |= 1 << 1
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -70670,7 +70894,7 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"createdAt\"")
 			}
 		case "revision":
-			requiredBitSet[3] |= 1 << 0
+			requiredBitSet[3] |= 1 << 2
 			if err := func() error {
 				if err := s.Revision.Decode(d); err != nil {
 					return err
@@ -70690,9 +70914,9 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 	var failures []validate.FieldError
 	for i, mask := range [4]uint8{
 		0b11111111,
-		0b10110001,
-		0b11000011,
-		0b00000001,
+		0b11000111,
+		0b00001110,
+		0b00000111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

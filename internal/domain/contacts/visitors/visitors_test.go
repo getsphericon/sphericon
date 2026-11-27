@@ -1,7 +1,6 @@
 package visitors_test
 
 import (
-	"context"
 	"errors"
 	"strings"
 	"testing"
@@ -28,7 +27,7 @@ func queuedCollected(t *testing.T, env *testhelper.TestEnv) []*events.CollectedE
 
 func TestCollectCarriesTheIdentityTheDeviceResolvesTo(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	at := time.Date(2026, 5, 1, 9, 0, 0, 0, time.UTC)
 	// A claim gives a Contact that exists no alias key (ADR 0171): Alice holds hers already.
 	require.NoError(t, env.DB.Contact.UpdateOneID(fixtures.ContactAliceID).SetSubjectID("alice-1").Exec(ctx))
@@ -67,7 +66,7 @@ func TestCollectCarriesTheIdentityTheDeviceResolvesTo(t *testing.T) {
 // deleted Contact is anonymous again.
 func TestCollectTreatsTheDeviceOfADeletedContactAsAnonymous(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	require.NoError(t, testhelper.Module[*visitors.Module](env).Collect(ctx, env.DB.Scoped(fixtures.StarkID), []visitors.CollectEventInput{{VisitorID: fixtures.VisitorStarkVanishedVisitorID, Action: "login"}}))
 	got := queuedCollected(t, env)
@@ -79,7 +78,7 @@ func TestCollectTreatsTheDeviceOfADeletedContactAsAnonymous(t *testing.T) {
 // refuses the whole batch, whichever driver collects it: no event of it is accepted.
 func TestCollectRefusesABatchWithAnEventOutsideTheContractsBounds(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	ok := visitors.CollectEventInput{VisitorID: "dev-bounded", Action: "login"}
 
 	for name, bad := range map[string]visitors.CollectEventInput{

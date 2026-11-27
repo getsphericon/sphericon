@@ -2506,6 +2506,13 @@ func (c *ConverterImpl) WorkspaceToResource(source *ent.Workspace) external.Work
 		externalapiWorkspaceResource.PostalAddress = (*source).PostalAddress
 		externalapiWorkspaceResource.RequireConfirmedOptIn = (*source).RequireConfirmedOptIn
 		externalapiWorkspaceResource.EngagementTrackingDefault = c.EngagementTrackingDecisionToResource((*source).EngagementTrackingDefault)
+		externalapiWorkspaceResource.LinkIdentityEnabled = (*source).LinkIdentityEnabled
+		if (*source).LinkIdentityHosts != nil {
+			externalapiWorkspaceResource.LinkIdentityHosts = make([]string, len((*source).LinkIdentityHosts))
+			for i := 0; i < len((*source).LinkIdentityHosts); i++ {
+				externalapiWorkspaceResource.LinkIdentityHosts[i] = (*source).LinkIdentityHosts[i]
+			}
+		}
 		externalapiWorkspaceResource.Timezone = workspaceTimezone((*source).Timezone)
 		// externalapiWorkspaceResource.SendCap: ignore
 		// externalapiWorkspaceResource.SendingRules: ignore

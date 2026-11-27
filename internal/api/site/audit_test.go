@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"testing"
@@ -20,7 +19,7 @@ import (
 func promoteMary(t *testing.T, env *testhelper.TestEnv) {
 	t.Helper()
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	_, err := owner.SiteMembershipsUpdate(context.Background(),
+	_, err := owner.SiteMembershipsUpdate(t.Context(),
 		&siteapi.SiteUpdateMembershipInput{Role: siteapi.SiteMembershipRoleAdmin},
 		siteapi.SiteMembershipsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.AcmeMemberMembershipID)})
 	require.NoError(t, err)
@@ -29,7 +28,7 @@ func promoteMary(t *testing.T, env *testhelper.TestEnv) {
 
 func auditList(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceId) (*siteapi.AuditEntryList, error) {
 	t.Helper()
-	return c.SiteAuditList(context.Background(), siteapi.SiteAuditListParams{WorkspaceId: workspaceID})
+	return c.SiteAuditList(t.Context(), siteapi.SiteAuditListParams{WorkspaceId: workspaceID})
 }
 
 func auditPage(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceId) *siteapi.AuditEntryList {
@@ -63,11 +62,11 @@ func TestAuditRoleChangeIsRecordedAndListed(t *testing.T) {
 
 func TestAuditIsNotAnEventAndHasNoSideEffectsOnProjection(t *testing.T) {
 	env := testhelper.Setup(t)
-	before, err := env.DB.Event.Query().Count(context.Background())
+	before, err := env.DB.Event.Query().Count(t.Context())
 	require.NoError(t, err)
 	promoteMary(t, env)
 
-	after, err := env.DB.Event.Query().Count(context.Background())
+	after, err := env.DB.Event.Query().Count(t.Context())
 	require.NoError(t, err)
 	assert.Equal(t, before, after, "an Audit entry never becomes an Event")
 }
@@ -116,18 +115,18 @@ func TestAuditRedeliveryDoesNotDuplicate(t *testing.T) {
 func TestAuditWithoutLicenseStoresNothingAndChangesNoBehaviour(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithoutLicense())
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	before, err := env.DB.AuditEntry.Query().Count(context.Background())
+	before, err := env.DB.AuditEntry.Query().Count(t.Context())
 	require.NoError(t, err)
 
 	// The mutation behaves as before: it succeeds and the role changes.
-	updated, err := owner.SiteMembershipsUpdate(context.Background(),
+	updated, err := owner.SiteMembershipsUpdate(t.Context(),
 		&siteapi.SiteUpdateMembershipInput{Role: siteapi.SiteMembershipRoleAdmin},
 		siteapi.SiteMembershipsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.AcmeMemberMembershipID)})
 	require.NoError(t, err)
 	assert.Equal(t, siteapi.SiteMembershipRoleAdmin, updated.Role)
 
 	env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)
-	stored, err := env.DB.AuditEntry.Query().Count(context.Background())
+	stored, err := env.DB.AuditEntry.Query().Count(t.Context())
 	require.NoError(t, err)
 	assert.Equal(t, before, stored, "nothing was stored for the change")
 
@@ -138,7 +137,7 @@ func TestAuditWithoutLicenseStoresNothingAndChangesNoBehaviour(t *testing.T) {
 func TestAuditCursorPaginates(t *testing.T) {
 	env := testhelper.Setup(t)
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	for _, role := range []siteapi.SiteMembershipRole{siteapi.SiteMembershipRoleAdmin, siteapi.SiteMembershipRoleMember, siteapi.SiteMembershipRoleAdmin} {
 		_, err := owner.SiteMembershipsUpdate(ctx, &siteapi.SiteUpdateMembershipInput{Role: role},
 			siteapi.SiteMembershipsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.AcmeMemberMembershipID)})

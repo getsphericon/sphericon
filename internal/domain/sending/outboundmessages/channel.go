@@ -164,6 +164,6 @@ func (e contentError) Error() string { return e.err.Error() }
 func (e contentError) Unwrap() error { return e.err }
 
 func isContentError(err error) bool {
-	var ce contentError
-	return errors.As(err, &ce)
+	_, ok := errors.AsType[contentError](err)
+	return ok
 }

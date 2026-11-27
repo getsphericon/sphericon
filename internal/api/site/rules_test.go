@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -24,7 +23,7 @@ func tagAction(kind siteapi.RuleActionType, name string) siteapi.RuleActionInput
 func TestSiteRulesCRUDPublishAndDeactivate(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
 	created, err := c.SiteRulesCreate(ctx, &siteapi.CreateRuleInput{
@@ -91,7 +90,7 @@ func TestSiteRulesListIsTheWorkspacesOwn(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	list, err := c.SiteRulesList(context.Background(), siteapi.SiteRulesListParams{WorkspaceId: siteapi.WorkspaceId(fixtures.AcmePublicID)})
+	list, err := c.SiteRulesList(t.Context(), siteapi.SiteRulesListParams{WorkspaceId: siteapi.WorkspaceId(fixtures.AcmePublicID)})
 	require.NoError(t, err)
 
 	listed := list
@@ -103,7 +102,7 @@ func TestSiteRulesListIsTheWorkspacesOwn(t *testing.T) {
 func TestSiteRulesAreRefusedWhenInvalid(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 	unknownField := `{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":"no_such_field","test":{"kind":"text","operator":"eq","value":"x"}}]}`
 	apply := []siteapi.RuleActionInput{tagAction(siteapi.RuleActionTypeApplyTag, "x")}
@@ -135,7 +134,7 @@ func TestSiteRulesAreRefusedWhenInvalid(t *testing.T) {
 func TestSiteRuleConditionComparesATriggerNumber(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	create := func(leaf string) error {
 		t.Helper()
 		def := `{"kind":"group","combinator":"and","entries":[` + leaf + `]}`
@@ -156,7 +155,7 @@ func TestSiteRuleConditionComparesATriggerNumber(t *testing.T) {
 func TestSiteRuleConditionCountsEvents(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	create := func(leaf string) error {
 		t.Helper()
 		def := `{"kind":"group","combinator":"and","entries":[` + leaf + `]}`
@@ -178,7 +177,7 @@ func TestSiteRuleConditionCountsEvents(t *testing.T) {
 func TestSiteRulesPublishRefusesARuleWithNoActions(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
 	_, err := c.SiteRulesPublish(ctx, &siteapi.RevisionInput{Revision: siteapi.Revision(env.RuleRevision(ctx, t, int64(fixtures.RuleNoActionsID)))}, siteapi.SiteRulesPublishParams{WorkspaceId: workspaceID, ID: fixtures.RuleNoActionsID})
@@ -189,7 +188,7 @@ func TestSiteRulesPublishRefusesARuleWithNoActions(t *testing.T) {
 func TestSiteRulesStayInTheirWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
 	_, get := c.SiteRulesGet(ctx, siteapi.SiteRulesGetParams{WorkspaceId: workspaceID, ID: fixtures.RuleGlobexID})
@@ -206,7 +205,7 @@ func TestSiteRuleFiringsShowWhatEachActionDid(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	out, err := c.SiteRuleFiringsList(context.Background(), siteapi.SiteRuleFiringsListParams{
+	out, err := c.SiteRuleFiringsList(t.Context(), siteapi.SiteRuleFiringsListParams{
 		WorkspaceId: siteapi.WorkspaceId(fixtures.AcmePublicID), RuleId: fixtures.RuleTagClickedID,
 	})
 

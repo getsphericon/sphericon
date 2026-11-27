@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -60,7 +59,7 @@ func TestExportErasuresNeverCarryTheAddressOrThePhone(t *testing.T) {
 	eraseErasable(t, env)
 	env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)
 
-	rows, err := env.DB.Erasure.Query().All(context.Background())
+	rows, err := env.DB.Erasure.Query().All(t.Context())
 	require.NoError(t, err)
 	stored, err := json.Marshal(rows)
 	require.NoError(t, err)
@@ -72,7 +71,7 @@ func TestExportErasuresNeverCarryTheAddressOrThePhone(t *testing.T) {
 func TestExportErasuresAnnouncesAnErasureByAddressAlone(t *testing.T) {
 	env := testhelper.Setup(t)
 	olga := env.SiteActor(t, fixtures.InitechOwnerOlgaEmail)
-	err := olga.SiteContactsErase(context.Background(), siteapi.SiteContactsEraseParams{
+	err := olga.SiteContactsErase(t.Context(), siteapi.SiteContactsEraseParams{
 		WorkspaceId: fixtures.InitechPublicID,
 		Email:       " " + fixtures.OutboundMessageStrangerDestination + " ",
 	})
@@ -92,27 +91,27 @@ func TestExportErasuresAnnouncesAnErasureByAddressAlone(t *testing.T) {
 func TestExportErasuresRedeliveryWritesOneRow(t *testing.T) {
 	env := testhelper.Setup(t)
 	eraseErasable(t, env)
-	before, err := env.DB.Erasure.Query().Count(context.Background())
+	before, err := env.DB.Erasure.Query().Count(t.Context())
 	require.NoError(t, err)
 
 	env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)
 	env.RetryJobs(t, testhelper.EditionJobs...)
 	env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)
 
-	after, err := env.DB.Erasure.Query().Count(context.Background())
+	after, err := env.DB.Erasure.Query().Count(t.Context())
 	require.NoError(t, err)
 	assert.Equal(t, before+1, after)
 }
 
 func TestExportErasuresUnlicensedStoresNothing(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithoutLicense())
-	before, err := env.DB.Erasure.Query().Count(context.Background())
+	before, err := env.DB.Erasure.Query().Count(t.Context())
 	require.NoError(t, err)
 	eraseErasable(t, env)
 
 	env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)
 
-	after, err := env.DB.Erasure.Query().Count(context.Background())
+	after, err := env.DB.Erasure.Query().Count(t.Context())
 	require.NoError(t, err)
 	assert.Equal(t, before, after)
 }
@@ -120,7 +119,7 @@ func TestExportErasuresUnlicensedStoresNothing(t *testing.T) {
 func TestExportErasuresAnswers404WithoutTheLicense(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithoutLicense())
 
-	_, err := exportClient(t, env, fixtures.InitechID).ExportErasures(context.Background(), externalapi.ExportErasuresParams{})
+	_, err := exportClient(t, env, fixtures.InitechID).ExportErasures(t.Context(), externalapi.ExportErasuresParams{})
 
 	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 }
@@ -129,7 +128,7 @@ func TestExportErasuresNeedTheExportReadScope(t *testing.T) {
 	env := testhelper.Setup(t)
 	for _, scopes := range [][]apitokens.Scope{{}, {apitokens.ScopeContactsErase}, {apitokens.ScopeContactsRead, apitokens.ScopeEventsRead, apitokens.ScopeAuditRead}} {
 		c := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.InitechID, scopes...))
-		_, err := c.ExportErasures(context.Background(), externalapi.ExportErasuresParams{})
+		_, err := c.ExportErasures(t.Context(), externalapi.ExportErasuresParams{})
 		testhelper.ExternalRefusal(t, err, http.StatusForbidden, "scopes %v are refused", scopes)
 	}
 }
@@ -137,7 +136,7 @@ func TestExportErasuresNeedTheExportReadScope(t *testing.T) {
 func TestExportErasuresRefuseAMalformedCursor(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	_, err := exportClient(t, env, fixtures.InitechID).ExportErasures(context.Background(), externalapi.ExportErasuresParams{
+	_, err := exportClient(t, env, fixtures.InitechID).ExportErasures(t.Context(), externalapi.ExportErasuresParams{
 		Cursor: externalapi.NewOptString("not-a-cursor"),
 	})
 

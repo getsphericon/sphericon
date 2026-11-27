@@ -1,11 +1,21 @@
 import { z } from 'zod'
 
+import { zSiteSigninError } from './generated/site/zod.gen.ts'
+
 // A search param that carries a link the server built: an absolute http(s) URL, anything else
 // (a `javascript:` or `data:` URL, plain text) is dropped so a page never renders it as an href.
 export const httpUrlParam = z
   .url({ protocol: /^https?$/ })
   .optional()
   .catch(undefined)
+
+// The token of a mailed link the page sends on; an absent or unreadable one is empty, which the
+// server refuses as it does a spent link.
+export const tokenParam = z.string().catch('')
+
+// Why a sign-in or a link with a provider did not succeed, set by the server's callback; a value
+// the contract does not name is dropped.
+export const signinErrorParam = zSiteSigninError.optional().catch(undefined)
 
 // The page of a paged list (PagedTable), so a page is linkable and Back returns to it. The first
 // page is the absent param; anything unreadable falls back to it.

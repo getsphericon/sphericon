@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -18,7 +17,7 @@ import (
 func TestSiteSendingDomainsCreateNormalizesAndValidatesNames(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	create := func(domain string) (*siteapi.SendingDomainResource, error) {
 		return c.SiteSendingDomainsCreate(ctx, &siteapi.CreateSendingDomainInput{Domain: domain},
 			siteapi.SiteSendingDomainsCreateParams{WorkspaceId: fixtures.AcmePublicID})

@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -19,7 +18,7 @@ import (
 // Automation it names, the same as on the site API.
 func TestExternalRulesReadAnEnrollAction(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	reader := env.ExternalScoped(t, apitokens.ScopeAutomationsRead)
 
 	rule, err := reader.RulesGet(ctx, externalapi.RulesGetParams{ID: entityIDString(fixtures.RuleEnrollGreetingID)})
@@ -33,7 +32,7 @@ func TestExternalRulesReadAnEnrollAction(t *testing.T) {
 
 func TestExternalRulesReadNeedsTheAutomationsReadScope(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	reader := env.ExternalScoped(t, apitokens.ScopeAutomationsRead)
 
 	rule, err := reader.RulesGet(ctx, externalapi.RulesGetParams{ID: entityIDString(fixtures.RuleVipOnlyID)})
@@ -66,7 +65,7 @@ func TestExternalRulesReadNeedsTheAutomationsReadScope(t *testing.T) {
 // field is refused.
 func TestExternalRulesCreatePublishAndDeactivate(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	author := env.ExternalScoped(t, apitokens.ScopeAutomationsRead, apitokens.ScopeAutomationsWrite)
 	publisher := env.ExternalScoped(t, apitokens.ScopeAutomationsPublish)
 

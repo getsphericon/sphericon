@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"strings"
@@ -20,7 +19,7 @@ import (
 func TestSiteRuleHTTPActionIsMaskedOnReadAndKeptOnEdit(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
 	created, err := c.SiteRulesCreate(ctx, &siteapi.CreateRuleInput{
@@ -68,7 +67,7 @@ func TestSiteRuleHTTPActionRefusesASixthHeader(t *testing.T) {
 		return rawBody{inner: inner, body: body}
 	})
 
-	_, err := raw.SiteRulesCreate(context.Background(), &siteapi.CreateRuleInput{},
+	_, err := raw.SiteRulesCreate(t.Context(), &siteapi.CreateRuleInput{},
 		siteapi.SiteRulesCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	bad := testhelper.SiteRefusal(t, err, http.StatusBadRequest)
 	assert.Equal(t, siteapi.NewOptInt32(http.StatusBadRequest), bad.Status)

@@ -3,7 +3,6 @@ import {
   Box,
   Button,
   Code,
-  CopyButton,
   EmptyState,
   Group,
   Modal,
@@ -20,6 +19,7 @@ import { DataTable } from 'mantine-datatable'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { CopyTextButton } from '../../components/CopyTextButton.tsx'
 import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { ScopesBadge } from '../../components/ScopesBadge.tsx'
 import { TableSkeleton } from '../../components/Skeletons.tsx'
@@ -195,13 +195,7 @@ export function PersonalTokensSection({ workspace }: { workspace: SiteWorkspaceR
           <Alert color="yellow" title={t(($) => $.settings.personalTokens.secretNotice)}>
             <Group align="center" gap="sm" wrap="nowrap">
               <Code>{newSecret}</Code>
-              <CopyButton value={newSecret}>
-                {({ copied, copy }) => (
-                  <Button size="compact-xs" variant="light" onClick={copy}>
-                    {copied ? t(($) => $.settings.copied) : t(($) => $.settings.copy)}
-                  </Button>
-                )}
-              </CopyButton>
+              <CopyTextButton value={newSecret} size="compact-xs" />
             </Group>
           </Alert>
         ) : (

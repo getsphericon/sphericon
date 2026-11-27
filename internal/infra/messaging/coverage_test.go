@@ -87,26 +87,26 @@ func (f failingKeys) Key(context.Context, string) (*messaging.DKIMKey, error) {
 }
 
 func TestBuildSignedMessagePropagatesBuildAndKeyErrors(t *testing.T) {
-	_, err := messaging.BuildSignedMessage(context.Background(),
+	_, err := messaging.BuildSignedMessage(t.Context(),
 		messaging.EmailMessage{From: "bad", To: "a@b.com", Text: "x"}, failingKeys{})
 	require.ErrorContains(t, err, "invalid from address")
 
 	boom := errors.New("keys down")
-	_, err = messaging.BuildSignedMessage(context.Background(),
+	_, err = messaging.BuildSignedMessage(t.Context(),
 		messaging.EmailMessage{From: "a@b.com", To: "c@d.com", Text: "x"}, failingKeys{err: boom})
 	assert.ErrorIs(t, err, boom)
 }
 
 func TestDKIMKeysEmptyDomain(t *testing.T) {
 	env := testhelper.Setup(t)
-	dk, err := messaging.NewDKIMKeys(env.DB.Scoped(fixtures.AcmeID), env.Cipher).Key(context.Background(), "no-at-sign")
+	dk, err := messaging.NewDKIMKeys(env.DB.Scoped(fixtures.AcmeID), env.Cipher).Key(t.Context(), "no-at-sign")
 	require.NoError(t, err)
 	assert.Nil(t, dk)
 }
 
 func TestDKIMKeysQueryError(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 	_, err := messaging.NewDKIMKeys(env.DB.Scoped(fixtures.AcmeID), env.Cipher).Key(ctx, "hi@mail.acme.com")
 	assert.Error(t, err)
@@ -114,7 +114,7 @@ func TestDKIMKeysQueryError(t *testing.T) {
 
 func TestDKIMKeysBrokenKeyMaterial(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	cipher := env.Cipher
 
 	// Ciphertext that does not decrypt under the workspace cipher.
@@ -132,7 +132,7 @@ func TestDKIMKeysBrokenKeyMaterial(t *testing.T) {
 
 func TestHasVerifiedSendingDomain(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	ok, err := messaging.HasVerifiedSendingDomain(ctx, env.DB.Scoped(fixtures.AcmeID), "hi@mail.acme.com")
 	require.NoError(t, err)
@@ -153,7 +153,7 @@ func TestHasVerifiedSendingDomain(t *testing.T) {
 
 func TestResolverErrors(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	resolver := messaging.NewResolver(env.Cipher, registry.Default())
 
 	canceled, cancel := context.WithCancel(ctx)

@@ -5,6 +5,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
+	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 )
@@ -55,7 +56,7 @@ func (m *Module) updateHealth(ctx context.Context, s *ent.Scoped, id int64, in U
 		})
 	})
 	if err != nil {
-		return Endpoint{}, missing(err)
+		return Endpoint{}, db.NotFoundAs(err, ErrNotFound)
 	}
 	return m.open(ctx, s, saved)
 }

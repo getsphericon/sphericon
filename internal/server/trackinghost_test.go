@@ -58,7 +58,7 @@ func hostReq(env *testhelper.TestEnv, method, host, path string) *httptest.Respo
 // surface of the Instance (ADR 0038).
 func TestTrackingHostScopesLinkPathsToItsWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	tr := env.Tracker
 	host := fixtures.TrackingDomainServingHost
 
@@ -124,7 +124,7 @@ func TestTrackingHostServesTheFirstPartyTracker(t *testing.T) {
 	env := testhelper.Setup(t)
 
 	collect := func(host, key string) int {
-		req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/collect/events", strings.NewReader(`{"events":[{"visitorId":"v1","action":"test.event"}]}`))
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/collect/events", strings.NewReader(`{"events":[{"visitorId":"v1","action":"test.event"}]}`))
 		req.Host = host
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("X-Collect-Key", key)
@@ -175,7 +175,7 @@ func TestTrackingHostFromTheEdgeServesTheTrackerForItsWorkspaceOnly(t *testing.T
 	host := fixtures.TrackingDomainServingHost
 
 	collect := func(key string) int {
-		req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/collect/events", strings.NewReader(`{"events":[{"visitorId":"v1","action":"test.event"}]}`))
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/collect/events", strings.NewReader(`{"events":[{"visitorId":"v1","action":"test.event"}]}`))
 		req.RemoteAddr = "127.0.0.1:4444"
 		req.Header.Set(edgeHeader, host)
 		req.Header.Set("Content-Type", "application/json")

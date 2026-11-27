@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -30,7 +29,7 @@ func nullEmail() siteapi.OptNilEmailAddress {
 func TestSiteContactsUpdateNullClearsAbsentKeeps(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	params := siteapi.SiteContactsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: 1}
 
 	res, err := c.SiteContactsUpdate(ctx, &siteapi.SiteUpdateContactInput{Revision: siteapi.Revision(env.ContactRevision(ctx, t, int64(params.ID))), FirstName: nullString()}, params)
@@ -51,7 +50,7 @@ func TestSiteContactsUpdateNullClearsAbsentKeeps(t *testing.T) {
 func TestSiteContactsUpdateNullClearsCustomFields(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	params := siteapi.SiteContactsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: 100}
 
 	var null siteapi.OptNilJsonObject
@@ -69,7 +68,7 @@ func TestSiteContactsRequireAuth(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteAnonymous(t)
 
-	_, err := c.SiteContactsList(context.Background(), siteapi.SiteContactsListParams{})
+	_, err := c.SiteContactsList(t.Context(), siteapi.SiteContactsListParams{})
 	require.Error(t, err)
 }
 
@@ -78,7 +77,7 @@ func TestSiteContactsRequireAuth(t *testing.T) {
 func TestSiteContactsListFiltersByEmail(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	emails := func(email string) []string {
 		res, err := c.SiteContactsList(ctx, siteapi.SiteContactsListParams{
@@ -105,7 +104,7 @@ func TestSiteContactsListFiltersByEmail(t *testing.T) {
 func TestSiteContactsListFiltersByTagAndCountry(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.DuffOwnerDanEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	emails := func(params siteapi.SiteContactsListParams) []string {
 		params.WorkspaceId = fixtures.DuffPublicID
@@ -137,7 +136,7 @@ func TestSiteContactsListFiltersByTagAndCountry(t *testing.T) {
 func TestSiteContactsCarryTheirTags(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	res, err := c.SiteContactsCreate(ctx, &siteapi.SiteCreateContactInput{
 		Email: siteapi.NewOptNilEmailAddress("tagged@example.com"),

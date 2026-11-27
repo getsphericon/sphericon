@@ -1,7 +1,6 @@
 package brandkits_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -28,7 +27,7 @@ var kit = brandkits.Input{
 func TestAFirstSaveThatLosesTheRaceIsRefusedAndMakesNoStarters(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.Committed())
 	scope := env.DB.Scoped(fixtures.UmbrellaID)
-	ctx := context.Background()
+	ctx := t.Context()
 	templates := func() int {
 		n, err := scope.EmailTemplate().Query().Count(ctx)
 		require.NoError(t, err)

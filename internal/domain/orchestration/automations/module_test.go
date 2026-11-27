@@ -1,7 +1,6 @@
 package automations_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -18,7 +17,7 @@ import (
 func TestModuleIsConfinedToTheScopedWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*automations.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 	acme, globex := env.DB.Scoped(fixtures.AcmeID), env.DB.Scoped(fixtures.GlobexID)
 
 	_, err := m.Get(ctx, acme, fixtures.AutomationGlobexID)

@@ -1,11 +1,9 @@
 package external_test
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
 	"testing"
 
 	"github.com/go-faster/jx"
@@ -22,14 +20,6 @@ import (
 
 // The external API takes the editor's document under the same rules as the site (ADR 0040).
 
-func paragraphDoc(text string) map[string]jx.Raw {
-	return map[string]jx.Raw{
-		"type": jx.Raw(`"doc"`),
-		"content": jx.Raw(`[{"type":"paragraph","content":[{"type":"text","text":` +
-			strconv.Quote(text) + `}]}]`),
-	}
-}
-
 func badHeadingDoc() map[string]jx.Raw {
 	return map[string]jx.Raw{
 		"type":    jx.Raw(`"doc"`),
@@ -40,12 +30,12 @@ func badHeadingDoc() map[string]jx.Raw {
 func TestExternalTemplatesSaveADocumentWithItsBody(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeTemplatesRead, apitokens.ScopeTemplatesWrite)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	res, err := c.TemplatesCreate(ctx, &externalapi.CreateTemplateInput{
 		Name:    "Authored",
 		Subject: externalapi.NewOptString("Hi {{ first_name }}"),
-		Doc:     externalapi.NewOptEditorDocument(paragraphDoc("Hello {{ first_name }}")),
+		Doc:     externalapi.NewOptEditorDocument(testhelper.ParagraphDoc("Hello {{ first_name }}")),
 	})
 	require.NoError(t, err)
 	assert.Contains(t, res.Body, "Hello {{ first_name }}")
@@ -68,7 +58,7 @@ func TestExternalTemplatesSaveADocumentWithItsBody(t *testing.T) {
 	// Saving another document rebuilds the body.
 	upd, err := c.TemplatesUpdate(ctx, &externalapi.UpdateTemplateInput{
 		Revision: read.Revision,
-		Doc:      externalapi.NewOptEditorDocument(paragraphDoc("Second")),
+		Doc:      externalapi.NewOptEditorDocument(testhelper.ParagraphDoc("Second")),
 	}, externalapi.TemplatesUpdateParams{ID: res.ID})
 	require.NoError(t, err)
 	assert.Contains(t, upd.Body, "Second")
@@ -78,7 +68,7 @@ func TestExternalTemplatesSaveADocumentWithItsBody(t *testing.T) {
 func TestExternalTemplateBodyOnlyWriteStoresNoDocument(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeTemplatesRead, apitokens.ScopeTemplatesWrite)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	res, err := c.TemplatesCreate(ctx, &externalapi.CreateTemplateInput{
 		Name: "Html", Body: externalapi.NewOptString("<p>Hi</p>"),
@@ -105,7 +95,7 @@ func TestExternalTemplateBodyOnlyWriteStoresNoDocument(t *testing.T) {
 func TestExternalTemplatesRefuseAnInvalidDocumentWithTheReasonAndStoreNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeTemplatesRead, apitokens.ScopeTemplatesWrite)
-	ctx := context.Background()
+	ctx := t.Context()
 	before := env.DB.EmailTemplate.Query().CountX(ctx)
 
 	_, err := c.TemplatesCreate(ctx, &externalapi.CreateTemplateInput{
@@ -116,7 +106,7 @@ func TestExternalTemplatesRefuseAnInvalidDocumentWithTheReasonAndStoreNothing(t 
 
 	_, err = c.TemplatesCreate(ctx, &externalapi.CreateTemplateInput{
 		Name: "Both", Body: externalapi.NewOptString("<p>x</p>"),
-		Doc: externalapi.NewOptEditorDocument(paragraphDoc("x")),
+		Doc: externalapi.NewOptEditorDocument(testhelper.ParagraphDoc("x")),
 	})
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 
@@ -139,11 +129,11 @@ func TestExternalTemplatesRefuseAnInvalidDocumentWithTheReasonAndStoreNothing(t 
 func TestExternalBroadcastsSaveADocumentAndRefuseAnInvalidOne(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeBroadcastsRead, apitokens.ScopeBroadcastsWrite)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	res, err := c.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{
 		Name:      "Authored",
-		Content:   testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{Subject: externalapi.NewOptString("Hi"), Doc: externalapi.NewOptEditorDocument(paragraphDoc("Hello {{ first_name }}"))}),
+		Content:   testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{Subject: externalapi.NewOptString("Hi"), Doc: externalapi.NewOptEditorDocument(testhelper.ParagraphDoc("Hello {{ first_name }}"))}),
 		SegmentId: externalapi.NilEntityId{Null: true},
 	})
 	require.NoError(t, err)
@@ -165,7 +155,7 @@ func TestExternalBroadcastsSaveADocumentAndRefuseAnInvalidOne(t *testing.T) {
 	assert.Equal(t, stored, *env.DB.Broadcast.GetX(ctx, fixtures.BroadcastAuthoredID).Body, "nothing is stored")
 
 	_, err = c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Revision: externalapi.Revision(env.BroadcastRevision(ctx, t, int64(authored.ID))),
-		Content: testhelper.ExternalEmailEdit(externalapi.EmailBroadcastContentInput{Body: externalapi.NewOptString("<p>x</p>"), Doc: externalapi.NewOptEditorDocument(paragraphDoc("x"))}),
+		Content: testhelper.ExternalEmailEdit(externalapi.EmailBroadcastContentInput{Body: externalapi.NewOptString("<p>x</p>"), Doc: externalapi.NewOptEditorDocument(testhelper.ParagraphDoc("x"))}),
 	}, authored)
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 
@@ -180,13 +170,13 @@ func TestExternalBroadcastsSaveADocumentAndRefuseAnInvalidOne(t *testing.T) {
 func TestExternalAutomationEmailStepsCarryTheDocument(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeAutomationsRead, apitokens.ScopeAutomationsWrite)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	res, err := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
 		Name: "Authored", Trigger: testhelper.ExternalTrigger("authored.signup"),
 		Steps: testhelper.ExternalPathEdit(externalapi.EmailStepInput{
 			Subject: "Hi",
-			Doc:     externalapi.NewOptEditorDocument(paragraphDoc("Hello {{ first_name }}")),
+			Doc:     externalapi.NewOptEditorDocument(testhelper.ParagraphDoc("Hello {{ first_name }}")),
 		}),
 	})
 	require.NoError(t, err)
@@ -198,7 +188,7 @@ func TestExternalAutomationEmailStepsCarryTheDocument(t *testing.T) {
 	// Read, change the document, write it back (without the body).
 	written := resendEmailStep(t, step)
 	written.Body = externalapi.OptString{}
-	written.Doc = externalapi.NewOptEditorDocument(paragraphDoc("Second"))
+	written.Doc = externalapi.NewOptEditorDocument(testhelper.ParagraphDoc("Second"))
 	upd, err := c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Revision: externalapi.Revision(env.AutomationRevision(ctx, t, int64(res.ID))), Steps: testhelper.ExternalPathEdit(written)},
 		externalapi.AutomationsUpdateParams{ID: res.ID})
 	require.NoError(t, err)
@@ -234,9 +224,9 @@ func resendEmailStep(t *testing.T, step externalapi.EmailStep) externalapi.Email
 func TestExternalEmailLintTakesADocument(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeTemplatesRead)
-	ctx := context.Background()
+	ctx := t.Context()
 
-	res, err := c.EmailLintLint(ctx, &externalapi.LintEmailInput{Doc: externalapi.NewOptEditorDocument(paragraphDoc("Hi {{ first_name }}"))})
+	res, err := c.EmailLintLint(ctx, &externalapi.LintEmailInput{Doc: externalapi.NewOptEditorDocument(testhelper.ParagraphDoc("Hi {{ first_name }}"))})
 	require.NoError(t, err)
 	assert.Empty(t, res.Errors)
 
@@ -246,7 +236,7 @@ func TestExternalEmailLintTakesADocument(t *testing.T) {
 	assert.Contains(t, got.Errors[0].Detail.Or(""), "level")
 
 	_, err = c.EmailLintLint(ctx, &externalapi.LintEmailInput{
-		Body: externalapi.NewOptString("<p>x</p>"), Doc: externalapi.NewOptEditorDocument(paragraphDoc("x")),
+		Body: externalapi.NewOptString("<p>x</p>"), Doc: externalapi.NewOptEditorDocument(testhelper.ParagraphDoc("x")),
 	})
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 

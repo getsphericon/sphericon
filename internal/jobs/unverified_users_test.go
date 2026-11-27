@@ -1,7 +1,6 @@
 package jobs_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -21,12 +20,12 @@ const unverifiedRetention = 7 * 24 * time.Hour
 func pruneUnverified(t *testing.T, env *testhelper.TestEnv, retention time.Duration) {
 	t.Helper()
 	w := jobs.NewPruneUnverifiedUsersWorker(testhelper.Module[*users.Module](env), retention)
-	require.NoError(t, w.Work(context.Background(), job(jobs.PruneUnverifiedUsersArgs{})))
+	require.NoError(t, w.Work(t.Context(), job(jobs.PruneUnverifiedUsersArgs{})))
 }
 
 func userExists(t *testing.T, env *testhelper.TestEnv, id int64) bool {
 	t.Helper()
-	return env.DB.User.Query().Where(user.ID(id)).ExistX(context.Background())
+	return env.DB.User.Query().Where(user.ID(id)).ExistX(t.Context())
 }
 
 func TestPruneUnverifiedUsersDeletesStaleOnes(t *testing.T) {
@@ -39,12 +38,12 @@ func TestPruneUnverifiedUsersDeletesStaleOnes(t *testing.T) {
 
 func TestPruneUnverifiedUsersKeepsYoungAndVerifiedUsers(t *testing.T) {
 	env := testhelper.Setup(t)
-	verified := env.DB.User.Query().Where(user.EmailVerifiedAtNotNil()).CountX(context.Background())
+	verified := env.DB.User.Query().Where(user.EmailVerifiedAtNotNil()).CountX(t.Context())
 
 	pruneUnverified(t, env, unverifiedRetention)
 
 	assert.True(t, userExists(t, env, fixtures.FreshUnverifiedUserID), "younger than the window")
-	assert.Equal(t, verified, env.DB.User.Query().Where(user.EmailVerifiedAtNotNil()).CountX(context.Background()),
+	assert.Equal(t, verified, env.DB.User.Query().Where(user.EmailVerifiedAtNotNil()).CountX(t.Context()),
 		"a Verified User is never deleted, whatever its age")
 }
 

@@ -1,7 +1,6 @@
 package contacts_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/samber/lo"
@@ -20,7 +19,7 @@ import (
 func fieldType(t *testing.T, env *testhelper.TestEnv, key string) customfield.Type {
 	t.Helper()
 	f, err := env.DB.CustomField.Query().
-		Where(customfield.WorkspaceID(fixtures.AcmeID), customfield.Key(key)).Only(context.Background())
+		Where(customfield.WorkspaceID(fixtures.AcmeID), customfield.Key(key)).Only(t.Context())
 	require.NoError(t, err)
 	return f.Type
 }
@@ -28,7 +27,7 @@ func fieldType(t *testing.T, env *testhelper.TestEnv, key string) customfield.Ty
 func TestUpdateReplacesCustomFieldsAndDeclaresThemTyped(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*contacts.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	c, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID, contacts.UpdateInput{Revision: testhelper.ContactRevisionIn(ctx, t, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID),
 		CustomFields: patch.Set(map[string]any{"vip": true, "visits": float64(3), "plan": "pro", "": "ignored"}),
@@ -49,7 +48,7 @@ func TestUpdateReplacesCustomFieldsAndDeclaresThemTyped(t *testing.T) {
 func TestUpdateClearsExplicitlyClearedAttributes(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*contacts.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	cleared, err := m.Update(ctx, env.DB.Scoped(fixtures.StarkID), fixtures.ContactStarkFullID, contacts.UpdateInput{Revision: testhelper.ContactRevisionIn(ctx, t, env.DB.Scoped(fixtures.StarkID), fixtures.ContactStarkFullID),
 		SubjectID: patch.Clear[string](), Email: patch.Clear[string](), Phone: patch.Clear[string](),
@@ -74,7 +73,7 @@ func TestUpdateClearsExplicitlyClearedAttributes(t *testing.T) {
 func TestCreateAndUpdateSetTheTagsAndReturnTheContactWithThem(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*contacts.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
 	created, err := m.Create(ctx, s, contact.SourceManual, contacts.CreateInput{
@@ -97,8 +96,8 @@ func TestUpdateKeepsAnAliasKeySetBlank(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*contacts.Module](env)
 
-	c, err := m.Update(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID,
-		contacts.UpdateInput{Revision: testhelper.ContactRevisionIn(context.Background(), t, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID), Email: patch.Set("  ")})
+	c, err := m.Update(t.Context(), env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID,
+		contacts.UpdateInput{Revision: testhelper.ContactRevisionIn(t.Context(), t, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID), Email: patch.Set("  ")})
 	require.NoError(t, err)
 	assert.Equal(t, fixtures.ContactAliceEmail, lo.FromPtr(c.Email))
 }
@@ -110,7 +109,7 @@ func tagNames(c *ent.Contact) []string {
 func TestUpsertEnrichesAnExistingContactFoundByAnotherKey(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*contacts.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	res, err := m.Upsert(ctx, env.DB.Scoped(fixtures.StarkID), contact.SourceManual, contacts.UpsertInput{
 		Phone: new(fixtures.ContactStarkPhoneOnlyPhone), Email: new("Filled.In@Example.com"), SubjectID: new("sub-9"),
@@ -132,7 +131,7 @@ func TestUpsertIsScopedToTheWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*contacts.Module](env)
 
-	res, err := m.Upsert(context.Background(), env.DB.Scoped(fixtures.GlobexID), contact.SourceManual, contacts.UpsertInput{Email: lo.ToPtr(fixtures.ContactAliceEmail)})
+	res, err := m.Upsert(t.Context(), env.DB.Scoped(fixtures.GlobexID), contact.SourceManual, contacts.UpsertInput{Email: lo.ToPtr(fixtures.ContactAliceEmail)})
 	require.NoError(t, err)
 	assert.True(t, res.Created, "Acme's Alice is not Globex's contact")
 	assert.NotEqual(t, int64(fixtures.ContactAliceID), res.Contact.ID)
@@ -141,7 +140,7 @@ func TestUpsertIsScopedToTheWorkspace(t *testing.T) {
 
 func TestResolvePrefersSubjectThenEmailThenPhone(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	got, err := testhelper.Module[*contacts.Module](env).Resolve(ctx, env.DB.Scoped(fixtures.AcmeID), contacts.AliasKeys{SubjectID: new(" user:export-subject "), Email: lo.ToPtr(fixtures.ContactAliceEmail)})
 	require.NoError(t, err)
@@ -164,13 +163,13 @@ func TestResolvePrefersSubjectThenEmailThenPhone(t *testing.T) {
 
 func TestEnsureCustomFieldsWithoutValuesDeclaresNothing(t *testing.T) {
 	env := testhelper.Setup(t)
-	before, err := env.DB.CustomField.Query().Count(context.Background())
+	before, err := env.DB.CustomField.Query().Count(t.Context())
 	require.NoError(t, err)
 
-	typed, err := testhelper.Module[*contacts.Module](env).EnsureCustomFields(context.Background(), env.DB.Scoped(fixtures.AcmeID), nil)
+	typed, err := testhelper.Module[*contacts.Module](env).EnsureCustomFields(t.Context(), env.DB.Scoped(fixtures.AcmeID), nil)
 	require.NoError(t, err)
 	assert.Nil(t, typed)
-	after, err := env.DB.CustomField.Query().Count(context.Background())
+	after, err := env.DB.CustomField.Query().Count(t.Context())
 	require.NoError(t, err)
 	assert.Equal(t, before, after)
 }

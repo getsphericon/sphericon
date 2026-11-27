@@ -40,13 +40,6 @@ func kinds(items []siteapi.SiteAttentionItem) []siteapi.SiteAttentionKind {
 	return lo.Map(items, func(i siteapi.SiteAttentionItem, _ int) siteapi.SiteAttentionKind { return i.Kind })
 }
 
-// itemAbout is the item of the kind about the subject id, and whether there is one.
-func itemAbout(items []siteapi.SiteAttentionItem, kind siteapi.SiteAttentionKind, id int64) (siteapi.SiteAttentionItem, bool) {
-	return lo.Find(items, func(i siteapi.SiteAttentionItem) bool {
-		return i.Kind == kind && i.Subject.Value.ID == siteapi.EntityId(id)
-	})
-}
-
 // Fixtures: Acme's Sending domain lost.acme.com lost its DKIM record. A plain member reads the
 // report as it is, in its order, as an Owner does.
 func TestEveryMemberReadsWhatNeedsAttention(t *testing.T) {
@@ -58,7 +51,7 @@ func TestEveryMemberReadsWhatNeedsAttention(t *testing.T) {
 	items := attentionOf(t, env.SiteActor(t, fixtures.MemberMaryEmail), fixtures.AcmePublicID)
 
 	assert.Equal(t, report, kinds(items))
-	lost, ok := itemAbout(items, siteapi.SiteAttentionKindSendingDomainVerificationLost, fixtures.SendingDomainLostID)
+	lost, ok := testhelper.AttentionItemAbout(items, siteapi.SiteAttentionKindSendingDomainVerificationLost, fixtures.SendingDomainLostID)
 	require.True(t, ok)
 	assert.Equal(t, siteapi.SiteAttentionSeverityBlocked, lost.Severity)
 	assert.Equal(t, siteapi.SiteAttentionSubject{ID: fixtures.SendingDomainLostID, Name: fixtures.SendingDomainLostDomain}, lost.Subject.Value)
@@ -98,7 +91,7 @@ func TestAHeldBroadcastReadsWithItsHoldReason(t *testing.T) {
 
 	items := attentionOf(t, env.SiteActor(t, fixtures.MeridianOwnerMonaEmail), fixtures.MeridianPublicID)
 
-	held, ok := itemAbout(items, siteapi.SiteAttentionKindBroadcastHeld, fixtures.BroadcastMeridianFromNewsID)
+	held, ok := testhelper.AttentionItemAbout(items, siteapi.SiteAttentionKindBroadcastHeld, fixtures.BroadcastMeridianFromNewsID)
 	require.True(t, ok)
 	assert.Equal(t, siteapi.HoldReasonUnverifiedDomain, held.HoldReason.Value)
 }
@@ -119,7 +112,7 @@ func TestABroadcastOverTheSendCapReadsWithItsAudienceAndItsFinish(t *testing.T) 
 
 	items := attentionOf(t, env.SiteActor(t, fixtures.CaptonOwnerCleoEmail), fixtures.CaptonPublicID)
 
-	item, ok := itemAbout(items, siteapi.SiteAttentionKindScheduledBroadcastOverSendCap, fixtures.BroadcastCaptonSoonerID)
+	item, ok := testhelper.AttentionItemAbout(items, siteapi.SiteAttentionKindScheduledBroadcastOverSendCap, fixtures.BroadcastCaptonSoonerID)
 	require.True(t, ok)
 	assert.EqualValues(t, held.Count, item.Count)
 	assert.Equal(t, fixtures.BroadcastCaptonSoonerName, item.Subject.Value.Name)

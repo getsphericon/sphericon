@@ -52,7 +52,7 @@ func (env *TestEnv) ClaimOutbound(ctx context.Context, workspaceID, messageID in
 // Workspace, read from its row.
 func (env *TestEnv) Tracked(tb testing.TB, messageID int64) messagetoken.Message {
 	tb.Helper()
-	msg, err := env.DB.OutboundMessage.Get(context.Background(), messageID)
+	msg, err := env.DB.OutboundMessage.Get(tb.Context(), messageID)
 	require.NoError(tb, err)
 	return messagetoken.Message{WorkspaceID: msg.WorkspaceID, ID: msg.ID}
 }

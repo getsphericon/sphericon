@@ -1,7 +1,6 @@
 package outboundmessages_test
 
 import (
-	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -33,7 +32,7 @@ func capped(t *testing.T, env *testhelper.TestEnv, workspaceID int64, perDay *in
 	} else {
 		upd.SetSendCap(*perDay)
 	}
-	upd.ExecX(context.Background())
+	upd.ExecX(t.Context())
 }
 
 // sendCapModule is the send path of an Instance with Send caps, on the test's clock.
@@ -119,7 +118,7 @@ func TestTransactionalSendsIgnoreTheSendCapButSpendIt(t *testing.T) {
 	c := startClock()
 	m := sendCapModule(env, c)
 	capped(t, env, fixtures.AcmeID, new(2))
-	ctx := context.Background()
+	ctx := t.Context()
 
 	for i := range 3 {
 		res, err := m.Send(ctx, acme(env), transactional(fmt.Sprintf("tx:%d", i), "buyer@example.com"))
@@ -142,7 +141,7 @@ func TestARaisedSendCapKeepsATransactionalDebtInMessages(t *testing.T) {
 	m := sendCapModule(env, c)
 	capped(t, env, fixtures.AcmeID, new(2))
 	for i := range 3 {
-		res, err := m.Send(context.Background(), acme(env), transactional(fmt.Sprintf("tx:%d", i), "buyer@example.com"))
+		res, err := m.Send(t.Context(), acme(env), transactional(fmt.Sprintf("tx:%d", i), "buyer@example.com"))
 		require.NoError(t, err)
 		require.Equal(t, outboundmessages.Sent, res.Outcome)
 	}

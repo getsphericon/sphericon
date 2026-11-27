@@ -230,6 +230,7 @@ var operationRolesApiKeyAuth = map[string][]string{
 	SiteWorkspacesRestoreOperation:                      []string{},
 	SiteWorkspacesSetConfirmedOptInOperation:            []string{},
 	SiteWorkspacesSetEngagementTrackingDefaultOperation: []string{},
+	SiteWorkspacesSetLinkIdentityOperation:              []string{},
 	SiteWorkspacesSetTimezoneOperation:                  []string{},
 	SiteWorkspacesUpdateOperation:                       []string{},
 	SiteWorkspacesUpdateConfirmationEmailOperation:      []string{},

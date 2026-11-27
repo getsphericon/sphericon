@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -64,7 +63,7 @@ func TestExternalContactsExportByIDReturnsTheFullBundle(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeContactsExport)
 
-	res, err := c.ContactsExport(context.Background(), externalapi.ContactsExportParams{
+	res, err := c.ContactsExport(t.Context(), externalapi.ContactsExportParams{
 		ID: externalapi.NewOptEntityId(entityIDString(fixtures.ContactExportSubjectID)),
 	})
 	require.NoError(t, err)
@@ -137,7 +136,7 @@ func TestExternalContactsExportLeaksNoInternals(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeContactsExport)
 
-	res, err := c.ContactsExport(context.Background(), externalapi.ContactsExportParams{
+	res, err := c.ContactsExport(t.Context(), externalapi.ContactsExportParams{
 		ID: externalapi.NewOptEntityId(entityIDString(fixtures.ContactExportSubjectID)),
 	})
 	require.NoError(t, err)
@@ -152,7 +151,7 @@ func TestExternalContactsExportByEmailMatchesByID(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeContactsExport)
 
-	res, err := c.ContactsExport(context.Background(), externalapi.ContactsExportParams{
+	res, err := c.ContactsExport(t.Context(), externalapi.ContactsExportParams{
 		Email: externalapi.NewOptEmailAddress("Export.Subject@Example.com"),
 	})
 	require.NoError(t, err)
@@ -166,7 +165,7 @@ func TestExternalContactsExportEmptyMembersAreArrays(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeContactsExport)
 
-	res, err := c.ContactsExport(context.Background(), externalapi.ContactsExportParams{
+	res, err := c.ContactsExport(t.Context(), externalapi.ContactsExportParams{
 		ID: externalapi.NewOptEntityId(entityIDString(fixtures.ContactBobID)),
 	})
 	require.NoError(t, err)
@@ -180,7 +179,7 @@ func TestExternalContactsExportEmptyMembersAreArrays(t *testing.T) {
 
 func TestExternalContactsExportStreamsLargeContacts(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	// The fixtures give the Contact more Events than two pages of the keyset reader.
 	stored, err := env.DB.Scoped(fixtures.AcmeID).Event().Query().Where(event.ContactID(fixtures.ContactExportHeavyID)).Count(ctx)
 	require.NoError(t, err)
@@ -203,7 +202,7 @@ func TestExternalContactsExportStreamsLargeContacts(t *testing.T) {
 func TestExternalContactsExportNeedsTheExportScope(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	_, err := env.ExternalScoped(t, apitokens.ScopeContactsRead, apitokens.ScopeContactsWrite).ContactsExport(context.Background(), externalapi.ContactsExportParams{
+	_, err := env.ExternalScoped(t, apitokens.ScopeContactsRead, apitokens.ScopeContactsWrite).ContactsExport(t.Context(), externalapi.ContactsExportParams{
 		ID: externalapi.NewOptEntityId(entityIDString(fixtures.ContactExportSubjectID)),
 	})
 	refused := testhelper.ExternalRefusal(t, err, http.StatusForbidden)
@@ -213,7 +212,7 @@ func TestExternalContactsExportNeedsTheExportScope(t *testing.T) {
 func TestExternalContactsExportIsWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeContactsExport)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := c.ContactsExport(ctx, externalapi.ContactsExportParams{
 		ID: externalapi.NewOptEntityId(entityIDString(fixtures.ContactGlobexID)),
@@ -229,7 +228,7 @@ func TestExternalContactsExportIsWorkspaceScoped(t *testing.T) {
 func TestExternalContactsExportNeedsExactlyOneIdentifier(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeContactsExport)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := c.ContactsExport(ctx, externalapi.ContactsExportParams{})
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)

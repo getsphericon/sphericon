@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -17,7 +16,7 @@ import (
 // A dry run only reads, so the automations:read scope is enough; it writes no Firing.
 func TestExternalRulesDryRunNeedsOnlyTheReadScopeAndWritesNothing(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	reader := env.ExternalScoped(t, apitokens.ScopeAutomationsRead)
 	firings := env.DB.RuleFiring.Query().CountX(ctx)
 	params := externalapi.RulesDryRunParams{ID: entityIDString(fixtures.RuleTagClickedID)}

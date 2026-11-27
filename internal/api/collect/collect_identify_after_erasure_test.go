@@ -1,7 +1,6 @@
 package collect_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -22,7 +21,7 @@ import (
 // refuse mail to their address.
 func TestCollectIdentifyAfterErasureCreatesAFreshContactStillRefusedByTheSurvivingOptOuts(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	err := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.InitechID, apitokens.ScopeContactsErase)).
 		ContactsDelete(ctx, externalapi.ContactsDeleteParams{ID: externalapi.EntityId(fixtures.ContactErasableID)})

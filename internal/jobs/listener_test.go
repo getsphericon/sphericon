@@ -25,7 +25,8 @@ import (
 // does not wait for its poll, which with a listener runs only every few seconds. It runs on a
 // database of its own, since a notification is only sent on commit.
 func TestAListeningClientWorksAJobInsertedElsewhereAtOnce(t *testing.T) {
-	ctx := context.Background()
+	// The job client is stopped by a cleanup, which runs after t.Context() is done.
+	ctx := context.WithoutCancel(t.Context())
 	url := testhelper.RealDBURL(t)
 	pool, err := sql.Open("pgx", url)
 	require.NoError(t, err)
@@ -46,7 +47,7 @@ func TestAListeningClientWorksAJobInsertedElsewhereAtOnce(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.NoError(t, client.Start(ctx))
-	t.Cleanup(func() { cleanup.Report("stop the job client", client.Stop(context.Background())) })
+	t.Cleanup(func() { cleanup.Report("stop the job client", client.Stop(context.WithoutCancel(t.Context()))) })
 	require.Eventually(t, func() bool {
 		n, err := testhelper.Listeners(ctx, pool)
 		return err == nil && n > 0
@@ -57,17 +58,6 @@ func TestAListeningClientWorksAJobInsertedElsewhereAtOnce(t *testing.T) {
 	_, err = elsewhere.Insert(ctx, jobs.SendNoticeArgs{EventID: "01LISTENED", To: "listened@example.com", Subject: "Welcome", Text: "Listened"}, nil)
 	require.NoError(t, err)
 
-	require.Eventually(t, func() bool { return sentTo(mail, "listened@example.com") }, 2*time.Second, 20*time.Millisecond,
+	require.Eventually(t, func() bool { return len(mail.To("listened@example.com")) > 0 }, 2*time.Second, 20*time.Millisecond,
 		"worked well before the listener's fallback poll")
-}
-
-// sentTo reports whether the sender sent a message to the address.
-func sentTo(mail *testhelper.CapturingSender, to string) bool {
-	msgs := mail.Messages()
-	for i := range msgs {
-		if msgs[i].To == to {
-			return true
-		}
-	}
-	return false
 }

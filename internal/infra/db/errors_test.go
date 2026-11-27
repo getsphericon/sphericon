@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 )
 
@@ -48,4 +49,20 @@ func TestIsConnectionLostRecognizesAConnectionClosedMidRequest(t *testing.T) {
 	assert.False(t, db.IsConnectionLost(nil))
 	assert.False(t, db.IsConnectionLost(&pgconn.ConnectError{}))
 	assert.False(t, db.IsUnavailable(pgconn.ErrConnClosed), "the request may have taken effect")
+}
+
+// A row ent did not find is the module's own refusal; any other error, and no error, pass as they
+// are.
+func TestNotFoundAsTurnsOnlyAMissIntoTheRefusal(t *testing.T) {
+	refusal := errors.New("the row is not there")
+	other := errors.New("connection reset")
+	miss := fmt.Errorf("get: %w", &ent.NotFoundError{})
+
+	missed := db.NotFoundAs(miss, refusal)
+	failed := db.NotFoundAs(other, refusal)
+	found := db.NotFoundAs(nil, refusal)
+
+	assert.Equal(t, refusal, missed)
+	assert.Equal(t, other, failed)
+	assert.NoError(t, found)
 }

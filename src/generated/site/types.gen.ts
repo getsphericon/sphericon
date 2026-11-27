@@ -3687,6 +3687,11 @@ export type LinkClicks = {
 };
 
 /**
+ * A hostname a Link identity token may be added to a link of
+ */
+export type LinkIdentityHost = string;
+
+/**
  * What a lint finding is about (ADR 0040)
  */
 export const LintCode = {
@@ -8618,6 +8623,27 @@ export type SiteSetEngagementTrackingDefaultInput = {
 };
 
 /**
+ * Set the Link identity token settings (ADR 0160)
+ */
+export type SiteSetLinkIdentityInput = {
+  /**
+   * The Workspace's `revision` the change was made on (ADR 0119): the one it was read with
+   */
+  revision: Revision;
+  /**
+   * On: the click of a tracked link adds the recipient's Link identity token to an `https`
+   * destination on one of `linkIdentityHosts`. It cannot be on with no host listed (422).
+   */
+  linkIdentityEnabled: boolean;
+  /**
+   * The hostnames of the Workspace's own sites, such as `shop.example.com`: each is normalized as
+   * a Sending domain is (lower case, IDN as punycode, no trailing dot), and one that is not a
+   * domain name is refused with 422. The list replaces the one stored.
+   */
+  linkIdentityHosts: Array<LinkIdentityHost>;
+};
+
+/**
  * The Workspace's Setup checklist: its steps are read now, never ticked by hand, and the read
  * that first finds every step done stamps the Workspace, which keeps it complete for good
  */
@@ -9363,6 +9389,18 @@ export type SiteWorkspaceResource = {
    * consent recorded has its opens and clicks tracked. `track` until an Owner or Admin changes it.
    */
   engagementTrackingDefault: EngagementTrackingDecision;
+  /**
+   * Whether the click of a tracked link adds a Link identity token to a destination on one of
+   * `linkIdentityHosts` (ADR 0160), so the tracker there binds the anonymous visitor to the
+   * recipient's contact. Off until an Owner or Admin turns it on.
+   */
+  linkIdentityEnabled: boolean;
+  /**
+   * The hostnames of the Workspace's own sites, where its tracker runs: only an `https` link to
+   * one of them gets a Link identity token. Each is matched exactly, so a subdomain is listed on its
+   * own.
+   */
+  linkIdentityHosts: Array<string>;
   /**
    * The authenticated User's role in this Workspace (from their Membership). It
    * rides the Workspace list so role-gated UI is known even while the Workspace's
@@ -17511,6 +17549,38 @@ export type SiteWorkspacesLeaveResponses = {
 };
 
 export type SiteWorkspacesLeaveResponse = SiteWorkspacesLeaveResponses[keyof SiteWorkspacesLeaveResponses];
+
+export type SiteWorkspacesSetLinkIdentityData = {
+  body: SiteSetLinkIdentityInput;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/link-identity';
+};
+
+export type SiteWorkspacesSetLinkIdentityErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SiteWorkspacesSetLinkIdentityError = SiteWorkspacesSetLinkIdentityErrors[keyof SiteWorkspacesSetLinkIdentityErrors];
+
+export type SiteWorkspacesSetLinkIdentityResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteWorkspaceResource;
+};
+
+export type SiteWorkspacesSetLinkIdentityResponse = SiteWorkspacesSetLinkIdentityResponses[keyof SiteWorkspacesSetLinkIdentityResponses];
 
 export type SiteMembershipsListData = {
   body?: never;

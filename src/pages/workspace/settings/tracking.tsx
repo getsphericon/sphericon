@@ -1,18 +1,8 @@
-import {
-  Anchor,
-  Box,
-  Badge,
-  Button,
-  Code,
-  CopyButton,
-  Group,
-  Stack,
-  Text,
-  Title,
-} from '@mantine/core'
+import { Anchor, Box, Badge, Code, Group, Stack, Text, Title } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
+import { CopyTextButton } from '../../../components/CopyTextButton.tsx'
 import { AnchorLink } from '../../../components/RouterLink.tsx'
 import {
   siteEventsListOptions,
@@ -25,6 +15,7 @@ import { Route as trackingRoute } from '../../../routes/workspaces/$workspaceId/
 import { DOCS_URL, SDK_SOURCE_URL } from '../../../utils/docs.ts'
 import { can } from '../../../utils/permissions.ts'
 import { IdentitySecretSection } from './IdentitySecretSection.tsx'
+import { LinkIdentitySection } from './LinkIdentitySection.tsx'
 import { SettingsFrame } from './SettingsFrame.tsx'
 import { TrackingDomainSection } from './TrackingDomainSection.tsx'
 
@@ -85,13 +76,7 @@ function TestEvent({ collectKey, trackerUrl }: { collectKey: string; trackerUrl:
         {t(($) => $.settings.testEventDescription)}
       </Text>
       <Code block>{command}</Code>
-      <CopyButton value={command}>
-        {({ copied, copy }) => (
-          <Button size="xs" mt="sm" variant="light" onClick={copy}>
-            {copied ? t(($) => $.settings.copied) : t(($) => $.settings.copy)}
-          </Button>
-        )}
-      </CopyButton>
+      <CopyTextButton value={command} size="xs" mt="sm" />
     </Box>
   )
 }
@@ -131,13 +116,7 @@ function TrackingSection({
         {t(($) => $.settings.trackingDescription)}
       </Text>
       <Code block>{snippet}</Code>
-      <CopyButton value={snippet}>
-        {({ copied, copy }) => (
-          <Button size="xs" mt="sm" variant="light" onClick={copy}>
-            {copied ? t(($) => $.settings.copied) : t(($) => $.settings.copy)}
-          </Button>
-        )}
-      </CopyButton>
+      <CopyTextButton value={snippet} size="xs" mt="sm" />
       <InstallStatus workspaceId={workspaceId} />
     </Box>
   )
@@ -191,6 +170,7 @@ function TrackerSetup({ workspace }: { workspace: SiteWorkspaceResource }) {
       />
       <TestEvent collectKey={workspace.collectKey} trackerUrl={trackerUrl} />
       {can(workspace, 'tokens:manage') && <IdentitySecretSection workspaceId={workspace.id} />}
+      <LinkIdentitySection workspace={workspace} />
       <TrackingDomainSection workspace={workspace} />
       <SendEvents />
     </Stack>

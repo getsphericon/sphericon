@@ -1,7 +1,6 @@
 package throttle_test
 
 import (
-	"context"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -202,7 +201,7 @@ func TestResetBudgetGrantsExactlyThresholdSlotsUnderConcurrency(t *testing.T) {
 	var wg sync.WaitGroup
 	for range workers {
 		wg.Go(func() {
-			ok, err := a.Take(context.Background(), throttle.KindPasswordReset, email)
+			ok, err := a.Take(t.Context(), throttle.KindPasswordReset, email)
 			require.NoError(t, err)
 			if ok {
 				granted.Add(1)

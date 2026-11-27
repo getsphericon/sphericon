@@ -1,7 +1,6 @@
 package automations_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -16,7 +15,7 @@ import (
 // eventOf is a stored fixture Event as its trigger job hands it on.
 func eventOf(t *testing.T, env *testhelper.TestEnv, id int64) automations.Event {
 	t.Helper()
-	stored, err := env.DB.Event.Get(context.Background(), id)
+	stored, err := env.DB.Event.Get(t.Context(), id)
 	require.NoError(t, err)
 	return automations.Event{Action: stored.Action, SourceID: *stored.SourceID, OccurredAt: stored.OccurredAt}
 }
@@ -28,7 +27,7 @@ func TestATriggeredEnrollmentCopiesItsEventsActionAndProperties(t *testing.T) {
 	ev := eventOf(t, env, fixtures.EventPaymentFailedID)
 	in := automations.OnEventInput{ContactID: fixtures.ContactPaymentFailedID, Event: ev}
 
-	require.NoError(t, testhelper.Module[*automations.StepExecution](env).OnEvent(context.Background(), env.DB.Scoped(fixtures.AcmeID), in))
+	require.NoError(t, testhelper.Module[*automations.StepExecution](env).OnEvent(t.Context(), env.DB.Scoped(fixtures.AcmeID), in))
 
 	runs := runsOf(t, env, fixtures.AutomationPaymentRecoveryID, fixtures.ContactPaymentFailedID)
 	require.Len(t, runs, 1)
@@ -44,7 +43,7 @@ func TestAnEventOverTheBoundGivesNoPropertiesToCopy(t *testing.T) {
 		SourceID: eventOf(t, env, fixtures.EventRuleUrlOversizedID).SourceID,
 	}
 
-	_, err := testhelper.Module[*automations.StepExecution](env).EnrollOnRule(context.Background(), env.DB.Scoped(fixtures.AcmeID), in)
+	_, err := testhelper.Module[*automations.StepExecution](env).EnrollOnRule(t.Context(), env.DB.Scoped(fixtures.AcmeID), in)
 
 	require.NoError(t, err)
 	runs := runsOf(t, env, fixtures.AutomationPaymentRecoveryID, fixtures.ContactPaymentFailedID)
@@ -61,7 +60,7 @@ func TestAnEventWithoutItsTimeIsRefused(t *testing.T) {
 	ev.OccurredAt = time.Time{}
 	in := automations.OnEventInput{ContactID: fixtures.ContactPaymentFailedID, Event: ev}
 
-	err := testhelper.Module[*automations.StepExecution](env).OnEvent(context.Background(), env.DB.Scoped(fixtures.AcmeID), in)
+	err := testhelper.Module[*automations.StepExecution](env).OnEvent(t.Context(), env.DB.Scoped(fixtures.AcmeID), in)
 
 	require.Error(t, err)
 	assert.Empty(t, runsOf(t, env, fixtures.AutomationPaymentRecoveryID, fixtures.ContactPaymentFailedID))

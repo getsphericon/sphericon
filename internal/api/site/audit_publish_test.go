@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
@@ -29,7 +28,7 @@ func auditedStatuses(t *testing.T, env *testhelper.TestEnv, targetType string, i
 // Publish and Deactivate of an Automation are Audited as the status change they make (ADR 0022).
 func TestSiteAutomationPublishAndDeactivateAreAudited(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	params := siteapi.SiteAutomationsPublishParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.AutomationWinBackID)}
 
@@ -71,7 +70,7 @@ func pointerMove(entry any) string {
 // ADR 0065): Publish makes the draft live, Revert drops it.
 func TestSiteAutomationPublishAndRevertAreAudited(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	params := siteapi.SiteAutomationsRevertParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.AutomationWelcomeSeriesID)}
 
@@ -98,7 +97,7 @@ func TestSiteAutomationPublishAndRevertAreAudited(t *testing.T) {
 // one trace of the edit (the version rows are not audited).
 func TestSiteAutomationDraftEditIsAudited(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	params := siteapi.SiteAutomationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.AutomationWelcomeSeriesID)}
 
@@ -115,7 +114,7 @@ func versionIDOf(t *testing.T, env *testhelper.TestEnv, automationID int64, numb
 	t.Helper()
 	id, err := env.DB.AutomationVersion.Query().
 		Where(automationversion.AutomationID(automationID), automationversion.Version(number)).
-		OnlyID(context.Background())
+		OnlyID(t.Context())
 	require.NoError(t, err)
 	return id
 }
@@ -123,7 +122,7 @@ func versionIDOf(t *testing.T, env *testhelper.TestEnv, automationID int64, numb
 // Publish and Deactivate of a Rule are Audited as the status change they make (ADR 0022).
 func TestSiteRulePublishAndDeactivateAreAudited(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	params := siteapi.SiteRulesPublishParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.RuleInactiveID)}
 

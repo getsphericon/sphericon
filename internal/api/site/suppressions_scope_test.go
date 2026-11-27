@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -19,7 +18,7 @@ import (
 func TestSiteSuppressionsDeleteForeignIDIsNotFound(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	err := c.SiteSuppressionsDelete(ctx, siteapi.SiteSuppressionsDeleteParams{
 		WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(int64(fixtures.SuppressionGlobexID)),

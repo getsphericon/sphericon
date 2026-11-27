@@ -241,6 +241,8 @@ var (
 	ErrorsLegalDocumentLabelTaken                         = ID{key: "errors.legal_document_label_taken"}
 	ErrorsLegalDocumentNoDraft                            = ID{key: "errors.legal_document_no_draft"}
 	ErrorsLegalDocumentNotFound                           = ID{key: "errors.legal_document_not_found"}
+	ErrorsLinkIdentityHostInvalid                         = ID{key: "errors.link_identity_host_invalid"}
+	ErrorsLinkIdentityHostRequired                        = ID{key: "errors.link_identity_host_required"}
 	ErrorsLinkedIdentityLastSignIn                        = ID{key: "errors.linked_identity_last_sign_in"}
 	ErrorsLinkedIdentityNotFound                          = ID{key: "errors.linked_identity_not_found"}
 	ErrorsLintBodyOrDoc                                   = ID{key: "errors.lint_body_or_doc"}

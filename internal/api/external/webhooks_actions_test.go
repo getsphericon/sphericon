@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -23,7 +22,7 @@ import (
 
 func TestExternalWebhookRegenerateSecretReplacesItAndNeverReturnsIt(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	id := entityIDString(fixtures.WebhookCodebasicsID)
 	before, err := env.DB.WebhookEndpoint.Query().Where(webhookendpoint.ID(fixtures.WebhookCodebasicsID)).WithHealth().Only(ctx)
 	require.NoError(t, err)
@@ -44,7 +43,7 @@ func TestExternalWebhookRegenerateSecretReplacesItAndNeverReturnsIt(t *testing.T
 }
 
 func TestExternalWebhookTestSendReportsTheReceiversAnswer(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	status := http.StatusAccepted
 	rcv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(status) }))
 	t.Cleanup(rcv.Close)
@@ -88,7 +87,7 @@ func TestExternalWebhookTestSendReportsTheReceiversAnswer(t *testing.T) {
 
 func TestExternalWebhookActionsAreAuditedAsTheAPIToken(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.ExternalScoped(t, apitokens.ScopeWebhooksRegenerate, apitokens.ScopeWebhooksTest)
 	id := entityIDString(fixtures.WebhookCodebasicsID)
 

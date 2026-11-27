@@ -1,7 +1,6 @@
 package collect_test
 
 import (
-	"context"
 	"net/http"
 	"strings"
 	"testing"
@@ -24,7 +23,7 @@ func eventBatch(n int) *collectapi.CollectEventsInput {
 
 func TestCollectEventsBatchIsCappedAt100(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	err := env.CollectAcme(t).CollectEventsCreate(ctx, eventBatch(100))
 	require.NoError(t, err)
@@ -36,7 +35,7 @@ func TestCollectEventsBatchIsCappedAt100(t *testing.T) {
 
 func TestCollectEventFieldsAreBoundedInLength(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.CollectAcme(t)
 
 	send := func(visitorID, action string) error {
@@ -55,7 +54,7 @@ func TestCollectEventFieldsAreBoundedInLength(t *testing.T) {
 
 func TestCollectIdentifyFieldsAreBoundedInLength(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.CollectAcme(t)
 
 	identify := func(in collectapi.CollectIdentifyInput) error {

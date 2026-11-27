@@ -43,7 +43,7 @@ func dmarcRecords(ctx context.Context, lookup domainname.TXTLookup, domain strin
 	// Fully qualified, for the reason DNS.VerifyDKIM gives.
 	records, err := lookup(ctx, host+".")
 	if err != nil {
-		if dnsIsNotFound(err) {
+		if domainname.NotFound(err) {
 			return 0, nil
 		}
 		return 0, fmt.Errorf("lookup %s: %w", host, err)

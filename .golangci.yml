@@ -147,6 +147,12 @@ linters:
       # Where a context is in scope, a line is logged with it (slog.*Context), so the logger
       # tags the line with the request id and the correlation id it carries.
       context: scope
+    usetesting:
+      # A test's context is t.Context(), cancelled when the test ends, so work it started stops with
+      # it. What a cleanup stops or releases (a runtime, a held transaction) runs on
+      # context.WithoutCancel(t.Context()): the cleanups run after t.Context() is done.
+      context-background: true
+      context-todo: true
     forbidigo:
       analyze-types: true
       forbid:
@@ -177,6 +183,8 @@ linters:
         - pattern: ^ent\.(Client|Scoped|WorkspaceLocked|DestinationLocked)\.TxDriver$
           pkg: '^github\.com/getsphericon/sphericon/ent$'
           msg: the driver of a transaction is the events bus's; publish or queue with events.Bus.PublishIn or EnqueueIn
+        - pattern: ^errors\.As$
+          msg: take the typed error with errors.AsType (CODING_STANDARDS.md), which returns it instead of filling a variable declared for it
         - pattern: ^time\.Sleep$
           msg: no sleeps; wait on the condition, take a clock, or call testhelper.Elapse inside a synctest bubble (CODING_STANDARDS.md)
         - pattern: ^time\.(Now|Since|Until)$

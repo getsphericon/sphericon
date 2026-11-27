@@ -1,7 +1,6 @@
 package events_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -19,7 +18,7 @@ import (
 // ULID of its own.
 func TestPublishDeliveryFailureWithLongDedupID(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	err := env.Bus.WithinTx(ctx, func(_ *ent.Client, pub events.Publisher) error {
 		return pub.Publish(ctx, &events.EmailDelivery{

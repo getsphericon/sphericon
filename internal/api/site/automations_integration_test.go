@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -25,7 +24,7 @@ func siteEmailStepVia(id siteapi.OptNilEntityId) siteapi.EmailStepInput {
 func TestSiteAutomationStepsNameTheirIntegration(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 	mailgun := siteapi.NewOptNilEntityId(idStr(fixtures.IntegrationAcmeMailgunID))
 
@@ -58,7 +57,7 @@ func TestSiteAutomationStepsNameTheirIntegration(t *testing.T) {
 func TestSiteAutomationsRefuseAStepsUnknownIntegration(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 	steps := testhelper.SitePathEdit(siteEmailStepVia(siteapi.NewOptNilEntityId(idStr(fixtures.IntegrationGlobexID)))) // another Workspace's
 	draftBefore := env.DB.AutomationVersion.GetX(ctx, fixtures.AutomationWelcomeSeriesDraftVersionID).Steps

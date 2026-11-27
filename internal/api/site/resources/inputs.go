@@ -180,6 +180,7 @@ type Inputs interface {
 	// goverter:enum:map EngagementTrackingDecisionTrack EngagementTrackingDefaultTrack
 	// goverter:enum:map EngagementTrackingDecisionDontTrack EngagementTrackingDefaultDontTrack
 	EngagementTrackingDefaultIn(source siteapi.EngagementTrackingDecision) workspace.EngagementTrackingDefault
+	LinkIdentitySet(source *siteapi.SiteSetLinkIdentityInput) workspaceview.SetLinkIdentityInput
 	RevenueSettingsSet(source *siteapi.SiteUpdateRevenueSettingsInput) workspaces.SetRevenueSettingsInput
 	// The whole of the Workspace's sending rules (ADR 0134, ADR 0137).
 	SendingRulesReplace(source *siteapi.SiteReplaceSendingRulesInput) workspaces.ReplaceSendingRulesInput
@@ -937,11 +938,7 @@ func broadcastContentPatch(c Inputs, o siteapi.OptBroadcastContentInput) (broadc
 
 // broadcastChannelPtrIn is the Channel a list is narrowed to: nil for every Channel.
 func broadcastChannelPtrIn(c Inputs, o siteapi.OptBroadcastChannel) *channels.Channel {
-	v, ok := o.Get()
-	if !ok {
-		return nil
-	}
-	return new(c.BroadcastChannel(v))
+	return convert.PtrVia(o, c.BroadcastChannel)
 }
 
 // automationStateIn is the State the Automation list is narrowed to: empty for every State.

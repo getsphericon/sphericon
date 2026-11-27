@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -19,7 +18,7 @@ import (
 func TestSiteAutomationsErrorBranches(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	acme, foreign := siteapi.WorkspaceId(fixtures.AcmePublicID), siteapi.WorkspaceId(fixtures.GlobexPublicID)
 	known := idStr(fixtures.AutomationWelcomeSeriesID)
 	missing := idStr(99999)
@@ -100,7 +99,7 @@ func TestSiteAutomationsErrorBranches(t *testing.T) {
 func TestSiteSegmentsErrorBranches(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	acme, foreign := siteapi.WorkspaceId(fixtures.AcmePublicID), siteapi.WorkspaceId(fixtures.GlobexPublicID)
 	known := idStr(fixtures.SegmentProPlanID)
 	missing := idStr(99999)
@@ -148,7 +147,7 @@ func TestSiteSegmentsErrorBranches(t *testing.T) {
 func TestSiteTemplatesErrorBranches(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	acme, foreign := siteapi.WorkspaceId(fixtures.AcmePublicID), siteapi.WorkspaceId(fixtures.GlobexPublicID)
 	known := idStr(fixtures.TemplateWelcomeID)
 	missing := idStr(99999)
@@ -204,7 +203,7 @@ func TestSiteTemplatesErrorBranches(t *testing.T) {
 func TestSiteWebhooksErrorBranches(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	acme, foreign := siteapi.WorkspaceId(fixtures.AcmePublicID), siteapi.WorkspaceId(fixtures.GlobexPublicID)
 	known := idStr(fixtures.WebhookCodebasicsID)
 	missing := idStr(99999)

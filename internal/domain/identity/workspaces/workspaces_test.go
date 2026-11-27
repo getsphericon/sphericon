@@ -1,7 +1,6 @@
 package workspaces_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -17,12 +16,12 @@ func TestIDByPublicIDIn(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*workspaces.Module](env)
 
-	id, err := m.IDByPublicIDIn(context.Background(), env.DB, fixtures.AcmePublicID)
+	id, err := m.IDByPublicIDIn(t.Context(), env.DB, fixtures.AcmePublicID)
 	require.NoError(t, err)
 	assert.EqualValues(t, fixtures.AcmeID, id)
-	_, err = m.IDByPublicIDIn(context.Background(), env.DB, "NoSuchId")
+	_, err = m.IDByPublicIDIn(t.Context(), env.DB, "NoSuchId")
 	require.Error(t, err)
-	_, err = m.IDByPublicIDIn(context.Background(), env.DB, "acmews01")
+	_, err = m.IDByPublicIDIn(t.Context(), env.DB, "acmews01")
 	require.Error(t, err, "the id is case-sensitive")
 }
 

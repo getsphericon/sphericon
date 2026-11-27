@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"io"
 	"net/http"
 	"testing"
@@ -39,14 +38,14 @@ func TestSiteContactsExportIsForOwnersAndAdmins(t *testing.T) {
 		ID:          siteapi.NewOptEntityId(siteapi.EntityId(800)),
 	}
 
-	res, err := env.SiteActor(t, fixtures.AdminAliceEmail).SiteContactsExport(context.Background(), params)
+	res, err := env.SiteActor(t, fixtures.AdminAliceEmail).SiteContactsExport(t.Context(), params)
 	require.NoError(t, err)
 	doc := readSiteExport(t, res)
 	assert.Len(t, doc.Events, 3)
 	assert.Len(t, doc.OutboundMessages, 3)
 	assert.Len(t, doc.BroadcastRecipients, 1)
 
-	_, err = env.SiteActor(t, fixtures.MemberMaryEmail).SiteContactsExport(context.Background(), params)
+	_, err = env.SiteActor(t, fixtures.MemberMaryEmail).SiteContactsExport(t.Context(), params)
 	refused := testhelper.SiteRefusal(t, err, http.StatusForbidden)
 	assert.Equal(t, siteapi.ProblemCodePermissionRequired, refused.Code.Value)
 }
@@ -55,7 +54,7 @@ func TestSiteContactsExportByEmail(t *testing.T) {
 	env := testhelper.Setup(t)
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	res, err := owner.SiteContactsExport(context.Background(), siteapi.SiteContactsExportParams{
+	res, err := owner.SiteContactsExport(t.Context(), siteapi.SiteContactsExportParams{
 		WorkspaceId: fixtures.AcmePublicID,
 		Email:       siteapi.NewOptEmailAddress(fixtures.ContactExportSubjectEmail),
 	})
@@ -68,7 +67,7 @@ func TestSiteContactsExportByEmail(t *testing.T) {
 
 func TestSiteContactsExportStaysInsideTheWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// A foreign Contact is not found through the caller's own Workspace.
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)

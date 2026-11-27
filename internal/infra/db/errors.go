@@ -8,6 +8,8 @@ import (
 
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"
+
+	"github.com/getsphericon/sphericon/ent"
 )
 
 // IsUnavailable reports whether err means the database cannot be reached right now: a
@@ -17,13 +19,12 @@ func IsUnavailable(err error) bool {
 	if err == nil {
 		return false
 	}
-	var connect *pgconn.ConnectError
-	var pgErr *pgconn.PgError
-	var netErr net.Error
+	_, connect := errors.AsType[*pgconn.ConnectError](err)
+	pgErr, fromServer := errors.AsType[*pgconn.PgError](err)
 	switch {
-	case errors.As(err, &connect), errors.Is(err, driver.ErrBadConn), errors.Is(err, sql.ErrConnDone):
+	case connect, errors.Is(err, driver.ErrBadConn), errors.Is(err, sql.ErrConnDone):
 		return true
-	case errors.As(err, &pgErr):
+	case fromServer:
 		// Class 08 connection exception, a server shutting down, restarting or dropping the
 		// session (57P01 to 57P05, the operator-intervention codes that end a connection),
 		// too many connections. A query_canceled (57014) is a statement timeout or a cancelled
@@ -35,7 +36,8 @@ func IsUnavailable(err error) bool {
 		}
 		return pgerrcode.IsConnectionException(pgErr.Code)
 	default:
-		return errors.As(err, &netErr)
+		_, network := errors.AsType[net.Error](err)
+		return network
 	}
 }
 
@@ -44,4 +46,14 @@ func IsUnavailable(err error) bool {
 // request took effect is unknown, so only a request whose retry is idempotent may be retried.
 func IsConnectionLost(err error) bool {
 	return errors.Is(err, pgconn.ErrConnClosed)
+}
+
+// NotFoundAs is refusal when err is ent's miss of a row, and err otherwise: a module answers a row
+// it was asked for and does not hold with its own not-found refusal, as Constraints answers a
+// violated constraint with the refusal declared for it.
+func NotFoundAs(err, refusal error) error {
+	if ent.IsNotFound(err) {
+		return refusal
+	}
+	return err
 }

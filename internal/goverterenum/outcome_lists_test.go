@@ -1,4 +1,4 @@
-package site_test
+package goverterenum_test
 
 import (
 	"encoding/json"
@@ -12,13 +12,17 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 )
 
-// The site's contract lists the Skipped reasons and the Deferral causes as enums, each exactly the
-// kernel's closed list, so a client can switch over them (ADR 0178).
-func TestTheSiteContractListsTheSkippedReasonsAndTheDeferralCauses(t *testing.T) {
-	enums := contractEnums(t, "../../../openapi/site.openapi.json")
+// The site's and the external contract list the Skipped reasons and the Deferral causes as enums,
+// each exactly the kernel's closed list, so a client can switch over them (ADR 0178).
+func TestTheContractsListTheSkippedReasonsAndTheDeferralCauses(t *testing.T) {
+	for _, contract := range []string{"site", "external"} {
+		t.Run(contract, func(t *testing.T) {
+			enums := contractEnums(t, "../../openapi/"+contract+".openapi.json")
 
-	assert.ElementsMatch(t, skipreason.Reason("").Values(), enums["SkippedReason"])
-	assert.ElementsMatch(t, deferralcause.Cause("").Values(), enums["DeferralCause"])
+			assert.ElementsMatch(t, skipreason.Reason("").Values(), enums["SkippedReason"])
+			assert.ElementsMatch(t, deferralcause.Cause("").Values(), enums["DeferralCause"])
+		})
+	}
 }
 
 // contractEnums reads the enum values of every schema of the OpenAPI document at path.

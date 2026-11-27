@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -28,21 +27,21 @@ func initechClient(t *testing.T, env *testhelper.TestEnv, scopes ...apitokens.Sc
 
 func eraseErasable(t *testing.T, env *testhelper.TestEnv) {
 	t.Helper()
-	err := initechClient(t, env, "contacts:erase").ContactsDelete(context.Background(),
+	err := initechClient(t, env, "contacts:erase").ContactsDelete(t.Context(),
 		externalapi.ContactsDeleteParams{ID: entityIDString(fixtures.ContactErasableID)})
 	require.NoError(t, err)
 }
 
 func eventByID(t *testing.T, env *testhelper.TestEnv, id int64) *ent.Event {
 	t.Helper()
-	e, err := env.DB.Event.Get(context.Background(), id)
+	e, err := env.DB.Event.Get(t.Context(), id)
 	require.NoError(t, err)
 	return e
 }
 
 func TestExternalContactsEraseNeedsTheEraseScope(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	id := entityIDString(fixtures.ContactErasableID)
 
 	err := initechClient(t, env, "contacts:read", "contacts:write").ContactsDelete(ctx, externalapi.ContactsDeleteParams{ID: id})
@@ -59,7 +58,7 @@ func TestExternalContactsEraseNeedsTheEraseScope(t *testing.T) {
 
 func TestExternalContactsEraseDoesNotMoveRatesOrMetering(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := initechClient(t, env, "contacts:erase", "sending_domains:read")
 
 	ratesOf := func() any {
@@ -104,7 +103,7 @@ func TestExternalContactsEraseDoesNotMoveRatesOrMetering(t *testing.T) {
 
 func TestExternalContactsEraseIsWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// An Acme token cannot erase an Initech Contact: it does not exist for Acme.
 	err := env.ExternalScoped(t, apitokens.ScopeContactsErase).ContactsDelete(ctx,
@@ -121,7 +120,7 @@ func TestExternalContactsEraseIsWorkspaceScoped(t *testing.T) {
 // their address.
 func TestExternalContactsEraseDoesNotBlockReappearance(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	eraseErasable(t, env)
 
 	created, err := initechClient(t, env, "contacts:write").ContactsCreate(ctx, &externalapi.CreateContactInput{

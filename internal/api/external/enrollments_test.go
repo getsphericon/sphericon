@@ -24,7 +24,7 @@ import (
 // receiver's status and the start of its answer.
 func TestExternalEnrollmentsReadAFailedEnrollment(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.ExternalScoped(t, apitokens.ScopeEnrollmentsRead)
 
 	listed, err := c.EnrollmentsList(ctx, externalapi.EnrollmentsListParams{
@@ -53,7 +53,7 @@ func TestExternalEnrollmentsReadAFailedEnrollment(t *testing.T) {
 
 func TestExternalEnrollmentsAreFilteredByStatusAndScoped(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.ExternalScoped(t, apitokens.ScopeEnrollmentsRead)
 
 	completed, err := c.EnrollmentsList(ctx, externalapi.EnrollmentsListParams{
@@ -80,7 +80,7 @@ func TestExternalEnrollmentsAreFilteredByStatusAndScoped(t *testing.T) {
 
 func TestExternalEnrollmentsNeedTheirOwnScope(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	denied := env.ExternalScoped(t, apitokens.ScopeAutomationsRead)
 
 	_, err := denied.EnrollmentsList(ctx, externalapi.EnrollmentsListParams{AutomationId: entityIDString(fixtures.AutomationNotifySlackID)})
@@ -137,7 +137,7 @@ func TestExternalEnrollmentsShowTheOnceOccurrence(t *testing.T) {
 // Deferral.
 func TestExternalEnrollmentsReadTheWaitOfADeferredSend(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	// The test's database is one transaction on one connection, so the send is not fenced against
 	// an exit on a connection of its own.

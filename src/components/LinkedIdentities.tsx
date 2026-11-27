@@ -1,7 +1,6 @@
 import { Alert, Button, Group, Stack, Text, Title } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { useSuspenseQueries } from '@tanstack/react-query'
-import { useSearch } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
 import {
@@ -10,8 +9,11 @@ import {
   siteIdentitiesListOptions,
   siteIdentitiesUnlinkMutation,
 } from '../generated/site/@tanstack/react-query.gen.ts'
-import type { SiteLinkedIdentity, SiteSigninProvider } from '../generated/site/types.gen.ts'
-import { zSiteSigninError } from '../generated/site/zod.gen.ts'
+import type {
+  SiteLinkedIdentity,
+  SiteSigninError,
+  SiteSigninProvider,
+} from '../generated/site/types.gen.ts'
 import { useActionModal } from '../hooks/useActionModal.tsx'
 import { useResourceMutation } from '../hooks/useResourceMutation.ts'
 import { IdentityProof } from './IdentityProof.tsx'
@@ -25,7 +27,13 @@ import { BlockSkeleton } from './Skeletons.tsx'
 // the same proof as adding a Passkey (ADR 0176): the password, or a fresh provider sign-in or
 // Passkey check for a User with none, which lands back on `returnTo`. Nothing is shown on an
 // Instance with no provider and an account with no identity, so the title is part of what loads.
-export function LinkedIdentities({ returnTo }: { returnTo: string }) {
+interface LinkedIdentitiesProps {
+  returnTo: string
+  // Why a link just made did not succeed, which the provider's callback put on `returnTo`.
+  linkError: SiteSigninError | undefined
+}
+
+export function LinkedIdentities({ returnTo, linkError }: LinkedIdentitiesProps) {
   const { t } = useTranslation()
   return (
     <QueryBoundary
@@ -37,15 +45,13 @@ export function LinkedIdentities({ returnTo }: { returnTo: string }) {
       }
       errorTitle={t(($) => $.security.loadErrorTitle)}
     >
-      <IdentityList returnTo={returnTo} />
+      <IdentityList returnTo={returnTo} linkError={linkError} />
     </QueryBoundary>
   )
 }
 
-function IdentityList({ returnTo }: { returnTo: string }) {
+function IdentityList({ returnTo, linkError }: LinkedIdentitiesProps) {
   const { t } = useTranslation()
-  const search = useSearch({ strict: false })
-  const linkError = zSiteSigninError.safeParse(search.error).data
   // Both lists are fetched at once rather than one after the other.
   const [identities, providers] = useSuspenseQueries({
     queries: [siteIdentitiesListOptions(), siteAuthSigninProvidersOptions()],

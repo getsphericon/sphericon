@@ -26,6 +26,10 @@ interface ResourceMutationOptions<TData, TError, TVars, TCtx> {
   // Message shown instead of the API detail when the API answers 403 (the action
   // is role-gated and the caller lacks the role) — localized, unlike the detail.
   forbiddenMessage?: string
+  // A refused write still reads its data again: the queries a success refreshes are refreshed on a
+  // failure too, before the toast, so the next attempt is made on what is stored (a switch made on
+  // a revision the server no longer holds, ADR 0119).
+  rereadOnError?: boolean
   // Takes over a failure before the toast: true when it dealt with the error itself (no toast).
   handleError?: (error: TError) => boolean | Promise<boolean>
   // Extra success work — navigation, form reset — run after invalidation, once the active queries
@@ -47,6 +51,7 @@ export function useResourceMutation<TData, TError, TVars, TCtx>({
   successMessage,
   errorTitle,
   forbiddenMessage,
+  rereadOnError = false,
   handleError,
   onDone,
 }: ResourceMutationOptions<TData, TError, TVars, TCtx>) {
@@ -55,17 +60,20 @@ export function useResourceMutation<TData, TError, TVars, TCtx>({
   const apiErrorMessage = useApiErrorMessage()
   const notify = useNotify()
 
+  const refresh = async () => {
+    if (invalidate === false) {
+      return
+    }
+    await Promise.all([
+      invalidateOwn(queryClient, mutation.mutationKey),
+      ...(invalidate ?? []).map(async (queryKey) => queryClient.invalidateQueries({ queryKey })),
+    ])
+  }
+
   return useMutation({
     ...mutation,
     onSuccess: async (data, variables) => {
-      if (invalidate !== false) {
-        await Promise.all([
-          invalidateOwn(queryClient, mutation.mutationKey),
-          ...(invalidate ?? []).map(async (queryKey) =>
-            queryClient.invalidateQueries({ queryKey }),
-          ),
-        ])
-      }
+      await refresh()
       if (successMessage) {
         notify({
           color: 'teal',
@@ -76,6 +84,9 @@ export function useResourceMutation<TData, TError, TVars, TCtx>({
       await onDone?.(data, variables)
     },
     onError: async (error) => {
+      if (rereadOnError) {
+        await refresh()
+      }
       if (await handleError?.(error)) {
         return
       }

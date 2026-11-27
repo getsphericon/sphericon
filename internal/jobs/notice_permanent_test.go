@@ -50,14 +50,15 @@ func sesReplying(t *testing.T, reply sesReply) messaging.EmailSender {
 // what river stored for it.
 func failedNotice(t *testing.T, reply sesReply) *rivertype.JobRow {
 	t.Helper()
-	ctx := context.Background()
+	// The job client is stopped by a cleanup, which runs after t.Context() is done.
+	ctx := context.WithoutCancel(t.Context())
 	_, sendErr := sesReplying(t, reply).Send(ctx, messaging.EmailMessage{To: "a@example.com", Subject: "s", Text: "x"})
 	require.Error(t, sendErr)
 
 	e := newRiverEnvWithRealQueue(t)
 	e.SystemMail.SetErr(sendErr)
 	require.NoError(t, e.client.Start(ctx))
-	t.Cleanup(func() { cleanup.Report("stop the job client", e.client.Stop(context.Background())) })
+	t.Cleanup(func() { cleanup.Report("stop the job client", e.client.Stop(context.WithoutCancel(t.Context()))) })
 	e.insert(t, jobs.SendNoticeArgs{EventID: "01NOTICE", To: "a@example.com", Subject: "Reset your password", Text: "link"})
 
 	var row *rivertype.JobRow

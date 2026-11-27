@@ -1,7 +1,7 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { z } from 'zod'
 
-import { zSiteSigninError } from '../generated/site/zod.gen.ts'
+import { signinErrorParam } from '../searchSchemas.ts'
 import { isSignedIn } from '../signedIn.ts'
 import { zReturnPath } from '../utils/returnPath.ts'
 import { Route as rootRoute } from './__root.tsx'
@@ -11,7 +11,7 @@ export const Route = createFileRoute('/login')({
     // A same-origin path to return to after signing in.
     redirect: zReturnPath,
     // Why a sign-in with a provider did not start a session (set by the server's callback).
-    error: zSiteSigninError.optional().catch(undefined),
+    error: signinErrorParam,
     // The Second factor challenge of a provider sign-in (set by the server's callback).
     challenge: z.string().optional().catch(undefined),
   }),

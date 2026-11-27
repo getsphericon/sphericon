@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"io"
 	"net/http"
 	"strings"
@@ -21,7 +20,7 @@ func TestSiteSegmentsRequireAuth(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteAnonymous(t)
 
-	_, err := c.SiteSegmentsList(context.Background(), siteapi.SiteSegmentsListParams{})
+	_, err := c.SiteSegmentsList(t.Context(), siteapi.SiteSegmentsListParams{})
 	require.Error(t, err)
 }
 
@@ -31,7 +30,7 @@ func TestSiteSegmentsRequireAuth(t *testing.T) {
 func TestSiteSegmentsScopedToWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// A seeded segment of the owned workspace is fetchable by id (selection by key).
 	seededRes, err := c.SiteSegmentsGet(ctx, siteapi.SiteSegmentsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.SegmentActiveID)})
@@ -95,7 +94,7 @@ func TestSiteSegmentResponsesHaveNoType(t *testing.T) {
 		capture = &bodyCapture{inner: inner}
 		return capture
 	})
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := c.SiteSegmentsGet(ctx, siteapi.SiteSegmentsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: 1})
 	require.NoError(t, err)

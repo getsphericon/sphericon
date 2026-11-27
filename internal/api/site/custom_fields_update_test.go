@@ -23,7 +23,7 @@ func writeFields(t *testing.T, c *siteapi.Client, email string, values map[strin
 	for key, raw := range values {
 		fields[key] = jx.Raw(raw)
 	}
-	_, err := c.SiteContactsCreate(context.Background(), &siteapi.SiteCreateContactInput{
+	_, err := c.SiteContactsCreate(t.Context(), &siteapi.SiteCreateContactInput{
 		Email:        siteapi.NewOptNilEmailAddress(siteapi.EmailAddress(email)),
 		CustomFields: siteapi.NewOptNilJsonObject(fields),
 	}, siteapi.SiteContactsCreateParams{WorkspaceId: fixtures.AcmePublicID})
@@ -33,7 +33,7 @@ func writeFields(t *testing.T, c *siteapi.Client, email string, values map[strin
 // fieldByKey is the Workspace's Custom field with the key, read from the catalogue.
 func fieldByKey(t *testing.T, c *siteapi.Client, workspace siteapi.WorkspaceId, key string) siteapi.SiteCustomFieldResource {
 	t.Helper()
-	list, err := c.SiteCustomFieldsList(context.Background(), siteapi.SiteCustomFieldsListParams{WorkspaceId: workspace})
+	list, err := c.SiteCustomFieldsList(t.Context(), siteapi.SiteCustomFieldsListParams{WorkspaceId: workspace})
 	require.NoError(t, err)
 	field, found := lo.Find(list.Items, func(f siteapi.SiteCustomFieldResource) bool { return f.Key == key })
 	require.Truef(t, found, "no custom field %q", key)
@@ -48,7 +48,7 @@ func updateField(c *siteapi.Client, workspace siteapi.WorkspaceId, id siteapi.En
 func previewDuff(t *testing.T, c *siteapi.Client, leaf string) int32 {
 	t.Helper()
 	def := `{"kind":"group","combinator":"and","entries":[` + leaf + `]}`
-	res, err := c.SiteSegmentsPreview(context.Background(), &siteapi.SitePreviewSegmentInput{
+	res, err := c.SiteSegmentsPreview(t.Context(), &siteapi.SitePreviewSegmentInput{
 		Condition: siteapi.NewOptSegmentConditionInput(testhelper.ConditionInput[siteapi.SegmentConditionInput](t, def)),
 	}, siteapi.SiteSegmentsPreviewParams{WorkspaceId: fixtures.DuffPublicID})
 	require.NoError(t, err)
@@ -171,10 +171,10 @@ func TestSiteCustomFieldGetReadsOneField(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	field := fieldByKey(t, c, fixtures.AcmePublicID, "plan")
 
-	got, err := c.SiteCustomFieldsGet(context.Background(), siteapi.SiteCustomFieldsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: field.ID})
+	got, err := c.SiteCustomFieldsGet(t.Context(), siteapi.SiteCustomFieldsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: field.ID})
 	require.NoError(t, err)
 	assert.Equal(t, field, *got)
 
-	_, err = c.SiteCustomFieldsGet(context.Background(), siteapi.SiteCustomFieldsGetParams{WorkspaceId: fixtures.GlobexPublicID, ID: field.ID})
+	_, err = c.SiteCustomFieldsGet(t.Context(), siteapi.SiteCustomFieldsGetParams{WorkspaceId: fixtures.GlobexPublicID, ID: field.ID})
 	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 }

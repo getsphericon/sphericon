@@ -35904,6 +35904,12 @@ type WorkspaceResource struct {
 	// consent recorded has its opens and clicks tracked. Read-only: only a person changes it, in the
 	// console's Workspace settings.
 	EngagementTrackingDefault EngagementTrackingDecision `json:"engagementTrackingDefault"`
+	// Whether the click of a tracked link adds a Link identity token to a destination on one of
+	// `linkIdentityHosts` (ADR 0160), so the tracker there binds the anonymous visitor to the recipient's
+	// contact. Read-only: only a person changes it, in the console's tracking settings.
+	LinkIdentityEnabled bool `json:"linkIdentityEnabled"`
+	// The hostnames of the Workspace's own sites a Link identity token may be added to a link of.
+	LinkIdentityHosts []string `json:"linkIdentityHosts"`
 	// The IANA time zone every analytics report counts its days in (ADR 0057).
 	Timezone TimeZoneName `json:"timezone"`
 	// The Send cap the platform set on the Workspace, with its sends over the last 24 hours; null when no
@@ -35939,6 +35945,16 @@ func (s *WorkspaceResource) GetRequireConfirmedOptIn() bool {
 // GetEngagementTrackingDefault returns the value of EngagementTrackingDefault.
 func (s *WorkspaceResource) GetEngagementTrackingDefault() EngagementTrackingDecision {
 	return s.EngagementTrackingDefault
+}
+
+// GetLinkIdentityEnabled returns the value of LinkIdentityEnabled.
+func (s *WorkspaceResource) GetLinkIdentityEnabled() bool {
+	return s.LinkIdentityEnabled
+}
+
+// GetLinkIdentityHosts returns the value of LinkIdentityHosts.
+func (s *WorkspaceResource) GetLinkIdentityHosts() []string {
+	return s.LinkIdentityHosts
 }
 
 // GetTimezone returns the value of Timezone.
@@ -35984,6 +36000,16 @@ func (s *WorkspaceResource) SetRequireConfirmedOptIn(val bool) {
 // SetEngagementTrackingDefault sets the value of EngagementTrackingDefault.
 func (s *WorkspaceResource) SetEngagementTrackingDefault(val EngagementTrackingDecision) {
 	s.EngagementTrackingDefault = val
+}
+
+// SetLinkIdentityEnabled sets the value of LinkIdentityEnabled.
+func (s *WorkspaceResource) SetLinkIdentityEnabled(val bool) {
+	s.LinkIdentityEnabled = val
+}
+
+// SetLinkIdentityHosts sets the value of LinkIdentityHosts.
+func (s *WorkspaceResource) SetLinkIdentityHosts(val []string) {
+	s.LinkIdentityHosts = val
 }
 
 // SetTimezone sets the value of Timezone.

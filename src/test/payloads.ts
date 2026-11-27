@@ -67,6 +67,8 @@ export function workspace(extra: Partial<SiteWorkspaceResource> = {}): SiteWorks
     postalAddress: '1 Test Street\nTestville',
     requireConfirmedOptIn: false,
     engagementTrackingDefault: 'track',
+    linkIdentityEnabled: false,
+    linkIdentityHosts: [],
     timezone: 'UTC',
     accountLinkAvailable: false,
     permissions: [],

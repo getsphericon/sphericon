@@ -1,7 +1,6 @@
 package outboundmessages_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -29,12 +28,12 @@ func limited(t *testing.T, env *testhelper.TestEnv, perSecond, perDay *int) {
 	if perDay != nil {
 		upd.SetMaxPerDay(*perDay)
 	}
-	upd.ExecX(context.Background())
+	upd.ExecX(t.Context())
 }
 
 func send(t *testing.T, m *outboundmessages.Module, env *testhelper.TestEnv, key string) outboundmessages.Result {
 	t.Helper()
-	res, err := m.Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), marketing(t, env, key, fixtures.ContactAliceID))
+	res, err := m.Send(t.Context(), env.DB.Scoped(fixtures.AcmeID), marketing(t, env, key, fixtures.ContactAliceID))
 	require.NoError(t, err)
 	return res
 }
@@ -70,7 +69,7 @@ func TestDeferredSendLeavesNoClaimAndSendsExactlyOnceAfterTheWait(t *testing.T) 
 	require.Equal(t, outboundmessages.Deferral, res.Outcome)
 	assert.Equal(t, time.Second, res.Wait)
 
-	n, err := acme(env).OutboundMessage().Query().Count(context.Background())
+	n, err := acme(env).OutboundMessage().Query().Count(t.Context())
 	require.NoError(t, err)
 	before := n
 	// The deferred key left no row: no claim, so nothing for a retry to trip on.
@@ -79,7 +78,7 @@ func TestDeferredSendLeavesNoClaimAndSendsExactlyOnceAfterTheWait(t *testing.T) 
 	assert.Equal(t, outboundmessages.Sent, retry.Outcome)
 	assert.False(t, retry.Replayed)
 
-	n, err = acme(env).OutboundMessage().Query().Count(context.Background())
+	n, err = acme(env).OutboundMessage().Query().Count(t.Context())
 	require.NoError(t, err)
 	assert.Equal(t, before+1, n, "exactly one message row for the deferred key")
 	assert.Len(t, env.CustomerMail.Messages(), 2)
@@ -125,7 +124,7 @@ func TestSkippedAndHeldMessagesSpendNoCapacity(t *testing.T) {
 	c := startClock()
 	m := newModule(env, c.Now)
 	limited(t, env, new(1), nil)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// Skipped: the destination is suppressed.
 	sup := marketing(t, env, "bc:sup", fixtures.ContactAliceID)
@@ -152,7 +151,7 @@ func TestNoLimitMeansNoLimiterStateAndNoDeferral(t *testing.T) {
 	for _, key := range []string{"bc:1", "bc:2", "bc:3", "bc:4", "bc:5"} {
 		assert.Equal(t, outboundmessages.Sent, send(t, m, env, key).Outcome)
 	}
-	n, err := env.DB.ProviderLimiter.Query().Where(providerlimiter.IntegrationID(fixtures.IntegrationAcmeDefaultID)).Count(context.Background())
+	n, err := env.DB.ProviderLimiter.Query().Where(providerlimiter.IntegrationID(fixtures.IntegrationAcmeDefaultID)).Count(t.Context())
 	require.NoError(t, err)
 	assert.Zero(t, n)
 }
@@ -166,7 +165,7 @@ func TestTransactionalSendsAreNeverDeferredEvenWithTheLimitSpent(t *testing.T) {
 	require.Equal(t, outboundmessages.Sent, send(t, m, env, "bc:1").Outcome)
 	require.Equal(t, outboundmessages.Deferral, send(t, m, env, "bc:2").Outcome)
 	for _, key := range []string{"tx:1", "tx:2", "tx:3"} {
-		res, err := m.Send(context.Background(), acme(env), transactional(key, "a@example.com"))
+		res, err := m.Send(t.Context(), acme(env), transactional(key, "a@example.com"))
 		require.NoError(t, err)
 		assert.Equal(t, outboundmessages.Sent, res.Outcome)
 		assert.Zero(t, res.Wait)
@@ -178,7 +177,7 @@ func TestTransactionalSendsSpendCapacityAndDelayLaterMarketingSends(t *testing.T
 	c := startClock()
 	m := newModule(env, c.Now)
 	limited(t, env, new(1), nil)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// Three Transactional sends drive the per-second bucket to minus two tokens.
 	for _, key := range []string{"tx:1", "tx:2", "tx:3"} {
@@ -204,7 +203,7 @@ func TestTransactionalSendsCountTowardTheDailyBucketToo(t *testing.T) {
 	limited(t, env, nil, new(2))
 
 	for _, key := range []string{"tx:1", "tx:2", "tx:3"} {
-		res, err := m.Send(context.Background(), acme(env), transactional(key, "a@example.com"))
+		res, err := m.Send(t.Context(), acme(env), transactional(key, "a@example.com"))
 		require.NoError(t, err)
 		require.Equal(t, outboundmessages.Sent, res.Outcome)
 	}
@@ -219,7 +218,7 @@ func TestTransactionalThatIsSkippedSpendsNoCapacity(t *testing.T) {
 	m := newModule(env, c.Now)
 	limited(t, env, new(1), nil)
 
-	res, err := m.Send(context.Background(), acme(env), transactional("tx:sup", suppressd))
+	res, err := m.Send(t.Context(), acme(env), transactional("tx:sup", suppressd))
 	require.NoError(t, err)
 	require.Equal(t, outboundmessages.Skipped, res.Outcome)
 
@@ -231,10 +230,10 @@ func TestUnlimitedIntegrationKeepsNoStateForTransactional(t *testing.T) {
 	c := startClock()
 	m := newModule(env, c.Now)
 
-	res, err := m.Send(context.Background(), acme(env), transactional("tx:1", "a@example.com"))
+	res, err := m.Send(t.Context(), acme(env), transactional("tx:1", "a@example.com"))
 	require.NoError(t, err)
 	require.Equal(t, outboundmessages.Sent, res.Outcome)
-	n, err := env.DB.ProviderLimiter.Query().Where(providerlimiter.IntegrationID(fixtures.IntegrationAcmeDefaultID)).Count(context.Background())
+	n, err := env.DB.ProviderLimiter.Query().Where(providerlimiter.IntegrationID(fixtures.IntegrationAcmeDefaultID)).Count(t.Context())
 	require.NoError(t, err)
 	assert.Zero(t, n)
 }
@@ -247,7 +246,7 @@ func TestAutomationAndBroadcastSendsShareOneLimit(t *testing.T) {
 
 	auto := marketing(t, env, "auto:1", fixtures.ContactAliceID)
 	auto.Ref = outboundmessages.AutomationRef{AutomationID: fixtures.AutomationHoldDemoID, VersionID: fixtures.AutomationHoldDemoVersionID, StepID: "1c7f087b-436d-5b5a-b11e-da4433bba846"}
-	res, err := m.Send(context.Background(), acme(env), auto)
+	res, err := m.Send(t.Context(), acme(env), auto)
 	require.NoError(t, err)
 	require.Equal(t, outboundmessages.Sent, res.Outcome)
 
@@ -277,18 +276,18 @@ func TestSentMessageIsStampedWithItsIntegrationAndCountsAsUsage(t *testing.T) {
 	c := startClock()
 	m := newModule(env, c.Now)
 
-	before, err := providerlimit.New(time.Now).Usage(context.Background(), acme(env))
+	before, err := providerlimit.New(time.Now).Usage(t.Context(), acme(env))
 	require.NoError(t, err)
 
 	res := send(t, m, env, "bc:usage")
 	require.Equal(t, outboundmessages.Sent, res.Outcome)
 
-	msg, err := acme(env).OutboundMessage().Get(context.Background(), res.MessageID)
+	msg, err := acme(env).OutboundMessage().Get(t.Context(), res.MessageID)
 	require.NoError(t, err)
 	require.NotNil(t, msg.IntegrationID, "the message records the Integration it went through")
 	assert.Equal(t, int64(fixtures.IntegrationAcmeDefaultID), *msg.IntegrationID)
 
-	after, err := providerlimit.New(time.Now).Usage(context.Background(), acme(env))
+	after, err := providerlimit.New(time.Now).Usage(t.Context(), acme(env))
 	require.NoError(t, err)
 	assert.Equal(t, before[fixtures.IntegrationAcmeDefaultID]+1, after[fixtures.IntegrationAcmeDefaultID])
 }

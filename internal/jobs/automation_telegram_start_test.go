@@ -28,14 +28,6 @@ func visitorChat(t *testing.T, env *testhelper.TestEnv, bot testhelper.TelegramB
 	env.StartTelegram(t, bot, from, from, link.URL)
 }
 
-func identifyAs(t *testing.T, env *testhelper.TestEnv, visitorID, email string) {
-	t.Helper()
-	_, err := env.CollectAcme(t).CollectIdentifyCreate(t.Context(), &collectapi.CollectIdentifyInput{
-		VisitorId: visitorID, Email: collectapi.NewOptNilEmailAddress(collectapi.EmailAddress(email)),
-	})
-	require.NoError(t, err)
-}
-
 // A chat the Visitor started is not the Contact's after a claimed Identify of the Visitor
 // (ADR 0171): an Automation step finds no Destination.
 func TestATelegramStepDoesNotReachAContactThroughAClaimedVisitorsChat(t *testing.T) {
@@ -43,7 +35,7 @@ func TestATelegramStepDoesNotReachAContactThroughAClaimedVisitorsChat(t *testing
 	bot := env.AcmeTelegram(t)
 	env.MakeDefaultTelegram(t, bot)
 	visitorChat(t, env, bot, "dev-step", 555031)
-	identifyAs(t, env, "dev-step", fixtures.ContactBobEmail)
+	env.IdentifyVisitor(t, "dev-step", fixtures.ContactBobEmail)
 	runID := int64(fixtures.AutomationRunJobsTelegramWelcomeBackBobID)
 	queueStep(t, env, runID)
 

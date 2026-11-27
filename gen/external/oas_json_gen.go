@@ -63941,6 +63941,18 @@ func (s *WorkspaceResource) encodeFields(e *jx.Encoder) {
 		s.EngagementTrackingDefault.Encode(e)
 	}
 	{
+		e.FieldStart("linkIdentityEnabled")
+		e.Bool(s.LinkIdentityEnabled)
+	}
+	{
+		e.FieldStart("linkIdentityHosts")
+		e.ArrStart()
+		for _, elem := range s.LinkIdentityHosts {
+			e.Str(elem)
+		}
+		e.ArrEnd()
+	}
+	{
 		e.FieldStart("timezone")
 		s.Timezone.Encode(e)
 	}
@@ -63960,16 +63972,18 @@ func (s *WorkspaceResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfWorkspaceResource = [9]string{
-	0: "id",
-	1: "name",
-	2: "postalAddress",
-	3: "requireConfirmedOptIn",
-	4: "engagementTrackingDefault",
-	5: "timezone",
-	6: "sendCap",
-	7: "sendingRules",
-	8: "revision",
+var jsonFieldsNameOfWorkspaceResource = [11]string{
+	0:  "id",
+	1:  "name",
+	2:  "postalAddress",
+	3:  "requireConfirmedOptIn",
+	4:  "engagementTrackingDefault",
+	5:  "linkIdentityEnabled",
+	6:  "linkIdentityHosts",
+	7:  "timezone",
+	8:  "sendCap",
+	9:  "sendingRules",
+	10: "revision",
 }
 
 // Decode decodes WorkspaceResource from json.
@@ -64037,8 +64051,40 @@ func (s *WorkspaceResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"engagementTrackingDefault\"")
 			}
-		case "timezone":
+		case "linkIdentityEnabled":
 			requiredBitSet[0] |= 1 << 5
+			if err := func() error {
+				v, err := d.Bool()
+				s.LinkIdentityEnabled = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"linkIdentityEnabled\"")
+			}
+		case "linkIdentityHosts":
+			requiredBitSet[0] |= 1 << 6
+			if err := func() error {
+				s.LinkIdentityHosts = make([]string, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem string
+					v, err := d.Str()
+					elem = string(v)
+					if err != nil {
+						return err
+					}
+					s.LinkIdentityHosts = append(s.LinkIdentityHosts, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"linkIdentityHosts\"")
+			}
+		case "timezone":
+			requiredBitSet[0] |= 1 << 7
 			if err := func() error {
 				if err := s.Timezone.Decode(d); err != nil {
 					return err
@@ -64058,7 +64104,7 @@ func (s *WorkspaceResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"sendCap\"")
 			}
 		case "sendingRules":
-			requiredBitSet[0] |= 1 << 7
+			requiredBitSet[1] |= 1 << 1
 			if err := func() error {
 				if err := s.SendingRules.Decode(d); err != nil {
 					return err
@@ -64068,7 +64114,7 @@ func (s *WorkspaceResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"sendingRules\"")
 			}
 		case "revision":
-			requiredBitSet[1] |= 1 << 0
+			requiredBitSet[1] |= 1 << 2
 			if err := func() error {
 				if err := s.Revision.Decode(d); err != nil {
 					return err
@@ -64087,8 +64133,8 @@ func (s *WorkspaceResource) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [2]uint8{
-		0b10111111,
-		0b00000001,
+		0b11111111,
+		0b00000110,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

@@ -11,9 +11,10 @@ import (
 )
 
 // Load replaces the contents of every table the YAML files of dir name with their rows, through
-// the fixture library and its templating (relative dates, load-time encryption with cipher). The
-// sequences are reset to 100000 afterwards, so the explicit fixture ids stay clear of the rows an
-// app inserts.
+// the fixture library and its templating (relative dates, load-time encryption with cipher). Every
+// sequence is then moved to the larger of 100000 and the highest id of its table, so the explicit
+// fixture ids stay clear of the rows an app inserts, and so do the rows that survive the load in a
+// table the fixtures do not own (keepSequencesAheadOfRows).
 //
 // "Now" is the database's clock, not Go's: the first test of a package may run inside a
 // testing/synctest bubble, where time.Now() starts in the year 2000, and every fixture loaded
@@ -23,15 +24,9 @@ func Load(ctx context.Context, sqlDB *sql.DB, cipher *secrets.Cipher, dir string
 }
 
 // Seed is Load into a database that is not a test one (the development database), which the
-// fixture library refuses otherwise. A running dev stack keeps rows in tables the fixtures do not
-// own, so every sequence is then moved past the highest id of its table.
+// fixture library refuses otherwise.
 func Seed(ctx context.Context, sqlDB *sql.DB, cipher *secrets.Cipher, dir string) error {
-	if err := load(ctx, sqlDB, cipher, dir, testfixtures.DangerousSkipTestDatabaseCheck()); err != nil {
-		return err
-	}
-	// raw sql: sequences are database state, which ent has no API for
-	_, err := sqlDB.ExecContext(ctx, keepSequencesAheadOfRows)
-	return err
+	return load(ctx, sqlDB, cipher, dir, testfixtures.DangerousSkipTestDatabaseCheck())
 }
 
 // load is Load with the extra options of the fixture library opts.
@@ -58,13 +53,19 @@ func load(ctx context.Context, sqlDB *sql.DB, cipher *secrets.Cipher, dir string
 	if err != nil {
 		return err
 	}
-	return loader.Load()
+	if err := loader.Load(); err != nil {
+		return err
+	}
+	// raw sql: sequences are database state, which ent has no API for
+	_, err = sqlDB.ExecContext(ctx, keepSequencesAheadOfRows)
+	return err
 }
 
 // keepSequencesAheadOfRows undoes what ResetSequencesTo does to a table the fixtures do not own, such as
-// River's job queue: a running dev stack has rows there that survive the load, and a sequence set back
-// to 100000 would hand out ids they already hold ("duplicate key river_job_pkey"), so no periodic job
-// could be enqueued. Every sequence ends up at the larger of 100000 and the highest id in its table.
+// River's job queue: a running dev stack, or a test that committed its jobs and died before its
+// cleanup, leaves rows there that survive the load, and a sequence set back to 100000 would hand out
+// ids they already hold ("duplicate key river_job_pkey"). Every sequence ends up at the larger of
+// 100000 and the highest id in its table.
 const keepSequencesAheadOfRows = `DO $$
 DECLARE r record;
 BEGIN

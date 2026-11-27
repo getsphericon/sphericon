@@ -1,7 +1,6 @@
 package outboundmessages_test
 
 import (
-	"context"
 	"errors"
 	"testing"
 	"time"
@@ -43,7 +42,7 @@ func TestAClaimTakenOverKeepsTheWaitOfTheAttemptThatTookIt(t *testing.T) {
 	m = outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), senders{sender: s}, messagetoken.New("s", "http://local", time.Now), env.OutboundModules(env.Bus, time.Now), outboundmessages.Deps{}, outboundmessages.Config{}, time.Now)
 	first := automationEmailTo(t, env, fixtures.ContactAliceID, stepID, outboundmessages.Waited{})
 
-	_, err := m.Send(context.Background(), acme(env), first)
+	_, err := m.Send(t.Context(), acme(env), first)
 
 	require.ErrorIs(t, err, outboundmessages.ErrInProgress, "the first attempt lost its claim")
 	require.NoError(t, takenErr)

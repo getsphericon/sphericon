@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -20,25 +19,25 @@ func TestSiteWorkspaceSettingsOnAStaleRevisionAreRefused(t *testing.T) {
 	ws := siteapi.WorkspaceId(fixtures.AcmePublicID)
 	for name, change := range map[string]func(c *siteapi.Client, revision siteapi.Revision, first bool) error{
 		"rename": func(c *siteapi.Client, revision siteapi.Revision, first bool) error {
-			_, err := c.SiteWorkspacesUpdate(context.Background(), &siteapi.SiteUpdateWorkspaceInput{
+			_, err := c.SiteWorkspacesUpdate(t.Context(), &siteapi.SiteUpdateWorkspaceInput{
 				Revision: revision, Name: siteapi.Name(map[bool]string{true: "First", false: "Second"}[first]),
 			}, siteapi.SiteWorkspacesUpdateParams{WorkspaceId: ws})
 			return err
 		},
 		"time zone": func(c *siteapi.Client, revision siteapi.Revision, first bool) error {
-			_, err := c.SiteWorkspacesSetTimezone(context.Background(), &siteapi.SiteWorkspaceTimezoneInput{
+			_, err := c.SiteWorkspacesSetTimezone(t.Context(), &siteapi.SiteWorkspaceTimezoneInput{
 				Revision: revision, Timezone: siteapi.TimeZoneName(map[bool]string{true: "Europe/Berlin", false: "Asia/Tokyo"}[first]),
 			}, siteapi.SiteWorkspacesSetTimezoneParams{WorkspaceId: ws})
 			return err
 		},
 		"revenue settings": func(c *siteapi.Client, revision siteapi.Revision, first bool) error {
-			_, err := c.SiteWorkspacesUpdateRevenueSettings(context.Background(), &siteapi.SiteUpdateRevenueSettingsInput{
+			_, err := c.SiteWorkspacesUpdateRevenueSettings(t.Context(), &siteapi.SiteUpdateRevenueSettingsInput{
 				Revision: revision, AttributionWindowDays: siteapi.NewOptAttributionWindowDays(siteapi.AttributionWindowDays(map[bool]int32{true: 7, false: 9}[first])),
 			}, siteapi.SiteWorkspacesUpdateRevenueSettingsParams{WorkspaceId: ws})
 			return err
 		},
 		"domain join": func(c *siteapi.Client, revision siteapi.Revision, first bool) error {
-			_, err := c.SiteDomainJoinSet(context.Background(), &siteapi.SiteSetDomainJoinInput{
+			_, err := c.SiteDomainJoinSet(t.Context(), &siteapi.SiteSetDomainJoinInput{
 				Revision: revision, Enabled: first,
 			}, siteapi.SiteDomainJoinSetParams{WorkspaceId: ws})
 			return err
@@ -47,14 +46,14 @@ func TestSiteWorkspaceSettingsOnAStaleRevisionAreRefused(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			env := testhelper.Setup(t)
 			c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-			read := siteapi.Revision(env.WorkspaceRevision(context.Background(), t, fixtures.AcmePublicID))
+			read := siteapi.Revision(env.WorkspaceRevision(t.Context(), t, fixtures.AcmePublicID))
 			require.NoError(t, change(c, read, true))
-			after := env.DB.Workspace.GetX(context.Background(), fixtures.AcmeID)
+			after := env.DB.Workspace.GetX(t.Context(), fixtures.AcmeID)
 
 			refused := testhelper.SiteRefusal(t, change(c, read, false), http.StatusConflict)
 
 			assert.Equal(t, siteapi.ProblemCodeRevisionChanged, refused.Code.Value)
-			now := env.DB.Workspace.GetX(context.Background(), fixtures.AcmeID)
+			now := env.DB.Workspace.GetX(t.Context(), fixtures.AcmeID)
 			assert.Equal(t, after.Revision, now.Revision, "the first change stays")
 			assert.True(t, after.UpdatedAt.Equal(now.UpdatedAt), "nothing is written")
 		})
@@ -65,9 +64,9 @@ func TestSiteWorkspaceSettingsOnAStaleRevisionAreRefused(t *testing.T) {
 func TestSiteWorkspaceSaveThatChangesNothingKeepsTheRevision(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	before := env.DB.Workspace.GetX(context.Background(), fixtures.AcmeID)
+	before := env.DB.Workspace.GetX(t.Context(), fixtures.AcmeID)
 
-	saved, err := c.SiteWorkspacesUpdate(context.Background(), &siteapi.SiteUpdateWorkspaceInput{
+	saved, err := c.SiteWorkspacesUpdate(t.Context(), &siteapi.SiteUpdateWorkspaceInput{
 		Revision: siteapi.Revision(before.Revision), Name: siteapi.Name(before.Name), PostalAddress: siteapi.NewOptString(before.PostalAddress),
 	}, siteapi.SiteWorkspacesUpdateParams{WorkspaceId: fixtures.AcmePublicID})
 
@@ -80,7 +79,7 @@ func TestSiteWorkspaceSaveThatChangesNothingKeepsTheRevision(t *testing.T) {
 // Workspace's row, so a settings form open meanwhile still saves.
 func TestSiteWorkspaceStandingLeavesTheWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	before := env.DB.Workspace.GetX(ctx, fixtures.AcmeID)
 	standing := env.DB.Workspace.QueryStanding(before).OnlyX(ctx)

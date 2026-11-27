@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 	"time"
@@ -24,7 +23,7 @@ const (
 func setupChecklist(t *testing.T, email string, workspaceID siteapi.WorkspaceId) *siteapi.SiteSetupProgress {
 	t.Helper()
 	c := testhelper.Setup(t).SiteActor(t, email)
-	out, err := c.SiteSetupChecklistGet(context.Background(), siteapi.SiteSetupChecklistGetParams{WorkspaceId: workspaceID})
+	out, err := c.SiteSetupChecklistGet(t.Context(), siteapi.SiteSetupChecklistGetParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	return out
 }
@@ -32,7 +31,7 @@ func setupChecklist(t *testing.T, email string, workspaceID siteapi.WorkspaceId)
 func TestSiteSetupChecklistRequiresAuth(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	_, err := env.SiteAnonymous(t).SiteSetupChecklistGet(context.Background(), siteapi.SiteSetupChecklistGetParams{WorkspaceId: fixtures.AcmePublicID})
+	_, err := env.SiteAnonymous(t).SiteSetupChecklistGet(t.Context(), siteapi.SiteSetupChecklistGetParams{WorkspaceId: fixtures.AcmePublicID})
 	require.Error(t, err)
 }
 
@@ -40,7 +39,7 @@ func TestSiteSetupChecklistHidesAForeignWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	_, err := c.SiteSetupChecklistGet(context.Background(), siteapi.SiteSetupChecklistGetParams{WorkspaceId: fixtures.GlobexPublicID})
+	_, err := c.SiteSetupChecklistGet(t.Context(), siteapi.SiteSetupChecklistGetParams{WorkspaceId: fixtures.GlobexPublicID})
 	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 }
 
@@ -103,7 +102,7 @@ func TestSiteSetupChecklistAsksForAnEmailProviderNotATelegramBot(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.SabreOwnerSueEmail)
 
-	got, err := c.SiteSetupChecklistGet(context.Background(), siteapi.SiteSetupChecklistGetParams{WorkspaceId: fixtures.SabrePublicID})
+	got, err := c.SiteSetupChecklistGet(t.Context(), siteapi.SiteSetupChecklistGetParams{WorkspaceId: fixtures.SabrePublicID})
 	require.NoError(t, err)
 
 	assert.Equal(t, todo, got.Steps.Integration)

@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -22,7 +21,7 @@ const tagIsVip = `{"kind":"group","combinator":"and","entries":[{"kind":"propert
 func TestExternalAutomationExitAndGoalEvents(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeAutomationsRead, apitokens.ScopeAutomationsWrite)
-	ctx := context.Background()
+	ctx := t.Context()
 	vip := testhelper.ConditionInput[externalapi.EventFilterInput](t, tagIsVip)
 
 	created, err := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
@@ -41,7 +40,7 @@ func TestExternalAutomationExitAndGoalEvents(t *testing.T) {
 func TestExternalAutomationEndingsEditOfAPublishedAutomationWritesTheDraft(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeAutomationsRead, apitokens.ScopeAutomationsWrite)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	res, err := c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Revision: externalapi.Revision(env.AutomationRevision(ctx, t, int64(entityIDString(fixtures.AutomationPaymentRecoveryID)))),
 		ExitEvents: []externalapi.EventMatcherInput{testhelper.ExternalMatcher("card_removed")},

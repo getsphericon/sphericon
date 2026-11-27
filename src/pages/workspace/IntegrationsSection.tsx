@@ -6,7 +6,6 @@ import {
   Checkbox,
   Code,
   Collapse,
-  CopyButton,
   Group,
   Menu,
   Modal,
@@ -28,11 +27,12 @@ import {
   IconPlugConnected,
   IconServer,
 } from '@tabler/icons-react'
-import { useQuery, useSuspenseQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { DataTable } from 'mantine-datatable'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { CopyTextButton } from '../../components/CopyTextButton.tsx'
 import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
 import { TableSkeleton } from '../../components/Skeletons.tsx'
@@ -51,7 +51,7 @@ import type {
 import { zIntegrationChannel, zIntegrationProvider } from '../../generated/site/zod.gen.ts'
 import { useAuditLogOffered } from '../../hooks/useAuditLogOffered.ts'
 import { useDeleteResource } from '../../hooks/useDeleteResource.ts'
-import { invalidateOwn, useResourceMutation } from '../../hooks/useResourceMutation.ts'
+import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { AUDIT_TARGET_INTEGRATION } from '../../utils/auditFilter.ts'
 import { can } from '../../utils/permissions.ts'
 import type { FieldColumn } from '../../utils/tableColumns.ts'
@@ -209,13 +209,7 @@ function IntegrationsList({
               <Text size="sm">{t(($) => $.settings.integrations.twilioCallbacks.body)}</Text>
               <Code block>{record.hookUrl}</Code>
               <Group>
-                <CopyButton value={record.hookUrl}>
-                  {({ copied, copy }) => (
-                    <Button size="compact-sm" variant="light" onClick={copy}>
-                      {copied ? t(($) => $.settings.copied) : t(($) => $.settings.copy)}
-                    </Button>
-                  )}
-                </CopyButton>
+                <CopyTextButton value={record.hookUrl} size="compact-sm" />
               </Group>
             </Stack>
           </Alert>
@@ -412,15 +406,11 @@ export function IntegrationsSection({
 
   // Promoting a provider clears the channel's current default on the server. It is made on the
   // revision the row shows (ADR 0119): a refusal says why and reads the list again.
-  const queryClient = useQueryClient()
   const defaultMutation = useResourceMutation({
     mutation: siteIntegrationsUpdateMutation(),
     successMessage: t(($) => $.settings.integrations.defaultChanged),
     errorTitle: t(($) => $.settings.integrations.defaultError),
-    handleError: async () => {
-      await invalidateOwn(queryClient, siteIntegrationsUpdateMutation().mutationKey)
-      return false
-    },
+    rereadOnError: true,
   })
 
   const providerLabels = {

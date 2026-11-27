@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 	"time"
@@ -23,7 +22,7 @@ import (
 
 func TestExternalAuthMeDescribesTheCallingToken(t *testing.T) {
 	env := testhelper.Setup(t)
-	info, err := env.ExternalAnchor(t).AuthMeGet(context.Background())
+	info, err := env.ExternalAnchor(t).AuthMeGet(t.Context())
 	require.NoError(t, err)
 	assert.Equal(t, fixtures.AnchorTokenName, info.Name)
 	assert.EqualValues(t, fixtures.AnchorTokenID, int64(info.ID))
@@ -31,13 +30,13 @@ func TestExternalAuthMeDescribesTheCallingToken(t *testing.T) {
 
 func TestExternalAuthMeRequiresACredential(t *testing.T) {
 	env := testhelper.Setup(t)
-	_, err := env.ExternalAnonymous(t).AuthMeGet(context.Background())
+	_, err := env.ExternalAnonymous(t).AuthMeGet(t.Context())
 	testhelper.ExternalRefusal(t, err, http.StatusUnauthorized)
 }
 
 func TestExternalTokensOfADeletedWorkspaceAreRefused(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	env.DeleteWorkspace(t, fixtures.AcmeID, time.Now())
 
 	_, err := env.ExternalAnchor(t).AuthMeGet(ctx)
@@ -52,7 +51,7 @@ func TestExternalTokensOfADeletedWorkspaceAreRefused(t *testing.T) {
 
 func TestExternalAuthTokensListIsWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	list, err := env.ExternalAnchor(t).AuthTokensList(ctx)
 	require.NoError(t, err)
@@ -75,7 +74,7 @@ func TestExternalAuthTokensListIsWorkspaceScoped(t *testing.T) {
 
 func TestExternalAuthTokensListIsInCreationOrder(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	list, err := env.ExternalAnchor(t).AuthTokensList(ctx)
 	require.NoError(t, err)
@@ -91,7 +90,7 @@ func TestExternalAuthTokensListIsInCreationOrder(t *testing.T) {
 
 func TestExternalAuthTokensCreate(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.ExternalAnchor(t)
 
 	expires := time.Now().Add(24 * time.Hour).UTC().Truncate(time.Second)
@@ -123,7 +122,7 @@ func TestExternalAuthTokensCreate(t *testing.T) {
 
 func TestExternalAuthTokensDelete(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.ExternalAnchor(t)
 	victim := entityIDString(fixtures.ContractTokenID)
 
@@ -146,7 +145,7 @@ func TestExternalAuthTokensDelete(t *testing.T) {
 
 func TestExternalAuthTokensDeleteCannotTouchAnotherWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	err := env.ExternalAnchor(t).AuthTokensDelete(ctx, externalapi.AuthTokensDeleteParams{ID: entityIDString(fixtures.TokenGlobexID)})
 	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
@@ -160,7 +159,7 @@ func TestExternalAuthTokensDeleteCannotTouchAnotherWorkspace(t *testing.T) {
 // oldest Workspace (apitokens.Module.Bootstrap).
 func TestExternalAuthTokensBootstrap(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithConfig(func(c *config.Config) { c.BootstrapToken = "bootstrap-secret" }))
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.ExternalAnonymous(t)
 	in := &externalapi.CreateApiTokenInput{Name: "first", Scopes: []externalapi.ApiTokenScope{externalapi.ApiTokenScopeTokensWrite}}
 
@@ -179,7 +178,7 @@ func TestExternalAuthTokensBootstrap(t *testing.T) {
 func TestExternalAuthTokensBootstrapDisabledWithoutConfiguredSecret(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	_, err := env.ExternalAnonymous(t).AuthTokensBootstrap(context.Background(), &externalapi.CreateApiTokenInput{Name: "first"},
+	_, err := env.ExternalAnonymous(t).AuthTokensBootstrap(t.Context(), &externalapi.CreateApiTokenInput{Name: "first"},
 		externalapi.AuthTokensBootstrapParams{XBootstrapToken: "guess"})
 
 	testhelper.ExternalRefusal(t, err, http.StatusUnauthorized)
@@ -187,7 +186,7 @@ func TestExternalAuthTokensBootstrapDisabledWithoutConfiguredSecret(t *testing.T
 
 func TestExternalAuthTokensCreateCannotGrantAScopeTheCallerLacks(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.ExternalScoped(t, apitokens.ScopeTokensWrite, apitokens.ScopeContactsRead)
 
 	before, err := env.DB.ApiToken.Query().Count(ctx)
@@ -206,7 +205,7 @@ func TestExternalAuthTokensCreateCannotGrantAScopeTheCallerLacks(t *testing.T) {
 
 func TestExternalAuthTokensCreateRefusesABlankNameWith422(t *testing.T) {
 	env := testhelper.Setup(t)
-	_, err := env.ExternalAnchor(t).AuthTokensCreate(context.Background(), &externalapi.CreateApiTokenInput{
+	_, err := env.ExternalAnchor(t).AuthTokensCreate(t.Context(), &externalapi.CreateApiTokenInput{
 		Name:   "   ",
 		Scopes: []externalapi.ApiTokenScope{externalapi.ApiTokenScopeContactsRead},
 	})
@@ -215,7 +214,7 @@ func TestExternalAuthTokensCreateRefusesABlankNameWith422(t *testing.T) {
 
 func TestExternalAuthTokensDeleteTwiceIsNotFound(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.ExternalAnchor(t)
 	id := entityIDString(fixtures.ContractTokenID)
 

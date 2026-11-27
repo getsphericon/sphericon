@@ -1003,7 +1003,8 @@ var contentPackage = do.Package(
 	}),
 	do.Lazy(func(i do.Injector) (*visitoridentification.UseCase, error) {
 		return visitoridentification.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*contacts.Module](i), do.MustInvoke[*visitors.Module](i),
-			do.MustInvoke[*identitytokens.Module](i), do.MustInvoke[*bindings.Module](i), do.MustInvoke[*bindings.Owners](i), do.MustInvoke[Clock](i)), nil
+			do.MustInvoke[*identitytokens.Module](i), do.MustInvoke[*bindings.Module](i), do.MustInvoke[*bindings.Owners](i),
+			do.MustInvoke[*messagetoken.Tracker](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*unsubscriberecording.UseCase, error) {
 		return unsubscriberecording.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*outboundmessages.Module](i), do.MustInvoke[*automations.Module](i),

@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -17,7 +16,7 @@ import (
 
 func TestExternalTagsRemoveForAnUnknownOrForeignContactIsNotFound(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.ExternalScoped(t, apitokens.ScopeContactsRead, apitokens.ScopeContactsWrite)
 
 	for name, id := range map[string]externalapi.EntityId{
@@ -33,7 +32,7 @@ func TestExternalTagsRemoveForAnUnknownOrForeignContactIsNotFound(t *testing.T) 
 
 func TestExternalContactsCreatePersistsCustomFields(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.ExternalScoped(t, apitokens.ScopeContactsRead, apitokens.ScopeContactsWrite)
 
 	created, err := c.ContactsCreate(ctx, &externalapi.CreateContactInput{

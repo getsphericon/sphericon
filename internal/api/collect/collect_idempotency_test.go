@@ -1,7 +1,6 @@
 package collect_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -32,7 +31,7 @@ func countAction(t *testing.T, env *testhelper.TestEnv, action string) int {
 func TestARetriedEventIsCountedOnce(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.CollectAcme(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	batch := &collectapi.CollectEventsInput{Events: []collectapi.CollectEventInput{clientEvent("evt-1", "idem_after_delivery")}}
 
 	err := c.CollectEventsCreate(ctx, batch)

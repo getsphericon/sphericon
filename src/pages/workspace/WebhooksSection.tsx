@@ -4,7 +4,6 @@ import {
   Alert,
   Badge,
   Button,
-  CopyButton,
   Group,
   Menu,
   Modal,
@@ -18,11 +17,12 @@ import {
 import { useForm } from '@mantine/form'
 import { useDisclosure } from '@mantine/hooks'
 import { modals } from '@mantine/modals'
-import { useSuspenseQuery, useQueryClient } from '@tanstack/react-query'
+import { useSuspenseQuery } from '@tanstack/react-query'
 import { DataTable } from 'mantine-datatable'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { CopyTextButton } from '../../components/CopyTextButton.tsx'
 import { DetailsBadge } from '../../components/DetailsBadge.tsx'
 import { EventActionNames, EventActionOption } from '../../components/EventActionName.tsx'
 import { QueryBoundary } from '../../components/QueryBoundary.tsx'
@@ -47,7 +47,7 @@ import { useAuditLogOffered } from '../../hooks/useAuditLogOffered.ts'
 import { useConfirmation } from '../../hooks/useConfirmation.tsx'
 import { useEventActionLabel } from '../../hooks/useEventActionLabel.ts'
 import { useFormat } from '../../hooks/useFormat.ts'
-import { invalidateOwn, useResourceMutation } from '../../hooks/useResourceMutation.ts'
+import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { AUDIT_TARGET_WEBHOOK_ENDPOINT } from '../../utils/auditFilter.ts'
 import {
   AUDIT_ENTRY_EVENT,
@@ -265,13 +265,11 @@ function WebhooksTable({
           accessor: 'secret',
           title: t(($) => $.settings.webhooks.secret),
           render: (record) => (
-            <CopyButton value={record.secret}>
-              {({ copied, copy }) => (
-                <Button size="compact-xs" variant="light" onClick={copy}>
-                  {copied ? t(($) => $.settings.copied) : t(($) => $.settings.webhooks.copySecret)}
-                </Button>
-              )}
-            </CopyButton>
+            <CopyTextButton
+              value={record.secret}
+              size="compact-xs"
+              label={t(($) => $.settings.webhooks.copySecret)}
+            />
           ),
         },
         {
@@ -331,16 +329,12 @@ export function WebhooksSection({ workspaceId }: { workspaceId: string }) {
     },
   })
 
-  const queryClient = useQueryClient()
   const updateMutation = useResourceMutation({
     mutation: siteWebhooksUpdateMutation(),
     errorTitle: t(($) => $.settings.webhooks.saveError),
     // A refused toggle (the row changed since the list read it) still says why, and reads the list
     // again so the next one is made on what is stored.
-    handleError: async () => {
-      await invalidateOwn(queryClient, siteWebhooksUpdateMutation().mutationKey)
-      return false
-    },
+    rereadOnError: true,
   })
 
   const deleteMutation = useResourceMutation({

@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 	"time"
@@ -21,7 +20,7 @@ import (
 // until a token with automations:publish publishes it (ADR 0065).
 func TestAnAuthoringTokenCannotChangeWhatAnActiveRuleDoes(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	author := env.ExternalScoped(t, apitokens.ScopeAutomationsRead, apitokens.ScopeAutomationsWrite)
 	id := entityIDString(fixtures.RuleVipOnlyID)
 
@@ -68,7 +67,7 @@ func TestAnAuthoringTokenCannotChangeWhatAnActiveRuleDoes(t *testing.T) {
 // to revert.
 func TestExternalRevertDropsTheDraft(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	id := entityIDString(fixtures.RuleTagClickedID)
 
 	reader := env.ExternalScoped(t, apitokens.ScopeAutomationsRead)

@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -16,7 +15,7 @@ import (
 func TestSiteContactsCustomFieldsRoundTrip(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	created, err := c.SiteContactsCreate(ctx, &siteapi.SiteCreateContactInput{
 		Email:        siteapi.NewOptNilEmailAddress("cf@example.com"),
@@ -37,7 +36,7 @@ func TestSiteContactsCustomFieldsRoundTrip(t *testing.T) {
 func TestSiteEventsListFiltersByContact(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	all, err := c.SiteEventsList(ctx, siteapi.SiteEventsListParams{WorkspaceId: fixtures.AcmePublicID, PageSize: siteapi.NewOptInt32(100)})
 	require.NoError(t, err)

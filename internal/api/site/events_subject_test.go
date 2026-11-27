@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/samber/lo"
@@ -19,7 +18,7 @@ func TestSiteEventsListNamesTheEmailAnEventIsAbout(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	res, err := c.SiteEventsList(context.Background(), siteapi.SiteEventsListParams{
+	res, err := c.SiteEventsList(t.Context(), siteapi.SiteEventsListParams{
 		WorkspaceId: fixtures.AcmePublicID,
 		PageSize:    siteapi.NewOptInt32(100),
 	})

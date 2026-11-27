@@ -176,6 +176,17 @@ func (h *Handlers) SiteWorkspacesSetEngagementTrackingDefault(ctx context.Contex
 	return &resource, nil
 }
 
+// SiteWorkspacesSetLinkIdentity sets the Workspace's Link identity token settings (Permission
+// workspace:update, ADR 0160).
+func (h *Handlers) SiteWorkspacesSetLinkIdentity(ctx context.Context, req *siteapi.SiteSetLinkIdentityInput, _ siteapi.SiteWorkspacesSetLinkIdentityParams) (*siteapi.SiteWorkspaceResource, error) {
+	v, err := h.workspaceView.SetLinkIdentity(ctx, workspaceScope(ctx), h.viewCaller(ctx), inputs.LinkIdentitySet(req))
+	if err != nil {
+		return nil, err
+	}
+	resource := h.workspaceResource(v)
+	return &resource, nil
+}
+
 // deletedWorkspaceResource is a Workspace in its deletion window with the date its data
 // will be erased.
 func deletedWorkspaceResource(d workspacedeletion.DeletedWorkspace) siteapi.SiteDeletedWorkspaceResource {

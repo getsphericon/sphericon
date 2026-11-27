@@ -1,7 +1,6 @@
 package rules_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -32,7 +31,7 @@ func appliedTags(t *testing.T, v *ent.RuleVersion) []string {
 func TestCreateStoresTheDefinitionAsTheDraftOfAnInactiveRule(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	r, err := rules.New(env.Cipher, env.Bus, nil, time.Now).Create(context.Background(), acme(env), rules.CreateInput{
+	r, err := rules.New(env.Cipher, env.Bus, nil, time.Now).Create(t.Context(), acme(env), rules.CreateInput{
 		Name: "new", TriggerEvents: []string{"signed_up"}, Actions: tagAction("fresh"),
 	})
 
@@ -50,7 +49,7 @@ func TestCreateStoresTheDefinitionAsTheDraftOfAnInactiveRule(t *testing.T) {
 // on the live one.
 func TestUpdatingAnActiveRuleWritesADraftAndLeavesTheLiveVersion(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 	triggers := []string{"rule_vip", "rule_vip_again"}
 	cond := `{"kind":"group","combinator":"and","entries":[]}`
@@ -90,7 +89,7 @@ func TestUpdatingAnActiveRuleWritesADraftAndLeavesTheLiveVersion(t *testing.T) {
 // A rewritten draft keeps the Trigger events (its child rows) of the fields an edit leaves out.
 func TestARewrittenDraftKeepsTheFieldsAnEditLeavesOut(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 	actions := tagAction("rule-clicked-v3")
 
@@ -106,7 +105,7 @@ func TestARewrittenDraftKeepsTheFieldsAnEditLeavesOut(t *testing.T) {
 // The editor always sends every field; saving it unchanged, or renaming the Rule, makes no draft.
 func TestAnUnchangedDefinitionMakesNoDraft(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 	name := "Renamed"
 	triggers := []string{"rule_vip"}
@@ -124,7 +123,7 @@ func TestAnUnchangedDefinitionMakesNoDraft(t *testing.T) {
 // A version with no tests holds the empty group (ADR 0169): saving it again makes no draft.
 func TestSavingTheEmptyConditionAgainMakesNoDraft(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 	empty := `{"kind":"group","combinator":"and","entries":[]}`
 	triggers := []string{"rule_multi_a", "rule_multi_b"}
@@ -138,7 +137,7 @@ func TestSavingTheEmptyConditionAgainMakesNoDraft(t *testing.T) {
 
 func TestPublishRefusesADraftWithNoActions(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 	none := []ruleaction.Action{}
 	_, err := m.Update(ctx, acme(env), fixtures.RuleTagClickedID, rules.UpdateInput{Revision: testhelper.RuleRevisionIn(ctx, t, acme(env), fixtures.RuleTagClickedID), Actions: &none})
@@ -157,7 +156,7 @@ func TestPublishRefusesADraftWithNoActions(t *testing.T) {
 // published and the draft of an active Rule both hold theirs.
 func TestADraftThatNamesATagUsesIt(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	neverPublished, err := testhelper.UnderWorkspaceLock(t, env.Bus, acme(env), func(l *ent.WorkspaceLocked) ([]*ent.Rule, error) {
 		return rulesuse.New().UsingTag(ctx, l, "rule-inactive")
@@ -177,7 +176,7 @@ func TestADraftThatNamesATagUsesIt(t *testing.T) {
 // not.
 func TestOnlyTheLiveVersionOfAnActiveRuleEnrollsInAnAutomation(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 	enroll := []ruleaction.Action{{Type: ruleaction.Enroll, AutomationID: fixtures.AutomationJobsWaitFirstID}}
 	_, err := m.Update(ctx, acme(env), fixtures.RuleInactiveID, rules.UpdateInput{Revision: testhelper.RuleRevisionIn(ctx, t, acme(env), fixtures.RuleInactiveID), Actions: &enroll})

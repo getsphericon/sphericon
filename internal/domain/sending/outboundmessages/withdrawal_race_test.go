@@ -1,7 +1,6 @@
 package outboundmessages_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -25,7 +24,7 @@ import (
 // nothing.
 func TestAMessageRenderedWhileARefusalIsInFlightIsWithdrawnByItsReachBack(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.Committed())
-	ctx := context.Background()
+	ctx := t.Context()
 	mod := newModule(env, time.Now)
 	req := marketing(t, env, "render-meets-refusal", fixtures.ContactAliceID)
 	req.Track = true

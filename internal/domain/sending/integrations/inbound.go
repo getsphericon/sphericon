@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
+	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
@@ -42,7 +43,7 @@ func (m *Module) ByIngestKey(ctx context.Context, c *ent.Client, key string) (*e
 		Where(integration.IngestKey(key), integration.HasWorkspaceWith(workspaces.Live())).
 		Only(ctx)
 	if err != nil {
-		return nil, missing(err)
+		return nil, db.NotFoundAs(err, ErrNotFound)
 	}
 	return row, nil
 }
@@ -315,7 +316,7 @@ func (m *Module) RegenerateKey(ctx context.Context, s *ent.Scoped, id int64) (Vi
 		return err
 	})
 	if err != nil {
-		return View{}, missing(err)
+		return View{}, db.NotFoundAs(err, ErrNotFound)
 	}
 	return m.viewOf(ctx, s, row)
 }

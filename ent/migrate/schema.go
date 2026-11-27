@@ -3803,6 +3803,8 @@ var (
 		{Name: "attribution_window_days", Type: field.TypeInt, Default: 5},
 		{Name: "send_cap", Type: field.TypeInt, Nullable: true},
 		{Name: "domain_join_enabled", Type: field.TypeBool, Default: false},
+		{Name: "link_identity_enabled", Type: field.TypeBool, Default: false},
+		{Name: "link_identity_hosts", Type: field.TypeJSON, Default: "[]"},
 		{Name: "second_factor_required_at", Type: field.TypeTime, Nullable: true},
 		{Name: "erased_at", Type: field.TypeTime, Nullable: true},
 		{Name: "suspended_at", Type: field.TypeTime, Nullable: true},
@@ -4581,6 +4583,8 @@ func init() {
 	}
 	WorkspacesTable.Annotation.Checks = map[string]string{
 		"workspaces_engagement_tracking_default_check": "engagement_tracking_default IN ('track', 'dont_track')",
+		"workspaces_link_identity_check":               "NOT link_identity_enabled OR jsonb_array_length(link_identity_hosts) > 0",
+		"workspaces_link_identity_hosts_check":         "jsonb_typeof(link_identity_hosts) = 'array' AND NOT (link_identity_hosts @? '$[*] ? (@.type() != \"string\" || !(@ like_regex \"^[a-z0-9-]+(\\\\.[a-z0-9-]+)+$\"))')",
 		"workspaces_public_id_max_length_check":        "char_length(public_id) <= 8",
 		"workspaces_public_id_min_length_check":        "char_length(public_id) >= 8",
 		"workspaces_reporting_currency_format":         "reporting_currency ~ '^[A-Z]{3}$'",

@@ -6,7 +6,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -17,7 +16,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/sending/confirmationrequests"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -34,11 +32,6 @@ func requester(t *testing.T, env *testhelper.TestEnv) *externalapi.Client {
 func askConfirmation(t *testing.T, c *externalapi.Client, contactID int64) (externalapi.ConfirmationRequestsCreateRes, error) {
 	t.Helper()
 	return c.ConfirmationRequestsCreate(t.Context(), externalapi.ConfirmationRequestsCreateParams{ContactId: externalapi.EntityId(contactID)})
-}
-
-// mailTo is the messages the provider took for the address.
-func mailTo(env *testhelper.TestEnv, address string) []messaging.EmailMessage {
-	return lo.Filter(env.CustomerMail.Messages(), func(m messaging.EmailMessage, _ int) bool { return m.To == address })
 }
 
 // An unconfirmed Contact of a Workspace that requires confirmed opt-in gets one confirmation email
@@ -71,7 +64,7 @@ func TestAConfirmationRequestMakesAnUnconfirmedContactMailable(t *testing.T) {
 	assert.Equal(t, &externalapi.ConfirmationRequestsCreateAccepted{Status: externalapi.ConfirmationRequestStatusAccepted}, res)
 	env.PerformEnqueuedJobs(t, confirmationrequests.SendArgs{})
 
-	mail := mailTo(env, address)
+	mail := env.CustomerMail.To(address)
 	require.Len(t, mail, 1, "one confirmation email")
 	assert.Equal(t, testhelper.AcmeConfirmationFrom, mail[0].From)
 	link := confirmToken.FindStringSubmatch(mail[0].HTML)

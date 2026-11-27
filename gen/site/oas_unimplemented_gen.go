@@ -2314,6 +2314,17 @@ func (UnimplementedHandler) SiteWorkspacesSetEngagementTrackingDefault(ctx conte
 	return r, ht.ErrNotImplemented
 }
 
+// SiteWorkspacesSetLinkIdentity implements SiteWorkspaces_setLinkIdentity operation.
+//
+// Set the Link identity token settings (Owner and Admin, ADR 0160): the switch and the hostnames of
+// the Workspace's sites. Only a person changes them, here: neither `/api` nor MCP does. Turning it on
+// with no host is refused with 422. A change is recorded as an Audit entry.
+//
+// PUT /workspaces/{workspaceId}/link-identity
+func (UnimplementedHandler) SiteWorkspacesSetLinkIdentity(ctx context.Context, req *SiteSetLinkIdentityInput, params SiteWorkspacesSetLinkIdentityParams) (r *SiteWorkspaceResource, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteWorkspacesSetTimezone implements SiteWorkspaces_setTimezone operation.
 //
 // Set the Workspace time zone (Owner and Admin only), the zone of every Report day (ADR 0057). 422 for

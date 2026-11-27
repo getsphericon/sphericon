@@ -1,7 +1,6 @@
 package jobs_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -26,14 +25,14 @@ func TestRuleActionEnrollsTheContactInAnAutomation(t *testing.T) {
 	assert.Equal(t, []rules.Result{{Type: ruleaction.Enroll, Status: rules.Succeeded}}, resultsOf(t, f))
 	run, err := env.DB.AutomationRun.Query().
 		Where(automationrun.AutomationID(fixtures.AutomationJobsGreetingID), automationrun.ContactID(fixtures.ContactBobID)).
-		Only(context.Background())
+		Only(t.Context())
 	require.NoError(t, err)
 	assert.Contains(t, env.JobsOf(t, jobkind.RunStep.Kind), stepJob(t, env, run.ID, 0), "the run starts stepping")
 }
 
 func TestRuleActionSkipsAnAutomationThatIsNotActive(t *testing.T) {
 	env := testhelper.Setup(t)
-	require.NoError(t, env.DB.Scoped(fixtures.AcmeID).Automation().Archive(context.Background(), fixtures.AutomationJobsSingleEmailID, time.Now()))
+	require.NoError(t, env.DB.Scoped(fixtures.AcmeID).Automation().Archive(t.Context(), fixtures.AutomationJobsSingleEmailID, time.Now()))
 
 	draft := runFiring(t, env, fixtures.RuleFiringEnrollDraftPendingID)
 	archived := runFiring(t, env, fixtures.RuleFiringEnrollSingleEmailPendingID)
@@ -46,7 +45,7 @@ func TestRuleActionSkipsAnAutomationThatIsNotActive(t *testing.T) {
 	}
 	enrolled := env.DB.AutomationRun.Query().
 		Where(automationrun.ContactID(fixtures.ContactBobID), automationrun.AutomationIDIn(fixtures.AutomationJobsGreetingInactiveID, fixtures.AutomationJobsSingleEmailID)).
-		CountX(context.Background())
+		CountX(t.Context())
 	assert.Zero(t, enrolled)
 }
 
@@ -55,7 +54,7 @@ func TestRuleActionSkipsAnAutomationThatIsNotActive(t *testing.T) {
 // does (ADR 0099).
 func TestAnAutomationDeactivatedAfterTheRuleJobsCheckEnrollsNobody(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	_, err := testhelper.Module[*automations.Module](env).
 		Deactivate(ctx, s, fixtures.AutomationJobsGreetingID)
@@ -74,7 +73,7 @@ func TestAnAutomationDeactivatedAfterTheRuleJobsCheckEnrollsNobody(t *testing.T)
 func TestRuleActionSkipsAContactAlreadyEnrolled(t *testing.T) {
 	env := testhelper.Setup(t)
 	greeting := func() int {
-		return env.DB.AutomationRun.Query().Where(automationrun.AutomationID(fixtures.AutomationJobsGreetingID)).CountX(context.Background())
+		return env.DB.AutomationRun.Query().Where(automationrun.AutomationID(fixtures.AutomationJobsGreetingID)).CountX(t.Context())
 	}
 	before := greeting()
 
@@ -96,7 +95,7 @@ func TestRuleActionSkipsAContactAlreadyEnrolled(t *testing.T) {
 // (#752), as the Rule's own http Action binds them.
 func TestARuleEnrollmentBeginsWhenTheEventTheRuleFiredOnOccurred(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	fired, err := env.DB.Event.Get(ctx, fixtures.EventRecoveryRuleTriggerID)
 	require.NoError(t, err)
 

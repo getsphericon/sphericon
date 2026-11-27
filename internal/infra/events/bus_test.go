@@ -1,7 +1,6 @@
 package events_test
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"testing"
@@ -36,7 +35,7 @@ func dataFor(t *testing.T, ev events.DomainEvent) []byte {
 // The load-bearing requirement: the state row and the event commit together.
 func TestBusWithinTxCommitsStateAndEvent(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	before := publishedCount(t, env)
 
 	var created *ent.Contact
@@ -65,7 +64,7 @@ func TestBusWithinTxCommitsStateAndEvent(t *testing.T) {
 // If the unit of work fails, neither the state nor the event is published.
 func TestBusWithinTxRollsBackBoth(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	before := publishedCount(t, env)
 
 	boom := errors.New("boom")
@@ -159,7 +158,7 @@ func TestPublishStoresAnEventUnlinkedWhenItsContactIsGone(t *testing.T) {
 // Deleting a Contact unlinks its Events and keeps them.
 func TestDeletingAContactKeepsItsEvents(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	ev, err := env.DB.Event.Query().Where(event.ContactID(fixtures.ContactAliceID)).First(ctx)
 	require.NoError(t, err, "the fixtures hold Events of Alice")

@@ -20,9 +20,9 @@ func TestMalformedTelegramIdentityCannotRedeemATokenOrResume(t *testing.T) {
 		t.Run(identity, func(t *testing.T) {
 			env := testhelper.Setup(t)
 			bot := env.AcmeTelegram(t)
-			stop := env.PostTelegramUpdate(t, bot, said(1000, optOutUser, "/stop"))
+			stop := env.PostTelegramUpdate(t, bot, testhelper.TelegramMessage(1000, optOutUser, "/stop"))
 			require.Equal(t, http.StatusOK, stop.Code)
-			update := said(1001, optOutUser, "/start "+fixtures.StartTokenAcmeOpenToken)
+			update := testhelper.TelegramMessage(1001, optOutUser, "/start "+fixtures.StartTokenAcmeOpenToken)
 			update = strings.Replace(update, `"update_id":1001,`, identity, 1)
 
 			reply := env.PostTelegramUpdate(t, bot, update)
@@ -43,7 +43,7 @@ func TestMalformedTelegramIdentityCannotRedeemATokenOrResume(t *testing.T) {
 // The Bot API HTTP boundary is the only observable output of the nondurable acknowledgement.
 func TestMalformedTelegramIdentityCannotStopOrAcknowledge(t *testing.T) {
 	for name, update := range map[string]string{
-		"text":   said(1001, optOutUser, "/stop"),
+		"text":   testhelper.TelegramMessage(1001, optOutUser, "/stop"),
 		"button": pressed(1001, optOutUser, 77, "cb-invalid", "unsubscribe"),
 		"block":  memberStatus(1001, optOutUser, "kicked"),
 	} {

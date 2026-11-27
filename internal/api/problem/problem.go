@@ -140,12 +140,12 @@ func decide(ctx context.Context, ex *exchange, err error) (int, *siteapi.Problem
 		return http.StatusServiceUnavailable, Body(http.StatusServiceUnavailable, emailrender.ErrRenderUnavailable.Error())
 	}
 	code := http.StatusInternalServerError
-	var oe ogenerrors.Error
-	var tooBig *http.MaxBytesError
+	_, tooBig := errors.AsType[*http.MaxBytesError](err)
+	oe, fromOgen := errors.AsType[ogenerrors.Error](err)
 	switch {
-	case errors.As(err, &tooBig):
+	case tooBig:
 		code = http.StatusRequestEntityTooLarge
-	case errors.As(err, &oe):
+	case fromOgen:
 		code = oe.Code()
 	case errors.Is(err, lifecycle.ErrInvalidTransition):
 		// A move the entity's lifecycle refuses, or lost to a concurrent writer (ADR 0046).
@@ -209,6 +209,12 @@ func Write(ctx context.Context, w http.ResponseWriter, status int, body *siteapi
 	if _, err := w.Write(data); err != nil {
 		slog.WarnContext(ctx, "write json response", "error", err)
 	}
+}
+
+// WriteDetail renders the plain problem of status (Body) with detail, for an answer made outside a
+// surface's handlers: a middleware, a route of its own.
+func WriteDetail(ctx context.Context, w http.ResponseWriter, status int, detail string) {
+	Write(ctx, w, status, Body(status, detail))
 }
 
 // mapper maps what a refusal names to the problem models' members, and the site's problem to

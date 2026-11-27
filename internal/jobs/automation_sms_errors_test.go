@@ -61,7 +61,7 @@ func TestATwilioAccountRefusalHoldsTheIntegrationUntilItIsSavedAgain(t *testing.
 			require.NoError(t, err)
 			assert.Equal(t, holdreason.ProviderRefused, route.Hold)
 			attention := attentionOf(t, env)
-			_, named := itemAbout(attention, siteapi.SiteAttentionKindIntegrationProviderRefused, int64(account.Integration.ID))
+			_, named := testhelper.AttentionItemAbout(attention, siteapi.SiteAttentionKindIntegrationProviderRefused, int64(account.Integration.ID))
 			assert.True(t, named, "the attention list names the Integration")
 			sentWhileHeld := env.QueuedCount(t, systemevent.SmsSent, nil)
 			assert.Zero(t, sentWhileHeld)
@@ -126,13 +126,6 @@ func attentionOf(t *testing.T, env *testhelper.TestEnv) []siteapi.SiteAttentionI
 	require.NoError(t, err)
 	list := res
 	return list.Items
-}
-
-// itemAbout is the item of the kind about the subject id, and whether there is one.
-func itemAbout(items []siteapi.SiteAttentionItem, kind siteapi.SiteAttentionKind, id int64) (siteapi.SiteAttentionItem, bool) {
-	return lo.Find(items, func(i siteapi.SiteAttentionItem) bool {
-		return i.Kind == kind && i.Subject.Value.ID == siteapi.EntityId(id)
-	})
 }
 
 // A rate signal (a 429, a full queue) defers the send: the message is not failed, the step is asked

@@ -82,15 +82,15 @@ func TestAnHTTPActionIsPendingWhileTheActionsAfterItRun(t *testing.T) {
 	rcv := newHookReceiver(t)
 	quahog := env.DB.Scoped(fixtures.QuahogID)
 
-	require.NoError(t, rules.New(env.Cipher, env.Bus, nil, time.Now).RunActions(context.Background(), quahog, fixtures.RuleFiringQuahogHookToRunID, ruleRunners(env)))
+	require.NoError(t, rules.New(env.Cipher, env.Bus, nil, time.Now).RunActions(t.Context(), quahog, fixtures.RuleFiringQuahogHookToRunID, ruleRunners(env)))
 
-	f := env.DB.RuleFiring.GetX(context.Background(), fixtures.RuleFiringQuahogHookToRunID)
+	f := env.DB.RuleFiring.GetX(t.Context(), fixtures.RuleFiringQuahogHookToRunID)
 	results := resultsOf(t, f)
 	require.Len(t, results, 2)
 	assert.Equal(t, rules.Result{Type: ruleaction.HTTP, Status: rules.Pending}, results[0])
 	assert.Equal(t, rules.Succeeded, results[1].Status, "the next Action does not wait for the call")
 	assert.Nil(t, f.CompletedAt, "the Firing finishes when the call is recorded")
-	assert.Equal(t, []string{"after-hook"}, tagsOf(t, env, fixtures.ContactQuahogQuinnID))
+	assert.Equal(t, []string{"after-hook"}, tagNames(t, env, fixtures.ContactQuahogQuinnID))
 	assert.Empty(t, rcv.received(), "the Actions job makes no call")
 	assert.Equal(t, []map[string]any{{"firing_id": float64(fixtures.RuleFiringQuahogHookToRunID), "index": float64(0), jobkind.WorkspaceArg: float64(fixtures.QuahogID)}}, env.JobsOf(t, rules.HTTPArgs{}.Kind()))
 }
@@ -225,7 +225,7 @@ func TestAnHTTPActionRateLimitEndsAtTheRetryHorizon(t *testing.T) {
 	w := h.allowing()
 	h.clock = h.clock.Add(webhook.HookRetryHorizon) // the job was created a horizon ago
 
-	err := w.Work(context.Background(), &river.Job[rules.HTTPArgs]{
+	err := w.Work(t.Context(), &river.Job[rules.HTTPArgs]{
 		JobRow: &rivertype.JobRow{Attempt: 1, MaxAttempts: 3, CreatedAt: h.clock.Add(-webhook.HookRetryHorizon)},
 		Args:   rules.HTTPArgs{FiringID: h.firingID},
 	})
@@ -250,7 +250,7 @@ func TestAnHTTPActionAlreadyRecordedIsNotCalledAgain(t *testing.T) {
 func TestAnHTTPActionOfAnErasedFiringCallsNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 	h := pendingHTTPRule(t, env, fixtures.RuleFiringQuahogHookPendingID)
-	env.DB.RuleFiring.DeleteOneID(h.firingID).ExecX(context.Background())
+	env.DB.RuleFiring.DeleteOneID(h.firingID).ExecX(t.Context())
 
 	require.NoError(t, h.attempt(h.allowing(), 1))
 

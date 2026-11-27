@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"errors"
 	"testing"
 
@@ -22,7 +21,7 @@ import (
 func reread(t *testing.T, env *testhelper.TestEnv, c *siteapi.Client, id siteapi.EntityId) siteapi.ProviderLimitStatus {
 	t.Helper()
 	env.PerformEnqueuedJobs(t, integrations.RefreshQuotaArgs{})
-	got, err := c.SiteIntegrationsGet(context.Background(), siteapi.SiteIntegrationsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
+	got, err := c.SiteIntegrationsGet(t.Context(), siteapi.SiteIntegrationsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
 	require.NoError(t, err)
 	res := got
 	return res.ProviderLimit
@@ -34,7 +33,7 @@ func reread(t *testing.T, env *testhelper.TestEnv, c *siteapi.Client, id siteapi
 func TestSiteIntegrationsSaveDiscoversTheSESQuota(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	env.SES.SetQuota(messaging.Quota{PerSecond: new(14), PerDay: new(50000)})
 
 	created, err := c.SiteIntegrationsCreate(ctx, &siteapi.CreateIntegrationInput{
@@ -58,7 +57,7 @@ func TestSiteIntegrationsSaveDiscoversTheSESQuota(t *testing.T) {
 func TestSiteIntegrationsFailedQuotaLookupWarnsAndLaterSuccessClearsIt(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	env.SES.SetQuotaErr(errors.New("AccessDenied: ses:GetSendQuota"))
 
 	created, err := c.SiteIntegrationsCreate(ctx, &siteapi.CreateIntegrationInput{
@@ -115,7 +114,7 @@ func TestSiteIntegrationsReportTheProviderAccountStanding(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	env.SES.SetQuota(messaging.Quota{PerSecond: new(1), Enforcement: providers.EnforcementShutdown, Sandbox: true})
 
-	created, err := c.SiteIntegrationsCreate(context.Background(), &siteapi.CreateIntegrationInput{
+	created, err := c.SiteIntegrationsCreate(t.Context(), &siteapi.CreateIntegrationInput{
 		Params: sesTopicParams,
 		Name:   "SES", Config: sesInput("eu-west-1", "AKIA1234", "secret"),
 	}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
@@ -130,7 +129,7 @@ func TestSiteIntegrationsReportTheProviderAccountStanding(t *testing.T) {
 	// New credentials may name another account: what the old ones read goes with them, so a
 	// read that then fails holds nothing.
 	env.SES.SetQuotaErr(errors.New("AccessDenied: ses:GetAccount"))
-	_, err = c.SiteIntegrationsUpdate(context.Background(), &siteapi.UpdateIntegrationInput{Revision: siteapi.Revision(env.IntegrationRevision(context.Background(), t, int64(id))),
+	_, err = c.SiteIntegrationsUpdate(t.Context(), &siteapi.UpdateIntegrationInput{Revision: siteapi.Revision(env.IntegrationRevision(t.Context(), t, int64(id))),
 		Config: siteapi.NewOptIntegrationConfigInput(sesInput("eu-west-1", "AKIA5678", "other")),
 	}, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
 	require.NoError(t, err)
@@ -144,7 +143,7 @@ func TestSiteIntegrationsSMTPSaveDoesNotLookUpAQuota(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	env.SES.SetQuotaErr(errors.New("must not be asked"))
 
-	created, err := c.SiteIntegrationsCreate(context.Background(), &siteapi.CreateIntegrationInput{
+	created, err := c.SiteIntegrationsCreate(t.Context(), &siteapi.CreateIntegrationInput{
 		Name: "SMTP", Config: smtpInput("smtp.example.com", "pw"),
 	}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)

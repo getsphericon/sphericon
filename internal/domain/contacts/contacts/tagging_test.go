@@ -1,7 +1,6 @@
 package contacts_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/samber/lo"
@@ -28,7 +27,7 @@ func TestApplyAutoCreatesOnFirstUseAndIsIdempotent(t *testing.T) {
 	env := testhelper.Setup(t)
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	m, c := testhelper.Module[*tags.Module](env), testhelper.Module[*contacts.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	before, err := env.DB.Tag.Query().Count(ctx)
 	require.NoError(t, err)
@@ -59,7 +58,7 @@ func TestApplyRejectsBlankNameAndUnknownContact(t *testing.T) {
 	env := testhelper.Setup(t)
 	acme, globex := env.DB.Scoped(fixtures.AcmeID), env.DB.Scoped(fixtures.GlobexID)
 	c := testhelper.Module[*contacts.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := c.ApplyTag(ctx, acme, fixtures.ContactAliceID, "   ")
 	require.ErrorIs(t, err, validation.ErrNameBlank)
@@ -78,7 +77,7 @@ func TestRemoveDetachesAndKeepsTheTag(t *testing.T) {
 	env := testhelper.Setup(t)
 	acme, globex := env.DB.Scoped(fixtures.AcmeID), env.DB.Scoped(fixtures.GlobexID)
 	m, c := testhelper.Module[*tags.Module](env), testhelper.Module[*contacts.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	require.NoError(t, c.RemoveTag(ctx, acme, fixtures.ContactAliceID, fixtures.TagVipName))
 	got, err := m.ForContact(ctx, acme, fixtures.ContactAliceID)
@@ -105,7 +104,7 @@ func TestSetMakesTheNamedTagsTheContactsCompleteSet(t *testing.T) {
 	env := testhelper.Setup(t)
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	m := tags.New()
-	ctx := context.Background()
+	ctx := t.Context()
 	set := func(contactID int64, names []string) error {
 		return env.Bus.WithinScopedTx(ctx, acme, func(ts *ent.Scoped, _ events.Publisher) error {
 			return testhelper.Module[*contacts.Module](env).SetTagsIn(ctx, ts, contactID, names)
@@ -136,7 +135,7 @@ func TestForeignContactIsRefusedOnEveryOperation(t *testing.T) {
 	env := testhelper.Setup(t)
 	acme, globex := env.DB.Scoped(fixtures.AcmeID), env.DB.Scoped(fixtures.GlobexID)
 	m, c := testhelper.Module[*tags.Module](env), testhelper.Module[*contacts.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := c.ApplyTag(ctx, acme, fixtures.ContactGlobexID, "vip")
 	require.ErrorIs(t, err, contacts.ErrNotFound)
@@ -155,7 +154,7 @@ func TestForeignContactIsRefusedOnEveryOperation(t *testing.T) {
 func TestApplyToAnotherWorkspacesContactCreatesNoTag(t *testing.T) {
 	env := testhelper.Setup(t)
 	m, c := testhelper.Module[*tags.Module](env), testhelper.Module[*contacts.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 	otherWsID := env.DB.Scoped(fixtures.GlobexID)
 
 	_, err := c.ApplyTag(ctx, otherWsID, fixtures.ContactAliceID, "sneaky")

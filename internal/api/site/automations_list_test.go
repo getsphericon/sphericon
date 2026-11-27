@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/samber/lo"
@@ -19,7 +18,7 @@ import (
 func TestSiteAutomationsListFiltersByNameAndStateAndSorts(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.DuffOwnerDanEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	workspaceID := siteapi.WorkspaceId(fixtures.DuffPublicID)
 	draft := idStr(fixtures.AutomationDuffDraftID)
 	active := idStr(fixtures.AutomationDuffActiveID)

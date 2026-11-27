@@ -1,7 +1,6 @@
 package jobs_test
 
 import (
-	"fmt"
 	"net/http"
 	"testing"
 
@@ -17,12 +16,6 @@ import (
 // Telegram consent observations apply in the order they occurred (ADR 0154): within one bot by
 // update_id, between bots by the update's date, and of the same moment the refusal wins.
 
-// saidAt is said at date (Unix seconds).
-func saidAt(updateID, from, date int64, text string) string {
-	return fmt.Sprintf(`{"update_id":%d,"message":{"message_id":%d,"date":%d,"chat":{"id":%d,"type":"private"},"from":{"id":%d,"is_bot":false,"first_name":"P"},"text":%q}}`,
-		updateID, updateID, date, from, from, text)
-}
-
 func post(t *testing.T, env *testhelper.TestEnv, bot testhelper.TelegramBot, update string) {
 	t.Helper()
 	reply := env.PostTelegramUpdate(t, bot, update)
@@ -34,9 +27,9 @@ func TestAnOlderUpdateOfTheSameBotChangesNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 	bot := env.AcmeTelegram(t)
 	user := mustInt(t, fixtures.BindingLiamDestination)
-	post(t, env, bot, saidAt(101, user, date, "/stop"))
+	post(t, env, bot, testhelper.TelegramMessageAt(101, user, date, "/stop"))
 	// Within one bot the update_id orders, whatever the dates say.
-	post(t, env, bot, saidAt(100, user, date+60, "/start"))
+	post(t, env, bot, testhelper.TelegramMessageAt(100, user, date+60, "/start"))
 	stopped := optedOut(t, env, user)
 	superseded := env.DB.Event.Query().Where(
 		event.ContactID(fixtures.ContactLiamID), event.Action(systemevent.ContactConsentSuperseded),
@@ -55,8 +48,8 @@ type telegramUpdate struct {
 func TestAStopAndAStartOfTheSameMomentOnTwoBotsLeaveTheUserStopped(t *testing.T) {
 	const date = 1767225600
 	user := mustInt(t, fixtures.BindingLiamDestination)
-	stop := telegramUpdate{body: saidAt(500, user, date, "/stop")}
-	start := telegramUpdate{secondBot: true, body: saidAt(7, user, date, "/start")}
+	stop := telegramUpdate{body: testhelper.TelegramMessageAt(500, user, date, "/stop")}
+	start := telegramUpdate{secondBot: true, body: testhelper.TelegramMessageAt(7, user, date, "/start")}
 	for name, order := range map[string][]telegramUpdate{"stop first": {stop, start}, "start first": {start, stop}} {
 		t.Run(name, func(t *testing.T) {
 			env := testhelper.Setup(t)
@@ -75,8 +68,8 @@ func TestALaterStartOnAnotherBotLiftsTheStop(t *testing.T) {
 	env := testhelper.Setup(t)
 	first, second := env.AcmeTelegram(t), env.AcmeSecondTelegram(t)
 	user := mustInt(t, fixtures.BindingLiamDestination)
-	post(t, env, first, saidAt(500, user, date, "/stop"))
-	post(t, env, second, saidAt(7, user, date+1, "/start"))
+	post(t, env, first, testhelper.TelegramMessageAt(500, user, date, "/stop"))
+	post(t, env, second, testhelper.TelegramMessageAt(7, user, date+1, "/start"))
 	stopped := optedOut(t, env, user)
 	assert.False(t, stopped)
 }

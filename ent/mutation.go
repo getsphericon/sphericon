@@ -88238,6 +88238,9 @@ type WorkspaceMutation struct {
 	send_cap                             *int
 	addsend_cap                          *int
 	domain_join_enabled                  *bool
+	link_identity_enabled                *bool
+	link_identity_hosts                  *[]string
+	appendlink_identity_hosts            []string
 	second_factor_required_at            *time.Time
 	erased_at                            *time.Time
 	suspended_at                         *time.Time
@@ -89462,6 +89465,93 @@ func (m *WorkspaceMutation) OldDomainJoinEnabled(ctx context.Context) (v bool, e
 // ResetDomainJoinEnabled resets all changes to the "domain_join_enabled" field.
 func (m *WorkspaceMutation) ResetDomainJoinEnabled() {
 	m.domain_join_enabled = nil
+}
+
+// SetLinkIdentityEnabled sets the "link_identity_enabled" field.
+func (m *WorkspaceMutation) SetLinkIdentityEnabled(b bool) {
+	m.link_identity_enabled = &b
+}
+
+// LinkIdentityEnabled returns the value of the "link_identity_enabled" field in the mutation.
+func (m *WorkspaceMutation) LinkIdentityEnabled() (r bool, exists bool) {
+	v := m.link_identity_enabled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLinkIdentityEnabled returns the old "link_identity_enabled" field's value of the Workspace entity.
+// If the Workspace object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WorkspaceMutation) OldLinkIdentityEnabled(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLinkIdentityEnabled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLinkIdentityEnabled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLinkIdentityEnabled: %w", err)
+	}
+	return oldValue.LinkIdentityEnabled, nil
+}
+
+// ResetLinkIdentityEnabled resets all changes to the "link_identity_enabled" field.
+func (m *WorkspaceMutation) ResetLinkIdentityEnabled() {
+	m.link_identity_enabled = nil
+}
+
+// SetLinkIdentityHosts sets the "link_identity_hosts" field.
+func (m *WorkspaceMutation) SetLinkIdentityHosts(s []string) {
+	m.link_identity_hosts = &s
+	m.appendlink_identity_hosts = nil
+}
+
+// LinkIdentityHosts returns the value of the "link_identity_hosts" field in the mutation.
+func (m *WorkspaceMutation) LinkIdentityHosts() (r []string, exists bool) {
+	v := m.link_identity_hosts
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLinkIdentityHosts returns the old "link_identity_hosts" field's value of the Workspace entity.
+// If the Workspace object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WorkspaceMutation) OldLinkIdentityHosts(ctx context.Context) (v []string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLinkIdentityHosts is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLinkIdentityHosts requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLinkIdentityHosts: %w", err)
+	}
+	return oldValue.LinkIdentityHosts, nil
+}
+
+// AppendLinkIdentityHosts adds s to the "link_identity_hosts" field.
+func (m *WorkspaceMutation) AppendLinkIdentityHosts(s []string) {
+	m.appendlink_identity_hosts = append(m.appendlink_identity_hosts, s...)
+}
+
+// AppendedLinkIdentityHosts returns the list of values that were appended to the "link_identity_hosts" field in this mutation.
+func (m *WorkspaceMutation) AppendedLinkIdentityHosts() ([]string, bool) {
+	if len(m.appendlink_identity_hosts) == 0 {
+		return nil, false
+	}
+	return m.appendlink_identity_hosts, true
+}
+
+// ResetLinkIdentityHosts resets all changes to the "link_identity_hosts" field.
+func (m *WorkspaceMutation) ResetLinkIdentityHosts() {
+	m.link_identity_hosts = nil
+	m.appendlink_identity_hosts = nil
 }
 
 // SetSecondFactorRequiredAt sets the "second_factor_required_at" field.
@@ -93048,7 +93138,7 @@ func (m *WorkspaceMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *WorkspaceMutation) Fields() []string {
-	fields := make([]string, 0, 28)
+	fields := make([]string, 0, 30)
 	if m.created_at != nil {
 		fields = append(fields, workspace.FieldCreatedAt)
 	}
@@ -93108,6 +93198,12 @@ func (m *WorkspaceMutation) Fields() []string {
 	}
 	if m.domain_join_enabled != nil {
 		fields = append(fields, workspace.FieldDomainJoinEnabled)
+	}
+	if m.link_identity_enabled != nil {
+		fields = append(fields, workspace.FieldLinkIdentityEnabled)
+	}
+	if m.link_identity_hosts != nil {
+		fields = append(fields, workspace.FieldLinkIdentityHosts)
 	}
 	if m.second_factor_required_at != nil {
 		fields = append(fields, workspace.FieldSecondFactorRequiredAt)
@@ -93181,6 +93277,10 @@ func (m *WorkspaceMutation) Field(name string) (ent.Value, bool) {
 		return m.SendCap()
 	case workspace.FieldDomainJoinEnabled:
 		return m.DomainJoinEnabled()
+	case workspace.FieldLinkIdentityEnabled:
+		return m.LinkIdentityEnabled()
+	case workspace.FieldLinkIdentityHosts:
+		return m.LinkIdentityHosts()
 	case workspace.FieldSecondFactorRequiredAt:
 		return m.SecondFactorRequiredAt()
 	case workspace.FieldErasedAt:
@@ -93246,6 +93346,10 @@ func (m *WorkspaceMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldSendCap(ctx)
 	case workspace.FieldDomainJoinEnabled:
 		return m.OldDomainJoinEnabled(ctx)
+	case workspace.FieldLinkIdentityEnabled:
+		return m.OldLinkIdentityEnabled(ctx)
+	case workspace.FieldLinkIdentityHosts:
+		return m.OldLinkIdentityHosts(ctx)
 	case workspace.FieldSecondFactorRequiredAt:
 		return m.OldSecondFactorRequiredAt(ctx)
 	case workspace.FieldErasedAt:
@@ -93410,6 +93514,20 @@ func (m *WorkspaceMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetDomainJoinEnabled(v)
+		return nil
+	case workspace.FieldLinkIdentityEnabled:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLinkIdentityEnabled(v)
+		return nil
+	case workspace.FieldLinkIdentityHosts:
+		v, ok := value.([]string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLinkIdentityHosts(v)
 		return nil
 	case workspace.FieldSecondFactorRequiredAt:
 		v, ok := value.(time.Time)
@@ -93731,6 +93849,12 @@ func (m *WorkspaceMutation) ResetField(name string) error {
 		return nil
 	case workspace.FieldDomainJoinEnabled:
 		m.ResetDomainJoinEnabled()
+		return nil
+	case workspace.FieldLinkIdentityEnabled:
+		m.ResetLinkIdentityEnabled()
+		return nil
+	case workspace.FieldLinkIdentityHosts:
+		m.ResetLinkIdentityHosts()
 		return nil
 	case workspace.FieldSecondFactorRequiredAt:
 		m.ResetSecondFactorRequiredAt()

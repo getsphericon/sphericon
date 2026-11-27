@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -22,13 +21,13 @@ func docStep(subject string, doc map[string]jx.Raw) siteapi.EmailStepInput {
 func TestSiteAutomationEmailStepsSaveADocumentWithItsBody(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
 	created, err := c.SiteAutomationsCreate(ctx, &siteapi.CreateAutomationInput{
 		Name: "Authored", Trigger: testhelper.SiteTrigger("authored.signup"),
 		Steps: testhelper.SitePathEdit(
-			docStep("Hi {{ first_name }}", paragraphDoc("Hello {{ first_name }}")),
+			docStep("Hi {{ first_name }}", testhelper.ParagraphDoc("Hello {{ first_name }}")),
 			siteapi.WaitStepInput{Seconds: 60},
 			siteapi.EmailStepInput{Subject: "Plain", Body: siteapi.NewOptString("<p>HTML only</p>")},
 		),
@@ -51,7 +50,7 @@ func TestSiteAutomationEmailStepsSaveADocumentWithItsBody(t *testing.T) {
 
 	// Saving another document rebuilds that step's body.
 	updated, err := c.SiteAutomationsUpdate(ctx, &siteapi.UpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(res.ID))),
-		Steps: testhelper.SitePathEdit(docStep("Hi", paragraphDoc("Second"))),
+		Steps: testhelper.SitePathEdit(docStep("Hi", testhelper.ParagraphDoc("Second"))),
 	}, siteapi.SiteAutomationsUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	upd := updated.Draft.Value.Steps.Steps[0].OneOf.EmailStep
@@ -74,7 +73,7 @@ func TestSiteAutomationEmailStepsSaveADocumentWithItsBody(t *testing.T) {
 func TestSiteAutomationInvalidDocumentRefusesTheWholeSaveNamingTheStep(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
 	bad := map[string]jx.Raw{"type": jx.Raw(`"doc"`), "content": jx.Raw(`[{"type":"heading","attrs":{"level":9},"content":[{"type":"text","text":"x"}]}]`)}
@@ -83,7 +82,7 @@ func TestSiteAutomationInvalidDocumentRefusesTheWholeSaveNamingTheStep(t *testin
 	_, err := c.SiteAutomationsCreate(ctx, &siteapi.CreateAutomationInput{
 		Name: "Refused", Trigger: testhelper.SiteTrigger("refused.signup"),
 		Steps: testhelper.SitePathEdit(
-			docStep("Fine", paragraphDoc("Fine")),
+			docStep("Fine", testhelper.ParagraphDoc("Fine")),
 			broken,
 		),
 	}, siteapi.SiteAutomationsCreateParams{WorkspaceId: workspaceID})
@@ -91,7 +90,7 @@ func TestSiteAutomationInvalidDocumentRefusesTheWholeSaveNamingTheStep(t *testin
 	assert.Contains(t, refused.Detail.Value, "step 5b0c6a52-4f0e-4f65-9a70-0d4a1c0e1b02 (email)")
 
 	// Both a body and a document on one step is refused too.
-	both := docStep("Both", paragraphDoc("x"))
+	both := docStep("Both", testhelper.ParagraphDoc("x"))
 	both.Body = siteapi.NewOptString("<p>x</p>")
 	_, err = c.SiteAutomationsCreate(ctx, &siteapi.CreateAutomationInput{
 		Name: "Both", Trigger: testhelper.SiteTrigger("both.signup"), Steps: testhelper.SitePathEdit(both),
@@ -111,9 +110,9 @@ func TestSiteAutomationInvalidDocumentRefusesTheWholeSaveNamingTheStep(t *testin
 func TestSiteAutomationDocumentSavedAgainIsNoChange(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
-	step := docStep("Hi", paragraphDoc("Hello {{ first_name }}"))
+	step := docStep("Hi", testhelper.ParagraphDoc("Hello {{ first_name }}"))
 	created, err := c.SiteAutomationsCreate(ctx, &siteapi.CreateAutomationInput{
 		Name: "Saved twice", Trigger: testhelper.SiteTrigger("saved.twice"), Steps: testhelper.SitePathEdit(step),
 	}, siteapi.SiteAutomationsCreateParams{WorkspaceId: workspaceID})

@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -18,12 +17,12 @@ import (
 func TestSiteBroadcastsSaveADocumentWithItsBody(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
 	created, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
 		Name:      "Authored",
-		Content:   testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{Subject: siteapi.NewOptString("Hi {{ first_name }}"), Doc: siteapi.NewOptEditorDocument(paragraphDoc("Hello {{ first_name }}"))}),
+		Content:   testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{Subject: siteapi.NewOptString("Hi {{ first_name }}"), Doc: siteapi.NewOptEditorDocument(testhelper.ParagraphDoc("Hello {{ first_name }}"))}),
 		SegmentId: siteapi.NilEntityId{Null: true},
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
@@ -39,7 +38,7 @@ func TestSiteBroadcastsSaveADocumentWithItsBody(t *testing.T) {
 
 	// Saving another document rebuilds the body.
 	updated, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(res.ID))),
-		Content: testhelper.SiteEmailEdit(siteapi.EmailBroadcastContentInput{Doc: siteapi.NewOptEditorDocument(paragraphDoc("Second"))}),
+		Content: testhelper.SiteEmailEdit(siteapi.EmailBroadcastContentInput{Doc: siteapi.NewOptEditorDocument(testhelper.ParagraphDoc("Second"))}),
 	}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	upd := updated
@@ -67,7 +66,7 @@ func TestSiteBroadcastsSaveADocumentWithItsBody(t *testing.T) {
 func TestSiteBroadcastsRefuseADocumentThatCannotBeRendered(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 	before := env.DB.Broadcast.Query().CountX(ctx)
 	draft := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID)
@@ -98,17 +97,17 @@ func TestSiteBroadcastsRefuseADocumentThatCannotBeRendered(t *testing.T) {
 func TestSiteBroadcastsRefuseABodyAndADocumentTogether(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
 		Name:      "Both",
-		Content:   testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{Body: siteapi.NewOptString("<p>x</p>"), Doc: siteapi.NewOptEditorDocument(paragraphDoc("x"))}),
+		Content:   testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{Body: siteapi.NewOptString("<p>x</p>"), Doc: siteapi.NewOptEditorDocument(testhelper.ParagraphDoc("x"))}),
 		SegmentId: siteapi.NilEntityId{Null: true},
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 
 	_, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(idStr(fixtures.BroadcastDraftID)))),
-		Content: testhelper.SiteEmailEdit(siteapi.EmailBroadcastContentInput{Body: siteapi.NewOptString("<p>x</p>"), Doc: siteapi.NewOptEditorDocument(paragraphDoc("x"))}),
+		Content: testhelper.SiteEmailEdit(siteapi.EmailBroadcastContentInput{Body: siteapi.NewOptString("<p>x</p>"), Doc: siteapi.NewOptEditorDocument(testhelper.ParagraphDoc("x"))}),
 	}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastDraftID)})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 }
@@ -116,7 +115,7 @@ func TestSiteBroadcastsRefuseABodyAndADocumentTogether(t *testing.T) {
 func TestSiteBroadcastsWithoutADocumentStayHTMLOnly(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	got, err := c.SiteBroadcastsGet(ctx, siteapi.SiteBroadcastsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastDraftID)})
 	require.NoError(t, err)
@@ -131,7 +130,7 @@ func TestSiteBroadcastsTestSendDeliversTheMessageBuiltFromADocument(t *testing.T
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	_, err := c.SiteBroadcastsTestSend(context.Background(), &siteapi.TestSendBroadcastInput{Email: siteapi.NewOptEmailAddress("preview@example.com")},
+	_, err := c.SiteBroadcastsTestSend(t.Context(), &siteapi.TestSendBroadcastInput{Email: siteapi.NewOptEmailAddress("preview@example.com")},
 		siteapi.SiteBroadcastsTestSendParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastAuthoredID)})
 	require.NoError(t, err)
 

@@ -37,9 +37,9 @@ func scrape(t *testing.T) (status int, body string) {
 // Once telemetry is shut down, /metrics answers 503 again instead of a stale exposition.
 func TestMetricsHandlerIsA503StubAfterShutdown(t *testing.T) {
 	testhelper.IsolateOtel(t)
-	stop, err := setup(telemetry.BuildInfo{})(context.Background())
+	stop, err := setup(telemetry.BuildInfo{})(t.Context())
 	require.NoError(t, err)
-	require.NoError(t, stop(context.Background()))
+	require.NoError(t, stop(t.Context()))
 
 	code, body := scrape(t)
 	assert.Equal(t, http.StatusServiceUnavailable, code)
@@ -61,7 +61,7 @@ func TestSetupPullOnly(t *testing.T) {
 	assert.Regexp(t, `sphericon_build_info\{[^}]*commit="abc"[^}]*\} 1`, body)
 	assert.Regexp(t, `sphericon_build_info\{[^}]*version="v1"[^}]*\} 1`, body)
 
-	_, span := otel.Tracer("test").Start(context.Background(), "work")
+	_, span := otel.Tracer("test").Start(t.Context(), "work")
 	defer span.End()
 	assert.False(t, span.SpanContext().IsValid(), "the tracer provider is a no-op without a config file")
 	assert.Contains(t, otel.GetTextMapPropagator().Fields(), "traceparent")
@@ -127,7 +127,7 @@ meter_provider:
 `), 0o600))
 	t.Setenv("OTEL_CONFIG_FILE", file)
 
-	ctx := context.Background()
+	ctx := t.Context()
 	stop, err := setup(telemetry.BuildInfo{})(ctx)
 	require.NoError(t, err)
 

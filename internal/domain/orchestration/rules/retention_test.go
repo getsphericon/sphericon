@@ -1,7 +1,6 @@
 package rules_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -19,13 +18,13 @@ const eventsRetention = 400 * 24 * time.Hour
 
 func firingPresent(t *testing.T, env *testhelper.TestEnv, id int64) bool {
 	t.Helper()
-	return env.DB.RuleFiring.Query().Where(rulefiring.ID(id)).ExistX(context.Background())
+	return env.DB.RuleFiring.Query().Where(rulefiring.ID(id)).ExistX(t.Context())
 }
 
 func TestPruneRuleFiringsDeletesInBoundedBatches(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	deleted, err := rules.New(env.Cipher, env.Bus, nil, time.Now).PruneFirings(context.Background(), env.DB, eventsRetention, 1)
+	deleted, err := rules.New(env.Cipher, env.Bus, nil, time.Now).PruneFirings(t.Context(), env.DB, eventsRetention, 1)
 
 	require.NoError(t, err)
 	assert.Equal(t, int64(1), deleted)

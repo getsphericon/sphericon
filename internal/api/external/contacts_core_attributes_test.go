@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 	"time"
@@ -20,7 +19,7 @@ import (
 // ADR 0072: the upsert overwrites a core attribute it is given and clears one it is given null for.
 func TestExternalUpsertOverwritesCoreAttributes(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 
 	_, err := c.ContactsBatchUpsert(ctx, &externalapi.UpsertContactsInput{Contacts: []externalapi.UpsertContactInput{{
@@ -48,7 +47,7 @@ func TestExternalContactRefusesACustomFieldNamedAfterACoreAttribute(t *testing.T
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 
-	_, err := c.ContactsCreate(context.Background(), &externalapi.CreateContactInput{
+	_, err := c.ContactsCreate(t.Context(), &externalapi.CreateContactInput{
 		Email:        externalapi.NewOptNilEmailAddress("reserved.key@example.com"),
 		CustomFields: externalapi.NewOptNilJsonObject(externalapi.JsonObject{"city": jx.Raw(`"Berlin"`)}),
 	})
@@ -59,7 +58,7 @@ func TestExternalContactRefusesAPhotoThatIsNotHTTPS(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 
-	_, err := c.ContactsCreate(context.Background(), &externalapi.CreateContactInput{
+	_, err := c.ContactsCreate(t.Context(), &externalapi.CreateContactInput{
 		Email:  externalapi.NewOptNilEmailAddress("plain.http@example.com"),
 		Avatar: externalapi.NewOptNilImageUrl("http://example.com/a.png"),
 	})

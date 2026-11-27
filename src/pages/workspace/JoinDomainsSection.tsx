@@ -4,7 +4,6 @@ import {
   Button,
   Card,
   Code,
-  CopyButton,
   Group,
   Menu,
   Modal,
@@ -16,9 +15,10 @@ import {
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { useDisclosure } from '@mantine/hooks'
-import { useQuery, useSuspenseQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
+import { CopyTextButton } from '../../components/CopyTextButton.tsx'
 import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
 import { TableSkeleton } from '../../components/Skeletons.tsx'
@@ -32,7 +32,7 @@ import {
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteJoinDomainResource } from '../../generated/site/types.gen.ts'
 import { useConfirmation } from '../../hooks/useConfirmation.tsx'
-import { invalidateOwn, useResourceMutation } from '../../hooks/useResourceMutation.ts'
+import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 
 interface DomainFormValues {
   domain: string
@@ -96,13 +96,12 @@ function JoinDomainRow({
               </Text>
               <Group gap="xs" wrap="nowrap" align="center">
                 <Code>{domain.record.value}</Code>
-                <CopyButton value={domain.record.value}>
-                  {({ copied, copy }) => (
-                    <Button size="compact-xs" variant="light" onClick={copy}>
-                      {copied ? '✓' : '⧉'}
-                    </Button>
-                  )}
-                </CopyButton>
+                <CopyTextButton
+                  value={domain.record.value}
+                  size="compact-xs"
+                  label="⧉"
+                  copiedLabel="✓"
+                />
               </Group>
             </div>
           </Stack>
@@ -153,17 +152,13 @@ export function JoinDomainsSection({ workspaceId }: { workspaceId: string }) {
   const [addOpened, { open: openAdd, close: closeAdd }] = useDisclosure(false)
   const form = useForm<DomainFormValues>({ initialValues: { domain: '' } })
 
-  const queryClient = useQueryClient()
   // The switch is made on the revision it shows (ADR 0119): a refusal says why and reads it again.
   const joinMutation = useResourceMutation({
     mutation: siteDomainJoinSetMutation(),
     successMessage: t(($) => $.joinDomains.switchSaved),
     errorTitle: t(($) => $.joinDomains.switchError),
     forbiddenMessage: t(($) => $.joinDomains.forbidden),
-    handleError: async () => {
-      await invalidateOwn(queryClient, siteDomainJoinSetMutation().mutationKey)
-      return false
-    },
+    rereadOnError: true,
   })
   const addMutation = useResourceMutation({
     mutation: siteJoinDomainsAddMutation(),

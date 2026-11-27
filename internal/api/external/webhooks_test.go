@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"io"
 	"net/http"
 	"strings"
@@ -21,7 +20,7 @@ import (
 func TestExternalWebhooksCRUD(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeWebhooksRead, apitokens.ScopeWebhooksWrite)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	hook, err := c.WebhooksGet(ctx, externalapi.WebhooksGetParams{ID: entityIDString(fixtures.WebhookCodebasicsID)})
 	require.NoError(t, err)
@@ -96,7 +95,7 @@ func TestExternalWebhooksNeverReturnSecrets(t *testing.T) {
 
 func TestExternalWebhooksScopes(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := env.ExternalAnonymous(t).WebhooksList(ctx, externalapi.WebhooksListParams{})
 	testhelper.ExternalRefusal(t, err, http.StatusUnauthorized)
@@ -120,7 +119,7 @@ func TestExternalWebhooksScopes(t *testing.T) {
 
 func TestExternalWebhooksAreWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	id := entityIDString(fixtures.WebhookGlobexID)
 
@@ -141,7 +140,7 @@ func TestExternalWebhooksAreWorkspaceScoped(t *testing.T) {
 // audit.entry is selectable on a Webhook endpoint only with an Enterprise license,
 // through /api as through /site (ADR 0022).
 func TestExternalWebhookSelectsAuditEntryOnlyUnderLicense(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	auditTypes := []string{"audit.entry"}
 
 	licensed := testhelper.Setup(t).ExternalScoped(t, apitokens.ScopeWebhooksWrite)

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/getsphericon/sphericon/internal/kernel/optional"
 	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -158,7 +159,7 @@ func Became(to any) map[string]any {
 // value: the "from" is absent when there was none, the "to" when it was cleared. changed is false
 // when both are the same value (or both are none), so the caller writes and records nothing.
 func ChangeOf[T comparable](from, to *T) (entry map[string]any, changed bool) {
-	if from == nil && to == nil || from != nil && to != nil && *from == *to {
+	if optional.Equal(from, to) {
 		return nil, false
 	}
 	entry = map[string]any{}

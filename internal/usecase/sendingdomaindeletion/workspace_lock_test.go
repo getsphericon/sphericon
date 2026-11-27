@@ -1,7 +1,6 @@
 package sendingdomaindeletion_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -21,7 +20,7 @@ import (
 // Workspace's lock (ADR 0099), so the delete queued behind the schedule reads the armed Broadcast
 // and is refused naming it: the domain is never deleted under a Broadcast the check found a draft.
 func TestAScheduleQueuedFirstRefusesTheDeleteOfTheDomainItSendsFrom(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	env := testhelper.Setup(t, testhelper.Committed())
 	s := env.DB.Scoped(fixtures.AcmeID)
 	sends := testhelper.Module[*broadcasts.Module](env)

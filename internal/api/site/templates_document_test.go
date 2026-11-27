@@ -1,9 +1,7 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
-	"strconv"
 	"testing"
 
 	"github.com/go-faster/jx"
@@ -16,24 +14,16 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func paragraphDoc(text string) map[string]jx.Raw {
-	return map[string]jx.Raw{
-		"type": jx.Raw(`"doc"`),
-		"content": jx.Raw(`[{"type":"paragraph","content":[{"type":"text","text":` +
-			strconv.Quote(text) + `}]}]`),
-	}
-}
-
 func TestSiteTemplatesSaveADocumentWithItsBody(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
 	res, err := c.SiteTemplatesCreate(ctx, &siteapi.CreateTemplateInput{
 		Name:    "Authored",
 		Subject: siteapi.NewOptString("Hi {{ first_name }}"),
-		Doc:     siteapi.NewOptEditorDocument(paragraphDoc("Hello {{ first_name }}")),
+		Doc:     siteapi.NewOptEditorDocument(testhelper.ParagraphDoc("Hello {{ first_name }}")),
 	}, siteapi.SiteTemplatesCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	assert.Contains(t, res.Body, "Hello {{ first_name }}")
@@ -49,7 +39,7 @@ func TestSiteTemplatesSaveADocumentWithItsBody(t *testing.T) {
 	// Saving another document rebuilds the body.
 	upd, err := c.SiteTemplatesUpdate(ctx, &siteapi.UpdateTemplateInput{
 		Revision: res.Revision,
-		Doc:      siteapi.NewOptEditorDocument(paragraphDoc("Second")),
+		Doc:      siteapi.NewOptEditorDocument(testhelper.ParagraphDoc("Second")),
 	}, siteapi.SiteTemplatesUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	assert.Contains(t, upd.Body, "Second")
@@ -75,7 +65,7 @@ func TestSiteTemplatesSaveADocumentWithItsBody(t *testing.T) {
 func TestSiteTemplatesWithoutADocumentStayHTMLOnly(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	res, err := c.SiteTemplatesCreate(ctx, &siteapi.CreateTemplateInput{
 		Name: "Html", Body: siteapi.NewOptString("<p>Hi</p>"),
@@ -90,7 +80,7 @@ func TestSiteTemplatesWithoutADocumentStayHTMLOnly(t *testing.T) {
 func TestSiteTemplatesRefuseADocumentThatCannotBeRendered(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 	before := env.DB.EmailTemplate.Query().CountX(ctx)
 	welcome := env.DB.EmailTemplate.GetX(ctx, fixtures.TemplateWelcomeID)
@@ -121,9 +111,9 @@ func TestSiteTemplatesRefuseABodyAndADocumentTogether(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	_, err := c.SiteTemplatesCreate(context.Background(), &siteapi.CreateTemplateInput{
+	_, err := c.SiteTemplatesCreate(t.Context(), &siteapi.CreateTemplateInput{
 		Name: "Both", Body: siteapi.NewOptString("<p>x</p>"),
-		Doc: siteapi.NewOptEditorDocument(paragraphDoc("x")),
+		Doc: siteapi.NewOptEditorDocument(testhelper.ParagraphDoc("x")),
 	}, siteapi.SiteTemplatesCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 }

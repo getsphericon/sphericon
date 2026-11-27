@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"strconv"
 	"strings"
@@ -22,7 +21,7 @@ import (
 func TestSiteRulesDeleteKeepsARuleWithOrWithoutFirings(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	ws := siteapi.WorkspaceId(fixtures.AcmePublicID)
 	fired, never := idStr(fixtures.RuleTagClickedID), idStr(fixtures.RuleInactiveID)
 
@@ -58,7 +57,7 @@ func TestSiteRulesDeleteKeepsARuleWithOrWithoutFirings(t *testing.T) {
 func TestSiteRulesRefuseTooManyActionsAndAnOversizedCondition(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	ws := siteapi.WorkspaceId(fixtures.AcmePublicID)
 	actions := make([]siteapi.RuleActionInput, rules.MaxActions+1)
 	for i := range actions {

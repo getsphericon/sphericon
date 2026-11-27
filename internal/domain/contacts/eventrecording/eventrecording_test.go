@@ -1,7 +1,6 @@
 package eventrecording_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -27,7 +26,7 @@ func TestRecordAttachesEventToExistingContactByAlias(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := newModule(env)
 
-	err := m.Record(context.Background(), env.DB.Scoped(fixtures.AcmeID), []eventrecording.Input{
+	err := m.Record(t.Context(), env.DB.Scoped(fixtures.AcmeID), []eventrecording.Input{
 		{SubjectID: "s-1", Action: "page_view", Email: new("ALICE@example.com")},
 		{SubjectID: "nobody", Action: "signup", Email: new("nobody@example.com")},
 	})
@@ -45,7 +44,7 @@ func TestRecordCarriesPropertiesVerbatim(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := newModule(env)
 
-	require.NoError(t, m.Record(context.Background(), env.DB.Scoped(fixtures.AcmeID), []eventrecording.Input{
+	require.NoError(t, m.Record(t.Context(), env.DB.Scoped(fixtures.AcmeID), []eventrecording.Input{
 		{SubjectID: "s", Action: "added_to_cart", Properties: map[string]any{"sku": "A1"}},
 	}))
 

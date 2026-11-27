@@ -22,7 +22,7 @@ func TestMetricsServerServesExpositionOnItsOwnListener(t *testing.T) {
 	srv := telemetry.NewMetricsServer("127.0.0.1:0")
 	require.NoError(t, srv.Listen(t.Context()))
 	go func() { cleanup.Served("srv", srv.Serve()) }()
-	t.Cleanup(func() { cleanup.Report("shut srv down", srv.Shutdown(context.Background())) })
+	t.Cleanup(func() { cleanup.Report("shut srv down", srv.Shutdown(context.WithoutCancel(t.Context()))) })
 	base := "http://" + srv.Addr()
 
 	code, body := testhelper.HTTPGet(t, base+"/metrics")

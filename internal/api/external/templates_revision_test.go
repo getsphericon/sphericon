@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -18,7 +17,7 @@ import (
 func TestExternalTemplateUpdateOnAStaleRevisionIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeTemplatesRead, apitokens.ScopeTemplatesWrite)
-	ctx := context.Background()
+	ctx := t.Context()
 	id := entityIDString(fixtures.TemplateWelcomeID)
 	read, err := c.TemplatesGet(ctx, externalapi.TemplatesGetParams{ID: id})
 	require.NoError(t, err)
@@ -39,7 +38,7 @@ func TestExternalTemplateUpdateWithoutARevisionIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 	bearer := env.ScopedBearer(t, apitokens.ScopeTemplatesRead, apitokens.ScopeTemplatesWrite)
 	c := env.ExternalVia(t, bearer, testhelper.DropField("revision"))
-	ctx := context.Background()
+	ctx := t.Context()
 	before := env.DB.EmailTemplate.GetX(ctx, fixtures.TemplateWelcomeID)
 
 	_, err := c.TemplatesUpdate(ctx, &externalapi.UpdateTemplateInput{Revision: externalapi.Revision(before.Revision), Subject: externalapi.NewOptString("Blind")},

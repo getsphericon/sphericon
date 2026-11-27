@@ -21,7 +21,7 @@ import (
 // open editor stale as an owner's edit does.
 func TestEveryUpdateThatChangesSomethingMovesTheRevision(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	id := int64(fixtures.WebhookCodebasicsID)
 	revision := func() int64 {
 		t.Helper()
@@ -43,7 +43,7 @@ func TestEveryUpdateThatChangesSomethingMovesTheRevision(t *testing.T) {
 // write of what an editor shows: it moves the revision.
 func TestAnUpdateOfNoColumnMovesTheRevision(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	before := env.DB.Contact.GetX(ctx, fixtures.ContactAliceID).Revision
 
 	env.DB.Contact.UpdateOneID(fixtures.ContactAliceID).ExecX(ctx)
@@ -56,7 +56,7 @@ func TestAnUpdateOfNoColumnMovesTheRevision(t *testing.T) {
 // nothing leaves every open editor fresh.
 func TestAnUpdateThatChangesNothingWritesNothing(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	before := env.DB.EmailTemplate.GetX(ctx, fixtures.TemplateWelcomeID)
 
 	got := env.DB.EmailTemplate.UpdateOneID(before.ID).SetName(before.Name).SetSubject(before.Subject).SaveX(ctx)
@@ -136,7 +136,7 @@ func TestWhatAnUnchangedWriteIs(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			env := testhelper.Setup(t)
-			ctx := context.Background()
+			ctx := t.Context()
 			tc.prepare(ctx, env)
 			before := revisionOf(ctx, env)
 
@@ -152,7 +152,7 @@ func TestWhatAnUnchangedWriteIs(t *testing.T) {
 // A write that changes nothing over a revision the row has moved past is refused like any other.
 func TestANoOpOverAStaleRevisionIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	before := env.DB.EmailTemplate.GetX(ctx, fixtures.TemplateWelcomeID)
 
 	err := env.DB.EmailTemplate.UpdateOneID(before.ID).Where(emailtemplate.Revision(before.Revision - 1)).SetName(before.Name).Exec(ctx)

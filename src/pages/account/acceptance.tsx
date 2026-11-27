@@ -111,10 +111,7 @@ export function AcceptancePage() {
     mutation: siteUserAcceptPendingMutation(),
     errorTitle: t(($) => $.acceptance.acceptErrorTitle),
     // A version published meanwhile refuses the acceptance: the screen reloads to show it.
-    handleError: async () => {
-      await queryClient.invalidateQueries({ queryKey: siteUserGetMeQueryKey() })
-      return false
-    },
+    rereadOnError: true,
     onDone: async (me) => {
       queryClient.setQueryData(siteUserGetMeQueryKey(), me)
       await (redirect ? navigate({ href: redirect }) : navigate({ to: indexRoute.to }))

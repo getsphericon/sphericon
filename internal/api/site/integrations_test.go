@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -51,7 +50,7 @@ func sesInput(region, accessKey, secret string) siteapi.IntegrationConfigInput {
 func TestSiteIntegrationsSesEndpointRoundTrips(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	params := siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID}
 
 	// SES integration targeting an SES-compatible endpoint (e.g. Yandex Postbox), which
@@ -95,7 +94,7 @@ func TestSiteIntegrationsSesEndpointRoundTrips(t *testing.T) {
 func TestSiteIntegrationsCRUD(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	params := siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID}
 
 	created, err := c.SiteIntegrationsCreate(ctx, &siteapi.CreateIntegrationInput{
@@ -145,7 +144,7 @@ func TestSiteIntegrationsCRUD(t *testing.T) {
 func TestSiteIntegrationsRejectsWrongProviderOnUpdate(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// Swapping an SMTP relay's config to a different provider kind is rejected.
 	_, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Revision: siteapi.Revision(env.IntegrationRevision(ctx, t, int64(fixtures.IntegrationAcmeGenericAID))),
@@ -157,7 +156,7 @@ func TestSiteIntegrationsRejectsWrongProviderOnUpdate(t *testing.T) {
 func TestSiteIntegrationsSingleDefaultPerChannel(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	params := siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID}
 
 	created, err := c.SiteIntegrationsCreate(ctx, &siteapi.CreateIntegrationInput{
@@ -185,7 +184,7 @@ func TestSiteIntegrationsSingleDefaultPerChannel(t *testing.T) {
 func TestSiteIntegrationsPromoteViaUpdate(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// Promote a relay to default via update; this must demote the old default in the
 	// same transaction (see promote path in SiteIntegrationsUpdate).
@@ -210,13 +209,13 @@ func TestSiteIntegrationsScopedToWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	_, err := c.SiteIntegrationsList(context.Background(), siteapi.SiteIntegrationsListParams{WorkspaceId: "NoSuchWs"})
+	_, err := c.SiteIntegrationsList(t.Context(), siteapi.SiteIntegrationsListParams{WorkspaceId: "NoSuchWs"})
 	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 }
 
 func TestSiteIntegrationsWritesNeedAnOwnerOrAdmin(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	id := siteapi.EntityId(fixtures.IntegrationAcmeSmtpLoginID)
 	member := env.SiteActor(t, fixtures.MemberMaryEmail)
 
@@ -247,7 +246,7 @@ func TestSiteIntegrationsWritesNeedAnOwnerOrAdmin(t *testing.T) {
 func TestSiteIntegrationsBlankSecretIsKeptOnlyForTheSameDestination(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	// The relay logs in to smtp.example.com:587 as mailer with a stored password.
 	params := siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.IntegrationAcmeSmtpLoginID}
 
@@ -273,7 +272,7 @@ func TestSiteIntegrationsBlankSecretIsKeptOnlyForTheSameDestination(t *testing.T
 func TestSiteIntegrationsSesBlankSecretFollowsRegionAndKey(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	created, err := c.SiteIntegrationsCreate(ctx, &siteapi.CreateIntegrationInput{
 		Params: sesTopicParams,
 		Name:   "AWS", Config: sesInput("eu-west-1", "AKIA1234", "secret"),
@@ -302,7 +301,7 @@ func TestSiteIntegrationsSesBlankSecretFollowsRegionAndKey(t *testing.T) {
 func TestSiteIntegrationsRefuseAnInsecureSesEndpoint(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	_, err := c.SiteIntegrationsCreate(context.Background(), &siteapi.CreateIntegrationInput{
+	_, err := c.SiteIntegrationsCreate(t.Context(), &siteapi.CreateIntegrationInput{
 		Params: sesTopicParams,
 		Name:   "Bad",
 		Config: siteapi.IntegrationConfigInput{

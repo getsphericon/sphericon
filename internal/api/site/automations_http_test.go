@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"testing"
@@ -23,7 +22,7 @@ var httpSecret = testhelper.SigningSecret("http")
 func TestSiteHTTPStepIsMaskedOnReadKeptOnEditAndAbsentFromTheAuditLog(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 	body := `{"text":"{{ first_name }}"}`
 
@@ -88,7 +87,7 @@ func TestSiteHTTPStepIsMaskedOnReadKeptOnEditAndAbsentFromTheAuditLog(t *testing
 // sealedValues returns the ciphertext of the first step's URL, secret and header values.
 func sealedValues(t *testing.T, env *testhelper.TestEnv, id int64) []string {
 	t.Helper()
-	call := storedHTTP(t, testhelper.LatestSteps(context.Background(), t, env.DB, id), 0)
+	call := storedHTTP(t, testhelper.LatestSteps(t.Context(), t, env.DB, id), 0)
 	out := make([]string, 0, 2+len(call.Headers))
 	out = append(out, call.URL, call.Secret)
 	for _, h := range call.Headers {
@@ -103,7 +102,7 @@ func sealedValues(t *testing.T, env *testhelper.TestEnv, id int64) []string {
 func TestSiteHTTPStepDryRunRendersForAContactWithoutCalling(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	params := siteapi.SiteAutomationsDryRunHttpStepParams{WorkspaceId: fixtures.AcmePublicID}
 	contact := siteapi.EntityId(fixtures.ContactAliceID)
 
@@ -122,7 +121,7 @@ func TestSiteHTTPStepDryRunRendersForAContactWithoutCalling(t *testing.T) {
 func TestSiteHTTPStepRefusedAtSaveIsUnprocessable(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	_, err := c.SiteAutomationsCreate(context.Background(), &siteapi.CreateAutomationInput{
+	_, err := c.SiteAutomationsCreate(t.Context(), &siteapi.CreateAutomationInput{
 		Name: "Bad", Trigger: testhelper.SiteTrigger("signup"),
 		Steps: testhelper.SitePathEdit(siteapi.HttpStepInput{
 			URL:  siteapi.NewOptString("https://hooks.example.com/x"),
@@ -135,7 +134,7 @@ func TestSiteHTTPStepRefusedAtSaveIsUnprocessable(t *testing.T) {
 func TestSiteAutomationRefusesInfrastructureEventsAsTrigger(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	params := siteapi.SiteAutomationsCreateParams{WorkspaceId: fixtures.AcmePublicID}
 
 	for _, trigger := range []string{systemevent.EmailDelivered, systemevent.EmailDelayed, systemevent.EmailDropped, systemevent.EmailBounced, systemevent.EmailComplained, systemevent.EmailSent} {

@@ -1643,6 +1643,14 @@ type Handler interface {
 	//
 	// PUT /workspaces/{workspaceId}/engagement-tracking-default
 	SiteWorkspacesSetEngagementTrackingDefault(ctx context.Context, req *SiteSetEngagementTrackingDefaultInput, params SiteWorkspacesSetEngagementTrackingDefaultParams) (*SiteWorkspaceResource, error)
+	// SiteWorkspacesSetLinkIdentity implements SiteWorkspaces_setLinkIdentity operation.
+	//
+	// Set the Link identity token settings (Owner and Admin, ADR 0160): the switch and the hostnames of
+	// the Workspace's sites. Only a person changes them, here: neither `/api` nor MCP does. Turning it on
+	// with no host is refused with 422. A change is recorded as an Audit entry.
+	//
+	// PUT /workspaces/{workspaceId}/link-identity
+	SiteWorkspacesSetLinkIdentity(ctx context.Context, req *SiteSetLinkIdentityInput, params SiteWorkspacesSetLinkIdentityParams) (*SiteWorkspaceResource, error)
 	// SiteWorkspacesSetTimezone implements SiteWorkspaces_setTimezone operation.
 	//
 	// Set the Workspace time zone (Owner and Admin only), the zone of every Report day (ADR 0057). 422 for

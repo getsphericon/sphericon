@@ -39,7 +39,7 @@ func waitingFor(counted map[siteapi.DeferralCause]int32) []siteapi.DeferralCause
 // cap spent and waits for it. Every other reason and cause reads zero.
 func TestTheBroadcastFiguresCountTheSkippedByReasonAndTheWaitingByCause(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	alice := env.PlaceRecipient(ctx, fixtures.BroadcastSendingID, fixtures.ContactAliceID)
 	carol := env.PlaceRecipient(ctx, fixtures.BroadcastSendingID, fixtures.ContactCarolID)
@@ -66,7 +66,7 @@ func TestTheBroadcastFiguresCountTheSkippedByReasonAndTheWaitingByCause(t *testi
 // Boston number is in New York's zone alone. An email Broadcast has no window, and no such count.
 func TestAnSMSBroadcastsFiguresCountTheSendsJudgedByASingleZone(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	env.LacunaTwilio(t)
 	sent := env.SendBroadcastThrough(t, env.OutboundModule(), fixtures.BroadcastLacunaSmsGreetingID)
 	require.NoError(t, sent)
@@ -88,7 +88,7 @@ func TestAnSMSBroadcastsFiguresCountTheSendsJudgedByASingleZone(t *testing.T) {
 // nothing, and every cause reads zero.
 func TestAFinishedBroadcastHasNoneWaiting(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	carol := env.PlaceRecipient(ctx, fixtures.BroadcastSendingID, fixtures.ContactCarolID)
 	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSendCap(1).ExecX(ctx)
@@ -114,7 +114,7 @@ func TestAFinishedBroadcastHasNoneWaiting(t *testing.T) {
 // Alice, suppressed, is Skipped there by Send-eligibility and moves on.
 func TestTheAutomationReportCountsEachStepsSkippedByReasonAndItsWaitingByCause(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerDay(1).ExecX(ctx)
 	receipt, err := env.OutboundModule().Send(ctx, acme, outboundmessages.Request{

@@ -2,7 +2,6 @@ package external_test
 
 import (
 	"bytes"
-	"context"
 	"io"
 	"net/http"
 	"strings"
@@ -47,7 +46,7 @@ func (r recorder) Do(req *http.Request) (*http.Response, error) {
 // is in none of them.
 func TestNoContactKeyReachesAClient(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	const mark = 7770000001
 	testhelper.RestartIDs(t, env.SQLDB, "contacts", mark)
 	bodies := make([]string, 0, 16)

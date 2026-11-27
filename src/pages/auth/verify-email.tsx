@@ -20,6 +20,7 @@ import { Route as loginRoute } from '../../routes/login.tsx'
 import { Route as verifyEmailRoute } from '../../routes/verify-email.tsx'
 import { Route as overviewRoute } from '../../routes/workspaces/$workspaceId/index.tsx'
 import { getApiErrorMessage, hasErrorStatus } from '../../utils/apiErrors.ts'
+import { oneShotTokenQuery } from '../../utils/oneShotToken.ts'
 
 function StatusCard({ children }: { children: ReactNode }) {
   return (
@@ -146,34 +147,28 @@ function PasswordForm({ token }: { token: string }) {
 
 // What the token alone yields: in the Sign-up browser the password from the Sign-up form stays
 // and the answer starts the session; anywhere else the answer is "password needed" (428) and
-// nothing has changed; a refused link (400) is spent. The page reads it once: the answer is kept
-// for good, so a remount or a refocus never sends the token again, and the request takes no abort
-// signal, so one that was sent is not cut off and sent a second time.
+// nothing has changed; a refused link (400) is spent. The page reads it once (oneShotTokenQuery).
 function Verification({ token }: { token: string }) {
-  const { data } = useSuspenseQuery({
-    // A POST has no generated query key, so its mutation key names the operation and the token.
-    // A Site Auth mutation invalidates it by that key's tag, which a static query never refetches.
-    queryKey: siteAuthVerifyEmailMutationKey({ body: { token } }),
-    queryFn: async () => {
-      try {
-        const { data: verified } = await siteAuthVerifyEmail({
-          body: { token },
-          throwOnError: true,
-        })
-        return { kind: 'verified', landingWorkspaceId: verified.landingWorkspaceId } as const
-      } catch (error) {
-        if (hasErrorStatus(error, [428])) {
-          return { kind: 'needsPassword' } as const
+  const { data } = useSuspenseQuery(
+    oneShotTokenQuery(
+      siteAuthVerifyEmailMutationKey({ body: { token } }),
+      async () => {
+        try {
+          const { data: verified } = await siteAuthVerifyEmail({
+            body: { token },
+            throwOnError: true,
+          })
+          return { kind: 'verified', landingWorkspaceId: verified.landingWorkspaceId } as const
+        } catch (error) {
+          if (hasErrorStatus(error, [428])) {
+            return { kind: 'needsPassword' } as const
+          }
+          throw error
         }
-        if (hasErrorStatus(error, [400])) {
-          return { kind: 'spent' } as const
-        }
-        throw error
-      }
-    },
-    staleTime: 'static',
-    retry: false,
-  })
+      },
+      { kind: 'spent' } as const,
+    ),
+  )
 
   if (data.kind === 'needsPassword') {
     return <PasswordForm token={token} />

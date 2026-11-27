@@ -28,7 +28,7 @@ func joinDomainsEnv(t *testing.T) (*testhelper.TestEnv, *dnstest.Zone) {
 
 func listJoinDomains(t *testing.T, c *siteapi.Client, ws siteapi.WorkspaceId) []siteapi.SiteJoinDomainResource {
 	t.Helper()
-	list, err := c.SiteJoinDomainsList(context.Background(), siteapi.SiteJoinDomainsListParams{WorkspaceId: ws})
+	list, err := c.SiteJoinDomainsList(t.Context(), siteapi.SiteJoinDomainsListParams{WorkspaceId: ws})
 	require.NoError(t, err)
 	return list
 }
@@ -78,7 +78,7 @@ func TestJoinDomainsListShowsVerifiedAndPendingWithTheRecordToPublish(t *testing
 
 func TestAMemberCannotManageJoinDomains(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	ws := siteapi.WorkspaceId(fixtures.AcmePublicID)
 	id := siteapi.EntityId(fixtures.JoinDomainPendingID)
 	c := env.SiteActor(t, fixtures.MemberMaryEmail)
@@ -232,7 +232,7 @@ func TestJoinDomainsAMailFailureDoesNotUndoTheMove(t *testing.T) {
 
 func TestJoinDomainsRemoveDeletesOnlyTheClaim(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ws := siteapi.WorkspaceId(fixtures.AcmePublicID)
 	claim := joinDomain(t, owner, ws, fixtures.JoinDomainPendingID)

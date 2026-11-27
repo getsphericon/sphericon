@@ -117,7 +117,7 @@ func (e *realEnv) enrollments() *automations.StepExecution {
 // (the Enrollment begins now and no Event began it), and returns the Enrollment.
 func (e *realEnv) enrolledNow(t *testing.T, automationID, contactID int64) int64 {
 	t.Helper()
-	ctx := context.Background()
+	ctx := t.Context()
 	in := automations.EnrollOnRuleInput{AutomationID: automationID, ContactID: contactID}
 	made, err := e.enrollments().EnrollOnRule(ctx, e.scoped, in)
 	require.NoError(t, err)
@@ -133,7 +133,7 @@ func (e *realEnv) enrolledNow(t *testing.T, automationID, contactID int64) int64
 // the lock an exit's update needs is refused at once (NOWAIT) instead of queued.
 func (e *realEnv) runRowIsLocked(t *testing.T, runID int64) bool {
 	t.Helper()
-	ctx := context.Background()
+	ctx := t.Context()
 	tx, err := e.client.Tx(ctx)
 	require.NoError(t, err)
 	defer func() { _ = tx.Rollback() }()
@@ -153,7 +153,7 @@ type exitResult struct {
 // linearized before the exit, so exactly one mail goes out for the step and none after it.
 func TestExitDuringAnEmailStepWaitsForTheSendAndNothingFollows(t *testing.T) {
 	e := newRealEnv(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	bs := newBlockingSender()
 	t.Cleanup(bs.release) // a failed assertion must not leave the send blocked
 	stepper := e.stepper(t, bs)
@@ -189,7 +189,7 @@ func TestExitDuringAnEmailStepWaitsForTheSendAndNothingFollows(t *testing.T) {
 // The same order holds for an HTTP step: the call is in flight under the Enrollment's lock.
 func TestExitDuringAnHTTPStepWaitsForTheCall(t *testing.T) {
 	e := newRealEnv(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	cipher := e.env.Cipher
 	queue := testhelper.RiverClientOn(t, e.env.SQLDB)
 	workCtx := rivertest.WorkContext(ctx, queue)

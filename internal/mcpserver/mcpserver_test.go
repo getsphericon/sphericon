@@ -1,7 +1,6 @@
 package mcpserver_test
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -24,7 +23,7 @@ import (
 
 func call(t *testing.T, s *mcp.ClientSession, name string, args map[string]any) *mcp.CallToolResult {
 	t.Helper()
-	res, err := s.CallTool(context.Background(), &mcp.CallToolParams{Name: name, Arguments: args})
+	res, err := s.CallTool(t.Context(), &mcp.CallToolParams{Name: name, Arguments: args})
 	require.NoError(t, err)
 	return res
 }
@@ -87,7 +86,7 @@ var (
 
 func listedTools(t *testing.T, s *mcp.ClientSession) map[string]*mcp.Tool {
 	t.Helper()
-	list, err := s.ListTools(context.Background(), nil)
+	list, err := s.ListTools(t.Context(), nil)
 	require.NoError(t, err)
 	got := map[string]*mcp.Tool{}
 	for _, tool := range list.Tools {
@@ -144,7 +143,7 @@ func TestMCPSendToolCallIsRefusedWithoutMCPSend(t *testing.T) {
 	res := call(t, s, "broadcasts_schedule", args)
 	require.True(t, res.IsError)
 	assert.Contains(t, text(t, res), "mcp:send")
-	b, err := env.DB.Broadcast.Get(context.Background(), fixtures.BroadcastDraftID)
+	b, err := env.DB.Broadcast.Get(t.Context(), fixtures.BroadcastDraftID)
 	require.NoError(t, err)
 	assert.Equal(t, broadcast.StatusDraft, b.Status, "the refused call changed nothing")
 
@@ -159,13 +158,13 @@ func TestMCPSendToolCallIsRefusedWithoutMCPSend(t *testing.T) {
 	s = env.MCPClient(t, env.ScopedBearer(t, apitokens.ScopeMcpSend, apitokens.ScopeBroadcastsSend))
 	res = call(t, s, "broadcasts_schedule", args)
 	require.False(t, res.IsError, text(t, res))
-	b, err = env.DB.Broadcast.Get(context.Background(), fixtures.BroadcastDraftID)
+	b, err = env.DB.Broadcast.Get(t.Context(), fixtures.BroadcastDraftID)
 	require.NoError(t, err)
 	assert.Equal(t, broadcast.StatusScheduled, b.Status)
 
 	res = call(t, s, "broadcasts_unschedule", map[string]any{"id": testhelper.ID(fixtures.BroadcastDraftID)})
 	require.False(t, res.IsError, text(t, res))
-	b, err = env.DB.Broadcast.Get(context.Background(), fixtures.BroadcastDraftID)
+	b, err = env.DB.Broadcast.Get(t.Context(), fixtures.BroadcastDraftID)
 	require.NoError(t, err)
 	assert.Equal(t, broadcast.StatusDraft, b.Status)
 }
@@ -353,7 +352,7 @@ func TestMCPStoresBodiesAsWritten(t *testing.T) {
 // with the same scope the /api read needs.
 func TestMCPIntegrationsListReadsProviderLimitAndUsage(t *testing.T) {
 	env := testhelper.Setup(t)
-	env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(14).ExecX(context.Background())
+	env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(14).ExecX(t.Context())
 
 	denied := call(t, env.MCPClient(t, env.ScopedBearer(t, apitokens.ScopeContactsRead)), "integrations_list", nil)
 	assert.True(t, denied.IsError, "integrations:read is required")
@@ -382,7 +381,7 @@ func TestMCPIntegrationsListReadsProviderLimitAndUsage(t *testing.T) {
 // projected from GET /workspace.
 func TestMCPWorkspaceGetReadsTheSendCap(t *testing.T) {
 	env := testhelper.Setup(t)
-	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSendCap(5000).ExecX(context.Background())
+	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSendCap(5000).ExecX(t.Context())
 
 	res := call(t, env.MCPClient(t, env.ScopedBearer(t, apitokens.ScopeContactsRead)), "workspace_get", nil)
 	require.False(t, res.IsError, text(t, res))
@@ -497,7 +496,7 @@ func TestMCPConsentOnlyNarrows(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.MCPClient(t, env.ScopedBearer(t, apitokens.ScopeContactsWrite, apitokens.ScopeSuppressionsWrite))
 
-	list, err := s.ListTools(context.Background(), nil)
+	list, err := s.ListTools(t.Context(), nil)
 	require.NoError(t, err)
 	for _, tool := range list.Tools {
 		assert.NotContains(t, strings.ToLower(tool.Name), "resubscribe")

@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"testing"
@@ -18,18 +17,18 @@ import (
 func setRetention(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceId, days siteapi.NilRetentionDays) error {
 	t.Helper()
 	// A change names the revision it was made on (ADR 0119), so the client reads the Workspace first.
-	read, err := c.SiteWorkspacesGet(context.Background(), siteapi.SiteWorkspacesGetParams{WorkspaceId: workspaceID})
+	read, err := c.SiteWorkspacesGet(t.Context(), siteapi.SiteWorkspacesGetParams{WorkspaceId: workspaceID})
 	if err != nil {
 		return err
 	}
-	_, err = c.SiteAuditSetRetention(context.Background(), &siteapi.SiteAuditRetentionInput{Revision: read.Revision, RetentionDays: days},
+	_, err = c.SiteAuditSetRetention(t.Context(), &siteapi.SiteAuditRetentionInput{Revision: read.Revision, RetentionDays: days},
 		siteapi.SiteAuditSetRetentionParams{WorkspaceId: workspaceID})
 	return err
 }
 
 func retentionOf(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceId) (*siteapi.SiteAuditRetention, error) {
 	t.Helper()
-	return c.SiteAuditGetRetention(context.Background(), siteapi.SiteAuditGetRetentionParams{WorkspaceId: workspaceID})
+	return c.SiteAuditGetRetention(t.Context(), siteapi.SiteAuditGetRetentionParams{WorkspaceId: workspaceID})
 }
 
 func TestAuditRetentionIsSetReadAndRecorded(t *testing.T) {

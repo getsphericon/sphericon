@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -21,7 +20,7 @@ const missingAutomation = externalapi.EntityId(999999)
 // exist, and the same for another workspace's automation, which stays untouched.
 func TestExternalAutomationsAreWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.ExternalScoped(t, apitokens.ScopeAutomationsRead, apitokens.ScopeAutomationsWrite, apitokens.ScopeAutomationsPublish)
 
 	foreign := env.DB.Automation.GetX(ctx, fixtures.AutomationGlobexID)

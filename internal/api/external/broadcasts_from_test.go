@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -18,7 +17,7 @@ import (
 // alone is not re-checked, so a draft whose domain lost verification stays editable.
 func TestExternalBroadcastFromEmailMustBeAVerifiedSendingDomain(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	c := env.ExternalScoped(t, apitokens.ScopeBroadcastsWrite)
 
 	create := func(from string) error {

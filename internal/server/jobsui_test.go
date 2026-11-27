@@ -19,7 +19,7 @@ import (
 func TestTheJobQueueUIServesItsPagesAndHidesArguments(t *testing.T) {
 	ui, err := server.NewJobsUI(testhelper.Setup(t).SQLDB)
 	require.NoError(t, err)
-	ctx, stop := context.WithCancel(context.Background())
+	ctx, stop := context.WithCancel(t.Context())
 	t.Cleanup(stop)
 	require.NoError(t, ui.Start(ctx))
 
@@ -38,7 +38,5 @@ func TestTheJobQueueUIServesItsPagesAndHidesArguments(t *testing.T) {
 
 func serve(t *testing.T, h http.Handler, path string) *httptest.ResponseRecorder {
 	t.Helper()
-	rec := httptest.NewRecorder()
-	h.ServeHTTP(rec, httptest.NewRequestWithContext(t.Context(), http.MethodGet, path, nil))
-	return rec
+	return testhelper.ServeHandler(h, httptest.NewRequestWithContext(t.Context(), http.MethodGet, path, nil))
 }

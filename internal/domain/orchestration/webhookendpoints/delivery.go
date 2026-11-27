@@ -64,9 +64,11 @@ func (m *Module) Deliver(ctx context.Context, s *ent.Scoped, e *ent.WebhookEndpo
 func (m *Module) RecordDelivery(ctx context.Context, s *ent.Scoped, e *ent.WebhookEndpoint, sendErr error) error {
 	change := HealthChange{Trigger: Succeed, At: m.now()}
 	if sendErr != nil {
-		if !errors.As(sendErr, &change.Failure) {
+		failure, ok := errors.AsType[*webhook.DeliveryError](sendErr)
+		if !ok {
 			return nil // not a delivery outcome (for example, an unusable secret)
 		}
+		change.Failure = failure
 		change.Trigger = Fail
 		if webhook.RateLimited(sendErr) != nil {
 			change.Trigger = RateLimit

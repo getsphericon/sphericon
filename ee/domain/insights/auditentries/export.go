@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/samber/lo"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -119,9 +121,9 @@ func exportRow(e *ent.AuditEntry) []string {
 		}
 	}
 	row := []string{
-		strconv.FormatInt(v.ID, 10), v.OccurredAt.UTC().Format(time.RFC3339), v.ActorKind, valueOrEmpty(v.ActorID), valueOrEmpty(v.ActorName),
-		v.Action, v.TargetType, valueOrEmpty(v.TargetID), valueOrEmpty(v.TargetName), diff,
-		valueOrEmpty(v.RequestID), valueOrEmpty(v.IP), valueOrEmpty(v.UserAgent),
+		strconv.FormatInt(v.ID, 10), v.OccurredAt.UTC().Format(time.RFC3339), v.ActorKind, lo.FromPtr(v.ActorID), lo.FromPtr(v.ActorName),
+		v.Action, v.TargetType, lo.FromPtr(v.TargetID), lo.FromPtr(v.TargetName), diff,
+		lo.FromPtr(v.RequestID), lo.FromPtr(v.IP), lo.FromPtr(v.UserAgent),
 	}
 	for i, cell := range row {
 		row[i] = defuseFormula(cell)
@@ -137,11 +139,4 @@ func defuseFormula(cell string) string {
 		return "'" + cell
 	}
 	return cell
-}
-
-func valueOrEmpty(s *string) string {
-	if s == nil {
-		return ""
-	}
-	return *s
 }

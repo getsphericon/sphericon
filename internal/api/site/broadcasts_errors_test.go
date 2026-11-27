@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 	"time"
@@ -20,7 +19,7 @@ import (
 func TestSiteBroadcastsErrorBranches(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	acme, foreign := siteapi.WorkspaceId(fixtures.AcmePublicID), siteapi.WorkspaceId(fixtures.GlobexPublicID)
 	draft := idStr(fixtures.BroadcastDraftID)
 	missing := idStr(99999)
@@ -104,7 +103,7 @@ func TestSiteBroadcastsErrorBranches(t *testing.T) {
 func TestSiteBroadcastsListPaginatesAndRequiresAuth(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	res, err := c.SiteBroadcastsList(ctx, siteapi.SiteBroadcastsListParams{
 		WorkspaceId: fixtures.AcmePublicID, Page: siteapi.NewOptInt32(2), PageSize: siteapi.NewOptInt32(2),
@@ -126,7 +125,7 @@ func TestSiteBroadcastsListPaginatesAndRequiresAuth(t *testing.T) {
 func TestSiteBroadcastsTestSendDeliversPreview(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := c.SiteBroadcastsTestSend(ctx, &siteapi.TestSendBroadcastInput{Email: siteapi.NewOptEmailAddress("preview@example.com")},
 		siteapi.SiteBroadcastsTestSendParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastDraftID)})

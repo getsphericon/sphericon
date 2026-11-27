@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -58,6 +59,10 @@ type Workspace struct {
 	SendCap *int `json:"send_cap,omitempty"`
 	// DomainJoinEnabled holds the value of the "domain_join_enabled" field.
 	DomainJoinEnabled bool `json:"domain_join_enabled,omitempty"`
+	// LinkIdentityEnabled holds the value of the "link_identity_enabled" field.
+	LinkIdentityEnabled bool `json:"link_identity_enabled,omitempty"`
+	// LinkIdentityHosts holds the value of the "link_identity_hosts" field.
+	LinkIdentityHosts []string `json:"link_identity_hosts,omitempty"`
 	// SecondFactorRequiredAt holds the value of the "second_factor_required_at" field.
 	SecondFactorRequiredAt *time.Time `json:"second_factor_required_at,omitempty"`
 	// ErasedAt holds the value of the "erased_at" field.
@@ -754,7 +759,9 @@ func (*Workspace) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case workspace.FieldRequireConfirmedOptIn, workspace.FieldDomainJoinEnabled, workspace.FieldAbuseExempt:
+		case workspace.FieldLinkIdentityHosts:
+			values[i] = new([]byte)
+		case workspace.FieldRequireConfirmedOptIn, workspace.FieldDomainJoinEnabled, workspace.FieldLinkIdentityEnabled, workspace.FieldAbuseExempt:
 			values[i] = new(sql.NullBool)
 		case workspace.FieldID, workspace.FieldRevision, workspace.FieldRetentionDays, workspace.FieldAttributionWindowDays, workspace.FieldSendCap:
 			values[i] = new(sql.NullInt64)
@@ -911,6 +918,20 @@ func (_m *Workspace) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field domain_join_enabled", values[i])
 			} else if value.Valid {
 				_m.DomainJoinEnabled = value.Bool
+			}
+		case workspace.FieldLinkIdentityEnabled:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field link_identity_enabled", values[i])
+			} else if value.Valid {
+				_m.LinkIdentityEnabled = value.Bool
+			}
+		case workspace.FieldLinkIdentityHosts:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field link_identity_hosts", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.LinkIdentityHosts); err != nil {
+					return fmt.Errorf("unmarshal field link_identity_hosts: %w", err)
+				}
 			}
 		case workspace.FieldSecondFactorRequiredAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -1379,6 +1400,12 @@ func (_m *Workspace) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("domain_join_enabled=")
 	builder.WriteString(fmt.Sprintf("%v", _m.DomainJoinEnabled))
+	builder.WriteString(", ")
+	builder.WriteString("link_identity_enabled=")
+	builder.WriteString(fmt.Sprintf("%v", _m.LinkIdentityEnabled))
+	builder.WriteString(", ")
+	builder.WriteString("link_identity_hosts=")
+	builder.WriteString(fmt.Sprintf("%v", _m.LinkIdentityHosts))
 	builder.WriteString(", ")
 	if v := _m.SecondFactorRequiredAt; v != nil {
 		builder.WriteString("second_factor_required_at=")

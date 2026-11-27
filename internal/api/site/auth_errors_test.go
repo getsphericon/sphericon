@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"testing"
@@ -59,7 +58,7 @@ func TestSiteAuthVerifyNamesEveryFirstWorkspacePersonal(t *testing.T) {
 func TestSiteAuthRecoveryRejectsBadTokens(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteAnonymous(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := signer(t)
 	john, err := env.DB.User.Get(ctx, fixtures.OwnerJohnID)
 	require.NoError(t, err)
@@ -108,7 +107,7 @@ func TestSiteAuthRecoveryRejectsBadTokens(t *testing.T) {
 func TestSiteUserEmailChangeEdgeCases(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	err := c.SiteUserEmailChange(ctx, &siteapi.SiteEmailChangeInput{
 		NewEmail: siteapi.EmailAddress(fixtures.OwnerJohnEmail), CurrentPassword: fixtures.OwnerJohnPassword,

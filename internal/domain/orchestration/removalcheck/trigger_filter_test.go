@@ -1,7 +1,6 @@
 package removalcheck_test
 
 import (
-	"context"
 	"encoding/json"
 	"testing"
 
@@ -36,7 +35,7 @@ func namingTrigger(t *testing.T, action, key, value string) eventmatcher.Matcher
 // only in its draft otherwise, and returns it.
 func filteredOn(t *testing.T, env *testhelper.TestEnv, workspaceID int64, name string, trigger eventmatcher.Matcher, published bool) *ent.Automation {
 	t.Helper()
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(workspaceID)
 	m := testhelper.Module[*automations.Module](env)
 	a, err := m.Create(ctx, s, automations.CreateInput{Name: name, Trigger: automations.EventTrigger{Matcher: trigger}})

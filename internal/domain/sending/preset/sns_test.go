@@ -78,7 +78,7 @@ func (s *snsSigner) handle(t *testing.T, msg map[string]string, version string, 
 	msg["SigningCertURL"] = snsCertURL
 	body, err := json.Marshal(msg)
 	require.NoError(t, err)
-	_, err = s.engine.Handle(context.Background(), s.preset, preset.HandleInput{
+	_, err = s.engine.Handle(t.Context(), s.preset, preset.HandleInput{
 		Request: preset.Request{Body: body}, Params: preset.Params{"topic_arn": snsTopic},
 	})
 	return err

@@ -1,7 +1,6 @@
 package eligibility_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -18,7 +17,7 @@ import (
 // blocks, and a Workspace with no Suppression at all still gets a decision.
 func TestCheckIsConfinedToTheScopedWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	d, err := eligibility.New().Check(ctx, env.DB.Scoped(fixtures.GlobexID), eligibility.CheckInput{Channel: channels.Email, Destination: fixtures.SuppressionGlobexDestination, Mode: eligibility.Marketing(eligibility.SourceBroadcasts)})
 	require.NoError(t, err)

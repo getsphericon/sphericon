@@ -1,7 +1,6 @@
 package tags_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -25,11 +24,11 @@ func TestListReturnsTheWorkspaceCatalogue(t *testing.T) {
 	acme, globex := env.DB.Scoped(fixtures.AcmeID), env.DB.Scoped(fixtures.GlobexID)
 	m := tags.New()
 
-	got, err := m.List(context.Background(), acme)
+	got, err := m.List(t.Context(), acme)
 	require.NoError(t, err)
 	assert.Equal(t, []string{"newsletter", fixtures.TagRenewalDueName, "unused", fixtures.TagVipName}, names(got))
 
-	other, err := m.List(context.Background(), globex)
+	other, err := m.List(t.Context(), globex)
 	require.NoError(t, err)
 	assert.Equal(t, []string{fixtures.TagGlobexName}, names(other), "each workspace sees only its own tags")
 }
@@ -38,7 +37,7 @@ func TestForContactListsOnlyItsTags(t *testing.T) {
 	env := testhelper.Setup(t)
 	acme, globex := env.DB.Scoped(fixtures.AcmeID), env.DB.Scoped(fixtures.GlobexID)
 	m := tags.New()
-	ctx := context.Background()
+	ctx := t.Context()
 
 	got, err := m.ForContact(ctx, acme, fixtures.ContactAliceID)
 	require.NoError(t, err)

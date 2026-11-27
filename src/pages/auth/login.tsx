@@ -8,7 +8,7 @@ import {
 } from '@simplewebauthn/browser'
 import { IconFingerprint } from '@tabler/icons-react'
 import { useMutation } from '@tanstack/react-query'
-import { useNavigate, useRouter, useSearch } from '@tanstack/react-router'
+import { useNavigate, useRouter } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -24,12 +24,12 @@ import {
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { sitePasskeyLoginBegin, sitePasskeyLoginFinish } from '../../generated/site/sdk.gen.ts'
 import type { SiteLoginInput, SiteLoginResult } from '../../generated/site/types.gen.ts'
-import { zSiteSigninError } from '../../generated/site/zod.gen.ts'
 import { useApiErrorMessage } from '../../hooks/useApiErrorMessage.ts'
 import { useNotify } from '../../hooks/useNotify.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as forgotPasswordRoute } from '../../routes/forgot-password.tsx'
 import { Route as indexRoute } from '../../routes/index.tsx'
+import { Route as loginRoute } from '../../routes/login.tsx'
 import { Route as signUpRoute } from '../../routes/sign-up.tsx'
 import { isEmailVerificationRequiredError } from '../../utils/apiErrors.ts'
 
@@ -73,11 +73,10 @@ export function LoginPage() {
   const notify = useNotify()
   const navigate = useNavigate()
   const router = useRouter()
-  // Set when a guard (e.g. the OAuth consent screen) sent the user here to sign in.
-  const search = useSearch({ strict: false })
-  const { redirect } = search
-  // Set when the server's provider callback sent the person back here without a session.
-  const signinError = zSiteSigninError.safeParse(search.error).data
+  // `redirect` is set when a guard (e.g. the OAuth consent screen) sent the user here to sign in;
+  // `error` when the server's provider callback sent the person back here without a session.
+  const search = loginRoute.useSearch()
+  const { redirect, error: signinError } = search
 
   const apiErrorMessage = useApiErrorMessage()
 

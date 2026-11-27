@@ -24,7 +24,7 @@ import (
 // stored opens the config an Integration keeps, as the provider reads it.
 func stored[T any](t *testing.T, env *testhelper.TestEnv, id int64) T {
 	t.Helper()
-	row := env.DB.Scoped(fixtures.AcmeID).Integration().Query().Where(integration.ID(id)).OnlyX(context.Background())
+	row := env.DB.Scoped(fixtures.AcmeID).Integration().Query().Where(integration.ID(id)).OnlyX(t.Context())
 	plain, err := env.Cipher.Decrypt(row.ConfigEncrypted)
 	require.NoError(t, err)
 	var c T

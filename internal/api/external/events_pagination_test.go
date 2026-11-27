@@ -1,7 +1,6 @@
 package external_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -16,7 +15,7 @@ import (
 func TestExternalEventActionsListPagesTheActionsAscending(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeEventsRead)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	all, err := c.EventActionsList(ctx, externalapi.EventActionsListParams{PageSize: externalapi.NewOptInt32(100)})
 	require.NoError(t, err)
@@ -36,7 +35,7 @@ func TestExternalEventActionsListPagesTheActionsAscending(t *testing.T) {
 func TestExternalEventActionsListPageBeyondTheTotal(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeEventsRead)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	first, err := c.EventActionsList(ctx, externalapi.EventActionsListParams{})
 	require.NoError(t, err)

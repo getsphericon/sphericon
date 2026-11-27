@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"maps"
 	"net/http"
 	"slices"
@@ -28,7 +27,7 @@ func statusIs(value string) string {
 func TestSiteAutomationExitAndGoalEventsWriteTheDraft(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	params := siteapi.SiteAutomationsUpdateParams{WorkspaceId: siteapi.WorkspaceId(fixtures.AcmePublicID), ID: idStr(fixtures.AutomationPaymentRecoveryID)}
 	cancelled := testhelper.ConditionInput[siteapi.EventFilterInput](t, statusIs("cancelled"))
 	paid := testhelper.ConditionInput[siteapi.EventFilterInput](t, statusIs("paid"))

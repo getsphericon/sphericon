@@ -5,16 +5,20 @@ import {
   handleSiteAuthSecondFactor,
   handleSiteAuthSigninProviders,
 } from '../../generated/site/msw.gen.ts'
+import { Route as loginRoute } from '../../routes/login.tsx'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
+import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
 import { LoginPage } from './login.tsx'
 import { SignUpPage } from './sign-up.tsx'
+
+const LOGIN = routeMount(loginRoute)
 
 const GOOGLE = { items: [{ name: 'google', displayName: 'Google' }] }
 
 test('the login page offers a button for each enabled sign-in provider', async () => {
   worker.use(handleSiteAuthSigninProviders({ body: GOOGLE }))
-  const { screen } = await renderWithRouter(<LoginPage />)
+  const { screen } = await renderWithRouter(<LoginPage />, LOGIN)
 
   await expect
     .element(screen.getByRole('link', { name: 'Continue with Google' }))
@@ -32,7 +36,7 @@ test('every enabled provider gets its own button, in the order the server lists 
       },
     }),
   )
-  const { screen } = await renderWithRouter(<LoginPage />)
+  const { screen } = await renderWithRouter(<LoginPage />, LOGIN)
 
   await expect
     .element(screen.getByRole('link', { name: 'Continue with GitHub' }))
@@ -43,7 +47,8 @@ test('every enabled provider gets its own button, in the order the server lists 
 test('the login page hands its return address to the provider flow', async () => {
   worker.use(handleSiteAuthSigninProviders({ body: GOOGLE }))
   const { screen } = await renderWithRouter(<LoginPage />, {
-    initialPath: '/workspaces/TestWs01?redirect=%2Fw%2Fabc',
+    ...LOGIN,
+    initialPath: `${LOGIN.initialPath}?redirect=%2Fw%2Fabc`,
   })
 
   await expect
@@ -59,7 +64,7 @@ test('the sign-up page offers the same buttons', async () => {
 })
 
 test('with no provider enabled the login page has no provider button', async () => {
-  const { screen } = await renderWithRouter(<LoginPage />)
+  const { screen } = await renderWithRouter(<LoginPage />, LOGIN)
 
   await expect.element(screen.getByRole('button', { name: 'Sign in' })).toBeVisible()
   await expect.element(screen.getByText('Continue with')).not.toBeInTheDocument()
@@ -74,7 +79,8 @@ test('a provider sign-in that needs a second factor opens the code step', async 
     }),
   )
   const { screen, navigate } = await renderWithRouter(<LoginPage />, {
-    initialPath: '/workspaces/TestWs01?challenge=signed-challenge',
+    ...LOGIN,
+    initialPath: `${LOGIN.initialPath}?challenge=signed-challenge`,
   })
 
   await screen.getByLabelText(/^Authentication code/).fill('123456')
@@ -86,7 +92,8 @@ test('a provider sign-in that needs a second factor opens the code step', async 
 
 test('a refused provider sign-in is explained on the login page', async () => {
   const { screen } = await renderWithRouter(<LoginPage />, {
-    initialPath: '/workspaces/TestWs01?error=email_not_trusted',
+    ...LOGIN,
+    initialPath: `${LOGIN.initialPath}?error=email_not_trusted`,
   })
 
   await expect

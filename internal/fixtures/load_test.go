@@ -76,3 +76,31 @@ func TestFixturesSatisfyEveryForeignKey(t *testing.T) {
 
 	require.Empty(t, orphans, "fixture rows that break a foreign key")
 }
+
+// A test that commits River jobs and dies before its cleanup leaves them in its worker database,
+// which the next run reloads. The loader does not own River's job queue, so the rows survive, and a
+// sequence set back to 100000 would hand the next job an id one of them holds ("duplicate key
+// river_job_pkey"): every job the next run enqueues there fails.
+func TestLoadKeepsSequencesAheadOfRowsItDoesNotOwn(t *testing.T) {
+	cipher := testhelper.Cipher(t)
+	sqlDB, err := sql.Open("pgx", testhelper.EmptyDBURL(t))
+	require.NoError(t, err)
+	t.Cleanup(func() { cleanup.Close(sqlDB, "sqlDB") })
+	_, err = db.Migrate(t.Context(), sqlDB)
+	require.NoError(t, err)
+	dir := filepath.Join("..", "..", "fixtures")
+	require.NoError(t, fixtures.Load(t.Context(), sqlDB, cipher, dir))
+	jobs := testhelper.RiverClientOn(t, sqlDB)
+	_, err = jobs.Insert(t.Context(), leftoverArgs{}, nil)
+	require.NoError(t, err)
+
+	require.NoError(t, fixtures.Load(t.Context(), sqlDB, cipher, dir))
+
+	_, err = jobs.Insert(t.Context(), leftoverArgs{}, nil)
+	require.NoError(t, err, "the job enqueued after the reload gets an id no surviving job holds")
+}
+
+// leftoverArgs is a River job of a kind no worker takes: the one a dead test left committed.
+type leftoverArgs struct{}
+
+func (leftoverArgs) Kind() string { return "leftover" }

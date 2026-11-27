@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"testing"
@@ -18,7 +17,7 @@ import (
 func TestSiteSendingDomainsCRUD(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
 	// Invalid domain is rejected.
@@ -95,7 +94,7 @@ func TestSiteSendingDomainsShowALostVerification(t *testing.T) {
 func TestSiteSendingDomainsListScopedToWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	page, err := c.SiteSendingDomainsList(ctx, siteapi.SiteSendingDomainsListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
@@ -112,7 +111,7 @@ func TestSiteSendingDomainsListScopedToWorkspace(t *testing.T) {
 
 func TestSiteSendingDomainsRequireMembership(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// A real, authenticated user with no membership on acme must get 404 — never
 	// another tenant's sending domains.

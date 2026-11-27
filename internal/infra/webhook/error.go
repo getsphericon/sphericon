@@ -78,32 +78,35 @@ func ParseRetryAfter(value string, now time.Time) (wait time.Duration, ok bool) 
 
 // transportError classifies an error from the client's Do.
 func transportError(err error) *DeliveryError {
-	var (
-		port   *safeurl.AllowedPortError
-		scheme *safeurl.AllowedSchemeError
-		host   *safeurl.InvalidHostError
-		allowH *safeurl.AllowedHostError
-		ip     *safeurl.AllowedIPError
-		v6     *safeurl.IPv6BlockedError
-		creds  *safeurl.SendingCredentialsBlockedError
-		netErr net.Error
-	)
-	switch {
-	case errors.As(err, &port), errors.As(err, &scheme), errors.As(err, &host),
-		errors.As(err, &allowH), errors.As(err, &ip), errors.As(err, &v6), errors.As(err, &creds):
+	if blockedAddress(err) {
 		return &DeliveryError{Kind: KindBlockedAddress, cause: err}
-	case errors.As(err, &netErr) && netErr.Timeout():
+	}
+	if netErr, ok := errors.AsType[net.Error](err); ok && netErr.Timeout() {
 		return &DeliveryError{Kind: KindTimeout, cause: err}
 	}
 	return &DeliveryError{Kind: KindNetwork, cause: err}
+}
+
+// blockedAddress reports whether err is safeurl's refusal of the address the request went to.
+func blockedAddress(err error) bool {
+	return carries[*safeurl.AllowedPortError](err) || carries[*safeurl.AllowedSchemeError](err) ||
+		carries[*safeurl.InvalidHostError](err) || carries[*safeurl.AllowedHostError](err) ||
+		carries[*safeurl.AllowedIPError](err) || carries[*safeurl.IPv6BlockedError](err) ||
+		carries[*safeurl.SendingCredentialsBlockedError](err)
+}
+
+// carries reports whether err's tree holds an error of type E.
+func carries[E error](err error) bool {
+	_, ok := errors.AsType[E](err)
+	return ok
 }
 
 // Retryable reports whether another attempt can succeed where this failure did not: a timeout, a
 // transport error, a 5xx, a 408 or a 429. A blocked address, and any other status (a 400, a 401, a
 // 404, a 410), would answer the same however long the retries run (ADR 0039).
 func Retryable(sendErr error) bool {
-	var d *DeliveryError
-	if !errors.As(sendErr, &d) {
+	d, ok := errors.AsType[*DeliveryError](sendErr)
+	if !ok {
 		return true
 	}
 	switch d.Kind {
@@ -120,8 +123,7 @@ func Retryable(sendErr error) bool {
 // RateLimited returns the receiver's 429 answer, or nil for any other outcome. A 429 is
 // neither a success nor a failure: the receiver is alive and asking us to slow down.
 func RateLimited(sendErr error) *DeliveryError {
-	var deliveryErr *DeliveryError
-	if errors.As(sendErr, &deliveryErr) && deliveryErr.Kind == KindHTTPStatus &&
+	if deliveryErr, ok := errors.AsType[*DeliveryError](sendErr); ok && deliveryErr.Kind == KindHTTPStatus &&
 		deliveryErr.Status == http.StatusTooManyRequests {
 		return deliveryErr
 	}

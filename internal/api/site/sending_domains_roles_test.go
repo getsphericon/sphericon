@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -16,7 +15,7 @@ import (
 // links, so every write needs an Owner or an Admin; reading one stays open to a member.
 func TestSiteSendingDomainsWritesNeedAnOwnerOrAdmin(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
 	id := siteapi.EntityId(fixtures.SendingDomainUnverifiedID)

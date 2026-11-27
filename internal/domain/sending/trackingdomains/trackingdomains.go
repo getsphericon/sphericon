@@ -24,7 +24,6 @@ import (
 	"errors"
 	"io"
 	"log/slog"
-	"net"
 	"net/http"
 	"slices"
 	"strings"
@@ -74,13 +73,6 @@ var constraints = db.Declare(
 	db.Fault("trackingdomain_workspace_id_role",
 		"the current and replacement roles are moved under the Workspace lock, after the Workspace's hosts are read"),
 )
-
-func notFound(err error) error {
-	if ent.IsNotFound(err) {
-		return ErrNotFound
-	}
-	return err
-}
 
 // CNAMELookup resolves the canonical name of a host. net.Resolver.LookupCNAME satisfies
 // it; a host with no CNAME answers itself or a not-found error.
@@ -206,7 +198,7 @@ func roleRank(r trackingdomain.Role) int {
 // Get returns the Workspace's Tracking domain with the id; an unknown id is ErrNotFound.
 func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.TrackingDomain, error) {
 	row, err := s.TrackingDomain().Get(ctx, id)
-	return row, notFound(err)
+	return row, db.NotFoundAs(err, ErrNotFound)
 }
 
 // ServingHost is the host the Workspace's new mail and snippet are built on: the current Tracking
@@ -343,7 +335,7 @@ func (m *Module) Remove(ctx context.Context, s *ent.Scoped, id int64) error {
 		ts := wl.Scope()
 		row, err := ts.TrackingDomain().Get(ctx, id)
 		if err != nil {
-			return notFound(err)
+			return db.NotFoundAs(err, ErrNotFound)
 		}
 		if row.Role != trackingdomain.RoleCurrent {
 			return ts.TrackingDomain().DeleteOneID(id).Exec(ctx)
@@ -404,7 +396,7 @@ func (m *Module) Verify(ctx context.Context, s *ent.Scoped, id int64) (*ent.Trac
 	}
 	row, err := s.TrackingDomain().Get(ctx, id)
 	if err != nil {
-		return nil, notFound(err)
+		return nil, db.NotFoundAs(err, ErrNotFound)
 	}
 	if err := m.checkRow(ctx, s, row); err != nil {
 		return nil, err
@@ -580,8 +572,7 @@ func (c *Checker) held(ctx context.Context, row *ent.TrackingDomain) (bool, erro
 // with a nil error; another resolver failure is returned.
 func (c *Checker) owns(ctx context.Context, row *ent.TrackingDomain) (bool, error) {
 	values, err := c.TXT(ctx, OwnershipName(row.Host))
-	var dnsErr *net.DNSError
-	if errors.As(err, &dnsErr) && dnsErr.IsNotFound {
+	if domainname.NotFound(err) {
 		return false, nil
 	}
 	if err != nil {
@@ -595,8 +586,7 @@ func (c *Checker) owns(ctx context.Context, row *ent.TrackingDomain) (bool, erro
 // false with a nil error; so is an answer of the host itself (no CNAME).
 func (c *Checker) pointsAtTarget(ctx context.Context, host string) (bool, error) {
 	cname, err := c.Lookup(ctx, host)
-	var dnsErr *net.DNSError
-	if errors.As(err, &dnsErr) && dnsErr.IsNotFound {
+	if domainname.NotFound(err) {
 		return false, nil
 	}
 	if err != nil {

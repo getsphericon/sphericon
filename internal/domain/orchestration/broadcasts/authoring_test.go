@@ -40,7 +40,7 @@ func TestListIsNewestFirstAndWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*broadcasts.Module](env)
 
-	page, err := m.List(context.Background(), env.DB.Scoped(fixtures.AcmeID), pagination.Params{Page: 1, PageSize: 100}, broadcasts.ListFilter{})
+	page, err := m.List(t.Context(), env.DB.Scoped(fixtures.AcmeID), pagination.Params{Page: 1, PageSize: 100}, broadcasts.ListFilter{})
 	require.NoError(t, err)
 	require.Len(t, page.Items, page.TotalItems)
 	require.Greater(t, page.TotalItems, 2)
@@ -61,7 +61,7 @@ func TestCreateMakesADraftWithTheGivenFields(t *testing.T) {
 	env := testhelper.Setup(t)
 	name, subject, body, from := "N", "S", "<p></p>", "a@"+fixtures.SendingDomainVerifiedDomain
 
-	b, err := testhelper.Module[*broadcasts.Module](env).Create(context.Background(), env.DB.Scoped(fixtures.AcmeID),
+	b, err := testhelper.Module[*broadcasts.Module](env).Create(t.Context(), env.DB.Scoped(fixtures.AcmeID),
 		broadcasts.CreateInput{Name: &name, Content: broadcasts.EmailContentInput{Subject: &subject, Body: &body, FromEmail: &from}})
 	require.NoError(t, err)
 	assert.Equal(t, broadcast.StatusDraft, b.Status)
@@ -76,7 +76,7 @@ func TestCreateMakesADraftWithTheGivenFields(t *testing.T) {
 func TestUpdateOnlyEditsDraftsAndKeepsUnsetFields(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*broadcasts.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 	subject := "New subject"
 
 	before := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID)
@@ -96,7 +96,7 @@ func TestUpdateOnlyEditsDraftsAndKeepsUnsetFields(t *testing.T) {
 func TestSetSegment(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*broadcasts.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 	seg := int64(fixtures.SegmentProPlanID)
 
 	b, err := m.SetSegment(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, broadcasts.SetSegmentInput{Revision: testhelper.BroadcastRevisionIn(ctx, t, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID), SegmentID: &seg})
@@ -127,7 +127,7 @@ func TestSetSegment(t *testing.T) {
 func TestReport(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*broadcasts.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// The figures are the rows': 11 recipients of the sent Broadcast, all sent, 5 opened and 2
 	// clicked in the fixtures; one more unsubscribes now.
@@ -156,7 +156,7 @@ func TestGetUnknownAndErrors(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*broadcasts.Module](env)
 
-	_, err := m.Get(context.Background(), env.DB.Scoped(fixtures.AcmeID), 987654)
+	_, err := m.Get(t.Context(), env.DB.Scoped(fixtures.AcmeID), 987654)
 	require.ErrorIs(t, err, broadcasts.ErrNotFound)
 	_, err = m.Get(canceled(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID)
 	require.Error(t, err)
@@ -164,7 +164,7 @@ func TestGetUnknownAndErrors(t *testing.T) {
 }
 
 func TestTransitionStoreErrors(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("claim update fails", func(t *testing.T) {
 		env := testhelper.Setup(t)
@@ -191,7 +191,7 @@ func TestTransitionStoreErrors(t *testing.T) {
 func TestAnotherWorkspacesBroadcastAndSegmentAreRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*broadcasts.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 
 	_, err := m.Get(ctx, acme, fixtures.BroadcastGlobexID)
@@ -206,7 +206,7 @@ func TestAnotherWorkspacesBroadcastAndSegmentAreRefused(t *testing.T) {
 func TestArchiveKeepsABroadcastAddressableAndIsWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*broadcasts.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
 	archived, err := m.Archive(ctx, s, fixtures.BroadcastFailedID)
@@ -227,7 +227,7 @@ func TestArchiveKeepsABroadcastAddressableAndIsWorkspaceScoped(t *testing.T) {
 func TestArchiveAndUnarchiveReturnTheBroadcast(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*broadcasts.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
 	_, err := m.Archive(ctx, s, fixtures.BroadcastFailedID)
@@ -245,7 +245,7 @@ func TestArchiveAndUnarchiveReturnTheBroadcast(t *testing.T) {
 func TestUpdatePatchClearsANullAndKeepsAnAbsentField(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*broadcasts.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	seg := int64(fixtures.SegmentProPlanID)
 	_, err := m.Update(ctx, s, fixtures.BroadcastDraftID, broadcasts.UpdateInput{Revision: testhelper.BroadcastRevisionIn(ctx, t, s, fixtures.BroadcastDraftID),
@@ -269,7 +269,7 @@ func TestUpdatePatchClearsANullAndKeepsAnAbsentField(t *testing.T) {
 func TestCreateAndUpdateRefuseABlankName(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*broadcasts.Module](env)
-	ctx := context.Background()
+	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
 	for _, name := range []string{"", "  \t\n"} {
