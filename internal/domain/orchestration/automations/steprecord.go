@@ -6,9 +6,12 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect/sql"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationsteprecord"
+	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/infra/db"
@@ -154,6 +157,34 @@ type keptEvent struct {
 // keptOf is the copy of the stored Event e.
 func keptOf(e *ent.Event) *keptEvent {
 	return &keptEvent{eventID: e.ID, action: e.Action, properties: events.BoundedProperties(e.Properties)}
+}
+
+// stillKept is how, with the copy of the awaited Event it keeps taken again from the Event's row,
+// read under a key-share lock in the transaction of the move (ADR 0136). A refusal of tracking that
+// deleted the Event since the read that found it (ADR 0120) leaves no copy to keep, and the path is
+// still taken: as if the move had committed first and the refusal had cleared its copy after, so a
+// later Step reads the name as absent. The lock holds a deletion off until the move commits, and the
+// refusal then finds the copy and clears it. It is taken before the Enrollment's own row is moved,
+// in the order an Erasure deletes the Contact's Events and then its Enrollments.
+func stillKept(ctx context.Context, s *ent.Scoped, how leaving) (leaving, error) {
+	if how.path == nil || how.path.kept == nil {
+		return how, nil
+	}
+	path := *how.path
+	source, err := s.Event().Query().
+		Where(event.ID(path.kept.eventID)).
+		ForShare(func(o *sql.LockOptions) { o.Strength = sql.LockKeyShare }).
+		Only(ctx)
+	switch {
+	case ent.IsNotFound(err):
+		path.kept = nil
+	case err != nil:
+		return how, fmt.Errorf("read the awaited event %d: %w", path.kept.eventID, err)
+	default:
+		path.kept = keptOf(source)
+	}
+	how.path = &path
+	return how, nil
 }
 
 // leave records that the Enrollment runID left the Step of the id at now, as how says: skipped for

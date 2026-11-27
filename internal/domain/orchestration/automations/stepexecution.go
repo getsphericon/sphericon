@@ -597,6 +597,10 @@ func (m *StepExecution) advance(ctx context.Context, s *ent.Scoped, runID int64,
 				return err // an erased Contact's Enrollment is erased with it
 			}
 		}
+		how, err := stillKept(ctx, ts, mv.leaving)
+		if err != nil {
+			return err
+		}
 		var arrived automationstep.Due
 		if more {
 			var err error
@@ -607,10 +611,10 @@ func (m *StepExecution) advance(ctx context.Context, s *ent.Scoped, runID int64,
 			if err := advanceRun(ctx, ts, runID, from.step, next.ID, dueAt(arrived)); err != nil {
 				return err
 			}
-			if err := leave(ctx, ts, runID, from.step, now, mv.leaving); err != nil {
+			if err := leave(ctx, ts, runID, from.step, now, how); err != nil {
 				return err
 			}
-		} else if err := completeOn(ctx, ts, pub, runID, from.step, now, mv.leaving); err != nil {
+		} else if err := completeOn(ctx, ts, pub, runID, from.step, now, how); err != nil {
 			return err
 		}
 		if mv.with != nil {

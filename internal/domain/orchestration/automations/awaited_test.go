@@ -1,6 +1,7 @@
 package automations_test
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"strings"
@@ -351,4 +352,64 @@ func TestAWaitForEventThatCompletesTheEnrollmentKeepsNoCopy(t *testing.T) {
 	kept, path := f.keptOf(t, runID)
 	assert.Nil(t, kept)
 	assert.Equal(t, f.arrivedPath(t), path)
+}
+
+// A refusal of tracking may delete the Event a Wait for event arrives on between the read that
+// finds it and the move that keeps its copy (ADR 0120, ADR 0136): the move then keeps no copy of an
+// Event that is gone, at the wake as at the timeout. The path stays `arrived`, as it would had the
+// move committed first and the refusal cleared its copy after, and a later Step reads the name as
+// absent.
+func TestAnArrivalWhoseEventIsDeletedBeforeTheMoveKeepsNoCopy(t *testing.T) {
+	for name, arrive := range map[string]func(t *testing.T, f awaitedFlow, c *ent.Contact, runID int64){
+		"at the wake": func(t *testing.T, f awaitedFlow, c *ent.Contact, _ int64) {
+			t.Helper()
+			f.clock.Advance(time.Minute)
+			require.NoError(t, f.env.Publisher().Publish(t.Context(), collected(c.ID, awaitedAction, f.clock.Now(), map[string]any{"product": "Lamp"})))
+			stored := f.env.StoredEvents(t, awaitedAction)
+			require.Len(t, stored, 1)
+			deleteOnceRead(f.env, awaitedAction)
+			in := automations.OnEventInput{ContactID: c.ID, Event: automations.Event{Action: awaitedAction, SourceID: *stored[0].SourceID, OccurredAt: stored[0].OccurredAt}}
+			require.NoError(t, testhelper.Module[*automations.StepExecution](f.env).OnEvent(t.Context(), f.env.DB.Scoped(fixtures.AcmeID), in))
+		},
+		"at the timeout": func(t *testing.T, f awaitedFlow, c *ent.Contact, runID int64) {
+			t.Helper()
+			f.clock.Advance(waitTimeout + 5*time.Minute)
+			// Recorded within the window, its trigger job not yet run.
+			require.NoError(t, f.env.Publisher().Publish(t.Context(), collected(c.ID, awaitedAction, f.clock.Now().Add(-30*time.Minute), map[string]any{"product": "Lamp"})))
+			deleteOnceRead(f.env, awaitedAction)
+			require.NoError(t, testhelper.Module[*automations.StepExecution](f.env).Step(t.Context(), f.env.DB.Scoped(fixtures.AcmeID), runID, f.wait))
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			f := awaitThen(t, automationstep.Wait{Seconds: 3600})
+			contact := enrollable(t, f.env.DB.Scoped(fixtures.AcmeID), 0)
+			runID := f.enroll(t, contact)
+
+			arrive(t, f, contact, runID)
+
+			kept, path := f.keptOf(t, runID)
+			assert.Nil(t, kept, "no copy of an Event that is gone")
+			assert.Equal(t, f.arrivedPath(t), path, "the path taken stays")
+			assert.Empty(t, f.env.StoredEvents(t, awaitedAction), "the refusal deleted the Event")
+		})
+	}
+}
+
+// deleteOnceRead deletes the first stored Event of the action a read of the env's client returns,
+// right after that read, as a refusal of tracking that commits between a read of an Event and a
+// write that depends on it does.
+func deleteOnceRead(env *testhelper.TestEnv, action string) {
+	done := false
+	env.DB.Event.Intercept(ent.InterceptFunc(func(next ent.Querier) ent.Querier {
+		return ent.QuerierFunc(func(ctx context.Context, q ent.Query) (ent.Value, error) {
+			v, err := next.Query(ctx, q)
+			rows, _ := v.([]*ent.Event)
+			read, ok := lo.Find(rows, func(e *ent.Event) bool { return e.Action == action })
+			if err != nil || done || !ok {
+				return v, err
+			}
+			done = true
+			return v, env.DB.Event.DeleteOneID(read.ID).Exec(ctx)
+		})
+	}))
 }
