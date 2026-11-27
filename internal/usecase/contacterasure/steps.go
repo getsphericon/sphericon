@@ -155,7 +155,8 @@ func (u *UseCase) withdrawFrom(ctx context.Context, s *ent.Scoped, d heldDestina
 		if err := u.messages.ForgetEngagement(ctx, s, ids); err != nil {
 			return err
 		}
-		if err := u.events.DeleteEngagementOf(ctx, s, taken); err != nil {
+		// The Contact's Enrollments go with it, and the copies their Wait for event Steps kept.
+		if _, err := u.events.DeleteEngagementOf(ctx, s, taken); err != nil {
 			return err
 		}
 		if err := u.credits.ClearCredits(ctx, s, ids); err != nil {

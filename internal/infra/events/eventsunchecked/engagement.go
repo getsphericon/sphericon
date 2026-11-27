@@ -24,10 +24,13 @@ var engagementActions = slices.Concat([]string{systemevent.EmailOpened}, events.
 // the messages' rows. An Event names its message's Contact, or none for a message kept by address,
 // which narrows the search to those Contacts' Events (the Contact's index) before the property is
 // read. What the Events triggered stays: an Enrollment, a send, a Rule's action. An Erasure that
-// comes before the reach-back runs it too (internal/usecase/contacterasure).
-func (m *Module) DeleteEngagementOf(ctx context.Context, s *ent.Scoped, msgs []*ent.OutboundMessage) error {
+// comes before the reach-back runs it too (internal/usecase/contacterasure). It returns the ids of
+// the Events it deleted, so that the reach-back deletes what was copied of them (a Wait for event's
+// kept Event, ADR 0136): the messages' rows are taken for their update, so no open or click of them
+// is recorded between the read of the ids and their deletion.
+func (m *Module) DeleteEngagementOf(ctx context.Context, s *ent.Scoped, msgs []*ent.OutboundMessage) ([]int64, error) {
 	if len(msgs) == 0 {
-		return nil
+		return nil, nil
 	}
 	ids := lo.Map(msgs, func(m *ent.OutboundMessage, _ int) int64 { return m.ID })
 	contacts := lo.Uniq(lo.FilterMap(msgs, func(m *ent.OutboundMessage, _ int) (int64, bool) {
@@ -37,8 +40,14 @@ func (m *Module) DeleteEngagementOf(ctx context.Context, s *ent.Scoped, msgs []*
 	if len(contacts) > 0 {
 		of = append(of, event.ContactIDIn(contacts...))
 	}
-	_, err := s.Event().Delete().
+	engaged, err := s.Event().Query().
 		Where(event.Or(of...), event.ActionIn(engagementActions...), events.NamesMessageIn(ids)).
-		Exec(ctx)
-	return err
+		IDs(ctx)
+	if err != nil || len(engaged) == 0 {
+		return nil, err
+	}
+	if _, err := s.Event().Delete().Where(event.IDIn(engaged...)).Exec(ctx); err != nil {
+		return nil, err
+	}
+	return engaged, nil
 }

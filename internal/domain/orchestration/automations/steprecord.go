@@ -9,6 +9,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationsteprecord"
+	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -198,8 +199,14 @@ func leave(ctx context.Context, s *ent.Scoped, runID int64, stepID automationste
 // (ADR 0136), in the move that ends it: nothing reads them after, and an Enrollment's records are
 // kept for its reports. The rest of each record stays.
 func clearKept(ctx context.Context, s *ent.Scoped, runID int64) error {
+	return clearKeptWhere(ctx, s, automationsteprecord.RunID(runID), automationsteprecord.AwaitedEventIDNotNil())
+}
+
+// clearKeptWhere clears the copy of an awaited Event that each Step record where selects keeps,
+// all three of its columns together. The rest of each record stays.
+func clearKeptWhere(ctx context.Context, s *ent.Scoped, where ...predicate.AutomationStepRecord) error {
 	return s.AutomationStepRecord().Update().
-		Where(automationsteprecord.RunID(runID), automationsteprecord.AwaitedEventIDNotNil()).
+		Where(where...).
 		ClearAwaitedEventID().
 		ClearAwaitedAction().
 		ClearAwaitedProperties().
