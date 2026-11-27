@@ -317,7 +317,7 @@ func (m *StepExecution) Step(ctx context.Context, s *ent.Scoped, runID int64, st
 		return m.branch(ctx, s, run, at, p)
 
 	case automationstep.WaitForEvent:
-		return m.timeout(ctx, s, run, at, p)
+		return m.timeout(ctx, s, run, version, at, p)
 
 	case automationstep.Split:
 		// The draw holds no random state (ADR 0124): the same Enrollment always lands on the same
