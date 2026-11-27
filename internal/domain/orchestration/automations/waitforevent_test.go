@@ -178,22 +178,22 @@ func TestWithNoEventTheWaitTimesOutAtTheDeadlineAndNotBefore(t *testing.T) {
 func TestEventsThatDoNotCountLeaveTheEnrollmentWaiting(t *testing.T) {
 	for name, c := range map[string]struct {
 		trigger, awaited string
-		record           func(w waiting, contact *ent.Contact)
+		record           func(t *testing.T, w waiting, contact *ent.Contact)
 	}{
-		"occurred before it reached the step": {"trial.started", "order.created", func(w waiting, contact *ent.Contact) {
+		"occurred before it reached the step": {"trial.started", "order.created", func(t *testing.T, w waiting, contact *ent.Contact) {
 			// It reached the Step a minute ago.
 			handStored(t, w.env, contact.ID, "order.created", collected(contact.ID, "order.created", w.clock.Now().Add(-2*time.Minute), nil))
 		}},
-		"its own triggering event": {"order.created", "order.created", func(w waiting, contact *ent.Contact) {
+		"its own triggering event": {"order.created", "order.created", func(t *testing.T, w waiting, contact *ent.Contact) {
 			handLast(t, w.env, contact.ID, "order.created")
 		}},
-		"a machine open": {"trial.started", systemevent.EmailOpened, func(w waiting, contact *ent.Contact) {
+		"a machine open": {"trial.started", systemevent.EmailOpened, func(t *testing.T, w waiting, contact *ent.Contact) {
 			handStored(t, w.env, contact.ID, systemevent.EmailOpened, &events.EmailEngagement{
 				Action: systemevent.EmailOpened, WorkspaceID: fixtures.AcmeID, ContactID: contact.ID, Email: lo.FromPtr(contact.Email),
 				OutboundMessageID: fixtures.OutboundMessageTrackingSampleID, Machine: true,
 			})
 		}},
-		"loaded history": {"trial.started", "order.created", func(w waiting, contact *ent.Contact) {
+		"loaded history": {"trial.started", "order.created", func(t *testing.T, w waiting, contact *ent.Contact) {
 			history := collected(contact.ID, "order.created", w.clock.Now(), nil)
 			history.Backfill = true
 			handStored(t, w.env, contact.ID, "order.created", history)
@@ -204,7 +204,7 @@ func TestEventsThatDoNotCountLeaveTheEnrollmentWaiting(t *testing.T) {
 			contact, runID := w.enroll(t, c.trigger)
 
 			w.clock.Advance(time.Minute)
-			c.record(w, contact)
+			c.record(t, w, contact)
 			afterTheEvent := w.standsOn(t, runID)
 			w.clock.Advance(waitTimeout)
 			w.timeout(t, runID)
