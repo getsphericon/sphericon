@@ -1066,7 +1066,7 @@ export const zOnceEnrollmentOccurrence = z.object({
 });
 
 /**
- * How a person stopped on a Channel other than email (ADR 0077): a STOP keyword or `/stop` (keyword), a message's unsubscribe button (button) or link (link), a blocked bot (block), a send the provider refused because the person had stopped at the provider (refused_send), or an opt-out recorded by hand in the app or through the API, which reached the Workspace by another route (manual)
+ * How a person stopped on a Channel other than email (ADR 0077): a STOP keyword or `/stop` (keyword), a message's unsubscribe button (button) or link (link), a blocked bot (block), a send the provider refused because the person had stopped at the provider (refused_send), an opt-out recorded by hand in the app or through the API, which reached the Workspace by another route (manual), or one brought by an import from another platform (imported)
  */
 export const zOptOutVia = z.enum([
   'keyword',
@@ -1074,7 +1074,8 @@ export const zOptOutVia = z.enum([
   'block',
   'link',
   'refused_send',
-  'manual'
+  'manual',
+  'imported'
 ]);
 
 /**

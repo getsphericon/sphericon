@@ -559,6 +559,18 @@ type ContactObservations struct {
 	SMS   *Observation
 }
 
+// RefusalsOf is the part of o that refuses tracking: what an intake row that leaves its Contact as
+// it is still records, since a refusal only narrows (ADR 0138).
+func RefusalsOf(o ContactObservations) ContactObservations {
+	refusal := func(ob *Observation) *Observation {
+		if ob == nil || ob.State != Denied {
+			return nil
+		}
+		return ob
+	}
+	return ContactObservations{Email: refusal(o.Email), SMS: refusal(o.SMS)}
+}
+
 // ImportInput is what a Contact intake row records: the Contact's email address and phone ("" when
 // it has none), and the observations the row carries for them.
 type ImportInput struct {

@@ -306,8 +306,8 @@ func (e *TelegramClicked) Project() Projection {
 	return (*LinkClick)(e).project(systemevent.TelegramClicked)
 }
 
-// Ways a Contact stops marketing on a Channel, the `via` property of telegram.unsubscribed and
-// sms.unsubscribed.
+// Ways a Contact stops marketing on a Channel, the `via` property of email.unsubscribed,
+// telegram.unsubscribed and sms.unsubscribed.
 const (
 	// UnsubscribedByKeyword is `/stop` or a STOP keyword.
 	UnsubscribedByKeyword = "keyword"
@@ -320,6 +320,8 @@ const (
 	UnsubscribedByLink = "link"
 	// UnsubscribedByManual is an opt-out recorded by hand, through the API.
 	UnsubscribedByManual = "manual"
+	// UnsubscribedByImported is an opt-out an import brought from another platform (ADR 0138).
+	UnsubscribedByImported = "imported"
 	// UnsubscribedByRefusedSend is a provider refusing a send because the number opted out.
 	UnsubscribedByRefusedSend = "refused_send"
 )

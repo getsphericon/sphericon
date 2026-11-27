@@ -163,6 +163,7 @@ var (
 	ErrorsCustomFieldKeyReserved                          = ID{key: "errors.custom_field_key_reserved"}
 	ErrorsCustomFieldNotFound                             = ID{key: "errors.custom_field_not_found"}
 	ErrorsCustomFieldRevisionChanged                      = ID{key: "errors.custom_field_revision_changed"}
+	ErrorsCustomFieldTypeMismatch                         = ID{key: "errors.custom_field_type_mismatch"}
 	ErrorsDeleteUserEmailMismatch                         = ID{key: "errors.delete_user_email_mismatch"}
 	ErrorsDeleteUserOnlyOwner                             = ID{key: "errors.delete_user_only_owner"}
 	ErrorsDeleteUserProofStale                            = ID{key: "errors.delete_user_proof_stale"}

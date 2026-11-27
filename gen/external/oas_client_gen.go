@@ -279,12 +279,13 @@ type Invoker interface {
 	ConfirmationRequestsCreate(ctx context.Context, params ConfirmationRequestsCreateParams) (ConfirmationRequestsCreateRes, error)
 	// ConfirmationsCreate invokes Confirmations_create operation.
 	//
-	// Record consent a phone number gave outside sphericon (a form of your own, a verification service),
-	// as an `imported` confirmation with its evidence: the wording shown, where it was collected and the
-	// brand. The evidence is kept in the immutable `sms.confirmed` event. A number already confirmed keeps
-	// its confirmation unless the new one is stronger, so the answer is the confirmation that stands. It
-	// does not lift an opt-out: only the person can, by texting START. Consent recorded before the number
-	// last withdrew it changes nothing and is refused with a conflict.
+	// Record consent an email address or a phone number gave outside sphericon (a form of your own, a
+	// verification service), as an `imported` confirmation with its evidence: the wording shown, where it
+	// was collected and the brand. The evidence is kept in the immutable `marketing.confirmed` or
+	// `sms.confirmed` event. A destination already confirmed keeps its confirmation unless the new one is
+	// stronger, so the answer is the confirmation that stands. It does not lift an opt-out: only the
+	// person can, by a confirmation link or by texting START. Consent given before the destination last
+	// withdrew it changes nothing and is refused with a conflict.
 	//
 	// POST /confirmations
 	ConfirmationsCreate(ctx context.Context, request *CreateConfirmationInput) (*ConfirmationResource, error)
@@ -5785,12 +5786,13 @@ func (c *Client) sendConfirmationRequestsCreate(ctx context.Context, params Conf
 
 // ConfirmationsCreate invokes Confirmations_create operation.
 //
-// Record consent a phone number gave outside sphericon (a form of your own, a verification service),
-// as an `imported` confirmation with its evidence: the wording shown, where it was collected and the
-// brand. The evidence is kept in the immutable `sms.confirmed` event. A number already confirmed keeps
-// its confirmation unless the new one is stronger, so the answer is the confirmation that stands. It
-// does not lift an opt-out: only the person can, by texting START. Consent recorded before the number
-// last withdrew it changes nothing and is refused with a conflict.
+// Record consent an email address or a phone number gave outside sphericon (a form of your own, a
+// verification service), as an `imported` confirmation with its evidence: the wording shown, where it
+// was collected and the brand. The evidence is kept in the immutable `marketing.confirmed` or
+// `sms.confirmed` event. A destination already confirmed keeps its confirmation unless the new one is
+// stronger, so the answer is the confirmation that stands. It does not lift an opt-out: only the
+// person can, by a confirmation link or by texting START. Consent given before the destination last
+// withdrew it changes nothing and is refused with a conflict.
 //
 // POST /confirmations
 func (c *Client) ConfirmationsCreate(ctx context.Context, request *CreateConfirmationInput) (*ConfirmationResource, error) {

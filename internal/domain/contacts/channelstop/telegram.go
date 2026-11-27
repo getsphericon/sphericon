@@ -138,28 +138,31 @@ func contactsOf(ctx context.Context, s *ent.Scoped, destination string) ([]int64
 // Channel-wide.
 var ErrTelegramSource = validation.RefuseField(fieldname.SendingSource, "consent: a telegram opt-out is for everything", i18n.ErrorsSendingSourceTelegram)
 
-// TelegramUnsubscribe records the Channel-wide opt-out of a Telegram user id, with the effects of
-// the user stopping in Telegram (StopTelegram): the row and telegram.unsubscribed for every
-// Contact the id is Bound to. A manual opt-out is Channel-wide: only the `everything` source is
-// accepted here; a source-scoped one comes from the link in a message (the unsubscribe use case).
-// The stop occurs now, by the module's clock. Idempotent.
-func (m *Module) TelegramUnsubscribe(ctx context.Context, s *ent.Scoped, destination, source string) (*ent.Unsubscribe, error) {
-	dest, err := unsubscribes.Destination(channels.Telegram, destination)
+// TelegramUnsubscribe records the Channel-wide opt-out of a Telegram user id that reached the
+// Workspace by another route (HandStop), with the effects of the user stopping in Telegram
+// (StopTelegram): the row and telegram.unsubscribed for every Contact the id is Bound to. Such an
+// opt-out is Channel-wide: only the `everything` source is accepted here; a source-scoped one
+// comes from the link in a message (the unsubscribe use case). Idempotent.
+func (m *Module) TelegramUnsubscribe(ctx context.Context, s *ent.Scoped, in HandStop) (*ent.Unsubscribe, error) {
+	dest, err := unsubscribes.Destination(channels.Telegram, in.Destination)
 	if err != nil {
 		return nil, err
 	}
-	if source != eligibility.SourceEverything {
+	if in.Source != eligibility.SourceEverything {
 		return nil, ErrTelegramSource
 	}
-	now := m.now()
+	at := in.At
+	if at.IsZero() {
+		at = m.now()
+	}
 	err = m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		return m.StopTelegram(ctx, ts, TelegramStop{
-			Destination: dest, Via: events.UnsubscribedByManual, At: now,
-			DedupKey: "manual:" + dest + ":" + strconv.FormatInt(now.UnixNano(), 10),
+			Destination: dest, Via: in.Via, At: at,
+			DedupKey: in.Via + ":" + dest + ":" + strconv.FormatInt(at.UnixNano(), 10),
 		})
 	})
 	if err != nil {
 		return nil, err
 	}
-	return m.unsubs.Get(ctx, s, unsubscribes.Key{Channel: channels.Telegram, Destination: dest, Source: source})
+	return m.unsubs.Get(ctx, s, unsubscribes.Key{Channel: channels.Telegram, Destination: dest, Source: in.Source})
 }

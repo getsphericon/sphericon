@@ -3,6 +3,7 @@ package channelstop
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/samber/lo"
 
@@ -74,19 +75,33 @@ func attributesSMSStop(stop *events.SmsStopObserved) bool {
 	return stop.Via == events.UnsubscribedByLink && stop.OutboundMessageID != 0
 }
 
-// SMSUnsubscribe records an SMS opt-out that reached the Workspace by another route (an email, a
-// call): the number gets no more texts, whichever sender. A manual opt-out is
-// Channel-wide, so only the `everything` source is accepted. Idempotent.
-func (m *Module) SMSUnsubscribe(ctx context.Context, s *ent.Scoped, destination, source string) (*ent.Unsubscribe, error) {
-	number, err := unsubscribes.SMSNumber(destination)
+// HandStop is an opt-out of a Destination that reached the Workspace by another route than its
+// Channel (an email, a call, another platform): recorded by hand through the app or the API
+// (events.UnsubscribedByManual), or brought by an import (events.UnsubscribedByImported, ADR 0138).
+type HandStop struct {
+	Destination, Source string
+	// Via is how the opt-out was made: one of events.UnsubscribedByManual and
+	// events.UnsubscribedByImported.
+	Via string
+	// At is when the person stopped (ADR 0154); the zero time is now, by the module's clock.
+	At time.Time
+}
+
+// SMSUnsubscribe records an SMS opt-out that reached the Workspace by another route: the number
+// gets no more texts, whichever sender. Such an opt-out is Channel-wide, so only the `everything`
+// source is accepted. Idempotent.
+func (m *Module) SMSUnsubscribe(ctx context.Context, s *ent.Scoped, in HandStop) (*ent.Unsubscribe, error) {
+	number, err := unsubscribes.SMSNumber(in.Destination)
 	if err != nil {
 		return nil, err
 	}
-	if source != eligibility.SourceEverything {
+	if in.Source != eligibility.SourceEverything {
 		return nil, ErrSMSSource
 	}
+	stop := &events.SmsStopObserved{Phone: number, Via: in.Via, ObservedAt: in.At}
 	if err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
-		return m.bus.PublishIn(ctx, ts, &events.SmsStopObserved{WorkspaceID: ts.WorkspaceID(), Phone: number, Via: events.UnsubscribedByManual})
+		stop.WorkspaceID = ts.WorkspaceID()
+		return m.bus.PublishIn(ctx, ts, stop)
 	}); err != nil {
 		return nil, err
 	}
@@ -94,13 +109,14 @@ func (m *Module) SMSUnsubscribe(ctx context.Context, s *ent.Scoped, destination,
 }
 
 // OptOutContactSMS records an SMS opt-out of a Contact's phone that reached the Workspace by
-// another route (SMSUnsubscribe) and returns the phone's SMS consent after it.
+// another route by hand (SMSUnsubscribe) and returns the phone's SMS consent after it.
 func (m *Module) OptOutContactSMS(ctx context.Context, s *ent.Scoped, contactID int64) (confirmations.ContactSMS, error) {
 	number, err := m.confirmations.ContactPhone(ctx, s, contactID)
 	if err != nil {
 		return confirmations.ContactSMS{}, err
 	}
-	if _, err := m.SMSUnsubscribe(ctx, s, number, eligibility.SourceEverything); err != nil {
+	stop := HandStop{Destination: number, Source: eligibility.SourceEverything, Via: events.UnsubscribedByManual}
+	if _, err := m.SMSUnsubscribe(ctx, s, stop); err != nil {
 		return confirmations.ContactSMS{}, err
 	}
 	return m.confirmations.ReadContactSMS(ctx, s, contactID)

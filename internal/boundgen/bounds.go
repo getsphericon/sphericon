@@ -165,16 +165,19 @@ var Bounds = []Bound{
 		Spec: site, Schema: "ConsentEvidence", Property: "wording", Owners: []string{"Confirmation"},
 	},
 	{Name: "ConsentWording", Spec: external, Schema: "CreateConfirmationInput", Property: "wording"},
+	{Name: "ConsentWording", Spec: external, Schema: "ImportedConsentEvidence", Property: "wording"},
 	{
 		Name: "ConsentSource", Doc: "is where a person consented.",
 		Spec: site, Schema: "ConsentEvidence", Property: "source", Owners: []string{"Confirmation"},
 	},
 	{Name: "ConsentSource", Spec: external, Schema: "CreateConfirmationInput", Property: "source"},
+	{Name: "ConsentSource", Spec: external, Schema: "ImportedConsentEvidence", Property: "source"},
 	{
 		Name: "ConsentBrand", Doc: "is the brand a person consented to hear from.",
 		Spec: site, Schema: "ConsentEvidence", Property: "brand", Owners: []string{"Confirmation"},
 	},
 	{Name: "ConsentBrand", Spec: external, Schema: "CreateConfirmationInput", Property: "brand"},
+	{Name: "ConsentBrand", Spec: external, Schema: "ImportedConsentEvidence", Property: "brand"},
 	{
 		Name: "TrackingDomainHost", Doc: "is the host a Workspace serves its links and tracker on, as typed.",
 		Spec: site, Schema: "SetTrackingDomainInput", Property: "host", Owners: []string{"TrackingDomain"},

@@ -111,6 +111,12 @@ const (
 	AutomationHalcyonCourseName = "Course"
 	// AutomationHalcyonCourseVersionID is from fixtures/automation_versions.
 	AutomationHalcyonCourseVersionID = 9904
+	// AutomationHalcyonOnConfirmedID is from fixtures/automations.
+	AutomationHalcyonOnConfirmedID = 9905
+	// AutomationHalcyonOnConfirmedName is from fixtures/automations.
+	AutomationHalcyonOnConfirmedName = "On marketing confirmed"
+	// AutomationHalcyonOnConfirmedVersionID is from fixtures/automation_versions.
+	AutomationHalcyonOnConfirmedVersionID = 9905
 	// AutomationHalcyonOnCreatedID is from fixtures/automations.
 	AutomationHalcyonOnCreatedID = 9903
 	// AutomationHalcyonOnCreatedName is from fixtures/automations.

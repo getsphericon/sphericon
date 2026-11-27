@@ -22,7 +22,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/tags"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/kernel/addresscheck"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -128,11 +127,11 @@ func TestUpsertBatchFlagsDisposableAndRoleAddresses(t *testing.T) {
 	require.NoError(t, err)
 
 	require.NoError(t, out.Items[0].Err)
-	assert.Equal(t, []addresscheck.Flag{addresscheck.Disposable}, out.Items[0].Value.Flags)
+	assert.Equal(t, []contacts.Warning{contacts.WarningDisposableEmail}, out.Items[0].Value.Warnings)
 	require.NoError(t, out.Items[1].Err)
-	assert.Equal(t, []addresscheck.Flag{addresscheck.Role}, out.Items[1].Value.Flags)
+	assert.Equal(t, []contacts.Warning{contacts.WarningRoleEmail}, out.Items[1].Value.Warnings)
 	require.NoError(t, out.Items[2].Err)
-	assert.Empty(t, out.Items[2].Value.Flags)
+	assert.Empty(t, out.Items[2].Value.Warnings)
 }
 
 func TestUpsertBatchLooksUpEachDomainOnce(t *testing.T) {

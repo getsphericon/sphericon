@@ -175,6 +175,42 @@ func TestAContactCreatedThroughAConnectionStartsASendOnlyWithMCPSend(t *testing.
 	}
 }
 
+// A Confirmation recorded through a Connection without mcp:send carries the mark as the Contact
+// written with it does (ADR 0132, ADR 0138): its marketing.confirmed enrolls no one and fires no
+// Rule, from an upsert item's emailConsent and from confirmations_create alike. Fixtures:
+// Halcyon's Automation and Rule on marketing.confirmed.
+func TestAConfirmationRecordedThroughAConnectionStartsASendOnlyWithMCPSend(t *testing.T) {
+	evidence := map[string]any{"wording": "Mail me the course", "source": "old platform", "brand": "Halcyon"}
+	for name, c := range sendLockCases {
+		t.Run(name+", contacts_upsert_batch", func(t *testing.T) {
+			env := testhelper.Setup(t)
+			write := halcyonWriter(t, env, c.scopes)
+
+			write("contacts_upsert_batch", map[string]any{"contacts": []any{
+				map[string]any{"email": fixtures.ContactHalcyonIdaEmail, "emailConsent": evidence},
+			}})
+			reactTo(t, env)
+			enrollments, firings := started(t, env, fixtures.ContactHalcyonIdaEmail, fixtures.AutomationHalcyonOnConfirmedID)
+
+			assert.Equal(t, c.wantEnrollments, enrollments)
+			assert.Equal(t, c.wantFirings, firings)
+		})
+		t.Run(name+", confirmations_create", func(t *testing.T) {
+			env := testhelper.Setup(t)
+			write := halcyonWriter(t, env, c.scopes)
+
+			write("confirmations_create", lo.Assign(evidence, map[string]any{
+				"channel": "email", "destination": fixtures.ContactHalcyonIdaEmail,
+			}))
+			reactTo(t, env)
+			enrollments, firings := started(t, env, fixtures.ContactHalcyonIdaEmail, fixtures.AutomationHalcyonOnConfirmedID)
+
+			assert.Equal(t, c.wantEnrollments, enrollments)
+			assert.Equal(t, c.wantFirings, firings)
+		})
+	}
+}
+
 // The mark only stops sends from starting: an Event recorded through a Connection without
 // mcp:send still ends an active Enrollment as its goal or as an exit. Fixture: Ida's Enrollment
 // in Halcyon's course, whose exit is halcyon_left and whose goal is halcyon_paid.

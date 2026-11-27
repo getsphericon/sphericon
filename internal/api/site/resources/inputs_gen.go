@@ -377,6 +377,7 @@ func (c *InputsImpl) ConsentEvidence(source *site.ConsentEvidence) confirmations
 		confirmationsEvidence.Wording = (*source).Wording
 		confirmationsEvidence.Source = (*source).Source
 		confirmationsEvidence.Brand = (*source).Brand
+		// confirmationsEvidence.OccurredAt: ignore
 	}
 	return confirmationsEvidence
 }

@@ -66,6 +66,7 @@ const (
 	Doc                       = "doc"
 	Domain                    = "domain"
 	Email                     = "email"
+	EmailConsent              = "emailConsent"
 	Enabled                   = "enabled"
 	Endpoint                  = "endpoint"
 	Engagement                = "engagement"

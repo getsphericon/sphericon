@@ -59,11 +59,11 @@ func (Unsubscribe) Fields() []ent.Field {
 		// How the person stopped, for an opt-out made in a Channel other than email or recorded
 		// by hand there: a STOP keyword (or `/stop`), a message's unsubscribe button or link, a
 		// blocked bot, a send the provider refused because the number had opted out at the
-		// provider, or by hand through the app or the API (an off-channel opt-out). Null on email,
-		// where the email.unsubscribed Event says it. Display only: the opt-out means the same
-		// whatever way it was made.
+		// provider, by hand through the app or the API (an off-channel opt-out), or by an import
+		// from another platform (ADR 0138). Null on email, where the email.unsubscribed Event says
+		// it. Display only: the opt-out means the same whatever way it was made.
 		field.Enum("via").
-			Values("keyword", "button", "block", "link", "refused_send", "manual").
+			Values("keyword", "button", "block", "link", "refused_send", "manual", "imported").
 			Optional().
 			Nillable(),
 		// The contact this destination belongs to, when known. Display only;

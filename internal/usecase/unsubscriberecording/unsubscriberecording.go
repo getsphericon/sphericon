@@ -60,12 +60,25 @@ func New(bus *events.Bus, out *outboundmessages.Module, enrollments *automations
 // of the token's Workspace, which the entry point builds from it; the writes go through it as the
 // ingest actor (never audited), since no membership or API token stands behind them.
 func (u *UseCase) RecordLink(ctx context.Context, s *ent.Scoped, target linktarget.Unsubscribe) error {
+	return u.record(ctx, s, target, stop{via: events.UnsubscribedByLink, at: u.now()})
+}
+
+// stop is how and when an opt-out recorded through the link's effects was made: by the link now,
+// or, for an opt-out that reached the Workspace by another route, by hand or by an import.
+type stop struct {
+	// via is one of events.UnsubscribedBy*, which email.unsubscribed carries.
+	via string
+	at  time.Time
+}
+
+// record is RecordLink for an opt-out made as st says.
+func (u *UseCase) record(ctx context.Context, s *ent.Scoped, target linktarget.Unsubscribe, st stop) error {
 	dest := emailcase.Of(target.Destination)
 	if dest == "" || target.WorkspaceID == 0 || target.Source == "" || target.Channel == "" {
 		return nil
 	}
 	automationID, isAutomation := eligibility.ParseAutomationSource(target.Source)
-	at := u.now()
+	at := st.at
 
 	// The Workspace comes from the signed unsubscribe token (no membership or api
 	// token here), so this is a scope source outside the site/external/job list.
@@ -90,7 +103,7 @@ func (u *UseCase) RecordLink(ctx context.Context, s *ent.Scoped, target linktarg
 			return err
 		}
 		if change.Superseded {
-			return publishSuperseded(ctx, sc, pub, target, at)
+			return publishSuperseded(ctx, sc, pub, target, st)
 		}
 		if change.ID == 0 {
 			return nil
@@ -129,7 +142,7 @@ func (u *UseCase) RecordLink(ctx context.Context, s *ent.Scoped, target linktarg
 		return pub.Publish(ctx, &events.EmailEngagement{
 			Action: systemevent.EmailUnsubscribed, WorkspaceID: target.WorkspaceID, ContactID: target.ContactID,
 			Email: dest, BroadcastID: target.BroadcastID, AutomationID: automationID,
-			OutboundMessageID: target.OutboundMessageID,
+			OutboundMessageID: target.OutboundMessageID, Via: st.via, ObservedAt: at,
 		})
 	})
 }
@@ -157,10 +170,10 @@ func publishTelegramUnsubscribed(ctx context.Context, sc *ent.Scoped, pub events
 	})
 }
 
-// publishSuperseded records a click older than the opt-out state of its destination (a later
+// publishSuperseded records an opt-out older than the opt-out state of its destination (a later
 // return stands, ADR 0154) as contact.consent_superseded for the Contact the link was issued to:
 // it changed nothing. A link with no Contact, or one whose Contact is gone, has nobody to name.
-func publishSuperseded(ctx context.Context, sc *ent.Scoped, pub events.Publisher, target linktarget.Unsubscribe, at time.Time) error {
+func publishSuperseded(ctx context.Context, sc *ent.Scoped, pub events.Publisher, target linktarget.Unsubscribe, st stop) error {
 	if target.ContactID == 0 {
 		return nil
 	}
@@ -173,7 +186,7 @@ func publishSuperseded(ctx context.Context, sc *ent.Scoped, pub events.Publisher
 	}
 	return pub.Publish(ctx, &events.ConsentSuperseded{
 		WorkspaceID: target.WorkspaceID, ContactID: c.ID, Email: lo.FromPtr(c.Email), Channel: string(target.Channel),
-		Observation: events.ObservationStop, Via: events.UnsubscribedByLink, ObservedAt: at,
+		Observation: events.ObservationStop, Via: st.via, ObservedAt: st.at,
 	})
 }
 

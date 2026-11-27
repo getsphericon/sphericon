@@ -450,6 +450,9 @@ type EmailEngagement struct {
 	// Captured is set when the send went through a sender that delivers nowhere outside (a
 	// Test inbox): Activity says "captured, not delivered".
 	Captured bool `json:"captured,omitempty"`
+	// Via is how the person unsubscribed, on email.unsubscribed: one of UnsubscribedBy* (the row of
+	// an email opt-out says none).
+	Via string `json:"via,omitempty"`
 }
 
 func (e *EmailEngagement) EventName() string { return e.Action }
@@ -470,6 +473,7 @@ func (e *EmailEngagement) Project() Projection {
 	setNonZero(props, outboundMessageIDProperty, e.OutboundMessageID)
 	setNonZero(props, CapturedProperty, e.Captured)
 	setNonZero(props, MachineProperty, e.Machine)
+	setNonZero(props, "via", e.Via)
 	return Projection{
 		OccurredAt: e.ObservedAt,
 		Subject:    e.Email, Action: e.Action, Email: e.Email, Properties: props, ContactID: e.ContactID,
@@ -554,6 +558,11 @@ type MarketingConfirmed struct {
 	Email       string `json:"email"`
 	Provenance  string `json:"provenance"`   // double_opt_in|grandfathered|imported
 	IP          string `json:"ip,omitempty"` // confirming client IP (double_opt_in only)
+	// Wording, Source and Brand are the evidence of an imported Confirmation (ADR 0077, ADR 0138):
+	// the wording the person was shown, where it was collected and the brand.
+	Wording string `json:"wording,omitempty"`
+	Source  string `json:"source,omitempty"`
+	Brand   string `json:"brand,omitempty"`
 }
 
 func (*MarketingConfirmed) EventName() string  { return systemevent.MarketingConfirmed }
@@ -563,6 +572,9 @@ func (e *MarketingConfirmed) Project() Projection {
 	props := map[string]any{}
 	setNonZero(props, "provenance", e.Provenance)
 	setNonZero(props, "ip", e.IP)
+	setNonZero(props, "wording", e.Wording)
+	setNonZero(props, "source", e.Source)
+	setNonZero(props, "brand", e.Brand)
 	return Projection{Subject: e.Email, Action: systemevent.MarketingConfirmed, Email: e.Email, Properties: props, ContactID: e.ContactID}
 }
 

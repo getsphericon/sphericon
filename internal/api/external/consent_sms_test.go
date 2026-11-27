@@ -91,19 +91,19 @@ func TestAnImportedSMSConfirmationReplacesAGrandfatheredOne(t *testing.T) {
 	assert.Equal(t, 1, smsConfirmed)
 }
 
-func TestAnSMSConfirmationIsRefusedOffSMSWithoutACountryCodeOrWithoutEvidence(t *testing.T) {
+func TestAnSMSConfirmationIsRefusedOnTelegramWithoutACountryCodeOrWithoutEvidence(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
-	onEmail := smsConsent(fixtures.ContactTexterEmail)
-	onEmail.Channel = externalapi.ConsentChannelEmail
+	onTelegram := smsConsent("123456789")
+	onTelegram.Channel = externalapi.ConsentChannelTelegram
 	blankBrand := smsConsent(fixtures.ContactTexterPhone)
 	blankBrand.Brand = "  "
 
-	_, email := c.ConfirmationsCreate(t.Context(), onEmail)
+	_, telegram := c.ConfirmationsCreate(t.Context(), onTelegram)
 	_, local := c.ConfirmationsCreate(t.Context(), smsConsent("(415) 555-0810"))
 	_, brand := c.ConfirmationsCreate(t.Context(), blankBrand)
 
-	testhelper.ExternalRefusal(t, email, http.StatusUnprocessableEntity)
+	testhelper.ExternalRefusal(t, telegram, http.StatusUnprocessableEntity)
 	testhelper.ExternalRefusal(t, local, http.StatusUnprocessableEntity)
 	testhelper.ExternalRefusal(t, brand, http.StatusUnprocessableEntity)
 	decision := smsDecision(t, env, fixtures.ContactTexterPhone)
@@ -173,7 +173,7 @@ func TestAnSMSOptOutIsForEverything(t *testing.T) {
 func TestABatchUpsertRecordsSMSConsentFromItsItems(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
-	evidence := externalapi.NewOptConsentEvidence(externalapi.ConsentEvidence{
+	evidence := externalapi.NewOptImportedConsentEvidence(externalapi.ImportedConsentEvidence{
 		Wording: "Text me offers", Source: "store signup sheet", Brand: "Acme",
 	})
 

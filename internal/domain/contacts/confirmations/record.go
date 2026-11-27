@@ -1,7 +1,7 @@
 // Package confirmations is the one place a Confirmation (confirmed opt-in) is written (ADR 0013,
 // ADR 0077, ADR 0102): the derived destination-keyed row with the immutable confirmed Event of its
 // Channel. It records the consent a double opt-in link, a START texted to the Workspace or the
-// evidence an API client collected gives, reads the SMS consent of a Contact's phone, and drops a
+// evidence an API client or an import collected gives, reads the SMS consent of a Contact's phone, and drops a
 // Confirmation an opt-out of everything ends. On SMS the opt-in and the opt-out are one number's:
 // a START lifts the opt-out (unsubscribes) as it records the Confirmation.
 package confirmations
@@ -63,9 +63,12 @@ func Stronger(a, b confirmation.Provenance) bool {
 
 // Evidence is the evidence of consent collected outside sphericon (ADR 0077): the wording the
 // person was shown, where it was collected and the brand they agreed to hear from. It is kept in
-// the immutable sms.confirmed Event and projected on the Confirmation.
+// the immutable confirmed Event of its Channel and projected on the Confirmation.
 type Evidence struct {
 	Wording, Source, Brand string
+	// OccurredAt is when the person gave the consent (ADR 0154); the zero time, or one after now,
+	// is now.
+	OccurredAt time.Time
 }
 
 // grant is one Confirmation to record.
@@ -196,10 +199,14 @@ func standingOf(ctx context.Context, s *ent.Scoped, channel channels.Channel, de
 func (g grant) proof(workspaceID int64) (events.DomainEvent, error) {
 	switch g.channel {
 	case channels.Email:
-		return &events.MarketingConfirmed{
+		e := &events.MarketingConfirmed{
 			WorkspaceID: workspaceID, ContactID: g.contactID, Email: g.destination,
 			Provenance: string(g.provenance), IP: g.ip,
-		}, nil
+		}
+		if ev := g.evidence; ev != nil {
+			e.Wording, e.Source, e.Brand = ev.Wording, ev.Source, ev.Brand
+		}
+		return e, nil
 	case channels.SMS:
 		e := &events.SmsConfirmed{
 			WorkspaceID: workspaceID, ContactID: g.contactID, Phone: g.destination, Provenance: string(g.provenance),
