@@ -80,11 +80,15 @@ func TestSendingCountsEveryMessageSentInTheWindowBySurface(t *testing.T) {
 	}, ov.Current.Sending)
 }
 
+// The report reads the clock the fixtures count from, so "three days ago" is the day the fixtures
+// fell on even when the package runs past midnight after loading them.
 func TestTimeSeriesIsOneZeroFilledUTCDayPerDayEndingToday(t *testing.T) {
-	ov := overview(t, fixtures.AcmeID, analyticsreport.Window7Days)
+	env := testhelper.Setup(t)
+	now := env.FixturesNow()
+	ov := overviewAt(t, env, fixtures.AcmeID, analyticsreport.Window7Days, now)
 	require.Len(t, ov.Series, 7)
 
-	today := time.Now().UTC().Truncate(24 * time.Hour)
+	today := now.UTC().Truncate(24 * time.Hour)
 	sent := 0
 	for i, p := range ov.Series {
 		assert.Equal(t, today.AddDate(0, 0, i-6).Format("2006-01-02"), p.Date)
