@@ -122,8 +122,9 @@ type EnrollOnRuleInput struct {
 // Contact's active Enrollments whose version has an exit or goal event matching it
 // (endOnEvent, in a transaction of its own, which it needs for the Contact's lock), then wakes the
 // Contact's active Enrollments standing on a Wait for event it satisfies, down `arrived` (wake, ADR
-// 0124), then enrolls the Contact into every active Automation whose live version's Trigger is the action
-// (ADR 0065), one transaction per Automation (enrollOnTrigger), again after an earlier Enrollment
+// 0124; wakeOnMessage for an open or a click of a message one awaits), then enrolls the Contact
+// into every active Automation whose live version's Trigger is the action (ADR 0065), one
+// transaction per Automation (enrollOnTrigger), again after an earlier Enrollment
 // ended when the version's Entry policy is `again` (ADR 0127). Each entry runs the entry checks,
 // which skip one whose Event's chain already passed through the Automation (Event.Chain, `cycle`):
 // its own Tag or lifecycle Event never enrolls the Contact again. An open or click of the
@@ -152,6 +153,9 @@ func (m *StepExecution) OnEvent(ctx context.Context, s *ent.Scoped, in OnEventIn
 	}
 	// An Event that ended an Enrollment ended it first: it wakes only those still active.
 	if err := m.wake(ctx, s, contactID, ev); err != nil {
+		return err
+	}
+	if err := m.wakeOnMessage(ctx, s, contactID, ev); err != nil {
 		return err
 	}
 	triggered, err := triggeredBy(ctx, s, ev)
@@ -317,6 +321,9 @@ func (m *StepExecution) Step(ctx context.Context, s *ent.Scoped, runID int64, st
 		return m.branch(ctx, s, run, at, p)
 
 	case automationstep.WaitForEvent:
+		if a, onMessage := p.Awaits.(automationstep.AwaitedMessage); onMessage {
+			return m.awaitMessage(ctx, s, run, at, p, a)
+		}
 		return m.timeout(ctx, s, run, version, at, p)
 
 	case automationstep.Split:
@@ -573,9 +580,9 @@ type place struct {
 // advance moves the Enrollment off the Step it stands on, in one transaction with mv's own writes
 // and the Step records of the move (ADR 0124): onto the next Step, which it reaches then, queueing
 // the job that runs it (at the due moment of a wait, which holds the Enrollment on itself until
-// then), or, with no next Step, to its end: it completes, on the Step it left, and nothing is
-// queued. The next Step is the one after the Step left (Index.Next) or, down a fork's path, the
-// path's first Step or, for an empty path, the Step after the fork (Index.Enter). A move that finds
+// then, and at once for a Wait for event on an open or a click, queuedAt), or, with no next Step,
+// to its end: it completes, on the Step it left, and nothing is queued. The next Step is the one
+// after the Step left (Index.Next) or, down a fork's path, the path's first Step or, for an empty path, the Step after the fork (Index.Enter). A move that finds
 // the Enrollment gone or elsewhere, or its Contact gone, writes nothing and returns nil.
 func (m *StepExecution) advance(ctx context.Context, s *ent.Scoped, runID int64, from place, mv stepMove) error {
 	next, more := from.index.Next(from.step)
@@ -617,7 +624,7 @@ func (m *StepExecution) advance(ctx context.Context, s *ent.Scoped, runID int64,
 		if err := reach(ctx, ts, runID, next.ID, now, arrived); err != nil {
 			return err
 		}
-		return q.Enqueue(ctx, RunStepArgs{WorkspaceID: ts.WorkspaceID(), RunID: runID, StepID: next.ID}, scheduled(dueAt(arrived)))
+		return q.Enqueue(ctx, RunStepArgs{WorkspaceID: ts.WorkspaceID(), RunID: runID, StepID: next.ID}, scheduled(queuedAt(next, arrived)))
 	})
 	return quiet(err)
 }

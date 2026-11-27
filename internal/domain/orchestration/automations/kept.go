@@ -20,7 +20,8 @@ import (
 // The kept Events (ADR 0136): a Wait for event that took `arrived` on an Event keeps a copy of it on
 // its Step record (leave), which the Steps after it read under its name, `awaited.<name>`, while
 // the Enrollment runs, and a later Branch's or Wait for event's Condition tests (awaitedFor). The
-// end of the Enrollment clears them (clearKept).
+// end of the Enrollment clears them (clearKept), and so does a refusal of tracking that deletes the
+// open or click a copy was taken from (ForgetKept).
 
 // KeptEvent is a copy an Enrollment keeps of the Event one of its Wait for event Steps arrived on,
 // under the Step's name: its action and its properties, which are the sender's own, untrusted
@@ -151,3 +152,21 @@ func awaitedNotBefore(steps automationstep.Path, at automationstep.ID, g conditi
 	}
 	return lo.Find(names, func(name string) bool { return !before[name] })
 }
+
+// ForgetKept clears every copy a Wait for event kept of one of the Events of eventIDs (ADR 0136):
+// the opens and clicks a refusal of tracking deletes of its Destination's earlier messages (ADR
+// 0120), cleared by the use case internal/usecase/trackingwithdrawal in the transaction that
+// deletes them. Each Step record keeps the path it took, and a later Step reads the name as absent.
+// A copy cleared before, or of another Event, is left as it is, so a second run clears nothing more.
+func (m *Module) ForgetKept(ctx context.Context, s *ent.Scoped, eventIDs []int64) error {
+	for _, chunk := range lo.Chunk(eventIDs, forgetChunk) {
+		if err := clearKeptWhere(ctx, s, automationsteprecord.AwaitedEventIDIn(chunk...)); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// forgetChunk is the Event ids one statement of ForgetKept takes: a refusal deletes every repeat
+// of an open or click, more than a statement takes parameters.
+const forgetChunk = 1000

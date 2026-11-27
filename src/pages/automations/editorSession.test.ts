@@ -235,7 +235,7 @@ test('two Saves keep an HTTP step by its id and its stored secret while preservi
 test('a flow holding a kept Step has no submission', () => {
   // A kind the contract may gain, read as the server would send it.
   const newer: AutomationStep = JSON.parse(
-    JSON.stringify({ id: stepId(9), type: 'wait_for_event' }),
+    JSON.stringify({ id: stepId(9), type: 'wait_for_reply' }),
   )
   const kept = flowOf({ ...DRAFT, steps: { id: stepId(1), steps: [newer] } })
 

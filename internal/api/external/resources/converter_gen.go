@@ -2424,6 +2424,11 @@ func (c *ConverterImpl) WaitForEventStepToResource(source automations.WaitForEve
 		return externalapiWaitForEventStep, err
 	}
 	externalapiWaitForEventStep.TimedOut = externalapiAutomationPath2
+	externalapiOptAutomationPath, err := optAutomationPath(c, source.Unknown)
+	if err != nil {
+		return externalapiWaitForEventStep, err
+	}
+	externalapiWaitForEventStep.Unknown = externalapiOptAutomationPath
 	return externalapiWaitForEventStep, nil
 }
 func (c *ConverterImpl) WaitStepToResource(source automations.WaitView) external.WaitStep {

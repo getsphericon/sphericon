@@ -141,3 +141,30 @@ test('an End is offered only at the last place of a path', () => {
     ].toSorted(),
   )
 })
+
+// A Wait for event (ADR 0124) hangs its `arrived` path, then its `timedOut` path, under it, each
+// headed by a node that names it and reads its figures by the Step's and the path's ids.
+test("a Wait for event's arrived and timed out paths hang under it and rejoin after it", () => {
+  const wait: AutomationStep = {
+    id: stepId(40),
+    type: 'wait_for_event',
+    name: 'purchase',
+    timeoutSeconds: 3600,
+    awaits: { kind: 'event', matchers: [{ action: 'order.created' }] },
+    arrived: { id: stepId(41), steps: [{ id: stepId(43), type: 'apply_tag', tag: 'buyer' }] },
+    timedOut: { id: stepId(42), steps: [] },
+  }
+  const { nodes, edges } = layoutFlow(flowOf(version([wait])))
+
+  const heads = nodes.flatMap((node) =>
+    node.type === 'path' ? [[node.data.fork.id, node.data.pathId, node.data.role.kind]] : [],
+  )
+  const after = `insert-${stepId(1)}-1`
+  const into = edges.filter((e) => e.target === after).map((e) => e.source)
+
+  expect(heads).toEqual([
+    [stepId(40), stepId(41), 'arrived'],
+    [stepId(40), stepId(42), 'timedOut'],
+  ])
+  expect(into.toSorted()).toEqual([`insert-${stepId(41)}-1`, `insert-${stepId(42)}-0`].toSorted())
+})

@@ -14,7 +14,14 @@ import { useTranslation } from 'react-i18next'
 
 import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
 import { allSteps, forkPaths } from './definition.ts'
-import type { EditedStep, Flow, FlowPath, FlowStep, TriggerDraft } from './definition.ts'
+import type {
+  EditedStep,
+  Flow,
+  FlowPath,
+  FlowStep,
+  TriggerDraft,
+  WaitForEventDraft,
+} from './definition.ts'
 import type { PathPatch } from './flowEdits.ts'
 import { TRIGGER_NODE_ID } from './flowLayout.ts'
 import { BranchForm, SplitForm } from './ForkForms.tsx'
@@ -23,12 +30,16 @@ import { StepForm } from './StepForms.tsx'
 import { useStepInfo } from './stepKinds.ts'
 import type { StepValidator } from './stepValidator.ts'
 import { TriggerPanel } from './TriggerPanel.tsx'
+import { WaitForEventForm } from './WaitForEventForm.tsx'
 
-// What the panel does to a fork of the id (ForkForms.tsx), and whether a node was checked (on blur
-// or on Save), which then shows its errors: a fork, a Wait until or the Trigger.
+// What the panel does to a fork of the id (ForkForms.tsx, WaitForEventForm.tsx), whether a node was
+// checked (on blur or on Save), which then shows its errors: a fork, a Wait until or the Trigger, and
+// the name a Wait for event is stored with under its id, which is fixed (ADR 0136).
 export interface ForkControls {
   checked: (id: string) => boolean
   onChecked: (id: string) => void
+  storedName: (id: string) => string | undefined
+  onWaitForEvent: (id: string, draft: WaitForEventDraft) => void
   onPaths: (id: string, patches: PathPatch[]) => void
   onAddPath: (id: string) => void
   onRemovePath: (id: string, pathId: string) => void
@@ -75,6 +86,18 @@ function StepBody({
   }
   if (step.kind === 'split') {
     return <SplitForm key={key} step={step} {...forkProps} />
+  }
+  if (step.kind === 'wait_for_event') {
+    return (
+      <WaitForEventForm
+        step={step}
+        storedName={forks.storedName(step.id)}
+        checked={forks.checked(step.id)}
+        validatorRef={validatorRef}
+        onEdit={(draft) => forks.onWaitForEvent(step.id, draft)}
+        onChecked={() => forks.onChecked(step.id)}
+      />
+    )
   }
   return (
     <StepForm

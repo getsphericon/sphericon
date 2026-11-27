@@ -39,7 +39,9 @@ import (
 // Automation may start or end on (matcherProblem), and none twice. What the matchers' filters and
 // its Condition name in the Workspace is checkWaits'. Whether its name is its own across the
 // Automation is checkWaitNames' and checkWaitNamesHeld's, and whether an exit or goal ends the
-// Enrollment on what it awaits is checkAwaitedEndings'.
+// Enrollment on what it awaits is checkAwaitedEndings'. One on an Event takes no unknown path, which
+// it could never take; whether the message one on an open or a click names can come before it is
+// checkStepMessages', and its unknown path is Publish's (checkUnknownPaths).
 func validateWaitForEvent(st *automationstep.Step, w automationstep.WaitForEvent) error {
 	if w.TimeoutSeconds <= 0 {
 		return refuse(st, "a wait for event needs a timeout greater than zero")
@@ -54,6 +56,9 @@ func validateWaitForEvent(st *automationstep.Step, w automationstep.WaitForEvent
 	}
 	switch a := w.Awaits.(type) {
 	case automationstep.AwaitedEvent:
+		if w.Unknown != nil {
+			return refuse(st, "a wait for an event is never unknown, so it takes no unknown path")
+		}
 		err := validation.MinItems(fieldname.Matchers, len(a.Matchers), bounds.AwaitedMatchersMinItems)
 		if bound, ok := boundRefusal(err); ok {
 			return &stepRefusalError{step: st.ID, bound: bound, boundAt: fieldname.Awaits + "." + bound.Field()}
@@ -72,6 +77,7 @@ func validateWaitForEvent(st *automationstep.Step, w automationstep.WaitForEvent
 			}
 			seen = append(seen, matcher)
 		}
+	case automationstep.AwaitedMessage:
 	case nil:
 		return refuse(st, "a wait for event needs what it waits for")
 	}
@@ -201,7 +207,7 @@ func checkAwaitedEndings(def definition) error {
 		}
 	}
 	for st, w := range automationstep.WaitsForEvents(def.steps) {
-		for _, action := range awaitedActions(w) {
+		for _, action := range awaitedActions(*w) {
 			if unfiltered[action] {
 				return refuse(st, fmt.Sprintf("it awaits %q, which an exit or the goal ends the enrollment on with no filter, so it would never arrive", action))
 			}
@@ -215,7 +221,8 @@ func awaitedActions(w automationstep.WaitForEvent) []string {
 	switch a := w.Awaits.(type) {
 	case automationstep.AwaitedEvent:
 		return a.Actions()
-	case nil:
+	case automationstep.AwaitedMessage, nil:
+		// An open or a click of a message is no action: it wakes by the message (wakeOnMessage).
 	}
 	return nil
 }
@@ -225,7 +232,7 @@ func awaitedMatchers(w automationstep.WaitForEvent) []eventmatcher.Matcher {
 	switch a := w.Awaits.(type) {
 	case automationstep.AwaitedEvent:
 		return a.Matchers
-	case nil:
+	case automationstep.AwaitedMessage, nil:
 	}
 	return nil
 }
@@ -235,7 +242,7 @@ func awaitedCondition(w automationstep.WaitForEvent) *conditiontree.WaitForEvent
 	switch a := w.Awaits.(type) {
 	case automationstep.AwaitedEvent:
 		return a.Condition
-	case nil:
+	case automationstep.AwaitedMessage, nil:
 	}
 	return nil
 }

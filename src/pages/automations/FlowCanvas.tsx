@@ -19,7 +19,7 @@ import { useTranslation } from 'react-i18next'
 
 import { useFormat } from '../../hooks/useFormat.ts'
 import type { CanvasFigures } from './canvasFigures.ts'
-import { isFork, sendsMessage } from './definition.ts'
+import { sendsMessage } from './definition.ts'
 import type { Flow, FlowStep, InsertedKind } from './definition.ts'
 import type { Place } from './flowEdits.ts'
 import { layoutFlow, TRIGGER_NODE_ID } from './flowLayout.ts'
@@ -164,7 +164,7 @@ function TriggerNodeView() {
 }
 
 // What a Step's node says beside its kind: an email's subject, a tag step's Tag, a Split's
-// weights, the local time a Wait until waits for.
+// weights, the local time a Wait until waits for, a Wait for event's name.
 function stepDetail(step: FlowStep): string {
   switch (step.kind) {
     case 'email':
@@ -179,6 +179,8 @@ function stepDetail(step: FlowStep): string {
       return step.paths.map((path) => `${path.weight === '' ? '?' : path.weight}%`).join(' / ')
     case 'wait_until':
       return step.draft.form === 'date' ? step.draft.date.localTime : step.draft.timeOfDay.localTime
+    case 'wait_for_event':
+      return step.draft.name
     case 'http':
     case 'wait':
     case 'branch':
@@ -210,7 +212,8 @@ function StepNodeView({ data: { step } }: NodeProps<StepNode>) {
   const { editable, remove, addPath, errorOf } = useControls()
   const info = useStepInfo()(step)
   const figures = useStepFigures(step)
-  const fork = isFork(step) ? step : null
+  // A person adds paths to a Branch and a Split; a Wait for event's paths are its own.
+  const fork = step.kind === 'branch' || step.kind === 'split' ? step : null
   return (
     <>
       <Handles />
@@ -258,7 +261,7 @@ function StepNodeView({ data: { step } }: NodeProps<StepNode>) {
 }
 
 // What heads a path of a fork: its place among the Branch's Conditions, `otherwise`, the unknown
-// path, or a Split's path and its weight.
+// path, a Split's path and its weight, or a Wait for event's `arrived` or `timedOut`.
 function usePathLabel(): (role: PathRole) => string {
   const { t } = useTranslation()
   return (role) => {
@@ -269,6 +272,10 @@ function usePathLabel(): (role: PathRole) => string {
         return t(($) => $.automations.pathOtherwise)
       case 'unknown':
         return t(($) => $.automations.pathUnknown)
+      case 'arrived':
+        return t(($) => $.automations.pathArrived)
+      case 'timedOut':
+        return t(($) => $.automations.pathTimedOut)
       case 'weight':
       default:
         return t(($) => $.automations.pathWeighted, {

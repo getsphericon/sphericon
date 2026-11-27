@@ -19,7 +19,7 @@ import { useConfirmation } from '../../hooks/useConfirmation.tsx'
 import { useNotify } from '../../hooks/useNotify.ts'
 import { Route as automationsRoute } from '../../routes/workspaces/$workspaceId/automations/index.tsx'
 import { canvasFigures } from './canvasFigures.ts'
-import { allSteps, forkPaths, holdsKept } from './definition.ts'
+import { allSteps, forkPaths, holdsKept, storedNames } from './definition.ts'
 import type { Flow } from './definition.ts'
 import { automationOutcomeTexts } from './draftActions.ts'
 import {
@@ -42,6 +42,7 @@ import {
   updateFork,
   updateStep,
   updateTrigger,
+  updateWaitForEvent,
 } from './flowEdits.ts'
 import { TRIGGER_NODE_ID } from './flowLayout.ts'
 import { LeaveGuard } from './LeaveGuard.tsx'
@@ -241,6 +242,9 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
   const editable = !session.hasTag('readOnly') && !kept
   const { resource, operation } = session.context
   const sendsEmail = allSteps(flow.path).some((step) => step.kind === 'email')
+  // The Wait for event names stored under their Steps' ids, as the last read or acknowledged
+  // Automation holds them.
+  const names = useMemo(() => storedNames([resource.draft, resource.live]), [resource])
 
   useUnknownPaths({
     workspaceId,
@@ -280,6 +284,11 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
   const forks: ForkControls = {
     checked: (id) => checked.has(id),
     onChecked: (id) => check([id]),
+    storedName: (id) => names.get(id),
+    onWaitForEvent: (id, draft) => {
+      unrefuse(id)
+      edit((current) => updateWaitForEvent(current, id, draft))
+    },
     onPaths: (id, patches) => edit((current) => updateFork(current, id, patches)),
     onAddPath: (id) => edit((current) => addPath(current, id).flow),
     onRemovePath: (id, pathId) => {
