@@ -26,6 +26,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/contactdate"
 	"github.com/getsphericon/sphericon/ent/customfield"
+	"github.com/getsphericon/sphericon/ent/downloadlink"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
 	"github.com/getsphericon/sphericon/ent/erasure"
@@ -1487,6 +1488,49 @@ func ScopedEntities() []*ScopedEntity {
 				b.SetKey(src.Key)
 				b.SetName(src.Name)
 				b.SetType(src.Type)
+				created, err := b.Save(ctx)
+				if err != nil {
+					return 0, err
+				}
+				return created.WorkspaceID, nil
+			},
+			Refs: []ScopedRef{},
+		},
+		{
+			Kind:         Kinds["DownloadLink"],
+			Name:         "DownloadLink",
+			Wrapper:      reflect.TypeFor[*DownloadLinkScoped](),
+			AuditActions: []string{},
+			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
+				return c.DownloadLink.Query().Where(downloadlink.WorkspaceID(ws)).Order(Asc(downloadlink.FieldID)).IDs(ctx)
+			},
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.DownloadLink().Get(ctx, id)
+			},
+			Touch: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.DownloadLink().UpdateOneID(id).Exec(ctx)
+			},
+			BulkTouch: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.DownloadLink().Update().Where(downloadlink.ID(id)).Save(ctx)
+			},
+			Delete: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.DownloadLink().DeleteOneID(id).Exec(ctx)
+			},
+			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.DownloadLink().Delete().Where(downloadlink.ID(id)).Exec(ctx)
+			},
+			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
+				src, err := s.c.DownloadLink.Get(ctx, id)
+				if err != nil {
+					return 0, err
+				}
+				_ = remap
+				b := s.DownloadLink().Create()
+				b.SetPurpose(src.Purpose)
+				b.SetTokenHash(src.TokenHash)
+				b.SetSessionHash(src.SessionHash)
+				b.SetPayload(src.Payload)
+				b.SetExpiresAt(src.ExpiresAt)
 				created, err := b.Save(ctx)
 				if err != nil {
 					return 0, err

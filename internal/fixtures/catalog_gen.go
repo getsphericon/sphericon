@@ -1777,6 +1777,10 @@ const (
 	DeletedWorkspaceOwnerDanName = "Dan"
 	// DeletedWorkspaceOwnerDanPassword is from fixtures/users.
 	DeletedWorkspaceOwnerDanPassword = "password"
+	// DownloadLinkAcmeLapsedID is from fixtures/download_links.
+	DownloadLinkAcmeLapsedID = 1
+	// DownloadLinkAcmeLapsedToken is from fixtures/download_links.
+	DownloadLinkAcmeLapsedToken = "fixture-download-link-acme"
 	// DuffCollectKey is from fixtures/workspaces.
 	DuffCollectKey = "omck_test_duff_collect_key"
 	// DuffDanMembershipID is from fixtures/memberships.

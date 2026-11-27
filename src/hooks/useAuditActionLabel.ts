@@ -43,6 +43,7 @@ export function useAuditActionLabel() {
       'workspace.send_cap_change': t(($) => $.auditActions.workspaceSendCapChange),
       'workspace.sending_rules_change': t(($) => $.auditActions.workspaceSendingRulesChange),
       'contact.import': t(($) => $.auditActions.contactImport),
+      'contact.export': t(($) => $.auditActions.contactExport),
       'audit_log.export': t(($) => $.auditActions.auditLogExport),
       'webhook_endpoint.test': t(($) => $.auditActions.webhookEndpointTest),
       'instance.default_send_cap_change': t(($) => $.auditActions.instanceDefaultSendCapChange),

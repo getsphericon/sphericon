@@ -698,6 +698,28 @@ func (UnimplementedHandler) SiteConnectionsList(ctx context.Context, params Site
 	return r, ht.ErrNotImplemented
 }
 
+// SiteContactCsvExportsCreate implements SiteContactCsvExports_create operation.
+//
+// Ask for the CSV export of a segment's contacts, or of all of them, with the columns chosen. The
+// answer is a one-time link the browser follows to download the file, which is written as it is read:
+// no file is kept. An unknown segment is a 404, no column a 422. Owners and admins only.
+//
+// POST /workspaces/{workspaceId}/contact-exports
+func (UnimplementedHandler) SiteContactCsvExportsCreate(ctx context.Context, req *SiteContactCsvExportInput, params SiteContactCsvExportsCreateParams) (r *SiteContactCsvExportLink, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteContactCsvExportsDownload implements SiteContactCsvExports_download operation.
+//
+// Download the CSV export a link was issued for. The link works once, for the session that asked for
+// it, within a minute of being issued; any other is a 400. The export is recorded in the Audit log as
+// it starts. Owners and admins only.
+//
+// GET /workspaces/{workspaceId}/contact-exports/{token}
+func (UnimplementedHandler) SiteContactCsvExportsDownload(ctx context.Context, params SiteContactCsvExportsDownloadParams) (r *SiteContactCsvExportsDownloadOKHeaders, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteContactsCreate implements SiteContacts_create operation.
 //
 // Create a resource from the site UI.

@@ -30,6 +30,7 @@ import (
 	site "github.com/getsphericon/sphericon/gen/site"
 	condition "github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	confirmations "github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
+	contactsexport "github.com/getsphericon/sphericon/internal/domain/contacts/contactsexport"
 	engagementtracking "github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	orders "github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	brandkits "github.com/getsphericon/sphericon/internal/domain/content/brandkits"
@@ -1046,6 +1047,12 @@ func (c *ConverterImpl) ConnectionsToResources(source []*ent.ApiToken) []site.Si
 		siteapiSiteConnectionResourceList[i] = c.ConnectionToResource(source[i])
 	}
 	return siteapiSiteConnectionResourceList
+}
+func (c *ConverterImpl) ContactCsvExportLink(source contactsexport.Link) *site.SiteContactCsvExportLink {
+	var siteapiSiteContactCsvExportLink site.SiteContactCsvExportLink
+	siteapiSiteContactCsvExportLink.URL = contactCsvExportURL(source)
+	siteapiSiteContactCsvExportLink.ExpiresAt = timestamp(source.ExpiresAt)
+	return &siteapiSiteContactCsvExportLink
 }
 func (c *ConverterImpl) ContactEngagementTrackingToResource(source engagementtracking.ContactConsents) site.ContactEngagementTracking {
 	var siteapiContactEngagementTracking site.ContactEngagementTracking

@@ -490,6 +490,8 @@ func (s AuditAction) Validate() error {
 		return nil
 	case "contact.import":
 		return nil
+	case "contact.export":
+		return nil
 	case "audit_log.export":
 		return nil
 	case "webhook_endpoint.test":
@@ -3280,6 +3282,51 @@ func (s ContactAttribute) Validate() error {
 	case "locale":
 		return nil
 	case "city":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s ContactCsvColumn) Validate() error {
+	switch s {
+	case "subjectId":
+		return nil
+	case "email":
+		return nil
+	case "phone":
+		return nil
+	case "firstName":
+		return nil
+	case "lastName":
+		return nil
+	case "timeZone":
+		return nil
+	case "country":
+		return nil
+	case "locale":
+		return nil
+	case "birthday":
+		return nil
+	case "city":
+		return nil
+	case "avatar":
+		return nil
+	case "source":
+		return nil
+	case "createdAt":
+		return nil
+	case "updatedAt":
+		return nil
+	case "customFields":
+		return nil
+	case "tags":
+		return nil
+	case "emailChannel":
+		return nil
+	case "smsChannel":
+		return nil
+	case "telegramChannel":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
@@ -12255,6 +12302,46 @@ func (s *SiteConnectionResource) Validate() error {
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
 			Name:  "userEmail",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *SiteContactCsvExportInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if s.Columns == nil {
+			return errors.New("nil is invalid value")
+		}
+		var failures []validate.FieldError
+		for i, elem := range s.Columns {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "columns",
 			Error: err,
 		})
 	}

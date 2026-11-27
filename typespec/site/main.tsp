@@ -52,6 +52,7 @@ import "./resources/engagement-tracking.tsp";
 import "./resources/contacts.tsp";
 import "./resources/custom-fields.tsp";
 import "./resources/segments.tsp";
+import "./resources/contact-csv-export.tsp";
 import "./resources/tags.tsp";
 import "./resources/telegram.tsp";
 import "./resources/auth.tsp";

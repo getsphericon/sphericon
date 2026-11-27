@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net/url"
 	"time"
 
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
@@ -17,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 	"github.com/getsphericon/sphericon/internal/kernel/httpheader"
 	"github.com/getsphericon/sphericon/internal/kernel/localcalendar"
+	"github.com/getsphericon/sphericon/internal/kernel/paths"
 	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
@@ -44,6 +46,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contactsexport"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
@@ -562,6 +565,8 @@ type Converter interface {
 	// goverter:useEmptyOnNil:slice
 	CustomFieldsToResources(source []*ent.CustomField) []siteapi.SiteCustomFieldResource
 	StartLinkToResource(source bindings.StartLink) siteapi.TelegramStartLinkResource
+	// goverter:map . URL | contactCsvExportURL
+	ContactCsvExportLink(source contactsexport.Link) *siteapi.SiteContactCsvExportLink
 	BindingToResource(source bindings.Chat) siteapi.SiteBindingResource
 	// goverter:useEmptyOnNil:slice
 	BindingsToResources(source []bindings.Chat) []siteapi.SiteBindingResource
@@ -1852,4 +1857,10 @@ func revision(v int64) siteapi.Revision {
 // ownershipRecordType is the type of a Tracking domain's ownership record (ADR 0173).
 func ownershipRecordType(trackingdomains.OwnershipRecord) siteapi.DnsRecordType {
 	return siteapi.DnsRecordTypeTXT
+}
+
+// contactCsvExportURL is the path the browser follows to download a CSV export of Contacts: the
+// contract's SiteContactCsvExports download under the /site prefix (ADR 0138).
+func contactCsvExportURL(l contactsexport.Link) string {
+	return paths.Site + "/workspaces/" + url.PathEscape(l.Workspace) + "/contact-exports/" + url.PathEscape(l.Token)
 }

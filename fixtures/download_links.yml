@@ -1,0 +1,11 @@
+# One-time download links (ADR 0138), stored as the hash of the token and of the session. This one
+# lapsed long ago: a link a test follows comes from the API.
+- id: 1 # fixture: DownloadLinkAcmeLapsed
+  purpose: contacts_export
+  token_hash: '{{ secretHash "fixture-download-link-acme" }}'
+  session_hash: '{{ secretHash "fixture-session-acme" }}'
+  payload: '{"columns":["email"]}'
+  expires_at: '{{daysAgo 1}}'
+  workspace_id: 1
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'

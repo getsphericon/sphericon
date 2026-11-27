@@ -39,6 +39,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contacttag"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/defaultsendcap"
+	"github.com/getsphericon/sphericon/ent/downloadlink"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
 	"github.com/getsphericon/sphericon/ent/erasure"
@@ -158,6 +159,8 @@ type Client struct {
 	CustomField *CustomFieldClient
 	// DefaultSendCap is the client for interacting with the DefaultSendCap builders.
 	DefaultSendCap *DefaultSendCapClient
+	// DownloadLink is the client for interacting with the DownloadLink builders.
+	DownloadLink *DownloadLinkClient
 	// EmailTemplate is the client for interacting with the EmailTemplate builders.
 	EmailTemplate *EmailTemplateClient
 	// EngagementTrackingConsent is the client for interacting with the EngagementTrackingConsent builders.
@@ -317,6 +320,7 @@ func (c *Client) init() {
 	c.ContactTag = NewContactTagClient(c.config)
 	c.CustomField = NewCustomFieldClient(c.config)
 	c.DefaultSendCap = NewDefaultSendCapClient(c.config)
+	c.DownloadLink = NewDownloadLinkClient(c.config)
 	c.EmailTemplate = NewEmailTemplateClient(c.config)
 	c.EngagementTrackingConsent = NewEngagementTrackingConsentClient(c.config)
 	c.Erasure = NewErasureClient(c.config)
@@ -495,6 +499,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		ContactTag:                 NewContactTagClient(cfg),
 		CustomField:                NewCustomFieldClient(cfg),
 		DefaultSendCap:             NewDefaultSendCapClient(cfg),
+		DownloadLink:               NewDownloadLinkClient(cfg),
 		EmailTemplate:              NewEmailTemplateClient(cfg),
 		EngagementTrackingConsent:  NewEngagementTrackingConsentClient(cfg),
 		Erasure:                    NewErasureClient(cfg),
@@ -600,6 +605,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		ContactTag:                 NewContactTagClient(cfg),
 		CustomField:                NewCustomFieldClient(cfg),
 		DefaultSendCap:             NewDefaultSendCapClient(cfg),
+		DownloadLink:               NewDownloadLinkClient(cfg),
 		EmailTemplate:              NewEmailTemplateClient(cfg),
 		EngagementTrackingConsent:  NewEngagementTrackingConsentClient(cfg),
 		Erasure:                    NewErasureClient(cfg),
@@ -696,7 +702,7 @@ func (c *Client) Use(hooks ...Hook) {
 		c.AutomationStepRecord, c.AutomationVersion, c.Binding, c.BrandKit,
 		c.Broadcast, c.BroadcastFigure, c.BroadcastRecipient, c.CapturedMessage,
 		c.Confirmation, c.ConsentRecord, c.ConsentStamp, c.Contact, c.ContactDate,
-		c.ContactTag, c.CustomField, c.DefaultSendCap, c.EmailTemplate,
+		c.ContactTag, c.CustomField, c.DefaultSendCap, c.DownloadLink, c.EmailTemplate,
 		c.EngagementTrackingConsent, c.Erasure, c.Event, c.EventJournalEntry,
 		c.EventReceipt, c.FrequencyCap, c.FrequencyCount, c.HeldOrderEvent, c.Hold,
 		c.IdentitySecret, c.InstanceAuditEntry, c.InstanceState, c.Integration,
@@ -725,7 +731,7 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.AutomationStepRecord, c.AutomationVersion, c.Binding, c.BrandKit,
 		c.Broadcast, c.BroadcastFigure, c.BroadcastRecipient, c.CapturedMessage,
 		c.Confirmation, c.ConsentRecord, c.ConsentStamp, c.Contact, c.ContactDate,
-		c.ContactTag, c.CustomField, c.DefaultSendCap, c.EmailTemplate,
+		c.ContactTag, c.CustomField, c.DefaultSendCap, c.DownloadLink, c.EmailTemplate,
 		c.EngagementTrackingConsent, c.Erasure, c.Event, c.EventJournalEntry,
 		c.EventReceipt, c.FrequencyCap, c.FrequencyCount, c.HeldOrderEvent, c.Hold,
 		c.IdentitySecret, c.InstanceAuditEntry, c.InstanceState, c.Integration,
@@ -796,6 +802,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.CustomField.mutate(ctx, m)
 	case *DefaultSendCapMutation:
 		return c.DefaultSendCap.mutate(ctx, m)
+	case *DownloadLinkMutation:
+		return c.DownloadLink.mutate(ctx, m)
 	case *EmailTemplateMutation:
 		return c.EmailTemplate.mutate(ctx, m)
 	case *EngagementTrackingConsentMutation:
@@ -5144,6 +5152,155 @@ func (c *DefaultSendCapClient) mutate(ctx context.Context, m *DefaultSendCapMuta
 		return (&DefaultSendCapDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown DefaultSendCap mutation op: %q", m.Op())
+	}
+}
+
+// DownloadLinkClient is a client for the DownloadLink schema.
+type DownloadLinkClient struct {
+	config
+}
+
+// NewDownloadLinkClient returns a client for the DownloadLink from the given config.
+func NewDownloadLinkClient(c config) *DownloadLinkClient {
+	return &DownloadLinkClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `downloadlink.Hooks(f(g(h())))`.
+func (c *DownloadLinkClient) Use(hooks ...Hook) {
+	c.hooks.DownloadLink = append(c.hooks.DownloadLink, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `downloadlink.Intercept(f(g(h())))`.
+func (c *DownloadLinkClient) Intercept(interceptors ...Interceptor) {
+	c.inters.DownloadLink = append(c.inters.DownloadLink, interceptors...)
+}
+
+// Create returns a builder for creating a DownloadLink entity.
+func (c *DownloadLinkClient) Create() *DownloadLinkCreate {
+	mutation := newDownloadLinkMutation(c.config, OpCreate)
+	return &DownloadLinkCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of DownloadLink entities.
+func (c *DownloadLinkClient) CreateBulk(builders ...*DownloadLinkCreate) *DownloadLinkCreateBulk {
+	return &DownloadLinkCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *DownloadLinkClient) MapCreateBulk(slice any, setFunc func(*DownloadLinkCreate, int)) *DownloadLinkCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &DownloadLinkCreateBulk{err: fmt.Errorf("calling to DownloadLinkClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*DownloadLinkCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &DownloadLinkCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for DownloadLink.
+func (c *DownloadLinkClient) Update() *DownloadLinkUpdate {
+	mutation := newDownloadLinkMutation(c.config, OpUpdate)
+	return &DownloadLinkUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *DownloadLinkClient) UpdateOne(_m *DownloadLink) *DownloadLinkUpdateOne {
+	mutation := newDownloadLinkMutation(c.config, OpUpdateOne, withDownloadLink(_m))
+	return &DownloadLinkUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *DownloadLinkClient) UpdateOneID(id int64) *DownloadLinkUpdateOne {
+	mutation := newDownloadLinkMutation(c.config, OpUpdateOne, withDownloadLinkID(id))
+	return &DownloadLinkUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for DownloadLink.
+func (c *DownloadLinkClient) Delete() *DownloadLinkDelete {
+	mutation := newDownloadLinkMutation(c.config, OpDelete)
+	return &DownloadLinkDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *DownloadLinkClient) DeleteOne(_m *DownloadLink) *DownloadLinkDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *DownloadLinkClient) DeleteOneID(id int64) *DownloadLinkDeleteOne {
+	builder := c.Delete().Where(downloadlink.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &DownloadLinkDeleteOne{builder}
+}
+
+// Query returns a query builder for DownloadLink.
+func (c *DownloadLinkClient) Query() *DownloadLinkQuery {
+	return &DownloadLinkQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeDownloadLink},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a DownloadLink entity by its id.
+func (c *DownloadLinkClient) Get(ctx context.Context, id int64) (*DownloadLink, error) {
+	return c.Query().Where(downloadlink.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *DownloadLinkClient) GetX(ctx context.Context, id int64) *DownloadLink {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryWorkspace queries the workspace edge of a DownloadLink.
+func (c *DownloadLinkClient) QueryWorkspace(_m *DownloadLink) *WorkspaceQuery {
+	query := (&WorkspaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(downloadlink.Table, downloadlink.FieldID, id),
+			sqlgraph.To(workspace.Table, workspace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, downloadlink.WorkspaceTable, downloadlink.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *DownloadLinkClient) Hooks() []Hook {
+	return c.hooks.DownloadLink
+}
+
+// Interceptors returns the client interceptors.
+func (c *DownloadLinkClient) Interceptors() []Interceptor {
+	return c.inters.DownloadLink
+}
+
+func (c *DownloadLinkClient) mutate(ctx context.Context, m *DownloadLinkMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&DownloadLinkCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&DownloadLinkUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&DownloadLinkUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&DownloadLinkDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown DownloadLink mutation op: %q", m.Op())
 	}
 }
 
@@ -15395,6 +15552,22 @@ func (c *WorkspaceClient) QueryStartTokens(_m *Workspace) *StartTokenQuery {
 	return query
 }
 
+// QueryDownloadLinks queries the download_links edge of a Workspace.
+func (c *WorkspaceClient) QueryDownloadLinks(_m *Workspace) *DownloadLinkQuery {
+	query := (&DownloadLinkClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, id),
+			sqlgraph.To(downloadlink.Table, downloadlink.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.DownloadLinksTable, workspace.DownloadLinksColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryAPITokens queries the api_tokens edge of a Workspace.
 func (c *WorkspaceClient) QueryAPITokens(_m *Workspace) *ApiTokenQuery {
 	query := (&ApiTokenClient{config: c.config}).Query()
@@ -16313,19 +16486,19 @@ type (
 		AutomationStepRecord, AutomationVersion, Binding, BrandKit, Broadcast,
 		BroadcastFigure, BroadcastRecipient, CapturedMessage, Confirmation,
 		ConsentRecord, ConsentStamp, Contact, ContactDate, ContactTag, CustomField,
-		DefaultSendCap, EmailTemplate, EngagementTrackingConsent, Erasure, Event,
-		EventJournalEntry, EventReceipt, FrequencyCap, FrequencyCount, HeldOrderEvent,
-		Hold, IdentitySecret, InstanceAuditEntry, InstanceState, Integration,
-		IntegrationProviderState, Invitation, JoinDomain, LegalDocumentDraft,
-		LegalDocumentVersion, Membership, OAuthClient, OAuthCode, OAuthRefreshToken,
-		Order, OrderMovement, OutboundMessage, Passkey, PasskeyChallenge,
-		PendingSignup, PrivateRelayRange, ProviderLimiter, RecoveryCode, Rule,
-		RuleFiring, RuleVersion, RuleVersionTrigger, SchemaState, SecondFactor,
-		Segment, SendCapLimiter, SendingDomain, SendingWindow, ServiceCredential,
-		SignupItem, SignupSurveyResponse, StaffMember, StartToken, Suppression, Tag,
-		TrackedLink, TrackingDomain, TrackingHostChange, Unsubscribe, Usage, User,
-		UserIdentity, UserTombstone, Visitor, WebhookEndpoint, WebhookEndpointHealth,
-		Workspace, WorkspaceStanding []ent.Hook
+		DefaultSendCap, DownloadLink, EmailTemplate, EngagementTrackingConsent,
+		Erasure, Event, EventJournalEntry, EventReceipt, FrequencyCap, FrequencyCount,
+		HeldOrderEvent, Hold, IdentitySecret, InstanceAuditEntry, InstanceState,
+		Integration, IntegrationProviderState, Invitation, JoinDomain,
+		LegalDocumentDraft, LegalDocumentVersion, Membership, OAuthClient, OAuthCode,
+		OAuthRefreshToken, Order, OrderMovement, OutboundMessage, Passkey,
+		PasskeyChallenge, PendingSignup, PrivateRelayRange, ProviderLimiter,
+		RecoveryCode, Rule, RuleFiring, RuleVersion, RuleVersionTrigger, SchemaState,
+		SecondFactor, Segment, SendCapLimiter, SendingDomain, SendingWindow,
+		ServiceCredential, SignupItem, SignupSurveyResponse, StaffMember, StartToken,
+		Suppression, Tag, TrackedLink, TrackingDomain, TrackingHostChange, Unsubscribe,
+		Usage, User, UserIdentity, UserTombstone, Visitor, WebhookEndpoint,
+		WebhookEndpointHealth, Workspace, WorkspaceStanding []ent.Hook
 	}
 	inters struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationFigure,
@@ -16333,19 +16506,19 @@ type (
 		AutomationStepRecord, AutomationVersion, Binding, BrandKit, Broadcast,
 		BroadcastFigure, BroadcastRecipient, CapturedMessage, Confirmation,
 		ConsentRecord, ConsentStamp, Contact, ContactDate, ContactTag, CustomField,
-		DefaultSendCap, EmailTemplate, EngagementTrackingConsent, Erasure, Event,
-		EventJournalEntry, EventReceipt, FrequencyCap, FrequencyCount, HeldOrderEvent,
-		Hold, IdentitySecret, InstanceAuditEntry, InstanceState, Integration,
-		IntegrationProviderState, Invitation, JoinDomain, LegalDocumentDraft,
-		LegalDocumentVersion, Membership, OAuthClient, OAuthCode, OAuthRefreshToken,
-		Order, OrderMovement, OutboundMessage, Passkey, PasskeyChallenge,
-		PendingSignup, PrivateRelayRange, ProviderLimiter, RecoveryCode, Rule,
-		RuleFiring, RuleVersion, RuleVersionTrigger, SchemaState, SecondFactor,
-		Segment, SendCapLimiter, SendingDomain, SendingWindow, ServiceCredential,
-		SignupItem, SignupSurveyResponse, StaffMember, StartToken, Suppression, Tag,
-		TrackedLink, TrackingDomain, TrackingHostChange, Unsubscribe, Usage, User,
-		UserIdentity, UserTombstone, Visitor, WebhookEndpoint, WebhookEndpointHealth,
-		Workspace, WorkspaceStanding []ent.Interceptor
+		DefaultSendCap, DownloadLink, EmailTemplate, EngagementTrackingConsent,
+		Erasure, Event, EventJournalEntry, EventReceipt, FrequencyCap, FrequencyCount,
+		HeldOrderEvent, Hold, IdentitySecret, InstanceAuditEntry, InstanceState,
+		Integration, IntegrationProviderState, Invitation, JoinDomain,
+		LegalDocumentDraft, LegalDocumentVersion, Membership, OAuthClient, OAuthCode,
+		OAuthRefreshToken, Order, OrderMovement, OutboundMessage, Passkey,
+		PasskeyChallenge, PendingSignup, PrivateRelayRange, ProviderLimiter,
+		RecoveryCode, Rule, RuleFiring, RuleVersion, RuleVersionTrigger, SchemaState,
+		SecondFactor, Segment, SendCapLimiter, SendingDomain, SendingWindow,
+		ServiceCredential, SignupItem, SignupSurveyResponse, StaffMember, StartToken,
+		Suppression, Tag, TrackedLink, TrackingDomain, TrackingHostChange, Unsubscribe,
+		Usage, User, UserIdentity, UserTombstone, Visitor, WebhookEndpoint,
+		WebhookEndpointHealth, Workspace, WorkspaceStanding []ent.Interceptor
 	}
 )
 

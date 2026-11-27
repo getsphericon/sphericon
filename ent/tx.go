@@ -62,6 +62,8 @@ type Tx struct {
 	CustomField *CustomFieldClient
 	// DefaultSendCap is the client for interacting with the DefaultSendCap builders.
 	DefaultSendCap *DefaultSendCapClient
+	// DownloadLink is the client for interacting with the DownloadLink builders.
+	DownloadLink *DownloadLinkClient
 	// EmailTemplate is the client for interacting with the EmailTemplate builders.
 	EmailTemplate *EmailTemplateClient
 	// EngagementTrackingConsent is the client for interacting with the EngagementTrackingConsent builders.
@@ -341,6 +343,7 @@ func (tx *Tx) init() {
 	tx.ContactTag = NewContactTagClient(tx.config)
 	tx.CustomField = NewCustomFieldClient(tx.config)
 	tx.DefaultSendCap = NewDefaultSendCapClient(tx.config)
+	tx.DownloadLink = NewDownloadLinkClient(tx.config)
 	tx.EmailTemplate = NewEmailTemplateClient(tx.config)
 	tx.EngagementTrackingConsent = NewEngagementTrackingConsentClient(tx.config)
 	tx.Erasure = NewErasureClient(tx.config)

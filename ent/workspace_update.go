@@ -32,6 +32,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/contactdate"
 	"github.com/getsphericon/sphericon/ent/customfield"
+	"github.com/getsphericon/sphericon/ent/downloadlink"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
 	"github.com/getsphericon/sphericon/ent/erasure"
@@ -794,6 +795,21 @@ func (_u *WorkspaceUpdate) AddStartTokens(v ...*StartToken) *WorkspaceUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.AddStartTokenIDs(ids...)
+}
+
+// AddDownloadLinkIDs adds the "download_links" edge to the DownloadLink entity by IDs.
+func (_u *WorkspaceUpdate) AddDownloadLinkIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.AddDownloadLinkIDs(ids...)
+	return _u
+}
+
+// AddDownloadLinks adds the "download_links" edges to the DownloadLink entity.
+func (_u *WorkspaceUpdate) AddDownloadLinks(v ...*DownloadLink) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddDownloadLinkIDs(ids...)
 }
 
 // AddAPITokenIDs adds the "api_tokens" edge to the ApiToken entity by IDs.
@@ -1766,6 +1782,27 @@ func (_u *WorkspaceUpdate) RemoveStartTokens(v ...*StartToken) *WorkspaceUpdate 
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveStartTokenIDs(ids...)
+}
+
+// ClearDownloadLinks clears all "download_links" edges to the DownloadLink entity.
+func (_u *WorkspaceUpdate) ClearDownloadLinks() *WorkspaceUpdate {
+	_u.mutation.ClearDownloadLinks()
+	return _u
+}
+
+// RemoveDownloadLinkIDs removes the "download_links" edge to DownloadLink entities by IDs.
+func (_u *WorkspaceUpdate) RemoveDownloadLinkIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.RemoveDownloadLinkIDs(ids...)
+	return _u
+}
+
+// RemoveDownloadLinks removes "download_links" edges to DownloadLink entities.
+func (_u *WorkspaceUpdate) RemoveDownloadLinks(v ...*DownloadLink) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveDownloadLinkIDs(ids...)
 }
 
 // ClearAPITokens clears all "api_tokens" edges to the ApiToken entity.
@@ -3573,6 +3610,51 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(starttoken.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.DownloadLinksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.DownloadLinksTable,
+			Columns: []string{workspace.DownloadLinksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(downloadlink.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedDownloadLinksIDs(); len(nodes) > 0 && !_u.mutation.DownloadLinksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.DownloadLinksTable,
+			Columns: []string{workspace.DownloadLinksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(downloadlink.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.DownloadLinksIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.DownloadLinksTable,
+			Columns: []string{workspace.DownloadLinksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(downloadlink.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -6363,6 +6445,21 @@ func (_u *WorkspaceUpdateOne) AddStartTokens(v ...*StartToken) *WorkspaceUpdateO
 	return _u.AddStartTokenIDs(ids...)
 }
 
+// AddDownloadLinkIDs adds the "download_links" edge to the DownloadLink entity by IDs.
+func (_u *WorkspaceUpdateOne) AddDownloadLinkIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.AddDownloadLinkIDs(ids...)
+	return _u
+}
+
+// AddDownloadLinks adds the "download_links" edges to the DownloadLink entity.
+func (_u *WorkspaceUpdateOne) AddDownloadLinks(v ...*DownloadLink) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddDownloadLinkIDs(ids...)
+}
+
 // AddAPITokenIDs adds the "api_tokens" edge to the ApiToken entity by IDs.
 func (_u *WorkspaceUpdateOne) AddAPITokenIDs(ids ...int64) *WorkspaceUpdateOne {
 	_u.mutation.AddAPITokenIDs(ids...)
@@ -7333,6 +7430,27 @@ func (_u *WorkspaceUpdateOne) RemoveStartTokens(v ...*StartToken) *WorkspaceUpda
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveStartTokenIDs(ids...)
+}
+
+// ClearDownloadLinks clears all "download_links" edges to the DownloadLink entity.
+func (_u *WorkspaceUpdateOne) ClearDownloadLinks() *WorkspaceUpdateOne {
+	_u.mutation.ClearDownloadLinks()
+	return _u
+}
+
+// RemoveDownloadLinkIDs removes the "download_links" edge to DownloadLink entities by IDs.
+func (_u *WorkspaceUpdateOne) RemoveDownloadLinkIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.RemoveDownloadLinkIDs(ids...)
+	return _u
+}
+
+// RemoveDownloadLinks removes "download_links" edges to DownloadLink entities.
+func (_u *WorkspaceUpdateOne) RemoveDownloadLinks(v ...*DownloadLink) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveDownloadLinkIDs(ids...)
 }
 
 // ClearAPITokens clears all "api_tokens" edges to the ApiToken entity.
@@ -9170,6 +9288,51 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(starttoken.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.DownloadLinksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.DownloadLinksTable,
+			Columns: []string{workspace.DownloadLinksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(downloadlink.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedDownloadLinksIDs(); len(nodes) > 0 && !_u.mutation.DownloadLinksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.DownloadLinksTable,
+			Columns: []string{workspace.DownloadLinksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(downloadlink.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.DownloadLinksIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.DownloadLinksTable,
+			Columns: []string{workspace.DownloadLinksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(downloadlink.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

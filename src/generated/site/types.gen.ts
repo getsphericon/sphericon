@@ -211,6 +211,7 @@ export const AuditAction = {
   WORKSPACE_SEND_CAP_CHANGE: 'workspace.send_cap_change',
   WORKSPACE_SENDING_RULES_CHANGE: 'workspace.sending_rules_change',
   CONTACT_IMPORT: 'contact.import',
+  CONTACT_EXPORT: 'contact.export',
   AUDIT_LOG_EXPORT: 'audit_log.export',
   WEBHOOK_ENDPOINT_TEST: 'webhook_endpoint.test',
   API_TOKEN_CREATE: 'api_token.create',
@@ -1606,6 +1607,54 @@ export const ContactAttribute = {
  * A text attribute of a Contact
  */
 export type ContactAttribute = typeof ContactAttribute[keyof typeof ContactAttribute];
+
+/**
+ * A choice of columns of the CSV export of contacts. A key or a core attribute is one column, under
+ * its own name. `customFields` is a column per custom field of the workspace, `customFields.<key>`,
+ * in the order of the keys. `tags` is one column holding the contact's tag names as one CSV record.
+ * A channel (`email`, `sms`, `telegram`) is six columns of its state as a broadcast meets it:
+ * `<channel>.state` (`may_receive`, `needs_confirmation`, `opted_out`, `suppressed`, empty for no
+ * destination), `<channel>.optedOutScopes` (one CSV record of the scopes opted out of:
+ * `everything`, `broadcasts`, `automation:<id>`), `<channel>.optedOutAt` (the latest of them),
+ * `<channel>.suppressionReason`, `<channel>.confirmation` (its provenance) and
+ * `<channel>.confirmedAt`. Times are RFC 3339 in UTC. The headers are the import's own, so an
+ * export maps onto an import by itself.
+ */
+export const ContactCsvColumn = {
+  SUBJECT_ID: 'subjectId',
+  EMAIL: 'email',
+  PHONE: 'phone',
+  FIRST_NAME: 'firstName',
+  LAST_NAME: 'lastName',
+  TIME_ZONE: 'timeZone',
+  COUNTRY: 'country',
+  LOCALE: 'locale',
+  BIRTHDAY: 'birthday',
+  CITY: 'city',
+  AVATAR: 'avatar',
+  SOURCE: 'source',
+  CREATED_AT: 'createdAt',
+  UPDATED_AT: 'updatedAt',
+  CUSTOM_FIELDS: 'customFields',
+  TAGS: 'tags',
+  EMAIL_CHANNEL: 'emailChannel',
+  SMS_CHANNEL: 'smsChannel',
+  TELEGRAM_CHANNEL: 'telegramChannel'
+} as const;
+
+/**
+ * A choice of columns of the CSV export of contacts. A key or a core attribute is one column, under
+ * its own name. `customFields` is a column per custom field of the workspace, `customFields.<key>`,
+ * in the order of the keys. `tags` is one column holding the contact's tag names as one CSV record.
+ * A channel (`email`, `sms`, `telegram`) is six columns of its state as a broadcast meets it:
+ * `<channel>.state` (`may_receive`, `needs_confirmation`, `opted_out`, `suppressed`, empty for no
+ * destination), `<channel>.optedOutScopes` (one CSV record of the scopes opted out of:
+ * `everything`, `broadcasts`, `automation:<id>`), `<channel>.optedOutAt` (the latest of them),
+ * `<channel>.suppressionReason`, `<channel>.confirmation` (its provenance) and
+ * `<channel>.confirmedAt`. Times are RFC 3339 in UTC. The headers are the import's own, so an
+ * export maps onto an import by itself.
+ */
+export type ContactCsvColumn = typeof ContactCsvColumn[keyof typeof ContactCsvColumn];
 
 /**
  * The Engagement tracking consent of each Destination of a contact: its email address, its phone, and the Telegram user of each of its chats
@@ -6864,6 +6913,34 @@ export type SiteConnectionResource = {
    * When the User approved the application
    */
   createdAt: Timestamp;
+};
+
+/**
+ * What to export: a segment's contacts, or all of them, with the columns chosen
+ */
+export type SiteContactCsvExportInput = {
+  /**
+   * The segment whose contacts are exported, evaluated as the file is read; every contact of the workspace when absent
+   */
+  segmentId?: EntityId;
+  /**
+   * The columns, in the order the file has them; a column named twice comes once. At least one.
+   */
+  columns: Array<ContactCsvColumn>;
+};
+
+/**
+ * A one-time link to the file: it works once, for the session that asked for it, within a minute
+ */
+export type SiteContactCsvExportLink = {
+  /**
+   * The link to follow in the browser, a path of this server
+   */
+  url: string;
+  /**
+   * When the link lapses
+   */
+  expiresAt: Timestamp;
 };
 
 /**
@@ -16293,6 +16370,74 @@ export type SiteConnectionsDeleteResponses = {
 };
 
 export type SiteConnectionsDeleteResponse = SiteConnectionsDeleteResponses[keyof SiteConnectionsDeleteResponses];
+
+export type SiteContactCsvExportsCreateData = {
+  body: SiteContactCsvExportInput;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/contact-exports';
+};
+
+export type SiteContactCsvExportsCreateErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SiteContactCsvExportsCreateError = SiteContactCsvExportsCreateErrors[keyof SiteContactCsvExportsCreateErrors];
+
+export type SiteContactCsvExportsCreateResponses = {
+  /**
+   * The request has succeeded and a new resource has been created as a result.
+   */
+  201: SiteContactCsvExportLink;
+};
+
+export type SiteContactCsvExportsCreateResponse = SiteContactCsvExportsCreateResponses[keyof SiteContactCsvExportsCreateResponses];
+
+export type SiteContactCsvExportsDownloadData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+    /**
+     * The token of the link
+     */
+    token: string;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/contact-exports/{token}';
+};
+
+export type SiteContactCsvExportsDownloadErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SiteContactCsvExportsDownloadError = SiteContactCsvExportsDownloadErrors[keyof SiteContactCsvExportsDownloadErrors];
+
+export type SiteContactCsvExportsDownloadResponses = {
+  /**
+   * The CSV file of the export, streamed as it is read
+   */
+  200: Blob | File;
+};
+
+export type SiteContactCsvExportsDownloadResponse = SiteContactCsvExportsDownloadResponses[keyof SiteContactCsvExportsDownloadResponses];
 
 export type SiteContactsListData = {
   body?: never;

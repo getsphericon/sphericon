@@ -1982,6 +1982,29 @@ func HasStartTokensWith(preds ...predicate.StartToken) predicate.Workspace {
 	})
 }
 
+// HasDownloadLinks applies the HasEdge predicate on the "download_links" edge.
+func HasDownloadLinks() predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, DownloadLinksTable, DownloadLinksColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasDownloadLinksWith applies the HasEdge predicate on the "download_links" edge with a given conditions (other predicates).
+func HasDownloadLinksWith(preds ...predicate.DownloadLink) predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := newDownloadLinksStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasAPITokens applies the HasEdge predicate on the "api_tokens" edge.
 func HasAPITokens() predicate.Workspace {
 	return predicate.Workspace(func(s *sql.Selector) {
