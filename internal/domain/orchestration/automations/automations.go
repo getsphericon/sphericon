@@ -339,10 +339,17 @@ func NeedsUnknownPath(conditions []conditiontree.Branch) bool {
 
 // checkUnknownPaths refuses, naming it, a Branch of the tree whose Conditions can be unknown for a
 // Contact (NeedsUnknownPath) and that has no unknown path, and
-// a Branch whose Conditions cannot be unknown and that has one (ADR 0124). A save keeps either, so
-// the author can build the Branch up; Publish arms it.
+// a Branch whose Conditions cannot be unknown and that has one (ADR 0124); and a Wait for event on
+// an open or a click without its unknown path. A save keeps either, so the author can build the
+// Step up; Publish arms it.
 func checkUnknownPaths(steps automationstep.Path) error {
 	for _, st := range automationstep.All(steps) {
+		if w, ok := st.Payload.(automationstep.WaitForEvent); ok {
+			if _, onMessage := w.Awaits.(automationstep.AwaitedMessage); onMessage && w.Unknown == nil {
+				return refuse(st, "a wait for an open or a click needs an unknown path, taken when the app cannot know whether one happened")
+			}
+			continue
+		}
 		b, ok := st.Payload.(automationstep.Branch)
 		if !ok {
 			continue
@@ -359,41 +366,60 @@ func checkUnknownPaths(steps automationstep.Path) error {
 }
 
 // checkStepMessages refuses, naming the Branch and its path, a test of the Enrollment's own message
-// (ADR 0122) that names a Step which is not a send Step that can come before the Branch
-// (automationstep.Before): one after it, in its own paths, in another path of a fork it stands in,
-// or one the version does not hold, so a send Step a test names cannot be removed; and a test of an
-// open of a message that is no email, the one Channel whose opens are tracked. A click is tracked on
-// every Channel. The steps carry their ids (identify).
+// (ADR 0122), and, naming it, a Wait for event on an open or a click (ADR 0124), that names a Step
+// which is not a send Step that can come before the Branch or the wait (automationstep.Before):
+// one after it, in its own paths, in another path of a fork it stands in, or one the version does
+// not hold, so a send Step either names cannot be removed; and either of an open of a message that
+// is no email, the one Channel whose opens are tracked. A click is tracked on every Channel. The
+// steps carry their ids (identify).
 func checkStepMessages(steps automationstep.Path) error {
 	for _, st := range automationstep.All(steps) {
-		b, ok := st.Payload.(automationstep.Branch)
-		if !ok {
-			continue
+		before := func() map[automationstep.ID]*automationstep.Step {
+			passed := automationstep.Before(steps, st.ID)
+			return lo.KeyBy(passed, func(s *automationstep.Step) automationstep.ID { return s.ID })
 		}
-		passed := automationstep.Before(steps, st.ID)
-		before := lo.KeyBy(passed, func(s *automationstep.Step) automationstep.ID { return s.ID })
-		for i, p := range b.Paths {
-			for _, test := range condition.StepMessageTests(p.Condition.Group) {
-				if why := messageProblem(before[test.Step], test); why != "" {
-					return refuse(st, fmt.Sprintf("path %d: %s", i+1, why))
+		switch p := st.Payload.(type) {
+		case automationstep.Branch:
+			passed := before()
+			for i, path := range p.Paths {
+				for _, test := range condition.StepMessageTests(path.Condition.Group) {
+					reader := messageReader{names: "the message test names step", before: "the branch"}
+					if why := reader.problem(passed[test.Step], test.Step, test.Engagement); why != "" {
+						return refuse(st, fmt.Sprintf("path %d: %s", i+1, why))
+					}
 				}
+			}
+		case automationstep.WaitForEvent:
+			m, ok := p.Awaits.(automationstep.AwaitedMessage)
+			if !ok {
+				continue
+			}
+			reader := messageReader{names: "it waits for the message of step", before: "it"}
+			if why := reader.problem(before()[m.Step], m.Step, m.Engagement); why != "" {
+				return refuse(st, why)
 			}
 		}
 	}
 	return nil
 }
 
-// messageProblem is why a Branch's test cannot read the message of the Step sent, one of the Steps
-// before the Branch (nil for none of them); "" when it can.
-func messageProblem(sent *automationstep.Step, test condition.StepMessageTest) string {
+// messageReader is a Step that reads the message of a send Step before it, as its refusals name
+// that Step (names) and itself (before).
+type messageReader struct {
+	names, before string
+}
+
+// problem is why the reader cannot read the open or click (e) of the message of the Step named,
+// which is sent, one of the Steps before the reader (nil for none of them); "" when it can.
+func (r messageReader) problem(sent *automationstep.Step, named automationstep.ID, e conditiontree.Engagement) string {
 	if sent == nil {
-		return fmt.Sprintf("the message test names step %s, which is no send step before the branch", test.Step)
+		return fmt.Sprintf("%s %s, which is no send step before %s", r.names, named, r.before)
 	}
 	ch, sends := sent.Kind().Channel()
 	if !sends {
-		return fmt.Sprintf("the message test names step %s (%s), which sends no message", sent.ID, sent.Kind())
+		return fmt.Sprintf("%s %s (%s), which sends no message", r.names, sent.ID, sent.Kind())
 	}
-	switch test.Engagement {
+	switch e {
 	case conditiontree.MessageOpened:
 		if ch != channels.Email {
 			return fmt.Sprintf("only an email step's message is opened, step %s sends %s", sent.ID, ch)

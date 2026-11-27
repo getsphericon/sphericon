@@ -7209,6 +7209,61 @@
         "description": "A Wait for event waits for an Event one of its Event matchers matches, as a request writes it",
         "additionalProperties": false
       },
+      "AwaitedMessage": {
+        "type": "object",
+        "required": ["kind", "step", "engagement"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["message"]
+          },
+          "step": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StepId"
+              }
+            ],
+            "description": "The send Step's id"
+          },
+          "engagement": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MessageEngagement"
+              }
+            ],
+            "description": "Whether it waits for an open or a click of the message"
+          }
+        },
+        "description": "A Wait for event waits for an open or a click of the message a send Step sent to this\nEnrollment (ADR 0124), with the meaning of a Branch's test of that message (ADR 0122): its first\nhuman open or click, whenever it happened, one before the Enrollment reached the Step included. It\ntakes `unknown` at once when the message went out untracked or its tracking was withdrawn since\n(ADR 0120), when the send Step was skipped and when the Enrollment never passed it, and at the\ntimeout, instead of `timedOut`, when its tracking was withdrawn during the wait. The Step must be a\nsend Step that can come before the Wait for event: an email Step for `opened`, any send Step for\n`clicked`. A Step it names cannot be removed."
+      },
+      "AwaitedMessageInput": {
+        "type": "object",
+        "required": ["kind", "step", "engagement"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["message"]
+          },
+          "step": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StepId"
+              }
+            ],
+            "description": "The send Step's id"
+          },
+          "engagement": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MessageEngagement"
+              }
+            ],
+            "description": "Whether it waits for an open or a click of the message"
+          }
+        },
+        "description": "A Wait for event waits for an open or a click of the message a send Step sent to this\nEnrollment (ADR 0124), with the meaning of a Branch's test of that message (ADR 0122): its first\nhuman open or click, whenever it happened, one before the Enrollment reached the Step included. It\ntakes `unknown` at once when the message went out untracked or its tracking was withdrawn since\n(ADR 0120), when the send Step was skipped and when the Enrollment never passed it, and at the\ntimeout, instead of `timedOut`, when its tracking was withdrawn during the wait. The Step must be a\nsend Step that can come before the Wait for event: an email Step for `opened`, any send Step for\n`clicked`. A Step it names cannot be removed.",
+        "additionalProperties": false
+      },
       "BirthdayDateField": {
         "type": "object",
         "required": ["kind"],
@@ -18002,12 +18057,16 @@
         "oneOf": [
           {
             "$ref": "#/components/schemas/AwaitedEvent"
+          },
+          {
+            "$ref": "#/components/schemas/AwaitedMessage"
           }
         ],
         "discriminator": {
           "propertyName": "kind",
           "mapping": {
-            "event": "#/components/schemas/AwaitedEvent"
+            "event": "#/components/schemas/AwaitedEvent",
+            "message": "#/components/schemas/AwaitedMessage"
           }
         },
         "description": "What a Wait for event waits for, by `kind`"
@@ -18017,12 +18076,16 @@
         "oneOf": [
           {
             "$ref": "#/components/schemas/AwaitedEventInput"
+          },
+          {
+            "$ref": "#/components/schemas/AwaitedMessageInput"
           }
         ],
         "discriminator": {
           "propertyName": "kind",
           "mapping": {
-            "event": "#/components/schemas/AwaitedEventInput"
+            "event": "#/components/schemas/AwaitedEventInput",
+            "message": "#/components/schemas/AwaitedMessageInput"
           }
         },
         "description": "What a Wait for event waits for, by `kind`, as a request writes it"
@@ -18341,9 +18404,17 @@
               }
             ],
             "description": "The path taken when the timeout passes first"
+          },
+          "unknown": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AutomationPath"
+              }
+            ],
+            "description": "The path taken when the Step waits for an open or a click (`message`) and cannot know whether\none happened; never present when it waits for an Event"
           }
         },
-        "description": "A Step that holds the Enrollment until what it awaits arrives or its timeout passes (ADR\n0124), then takes `arrived` or `timedOut`; the paths rejoin at the Step after it. An Event counts\nwhen one of its matchers matches it, its Condition, if any, holds for the Contact, and it is the\nContact's, occurred at or after the moment the Enrollment reached the Step and no later than the\ntimeout, and is neither a machine open or click, loaded history nor the Event that\nbegan the Enrollment. One that occurred within the window but was recorded late is taken at the\ntimeout. An Event an exit or the goal matches ends the Enrollment instead."
+        "description": "A Step that holds the Enrollment until what it awaits arrives or its timeout passes (ADR\n0124), then takes `arrived` or `timedOut`, or `unknown` when it waits for an open or a click\nthat it cannot know of; the paths rejoin at the Step after it. An Event counts when one of its\nmatchers matches it, its Condition, if any, holds for the Contact, and it is the Contact's,\noccurred at or after the moment the Enrollment reached the Step and no later than the timeout, and\nis neither a machine open or click, loaded history nor the Event that\nbegan the Enrollment. One that occurred within the window but was recorded late is taken at the\ntimeout. An Event an exit or the goal matches ends the Enrollment instead."
       },
       "WaitForEventStepInput": {
         "type": "object",
@@ -18397,6 +18468,14 @@
               }
             ],
             "description": "The path taken when the timeout passes first"
+          },
+          "unknown": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AutomationPathInput"
+              }
+            ],
+            "description": "The path taken when the Step waits for an open or a click (`message`) and cannot know whether\none happened. Publish refuses a Wait for event on a message without it, and a save refuses it\non a Wait for event on an Event."
           }
         },
         "description": "A Wait for event, as a request writes it",

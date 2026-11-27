@@ -3064,6 +3064,38 @@ export const zAutomationReport = z.object({
 });
 
 /**
+ * A Wait for event waits for an open or a click of the message a send Step sent to this
+ * Enrollment (ADR 0124), with the meaning of a Branch's test of that message (ADR 0122): its first
+ * human open or click, whenever it happened, one before the Enrollment reached the Step included. It
+ * takes `unknown` at once when the message went out untracked or its tracking was withdrawn since
+ * (ADR 0120), when the send Step was skipped and when the Enrollment never passed it, and at the
+ * timeout, instead of `timedOut`, when its tracking was withdrawn during the wait. The Step must be a
+ * send Step that can come before the Wait for event: an email Step for `opened`, any send Step for
+ * `clicked`. A Step it names cannot be removed.
+ */
+export const zAwaitedMessage = z.object({
+  kind: z.enum(['message']),
+  step: zStepId,
+  engagement: zMessageEngagement
+});
+
+/**
+ * A Wait for event waits for an open or a click of the message a send Step sent to this
+ * Enrollment (ADR 0124), with the meaning of a Branch's test of that message (ADR 0122): its first
+ * human open or click, whenever it happened, one before the Enrollment reached the Step included. It
+ * takes `unknown` at once when the message went out untracked or its tracking was withdrawn since
+ * (ADR 0120), when the send Step was skipped and when the Enrollment never passed it, and at the
+ * timeout, instead of `timedOut`, when its tracking was withdrawn during the wait. The Step must be a
+ * send Step that can come before the Wait for event: an email Step for `opened`, any send Step for
+ * `clicked`. A Step it names cannot be removed.
+ */
+export const zAwaitedMessageInput = z.strictObject({
+  kind: z.enum(['message']),
+  step: zStepId,
+  engagement: zMessageEngagement
+});
+
+/**
  * A Step that sends an email through the Integration it names
  */
 export const zEmailStep = z.object({
@@ -6268,12 +6300,18 @@ export const zUpdateSegmentInput = z.strictObject({
 /**
  * What a Wait for event waits for, by `kind`
  */
-export const zWaitForEventAwaits = zAwaitedEvent;
+export const zWaitForEventAwaits = z.discriminatedUnion('kind', [
+  zAwaitedEvent.extend({ kind: z.literal('event') }),
+  zAwaitedMessage.extend({ kind: z.literal('message') })
+]);
 
 /**
  * What a Wait for event waits for, by `kind`, as a request writes it
  */
-export const zWaitForEventAwaitsInput = zAwaitedEventInput;
+export const zWaitForEventAwaitsInput = z.discriminatedUnion('kind', [
+  zAwaitedEventInput.extend({ kind: z.literal('event') }),
+  zAwaitedMessageInput.extend({ kind: z.literal('message') })
+]);
 
 /**
  * A Wait for event's Condition (ADR 0124, ADR 0180): the tree of tests the Contact, on its live
@@ -6339,10 +6377,11 @@ export const zWaitForEventConditionNodeInput = z.discriminatedUnion('kind', [
 
 /**
  * A Step that holds the Enrollment until what it awaits arrives or its timeout passes (ADR
- * 0124), then takes `arrived` or `timedOut`; the paths rejoin at the Step after it. An Event counts
- * when one of its matchers matches it, its Condition, if any, holds for the Contact, and it is the
- * Contact's, occurred at or after the moment the Enrollment reached the Step and no later than the
- * timeout, and is neither a machine open or click, loaded history nor the Event that
+ * 0124), then takes `arrived` or `timedOut`, or `unknown` when it waits for an open or a click
+ * that it cannot know of; the paths rejoin at the Step after it. An Event counts when one of its
+ * matchers matches it, its Condition, if any, holds for the Contact, and it is the Contact's,
+ * occurred at or after the moment the Enrollment reached the Step and no later than the timeout, and
+ * is neither a machine open or click, loaded history nor the Event that
  * began the Enrollment. One that occurred within the window but was recorded late is taken at the
  * timeout. An Event an exit or the goal matches ends the Enrollment instead.
  */
@@ -6353,7 +6392,8 @@ export const zWaitForEventStep = z.object({
   timeoutSeconds: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   awaits: zWaitForEventAwaits,
   arrived: zAutomationPath,
-  timedOut: zAutomationPath
+  timedOut: zAutomationPath,
+  unknown: zAutomationPath.exactOptional()
 });
 
 /**
@@ -6366,7 +6406,8 @@ export const zWaitForEventStepInput = z.strictObject({
   timeoutSeconds: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   awaits: zWaitForEventAwaitsInput,
   arrived: zAutomationPathInput,
-  timedOut: zAutomationPathInput
+  timedOut: zAutomationPathInput,
+  unknown: zAutomationPathInput.exactOptional()
 });
 
 /**
