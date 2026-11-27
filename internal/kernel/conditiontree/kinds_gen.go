@@ -136,6 +136,7 @@ type Source string
 // The discriminator values of the contract's unions, in the order they first name them.
 const (
 	SourceTrigger Source = "trigger"
+	SourceAwaited Source = "awaited"
 )
 
 // RuleSources is every Source a Rule's property leaf reads.
@@ -146,9 +147,11 @@ var RuleSources = []Source{
 // BranchSources is every Source a Branch path's property leaf reads.
 var BranchSources = []Source{
 	SourceTrigger,
+	SourceAwaited,
 }
 
 // WaitForEventSources is every Source a Wait for event's property leaf reads.
 var WaitForEventSources = []Source{
 	SourceTrigger,
+	SourceAwaited,
 }

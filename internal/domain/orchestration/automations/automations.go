@@ -1147,6 +1147,9 @@ func (v versioned) mergeSteps(ctx context.Context, ts *ent.Scoped, steps, stored
 	if err := checkStepMessages(steps); err != nil {
 		return automationstep.Path{}, err
 	}
+	if err := checkAwaitedTests(steps); err != nil {
+		return automationstep.Path{}, err
+	}
 	if err := v.m.checkBranches(ctx, ts, steps); err != nil {
 		return automationstep.Path{}, err
 	}

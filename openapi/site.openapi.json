@@ -12705,6 +12705,45 @@
         "description": "A Wait for event waits for an Event one of its Event matchers matches, as a request writes it",
         "additionalProperties": false
       },
+      "AwaitedSource": {
+        "type": "object",
+        "required": ["kind", "name"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["awaited"]
+          },
+          "name": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WaitForEventName"
+              }
+            ],
+            "description": "The Wait for event's name"
+          }
+        },
+        "description": "The Event a Wait for event of the Automation arrived on, kept by the Enrollment under the Wait\nfor event's name (ADR 0136), whose properties a property test reads. The Wait for event must be\none that can come before the Step holding the test. Where the Enrollment keeps no copy of it\n(the Wait for event timed out, or its path never passed it), the test fails."
+      },
+      "AwaitedSourceInput": {
+        "type": "object",
+        "required": ["kind", "name"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["awaited"]
+          },
+          "name": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WaitForEventName"
+              }
+            ],
+            "description": "The Wait for event's name"
+          }
+        },
+        "description": "The Event a Wait for event of the Automation arrived on, kept by the Enrollment under the Wait\nfor event's name (ADR 0136), whose properties a property test reads. The Wait for event must be\none that can come before the Step holding the test. Where the Enrollment keeps no copy of it\n(the Wait for event timed out, or its path never passed it), the test fails.",
+        "additionalProperties": false
+      },
       "BirthdayDateField": {
         "type": "object",
         "required": ["kind"],
@@ -13105,30 +13144,38 @@
         "oneOf": [
           {
             "$ref": "#/components/schemas/TriggerSource"
+          },
+          {
+            "$ref": "#/components/schemas/AwaitedSource"
           }
         ],
         "discriminator": {
           "propertyName": "kind",
           "mapping": {
-            "trigger": "#/components/schemas/TriggerSource"
+            "trigger": "#/components/schemas/TriggerSource",
+            "awaited": "#/components/schemas/AwaitedSource"
           }
         },
-        "description": "Whose properties a Branch path's property test reads, by `kind`: the Event the Enrollment\nbegan with"
+        "description": "Whose properties a Branch path's property test reads, by `kind`: the Event the Enrollment\nbegan with, or the one an earlier Wait for event arrived on"
       },
       "BranchPropertySourceInput": {
         "type": "object",
         "oneOf": [
           {
             "$ref": "#/components/schemas/TriggerSourceInput"
+          },
+          {
+            "$ref": "#/components/schemas/AwaitedSourceInput"
           }
         ],
         "discriminator": {
           "propertyName": "kind",
           "mapping": {
-            "trigger": "#/components/schemas/TriggerSourceInput"
+            "trigger": "#/components/schemas/TriggerSourceInput",
+            "awaited": "#/components/schemas/AwaitedSourceInput"
           }
         },
-        "description": "Whose properties a Branch path's property test reads, by `kind`: the Event the Enrollment\nbegan with"
+        "description": "Whose properties a Branch path's property test reads, by `kind`: the Event the Enrollment\nbegan with, or the one an earlier Wait for event arrived on"
       },
       "BranchStep": {
         "type": "object",
@@ -27165,30 +27212,38 @@
         "oneOf": [
           {
             "$ref": "#/components/schemas/TriggerSource"
+          },
+          {
+            "$ref": "#/components/schemas/AwaitedSource"
           }
         ],
         "discriminator": {
           "propertyName": "kind",
           "mapping": {
-            "trigger": "#/components/schemas/TriggerSource"
+            "trigger": "#/components/schemas/TriggerSource",
+            "awaited": "#/components/schemas/AwaitedSource"
           }
         },
-        "description": "Whose properties a Wait for event's property test reads, by `kind`: the Event the Enrollment\nbegan with. The Event the Wait for event awaits is tested by its matcher's filter."
+        "description": "Whose properties a Wait for event's property test reads, by `kind`: the Event the Enrollment\nbegan with, or the one an earlier Wait for event arrived on. The Event the Wait for event awaits\nis tested by its matcher's filter."
       },
       "WaitForEventPropertySourceInput": {
         "type": "object",
         "oneOf": [
           {
             "$ref": "#/components/schemas/TriggerSourceInput"
+          },
+          {
+            "$ref": "#/components/schemas/AwaitedSourceInput"
           }
         ],
         "discriminator": {
           "propertyName": "kind",
           "mapping": {
-            "trigger": "#/components/schemas/TriggerSourceInput"
+            "trigger": "#/components/schemas/TriggerSourceInput",
+            "awaited": "#/components/schemas/AwaitedSourceInput"
           }
         },
-        "description": "Whose properties a Wait for event's property test reads, by `kind`: the Event the Enrollment\nbegan with. The Event the Wait for event awaits is tested by its matcher's filter."
+        "description": "Whose properties a Wait for event's property test reads, by `kind`: the Event the Enrollment\nbegan with, or the one an earlier Wait for event arrived on. The Event the Wait for event awaits\nis tested by its matcher's filter."
       },
       "WaitForEventStep": {
         "type": "object",

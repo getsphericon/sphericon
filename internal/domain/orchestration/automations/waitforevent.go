@@ -255,16 +255,21 @@ func anyMatcher(matchers []eventmatcher.Matcher) (predicate.Event, error) {
 }
 
 // conditionHolds reports whether the Wait for event's Condition, if any, holds for the
-// Enrollment's Contact now, its property tests reading the Event the Enrollment began with: false
-// and unknown are no match (ADR 0124). A failure to read is condition.ErrStorage; any other error
-// is a Condition that no longer compiles (a Custom field it tests was retyped since), which fails
-// the Enrollment, as a Branch's does.
-func (m *StepExecution) conditionHolds(ctx context.Context, s *ent.Scoped, run *ent.AutomationRun, w automationstep.WaitForEvent) (bool, error) {
+// Enrollment's Contact now, its property tests reading the Event the Enrollment began with and the
+// copies of the Events its earlier Wait for event Steps of index arrived on (ADR 0136): false and
+// unknown are no match (ADR 0124). A failure to read is condition.ErrStorage; any other error is a
+// Condition that no longer compiles (a Custom field it tests was retyped since), which fails the
+// Enrollment, as a Branch's does.
+func (m *StepExecution) conditionHolds(ctx context.Context, s *ent.Scoped, run *ent.AutomationRun, index *automationstep.Index, w automationstep.WaitForEvent) (bool, error) {
 	cond := awaitedCondition(w)
 	if cond == nil {
 		return true, nil
 	}
-	return m.conditions.Holds(ctx, s, condition.WaitForEventInput{ContactID: run.ContactID, Condition: *cond, Properties: run.EventProperties})
+	awaited, err := awaitedFor(ctx, s, run.ID, index, cond.Group)
+	if err != nil {
+		return false, fmt.Errorf("%w: read the kept events: %w", condition.ErrStorage, err)
+	}
+	return m.conditions.Holds(ctx, s, condition.WaitForEventInput{ContactID: run.ContactID, Condition: *cond, Properties: run.EventProperties, Awaited: awaited})
 }
 
 // awaitWindow is what an Event must be to satisfy a Wait for event an Enrollment stands on: the
@@ -369,7 +374,7 @@ func (m *StepExecution) timeout(ctx context.Context, s *ent.Scoped, run *ent.Aut
 	}
 	taken := pathTaken{id: w.TimedOut.ID}
 	if arrival != nil {
-		holds, err := m.conditionHolds(ctx, s, run, w)
+		holds, err := m.conditionHolds(ctx, s, run, at.index, w)
 		if errors.Is(err, condition.ErrStorage) {
 			return err
 		}
@@ -434,7 +439,7 @@ func (m *StepExecution) wake(ctx context.Context, s *ent.Scoped, contactID int64
 		if arrival == nil {
 			continue
 		}
-		holds, err := m.conditionHolds(ctx, s, run, w)
+		holds, err := m.conditionHolds(ctx, s, run, index, w)
 		if errors.Is(err, condition.ErrStorage) {
 			return fmt.Errorf("wake enrollment %d: %w", run.ID, err)
 		}

@@ -4569,23 +4569,6 @@ export const zTriggerSource = z.object({
 });
 
 /**
- * Whose properties a Branch path's property test reads, by `kind`: the Event the Enrollment
- * began with
- */
-export const zBranchPropertySource = zTriggerSource;
-
-/**
- * A test of one property of an Event: whose it is in `of`, its key in a field of its own, so a
- * key holding a dot is one key
- */
-export const zBranchPropertyLeaf = z.object({
-  kind: z.enum(['property']),
-  of: zBranchPropertySource,
-  key: z.string(),
-  test: zPropertyTest
-});
-
-/**
  * Whose properties a Rule's property test reads, by `kind`: the triggering Event
  */
 export const zRulePropertySource = zTriggerSource;
@@ -4606,23 +4589,6 @@ export const zRulePropertyLeaf = z.object({
  */
 export const zTriggerSourceInput = z.strictObject({
   kind: z.enum(['trigger'])
-});
-
-/**
- * Whose properties a Branch path's property test reads, by `kind`: the Event the Enrollment
- * began with
- */
-export const zBranchPropertySourceInput = zTriggerSourceInput;
-
-/**
- * A test of one property of an Event: whose it is in `of`, its key in a field of its own, so a
- * key holding a dot is one key
- */
-export const zBranchPropertyLeafInput = z.strictObject({
-  kind: z.enum(['property']),
-  of: zBranchPropertySourceInput,
-  key: z.string(),
-  test: zPropertyTestInput
 });
 
 /**
@@ -4873,10 +4839,76 @@ export const zSiteUpdateMeInput = z.strictObject({
 export const zWaitForEventName = z.string().max(64).regex(/^[a-z][a-z0-9_]*$/);
 
 /**
- * Whose properties a Wait for event's property test reads, by `kind`: the Event the Enrollment
- * began with. The Event the Wait for event awaits is tested by its matcher's filter.
+ * The Event a Wait for event of the Automation arrived on, kept by the Enrollment under the Wait
+ * for event's name (ADR 0136), whose properties a property test reads. The Wait for event must be
+ * one that can come before the Step holding the test. Where the Enrollment keeps no copy of it
+ * (the Wait for event timed out, or its path never passed it), the test fails.
  */
-export const zWaitForEventPropertySource = zTriggerSource;
+export const zAwaitedSource = z.object({
+  kind: z.enum(['awaited']),
+  name: zWaitForEventName
+});
+
+/**
+ * The Event a Wait for event of the Automation arrived on, kept by the Enrollment under the Wait
+ * for event's name (ADR 0136), whose properties a property test reads. The Wait for event must be
+ * one that can come before the Step holding the test. Where the Enrollment keeps no copy of it
+ * (the Wait for event timed out, or its path never passed it), the test fails.
+ */
+export const zAwaitedSourceInput = z.strictObject({
+  kind: z.enum(['awaited']),
+  name: zWaitForEventName
+});
+
+/**
+ * Whose properties a Branch path's property test reads, by `kind`: the Event the Enrollment
+ * began with, or the one an earlier Wait for event arrived on
+ */
+export const zBranchPropertySource = z.discriminatedUnion('kind', [
+  zTriggerSource.extend({ kind: z.literal('trigger') }),
+  zAwaitedSource.extend({ kind: z.literal('awaited') })
+]);
+
+/**
+ * A test of one property of an Event: whose it is in `of`, its key in a field of its own, so a
+ * key holding a dot is one key
+ */
+export const zBranchPropertyLeaf = z.object({
+  kind: z.enum(['property']),
+  of: zBranchPropertySource,
+  key: z.string(),
+  test: zPropertyTest
+});
+
+/**
+ * Whose properties a Branch path's property test reads, by `kind`: the Event the Enrollment
+ * began with, or the one an earlier Wait for event arrived on
+ */
+export const zBranchPropertySourceInput = z.discriminatedUnion('kind', [
+  zTriggerSourceInput.extend({ kind: z.literal('trigger') }),
+  zAwaitedSourceInput.extend({ kind: z.literal('awaited') })
+]);
+
+/**
+ * A test of one property of an Event: whose it is in `of`, its key in a field of its own, so a
+ * key holding a dot is one key
+ */
+export const zBranchPropertyLeafInput = z.strictObject({
+  kind: z.enum(['property']),
+  of: zBranchPropertySourceInput,
+  key: z.string(),
+  test: zPropertyTestInput
+});
+
+/**
+ * Whose properties a Wait for event's property test reads, by `kind`: the Event the Enrollment
+ * began with, or the one an earlier Wait for event arrived on. The Event the Wait for event awaits
+ * is tested by its matcher's filter.
+ */
+export const zWaitForEventPropertySource = z.discriminatedUnion('kind', [
+  zTriggerSource.extend({ kind: z.literal('trigger') }),
+  zAwaitedSource.extend({ kind: z.literal('awaited') })
+]);
 
 /**
  * A test of one property of an Event: whose it is in `of`, its key in a field of its own, so a
@@ -4891,9 +4923,13 @@ export const zWaitForEventPropertyLeaf = z.object({
 
 /**
  * Whose properties a Wait for event's property test reads, by `kind`: the Event the Enrollment
- * began with. The Event the Wait for event awaits is tested by its matcher's filter.
+ * began with, or the one an earlier Wait for event arrived on. The Event the Wait for event awaits
+ * is tested by its matcher's filter.
  */
-export const zWaitForEventPropertySourceInput = zTriggerSourceInput;
+export const zWaitForEventPropertySourceInput = z.discriminatedUnion('kind', [
+  zTriggerSourceInput.extend({ kind: z.literal('trigger') }),
+  zAwaitedSourceInput.extend({ kind: z.literal('awaited') })
+]);
 
 /**
  * A test of one property of an Event: whose it is in `of`, its key in a field of its own, so a

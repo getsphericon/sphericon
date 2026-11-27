@@ -195,6 +195,10 @@ type compiler struct {
 	// trigger is the properties of the Event a Rule's tests of the triggering Event read, a JSON
 	// object; nil in a Segment, whose tree holds no such test.
 	trigger json.RawMessage
+	// awaited is the properties of the Events the Enrollment's Wait for event Steps arrived on, by
+	// each Step's name (ADR 0136), which a Branch's and a Wait for event's tests of the awaited
+	// Event read; a name absent from it has no copy, and its tests fail.
+	awaited map[string]map[string]any
 	// messages is what a Branch's tests of the Enrollment's own messages read, by the send Step
 	// that sent each (ADR 0122); nil where none is read, as in a check, which reads them unknown.
 	messages map[automationstep.ID]SentMessage
@@ -297,16 +301,35 @@ func (c *compiler) since(days int) time.Time {
 	return since
 }
 
-// property is a test of one property of the triggering Event: its SQL/JSON path, the one a filter
-// compiles to (ADR 0180), on the Event's properties bound to the query.
+// property is a test of one property of an Event: its SQL/JSON path, the one a filter compiles to
+// (ADR 0180), on the properties of the Event its source names bound to the query: the triggering
+// Event's, or the copy of the Event the Wait for event arrived on, an empty object when the
+// Enrollment keeps none, so the test fails (ADR 0136).
 func (c *compiler) property(l propertyLeaf) (predicate.Contact, error) {
 	b := newPathBuilder()
 	path, err := b.path(b.property(l.key, l.test))
 	if err != nil {
 		return nil, err
 	}
-	on := Document(c.trigger)
+	doc := c.trigger
+	switch l.of {
+	case conditiontree.SourceAwaited:
+		if doc, err = propertiesDocument(c.awaited[l.name]); err != nil {
+			return nil, fmt.Errorf("encode the properties of the awaited event %q: %w", l.name, err)
+		}
+	case conditiontree.SourceTrigger:
+	}
+	on := Document(doc)
 	return predicate.Contact(func(s *sql.Selector) { s.Where(path.On(on)) }), nil
+}
+
+// propertiesDocument is an Event's properties as the JSON object a property test reads, the empty
+// object for none: never NULL, which no jsonb parameter may be.
+func propertiesDocument(props map[string]any) (json.RawMessage, error) {
+	if props == nil {
+		props = map[string]any{}
+	}
+	return json.Marshal(props)
 }
 
 // location is the Workspace time zone, in which a datetime Custom field's value without an offset
@@ -785,6 +808,20 @@ func StepMessageTests(g conditiontree.Group) []StepMessageTest {
 	for n := range decodeSkipping(g).leaves() {
 		if l, ok := n.(stepMessageLeaf); ok {
 			out = append(out, StepMessageTest{Step: l.step, Engagement: l.engagement})
+		}
+	}
+	return out
+}
+
+// AwaitedNames are the names of the Wait for event Steps the group's tests of the awaited Event
+// read (ADR 0136), at any depth and under a negation too, each once, in the tree's order: what a
+// save checks against the Wait for event Steps that can come before the Step holding the group,
+// and which of the Enrollment's copies the Step reads. A malformed entry names none.
+func AwaitedNames(g conditiontree.Group) []string {
+	var out []string
+	for n := range decodeSkipping(g).leaves() {
+		if l, ok := n.(propertyLeaf); ok && l.of == conditiontree.SourceAwaited && !slices.Contains(out, l.name) {
+			out = append(out, l.name)
 		}
 	}
 	return out

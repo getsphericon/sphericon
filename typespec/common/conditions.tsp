@@ -394,6 +394,19 @@ model TriggerSource {
 
 model TriggerSourceInput is TriggerSource;
 
+/** The Event a Wait for event of the Automation arrived on, kept by the Enrollment under the Wait
+ * for event's name (ADR 0136), whose properties a property test reads. The Wait for event must be
+ * one that can come before the Step holding the test. Where the Enrollment keeps no copy of it
+ * (the Wait for event timed out, or its path never passed it), the test fails. */
+model AwaitedSource {
+  kind: "awaited";
+
+  /** The Wait for event's name */
+  name: WaitForEventName;
+}
+
+model AwaitedSourceInput is AwaitedSource;
+
 /** Whose properties a Rule's property test reads, by `kind`: the triggering Event */
 @discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
 union RulePropertySource {
@@ -407,31 +420,37 @@ union RulePropertySourceInput {
 }
 
 /** Whose properties a Branch path's property test reads, by `kind`: the Event the Enrollment
- * began with */
+ * began with, or the one an earlier Wait for event arrived on */
 @discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
 union BranchPropertySource {
   trigger: TriggerSource,
+  awaited: AwaitedSource,
 }
 
 /** Whose properties a Branch path's property test reads, by `kind`: the Event the Enrollment
- * began with */
+ * began with, or the one an earlier Wait for event arrived on */
 @discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
 union BranchPropertySourceInput {
   trigger: TriggerSourceInput,
+  awaited: AwaitedSourceInput,
 }
 
 /** Whose properties a Wait for event's property test reads, by `kind`: the Event the Enrollment
- * began with. The Event the Wait for event awaits is tested by its matcher's filter. */
+ * began with, or the one an earlier Wait for event arrived on. The Event the Wait for event awaits
+ * is tested by its matcher's filter. */
 @discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
 union WaitForEventPropertySource {
   trigger: TriggerSource,
+  awaited: AwaitedSource,
 }
 
 /** Whose properties a Wait for event's property test reads, by `kind`: the Event the Enrollment
- * began with. The Event the Wait for event awaits is tested by its matcher's filter. */
+ * began with, or the one an earlier Wait for event arrived on. The Event the Wait for event awaits
+ * is tested by its matcher's filter. */
 @discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
 union WaitForEventPropertySourceInput {
   trigger: TriggerSourceInput,
+  awaited: AwaitedSourceInput,
 }
 
 /** A test of one property of an Event: whose it is in `of`, its key in a field of its own, so a

@@ -99,9 +99,12 @@ type stepMessageLeaf struct {
 	engagement conditiontree.Engagement
 }
 
-// propertyLeaf tests the property key of the triggering Event, the one source a Rule's property
-// test reads, by a text, presence or number test.
+// propertyLeaf tests the property key of the Event of, by a text, presence or number test: the
+// triggering Event, or the Event the Wait for event named name arrived on (ADR 0136), which the
+// Enrollment keeps.
 type propertyLeaf struct {
+	of   conditiontree.Source
+	name string
 	key  string
 	test propertyTest
 }
@@ -247,9 +250,11 @@ type entry struct {
 	Engagement conditiontree.Engagement      `json:"engagement"`
 }
 
-// source is a property test's `of`: whose properties it reads, by its `kind`.
+// source is a property test's `of`: whose properties it reads, by its `kind`, and the name of the
+// Wait for event whose arrival an `awaited` source reads.
 type source struct {
 	Kind conditiontree.Source `json:"kind"`
+	Name string               `json:"name"`
 }
 
 // storedTest is a leaf's stored `test`, with the fields of every kind of test. Value is a text
@@ -353,16 +358,26 @@ func decodeStepMessage(e entry) (node, error) {
 	return stepMessageLeaf{step: e.Step, engagement: e.Engagement}, nil
 }
 
-// decodeProperty reads a property test of one of the sources its place's property tests read.
+// decodeProperty reads a property test of one of the sources its place's property tests read. An
+// `awaited` source names its Wait for event; whether one of that name can come before the Step
+// holding the test is the save's check, which knows the version's Steps.
 func decodeProperty(e entry, sources []conditiontree.Source) (node, error) {
 	if e.Of == nil || !slices.Contains(sources, e.Of.Kind) {
-		return nil, errors.New("a property test reads the triggering Event's properties")
+		return nil, errors.New("a property test reads an Event this place does not hold")
+	}
+	var name string
+	switch e.Of.Kind {
+	case conditiontree.SourceAwaited:
+		if name = e.Of.Name; name == "" {
+			return nil, errors.New("a test of the awaited event names no wait for event")
+		}
+	case conditiontree.SourceTrigger:
 	}
 	key, t, err := decodePropertyTest(e)
 	if err != nil {
 		return nil, err
 	}
-	return propertyLeaf{key: key, test: t}, nil
+	return propertyLeaf{of: e.Of.Kind, name: name, key: key, test: t}, nil
 }
 
 // CheckPropertyKey checks the form of the key of an Event property: property keys have no
