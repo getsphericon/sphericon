@@ -224,6 +224,26 @@ func TestAnExportsGuardedCellsReadBackAsWritten(t *testing.T) {
 	assert.Equal(t, "=x", bob.CustomFields["signup_source"])
 }
 
+// A new field's column whose cells read as numbers only once their leading zero or plus sign is
+// lost (a postal code, a dialling code) is proposed as text and keeps them; a column of numbers that
+// mean numbers is proposed as a number.
+func TestAnExportsCodesAreProposedAsTextNotNumbers(t *testing.T) {
+	env := testhelper.Setup(t)
+	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	imp := uploaded(t, owner, "email,customFields.zip,customFields.dialling,customFields.score\n"+
+		"ann.moved@example.com,02134,'+44,0\nbob.moved@example.com,10001,'+1,-0.5\n")
+
+	runImport(t, env, owner, imp, mappingInput(t, imp))
+	fields, err := env.DB.Scoped(fixtures.AcmeID).CustomField().Query().Where(customfield.KeyIn("zip", "dialling", "score")).All(t.Context())
+	require.NoError(t, err)
+	types := lo.SliceToMap(fields, func(f *ent.CustomField) (string, customfield.Type) { return f.Key, f.Type })
+	ann := contactByEmail(t, env, "ann.moved@example.com")
+
+	assert.Equal(t, map[string]customfield.Type{"zip": customfield.TypeString, "dialling": customfield.TypeString, "score": customfield.TypeNumber}, types)
+	require.NotNil(t, ann)
+	assert.Equal(t, map[string]any{"zip": "02134", "dialling": "+44", "score": 0.0}, ann.CustomFields)
+}
+
 // The date columns of an export save unchanged: a blank one is proposed in the format the export
 // writes (ISO for the birthday, RFC 3339 for a datetime field), and a datetime field's column, which
 // holds a date alone or a date and time as each was written, reads both in RFC 3339; a new field of

@@ -149,15 +149,15 @@ func (e exported) customField(key string, cells []string) (csvimport.Column, boo
 }
 
 // newFieldType is the type a new Custom field is proposed in from the sample of its column: a
-// number when every non-blank cell reads as one, else a boolean, else a datetime in the one format
-// they all read in, else text (also when every cell is blank).
+// number when every non-blank cell reads as one and none is a code (codeLike), else a boolean, else
+// a datetime in the one format they all read in, else text (also when every cell is blank).
 func newFieldType(cells []string, sep csvimport.DecimalSeparator) (customfield.Type, csvimport.DateFormat) {
 	filled := lo.Filter(cells, func(c string, _ int) bool { return strings.TrimSpace(c) != "" })
 	reads := func(read func(string) csvimport.Reason) bool {
 		return len(filled) > 0 && lo.EveryBy(filled, func(c string) bool { return read(c) == "" })
 	}
 	switch {
-	case reads(func(c string) csvimport.Reason { _, r := contacts.ReadNumber(c, sep); return r }):
+	case !lo.SomeBy(filled, codeLike) && reads(func(c string) csvimport.Reason { _, r := contacts.ReadNumber(c, sep); return r }):
 		return customfield.TypeNumber, ""
 	case reads(func(c string) csvimport.Reason { _, r := contacts.ReadBool(c); return r }):
 		return customfield.TypeBool, ""
@@ -166,6 +166,14 @@ func newFieldType(cells []string, sep csvimport.DecimalSeparator) (customfield.T
 		return customfield.TypeDatetime, f
 	}
 	return customfield.TypeString, ""
+}
+
+// codeLike reports whether a cell that may read as a number is a code whose characters count: a
+// plus sign before it (a dialling code), or a zero before another digit (a postal code, `02134`),
+// which a number would lose.
+func codeLike(cell string) bool {
+	c := strings.TrimSpace(cell)
+	return strings.HasPrefix(c, "+") || (len(c) > 1 && c[0] == '0' && c[1] >= '0' && c[1] <= '9')
 }
 
 // times points each time column of an export at the column whose part it times (by header), and
