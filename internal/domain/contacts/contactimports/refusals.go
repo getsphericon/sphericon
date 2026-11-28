@@ -258,11 +258,13 @@ func matches(cell, value string) bool {
 	return lo.SomeBy(strings.Split(cell, ","), func(item string) bool { return strings.EqualFold(strings.TrimSpace(item), value) })
 }
 
-// readRefusal notes each refusal the cell means.
+// readRefusal notes each refusal the cell means, once however many of its values mean it.
 func readRefusal(r *rowState, col csvimport.Column, at int, cell string) {
 	fact := lo.FromPtr(col.Fact)
+	noted := map[csvimport.Refusal]bool{}
 	for _, v := range fact.Refusals {
-		if matches(cell, v.Value) {
+		if matches(cell, v.Value) && !noted[v.Refusal] {
+			noted[v.Refusal] = true
 			r.facts = append(r.facts, pendingFact{column: at, channel: channels.Channel(fact.Channel), refusal: v.Refusal})
 		}
 	}

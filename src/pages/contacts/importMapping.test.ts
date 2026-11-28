@@ -1,6 +1,7 @@
 import { expect, test } from 'vitest'
 
 import type { ContactImportMapping } from '../../generated/site/types.gen.ts'
+import { zConfirmationProvenance, zSuppressionReason } from '../../generated/site/zod.gen.ts'
 import {
   columnsMissingDateFormat,
   mappingInputOf,
@@ -116,4 +117,65 @@ test('a time column needs its format before the run', () => {
 
   expect(writesDate('time', fields)).toBe(true)
   expect(columnsMissingDateFormat(cleared, fields)).toEqual([0])
+})
+
+// The proposal for a CSV export of Contacts (ADR 0138) holds every kind of column; a Member who
+// changes nothing saves it as it was proposed.
+const exportProposal: ContactImportMapping = {
+  columns: [
+    { kind: 'key', key: 'email' },
+    { kind: 'customField', key: 'plan', dateFormat: null },
+    { kind: 'newCustomField', key: 'score', label: 'score', type: 'number', dateFormat: null },
+    {
+      kind: 'newCustomField',
+      key: 'seen_at',
+      label: 'seen_at',
+      type: 'datetime',
+      dateFormat: 'rfc3339',
+    },
+    {
+      kind: 'refusal',
+      channel: 'email',
+      values: [
+        { value: 'everything', refusal: 'unsubscribeEverything' },
+        { value: 'broadcasts', refusal: 'unsubscribeBroadcasts' },
+      ],
+    },
+    { kind: 'time', of: 4, dateFormat: 'rfc3339' },
+    {
+      kind: 'refusal',
+      channel: 'email',
+      values: zSuppressionReason.options.map((value) => ({
+        value,
+        refusal: 'suppression' as const,
+      })),
+    },
+    {
+      kind: 'consent',
+      channel: 'email',
+      values: [...zConfirmationProvenance.options],
+      evidence: {
+        wording: 'Consent given before this file was exported from another Workspace',
+        wordingColumn: null,
+        source: null,
+        sourceColumn: 7,
+        brand: 'Globex',
+        brandColumn: null,
+      },
+    },
+    { kind: 'time', of: 7, dateFormat: 'rfc3339' },
+    { kind: 'tags' },
+    { kind: 'ignore' },
+  ],
+  decimalSeparator: '.',
+  defaultCountry: null,
+  tag: 'Imported 2026-11-27',
+  onlyAddNew: false,
+  asNewSignUps: false,
+}
+
+test("an export's proposal is saved as it was proposed", () => {
+  const input = mappingInputOf(valuesOf(exportProposal), fields)
+
+  expect(input).toEqual(exportProposal)
 })

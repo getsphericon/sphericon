@@ -132,6 +132,24 @@ func TestAMomentIsAnInstantDatedInTheWorkspaceZone(t *testing.T) {
 	assert.Equal(t, csvimport.ReasonNotDate, badReason)
 }
 
+// RFC 3339 writes a date alone as its full-date (as a datetime Custom field holds one), so a column
+// in RFC 3339 reads a date alone as a date, in the Workspace's time zone as ISO reads it.
+func TestARFC3339ColumnReadsADateAlone(t *testing.T) {
+	tokyo, err := time.LoadLocation("Asia/Tokyo")
+	require.NoError(t, err)
+
+	value, valueReason := contacts.ReadDatetime("2024-03-04", csvimport.DateTimeRFC3339)
+	birthday, birthdayReason := contacts.ReadDate("2024-03-04", csvimport.DateTimeRFC3339, tokyo)
+	stamped, stampedReason := contacts.ReadMoment("2024-03-04", csvimport.DateTimeRFC3339, tokyo)
+
+	assert.Empty(t, valueReason)
+	assert.Equal(t, "2024-03-04", value)
+	assert.Empty(t, birthdayReason)
+	assert.Equal(t, time.Date(2024, 3, 4, 0, 0, 0, 0, time.UTC), birthday)
+	assert.Empty(t, stampedReason)
+	assert.True(t, time.Date(2024, 3, 4, 0, 0, 0, 0, tokyo).Equal(stamped))
+}
+
 func TestADateNotInItsFormatIsNotRead(t *testing.T) {
 	for _, c := range []struct {
 		cell   string
@@ -140,7 +158,7 @@ func TestADateNotInItsFormatIsNotRead(t *testing.T) {
 		{"31/02/2024", csvimport.DateDMYSlash},
 		{"2024-03-04", csvimport.DateDMYSlash},
 		{"04.03.24", csvimport.DateDMYDot},
-		{"2024-03-04", csvimport.DateTimeRFC3339},
+		{"2024-3-4", csvimport.DateTimeRFC3339},
 		{"yesterday", csvimport.DateISO},
 		{"2024-03-04", ""},
 	} {

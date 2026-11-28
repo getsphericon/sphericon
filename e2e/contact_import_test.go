@@ -66,3 +66,23 @@ func TestAnImportedUnsubscribeKeepsABroadcastAway(t *testing.T) {
 	w.Inbox.Wait(Match{To: stayed, Subject: "Spring news"})
 	w.Inbox.RequireNone(Match{To: left})
 }
+
+// A Workspace's export imports into another Workspace as it is (ADR 0138): the mapping the app
+// proposes from the export's headers is saved unchanged, and brings the Contacts with their Tags and
+// their refusals, so a Broadcast there reaches the others and not the address that opted out.
+func TestAnExportImportsIntoAnotherWorkspaceAsItIs(t *testing.T) {
+	t.Parallel()
+	from := env.NewWorkspace(t)
+	to := env.NewWorkspace(t).Ready()
+	left, stayed := from.NewRecipient(), from.NewRecipient()
+	from.ImportRefusals("email,status,tags\n"+left+",unsubscribed,vip\n"+stayed+",subscribed,vip\n", 1, "unsubscribed")
+
+	done := to.ImportCSVAsProposed(from.ExportCSV())
+	to.SendBroadcast(Broadcast{Subject: "Moved house", Body: HTML("We moved to a new platform")})
+
+	require.Equal(t, int32(1), done.Counts.OptedOut)
+	to.RequireImported(stayed, "vip")
+	to.RequireImported(left, "vip")
+	to.Inbox.Wait(Match{To: stayed, Subject: "Moved house"})
+	to.Inbox.RequireNone(Match{To: left})
+}

@@ -62,6 +62,17 @@ func neutralise(cell string) string {
 	return cell
 }
 
+// Unguarded is a cell read from a file as the writer was given it: the apostrophe neutralise puts
+// before a character a spreadsheet would run is taken off, once. An apostrophe before anything
+// else is the cell's own and stays, so only a cell that began with an apostrophe and such a
+// character before it was written reads back otherwise.
+func Unguarded(cell string) string {
+	if len(cell) >= 2 && cell[0] == '\'' && strings.IndexByte(formulaStarts, cell[1]) >= 0 {
+		return cell[1:]
+	}
+	return cell
+}
+
 // Chunks writes each page of records as one chunk of a CSV file, the BOM in the first, for a
 // module that yields a file instead of writing it (ADR 0111) and a driver that streams it
 // (internal/kernel/seqreader). A chunk is the caller's to keep. The pages are read only as the

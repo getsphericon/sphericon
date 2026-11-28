@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/bounds"
+	"github.com/getsphericon/sphericon/internal/kernel/csvfile"
 	"github.com/getsphericon/sphericon/internal/kernel/csvimport"
 	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
@@ -223,10 +224,13 @@ const sampleRows = 20
 // propose is the mapping proposed for imp's file before one is saved (ADR 0138): a header that
 // names an alias key, a core attribute or a Custom field of the Workspace (in any case, with or
 // without spaces, dashes or underscores), or Tags, is mapped to it, each target once, the first
-// header that names it; a blank or repeated header and any other is ignored. A date column gets
-// the one format its sample's cells all read in, none when no format or several do: the Member
-// chooses then. Numbers are proposed with a point, a comma in a file separated by semicolons; the
-// Tag for every row is "Imported" and the date.
+// header that names it; a header of a CSV export of Contacts is mapped as the export means it
+// (exported), so a Workspace's export imports into another as it is; a blank or repeated header and
+// any other is ignored. A date column gets the one format its sample's cells all read in (read
+// back as written, csvfile.Unguarded), none when several do or none does: the Member chooses then;
+// a column whose sample is blank gets the format the export writes (ISO for a date, RFC 3339 for a
+// time). Numbers are proposed with a point, a comma in a file separated by semicolons; the Tag for
+// every row is "Imported" and the date.
 func (m *Module) propose(ctx context.Context, s *ent.Scoped, imp *ent.ContactImport) (csvimport.Mapping, error) {
 	sample, err := sampleOf(ctx, s, imp)
 	if err != nil {
@@ -251,32 +255,60 @@ func (m *Module) propose(ctx context.Context, s *ent.Scoped, imp *ent.ContactImp
 	for _, a := range attributes {
 		targets[headerKey(a)] = csvimport.Column{Kind: csvimport.KindAttribute, Attribute: a}
 	}
-	dates := map[string]bool{}
+	fields := lo.SliceToMap(defined, func(f *ent.CustomField) (string, customfield.Type) { return f.Key, f.Type })
 	for _, f := range defined {
 		if _, taken := targets[headerKey(f.Key)]; !taken {
 			targets[headerKey(f.Key)] = csvimport.Column{Kind: csvimport.KindCustomField, Key: f.Key}
 		}
-		dates[f.Key] = f.Type == customfield.TypeDatetime
 	}
 	mapping := csvimport.Mapping{
 		DecimalSeparator: lo.Ternary(imp.Delimiter == contactimport.DelimiterSemicolon, csvimport.DecimalComma, csvimport.DecimalPoint),
 		Tag:              "Imported " + m.now().In(zone).Format("2006-01-02"),
 	}
+	export := exported{fields: fields, sep: mapping.DecimalSeparator, brand: ws.Name}
 	used := map[string]bool{}
 	for at, h := range imp.Header {
-		key := headerKey(h)
-		col, ok := targets[key]
-		if !ok || key == "" || used[key] {
+		cells := lo.Map(sample, func(cells []string, _ int) string { return csvfile.Unguarded(cellAt(cells, at)) })
+		col, ok := targets[headerKey(h)]
+		if !ok {
+			col, ok = export.column(h, at, cells)
+		}
+		target := lo.CoalesceOrEmpty(targetOf(col), "header:"+headerKey(h))
+		if !ok || headerKey(h) == "" || used[target] {
 			mapping.Columns = append(mapping.Columns, csvimport.Column{Kind: csvimport.KindIgnore})
 			continue
 		}
-		used[key] = true
-		if col.Attribute == fieldname.Birthday || (col.Kind == csvimport.KindCustomField && dates[col.Key]) {
-			col.DateFormat = proposedFormat(lo.Map(sample, func(cells []string, _ int) string { return cellAt(cells, at) }))
+		used[target] = true
+		switch {
+		case col.Attribute == fieldname.Birthday:
+			col.DateFormat = proposedFormat(cells, csvimport.DateISO)
+		case col.Kind == csvimport.KindCustomField && fields[col.Key] == customfield.TypeDatetime && col.DateFormat == "":
+			col.DateFormat = proposedFormat(cells, csvimport.DateTimeRFC3339)
 		}
 		mapping.Columns = append(mapping.Columns, col)
 	}
+	times(mapping.Columns, imp.Header)
 	return mapping, nil
+}
+
+// targetOf is the value a proposed column writes, which no other proposed column may write: its
+// key, attribute, Custom field, Tags or consent; "" for a refusal or a time column, which only a
+// repeated header repeats.
+func targetOf(col csvimport.Column) string {
+	switch col.Kind {
+	case csvimport.KindKey:
+		return "key:" + col.Key
+	case csvimport.KindAttribute:
+		return "attribute:" + col.Attribute
+	case csvimport.KindCustomField, csvimport.KindNewCustomField:
+		return "customField:" + col.Key
+	case csvimport.KindTags:
+		return "tags"
+	case csvimport.KindConsent:
+		return "consent:" + col.Fact.Channel
+	case csvimport.KindRefusal, csvimport.KindTime, csvimport.KindEngagementTracking, csvimport.KindIgnore:
+	}
+	return ""
 }
 
 // headerKey is a header as a proposal matches it: lower case, without spaces, dashes and
@@ -285,15 +317,20 @@ func headerKey(h string) string {
 	return strings.NewReplacer(" ", "", "-", "", "_", "").Replace(strings.ToLower(strings.TrimSpace(h)))
 }
 
-// proposedFormat is the one date format every non-blank cell reads in, "" when none or several do.
-func proposedFormat(cells []string) csvimport.DateFormat {
+// proposedFormat is the one date format every non-blank cell reads in, "" when none or several do,
+// blank when every cell is blank.
+func proposedFormat(cells []string, blank csvimport.DateFormat) csvimport.DateFormat {
 	filled := lo.Filter(cells, func(c string, _ int) bool { return strings.TrimSpace(c) != "" })
 	if len(filled) == 0 {
-		return ""
+		return blank
 	}
 	fits := lo.Filter(csvimport.DateFormats, func(f csvimport.DateFormat, _ int) bool {
 		return lo.EveryBy(filled, func(c string) bool { _, reason := contacts.ReadDatetime(c, f); return reason == "" })
 	})
+	// Dates alone read alike in ISO and in RFC 3339 (its full-date): ISO is proposed then.
+	if lo.Contains(fits, csvimport.DateISO) {
+		fits = lo.Without(fits, csvimport.DateTimeRFC3339)
+	}
 	if len(fits) != 1 {
 		return ""
 	}
