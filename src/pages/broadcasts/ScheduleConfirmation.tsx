@@ -2,6 +2,7 @@ import { Button, Group, Skeleton, Stack, Text } from '@mantine/core'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
+import { LintWarnings } from '../../components/LintWarnings.tsx'
 import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import {
   siteBroadcastsOutsideWindowOptions,
@@ -19,7 +20,8 @@ import { hasSendingWindow } from '../../utils/sendingRules.ts'
 
 // What Schedule arms, shown before it does (ADR 0149): the Recipients the saved Broadcast would take
 // now, whether or not a Send cap applies, and on SMS how many of them the Sending window would hold
-// at scheduledAt, the ISO moment chosen (ADR 0134). Nothing is scheduled until the person confirms.
+// at scheduledAt, the ISO moment chosen (ADR 0134), and the lint's warnings of the saved message
+// (ADR 0188), which do not hold it back. Nothing is scheduled until the person confirms.
 export function ScheduleConfirmation({
   broadcast,
   scheduledAt,
@@ -48,6 +50,7 @@ export function ScheduleConfirmation({
           <Recipients broadcast={broadcast} scheduledAt={scheduledAt} />
         )}
       </QueryBoundary>
+      <LintWarnings warnings={broadcast.warnings} />
       <Group justify="flex-end">
         <Button variant="default" onClick={onCancel}>
           {t(($) => $.actions.cancel)}

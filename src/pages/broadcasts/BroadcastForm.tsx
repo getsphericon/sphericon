@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { LintWarnings } from '../../components/LintWarnings.tsx'
 import { MessageEditor } from '../../components/MessageEditor.tsx'
 import { PostalAddressNotice } from '../../components/PostalAddressNotice.tsx'
 import { AnchorLink, ButtonLink } from '../../components/RouterLink.tsx'
@@ -18,6 +19,7 @@ import {
 import type {
   BroadcastChannel,
   CreateBroadcastInput,
+  SiteBroadcastResource,
   SiteSegmentResource,
   TelegramButton,
 } from '../../generated/site/types.gen.ts'
@@ -58,7 +60,9 @@ export interface BroadcastValues {
 
 // A new Broadcast asks for its Channel first (ADR 0080), then shows that Channel's editor; the
 // Channel is fixed from then on, so an existing Broadcast opens on its editor.
-export function BroadcastForm(props: ResourceFormProps<CreateBroadcastInput, BroadcastValues>) {
+export function BroadcastForm(
+  props: ResourceFormProps<CreateBroadcastInput, BroadcastValues, SiteBroadcastResource>,
+) {
   const { form } = props
   const channel = zBroadcastChannel.safeParse(form.values.channel)
   if (!channel.success) {
@@ -323,12 +327,14 @@ function SmsBroadcastForm({
   )
 }
 
-// The editor of an email Broadcast: its From, Integration, Segment and message.
+// The editor of an email Broadcast: its From, Integration, Segment and message. In an edit it shows
+// the lint's warnings of what is stored, which its last save answered.
 function EmailBroadcastForm({
   form,
   isPending,
   onSubmit,
-}: ResourceFormProps<CreateBroadcastInput, BroadcastValues>) {
+  stored,
+}: ResourceFormProps<CreateBroadcastInput, BroadcastValues, SiteBroadcastResource>) {
   const { t } = useTranslation()
   const { workspaceId } = workspaceRoute.useParams()
 
@@ -489,6 +495,7 @@ function EmailBroadcastForm({
             }
           }}
         />
+        <LintWarnings warnings={stored?.warnings} />
 
         <Group justify="flex-end">
           <ButtonLink variant="default" to={broadcastsRoute.to} params={{ workspaceId }}>

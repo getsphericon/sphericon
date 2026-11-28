@@ -13,10 +13,14 @@ interface RevisedPath {
   body: { revision: number }
 }
 
+// Publish with nothing shown first.
+const publishAtOnce = (publish: () => void) => publish()
+
 // DraftControls shows what an Automation or a Rule has beside its live version (ADR 0065): a
 // pending-draft badge, Publish and Revert, which run the generated mutations it is given (each
 // refreshes its resource's queries). `dirty` holds Publish back while the editor has unsaved
-// changes. A never-published draft is not offered Revert.
+// changes. A never-published draft is not offered Revert. `beforePublish`, given, takes Publish
+// over to show something first, and runs the publish it is handed to go ahead.
 export function DraftControls<TPublished, TPublishError, TReverted, TRevertError>({
   workspaceId,
   resource,
@@ -24,6 +28,7 @@ export function DraftControls<TPublished, TPublishError, TReverted, TRevertError
   publishMutation,
   revertMutation,
   messages,
+  beforePublish = publishAtOnce,
 }: {
   workspaceId: string
   resource: {
@@ -37,6 +42,7 @@ export function DraftControls<TPublished, TPublishError, TReverted, TRevertError
   publishMutation: UseMutationOptions<TPublished, TPublishError, RevisedPath>
   revertMutation: UseMutationOptions<TReverted, TRevertError, RevisedPath>
   messages: { published: string; reverted: string; errorTitle: string }
+  beforePublish?: (publish: () => void) => void
 }) {
   const path = { workspaceId, id: resource.id }
   const publish = useResourceMutation({
@@ -62,7 +68,9 @@ export function DraftControls<TPublished, TPublishError, TReverted, TRevertError
       publishable={publishable}
       publishing={publish.isPending}
       reverting={revert.isPending}
-      onPublish={() => publish.mutate({ path, body: { revision: resource.revision } })}
+      onPublish={() =>
+        beforePublish(() => publish.mutate({ path, body: { revision: resource.revision } }))
+      }
       onRevert={() => revert.mutate({ path, body: { revision: resource.revision } })}
     />
   )

@@ -474,6 +474,10 @@ export default interface Resources {
       "pathWeighted": "Path {{number}} · {{weight}}%",
       "pendingDetails": "It runs its last published version: the changes made since then are not published yet.",
       "publish": "Publish",
+      "publishReview": {
+        "description": "Some of its email steps have content warnings. They do not stop it from being published.",
+        "title": "Publish this automation?"
+      },
       "removeConfirm": "Remove",
       "removePath": "Remove path",
       "removeStep": "Remove step",
@@ -1710,6 +1714,9 @@ export default interface Resources {
     "linkExpired": {
       "body": "It leads nowhere now. The message it came in may be too old.",
       "title": "This link is no longer available"
+    },
+    "lintWarnings": {
+      "title": "{{count, number}} content warning" | "{{count, number}} content warnings"
     },
     "login": {
       "codeLabel": "Authentication code",

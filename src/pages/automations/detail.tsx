@@ -26,7 +26,9 @@ import type { FieldColumn } from '../../utils/tableColumns.ts'
 import { AutomationReport } from './AutomationReport.tsx'
 import { AutomationStatusBadge } from './AutomationStatusBadge.tsx'
 import { automationDraftActions } from './draftActions.ts'
+import { editedFlow } from './editorSession.ts'
 import { stepLabel } from './stepLabel.ts'
+import { usePublishReview } from './usePublishReview.tsx'
 
 // The Integration a send step sends through, by name (its id until the name loads), and said to
 // be deleted when it is: a deleted one stays readable by id for what names it.
@@ -149,9 +151,12 @@ function AutomationDetail() {
   // The version Publish arms: the draft, else the live version made active again (ADR 0156).
   const armed = automation.draft ?? automation.live
   const sendsEmail = armed?.steps.steps.some((step) => step.type === 'email')
+  // Publish shows the lint's warnings of the armed version's email steps first (ADR 0188).
+  const publishReview = usePublishReview(editedFlow(automation), automation.warnings)
 
   return (
     <Stack>
+      {publishReview.modal}
       <Group justify="space-between" align="flex-start" wrap="wrap">
         <Group gap="sm">
           <Title order={4}>{automation.name}</Title>
@@ -165,6 +170,7 @@ function AutomationDetail() {
                 workspaceId={workspaceId}
                 resource={automation}
                 {...automationDraftActions(t)}
+                beforePublish={publishReview.review}
               />
               <ButtonLink
                 variant="default"

@@ -809,3 +809,90 @@ test('a canvas without an email step shows no postal address notice', async () =
     .element(screen.getByText(/This workspace has no postal address/))
     .not.toBeInTheDocument()
 })
+
+// The lint's warnings of an email step (ADR 0040), as the server words them: never a refusal.
+const missingAlt = {
+  code: 'missing_alt' as const,
+  message: 'Image has no alt text',
+  element: '<img src="https://cdn.example.com/hero.png">',
+}
+
+const EMAILS: SiteAutomationResource = {
+  ...STORED,
+  draft: withSteps([
+    {
+      id: stepId(11),
+      type: 'email',
+      subject: 'Hi',
+      body: '<img src="https://cdn.example.com/hero.png">',
+    },
+    { id: stepId(12), type: 'email', subject: 'Again', body: '<p>Again</p>' },
+  ]),
+}
+
+const WARNED: SiteAutomationResource = {
+  ...EMAILS,
+  revision: 2,
+  warnings: [{ stepId: stepId(11), warnings: [missingAlt] }],
+}
+
+test("a save shows each email step's warnings in its panel, with their message and element", async () => {
+  let saved = false
+  worker.use(
+    handleSiteAutomationsGet(() => HttpResponse.json(saved ? WARNED : EMAILS)),
+    handleSiteAutomationsUpdate(() => {
+      saved = true
+      return HttpResponse.json(WARNED)
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
+  await openNode(screen, 'Send email')
+  const properties = screen.getByRole('region', { name: 'Send email' })
+  await expect.element(properties.getByLabelText('Subject')).toHaveValue('Hi')
+  await expect.element(properties.getByText('Image has no alt text')).not.toBeInTheDocument()
+
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect.element(screen.getByText('Automation updated')).toBeInTheDocument()
+  await expect.element(properties.getByText('Image has no alt text')).toBeVisible()
+  await expect.element(properties.getByText(missingAlt.element)).toBeVisible()
+})
+
+test('an email step without warnings shows none in its panel', async () => {
+  worker.use(handleSiteAutomationsGet({ body: WARNED }))
+
+  const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
+  await screen
+    .getByRole('button', { name: /^Send email/ })
+    .nth(1)
+    .click()
+  const properties = screen.getByRole('region', { name: 'Send email' })
+
+  await expect.element(properties.getByLabelText('Subject')).toHaveValue('Again')
+  await expect.element(properties.getByText('Image has no alt text')).not.toBeInTheDocument()
+})
+
+test('Publish shows the warnings of the email steps first, and still publishes', async () => {
+  const published: string[] = []
+  worker.use(
+    handleSiteAutomationsGet({ body: WARNED }),
+    handleSiteAutomationsPublish(({ params }) => {
+      published.push(params.id)
+      return HttpResponse.json({ ...WARNED, status: 'active', live: WARNED.draft, draft: null })
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
+  await screen.getByRole('button', { name: 'Publish' }).click()
+
+  const dialog = screen.getByRole('dialog', { name: 'Publish this automation?' })
+  await expect.element(dialog.getByText('Send email: Hi')).toBeVisible()
+  await expect.element(dialog.getByText('Image has no alt text')).toBeVisible()
+  await expect.element(dialog.getByText(missingAlt.element)).toBeVisible()
+  expect(published).toEqual([])
+  await dialog.getByRole('button', { name: 'Publish' }).click()
+
+  await expect.poll(() => published).toEqual([testId(5)])
+  await expect.element(screen.getByText('Automation published')).toBeInTheDocument()
+})

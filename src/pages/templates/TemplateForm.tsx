@@ -1,9 +1,13 @@
 import { Button, Group, Stack, TextInput } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
 
+import { LintWarnings } from '../../components/LintWarnings.tsx'
 import { MessageEditor } from '../../components/MessageEditor.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
-import type { CreateTemplateInput } from '../../generated/site/types.gen.ts'
+import type {
+  CreateTemplateInput,
+  SiteEmailTemplateResource,
+} from '../../generated/site/types.gen.ts'
 import type { ResourceFormProps } from '../../resources/defineResource.tsx'
 import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
 import { Route as templatesRoute } from '../../routes/workspaces/$workspaceId/templates/index.tsx'
@@ -14,11 +18,13 @@ export type TemplateValues = Required<Pick<CreateTemplateInput, 'name' | 'subjec
   doc: MessageDoc | null
 }
 
+// In an edit, the form shows the lint's warnings of what is stored, which its last save answered.
 export function TemplateForm({
   form,
   isPending,
   onSubmit,
-}: ResourceFormProps<CreateTemplateInput, TemplateValues>) {
+  stored,
+}: ResourceFormProps<CreateTemplateInput, TemplateValues, SiteEmailTemplateResource>) {
   const { t } = useTranslation()
   const { workspaceId } = workspaceRoute.useParams()
 
@@ -43,6 +49,7 @@ export function TemplateForm({
             }
           }}
         />
+        <LintWarnings warnings={stored?.warnings} />
 
         <Group justify="flex-end">
           <ButtonLink variant="default" to={templatesRoute.to} params={{ workspaceId }}>

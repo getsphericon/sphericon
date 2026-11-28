@@ -832,3 +832,50 @@ test('an archived automation is read-only: it offers no edit and no publish', as
   await expect.element(screen.getByRole('link', { name: 'Edit' })).not.toBeInTheDocument()
   await expect.element(screen.getByRole('button', { name: 'Publish' })).not.toBeInTheDocument()
 })
+
+test('Publish shows the warnings of the draft email steps first, and still publishes', async () => {
+  const published: string[] = []
+  const warned: SiteAutomationResource = {
+    ...PENDING,
+    draft: {
+      number: 2,
+      trigger: { kind: 'event', action: 'signup', entryPolicy: 'once', cooldown: 3600 },
+      exitEvents: [],
+      goalEvent: null,
+      steps: {
+        id: stepId(1),
+        steps: [{ id: stepId(11), type: 'email', subject: 'Hi', body: '<img src="x.png">' }],
+      },
+    },
+    warnings: [
+      {
+        stepId: stepId(11),
+        warnings: [
+          { code: 'missing_alt', message: 'Image has no alt text', element: '<img src="x.png">' },
+        ],
+      },
+    ],
+  }
+  worker.use(
+    handleSiteWorkspacesList({ body: [workspace()] }),
+    handleSiteAutomationsGet(() => HttpResponse.json(published.length > 0 ? PUBLISHED : warned)),
+    handleSiteAutomationReportsGet({ body: NO_AUTOMATION_REPORT }),
+    handleSiteEnrollmentsList({ body: page([], 0) }),
+    handleSiteAutomationsPublish(({ params }) => {
+      published.push(params.id)
+      return HttpResponse.json(PUBLISHED)
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<AutomationDetailPage />, MOUNT)
+  await screen.getByRole('button', { name: 'Publish' }).click()
+
+  const dialog = screen.getByRole('dialog', { name: 'Publish this automation?' })
+  await expect.element(dialog.getByText('Send email: Hi')).toBeVisible()
+  await expect.element(dialog.getByText('Image has no alt text')).toBeVisible()
+  expect(published).toEqual([])
+  await dialog.getByRole('button', { name: 'Publish' }).click()
+
+  await expect.poll(() => published).toEqual([testId(1)])
+  await expect.element(screen.getByText('Automation published')).toBeInTheDocument()
+})

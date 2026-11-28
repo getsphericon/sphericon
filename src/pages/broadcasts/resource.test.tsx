@@ -970,3 +970,60 @@ test('an SMS broadcast is test-sent to the typed number, then scheduled', async 
     { scheduledAt: new Date('2030-05-06T07:08').toISOString(), revision: 1 },
   ])
 })
+
+// The lint's warnings of a save (ADR 0040), as the server words them: never a refusal.
+const missingAlt = {
+  code: 'missing_alt' as const,
+  message: 'Image has no alt text',
+  element: '<img src="https://cdn.example.com/hero.png">',
+}
+
+test('a save shows the warnings it answers, each with its message and element', async () => {
+  let saved = false
+  serve('draft')
+  const warned = () => ({ ...broadcast('draft'), revision: 2, warnings: [missingAlt] })
+  worker.use(
+    handleSiteBroadcastsUpdate(() => {
+      saved = true
+      return HttpResponse.json(warned())
+    }),
+    handleSiteBroadcastsGet(() => HttpResponse.json(saved ? warned() : broadcast('draft'))),
+  )
+  const { screen } = await renderWithRouter(<BroadcastEditPage />, EDIT_ROUTE)
+  await expect.element(screen.getByLabelText('Subject')).toHaveValue('Hello')
+  await expect.element(screen.getByText('Image has no alt text')).not.toBeInTheDocument()
+
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect.element(screen.getByText('Broadcast updated')).toBeInTheDocument()
+  await expect.element(screen.getByText('Image has no alt text')).toBeVisible()
+  await expect.element(screen.getByText(missingAlt.element)).toBeVisible()
+})
+
+test('scheduling shows the warnings of the saved message and still schedules', async () => {
+  const bodies: unknown[] = []
+  serve('draft')
+  worker.use(
+    handleSiteBroadcastsGet(() =>
+      HttpResponse.json({ ...broadcast('draft'), warnings: [missingAlt] }),
+    ),
+    handleSiteSegmentsPreview({ body: { count: 3, recipients: 2, unknownEngagement: 0 } }),
+    handleSiteBroadcastsSchedule(async ({ request }) => {
+      bodies.push(await request.json())
+      return HttpResponse.json(broadcast('scheduled'))
+    }),
+  )
+  const { screen, navigate } = await renderWithRouter(<BroadcastEditPage />, EDIT_ROUTE)
+
+  await screen.getByLabelText('Schedule for').fill('2030-05-06T07:08')
+  await screen.getByRole('button', { name: 'Schedule', exact: true }).click()
+
+  const dialog = screen.getByRole('dialog', { name: 'Schedule this broadcast?' })
+  await expect.element(dialog.getByText('Image has no alt text')).toBeVisible()
+  await expect.element(dialog.getByText(missingAlt.element)).toBeVisible()
+  await dialog.getByRole('button', { name: 'Schedule broadcast' }).click()
+
+  await expect.element(screen.getByText('Broadcast scheduled')).toBeInTheDocument()
+  expect(bodies).toHaveLength(1)
+  await expect.poll(() => navigate.mock.calls).toContainEqual([REPORT])
+})

@@ -15,6 +15,8 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
+import { LintWarnings } from '../../components/LintWarnings.tsx'
+import type { LintFinding } from '../../generated/site/types.gen.ts'
 import { automationTags } from '../../utils/mergeTags.ts'
 import { awaitedBefore, awaitedWarnings } from './awaitedNames.ts'
 import { allSteps, forkPaths } from './definition.ts'
@@ -131,6 +133,7 @@ export function StepPanel({
   editable,
   validatorRef,
   refusal,
+  lint,
   onTrigger,
   onStep,
   forks,
@@ -144,6 +147,8 @@ export function StepPanel({
   // Why the last Save was refused over what is selected: the refusal, and the server's message about
   // what is selected.
   refusal: NodeRefusal | null
+  // The lint's warnings of what is selected as it was last saved (ADR 0188), when it has any.
+  lint?: LintFinding[] | undefined
   onTrigger: (patch: Partial<TriggerDraft>) => void
   onStep: (step: EditedStep) => void
   forks: ForkControls
@@ -214,6 +219,11 @@ export function StepPanel({
               names: unpassed.join(', '),
             })}
           </Alert>
+        )}
+        {lint !== undefined && lint.length > 0 && (
+          <Box mb="md">
+            <LintWarnings warnings={lint} />
+          </Box>
         )}
         <Fieldset disabled={!editable} variant="unstyled" m={0} miw={0}>
           {step === undefined ? (

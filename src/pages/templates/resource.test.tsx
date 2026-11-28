@@ -157,3 +157,36 @@ test('editing shows an error alert when the template cannot be loaded', async ()
   await expect.element(screen.getByText('Failed to load templates')).toBeVisible()
   await expect.element(screen.getByText('template not found')).toBeVisible()
 })
+
+// The lint's warnings of a save (ADR 0040), as the server words them: never a refusal.
+const missingAlt = {
+  code: 'missing_alt' as const,
+  message: 'Image has no alt text',
+  element: '<img src="https://cdn.example.com/hero.png">',
+}
+
+test('a save shows the warnings it answers, each with its message and element', async () => {
+  let saved = false
+  const stored = { id: testId(7), name: 'Welcome', subject: 'Hi', body: '<p>x</p>' }
+  worker.use(
+    handleSiteTemplatesUpdate(() => {
+      saved = true
+      return HttpResponse.json({ ...stored, revision: 2, warnings: [missingAlt] })
+    }),
+    handleSiteTemplatesGet(() =>
+      HttpResponse.json(
+        saved ? { ...stored, revision: 2, warnings: [missingAlt] } : { ...stored, revision: 1 },
+      ),
+    ),
+  )
+
+  const { screen } = await renderWithRouter(<TemplateEditPage />, EDIT_ROUTE)
+  await expect.element(screen.getByLabelText('Subject')).toHaveValue('Hi')
+  await expect.element(screen.getByText('Image has no alt text')).not.toBeInTheDocument()
+
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect.element(screen.getByText('Template updated')).toBeInTheDocument()
+  await expect.element(screen.getByText('Image has no alt text')).toBeVisible()
+  await expect.element(screen.getByText(missingAlt.element)).toBeVisible()
+})

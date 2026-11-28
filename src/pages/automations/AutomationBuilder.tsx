@@ -53,6 +53,7 @@ import type { NodeRefusal } from './refusedNodes.ts'
 import { useStepInfo } from './stepKinds.ts'
 import { StepPanel } from './StepPanel.tsx'
 import type { ForkControls } from './StepPanel.tsx'
+import { usePublishReview } from './usePublishReview.tsx'
 import { useUnknownPaths } from './useUnknownPaths.ts'
 
 interface AutomationBarValues {
@@ -246,6 +247,10 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
   // The Wait for event names stored under their Steps' ids, as the last read or acknowledged
   // Automation holds them.
   const names = useMemo(() => storedNames([resource.draft, resource.live]), [resource])
+  // The lint's warnings of the saved email steps (ADR 0188): each in its step's panel, and all of
+  // them in the review Publish opens first. Publish acts on the saved flow, which the canvas holds.
+  const lint = resource.warnings ?? []
+  const publishReview = usePublishReview(flow, lint)
 
   useUnknownPaths({
     workspaceId,
@@ -337,6 +342,7 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
       transitionProps={{ duration: 0 }}
     >
       <LeaveGuard wouldLose={wouldLose(content)} />
+      {publishReview.modal}
       <Box pos="relative" w="100%" h="100dvh">
         <FlowCanvas
           flow={flow}
@@ -395,7 +401,9 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
                 disabled={busy}
                 {...(unsaved && { unsaved: t(($) => $.automations.leaveMessage) })}
                 onPublish={() => {
-                  void run('PUBLISH')
+                  publishReview.review(() => {
+                    void run('PUBLISH')
+                  })
                 }}
                 onRevert={() => {
                   void run('REVERT')
@@ -415,6 +423,7 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
             editable={editable}
             validatorRef={validatorRef}
             refusal={refused.get(selected) ?? null}
+            lint={lint.find((entry) => entry.stepId === selected)?.warnings}
             onTrigger={(patch) => {
               unrefuse(TRIGGER_NODE_ID)
               edit((current) => updateTrigger(current, { ...current.trigger, ...patch }))

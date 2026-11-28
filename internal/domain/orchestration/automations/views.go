@@ -20,6 +20,7 @@ type StepWarnings struct {
 // read, and the lint warnings of each email step of the version Publish arms.
 type Linted struct {
 	WithRevenue
+
 	Warnings []StepWarnings
 }
 
