@@ -1,7 +1,7 @@
 id: one-csv-writer
 language: Go
 severity: error
-message: 'rule 6: the standard CSV writer is constructed outside internal/kernel/csvfile; fix: write the file through csvfile.NewWriter, or csvfile.Chunks for a module that yields it'
+message: 'rule 6: the standard CSV writer is constructed, or encoding/csv imported under another name, outside internal/kernel/csvfile; fix: write the file through csvfile.NewWriter, or csvfile.Chunks for a module that yields it, and import encoding/csv as csv'
 note: >-
   Every CSV the app writes neutralises a cell a spreadsheet would run and begins with a UTF-8 BOM
   (ADR 0138). That rule lives once, in internal/kernel/csvfile, the one package that wraps
@@ -9,10 +9,18 @@ note: >-
   CSV to read in (an import's file) may build one as it likes.
 # A Go pattern such as `x.NewWriter($A)` parses as a type conversion, so the pattern names its
 # statement context and selects the call_expression.
+# encoding/csv imported under another name would hide its writer from the pattern, so an import of
+# it under a name of its own (an alias, `.`) is refused as well.
 rule:
-  pattern:
-    context: 'func _() { csv.NewWriter($$$ARGS) }'
-    selector: call_expression
+  any:
+    - pattern:
+        context: 'func _() { csv.NewWriter($$$ARGS) }'
+        selector: call_expression
+    - kind: import_spec
+      regex: '"encoding/csv"'
+      has:
+        field: name
+        regex: '.'
 files:
   - '**/*.go'
 ignores:
