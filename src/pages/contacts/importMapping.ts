@@ -1,3 +1,5 @@
+import * as z from 'zod'
+
 import type {
   ContactImportAttribute,
   ContactImportColumn,
@@ -9,7 +11,15 @@ import type {
   CustomFieldType,
 } from '../../generated/site/types.gen.ts'
 import { zContactImportAttribute, zContactImportKey } from '../../generated/site/zod.gen.ts'
-import { factColumnOf, factOf, factTargets, time } from './importFacts.ts'
+import {
+  consent,
+  consentChannels,
+  engagementTracking,
+  factColumnOf,
+  factOf,
+  factTargets,
+  time,
+} from './importFacts.ts'
 import type { FactSettings } from './importFacts.ts'
 
 // What a column of a CSV import writes, as the value of its type control: `ignore`, `tags`,
@@ -187,4 +197,67 @@ export function columnsMissingDateFormat(
   return values.columns.flatMap((choice, at) =>
     choiceWritesDate(choice, fields) && choice.dateFormat === null ? [at] : [],
   )
+}
+
+// The messages of the form's own checks.
+export interface MappingMessages {
+  // A date column without its format.
+  dateFormat: string
+  // A consent or tracking column left on a Channel that has none (Telegram).
+  consentChannel: string
+}
+
+// The mapping form's schema: a date column needs its format, and a consent or tracking column a
+// Channel that has them, each refused under its column's control; a valid form is the mapping a
+// request saves. What the contract bounds is the server's to refuse, which the form shows under
+// the column it names (columnFieldOf).
+export function mappingSchema(
+  fields: readonly FieldOption[],
+  messages: MappingMessages,
+): z.ZodType<ContactImportMappingInput, MappingValues> {
+  return z
+    .custom<MappingValues>()
+    .superRefine((values, ctx) => {
+      for (const at of columnsMissingDateFormat(values, fields)) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['columns', at, 'dateFormat'],
+          message: messages.dateFormat,
+        })
+      }
+      for (const [at, choice] of values.columns.entries()) {
+        const onConsentChannel =
+          choice.fact === undefined || consentChannels[choice.fact.channel] !== null
+        if (
+          (choice.target === consent || choice.target === engagementTracking) &&
+          !onConsentChannel
+        ) {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['columns', at, 'target'],
+            message: messages.consentChannel,
+          })
+        }
+      }
+    })
+    .transform((values) => mappingInputOf(values, fields))
+}
+
+// The form's field a refusal of the save names by its path: a column's (`columns.<n>`, or a part
+// of it) is its date format when that is what it lacks, else its type control; any other path is
+// the form's field of the same name.
+export function columnFieldOf(
+  path: string,
+  values: MappingValues,
+  fields: readonly FieldOption[],
+): string {
+  const match = /^columns\.(\d+)(?:\.|$)/.exec(path)
+  if (match === null) {
+    return path
+  }
+  const at = Number(match[1])
+  const choice = values.columns[at]
+  const lacksFormat =
+    choice !== undefined && choiceWritesDate(choice, fields) && choice.dateFormat === null
+  return lacksFormat ? `columns.${at}.dateFormat` : `columns.${at}.target`
 }

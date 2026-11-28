@@ -1384,7 +1384,8 @@
       "value": "Cell value",
       "valueOf": "Value {{at}} of {{column}}",
       "valuePlaceholder": "unsubscribed",
-      "wording": "Wording"
+      "wording": "Wording",
+      "consentChannelRequired": "Consent and tracking are on email or SMS: choose the channel."
     },
     "failed": "The import failed after several tries. The contacts it wrote stay; download the refused rows to see what was not imported.",
     "file": "CSV file",
@@ -1426,7 +1427,6 @@
     "row": "Row",
     "run": "Run import",
     "runError": "Could not run the import",
-    "runNeedsDateFormats": "Choose the format of every date column to run the import.",
     "saveError": "Could not save the mapping",
     "states": {
       "cancelled": "Cancelled",
@@ -1446,7 +1446,8 @@
     "uploadError": "Could not upload the file",
     "uploadTitle": "Import contacts",
     "writes": "Imports as",
-    "writesColumn": "What {{column}} imports as"
+    "writesColumn": "What {{column}} imports as",
+    "dateFormatRequired": "Choose the date format."
   },
   "contacts": {
     "addContact": "Add contact",
