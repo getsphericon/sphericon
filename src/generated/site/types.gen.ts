@@ -4654,7 +4654,9 @@ export const LintCode = {
   MISSING_ALT: 'missing_alt',
   LOW_CONTRAST: 'low_contrast',
   OFF_BRAND_COLOR: 'off_brand_color',
-  OFF_BRAND_FONT: 'off_brand_font'
+  OFF_BRAND_FONT: 'off_brand_font',
+  HIDDEN_TEXT: 'hidden_text',
+  HIDDEN_CHARACTERS: 'hidden_characters'
 } as const;
 
 /**

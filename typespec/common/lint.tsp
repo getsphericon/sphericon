@@ -20,6 +20,12 @@ enum LintCode {
 
   /** A font is not one of the Workspace's Brand kit fonts */
   off_brand_font,
+
+  /** An element hidden by inline style holds text, other than the preheader and a block a media query of the message shows (ADR 0188) */
+  hidden_text,
+
+  /** The subject or the visible text holds an invisible character used to hide text: a Unicode tag character outside an emoji flag, or U+200B, U+2060 or U+FEFF (ADR 0188) */
+  hidden_characters,
 }
 
 /**
