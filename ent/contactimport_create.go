@@ -75,6 +75,12 @@ func (_c *ContactImportCreate) SetNillableMembershipID(v *int64) *ContactImportC
 	return _c
 }
 
+// SetMemberName sets the "member_name" field.
+func (_c *ContactImportCreate) SetMemberName(v string) *ContactImportCreate {
+	_c.mutation.SetMemberName(v)
+	return _c
+}
+
 // SetState sets the "state" field.
 func (_c *ContactImportCreate) SetState(v contactimport.State) *ContactImportCreate {
 	_c.mutation.SetState(v)
@@ -547,6 +553,9 @@ func (_c *ContactImportCreate) check() error {
 	if _, ok := _c.mutation.WorkspaceID(); !ok {
 		return &ValidationError{Name: "workspace_id", err: errors.New(`ent: missing required field "ContactImport.workspace_id"`)}
 	}
+	if _, ok := _c.mutation.MemberName(); !ok {
+		return &ValidationError{Name: "member_name", err: errors.New(`ent: missing required field "ContactImport.member_name"`)}
+	}
 	if _, ok := _c.mutation.State(); !ok {
 		return &ValidationError{Name: "state", err: errors.New(`ent: missing required field "ContactImport.state"`)}
 	}
@@ -660,6 +669,10 @@ func (_c *ContactImportCreate) createSpec() (*ContactImport, *sqlgraph.CreateSpe
 	if value, ok := _c.mutation.UpdatedAt(); ok {
 		_spec.SetField(contactimport.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
+	}
+	if value, ok := _c.mutation.MemberName(); ok {
+		_spec.SetField(contactimport.FieldMemberName, field.TypeString, value)
+		_node.MemberName = value
 	}
 	if value, ok := _c.mutation.State(); ok {
 		_spec.SetField(contactimport.FieldState, field.TypeEnum, value)
@@ -1282,6 +1295,9 @@ func (u *ContactImportUpsertOne) UpdateNewValues() *ContactImportUpsertOne {
 		}
 		if _, exists := u.create.mutation.CreatedAt(); exists {
 			s.SetIgnore(contactimport.FieldCreatedAt)
+		}
+		if _, exists := u.create.mutation.MemberName(); exists {
+			s.SetIgnore(contactimport.FieldMemberName)
 		}
 		if _, exists := u.create.mutation.Delimiter(); exists {
 			s.SetIgnore(contactimport.FieldDelimiter)
@@ -1961,6 +1977,9 @@ func (u *ContactImportUpsertBulk) UpdateNewValues() *ContactImportUpsertBulk {
 			}
 			if _, exists := b.mutation.CreatedAt(); exists {
 				s.SetIgnore(contactimport.FieldCreatedAt)
+			}
+			if _, exists := b.mutation.MemberName(); exists {
+				s.SetIgnore(contactimport.FieldMemberName)
 			}
 			if _, exists := b.mutation.Delimiter(); exists {
 				s.SetIgnore(contactimport.FieldDelimiter)

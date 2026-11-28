@@ -160,3 +160,8 @@ func newWorkspaceStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.M2O, true, WorkspaceTable, WorkspaceColumn),
 	)
 }
+
+// Values is every value of the Kind enum, in the schema's order.
+func (Kind) Values() []string {
+	return []string{"updated", "refunded", "cancelled"}
+}

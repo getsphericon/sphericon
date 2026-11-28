@@ -190,3 +190,13 @@ func newWorkspaceStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.M2O, true, WorkspaceTable, WorkspaceColumn),
 	)
 }
+
+// Values is every value of the State enum, in the schema's order.
+func (State) Values() []string {
+	return []string{"granted", "denied"}
+}
+
+// Values is every value of the Provenance enum, in the schema's order.
+func (Provenance) Values() []string {
+	return []string{"page", "manual", "imported", "onsite_form"}
+}

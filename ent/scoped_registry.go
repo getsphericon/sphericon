@@ -1490,6 +1490,7 @@ func ScopedEntities() []*ScopedEntity {
 				if src.MembershipID != nil {
 					b.SetMembershipID(remap("Membership", *src.MembershipID))
 				}
+				b.SetMemberName(src.MemberName)
 				b.SetState(src.State)
 				b.SetDelimiter(src.Delimiter)
 				b.SetHeader(src.Header)

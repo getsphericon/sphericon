@@ -4,6 +4,7 @@ import (
 	"context"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/kernel/attachment"
 	"github.com/getsphericon/sphericon/internal/kernel/seqreader"
 )
 
@@ -18,7 +19,7 @@ func (h *Handlers) SiteContactsExport(ctx context.Context, params siteapi.SiteCo
 	}
 
 	return &siteapi.SiteContactsExportOKApplicationOctetStreamHeaders{
-		ContentDisposition: `attachment; filename="` + d.Filename + `"`,
+		ContentDisposition: attachment.ContentDisposition(d.Filename),
 		Response: siteapi.SiteContactsExportOKApplicationOctetStream{
 			Data: seqreader.New(d.Chunks),
 		},

@@ -202,3 +202,8 @@ func newContactStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.M2O, false, ContactTable, ContactColumn),
 	)
 }
+
+// Values is every value of the Reason enum, in the schema's order.
+func (Reason) Values() []string {
+	return []string{"bounce", "complaint", "manual"}
+}

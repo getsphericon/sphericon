@@ -10,6 +10,7 @@ import (
 
 	entgo "entgo.io/ent"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -22,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/csvimport"
 	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
@@ -162,7 +164,7 @@ func TestARunStoppedMidFileResumesWithTheCountsOfAnUninterruptedRun(t *testing.T
 	imports := testhelper.Module[*contactimports.Module](env)
 	id := runningImportMapped(t, env, resumedFile(), fixtures.AcmeOwnerMembershipID, []csvimport.Column{
 		{Kind: csvimport.KindKey, Key: fieldname.Email},
-		{Kind: csvimport.KindRefusal, Fact: &csvimport.Fact{Channel: "email", Refusals: []csvimport.RefusalValue{
+		{Kind: csvimport.KindRefusal, Fact: &csvimport.Fact{Channel: channels.Email, Refusals: []csvimport.RefusalValue{
 			{Value: "unsubscribed", Refusal: csvimport.RefusalEverything},
 			{Value: "bounced", Refusal: csvimport.RefusalSuppression},
 		}}},
@@ -284,6 +286,31 @@ func TestARunWhoseMemberLostContactsImportEndsCancelled(t *testing.T) {
 	assert.Equal(t, contactimport.StateCancelled, ended.Import.State)
 	assert.Equal(t, 1000, ended.Import.Processed)
 	assert.Zero(t, countByEmail(t, env, "r1001@example.com"))
+}
+
+// A Member who leaves the Workspace while the run goes on stops it at its next batch, and the
+// import still gets its one contact.import Audit entry: by the system, naming the Member who ran it.
+func TestARunWhoseMemberLeftEndsCancelledWithItsAuditEntry(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	acme := env.DB.Scoped(fixtures.AcmeID)
+	imports := testhelper.Module[*contactimports.Module](env)
+	id := pausedAfterABatch(t, env, fixtures.AcmeAdminMembershipID)
+	require.NoError(t, testhelper.Module[*memberships.Module](env).Leave(ctx, acme, fixtures.AdminAliceID))
+
+	_, err := imports.Work(ctx, acme, contactimports.WorkInput{ImportID: id})
+	require.NoError(t, err)
+	ended, err := imports.Get(ctx, acme, id)
+	require.NoError(t, err)
+	entries := lo.Filter(testhelper.Queued[*events.AuditEntry](t, env, events.NameAuditEntry), func(e *events.AuditEntry, _ int) bool {
+		return e.Action == events.ActionContactImport
+	})
+
+	assert.Equal(t, contactimport.StateCancelled, ended.Import.State)
+	require.Len(t, entries, 1)
+	assert.Equal(t, events.ActorSystem, entries[0].Actor.Kind)
+	assert.Equal(t, fixtures.AdminAliceName, entries[0].Diff["member"])
+	assert.Equal(t, string(contactimport.StateCancelled), entries[0].Diff[contactimport.FieldState])
 }
 
 // A second import of the Workspace is not run while one runs.

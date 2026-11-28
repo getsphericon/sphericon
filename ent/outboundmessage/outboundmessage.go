@@ -772,3 +772,18 @@ func newTemplateStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.M2O, false, TemplateTable, TemplateColumn),
 	)
 }
+
+// Values is every value of the Kind enum, in the schema's order.
+func (Kind) Values() []string {
+	return []string{"broadcast", "automation", "transactional", "confirmation"}
+}
+
+// Values is every value of the Status enum, in the schema's order.
+func (Status) Values() []string {
+	return []string{"pending", "sent", "skipped", "failed"}
+}
+
+// Values is every value of the WindowZones enum, in the schema's order.
+func (WindowZones) Values() []string {
+	return []string{"unjudged", "no_zone", "one_zone", "several_zones"}
+}

@@ -111,27 +111,47 @@ func (m *Module) Run(ctx context.Context, s *ent.Scoped, id int64, role membersh
 
 // Recover queues again the run of the running import id whose job is gone (a process killed on
 // the job's last try, which river gives up on without its worker): the run resumes from its
-// checkpoint. After RunRecoveries it fails instead, keeping what it wrote and its report, so it no
-// longer holds the Workspace's one run. An import no longer running is left as it is.
+// checkpoint. A run whose job still waits or works is left to it: RunArgs is unique while its job
+// has not ended, so none is queued beside it. After RunRecoveries the run fails instead, keeping
+// what it wrote and its report, so it no longer holds the Workspace's one run. An import no
+// longer running is left as it is.
 func (m *Module) Recover(ctx context.Context, s *ent.Scoped, id int64) error {
 	imp, err := load(ctx, s, id)
 	if err != nil || imp.State != contactimport.StateRunning {
 		return err
 	}
-	if imp.Recoveries >= RunRecoveries {
-		return m.fail(ctx, s, id)
-	}
-	return m.bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher, q events.Enqueuer) error {
+	err = m.bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher, q events.Enqueuer) error {
+		queued, err := q.EnqueueNew(ctx, RunArgs{WorkspaceID: ts.WorkspaceID(), ImportID: id}, nil)
+		if err != nil || !queued {
+			return err
+		}
+		if imp.Recoveries >= RunRecoveries {
+			return errRecoveriesSpent
+		}
 		n, err := ts.ContactImport().Update().
 			Where(contactimport.ID(id), contactimport.StateEQ(contactimport.StateRunning), contactimport.Recoveries(imp.Recoveries)).
 			AddRecoveries(1).
 			Save(ctx)
-		if err != nil || n == 0 {
-			return err
+		if err == nil && n == 0 {
+			return errRecoveredElsewhere
 		}
-		return q.Enqueue(ctx, RunArgs{WorkspaceID: ts.WorkspaceID(), ImportID: id}, nil)
+		return err
 	})
+	if errors.Is(err, errRecoveriesSpent) {
+		return m.fail(ctx, s, id)
+	}
+	if errors.Is(err, errRecoveredElsewhere) {
+		return nil
+	}
+	return err
 }
+
+// Rollbacks of Recover's transaction, which take back the job it queued: the run's recoveries are
+// spent, or another check recovered it first.
+var (
+	errRecoveriesSpent    = errors.New("contactimports: the run's recoveries are spent")
+	errRecoveredElsewhere = errors.New("contactimports: the run was recovered by another check")
+)
 
 // Cancel asks the running import id to stop: its job stops after the batch it is writing, and the
 // import ends `cancelled`, keeping what it wrote and its report. An import not running, or asked
@@ -309,9 +329,9 @@ func (m *Module) membership(ctx context.Context, s *ent.Scoped, imp *ent.Contact
 }
 
 // end moves the running imp by t, stamping its end and its report's expiry, and deletes its
-// file, in one transaction; while its Member is in the Workspace (member) it records its one
-// contact.import Audit entry as member, with how it ended, what it wrote, its mapping and its
-// choices.
+// file, in one transaction, and records its one contact.import Audit entry: as its Member while
+// they are in the Workspace (member), else as the system; with the Member who ran it, how it
+// ended, what it wrote, its mapping and its choices.
 func (m *Module) end(ctx context.Context, s *ent.Scoped, imp *ent.ContactImport, t trigger, member *ent.Scoped) error {
 	now := m.now()
 	return m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
@@ -324,19 +344,22 @@ func (m *Module) end(ctx context.Context, s *ent.Scoped, imp *ent.ContactImport,
 		if _, err := ts.ContactImportChunk().Delete().Where(contactimportchunk.ContactImportID(imp.ID)).Exec(ctx); err != nil {
 			return err
 		}
-		if member == nil {
-			return nil
-		}
 		done, err := ts.ContactImport().Get(ctx, imp.ID)
 		if err != nil {
 			return err
 		}
+		// A Member who left no longer acts: the system ends the run, and the entry names them.
+		actor := events.Actor{Kind: events.ActorSystem}
+		if member != nil {
+			actor = member.Actor()
+		}
 		return events.RecordAudit(ctx, pub, &events.AuditEntry{
 			WorkspaceID: ts.WorkspaceID(),
-			Actor:       member.Actor(),
+			Actor:       actor,
 			Action:      events.ActionContactImport,
 			TargetType:  contact.Label,
 			Diff: map[string]any{
+				auditMember:                     done.MemberName,
 				contactimport.FieldState:        done.State,
 				contactimport.FieldCreated:      done.Created,
 				contactimport.FieldUpdated:      done.Updated,
@@ -351,6 +374,10 @@ func (m *Module) end(ctx context.Context, s *ent.Scoped, imp *ent.ContactImport,
 		})
 	})
 }
+
+// auditMember is the key of the contact.import Audit entry's diff that names the Member who ran
+// the import, as they were named at upload.
+const auditMember = "member"
 
 // mappingSummary is what each column of a file wrote, for the Audit entry: "<header>: <target>",
 // an ignored column left out.
@@ -367,7 +394,7 @@ func mappingSummary(header []string, mapping csvimport.Mapping) []string {
 		case csvimport.KindTags:
 			target = string(c.Kind)
 		case csvimport.KindRefusal, csvimport.KindConsent, csvimport.KindEngagementTracking:
-			target = string(c.Kind) + " " + lo.FromPtr(c.Fact).Channel
+			target = string(c.Kind) + " " + string(lo.FromPtr(c.Fact).Channel)
 		case csvimport.KindTime:
 			target = string(c.Kind) + " of " + cellAt(header, lo.FromPtr(lo.FromPtr(c.Fact).Of))
 		case csvimport.KindIgnore:

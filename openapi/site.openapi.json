@@ -15143,7 +15143,7 @@
             "description": "The column, counted from 0, whose cell is the brand; null when the brand is given"
           }
         },
-        "description": "The evidence of the consent a consent column records (ADR 0077): each part given once for every\nrow as text, or read from the column it names on each row, exactly one of the two"
+        "description": "The evidence of the consent a consent column records (ADR 0077): each part given once for every\nrow as text, or read from the column it names on each row, exactly one of the two. A proposal\nleaves a part it has no source for null in both (the wording and brand of an export's\nConfirmations), and the mapping is not saved until the Member gives it"
       },
       "ContactImportConsentEvidenceInput": {
         "type": "object",
@@ -15186,7 +15186,7 @@
             "description": "The column, counted from 0, whose cell is the brand; null when the brand is given"
           }
         },
-        "description": "The evidence of the consent a consent column records (ADR 0077): each part given once for every\nrow as text, or read from the column it names on each row, exactly one of the two",
+        "description": "The evidence of the consent a consent column records (ADR 0077): each part given once for every\nrow as text, or read from the column it names on each row, exactly one of the two. A proposal\nleaves a part it has no source for null in both (the wording and brand of an export's\nConfirmations), and the mapping is not saved until the Member gives it",
         "additionalProperties": false
       },
       "ContactImportCounts": {
@@ -15304,8 +15304,8 @@
       },
       "ContactImportDecimalSeparator": {
         "type": "string",
-        "enum": [".", ","],
-        "description": "The character a file's numbers write their decimals after"
+        "enum": ["point", "comma"],
+        "description": "The character a file's numbers write their decimals after: a point (`.`) or a comma (`,`)"
       },
       "ContactImportDelimiter": {
         "type": "string",
@@ -15728,7 +15728,7 @@
       "ContactImportRefusal": {
         "type": "string",
         "enum": ["unsubscribeEverything", "unsubscribeBroadcasts", "suppression"],
-        "description": "What a value of a refusal column records: an Unsubscribe of `everything` or of `broadcasts`\n(email only), recorded as imported, which only the person can lift; or a Suppression of the\n`manual` reason, which needs `suppressions:manage`"
+        "description": "What a value of a refusal column records: an Unsubscribe of `everything` or of `broadcasts`\n(not on SMS, where a person stops everything), recorded as imported, which only the person can lift; or a Suppression of the\n`manual` reason, which needs `suppressions:manage`"
       },
       "ContactImportRefusalChannel": {
         "type": "string",
@@ -22777,7 +22777,7 @@
           "optOuts": {
             "type": "integer",
             "format": "int32",
-            "description": "Opt-outs the refusal columns would record over the whole file: the rows with a Destination on the column's Channel whose value means an Unsubscribe (on Telegram, the rows that name a key). An imported Unsubscribe cannot be undone: only the person lifts it"
+            "description": "Opt-outs the refusal columns would record over the whole file, at most: the rows with a Destination on the column's Channel whose value means an Unsubscribe (on Telegram, the rows that name a key, whose Contact may have no Binding to record it at). An imported Unsubscribe cannot be undone: only the person lifts it"
           },
           "suppressions": {
             "type": "integer",
@@ -24147,7 +24147,7 @@
           "total": {
             "type": "integer",
             "format": "int32",
-            "description": "Contacts created within the range"
+            "description": "Contacts who signed up within the range: those a CSV import created are in the series, not here"
           },
           "timeseries": {
             "type": "array",

@@ -2,13 +2,14 @@
 # and never mapped. A test that runs an import uploads its own file through the API.
 - id: 1 # fixture: ContactImportAcmeDone
   membership_id: 1
+  member_name: John
   state: done
   delimiter: comma
   header: '["email","first_name"]'
   size: 64
   row_count: 2
   malformed_rows: 0
-  mapping: '{"columns":[{"kind":"key","key":"email"},{"kind":"attribute","attribute":"firstName"}],"decimalSeparator":"."}'
+  mapping: '{"columns":[{"kind":"key","key":"email"},{"kind":"attribute","attribute":"firstName"}],"decimalSeparator":"point"}'
   processed: 2
   created: 1
   refused: 1
@@ -20,6 +21,7 @@
   updated_at: '{{daysAgo 3}}'
 - id: 2 # fixture: ContactImportGlobexUploaded
   membership_id: 2
+  member_name: Jane
   state: uploaded
   delimiter: semicolon
   header: '["email"]'

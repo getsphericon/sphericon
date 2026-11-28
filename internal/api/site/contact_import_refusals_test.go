@@ -112,8 +112,43 @@ func TestAnImportedBounceSuppressesAndABroadcastsOptOutIsNarrow(t *testing.T) {
 	assert.Equal(t, []string{eligibility.SourceBroadcasts}, lo.Map(states["bob.moved@example.com"].OptOuts, func(o eligibility.OptOut, _ int) string { return o.Scope }))
 }
 
+// A Telegram refusal is recorded at the Bindings of the Contact its row writes, and on Telegram
+// alone: an opt-out of broadcasts stays one of broadcasts, as a Telegram link records it, and a
+// Suppression is of the Telegram user, no other Channel's. A row
+// whose Contact has no Binding records nothing and is reported; the preview, which looks up no
+// Binding, counts it as one that may.
+func TestAnImportedTelegramRefusalIsRecordedAtTheContactsBindings(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	imp := uploaded(t, owner, "email,telegram,blocked\n"+fixtures.ContactLiamEmail+",broadcasts,yes\nann.moved@example.com,broadcasts,\n")
+	in := mappingInput(t, imp)
+	in.Columns[1] = refusalColumn(siteapi.ContactImportRefusalChannelTelegram, siteapi.ContactImportRefusalUnsubscribeBroadcasts, "broadcasts")
+	in.Columns[2] = refusalColumn(siteapi.ContactImportRefusalChannelTelegram, siteapi.ContactImportRefusalSuppression, "yes")
+	_, err := saveMapping(t, owner, imp, in)
+	require.NoError(t, err)
+	preview, err := owner.SiteContactImportsPreview(ctx, siteapi.SiteContactImportsPreviewParams{WorkspaceId: fixtures.AcmePublicID, ImportId: imp.ID})
+	require.NoError(t, err)
+
+	done := runImport(t, env, owner, imp, in)
+	liam := contactByEmail(t, env, fixtures.ContactLiamEmail)
+	require.NotNil(t, liam)
+	states, err := eligibility.New().ChannelStates(ctx, env.DB.Scoped(fixtures.AcmeID), []*ent.Contact{liam})
+	require.NoError(t, err)
+
+	assert.Equal(t, int32(2), preview.OptOuts, "up to one a row")
+	assert.Equal(t, int32(1), done.Counts.OptedOut)
+	assert.Equal(t, int32(1), done.Counts.Suppressed)
+	assert.Equal(t, int32(1), done.ReportRows, "the row whose Contact has no Binding")
+	assert.Equal(t, []string{eligibility.SourceBroadcasts}, lo.Map(states[liam.ID].Telegram.OptOuts, func(o eligibility.OptOut, _ int) string { return o.Scope }))
+	assert.NotNil(t, states[liam.ID].Telegram.Suppression, "the Suppression is of the Telegram user")
+	assert.Nil(t, states[liam.ID].Email.Suppression, "no other Channel is suppressed")
+	assert.Nil(t, states[liam.ID].SMS.Suppression, "no other Channel is suppressed")
+	assert.NotContains(t, lo.Map(states[liam.ID].Email.OptOuts, func(o eligibility.OptOut, _ int) string { return o.Scope }), eligibility.SourceBroadcasts)
+}
+
 // A mapping that records a Suppression needs suppressions:manage, at saving and at the run; one
-// that records only opt-outs does not. An opt-out of broadcasts off email is refused.
+// that records only opt-outs does not. An opt-out of broadcasts on SMS is refused.
 func TestARefusalColumnRecordingASuppressionNeedsSuppressionsManage(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
@@ -124,7 +159,7 @@ func TestARefusalColumnRecordingASuppressionNeedsSuppressionsManage(t *testing.T
 	mapping := func(refusal csvimport.Refusal, channel channels.Channel) csvimport.Mapping {
 		return csvimport.Mapping{DecimalSeparator: csvimport.DecimalPoint, Columns: []csvimport.Column{
 			{Kind: csvimport.KindKey, Key: "email"},
-			{Kind: csvimport.KindRefusal, Fact: &csvimport.Fact{Channel: string(channel), Refusals: []csvimport.RefusalValue{{Value: "bounced", Refusal: refusal}}}},
+			{Kind: csvimport.KindRefusal, Fact: &csvimport.Fact{Channel: channel, Refusals: []csvimport.RefusalValue{{Value: "bounced", Refusal: refusal}}}},
 		}}
 	}
 
@@ -137,7 +172,7 @@ func TestARefusalColumnRecordingASuppressionNeedsSuppressionsManage(t *testing.T
 
 	lacking := memberships.Require(membership.RoleMember, memberships.PermSuppressionsManage)
 	require.ErrorIs(t, suppressing, lacking)
-	require.ErrorIs(t, smsBroadcasts, contactimports.ErrBroadcastsOnEmailOnly)
+	require.ErrorIs(t, smsBroadcasts, contactimports.ErrBroadcastsNotOnSMS)
 	require.NoError(t, optingOut)
 	require.ErrorIs(t, runByMember, lacking)
 }

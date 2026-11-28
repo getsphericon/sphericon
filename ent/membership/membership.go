@@ -290,3 +290,13 @@ func newContactImportsStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.O2M, false, ContactImportsTable, ContactImportsColumn),
 	)
 }
+
+// Values is every value of the Role enum, in the schema's order.
+func (Role) Values() []string {
+	return []string{"owner", "admin", "member"}
+}
+
+// Values is every value of the Source enum, in the schema's order.
+func (Source) Values() []string {
+	return []string{"creator", "invitation", "domain"}
+}

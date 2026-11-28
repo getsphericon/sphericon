@@ -22,7 +22,7 @@ const saved: ContactImportMapping = {
       dateFormat: 'dd/mm/yyyy',
     },
   ],
-  decimalSeparator: '.',
+  decimalSeparator: 'point',
   defaultCountry: null,
   tag: null,
   onlyAddNew: false,

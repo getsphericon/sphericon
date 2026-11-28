@@ -246,3 +246,8 @@ func newRunsStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.O2M, false, RunsTable, RunsColumn),
 	)
 }
+
+// Values is every value of the EntryPolicy enum, in the schema's order.
+func (EntryPolicy) Values() []string {
+	return []string{"once", "again"}
+}

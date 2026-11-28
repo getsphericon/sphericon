@@ -589,6 +589,12 @@ type Converter interface {
 	ContactImportIssueReason(source csvimport.Reason) siteapi.ContactImportIssueReason
 	// goverter:enum:transform value
 	ContactImportRefusal(source csvimport.Refusal) siteapi.ContactImportRefusal
+	// goverter:enum:transform value
+	ContactImportRefusalChannel(source channels.Channel) siteapi.ContactImportRefusalChannel
+	// A consent or tracking column is never of Telegram (the save refuses it).
+	// goverter:enum:transform value
+	// goverter:enum:map Telegram @panic
+	ContactImportConsentChannel(source channels.Channel) siteapi.ContactImportConsentChannel
 	// A preview carries only the address check's traits (ADR 0117): the consent and the
 	// two-Contacts warnings are the run's.
 	// goverter:enum:transform value
@@ -602,7 +608,8 @@ type Converter interface {
 	ContactImportPreviewRowToResource(source contactimports.PreviewRow) siteapi.ContactImportPreviewRow
 	ContactImportIssueToResource(source csvimport.Issue) siteapi.ContactImportIssue
 	// A link to download a file (downloadlinks): its path, which the handler builds, and its expiry.
-	DownloadLinkToResource(source DownloadLinkView) siteapi.DownloadLink
+	// goverter:map . URL | contactImportReportURL
+	ContactImportReportLink(source contactimports.ReportLink) siteapi.DownloadLink
 	// goverter:useEmptyOnNil:slice
 	CustomFieldsToResources(source []*ent.CustomField) []siteapi.SiteCustomFieldResource
 	StartLinkToResource(source bindings.StartLink) siteapi.TelegramStartLinkResource

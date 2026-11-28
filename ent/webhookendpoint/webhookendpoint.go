@@ -203,3 +203,8 @@ func newHealthStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.O2O, false, HealthTable, HealthColumn),
 	)
 }
+
+// Values is every value of the DisabledReason enum, in the schema's order.
+func (DisabledReason) Values() []string {
+	return []string{"owner", "gone", "persistent_failure"}
+}

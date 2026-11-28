@@ -115,3 +115,8 @@ func ByHost(opts ...sql.OrderTermOption) OrderOption {
 func ByState(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldState, opts...).ToFunc()
 }
+
+// Values is every value of the State enum, in the schema's order.
+func (State) Values() []string {
+	return []string{"dns_verified", "serving", "removed"}
+}

@@ -5,6 +5,7 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/kernel/attachment"
 	"github.com/getsphericon/sphericon/internal/kernel/seqreader"
 )
 
@@ -19,7 +20,7 @@ func (h *Handlers) ContactsExport(ctx context.Context, params externalapi.Contac
 	}
 
 	return &externalapi.ContactsExportOKApplicationOctetStreamHeaders{
-		ContentDisposition: `attachment; filename="` + d.Filename + `"`,
+		ContentDisposition: attachment.ContentDisposition(d.Filename),
 		Response: externalapi.ContactsExportOKApplicationOctetStream{
 			Data: seqreader.New(d.Chunks),
 		},

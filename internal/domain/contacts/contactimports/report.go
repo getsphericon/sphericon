@@ -4,6 +4,7 @@ import (
 	"context"
 	"iter"
 	"strings"
+	"time"
 
 	"github.com/samber/lo"
 
@@ -34,21 +35,38 @@ const reportPage = 1000
 // IssuesHeader is the header of the report's column that says why each row is in it.
 const IssuesHeader = "Issues"
 
+// ReportLink is the one-time link to an import's report: its Workspace's public id and the
+// import, which the download's path names, the link's token and when it lapses.
+type ReportLink struct {
+	Workspace string
+	ImportID  int64
+	Token     string
+	ExpiresAt time.Time
+}
+
 // ReportLink issues the link to the refused rows' report of the import id, in the session the
 // request is made in (downloadlinks): an import that has not ended is ErrReportPending, one whose
 // report has no row ErrNoReport.
-func (m *Module) ReportLink(ctx context.Context, s *ent.Scoped, id int64, session string) (downloadlinks.Link, error) {
+func (m *Module) ReportLink(ctx context.Context, s *ent.Scoped, id int64, session string) (ReportLink, error) {
 	v, err := m.Get(ctx, s, id)
 	if err != nil {
-		return downloadlinks.Link{}, err
+		return ReportLink{}, err
 	}
 	if !ended(v.Import.State) {
-		return downloadlinks.Link{}, ErrReportPending
+		return ReportLink{}, ErrReportPending
 	}
 	if v.ReportRows == 0 {
-		return downloadlinks.Link{}, ErrNoReport
+		return ReportLink{}, ErrNoReport
 	}
-	return m.links.Issue(ctx, s, downloadlinks.IssueInput{Purpose: downloadlinks.PurposeImportReport, Session: session, Payload: reportPayload{ImportID: id}})
+	ws, err := s.Workspace(ctx)
+	if err != nil {
+		return ReportLink{}, err
+	}
+	link, err := m.links.Issue(ctx, s, downloadlinks.IssueInput{Purpose: downloadlinks.PurposeImportReport, Session: session, Payload: reportPayload{ImportID: id}})
+	if err != nil {
+		return ReportLink{}, err
+	}
+	return ReportLink{Workspace: ws.PublicID, ImportID: id, Token: link.Token, ExpiresAt: link.ExpiresAt}, nil
 }
 
 // reportPayload is what a report's link names: its import.
@@ -71,17 +89,21 @@ type ReportInput struct {
 	Token, Session string
 }
 
-// Download is a file a handler streams: its name and its chunks.
+// Download is a file a handler streams: its name, its chunks, and what is done once the file
+// reached the client whole.
 type Download struct {
 	Filename string
 	Chunks   iter.Seq2[[]byte, error]
+	// Delivered deletes the report. The driver calls it only after the last chunk was written and
+	// the response flushed without error, so a stream cut short keeps the report.
+	Delivered func(context.Context) error
 }
 
 // Report follows the link of in and streams the import's refused rows' report as CSV through the
 // core writer (csvfile): the file's header with an Issues column, then each reported row's
-// original cells, in the file's order, with what was refused or dropped and why. Once the last
-// row has been read the report is deleted, so a stream cut short keeps it. A link that does not
-// stand is downloadlinks.ErrLinkInvalid.
+// original cells, in the file's order, with what was refused or dropped and why. The report is
+// deleted by the Download's Delivered, once its driver has delivered it whole, so a stream cut
+// short keeps it. A link that does not stand is downloadlinks.ErrLinkInvalid.
 func (m *Module) Report(ctx context.Context, s *ent.Scoped, in ReportInput) (Download, error) {
 	imp, err := load(ctx, s, in.ImportID)
 	if err != nil {
@@ -96,13 +118,13 @@ func (m *Module) Report(ctx context.Context, s *ent.Scoped, in ReportInput) (Dow
 		return Download{}, ErrReportLinkInvalid
 	}
 	return Download{
-		Filename: "contact-import-" + publicid.Encode(imp.ID) + "-report.csv",
-		Chunks:   csvfile.Chunks(m.reportPages(ctx, s, imp)),
+		Filename:  "contact-import-" + publicid.Encode(imp.ID) + "-report.csv",
+		Chunks:    csvfile.Chunks(m.reportPages(ctx, s, imp)),
+		Delivered: func(ctx context.Context) error { return m.dropReport(ctx, s, imp.ID) },
 	}, nil
 }
 
-// reportPages are the pages of imp's report as CSV records, its header first; after the last, the
-// report is deleted.
+// reportPages are the pages of imp's report as CSV records, its header first.
 func (m *Module) reportPages(ctx context.Context, s *ent.Scoped, imp *ent.ContactImport) iter.Seq2[[][]string, error] {
 	return func(yield func([][]string, error) bool) {
 		page := [][]string{append(append([]string{}, imp.Header...), IssuesHeader)}
@@ -126,16 +148,13 @@ func (m *Module) reportPages(ctx context.Context, s *ent.Scoped, imp *ent.Contac
 			}
 			page = nil
 			if len(rows) < reportPage {
-				break
+				return
 			}
-		}
-		if err := m.dropReport(ctx, s, imp.ID); err != nil {
-			yield(nil, err)
 		}
 	}
 }
 
-// dropReport deletes the report of the import id, downloaded whole.
+// dropReport deletes the report of the import id, delivered whole.
 func (m *Module) dropReport(ctx context.Context, s *ent.Scoped, id int64) error {
 	return m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		if _, err := ts.ContactImportReportRow().Delete().Where(contactimportreportrow.ContactImportID(id)).Exec(ctx); err != nil {

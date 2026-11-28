@@ -3,6 +3,7 @@ package site_test
 import (
 	"encoding/json"
 	"io"
+	"net/http"
 	"strings"
 	"testing"
 
@@ -19,6 +20,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/csvimport"
+	"github.com/getsphericon/sphericon/internal/kernel/narrow"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -34,8 +36,9 @@ func acmeExport(t *testing.T, env *testhelper.TestEnv) string {
 	return string(body)
 }
 
-// importIntoGlobex uploads file into Globex as its owner, saves the mapping the app proposes as it
-// is, runs the import and works its job: the import as it ended.
+// importIntoGlobex uploads file into Globex as its owner, saves the mapping the app proposes with
+// the consent's wording and brand the export does not hold, runs the import and works its job: the
+// import as it ended.
 func importIntoGlobex(t *testing.T, env *testhelper.TestEnv, file string) *siteapi.SiteContactImport {
 	t.Helper()
 	ctx := t.Context()
@@ -43,15 +46,52 @@ func importIntoGlobex(t *testing.T, env *testhelper.TestEnv, file string) *sitea
 	imp, err := owner.SiteContactImportsUpload(ctx, siteapi.SiteContactImportsUploadReq{Data: strings.NewReader(file)},
 		siteapi.SiteContactImportsUploadParams{WorkspaceId: fixtures.GlobexPublicID})
 	require.NoError(t, err)
-	in := mappingInput(t, imp)
+	in := withConsentEvidence(mappingInput(t, imp), "Sign me up for the newsletter", "Globex")
 	_, err = owner.SiteContactImportsSaveMapping(ctx, in, siteapi.SiteContactImportsSaveMappingParams{WorkspaceId: fixtures.GlobexPublicID, ImportId: imp.ID})
-	require.NoError(t, err, "the proposal saves as it is")
+	require.NoError(t, err, "the proposal saves with the consent's evidence given")
 	_, err = owner.SiteContactImportsRun(ctx, siteapi.SiteContactImportsRunParams{WorkspaceId: fixtures.GlobexPublicID, ImportId: imp.ID})
-	require.NoError(t, err, "the proposal runs as it is")
+	require.NoError(t, err, "the proposal runs with the consent's evidence given")
 	env.PerformEnqueuedJobs(t)
 	done, err := owner.SiteContactImportsGet(ctx, siteapi.SiteContactImportsGetParams{WorkspaceId: fixtures.GlobexPublicID, ImportId: imp.ID})
 	require.NoError(t, err)
 	return done
+}
+
+// withConsentEvidence is in with wording and brand given as the evidence of each consent column,
+// as the Member fills in what a proposal leaves blank.
+func withConsentEvidence(in *siteapi.ContactImportMappingInput, wording, brand string) *siteapi.ContactImportMappingInput {
+	for i := range in.Columns {
+		consent, ok := in.Columns[i].OneOf.GetContactImportConsentColumnInput()
+		if !ok {
+			continue
+		}
+		consent.Evidence.Wording = siteapi.NewNilString(wording)
+		consent.Evidence.Brand = siteapi.NewNilString(brand)
+		in.Columns[i].OneOf.SetContactImportConsentColumnInput(consent)
+	}
+	return in
+}
+
+// An export holds how each Confirmation was collected, which a proposal reads as the consent's
+// source, but not the wording the person was shown nor the brand they agreed to hear from: the
+// proposal leaves both blank, and its mapping is not saved until the Member gives them.
+func TestAnExportsConsentIsProposedWithoutTheEvidenceItLacks(t *testing.T) {
+	env := testhelper.Setup(t)
+	owner := env.SiteActor(t, fixtures.OwnerJaneEmail)
+	imp, err := owner.SiteContactImportsUpload(t.Context(), siteapi.SiteContactImportsUploadReq{Data: strings.NewReader(acmeExport(t, env))},
+		siteapi.SiteContactImportsUploadParams{WorkspaceId: fixtures.GlobexPublicID})
+	require.NoError(t, err)
+	at := lo.IndexOf(imp.Header, "email.confirmation")
+	require.GreaterOrEqual(t, at, 0)
+	consent, ok := imp.Mapping.Columns[at].OneOf.GetContactImportConsentColumn()
+	require.True(t, ok)
+
+	_, unsaved := owner.SiteContactImportsSaveMapping(t.Context(), mappingInput(t, imp), siteapi.SiteContactImportsSaveMappingParams{WorkspaceId: fixtures.GlobexPublicID, ImportId: imp.ID})
+
+	assert.Empty(t, consent.Evidence.Wording.Value, "no wording is made up")
+	assert.Empty(t, consent.Evidence.Brand.Value, "no brand is made up")
+	assert.Equal(t, siteapi.NewNilInt32(narrow.Int32(at)), consent.Evidence.SourceColumn, "the provenance is the source")
+	testhelper.SiteRefusal(t, unsaved, http.StatusUnprocessableEntity)
 }
 
 // globexStates are the Channel states of Globex's Contacts, by the Contact's email, else phone.
@@ -76,7 +116,7 @@ func scopes(st eligibility.ChannelState) []string {
 // A Workspace's export imports into another Workspace as it is (ADR 0138): the mapping the app
 // proposes from the export's headers saves and runs unchanged, and brings the Contacts with their
 // keys, attributes, Tags and Custom fields (created in their types), the opt-outs of everything and
-// of broadcasts (off email, where a person stops everything, as one of everything), each
+// of broadcasts (on SMS, where a person stops everything, as one of everything), each
 // Suppression as a manual one and each Confirmation as an imported one; an opt-out of a single
 // Automation comes back as nothing.
 func TestAnExportImportsIntoAnotherWorkspaceAsItIs(t *testing.T) {
@@ -112,7 +152,7 @@ func TestAnExportImportsIntoAnotherWorkspaceAsItIs(t *testing.T) {
 	require.NotNil(t, states["liam.python@codebasics.dev"].Email.Confirmation)
 	assert.Equal(t, confirmation.ProvenanceImported, states["liam.python@codebasics.dev"].Email.Confirmation.Provenance)
 	assert.Equal(t, []string{eligibility.SourceEverything}, scopes(states["+13125557505"].SMS))
-	assert.Equal(t, []string{eligibility.SourceEverything}, scopes(states["+13125557504"].SMS), "off email an opt-out of broadcasts comes back as one of everything")
+	assert.Equal(t, []string{eligibility.SourceEverything}, scopes(states["+13125557504"].SMS), "on SMS an opt-out of broadcasts comes back as one of everything")
 }
 
 // proposedKinds are the kinds of the columns an upload's proposal maps, by the file's header.
@@ -183,6 +223,26 @@ func TestAnExportsGuardedCellsReadBackAsWritten(t *testing.T) {
 	assert.Equal(t, map[string]any{"courses_completed": -3.0, "signup_source": "'hello", "score": -1.5}, ann.CustomFields)
 	require.NotNil(t, bob)
 	assert.Equal(t, "=x", bob.CustomFields["signup_source"])
+}
+
+// A new field's column whose cells read as numbers only once their leading zero or plus sign is
+// lost (a postal code, a dialling code) is proposed as text and keeps them; a column of numbers that
+// mean numbers is proposed as a number.
+func TestAnExportsCodesAreProposedAsTextNotNumbers(t *testing.T) {
+	env := testhelper.Setup(t)
+	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	imp := uploaded(t, owner, "email,customFields.zip,customFields.dialling,customFields.score\n"+
+		"ann.moved@example.com,02134,'+44,0\nbob.moved@example.com,10001,'+1,-0.5\n")
+
+	runImport(t, env, owner, imp, mappingInput(t, imp))
+	fields, err := env.DB.Scoped(fixtures.AcmeID).CustomField().Query().Where(customfield.KeyIn("zip", "dialling", "score")).All(t.Context())
+	require.NoError(t, err)
+	types := lo.SliceToMap(fields, func(f *ent.CustomField) (string, customfield.Type) { return f.Key, f.Type })
+	ann := contactByEmail(t, env, "ann.moved@example.com")
+
+	assert.Equal(t, map[string]customfield.Type{"zip": customfield.TypeString, "dialling": customfield.TypeString, "score": customfield.TypeNumber}, types)
+	require.NotNil(t, ann)
+	assert.Equal(t, map[string]any{"zip": "02134", "dialling": "+44", "score": 0.0}, ann.CustomFields)
 }
 
 // The date columns of an export save unchanged: a blank one is proposed in the format the export

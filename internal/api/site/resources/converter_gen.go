@@ -1084,6 +1084,20 @@ func (c *ConverterImpl) ContactExportSourceToResource(source contact.Source) sit
 	}
 	return siteapiContactExportSource
 }
+func (c *ConverterImpl) ContactImportConsentChannel(source channels.Channel) site.ContactImportConsentChannel {
+	var siteapiContactImportConsentChannel site.ContactImportConsentChannel
+	switch source {
+	case channels.Email:
+		siteapiContactImportConsentChannel = site.ContactImportConsentChannelEmail
+	case channels.SMS:
+		siteapiContactImportConsentChannel = site.ContactImportConsentChannelSMS
+	case channels.Telegram:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiContactImportConsentChannel
+}
 func (c *ConverterImpl) ContactImportCounts(source *ent.ContactImport) site.ContactImportCounts {
 	var siteapiContactImportCounts site.ContactImportCounts
 	if source != nil {
@@ -1236,6 +1250,26 @@ func (c *ConverterImpl) ContactImportRefusal(source csvimport.Refusal) site.Cont
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return siteapiContactImportRefusal
+}
+func (c *ConverterImpl) ContactImportRefusalChannel(source channels.Channel) site.ContactImportRefusalChannel {
+	var siteapiContactImportRefusalChannel site.ContactImportRefusalChannel
+	switch source {
+	case channels.Email:
+		siteapiContactImportRefusalChannel = site.ContactImportRefusalChannelEmail
+	case channels.SMS:
+		siteapiContactImportRefusalChannel = site.ContactImportRefusalChannelSMS
+	case channels.Telegram:
+		siteapiContactImportRefusalChannel = site.ContactImportRefusalChannelTelegram
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiContactImportRefusalChannel
+}
+func (c *ConverterImpl) ContactImportReportLink(source contactimports.ReportLink) site.DownloadLink {
+	var siteapiDownloadLink site.DownloadLink
+	siteapiDownloadLink.URL = contactImportReportURL(source)
+	siteapiDownloadLink.ExpiresAt = timestamp(source.ExpiresAt)
+	return siteapiDownloadLink
 }
 func (c *ConverterImpl) ContactImportState(source contactimport.State) site.ContactImportState {
 	var siteapiContactImportState site.ContactImportState
@@ -1522,12 +1556,6 @@ func (c *ConverterImpl) DomainJoinToResource(source *ent.Workspace) *site.SiteDo
 		pSiteapiSiteDomainJoinResource = &siteapiSiteDomainJoinResource
 	}
 	return pSiteapiSiteDomainJoinResource
-}
-func (c *ConverterImpl) DownloadLinkToResource(source DownloadLinkView) site.DownloadLink {
-	var siteapiDownloadLink site.DownloadLink
-	siteapiDownloadLink.URL = source.URL
-	siteapiDownloadLink.ExpiresAt = timestamp(source.ExpiresAt)
-	return siteapiDownloadLink
 }
 func (c *ConverterImpl) EmailBroadcastContentToResource(source *ent.Broadcast) site.EmailBroadcastContent {
 	var siteapiEmailBroadcastContent site.EmailBroadcastContent

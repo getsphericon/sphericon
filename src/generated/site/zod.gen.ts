@@ -446,7 +446,9 @@ export const zContactImportConsentChannel = z.enum(['email', 'sms']);
 
 /**
  * The evidence of the consent a consent column records (ADR 0077): each part given once for every
- * row as text, or read from the column it names on each row, exactly one of the two
+ * row as text, or read from the column it names on each row, exactly one of the two. A proposal
+ * leaves a part it has no source for null in both (the wording and brand of an export's
+ * Confirmations), and the mapping is not saved until the Member gives it
  */
 export const zContactImportConsentEvidence = z.object({
   wording: z.string().max(2000).nullable(),
@@ -471,7 +473,9 @@ export const zContactImportConsentColumn = z.object({
 
 /**
  * The evidence of the consent a consent column records (ADR 0077): each part given once for every
- * row as text, or read from the column it names on each row, exactly one of the two
+ * row as text, or read from the column it names on each row, exactly one of the two. A proposal
+ * leaves a part it has no source for null in both (the wording and brand of an export's
+ * Confirmations), and the mapping is not saved until the Member gives it
  */
 export const zContactImportConsentEvidenceInput = z.strictObject({
   wording: z.string().max(2000).nullable(),
@@ -558,9 +562,9 @@ export const zContactImportCustomFieldColumnInput = z.strictObject({
 });
 
 /**
- * The character a file's numbers write their decimals after
+ * The character a file's numbers write their decimals after: a point (`.`) or a comma (`,`)
  */
-export const zContactImportDecimalSeparator = z.enum(['.', ',']);
+export const zContactImportDecimalSeparator = z.enum(['point', 'comma']);
 
 /**
  * The character a file's cells are separated by, detected at upload
@@ -671,7 +675,7 @@ export const zContactImportKeyColumnInput = z.strictObject({
 
 /**
  * What a value of a refusal column records: an Unsubscribe of `everything` or of `broadcasts`
- * (email only), recorded as imported, which only the person can lift; or a Suppression of the
+ * (not on SMS, where a person stops everything), recorded as imported, which only the person can lift; or a Suppression of the
  * `manual` reason, which needs `suppressions:manage`
  */
 export const zContactImportRefusal = z.enum([
@@ -8403,9 +8407,9 @@ export const zSiteContactCsvExportsDownloadPath = z.object({
 /**
  * The CSV file of the export, streamed as it is read
  */
-export const zSiteContactCsvExportsDownloadResponse = z.string();
+export const zSiteContactCsvExportsDownloadResponse = z.instanceof(Blob);
 
-export const zSiteContactImportsUploadBody = z.string();
+export const zSiteContactImportsUploadBody = z.instanceof(Blob);
 
 export const zSiteContactImportsUploadPath = z.object({
   workspaceId: zWorkspaceId
@@ -8477,7 +8481,7 @@ export const zSiteContactImportsReportPath = z.object({
 /**
  * The request has succeeded.
  */
-export const zSiteContactImportsReportResponse = z.string();
+export const zSiteContactImportsReportResponse = z.instanceof(Blob);
 
 export const zSiteContactImportsRunPath = z.object({
   workspaceId: zWorkspaceId,

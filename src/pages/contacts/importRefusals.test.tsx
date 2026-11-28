@@ -29,7 +29,7 @@ const UPLOADED: SiteContactImport = {
   malformedRows: 0,
   mapping: {
     columns: [{ kind: 'key', key: 'email' }, { kind: 'ignore' }],
-    decimalSeparator: '.',
+    decimalSeparator: 'point',
     defaultCountry: null,
     tag: null,
     onlyAddNew: false,
@@ -99,7 +99,7 @@ test('maps a status column as refusals, and the preview counts them with the war
       values: [{ value: 'unsubscribed', refusal: 'unsubscribeEverything' }],
     })
   await expect
-    .element(screen.getByText('The file would record 1 opt-outs and 0 suppressions.'))
+    .element(screen.getByText('The file would record up to 1 opt-outs and 0 suppressions.'))
     .toBeVisible()
   await expect.element(screen.getByText(/cannot be undone/)).toBeVisible()
 })
@@ -114,4 +114,11 @@ test('offers no suppression to a Member who cannot manage suppressions', async (
   await expect
     .element(screen.getByRole('option', { name: 'A suppression (bounced, complained)' }))
     .toBeDisabled()
+  await expect
+    .element(
+      screen.getByText(
+        'Recording a suppression needs a role that manages suppressions: a column of them is left out.',
+      ),
+    )
+    .toBeVisible()
 })

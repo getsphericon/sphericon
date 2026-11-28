@@ -38,10 +38,10 @@ enum ContactImportDateFormat {
   rfc3339: "rfc3339",
 }
 
-/** The character a file's numbers write their decimals after */
+/** The character a file's numbers write their decimals after: a point (`.`) or a comma (`,`) */
 enum ContactImportDecimalSeparator {
-  point: ".",
-  comma: ",",
+  point,
+  comma,
 }
 
 /** The character a file's cells are separated by, detected at upload */
@@ -140,7 +140,7 @@ enum ContactImportConsentChannel {
 
 /**
  * What a value of a refusal column records: an Unsubscribe of `everything` or of `broadcasts`
- * (email only), recorded as imported, which only the person can lift; or a Suppression of the
+ * (not on SMS, where a person stops everything), recorded as imported, which only the person can lift; or a Suppression of the
  * `manual` reason, which needs `suppressions:manage`
  */
 enum ContactImportRefusal {
@@ -176,7 +176,9 @@ model ContactImportRefusalColumn {
 
 /**
  * The evidence of the consent a consent column records (ADR 0077): each part given once for every
- * row as text, or read from the column it names on each row, exactly one of the two
+ * row as text, or read from the column it names on each row, exactly one of the two. A proposal
+ * leaves a part it has no source for null in both (the wording and brand of an export's
+ * Confirmations), and the mapping is not saved until the Member gives it
  */
 model ContactImportConsentEvidence {
   /** The consent wording the person was shown and agreed to; null when a column holds it */
@@ -545,7 +547,7 @@ model SiteContactImportPreview {
   /** Distinct Tags the rows would add, the Tag for every row included */
   distinctTags: int32;
 
-  /** Opt-outs the refusal columns would record over the whole file: the rows with a Destination on the column's Channel whose value means an Unsubscribe (on Telegram, the rows that name a key). An imported Unsubscribe cannot be undone: only the person lifts it */
+  /** Opt-outs the refusal columns would record over the whole file, at most: the rows with a Destination on the column's Channel whose value means an Unsubscribe (on Telegram, the rows that name a key, whose Contact may have no Binding to record it at). An imported Unsubscribe cannot be undone: only the person lifts it */
   optOuts: int32;
 
   /** Suppressions the refusal columns would record over the whole file, counted as the opt-outs are */

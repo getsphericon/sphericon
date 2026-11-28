@@ -269,3 +269,8 @@ func newOutboundMessageStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.M2O, false, OutboundMessageTable, OutboundMessageColumn),
 	)
 }
+
+// Values is every value of the Surface enum, in the schema's order.
+func (Surface) Values() []string {
+	return []string{"broadcast", "automation", "transactional", "confirmation", "test"}
+}

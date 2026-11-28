@@ -2271,7 +2271,9 @@ export type ContactImportConsentColumnInput = {
 
 /**
  * The evidence of the consent a consent column records (ADR 0077): each part given once for every
- * row as text, or read from the column it names on each row, exactly one of the two
+ * row as text, or read from the column it names on each row, exactly one of the two. A proposal
+ * leaves a part it has no source for null in both (the wording and brand of an export's
+ * Confirmations), and the mapping is not saved until the Member gives it
  */
 export type ContactImportConsentEvidence = {
   /**
@@ -2302,7 +2304,9 @@ export type ContactImportConsentEvidence = {
 
 /**
  * The evidence of the consent a consent column records (ADR 0077): each part given once for every
- * row as text, or read from the column it names on each row, exactly one of the two
+ * row as text, or read from the column it names on each row, exactly one of the two. A proposal
+ * leaves a part it has no source for null in both (the wording and brand of an export's
+ * Confirmations), and the mapping is not saved until the Member gives it
  */
 export type ContactImportConsentEvidenceInput = {
   /**
@@ -2419,12 +2423,12 @@ export const ContactImportDateFormat = {
 export type ContactImportDateFormat = typeof ContactImportDateFormat[keyof typeof ContactImportDateFormat];
 
 /**
- * The character a file's numbers write their decimals after
+ * The character a file's numbers write their decimals after: a point (`.`) or a comma (`,`)
  */
-export const ContactImportDecimalSeparator = { '': '.', ',': ',' } as const;
+export const ContactImportDecimalSeparator = { POINT: 'point', COMMA: 'comma' } as const;
 
 /**
- * The character a file's numbers write their decimals after
+ * The character a file's numbers write their decimals after: a point (`.`) or a comma (`,`)
  */
 export type ContactImportDecimalSeparator = typeof ContactImportDecimalSeparator[keyof typeof ContactImportDecimalSeparator];
 
@@ -2709,7 +2713,7 @@ export type ContactImportPreviewRow = {
 
 /**
  * What a value of a refusal column records: an Unsubscribe of `everything` or of `broadcasts`
- * (email only), recorded as imported, which only the person can lift; or a Suppression of the
+ * (not on SMS, where a person stops everything), recorded as imported, which only the person can lift; or a Suppression of the
  * `manual` reason, which needs `suppressions:manage`
  */
 export const ContactImportRefusal = {
@@ -2720,7 +2724,7 @@ export const ContactImportRefusal = {
 
 /**
  * What a value of a refusal column records: an Unsubscribe of `everything` or of `broadcasts`
- * (email only), recorded as imported, which only the person can lift; or a Suppression of the
+ * (not on SMS, where a person stops everything), recorded as imported, which only the person can lift; or a Suppression of the
  * `manual` reason, which needs `suppressions:manage`
  */
 export type ContactImportRefusal = typeof ContactImportRefusal[keyof typeof ContactImportRefusal];
@@ -7799,7 +7803,7 @@ export type SiteContactImportPreview = {
    */
   distinctTags: number;
   /**
-   * Opt-outs the refusal columns would record over the whole file: the rows with a Destination on the column's Channel whose value means an Unsubscribe (on Telegram, the rows that name a key). An imported Unsubscribe cannot be undone: only the person lifts it
+   * Opt-outs the refusal columns would record over the whole file, at most: the rows with a Destination on the column's Channel whose value means an Unsubscribe (on Telegram, the rows that name a key, whose Contact may have no Binding to record it at). An imported Unsubscribe cannot be undone: only the person lifts it
    */
   optOuts: number;
   /**
@@ -8708,7 +8712,7 @@ export type SiteNewPeoplePoint = {
  */
 export type SiteNewPeopleReport = {
   /**
-   * Contacts created within the range
+   * Contacts who signed up within the range: those a CSV import created are in the series, not here
    */
   total: number;
   /**

@@ -39,7 +39,7 @@ function NewPeopleReport() {
       <SimpleGrid cols={{ base: 2, sm: 4 }}>
         <StatCard label={t(($) => $.analytics.newPeople.total)} value={report.total} />
       </SimpleGrid>
-      {report.total === 0 ? (
+      {report.timeseries.every((p) => p.manual + p.api + p.tracker + p.import === 0) ? (
         <CenteredEmptyState
           height={300}
           icon={<IconChartBar />}

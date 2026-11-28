@@ -29981,6 +29981,7 @@ type ContactImportMutation struct {
 	id                          *int64
 	created_at                  *time.Time
 	updated_at                  *time.Time
+	member_name                 *string
 	state                       *contactimport.State
 	delimiter                   *contactimport.Delimiter
 	header                      *[]string
@@ -30297,6 +30298,42 @@ func (m *ContactImportMutation) MembershipIDCleared() bool {
 func (m *ContactImportMutation) ResetMembershipID() {
 	m.membership = nil
 	delete(m.clearedFields, contactimport.FieldMembershipID)
+}
+
+// SetMemberName sets the "member_name" field.
+func (m *ContactImportMutation) SetMemberName(s string) {
+	m.member_name = &s
+}
+
+// MemberName returns the value of the "member_name" field in the mutation.
+func (m *ContactImportMutation) MemberName() (r string, exists bool) {
+	v := m.member_name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMemberName returns the old "member_name" field's value of the ContactImport entity.
+// If the ContactImport object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactImportMutation) OldMemberName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMemberName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMemberName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMemberName: %w", err)
+	}
+	return oldValue.MemberName, nil
+}
+
+// ResetMemberName resets all changes to the "member_name" field.
+func (m *ContactImportMutation) ResetMemberName() {
+	m.member_name = nil
 }
 
 // SetState sets the "state" field.
@@ -31775,7 +31812,7 @@ func (m *ContactImportMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ContactImportMutation) Fields() []string {
-	fields := make([]string, 0, 29)
+	fields := make([]string, 0, 30)
 	if m.created_at != nil {
 		fields = append(fields, contactimport.FieldCreatedAt)
 	}
@@ -31787,6 +31824,9 @@ func (m *ContactImportMutation) Fields() []string {
 	}
 	if m.membership != nil {
 		fields = append(fields, contactimport.FieldMembershipID)
+	}
+	if m.member_name != nil {
+		fields = append(fields, contactimport.FieldMemberName)
 	}
 	if m.state != nil {
 		fields = append(fields, contactimport.FieldState)
@@ -31879,6 +31919,8 @@ func (m *ContactImportMutation) Field(name string) (ent.Value, bool) {
 		return m.WorkspaceID()
 	case contactimport.FieldMembershipID:
 		return m.MembershipID()
+	case contactimport.FieldMemberName:
+		return m.MemberName()
 	case contactimport.FieldState:
 		return m.State()
 	case contactimport.FieldDelimiter:
@@ -31946,6 +31988,8 @@ func (m *ContactImportMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldWorkspaceID(ctx)
 	case contactimport.FieldMembershipID:
 		return m.OldMembershipID(ctx)
+	case contactimport.FieldMemberName:
+		return m.OldMemberName(ctx)
 	case contactimport.FieldState:
 		return m.OldState(ctx)
 	case contactimport.FieldDelimiter:
@@ -32032,6 +32076,13 @@ func (m *ContactImportMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetMembershipID(v)
+		return nil
+	case contactimport.FieldMemberName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMemberName(v)
 		return nil
 	case contactimport.FieldState:
 		v, ok := value.(contactimport.State)
@@ -32490,6 +32541,9 @@ func (m *ContactImportMutation) ResetField(name string) error {
 		return nil
 	case contactimport.FieldMembershipID:
 		m.ResetMembershipID()
+		return nil
+	case contactimport.FieldMemberName:
+		m.ResetMemberName()
 		return nil
 	case contactimport.FieldState:
 		m.ResetState()

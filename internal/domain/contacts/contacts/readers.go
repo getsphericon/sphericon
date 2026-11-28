@@ -68,10 +68,10 @@ func ReadNumber(cell string, sep csvimport.DecimalSeparator) (float64, csvimport
 		return 0, csvimport.ReasonNotNumber
 	}
 	other := lo.Ternary(sep == csvimport.DecimalComma, csvimport.DecimalPoint, csvimport.DecimalComma)
-	if strings.Contains(s, string(other)) || strings.Count(s, string(sep)) > 1 {
+	if strings.Contains(s, other.Char()) || strings.Count(s, sep.Char()) > 1 {
 		return 0, csvimport.ReasonNotNumber
 	}
-	s = strings.Replace(s, string(sep), string(csvimport.DecimalPoint), 1)
+	s = strings.Replace(s, sep.Char(), ".", 1)
 	digits := strings.TrimLeft(s, "+-")
 	if len(s)-len(digits) > 1 || digits == "" || digits == "." || strings.ContainsFunc(digits, func(r rune) bool { return r != '.' && (r < '0' || r > '9') }) {
 		return 0, csvimport.ReasonNotNumber

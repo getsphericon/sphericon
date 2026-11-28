@@ -197,3 +197,8 @@ func newOrderStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.M2O, true, OrderTable, OrderColumn),
 	)
 }
+
+// Values is every value of the Kind enum, in the schema's order.
+func (Kind) Values() []string {
+	return []string{"completed", "updated", "refunded", "cancelled"}
+}

@@ -24,8 +24,9 @@ func TestANumberReadsWithItsSeparator(t *testing.T) {
 		cents := rapid.IntRange(0, 99).Draw(t, "cents")
 		sep := rapid.SampledFrom([]csvimport.DecimalSeparator{csvimport.DecimalPoint, csvimport.DecimalComma}).Draw(t, "sep")
 		sign := rapid.SampledFrom([]string{"", "-", "+"}).Draw(t, "sign")
-		cell := fmt.Sprintf("%s%d%s%02d", sign, whole, sep, cents)
-		want, err := strconv.ParseFloat(strings.Replace(cell, string(sep), ".", 1), 64)
+		char := map[csvimport.DecimalSeparator]string{csvimport.DecimalPoint: ".", csvimport.DecimalComma: ","}[sep]
+		cell := fmt.Sprintf("%s%d%s%02d", sign, whole, char, cents)
+		want, err := strconv.ParseFloat(strings.Replace(cell, char, ".", 1), 64)
 		require.NoError(t, err)
 
 		got, reason := contacts.ReadNumber(cell, sep)

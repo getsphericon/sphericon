@@ -271,3 +271,8 @@ func newRunStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.M2O, false, RunTable, RunColumn),
 	)
 }
+
+// Values is every value of the Outcome enum, in the schema's order.
+func (Outcome) Values() []string {
+	return []string{"done", "skipped", "path"}
+}

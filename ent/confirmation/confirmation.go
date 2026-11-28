@@ -216,3 +216,8 @@ func newContactStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.M2O, false, ContactTable, ContactColumn),
 	)
 }
+
+// Values is every value of the Provenance enum, in the schema's order.
+func (Provenance) Values() []string {
+	return []string{"double_opt_in", "grandfathered", "imported", "keyword"}
+}

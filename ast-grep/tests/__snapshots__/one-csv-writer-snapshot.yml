@@ -12,3 +12,23 @@ snapshots:
         style: primary
         start: 45
         end: 61
+  "import . \"encoding/csv\"\n":
+    labels:
+      - source: . "encoding/csv"
+        style: primary
+        start: 7
+        end: 23
+      - source: '.'
+        style: secondary
+        start: 7
+        end: 8
+  "import enc \"encoding/csv\"\n":
+    labels:
+      - source: enc "encoding/csv"
+        style: primary
+        start: 7
+        end: 25
+      - source: enc
+        style: secondary
+        start: 7
+        end: 10

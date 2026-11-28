@@ -1,16 +1,19 @@
 package contactimports
 
 import (
+	"slices"
 	"strings"
 
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/customfield"
+	"github.com/getsphericon/sphericon/ent/membership"
 	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contactsexport"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/csvimport"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -20,39 +23,31 @@ import (
 // proposal maps by itself so that one Workspace's export imports into another as it is: a Custom
 // field's, and each Channel's state.
 
-// exportedConsentWording is the consent wording a proposal gives once for the Confirmations an export
-// carries: the export holds how each was confirmed, not what the person was shown. The Member may
-// change it.
-const exportedConsentWording = "Consent given before this file was exported from another Workspace"
-
 // exportedRefusals are the opted-out scopes of an export that a refusal column records, by Channel:
-// `everything`, and `broadcasts` on email; an opt-out of one Automation (its scope
-// `automation:<id>`) means nothing in another Workspace and is not listed. Off email a person stops
-// everything (ADR 0138), so an SMS or Telegram opt-out of broadcasts is recorded as one of
-// everything: a refusal comes back no narrower than it was.
+// `everything`, and `broadcasts` where an opt-out keeps that scope (email, Telegram); an opt-out of
+// one Automation (its scope `automation:<id>`) means nothing in another Workspace and is not
+// listed. On SMS a person stops everything (ADR 0138), so an SMS opt-out of broadcasts is recorded
+// as one of everything: a refusal comes back no narrower than it was.
 func exportedRefusals(channel channels.Channel) []csvimport.RefusalValue {
-	if channel == channels.Email {
-		return []csvimport.RefusalValue{
-			{Value: eligibility.SourceEverything, Refusal: csvimport.RefusalEverything},
-			{Value: eligibility.SourceBroadcasts, Refusal: csvimport.RefusalBroadcasts},
-		}
+	broadcasts := csvimport.RefusalBroadcasts
+	switch channel {
+	case channels.SMS:
+		broadcasts = csvimport.RefusalEverything
+	case channels.Email, channels.Telegram:
 	}
 	return []csvimport.RefusalValue{
 		{Value: eligibility.SourceEverything, Refusal: csvimport.RefusalEverything},
-		{Value: eligibility.SourceBroadcasts, Refusal: csvimport.RefusalEverything},
+		{Value: eligibility.SourceBroadcasts, Refusal: broadcasts},
 	}
 }
 
-// suppressionReasons are the reasons of a Suppression an export writes, each recorded as a
-// Suppression (of the manual reason) in the importing Workspace.
-var suppressionReasons = []entsuppression.Reason{entsuppression.ReasonBounce, entsuppression.ReasonComplaint, entsuppression.ReasonManual}
+// suppressionReasons are the reasons of a Suppression an export writes, every reason the schema has,
+// each recorded as a Suppression (of the manual reason) in the importing Workspace.
+var suppressionReasons = entsuppression.Reason("").Values()
 
-// provenances are the provenances of a Confirmation an export writes, each recorded as an imported
-// Confirmation.
-var provenances = []confirmation.Provenance{
-	confirmation.ProvenanceDoubleOptIn, confirmation.ProvenanceGrandfathered,
-	confirmation.ProvenanceImported, confirmation.ProvenanceKeyword,
-}
+// provenances are the provenances of a Confirmation an export writes, every provenance the schema
+// has, each recorded as an imported Confirmation.
+var provenances = confirmation.Provenance("").Values()
 
 // channelPart is a header of a Channel's state: the Channel and the part of its state.
 type channelPart struct {
@@ -88,8 +83,9 @@ type exported struct {
 	fields map[string]customfield.Type
 	// sep is the decimal separator the proposal reads numbers with.
 	sep csvimport.DecimalSeparator
-	// brand is the brand the Confirmations an export carries were given to: the Workspace's name.
-	brand string
+	// role is the Role of the import's Member: a column it may not save (a new Custom field without
+	// custom_fields:manage, a Suppression without suppressions:manage) is not proposed.
+	role membership.Role
 }
 
 // column is the column proposed for header at, whose sample cells are cells (read back as written,
@@ -106,12 +102,15 @@ func (e exported) column(header string, at int, cells []string) (csvimport.Colum
 	}
 	switch cp.part {
 	case contactsexport.PartOptedOutScopes:
-		return csvimport.Column{Kind: csvimport.KindRefusal, Fact: &csvimport.Fact{Channel: string(cp.channel), Refusals: exportedRefusals(cp.channel)}}, true
+		return csvimport.Column{Kind: csvimport.KindRefusal, Fact: &csvimport.Fact{Channel: cp.channel, Refusals: exportedRefusals(cp.channel)}}, true
 	case contactsexport.PartSuppressionReason:
+		if !memberships.Allows(e.role, memberships.PermSuppressionsManage) {
+			return csvimport.Column{}, false
+		}
 		return csvimport.Column{Kind: csvimport.KindRefusal, Fact: &csvimport.Fact{
-			Channel: string(cp.channel),
-			Refusals: lo.Map(suppressionReasons, func(r entsuppression.Reason, _ int) csvimport.RefusalValue {
-				return csvimport.RefusalValue{Value: string(r), Refusal: csvimport.RefusalSuppression}
+			Channel: cp.channel,
+			Refusals: lo.Map(suppressionReasons, func(r string, _ int) csvimport.RefusalValue {
+				return csvimport.RefusalValue{Value: r, Refusal: csvimport.RefusalSuppression}
 			}),
 		}}, true
 	case contactsexport.PartConfirmation:
@@ -119,14 +118,13 @@ func (e exported) column(header string, at int, cells []string) (csvimport.Colum
 			return csvimport.Column{}, false
 		}
 		return csvimport.Column{Kind: csvimport.KindConsent, Fact: &csvimport.Fact{
-			Channel: string(cp.channel),
-			Values:  lo.Map(provenances, func(p confirmation.Provenance, _ int) string { return string(p) }),
+			Channel: cp.channel,
+			Values:  slices.Clone(provenances),
 			// The provenance is how the consent was collected, the closest an export holds to where.
-			Evidence: &csvimport.Evidence{
-				Wording: csvimport.EvidencePart{Text: exportedConsentWording},
-				Source:  csvimport.EvidencePart{Column: new(at)},
-				Brand:   csvimport.EvidencePart{Text: e.brand},
-			},
+			// The export holds neither the wording the person was shown nor the brand they agreed to:
+			// both are left blank, which the save refuses until the Member gives them, so no proof of
+			// consent is made up.
+			Evidence: &csvimport.Evidence{Source: csvimport.EvidencePart{Column: new(at)}},
 		}}, true
 	case contactsexport.PartOptedOutAt, contactsexport.PartConfirmedAt:
 		return csvimport.Column{Kind: csvimport.KindTime, DateFormat: csvimport.DateTimeRFC3339, Fact: &csvimport.Fact{}}, true
@@ -136,7 +134,7 @@ func (e exported) column(header string, at int, cells []string) (csvimport.Colum
 
 // customField is the column of an export's Custom field key: the Workspace's field of the key, else
 // a new field of the key, labelled by it and typed as its sample reads (newFieldType); none when
-// no new field may take the key.
+// no new field may take the key or the Member's Role may not create one.
 func (e exported) customField(key string, cells []string) (csvimport.Column, bool) {
 	if t, ok := e.fields[key]; ok {
 		col := csvimport.Column{Kind: csvimport.KindCustomField, Key: key}
@@ -145,7 +143,7 @@ func (e exported) customField(key string, cells []string) (csvimport.Column, boo
 		}
 		return col, true
 	}
-	if contacts.CheckNewCustomFieldKey(key, false) != nil {
+	if !memberships.Allows(e.role, memberships.PermCustomFieldsManage) || contacts.CheckNewCustomFieldKey(key, false) != nil {
 		return csvimport.Column{}, false
 	}
 	label, err := validation.Name(key)
@@ -157,15 +155,15 @@ func (e exported) customField(key string, cells []string) (csvimport.Column, boo
 }
 
 // newFieldType is the type a new Custom field is proposed in from the sample of its column: a
-// number when every non-blank cell reads as one, else a boolean, else a datetime in the one format
-// they all read in, else text (also when every cell is blank).
+// number when every non-blank cell reads as one and none is a code (codeLike), else a boolean, else
+// a datetime in the one format they all read in, else text (also when every cell is blank).
 func newFieldType(cells []string, sep csvimport.DecimalSeparator) (customfield.Type, csvimport.DateFormat) {
 	filled := lo.Filter(cells, func(c string, _ int) bool { return strings.TrimSpace(c) != "" })
 	reads := func(read func(string) csvimport.Reason) bool {
 		return len(filled) > 0 && lo.EveryBy(filled, func(c string) bool { return read(c) == "" })
 	}
 	switch {
-	case reads(func(c string) csvimport.Reason { _, r := contacts.ReadNumber(c, sep); return r }):
+	case !lo.SomeBy(filled, codeLike) && reads(func(c string) csvimport.Reason { _, r := contacts.ReadNumber(c, sep); return r }):
 		return customfield.TypeNumber, ""
 	case reads(func(c string) csvimport.Reason { _, r := contacts.ReadBool(c); return r }):
 		return customfield.TypeBool, ""
@@ -174,6 +172,14 @@ func newFieldType(cells []string, sep csvimport.DecimalSeparator) (customfield.T
 		return customfield.TypeDatetime, f
 	}
 	return customfield.TypeString, ""
+}
+
+// codeLike reports whether a cell that may read as a number is a code whose characters count: a
+// plus sign before it (a dialling code), or a zero before another digit (a postal code, `02134`),
+// which a number would lose.
+func codeLike(cell string) bool {
+	c := strings.TrimSpace(cell)
+	return strings.HasPrefix(c, "+") || (len(c) > 1 && c[0] == '0' && c[1] >= '0' && c[1] <= '9')
 }
 
 // times points each time column of an export at the column whose part it times (by header), and

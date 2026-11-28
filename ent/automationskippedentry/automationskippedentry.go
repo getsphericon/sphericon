@@ -251,3 +251,8 @@ func newFiringStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.M2O, false, FiringTable, FiringColumn),
 	)
 }
+
+// Values is every value of the Reason enum, in the schema's order.
+func (Reason) Values() []string {
+	return []string{"no_enrollment_key", "cycle", "active_enrollment", "once", "cooldown", "enrollment_ceiling", "missed", "send_locked"}
+}

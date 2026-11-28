@@ -485,6 +485,18 @@ func (c *InputsImpl) ContactExport(source site.SiteContactsExportParams) dataexp
 	dataexportOpenInput.Email = emailPtrIn(source.Email)
 	return dataexportOpenInput
 }
+func (c *InputsImpl) ContactImportConsentChannelIn(source site.ContactImportConsentChannel) channels.Channel {
+	var channelsChannel channels.Channel
+	switch source {
+	case site.ContactImportConsentChannelEmail:
+		channelsChannel = channels.Email
+	case site.ContactImportConsentChannelSMS:
+		channelsChannel = channels.SMS
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return channelsChannel
+}
 func (c *InputsImpl) ContactImportDateFormatIn(source site.ContactImportDateFormat) csvimport.DateFormat {
 	var csvimportDateFormat csvimport.DateFormat
 	switch source {
@@ -518,6 +530,20 @@ func (c *InputsImpl) ContactImportMapping(source *site.ContactImportMappingInput
 		// contactimportsMappingInput.Role: ignore
 	}
 	return contactimportsMappingInput
+}
+func (c *InputsImpl) ContactImportRefusalChannelIn(source site.ContactImportRefusalChannel) channels.Channel {
+	var channelsChannel channels.Channel
+	switch source {
+	case site.ContactImportRefusalChannelEmail:
+		channelsChannel = channels.Email
+	case site.ContactImportRefusalChannelSMS:
+		channelsChannel = channels.SMS
+	case site.ContactImportRefusalChannelTelegram:
+		channelsChannel = channels.Telegram
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return channelsChannel
 }
 func (c *InputsImpl) ContactImportRefusalIn(source site.ContactImportRefusal) csvimport.Refusal {
 	var csvimportRefusal csvimport.Refusal
@@ -1114,16 +1140,12 @@ func (c *InputsImpl) SecondFactorRequire(source *site.RevisionInput) workspacevi
 	}
 	return workspaceviewSetSecondFactorRequirementInput
 }
-func (c *InputsImpl) SegmentContactsPage(source site.SiteSegmentContactsListParams) (segments.ContactsInput, error) {
-	var segmentsContactsInput segments.ContactsInput
-	segmentsContactsInput.SegmentID = segmentIDPtrIn(source.SegmentId)
-	xint64, err := segmentCursorIn(source.Cursor)
-	if err != nil {
-		return segmentsContactsInput, err
-	}
-	segmentsContactsInput.After = xint64
-	segmentsContactsInput.Limit = limitIn(source.Limit)
-	return segmentsContactsInput, nil
+func (c *InputsImpl) SegmentContactsPage(source site.SiteSegmentContactsListParams) segments.PageInput {
+	var segmentsPageInput segments.PageInput
+	segmentsPageInput.SegmentID = int64(source.SegmentId)
+	segmentsPageInput.Cursor = stringIn(source.Cursor)
+	segmentsPageInput.Limit = limitIn(source.Limit)
+	return segmentsPageInput
 }
 func (c *InputsImpl) SegmentCreate(source *site.CreateSegmentInput) (segments.CreateInput, error) {
 	var segmentsCreateInput segments.CreateInput

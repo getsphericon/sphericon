@@ -257,10 +257,10 @@ type Inputs interface {
 	// The Contact a Data export names by its id or its email.
 	ContactExport(source siteapi.SiteContactsExportParams) dataexport.OpenInput
 	// The page of a Segment's Contacts a list reads after its cursor (ADR 0138).
-	// goverter:map SegmentId SegmentID | segmentIDPtrIn
-	// goverter:map Cursor After | segmentCursorIn
+	// goverter:map SegmentId SegmentID
+	// goverter:map Cursor | stringIn
 	// goverter:map Limit | limitIn
-	SegmentContactsPage(source siteapi.SiteSegmentContactsListParams) (segments.ContactsInput, error)
+	SegmentContactsPage(source siteapi.SiteSegmentContactsListParams) segments.PageInput
 	// The Contacts a CSV export takes and its columns (ADR 0138). The session is the request's,
 	// which the handler assigns.
 	// goverter:map SegmentId SegmentID
@@ -375,6 +375,10 @@ type Inputs interface {
 	ContactImportDateFormatIn(source siteapi.ContactImportDateFormat) csvimport.DateFormat
 	// goverter:enum:transform value
 	ContactImportRefusalIn(source siteapi.ContactImportRefusal) csvimport.Refusal
+	// goverter:enum:transform value
+	ContactImportRefusalChannelIn(source siteapi.ContactImportRefusalChannel) channels.Channel
+	// goverter:enum:transform value
+	ContactImportConsentChannelIn(source siteapi.ContactImportConsentChannel) channels.Channel
 	// The optional consent changed is the path's key, not the request's: the handler sets it.
 	// goverter:ignore Key
 	OptionalConsentChange(source *siteapi.SiteOptionalConsentChange) consentrecords.SetOptionalConsentInput
@@ -1097,15 +1101,6 @@ func revisionPtrIn(v siteapi.Revision) *int64 {
 	r := int64(v)
 	return &r
 }
-
-// segmentIDPtrIn is the Segment a path names, as the optional Segment of a read of Contacts.
-func segmentIDPtrIn(id siteapi.EntityId) *int64 {
-	v := int64(id)
-	return &v
-}
-
-// segmentCursorIn is the Contact id a page of a Segment's Contacts reads after.
-func segmentCursorIn(o siteapi.OptString) (int64, error) { return segments.Cursor(o.Or("")) }
 
 // limitIn is a page's size, 0 when the request names none.
 func limitIn(o siteapi.OptInt32) int { return int(o.Or(0)) }

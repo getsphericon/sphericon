@@ -20,7 +20,15 @@ import {
   zContactImportRefusal,
   zContactImportRefusalChannel,
 } from '../../generated/site/zod.gen.ts'
-import { consent, engagementTracking, refusal, time, timesFacts } from './importFacts.ts'
+import {
+  consent,
+  consentChannels,
+  engagementTracking,
+  keepsBroadcasts,
+  refusal,
+  time,
+  timesFacts,
+} from './importFacts.ts'
 import type { FactSettings } from './importFacts.ts'
 
 interface Props {
@@ -74,7 +82,7 @@ export function FactColumnEditor({
     telegram: t(($) => $.contactImports.facts.channels.telegram),
   }
   const channels = zContactImportRefusalChannel.options
-    .filter((channel) => kind === refusal || channel !== 'telegram')
+    .filter((channel) => kind === refusal || consentChannels[channel] !== null)
     .map((channel) => ({ value: channel, label: channelLabels[channel] }))
   const channelSelect = (
     <Select
@@ -98,7 +106,7 @@ export function FactColumnEditor({
       label: refusalLabels[value],
       disabled:
         (value === 'suppression' && !canSuppress) ||
-        (value === 'unsubscribeBroadcasts' && fact.channel !== 'email'),
+        (value === 'unsubscribeBroadcasts' && !keepsBroadcasts[fact.channel]),
     }))
     const setValue = (at: number, patch: Partial<FactSettings['refusals'][number]>) =>
       set({ refusals: fact.refusals.map((v, i) => (i === at ? { ...v, ...patch } : v)) })

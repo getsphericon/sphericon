@@ -4,7 +4,6 @@ import (
 	"context"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
 	"github.com/getsphericon/sphericon/internal/kernel/narrow"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
@@ -132,17 +131,13 @@ func (h *Handlers) SiteSegmentsPreview(ctx context.Context, req *siteapi.SitePre
 // like the Segment's count; Send-eligibility is subtracted only at send (ADR 0001). It is read by a
 // cursor on the Contact id (ADR 0138).
 func (h *Handlers) SiteSegmentContactsList(ctx context.Context, params siteapi.SiteSegmentContactsListParams) (*siteapi.SiteSegmentContactList, error) {
-	in, err := inputs.SegmentContactsPage(params)
+	page, err := h.segments.ContactsPage(ctx, workspaceScope(ctx), inputs.SegmentContactsPage(params))
 	if err != nil {
 		return nil, err
 	}
-	page, err := h.segments.Contacts(ctx, workspaceScope(ctx), in)
-	if err != nil {
-		return nil, err
-	}
-	out := &siteapi.SiteSegmentContactList{Items: mapper.ContactsToResources(page.Items)}
-	if page.Next != 0 {
-		out.NextCursor = siteapi.NewOptNilString(segments.NextCursor(page.Next))
+	out := &siteapi.SiteSegmentContactList{Items: mapper.ContactsToResources(page.Contacts)}
+	if page.Next != "" {
+		out.NextCursor = siteapi.NewOptNilString(page.Next)
 	}
 	return out, nil
 }

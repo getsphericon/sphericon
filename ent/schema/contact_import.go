@@ -43,6 +43,10 @@ func (ContactImport) Fields() []ent.Field {
 		field.Int64("membership_id").
 			Optional().
 			Nillable(),
+		// A snapshot of that Member's name at upload, no reference: the contact.import Audit entry
+		// names the Member who ran the import after they left the Workspace (ADR 0138).
+		field.String("member_name").
+			Immutable(),
 		// uploaded until a mapping is saved, ready to run, running while its job writes the rows,
 		// then done; cancelled and failed end it early. Moved only by the module's machine.
 		field.Enum("state").

@@ -4,6 +4,8 @@
 // contactimports module runs the import.
 package csvimport
 
+import "github.com/getsphericon/sphericon/internal/kernel/channels"
+
 // Kind is what a column of an import is: the kinds of the contract's ContactImportColumn union. A
 // kind added by a later column (consent, refusal, time, a new Custom field) is a constant here and
 // a reader of the contactimports module.
@@ -94,7 +96,7 @@ type Column struct {
 type Fact struct {
 	// Channel is the Channel of a refusal, consent or Engagement tracking column: email or sms,
 	// and telegram for a refusal.
-	Channel string `json:"channel,omitempty"`
+	Channel channels.Channel `json:"channel,omitempty"`
 	// Refusals are the values of a refusal column, each with what it records.
 	Refusals []RefusalValue `json:"refusals,omitempty"`
 	// Values mean consent in a consent column, and a grant in an Engagement tracking one.
@@ -120,14 +122,25 @@ type Mapping struct {
 	Tag string `json:"tag,omitempty"`
 }
 
-// DecimalSeparator is the character a file's numbers write their decimals after: the values of
-// the contract's ContactImportDecimalSeparator.
+// DecimalSeparator is the character a file's numbers write their decimals after, by name: the
+// values of the contract's ContactImportDecimalSeparator.
 type DecimalSeparator string
 
 const (
-	DecimalPoint DecimalSeparator = "."
-	DecimalComma DecimalSeparator = ","
+	DecimalPoint DecimalSeparator = "point"
+	DecimalComma DecimalSeparator = "comma"
 )
+
+// Char is the character the separator names, "" for none of them.
+func (d DecimalSeparator) Char() string {
+	switch d {
+	case DecimalPoint:
+		return "."
+	case DecimalComma:
+		return ","
+	}
+	return ""
+}
 
 // DateFormat is how a column writes its dates: the values of the contract's ContactImportDateFormat.
 type DateFormat string

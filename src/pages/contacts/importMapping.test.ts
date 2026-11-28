@@ -2,6 +2,7 @@ import { expect, test } from 'vitest'
 
 import type { ContactImportMapping } from '../../generated/site/types.gen.ts'
 import { zConfirmationProvenance, zSuppressionReason } from '../../generated/site/zod.gen.ts'
+import { emptyFact } from './importFacts.ts'
 import {
   columnsMissingDateFormat,
   mappingInputOf,
@@ -23,7 +24,7 @@ const proposal: ContactImportMapping = {
     { kind: 'tags' },
     { kind: 'ignore' },
   ],
-  decimalSeparator: ',',
+  decimalSeparator: 'comma',
   defaultCountry: null,
   tag: 'Imported 2026-11-27',
   onlyAddNew: false,
@@ -119,8 +120,9 @@ test('a time column needs its format before the run', () => {
   expect(columnsMissingDateFormat(cleared, fields)).toEqual([0])
 })
 
-// The proposal for a CSV export of Contacts (ADR 0138) holds every kind of column; a Member who
-// changes nothing saves it as it was proposed.
+// The proposal for a CSV export of Contacts (ADR 0138) holds every kind of column, its consent's
+// wording and brand null (an export holds neither); a Member who changes nothing sends it as it was
+// proposed, and the save refuses the blank evidence.
 const exportProposal: ContactImportMapping = {
   columns: [
     { kind: 'key', key: 'email' },
@@ -155,11 +157,11 @@ const exportProposal: ContactImportMapping = {
       channel: 'email',
       values: [...zConfirmationProvenance.options],
       evidence: {
-        wording: 'Consent given before this file was exported from another Workspace',
+        wording: null,
         wordingColumn: null,
         source: null,
         sourceColumn: 7,
-        brand: 'Globex',
+        brand: null,
         brandColumn: null,
       },
     },
@@ -167,7 +169,7 @@ const exportProposal: ContactImportMapping = {
     { kind: 'tags' },
     { kind: 'ignore' },
   ],
-  decimalSeparator: '.',
+  decimalSeparator: 'point',
   defaultCountry: null,
   tag: 'Imported 2026-11-27',
   onlyAddNew: false,
@@ -178,4 +180,21 @@ test("an export's proposal is saved as it was proposed", () => {
   const input = mappingInputOf(valuesOf(exportProposal), fields)
 
   expect(input).toEqual(exportProposal)
+})
+
+// A Telegram refusal column turned into a consent or tracking column, which Telegram has none of, is
+// never sent as one of email: the Member chooses its Channel first.
+test('a consent or tracking column on Telegram is not sent as one on email', () => {
+  for (const kind of ['consent', 'engagementTracking'] as const) {
+    const values = valuesOf(proposal)
+    values.columns[4] = {
+      target: kind,
+      dateFormat: null,
+      fact: { ...emptyFact(), channel: 'telegram', values: ['yes'] },
+    }
+
+    expect(() => mappingInputOf(values, fields)).toThrow(
+      'a consent or tracking column is not on telegram',
+    )
+  }
 })

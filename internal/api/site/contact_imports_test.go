@@ -91,7 +91,7 @@ func TestAContactImportIsForMembersHoldingContactsImport(t *testing.T) {
 
 	_, upload := uploadCSV(t, member, "email\na@example.com\n")
 	_, get := member.SiteContactImportsGet(ctx, siteapi.SiteContactImportsGetParams{WorkspaceId: ws, ImportId: id})
-	_, save := member.SiteContactImportsSaveMapping(ctx, &siteapi.ContactImportMappingInput{Columns: []siteapi.ContactImportColumnInput{}, DecimalSeparator: siteapi.ContactImportDecimalSeparator_Dot, DefaultCountry: siteapi.NilCountryCode{Null: true}, Tag: siteapi.NilName{Null: true}}, siteapi.SiteContactImportsSaveMappingParams{WorkspaceId: ws, ImportId: id})
+	_, save := member.SiteContactImportsSaveMapping(ctx, &siteapi.ContactImportMappingInput{Columns: []siteapi.ContactImportColumnInput{}, DecimalSeparator: siteapi.ContactImportDecimalSeparatorPoint, DefaultCountry: siteapi.NilCountryCode{Null: true}, Tag: siteapi.NilName{Null: true}}, siteapi.SiteContactImportsSaveMappingParams{WorkspaceId: ws, ImportId: id})
 	_, preview := member.SiteContactImportsPreview(ctx, siteapi.SiteContactImportsPreviewParams{WorkspaceId: ws, ImportId: id})
 	_, run := member.SiteContactImportsRun(ctx, siteapi.SiteContactImportsRunParams{WorkspaceId: ws, ImportId: id})
 	_, link := member.SiteContactImportsReportLink(ctx, siteapi.SiteContactImportsReportLinkParams{WorkspaceId: ws, ImportId: id})
@@ -116,7 +116,7 @@ func TestAContactImportUploadsAFileWithABOMAndSemicolons(t *testing.T) {
 	assert.Equal(t, []string{"Email", "First name", "birthday", "Notes", "email"}, imp.Header)
 	assert.Equal(t, int32(2), imp.Rows)
 	assert.Equal(t, int32(1), imp.MalformedRows)
-	assert.Equal(t, siteapi.ContactImportDecimalSeparator_, imp.Mapping.DecimalSeparator)
+	assert.Equal(t, siteapi.ContactImportDecimalSeparatorComma, imp.Mapping.DecimalSeparator)
 	require.Len(t, imp.Mapping.Columns, 5)
 	assert.Equal(t, siteapi.ContactImportKeyEmail, imp.Mapping.Columns[0].OneOf.ContactImportKeyColumn.Key)
 	assert.Equal(t, siteapi.ContactImportAttributeFirstName, imp.Mapping.Columns[1].OneOf.ContactImportAttributeColumn.Attribute)

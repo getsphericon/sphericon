@@ -12,7 +12,8 @@ import (
 // NewPeople is the New people report: the Contacts created in the window, per Report day and
 // by Contact source.
 type NewPeople struct {
-	// Total is every Contact created in the window.
+	// Total is every Contact that signed up in the window: an imported Contact is shown in its
+	// series but is no sign-up of the window (ADR 0138).
 	Total  int
 	Series []NewPeoplePoint
 }
@@ -52,15 +53,17 @@ func (m *UseCase) NewPeople(ctx context.Context, s *ent.Scoped, w Window) (*NewP
 		switch r.Source {
 		case contact.SourceManual:
 			p.Manual += r.Count
+			report.Total += r.Count
 		case contact.SourceAPI:
 			p.API += r.Count
+			report.Total += r.Count
 		case contact.SourceTracker:
 			p.Tracker += r.Count
+			report.Total += r.Count
 		case contact.SourceImport:
 			p.Import += r.Count
 		}
 		byDay[r.Day] = p
-		report.Total += r.Count
 	}
 	report.Series = zeroFilled(days, byDay, func(p *NewPeoplePoint, day string) { p.Date = day })
 	return report, nil

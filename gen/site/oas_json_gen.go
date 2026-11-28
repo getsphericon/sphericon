@@ -17272,10 +17272,10 @@ func (s *ContactImportDecimalSeparator) Decode(d *jx.Decoder) error {
 	}
 	// Try to use constant string.
 	switch ContactImportDecimalSeparator(v) {
-	case ContactImportDecimalSeparator_Dot:
-		*s = ContactImportDecimalSeparator_Dot
-	case ContactImportDecimalSeparator_:
-		*s = ContactImportDecimalSeparator_
+	case ContactImportDecimalSeparatorPoint:
+		*s = ContactImportDecimalSeparatorPoint
+	case ContactImportDecimalSeparatorComma:
+		*s = ContactImportDecimalSeparatorComma
 	default:
 		*s = ContactImportDecimalSeparator(v)
 	}

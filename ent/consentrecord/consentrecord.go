@@ -211,3 +211,13 @@ func newVersionStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.M2O, true, VersionTable, VersionColumn),
 	)
 }
+
+// Values is every value of the Decision enum, in the schema's order.
+func (Decision) Values() []string {
+	return []string{"accepted", "declined", "withdrawn", "shown"}
+}
+
+// Values is every value of the Source enum, in the schema's order.
+func (Source) Values() []string {
+	return []string{"sign_up_form", "provider_screen", "invitation", "re_acceptance", "account_settings"}
+}

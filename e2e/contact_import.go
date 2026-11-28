@@ -34,10 +34,21 @@ func (w *Workspace) ImportCSVAsNewSignUps(file, tag string) *siteapi.SiteContact
 }
 
 // ImportCSVAsProposed imports a CSV file as ImportCSV does, saving the mapping the app proposes
-// from its header without changing anything, the Tag for every row included.
+// from its header, the Tag for every row included, with nothing changed but what a proposal leaves
+// to the Member: the wording and the brand of a consent column's evidence.
 func (w *Workspace) ImportCSVAsProposed(file string) *siteapi.SiteContactImport {
 	w.t.Helper()
-	return w.importCSV(file, func(*siteapi.ContactImportMappingInput) {})
+	return w.importCSV(file, func(in *siteapi.ContactImportMappingInput) {
+		for i := range in.Columns {
+			consent, ok := in.Columns[i].OneOf.GetContactImportConsentColumnInput()
+			if !ok {
+				continue
+			}
+			consent.Evidence.Wording = siteapi.NewNilString("Send me news")
+			consent.Evidence.Brand = siteapi.NewNilString("Acme")
+			in.Columns[i].OneOf.SetContactImportConsentColumnInput(consent)
+		}
+	})
 }
 
 // ExportCSV downloads the CSV export of every Contact of the Workspace with every column, as its

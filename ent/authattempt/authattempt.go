@@ -130,3 +130,8 @@ func ByFailures(opts ...sql.OrderTermOption) OrderOption {
 func ByLastAttemptAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldLastAttemptAt, opts...).ToFunc()
 }
+
+// Values is every value of the Kind enum, in the schema's order.
+func (Kind) Values() []string {
+	return []string{"login", "staff_login", "password_reset", "sign_up", "email_change", "test_send_user", "test_send_workspace", "confirmation"}
+}

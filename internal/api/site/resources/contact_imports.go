@@ -2,7 +2,7 @@ package resources
 
 import (
 	"io"
-	"time"
+	"net/url"
 
 	"github.com/samber/lo"
 
@@ -10,13 +10,14 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contactimports"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
 	"github.com/getsphericon/sphericon/internal/kernel/csvimport"
+	"github.com/getsphericon/sphericon/internal/kernel/paths"
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 )
 
-// DownloadLinkView is a download link as the answer shows it: the path the browser follows,
-// which the handler builds from the link's token, and when the link expires.
-type DownloadLinkView struct {
-	URL       string
-	ExpiresAt time.Time
+// contactImportReportURL is the path the browser follows to download an import's refused rows'
+// report: the contract's SiteContactImports report under the /site prefix (ADR 0138).
+func contactImportReportURL(l contactimports.ReportLink) string {
+	return paths.Site + "/workspaces/" + url.PathEscape(l.Workspace) + "/contact-imports/" + publicid.Encode(l.ImportID) + "/report/" + url.PathEscape(l.Token)
 }
 
 // contactImportMapping is the mapping of an import in the contract's shape: each column by its
@@ -164,12 +165,12 @@ func contactImportFactColumn(c Converter, col csvimport.Column, format siteapi.N
 			values[i] = siteapi.ContactImportRefusalValue{Value: v.Value, Refusal: c.ContactImportRefusal(v.Refusal)}
 		}
 		return siteapi.ContactImportColumn{OneOf: siteapi.NewContactImportRefusalColumnContactImportColumnSum(siteapi.ContactImportRefusalColumn{
-			Kind: siteapi.ContactImportRefusalColumnKindRefusal, Channel: siteapi.ContactImportRefusalChannel(fact.Channel), Values: values,
+			Kind: siteapi.ContactImportRefusalColumnKindRefusal, Channel: c.ContactImportRefusalChannel(fact.Channel), Values: values,
 		})}
 	case csvimport.KindConsent:
 		ev := lo.FromPtr(fact.Evidence)
 		return siteapi.ContactImportColumn{OneOf: siteapi.NewContactImportConsentColumnContactImportColumnSum(siteapi.ContactImportConsentColumn{
-			Kind: siteapi.ContactImportConsentColumnKindConsent, Channel: siteapi.ContactImportConsentChannel(fact.Channel),
+			Kind: siteapi.ContactImportConsentColumnKindConsent, Channel: c.ContactImportConsentChannel(fact.Channel),
 			Values: lo.CoalesceSliceOrEmpty(fact.Values),
 			Evidence: siteapi.ContactImportConsentEvidence{
 				Wording: evidenceText(ev.Wording), WordingColumn: evidenceColumn(ev.Wording),
@@ -179,19 +180,23 @@ func contactImportFactColumn(c Converter, col csvimport.Column, format siteapi.N
 		})}
 	case csvimport.KindEngagementTracking:
 		return siteapi.ContactImportColumn{OneOf: siteapi.NewContactImportEngagementTrackingColumnContactImportColumnSum(siteapi.ContactImportEngagementTrackingColumn{
-			Kind: siteapi.ContactImportEngagementTrackingColumnKindEngagementTracking, Channel: siteapi.ContactImportConsentChannel(fact.Channel),
+			Kind: siteapi.ContactImportEngagementTrackingColumnKindEngagementTracking, Channel: c.ContactImportConsentChannel(fact.Channel),
 			Granted: lo.CoalesceSliceOrEmpty(fact.Values), Denied: lo.CoalesceSliceOrEmpty(fact.Denied),
 		})}
-	default:
+	case csvimport.KindTime:
+		return siteapi.ContactImportColumn{OneOf: siteapi.NewContactImportTimeColumnContactImportColumnSum(siteapi.ContactImportTimeColumn{
+			Kind: siteapi.ContactImportTimeColumnKindTime, Of: nilColumn(fact.Of), DateFormat: format,
+		})}
+	case csvimport.KindKey, csvimport.KindAttribute, csvimport.KindCustomField, csvimport.KindNewCustomField,
+		csvimport.KindTags, csvimport.KindIgnore:
+		// No fact column: contactImportColumn maps it.
 	}
-	return siteapi.ContactImportColumn{OneOf: siteapi.NewContactImportTimeColumnContactImportColumnSum(siteapi.ContactImportTimeColumn{
-		Kind: siteapi.ContactImportTimeColumnKindTime, Of: nilColumn(fact.Of), DateFormat: format,
-	})}
+	return siteapi.ContactImportColumn{}
 }
 
-// evidenceText is the text of an evidence part, null when a column holds it.
+// evidenceText is the text of an evidence part, null when a column holds it or none is given yet.
 func evidenceText(p csvimport.EvidencePart) siteapi.NilString {
-	if p.Column != nil {
+	if p.Column != nil || p.Text == "" {
 		return siteapi.NilString{Null: true}
 	}
 	return siteapi.NewNilString(p.Text)
@@ -218,30 +223,38 @@ func contactImportFactColumnIn(c Inputs, col *siteapi.ContactImportColumnInput) 
 		for i, value := range v.Values {
 			values[i] = csvimport.RefusalValue{Value: value.Value, Refusal: c.ContactImportRefusalIn(value.Refusal)}
 		}
-		return csvimport.Column{Kind: csvimport.KindRefusal, Fact: &csvimport.Fact{Channel: string(v.Channel), Refusals: values}}
+		return csvimport.Column{Kind: csvimport.KindRefusal, Fact: &csvimport.Fact{Channel: c.ContactImportRefusalChannelIn(v.Channel), Refusals: values}}
 	case siteapi.ContactImportConsentColumnInputContactImportColumnInputSum:
 		v := col.OneOf.ContactImportConsentColumnInput
 		ev := v.Evidence
-		return csvimport.Column{Kind: csvimport.KindConsent, Fact: &csvimport.Fact{Channel: string(v.Channel), Values: v.Values, Evidence: &csvimport.Evidence{
+		return csvimport.Column{Kind: csvimport.KindConsent, Fact: &csvimport.Fact{Channel: c.ContactImportConsentChannelIn(v.Channel), Values: v.Values, Evidence: &csvimport.Evidence{
 			Wording: evidencePartIn(ev.Wording, ev.WordingColumn),
 			Source:  evidencePartIn(ev.Source, ev.SourceColumn),
 			Brand:   evidencePartIn(ev.Brand, ev.BrandColumn),
 		}}}
 	case siteapi.ContactImportEngagementTrackingColumnInputContactImportColumnInputSum:
 		v := col.OneOf.ContactImportEngagementTrackingColumnInput
-		return csvimport.Column{Kind: csvimport.KindEngagementTracking, Fact: &csvimport.Fact{Channel: string(v.Channel), Values: v.Granted, Denied: v.Denied}}
-	default:
+		return csvimport.Column{Kind: csvimport.KindEngagementTracking, Fact: &csvimport.Fact{Channel: c.ContactImportConsentChannelIn(v.Channel), Values: v.Granted, Denied: v.Denied}}
+	case siteapi.ContactImportTimeColumnInputContactImportColumnInputSum:
+		v := col.OneOf.ContactImportTimeColumnInput
+		var format csvimport.DateFormat
+		if f, ok := v.DateFormat.Get(); ok {
+			format = c.ContactImportDateFormatIn(f)
+		}
+		fact := &csvimport.Fact{}
+		if of, ok := v.Of.Get(); ok {
+			fact.Of = new(int(of))
+		}
+		return csvimport.Column{Kind: csvimport.KindTime, DateFormat: format, Fact: fact}
+	case siteapi.ContactImportKeyColumnInputContactImportColumnInputSum,
+		siteapi.ContactImportAttributeColumnInputContactImportColumnInputSum,
+		siteapi.ContactImportCustomFieldColumnInputContactImportColumnInputSum,
+		siteapi.ContactImportNewCustomFieldColumnInputContactImportColumnInputSum,
+		siteapi.ContactImportTagsColumnInputContactImportColumnInputSum,
+		siteapi.ContactImportIgnoreColumnInputContactImportColumnInputSum:
+		// No fact column: contactImportColumnIn maps it.
 	}
-	v := col.OneOf.ContactImportTimeColumnInput
-	var format csvimport.DateFormat
-	if f, ok := v.DateFormat.Get(); ok {
-		format = c.ContactImportDateFormatIn(f)
-	}
-	fact := &csvimport.Fact{}
-	if of, ok := v.Of.Get(); ok {
-		fact.Of = new(int(of))
-	}
-	return csvimport.Column{Kind: csvimport.KindTime, DateFormat: format, Fact: fact}
+	return csvimport.Column{}
 }
 
 // evidencePartIn is an evidence part a request gives: its text, or the column that holds it.

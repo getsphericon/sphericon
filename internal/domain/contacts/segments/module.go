@@ -18,7 +18,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
-	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
@@ -40,21 +39,6 @@ var (
 	// ErrBadCursor: a cursor of a Segment's Contacts that no page handed out.
 	ErrBadCursor = validation.UnknownReference("segments: invalid cursor", i18n.ErrorsSegmentCursorInvalid)
 )
-
-// Cursor reads the cursor of a page of a Segment's Contacts, a Contact id: empty is the first page.
-func Cursor(cursor string) (int64, error) {
-	if cursor == "" {
-		return 0, nil
-	}
-	after, err := publicid.Decode(cursor)
-	if err != nil || after < 1 {
-		return 0, ErrBadCursor
-	}
-	return after, nil
-}
-
-// NextCursor is the cursor of the page after the Contact id next.
-func NextCursor(next int64) string { return publicid.Encode(next) }
 
 // RefuseUnknownSender is the refusal of a Condition whose event test's filter names the sender n,
 // which the Workspace does not have: the segment saving use case asks messagesenders, a module
@@ -227,6 +211,40 @@ type ContactsInput struct {
 	// Limit is the most Contacts on the page, the contract's default page size when below 1. It is
 	// not held to the contract's maximum: an export reads larger pages.
 	Limit int
+}
+
+// PageInput names a page of a stored Segment's Contacts as a client reads them: by the cursor the
+// page before handed out, empty for the first.
+type PageInput struct {
+	SegmentID int64
+	Cursor    string
+	// Limit is as ContactsInput's.
+	Limit int
+}
+
+// ContactPage is a page of a Segment's Contacts and the cursor of the page after it, empty on the
+// last.
+type ContactPage struct {
+	Contacts []*ent.Contact
+	Next     string
+}
+
+// ContactsPage is Contacts read by the cursor a page handed out (pagination.IDCursor): one no page
+// handed out is ErrBadCursor.
+func (s *Module) ContactsPage(ctx context.Context, ws *ent.Scoped, in PageInput) (ContactPage, error) {
+	after, ok := pagination.ParseIDCursor(in.Cursor)
+	if !ok {
+		return ContactPage{}, ErrBadCursor
+	}
+	page, err := s.Contacts(ctx, ws, ContactsInput{SegmentID: &in.SegmentID, After: after, Limit: in.Limit})
+	if err != nil {
+		return ContactPage{}, err
+	}
+	out := ContactPage{Contacts: page.Items}
+	if page.Next > 0 {
+		out.Next = pagination.IDCursor(page.Next)
+	}
+	return out, nil
 }
 
 // Contacts returns one page of the Contacts a stored Segment matches, evaluated live, or of every

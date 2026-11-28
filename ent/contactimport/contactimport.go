@@ -23,6 +23,8 @@ const (
 	FieldWorkspaceID = "workspace_id"
 	// FieldMembershipID holds the string denoting the membership_id field in the database.
 	FieldMembershipID = "membership_id"
+	// FieldMemberName holds the string denoting the member_name field in the database.
+	FieldMemberName = "member_name"
 	// FieldState holds the string denoting the state field in the database.
 	FieldState = "state"
 	// FieldDelimiter holds the string denoting the delimiter field in the database.
@@ -120,6 +122,7 @@ var Columns = []string{
 	FieldUpdatedAt,
 	FieldWorkspaceID,
 	FieldMembershipID,
+	FieldMemberName,
 	FieldState,
 	FieldDelimiter,
 	FieldHeader,
@@ -274,6 +277,11 @@ func ByWorkspaceID(opts ...sql.OrderTermOption) OrderOption {
 // ByMembershipID orders the results by the membership_id field.
 func ByMembershipID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldMembershipID, opts...).ToFunc()
+}
+
+// ByMemberName orders the results by the member_name field.
+func ByMemberName(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldMemberName, opts...).ToFunc()
 }
 
 // ByState orders the results by the state field.
@@ -459,4 +467,14 @@ func newReportRowsStep() *sqlgraph.Step {
 		sqlgraph.To(ReportRowsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, ReportRowsTable, ReportRowsColumn),
 	)
+}
+
+// Values is every value of the State enum, in the schema's order.
+func (State) Values() []string {
+	return []string{"uploaded", "ready", "running", "cancelled", "failed", "done"}
+}
+
+// Values is every value of the Delimiter enum, in the schema's order.
+func (Delimiter) Values() []string {
+	return []string{"comma", "semicolon", "tab"}
 }

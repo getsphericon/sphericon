@@ -18,7 +18,13 @@ valid:
     func read(r io.Reader) ([][]string, error) {
     	return csv.NewReader(r).ReadAll()
     }
+  - |
+    import "encoding/csv"
 invalid:
+  - |
+    import enc "encoding/csv"
+  - |
+    import . "encoding/csv"
   - |
     func export(buf *bytes.Buffer, rows [][]string) error {
     	return csv.NewWriter(buf).WriteAll(rows)

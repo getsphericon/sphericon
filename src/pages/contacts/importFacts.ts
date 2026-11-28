@@ -69,9 +69,29 @@ export function factOf(column: ContactImportColumn): FactSettings | undefined {
   return column.kind === 'time' ? { ...fact, of: column.of } : undefined
 }
 
-// The channel of a consent or tracking column: email or sms, email for a refusal's telegram.
+// The Channel a consent or tracking column of each Channel is on: email and sms, none on Telegram,
+// which has neither (a Binding is its opt-in).
+export const consentChannels: Record<
+  ContactImportRefusalChannel,
+  ContactImportConsentChannel | null
+> = { email: 'email', sms: 'sms', telegram: null }
+
+// Whether an opt-out of broadcasts is kept on each Channel: on email and Telegram; on SMS a person
+// stops everything.
+export const keepsBroadcasts: Record<ContactImportRefusalChannel, boolean> = {
+  email: true,
+  sms: false,
+  telegram: true,
+}
+
+// The channel of a consent or tracking column. A column left on Telegram (a refusal column turned
+// into one) has none, which the form refuses before a save: it is never sent as another Channel's.
 function consentChannel(fact: FactSettings): ContactImportConsentChannel {
-  return fact.channel === 'sms' ? 'sms' : 'email'
+  const channel = consentChannels[fact.channel]
+  if (channel === null) {
+    throw new Error(`a consent or tracking column is not on ${fact.channel}`)
+  }
+  return channel
 }
 
 // A text given once, null when blank (a column holds it then).

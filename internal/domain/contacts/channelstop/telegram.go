@@ -1,6 +1,7 @@
 package channelstop
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"slices"
@@ -42,10 +43,13 @@ type TelegramStop struct {
 	At time.Time
 	// DedupKey is the key of the fact the stop came from: the events derive theirs from it.
 	DedupKey string
+	// Source is the sending source the user stopped: empty is `everything`, a stop in the chat;
+	// an import brings `broadcasts` too (TelegramUnsubscribe).
+	Source string
 }
 
-// StopTelegram records the Channel-wide opt-out of the user (scope `everything`, Channel
-// `telegram`, the Destination) and telegram.unsubscribed for every Contact the Destination is
+// StopTelegram records the opt-out of the user (its Source, `everything` by default, on Channel
+// `telegram` for the Destination) and telegram.unsubscribed for every Contact the Destination is
 // Bound to, on any bot or through a Visitor. A Destination nobody is Bound to still gets the
 // opt-out, and nothing else. It is idempotent: a user already opted out changes nothing and
 // records no second event. A stop older than the user's opt-out state (a return of theirs
@@ -60,7 +64,7 @@ func (m *Module) StopTelegram(ctx context.Context, s *ent.Scoped, st TelegramSto
 		contactIDs = append([]int64{st.ContactID}, contactIDs...)
 	}
 	o := unsubscribes.OptOut{
-		Channel: channels.Telegram, Destination: st.Destination, Source: eligibility.SourceEverything,
+		Channel: channels.Telegram, Destination: st.Destination, Source: cmp.Or(st.Source, eligibility.SourceEverything),
 		// The ways of stopping (events.UnsubscribedBy*) are the row's own values.
 		Via: unsubscribe.Via(st.Via),
 		At:  consentstamps.Occurrence{At: st.At, IntegrationID: st.IntegrationID, Sequence: st.Sequence},
@@ -135,20 +139,23 @@ func contactsOf(ctx context.Context, s *ent.Scoped, destination string) ([]int64
 }
 
 // ErrTelegramSource refuses a hand-recorded Telegram opt-out of a narrower source: it is
-// Channel-wide.
+// Channel-wide. An imported one may be of `broadcasts` too.
 var ErrTelegramSource = validation.RefuseField(fieldname.SendingSource, "consent: a telegram opt-out is for everything", i18n.ErrorsSendingSourceTelegram)
 
 // TelegramUnsubscribe records the Channel-wide opt-out of a Telegram user id that reached the
 // Workspace by another route (HandStop), with the effects of the user stopping in Telegram
 // (StopTelegram): the row and telegram.unsubscribed for every Contact the id is Bound to. Such an
 // opt-out is Channel-wide: only the `everything` source is accepted here; a source-scoped one
-// comes from the link in a message (the unsubscribe use case). Idempotent.
+// comes from the link in a message (the unsubscribe use case), or from an import
+// (events.UnsubscribedByImported), which keeps an opt-out of `broadcasts` as the link recorded it
+// in the Workspace it came from (ADR 0138). Idempotent.
 func (m *Module) TelegramUnsubscribe(ctx context.Context, s *ent.Scoped, in HandStop) (*ent.Unsubscribe, error) {
 	dest, err := unsubscribes.Destination(channels.Telegram, in.Destination)
 	if err != nil {
 		return nil, err
 	}
-	if in.Source != eligibility.SourceEverything {
+	imported := in.Via == events.UnsubscribedByImported && in.Source == eligibility.SourceBroadcasts
+	if in.Source != eligibility.SourceEverything && !imported {
 		return nil, ErrTelegramSource
 	}
 	at := in.At
@@ -157,7 +164,7 @@ func (m *Module) TelegramUnsubscribe(ctx context.Context, s *ent.Scoped, in Hand
 	}
 	err = m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		return m.StopTelegram(ctx, ts, TelegramStop{
-			Destination: dest, Via: in.Via, At: at,
+			Destination: dest, Via: in.Via, At: at, Source: in.Source,
 			DedupKey: in.Via + ":" + dest + ":" + strconv.FormatInt(at.UnixNano(), 10),
 		})
 	})

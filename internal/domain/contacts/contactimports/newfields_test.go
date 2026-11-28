@@ -104,3 +104,30 @@ func TestRunningAnImportRefusesANewCustomFieldWhoseKeyWasTakenSinceSaving(t *tes
 	assert.Equal(t, customfield.TypeString, field.Type)
 	assert.Equal(t, contactimport.StateReady, ready.Import.State)
 }
+
+// The proposal for an export asks no more than its Member's Role holds: without
+// custom_fields:manage an unknown Custom field's column is ignored instead of creating a field, and
+// without suppressions:manage a Suppression column is ignored, while the opt-outs, which any Member
+// may record, are still proposed. The Role holding both gets both proposed.
+func TestAnExportsProposalAsksNoMoreThanTheMembersRole(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	acme := env.DB.Scoped(fixtures.AcmeID)
+	imports := testhelper.Module[*contactimports.Module](env)
+	file := "email,customFields.visits,email.optedOutScopes,email.suppressionReason\nann@example.com,3,everything,bounce\n"
+	kinds := func(membershipID int64) []csvimport.Kind {
+		uploaded, err := imports.Upload(ctx, acme, contactimports.UploadInput{File: strings.NewReader(file), MembershipID: membershipID})
+		require.NoError(t, err)
+		out := make([]csvimport.Kind, 0, len(uploaded.Mapping.Columns))
+		for _, c := range uploaded.Mapping.Columns {
+			out = append(out, c.Kind)
+		}
+		return out
+	}
+
+	member := kinds(fixtures.AcmeMemberMembershipID)
+	owner := kinds(fixtures.AcmeOwnerMembershipID)
+
+	assert.Equal(t, []csvimport.Kind{csvimport.KindKey, csvimport.KindIgnore, csvimport.KindRefusal, csvimport.KindIgnore}, member)
+	assert.Equal(t, []csvimport.Kind{csvimport.KindKey, csvimport.KindNewCustomField, csvimport.KindRefusal, csvimport.KindRefusal}, owner)
+}

@@ -49,6 +49,7 @@ import {
 } from '../../generated/site/zod.gen.ts'
 import { useConfirmation } from '../../hooks/useConfirmation.tsx'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
+import { useSchemaForm } from '../../resources/schemaForm.ts'
 import { Route as importPageRoute } from '../../routes/workspaces/$workspaceId/contacts/imports/$importId.tsx'
 import { countryOptions } from '../../utils/countries.ts'
 import { can } from '../../utils/permissions.ts'
@@ -64,16 +65,16 @@ import {
 } from './importFacts.ts'
 import {
   choiceWritesDate,
-  columnsMissingDateFormat,
+  columnFieldOf,
   ignore,
-  mappingInputOf,
+  mappingSchema,
   newCustomField,
   newFieldFor,
   tags,
   targets,
   valuesOf,
 } from './importMapping.ts'
-import type { FieldOption, MappingValues, NewFieldChoice } from './importMapping.ts'
+import type { FieldOption, NewFieldChoice } from './importMapping.ts'
 
 // A CSV import's page (ADR 0138): the mapping of its columns and its preview before it runs, its
 // progress while it runs, and what it wrote with its refused rows' report after.
@@ -172,10 +173,19 @@ function MappingForm({ workspaceId, imp }: { workspaceId: string; imp: SiteConta
   // everyone else.
   const { data: workspace } = useQuery(workspaceOptions(workspaceId))
   const canCreateFields = can(workspace, 'custom_fields:manage')
-  const [values, setValues] = useState<MappingValues>(() => valuesOf(imp.mapping))
+  // Whether the mapping as it stands was saved and its preview asked for: the run's prerequisite.
   const [previewed, setPreviewed] = useState(false)
-  // Edits not saved yet, which leaving the page would lose.
-  const [dirty, setDirty] = useState(false)
+  // A refusal of the save that names no column the form shows (a Permission).
+  const [saveError, setSaveError] = useState<unknown>(null)
+  const form = useSchemaForm(
+    mappingSchema(fields, {
+      dateFormat: t(($) => $.contactImports.dateFormatRequired),
+      consentChannel: t(($) => $.contactImports.facts.consentChannelRequired),
+    }),
+    valuesOf(imp.mapping),
+    () => setPreviewed(false),
+  )
+  const values = form.values
   const path = { workspaceId, importId: imp.id }
   const refresh = () =>
     void queryClient.invalidateQueries({ queryKey: siteContactImportsGetQueryKey({ path }) })
@@ -183,8 +193,16 @@ function MappingForm({ workspaceId, imp }: { workspaceId: string; imp: SiteConta
     ...siteContactImportsSaveMappingMutation(),
     onSuccess: () => {
       setPreviewed(true)
-      setDirty(false)
+      setSaveError(null)
+      form.resetDirty()
       void queryClient.invalidateQueries({ queryKey: siteContactImportsPreviewQueryKey({ path }) })
+    },
+    onError: (error) => {
+      // A refusal of a column shows under its control; only what no field shows is an alert.
+      const unplaced = form.showFieldErrors(error, (field) =>
+        columnFieldOf(field, form.getValues(), fields),
+      )
+      setSaveError(unplaced === undefined ? null : error)
     },
   })
   const run = useMutation({ ...siteContactImportsRunMutation(), onSuccess: refresh })
@@ -192,7 +210,6 @@ function MappingForm({ workspaceId, imp }: { workspaceId: string; imp: SiteConta
     ...siteContactImportsPreviewOptions({ path }),
     enabled: previewed && save.isSuccess,
   })
-  const missing = columnsMissingDateFormat(values, fields)
   const all = targets(fields)
   const targetData = [
     { value: ignore, label: t(($) => $.contactImports.ignore) },
@@ -239,191 +256,180 @@ function MappingForm({ workspaceId, imp }: { workspaceId: string; imp: SiteConta
       t(($) => $.contactImports.dateTime),
     ),
   }))
-  const setColumn = (at: number, patch: Partial<MappingValues['columns'][number]>) => {
-    setDirty(true)
-    setValues((prev) => ({
-      ...prev,
-      columns: prev.columns.map((choice, i) => (i === at ? { ...choice, ...patch } : choice)),
-    }))
-  }
-  const edit = (patch: Partial<MappingValues>) => {
-    setDirty(true)
-    setValues((prev) => ({ ...prev, ...patch }))
-    setPreviewed(false)
-  }
 
   return (
-    <Stack>
-      <LeaveDialog dirty={dirty} message={t(($) => $.contactImports.leaveMessage)} />
-      <Title order={3}>{t(($) => $.contactImports.mappingTitle)}</Title>
-      <Table striped>
-        <Table.Thead>
-          <Table.Tr>
-            <Table.Th>{t(($) => $.contactImports.column)}</Table.Th>
-            <Table.Th>{t(($) => $.contactImports.writes)}</Table.Th>
-            <Table.Th>{t(($) => $.contactImports.dateFormat)}</Table.Th>
-          </Table.Tr>
-        </Table.Thead>
-        <Table.Tbody>
-          {imp.header.map((header, at) => {
-            const choice = values.columns[at] ?? { target: ignore, dateFormat: null }
-            const fact = factTargets.includes(choice.target) ? choice.fact : undefined
-            return (
-              <Fragment key={at}>
-                <Table.Tr>
-                  <Table.Td>{header === '' ? '-' : header}</Table.Td>
-                  <Table.Td>
-                    <Select
-                      aria-label={t(($) => $.contactImports.writesColumn, { column: header })}
-                      data={targetData}
-                      value={choice.target}
-                      allowDeselect={false}
-                      searchable
-                      onChange={(target) => {
-                        const next = target ?? ignore
-                        setColumn(at, {
-                          target: next,
-                          newField: choice.newField ?? newFieldFor(header),
-                          fact: factTargets.includes(next)
-                            ? (choice.fact ?? emptyFact())
-                            : undefined,
-                        })
-                        setPreviewed(false)
-                      }}
-                    />
-                    {choice.target === newCustomField ? (
-                      <NewFieldInputs
-                        column={header}
-                        field={choice.newField ?? newFieldFor(header)}
-                        onChange={(newField) => {
-                          setColumn(at, { newField })
-                          setPreviewed(false)
-                        }}
-                      />
-                    ) : null}
-                  </Table.Td>
-                  <Table.Td>
-                    {choiceWritesDate(choice, fields) ? (
-                      <Select
-                        aria-label={t(($) => $.contactImports.dateFormatColumn, { column: header })}
-                        placeholder={t(($) => $.contactImports.chooseDateFormat)}
-                        data={dateFormats}
-                        value={choice.dateFormat}
-                        onChange={(format) => {
-                          setColumn(at, {
-                            dateFormat: zContactImportDateFormat.nullable().parse(format),
-                          })
-                          setPreviewed(false)
-                        }}
-                      />
-                    ) : (
-                      '-'
-                    )}
-                  </Table.Td>
-                </Table.Tr>
-                {fact === undefined ? null : (
+    <form
+      onSubmit={form.onSubmit((body) => {
+        setSaveError(null)
+        save.mutate({ path, body })
+      })}
+      noValidate
+    >
+      <Stack>
+        <LeaveDialog dirty={form.isDirty()} message={t(($) => $.contactImports.leaveMessage)} />
+        <Title order={3}>{t(($) => $.contactImports.mappingTitle)}</Title>
+        <Table striped>
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th>{t(($) => $.contactImports.column)}</Table.Th>
+              <Table.Th>{t(($) => $.contactImports.writes)}</Table.Th>
+              <Table.Th>{t(($) => $.contactImports.dateFormat)}</Table.Th>
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>
+            {imp.header.map((header, at) => {
+              const choice = values.columns[at] ?? { target: ignore, dateFormat: null }
+              const fact = factTargets.includes(choice.target) ? choice.fact : undefined
+              return (
+                <Fragment key={at}>
                   <Table.Tr>
-                    <Table.Td />
-                    <Table.Td colSpan={2}>
-                      <FactColumnEditor
-                        kind={choice.target}
-                        column={header}
-                        fact={fact}
-                        header={imp.header}
-                        targets={values.columns.map((c) => c.target)}
-                        canSuppress={can(workspace, 'suppressions:manage')}
-                        onChange={(next) => {
-                          setColumn(at, { fact: next })
-                          setPreviewed(false)
+                    <Table.Td>{header === '' ? '-' : header}</Table.Td>
+                    <Table.Td>
+                      <Select
+                        {...form.getInputProps(`columns.${at}.target`)}
+                        aria-label={t(($) => $.contactImports.writesColumn, { column: header })}
+                        data={targetData}
+                        allowDeselect={false}
+                        searchable
+                        onChange={(target) => {
+                          const next = target ?? ignore
+                          form.setFieldValue(`columns.${at}`, {
+                            ...choice,
+                            target: next,
+                            newField: choice.newField ?? newFieldFor(header),
+                            fact: factTargets.includes(next)
+                              ? (choice.fact ?? emptyFact())
+                              : undefined,
+                          })
+                          // A refusal of the column was about what it imported before.
+                          form.clearFieldError(`columns.${at}.target`)
                         }}
                       />
+                      {choice.target === newCustomField ? (
+                        <NewFieldInputs
+                          column={header}
+                          field={choice.newField ?? newFieldFor(header)}
+                          onChange={(newField) => {
+                            form.setFieldValue(`columns.${at}.newField`, newField)
+                            form.clearFieldError(`columns.${at}.target`)
+                          }}
+                        />
+                      ) : null}
+                    </Table.Td>
+                    <Table.Td>
+                      {choiceWritesDate(choice, fields) ? (
+                        <Select
+                          {...form.getInputProps(`columns.${at}.dateFormat`)}
+                          aria-label={t(($) => $.contactImports.dateFormatColumn, {
+                            column: header,
+                          })}
+                          placeholder={t(($) => $.contactImports.chooseDateFormat)}
+                          data={dateFormats}
+                        />
+                      ) : (
+                        '-'
+                      )}
                     </Table.Td>
                   </Table.Tr>
-                )}
-              </Fragment>
-            )
-          })}
-        </Table.Tbody>
-      </Table>
+                  {fact === undefined ? null : (
+                    <Table.Tr>
+                      <Table.Td />
+                      <Table.Td colSpan={2}>
+                        <FactColumnEditor
+                          kind={choice.target}
+                          column={header}
+                          fact={fact}
+                          header={imp.header}
+                          targets={values.columns.map((c) => c.target)}
+                          canSuppress={can(workspace, 'suppressions:manage')}
+                          onChange={(next) => {
+                            form.setFieldValue(`columns.${at}.fact`, next)
+                            form.clearFieldError(`columns.${at}.target`)
+                          }}
+                        />
+                      </Table.Td>
+                    </Table.Tr>
+                  )}
+                </Fragment>
+              )
+            })}
+          </Table.Tbody>
+        </Table>
 
-      <SimpleGrid cols={{ base: 1, sm: 2 }}>
-        <Select
-          label={t(($) => $.contactImports.decimalSeparator)}
-          data={zContactImportDecimalSeparator.options.map((sep) => ({
-            value: sep,
-            label:
-              sep === '.' ? t(($) => $.contactImports.point) : t(($) => $.contactImports.comma),
-          }))}
-          value={values.decimalSeparator}
-          allowDeselect={false}
-          onChange={(sep) => edit({ decimalSeparator: zContactImportDecimalSeparator.parse(sep) })}
-        />
-        <Select
-          label={t(($) => $.contactImports.defaultCountry)}
-          description={t(($) => $.contactImports.defaultCountryHint)}
-          data={countryOptions}
-          value={values.defaultCountry}
-          searchable
-          clearable
-          onChange={(country) => edit({ defaultCountry: country })}
-        />
-        <TextInput
-          label={t(($) => $.contactImports.tag)}
-          description={t(($) => $.contactImports.tagHint)}
-          value={values.tag}
-          onChange={(event) => edit({ tag: event.currentTarget.value })}
-        />
-        <Checkbox
-          mt="lg"
-          label={t(($) => $.contactImports.onlyAddNew)}
-          description={t(($) => $.contactImports.onlyAddNewHint)}
-          checked={values.onlyAddNew}
-          onChange={(event) => edit({ onlyAddNew: event.currentTarget.checked })}
-        />
-        <Checkbox
-          mt="lg"
-          label={t(($) => $.contactImports.asNewSignUps)}
-          description={t(($) => $.contactImports.asNewSignUpsHint)}
-          checked={values.asNewSignUps}
-          onChange={(event) => edit({ asNewSignUps: event.currentTarget.checked })}
-        />
-      </SimpleGrid>
+        <SimpleGrid cols={{ base: 1, sm: 2 }}>
+          <Select
+            {...form.getInputProps('decimalSeparator')}
+            label={t(($) => $.contactImports.decimalSeparator)}
+            data={zContactImportDecimalSeparator.options.map((sep) => ({
+              value: sep,
+              label:
+                sep === 'point'
+                  ? t(($) => $.contactImports.point)
+                  : t(($) => $.contactImports.comma),
+            }))}
+            allowDeselect={false}
+          />
+          <Select
+            {...form.getInputProps('defaultCountry')}
+            label={t(($) => $.contactImports.defaultCountry)}
+            description={t(($) => $.contactImports.defaultCountryHint)}
+            data={countryOptions}
+            searchable
+            clearable
+          />
+          <TextInput
+            {...form.getInputProps('tag')}
+            label={t(($) => $.contactImports.tag)}
+            description={t(($) => $.contactImports.tagHint)}
+          />
+          <Checkbox
+            {...form.getInputProps('onlyAddNew', { type: 'checkbox' })}
+            mt="lg"
+            label={t(($) => $.contactImports.onlyAddNew)}
+            description={t(($) => $.contactImports.onlyAddNewHint)}
+          />
+          <Checkbox
+            {...form.getInputProps('asNewSignUps', { type: 'checkbox' })}
+            mt="lg"
+            label={t(($) => $.contactImports.asNewSignUps)}
+            description={t(($) => $.contactImports.asNewSignUpsHint)}
+          />
+        </SimpleGrid>
 
-      {save.isError ? (
-        <ApiErrorAlert error={save.error} title={t(($) => $.contactImports.saveError)} />
-      ) : null}
-      {run.isError ? (
-        <ApiErrorAlert error={run.error} title={t(($) => $.contactImports.runError)} />
-      ) : null}
-      {canCreateFields ? null : (
-        <Text c="dimmed">{t(($) => $.contactImports.newCustomFieldNeedsPermission)}</Text>
-      )}
-      {missing.length > 0 ? (
-        <Text c="dimmed">{t(($) => $.contactImports.runNeedsDateFormats)}</Text>
-      ) : null}
-      <Group>
-        <Button
-          variant="default"
-          loading={save.isPending}
-          onClick={() => save.mutate({ path, body: mappingInputOf(values, fields) })}
-        >
-          {t(($) => $.contactImports.preview)}
-        </Button>
-        <Button
-          disabled={missing.length > 0 || !previewed}
-          loading={run.isPending}
-          onClick={() => run.mutate({ path })}
-        >
-          {t(($) => $.contactImports.run)}
-        </Button>
-      </Group>
-      {preview.isError ? (
-        <ApiErrorAlert error={preview.error} title={t(($) => $.contactImports.previewError)} />
-      ) : null}
-      {previewed && preview.data !== undefined ? (
-        <PreviewView header={imp.header} preview={preview.data} />
-      ) : null}
-    </Stack>
+        {canCreateFields ? null : (
+          <Text c="dimmed">{t(($) => $.contactImports.newCustomFieldNeedsPermission)}</Text>
+        )}
+        {/* The proposal leaves a column of Suppressions out for a Role that may not record them. */}
+        {can(workspace, 'suppressions:manage') ? null : (
+          <Text c="dimmed">{t(($) => $.contactImports.facts.suppressionNeedsPermission)}</Text>
+        )}
+        {saveError === null ? null : (
+          <ApiErrorAlert error={saveError} title={t(($) => $.contactImports.saveError)} />
+        )}
+        {run.isError ? (
+          <ApiErrorAlert error={run.error} title={t(($) => $.contactImports.runError)} />
+        ) : null}
+        <Group>
+          <Button type="submit" variant="default" loading={save.isPending}>
+            {t(($) => $.contactImports.preview)}
+          </Button>
+          {/* The run reads the saved mapping: it waits for this one to be saved and previewed. */}
+          <Button
+            disabled={!previewed}
+            loading={run.isPending}
+            onClick={() => run.mutate({ path })}
+          >
+            {t(($) => $.contactImports.run)}
+          </Button>
+        </Group>
+        {preview.isError ? (
+          <ApiErrorAlert error={preview.error} title={t(($) => $.contactImports.previewError)} />
+        ) : null}
+        {previewed && preview.data !== undefined ? (
+          <PreviewView header={imp.header} preview={preview.data} />
+        ) : null}
+      </Stack>
+    </form>
   )
 }
 

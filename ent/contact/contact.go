@@ -477,3 +477,8 @@ func newContactTagsStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.O2M, true, ContactTagsTable, ContactTagsColumn),
 	)
 }
+
+// Values is every value of the Source enum, in the schema's order.
+func (Source) Values() []string {
+	return []string{"manual", "api", "tracker", "import"}
+}

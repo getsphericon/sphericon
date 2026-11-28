@@ -275,3 +275,23 @@ func newUserStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.O2O, true, UserTable, UserColumn),
 	)
 }
+
+// Values is every value of the Role enum, in the schema's order.
+func (Role) Values() []string {
+	return []string{"founder", "marketer", "developer", "product", "other"}
+}
+
+// Values is every value of the CompanySize enum, in the schema's order.
+func (CompanySize) Values() []string {
+	return []string{"1", "2_10", "11_50", "51_200", "201_1000", "1000_plus", "other"}
+}
+
+// Values is every value of the MainGoal enum, in the schema's order.
+func (MainGoal) Values() []string {
+	return []string{"broadcasts", "automations", "tracking", "migrating", "other"}
+}
+
+// Values is every value of the HeardFrom enum, in the schema's order.
+func (HeardFrom) Values() []string {
+	return []string{"search", "github", "social", "recommendation", "other"}
+}

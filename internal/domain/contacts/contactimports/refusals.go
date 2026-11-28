@@ -28,9 +28,9 @@ var (
 	// ErrValuesRequired means a refusal, consent or tracking column lists no value that means
 	// anything: any other value records nothing, so a column of none would record nothing.
 	ErrValuesRequired = validation.RefuseField(fieldname.Values, "contactimports: list the values that mean a refusal or consent", i18n.ErrorsContactImportValuesRequired)
-	// ErrBroadcastsOnEmailOnly means an Unsubscribe of `broadcasts` off email: on sms and
-	// Telegram a person stops everything.
-	ErrBroadcastsOnEmailOnly = validation.RefuseField(fieldname.Values, "contactimports: an opt-out of broadcasts is on email only", i18n.ErrorsContactImportBroadcastsOnEmailOnly)
+	// ErrBroadcastsNotOnSMS means an Unsubscribe of `broadcasts` on SMS, where a person stops
+	// everything; email and Telegram keep an opt-out of broadcasts.
+	ErrBroadcastsNotOnSMS = validation.RefuseField(fieldname.Values, "contactimports: an opt-out of broadcasts is not recorded on sms", i18n.ErrorsContactImportBroadcastsNotOnSms)
 	// ErrEvidencePart means a part of a consent column's evidence is neither given once nor read
 	// from a column of the file, or is both.
 	ErrEvidencePart = validation.RefuseField(fieldname.Evidence, "contactimports: give each part of the evidence once, or name the column that holds it", i18n.ErrorsContactImportEvidencePart)
@@ -79,9 +79,9 @@ func checkedFactColumn(col *csvimport.Column) (csvimport.Column, error) {
 }
 
 // checkedRefusal is a refusal column's fact: its Channel, and each value non-blank and recording
-// an Unsubscribe (of `broadcasts` on email only) or a Suppression.
+// an Unsubscribe (of `broadcasts` off SMS only) or a Suppression.
 func checkedRefusal(in csvimport.Fact) (csvimport.Fact, error) {
-	channel := channels.Channel(in.Channel)
+	channel := in.Channel
 	if !lo.Contains(refusalChannels, channel) {
 		return in, ErrUnknownTarget
 	}
@@ -96,8 +96,10 @@ func checkedRefusal(in csvimport.Fact) (csvimport.Fact, error) {
 		}
 		switch v.Refusal {
 		case csvimport.RefusalBroadcasts:
-			if channel != channels.Email {
-				return in, ErrBroadcastsOnEmailOnly
+			switch channel {
+			case channels.SMS:
+				return in, ErrBroadcastsNotOnSMS
+			case channels.Email, channels.Telegram:
 			}
 		case csvimport.RefusalEverything, csvimport.RefusalSuppression:
 		default:
@@ -111,7 +113,7 @@ func checkedRefusal(in csvimport.Fact) (csvimport.Fact, error) {
 // checkedConsent is a consent column's fact: its Channel, its values and its evidence, each part
 // given once (within the Confirmation's bounds) or read from a column.
 func checkedConsent(in csvimport.Fact) (csvimport.Fact, error) {
-	if !lo.Contains(consentChannels, channels.Channel(in.Channel)) {
+	if !lo.Contains(consentChannels, in.Channel) {
 		return in, ErrUnknownTarget
 	}
 	values, err := checkedValues(in.Values, bounds.ContactImportConsentValuesMinItems, bounds.ContactImportConsentValuesMaxItems)
@@ -144,7 +146,7 @@ func checkedConsent(in csvimport.Fact) (csvimport.Fact, error) {
 // checkedTracking is an Engagement tracking column's fact: its Channel and the values of a grant
 // and of a refusal, at least one of them.
 func checkedTracking(in csvimport.Fact) (csvimport.Fact, error) {
-	if !lo.Contains(consentChannels, channels.Channel(in.Channel)) {
+	if !lo.Contains(consentChannels, in.Channel) {
 		return in, ErrUnknownTarget
 	}
 	granted, err := checkedValues(in.Values, 0, bounds.ContactImportTrackingValuesMaxItems)
@@ -201,7 +203,9 @@ func pairs(columns []csvimport.Column) error {
 					return ErrEvidencePart.On(at)
 				}
 			}
-		default:
+		case csvimport.KindKey, csvimport.KindAttribute, csvimport.KindCustomField, csvimport.KindNewCustomField,
+			csvimport.KindTags, csvimport.KindIgnore, csvimport.KindRefusal, csvimport.KindEngagementTracking:
+			// Names no other column.
 		}
 	}
 	return nil
@@ -265,7 +269,7 @@ func readRefusal(r *rowState, col csvimport.Column, at int, cell string) {
 	for _, v := range fact.Refusals {
 		if matches(cell, v.Value) && !noted[v.Refusal] {
 			noted[v.Refusal] = true
-			r.facts = append(r.facts, pendingFact{column: at, channel: channels.Channel(fact.Channel), refusal: v.Refusal})
+			r.facts = append(r.facts, pendingFact{column: at, channel: fact.Channel, refusal: v.Refusal})
 		}
 	}
 }
@@ -278,7 +282,7 @@ func is(cell, value string) bool { return strings.EqualFold(strings.TrimSpace(ce
 func readConsent(r *rowState, col csvimport.Column, at int, cell string) {
 	fact := lo.FromPtr(col.Fact)
 	if lo.SomeBy(fact.Values, func(v string) bool { return is(cell, v) }) {
-		r.facts = append(r.facts, pendingFact{column: at, channel: channels.Channel(fact.Channel)})
+		r.facts = append(r.facts, pendingFact{column: at, channel: fact.Channel})
 	}
 }
 
@@ -295,7 +299,7 @@ func readTracking(r *rowState, col csvimport.Column, at int, cell string) {
 	default:
 		return
 	}
-	r.facts = append(r.facts, pendingFact{column: at, channel: channels.Channel(fact.Channel), state: state})
+	r.facts = append(r.facts, pendingFact{column: at, channel: fact.Channel, state: state})
 }
 
 // settle turns the facts the row's cells noted into what it records, once its keys are read: each
@@ -307,15 +311,18 @@ func (rd reading) settle(r *rowState, cells []string) {
 	times := map[int]time.Time{}
 	for _, f := range r.facts {
 		kind := rd.mapping.Columns[f.column].Kind
-		destination := ""
+		destination, reachable := "", true
 		switch f.channel {
 		case channels.Email:
 			destination = lo.FromPtr(r.in.Email)
+			reachable = destination != ""
 		case channels.SMS:
 			destination = lo.FromPtr(r.in.Phone)
+			reachable = destination != ""
 		case channels.Telegram:
+			// Its Destinations are the Bindings of the Contact the row writes, found at the run.
 		}
-		if destination == "" && f.channel != channels.Telegram {
+		if !reachable {
 			r.drop(f.column, csvimport.ReasonNoDestination)
 			continue
 		}
@@ -331,12 +338,17 @@ func (rd reading) settle(r *rowState, cells []string) {
 			rd.consent(r, f, cells, at)
 		case csvimport.KindEngagementTracking:
 			ob := &engagementtracking.Observation{State: f.state, OccurredAt: at}
-			if f.channel == channels.Email {
+			switch f.channel {
+			case channels.Email:
 				r.in.EngagementTracking.Email = ob
-			} else {
+			case channels.SMS:
 				r.in.EngagementTracking.SMS = ob
+			case channels.Telegram:
+				// No tracking column is of Telegram (checkedTracking).
 			}
-		default:
+		case csvimport.KindKey, csvimport.KindAttribute, csvimport.KindCustomField, csvimport.KindNewCustomField,
+			csvimport.KindTags, csvimport.KindIgnore, csvimport.KindTime:
+			// Notes no fact.
 		}
 	}
 }
@@ -359,10 +371,13 @@ func (rd reading) consent(r *rowState, f pendingFact, cells []string, at time.Ti
 		return
 	}
 	evidence := &confirmations.Evidence{Wording: wording, Source: source, Brand: brand, OccurredAt: at}
-	if f.channel == channels.Email {
+	switch f.channel {
+	case channels.Email:
 		r.in.EmailConsent = evidence
-	} else {
+	case channels.SMS:
 		r.in.SMSConsent = evidence
+	case channels.Telegram:
+		// No consent column is of Telegram (checkedConsent).
 	}
 }
 

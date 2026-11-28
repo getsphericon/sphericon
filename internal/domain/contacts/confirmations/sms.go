@@ -12,8 +12,10 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/consentstamps"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/bounds"
@@ -218,13 +220,18 @@ func (m *Module) StartSMSIn(ctx context.Context, s *ent.Scoped, number string, a
 }
 
 // holderOf is the id of the Contact whose address (on email) or phone (on sms) destination is, 0
-// when no Contact has it.
+// when no Contact has it. Telegram has no Confirmation: ErrConfirmationChannel.
 func holderOf(ctx context.Context, s *ent.Scoped, channel channels.Channel, destination string) (int64, error) {
-	q := s.Contact().Query().Where(contact.Phone(destination))
-	if channel == channels.Email {
-		q = s.Contact().Query().Where(contact.Email(destination))
+	var holds predicate.Contact
+	switch channel {
+	case channels.Email:
+		holds = contact.Email(destination)
+	case channels.SMS:
+		holds = contact.Phone(destination)
+	case channels.Telegram:
+		return 0, ErrConfirmationChannel
 	}
-	id, err := q.OnlyID(ctx)
+	id, err := s.Contact().Query().Where(holds).OnlyID(ctx)
 	if ent.IsNotFound(err) {
 		return 0, nil
 	}
@@ -273,10 +280,20 @@ func (m *Module) ReadContactSMS(ctx context.Context, s *ent.Scoped, contactID in
 	if err != nil {
 		return ContactSMS{}, err
 	}
-	if stop != nil {
-		// Every SMS opt-out is recorded with its way (unsubscribes' AddSMS).
-		out.OptOut = &SMSOptOut{Via: lo.FromPtr(stop.Via), OptedOutAt: stop.CreatedAt}
+	if stop == nil {
+		return out, nil
 	}
+	// Every SMS opt-out is recorded with its way (unsubscribes' AddSMS), and when it occurred by
+	// its stamp (ADR 0154): an imported one at the time the import states, not when it was written.
+	stamped, err := m.stamps.Stamped(ctx, s, consentstamps.Key{Channel: channels.SMS, Destination: *c.Phone, Source: eligibility.SourceEverything}, consentstamps.OptOut)
+	if err != nil {
+		return ContactSMS{}, err
+	}
+	at := stop.CreatedAt
+	if stamped != nil {
+		at = stamped.At
+	}
+	out.OptOut = &SMSOptOut{Via: lo.FromPtr(stop.Via), OptedOutAt: at}
 	return out, nil
 }
 

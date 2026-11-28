@@ -81,7 +81,7 @@ func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.C
 	if err != nil {
 		return nil, err
 	}
-	mux.Handle(paths.Site+"/", problem.Middleware[siteapi.Handler](siteSrv))
+	mux.Handle(paths.Site+"/", problem.Middleware[siteapi.Handler](apisite.Responses(siteSrv)))
 
 	// The Account link's public key set: published only when the link is configured.
 	if site.AccountLink != nil {

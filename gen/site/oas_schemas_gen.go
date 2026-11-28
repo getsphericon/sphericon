@@ -9725,7 +9725,9 @@ func (s *ContactImportConsentColumnKind) UnmarshalText(data []byte) error {
 }
 
 // The evidence of the consent a consent column records (ADR 0077): each part given once for every row
-// as text, or read from the column it names on each row, exactly one of the two.
+// as text, or read from the column it names on each row, exactly one of the two. A proposal leaves a
+// part it has no source for null in both (the wording and brand of an export's Confirmations), and the
+// mapping is not saved until the Member gives it.
 // Ref: #/components/schemas/ContactImportConsentEvidence
 type ContactImportConsentEvidence struct {
 	// The consent wording the person was shown and agreed to; null when a column holds it.
@@ -9803,7 +9805,9 @@ func (s *ContactImportConsentEvidence) SetBrandColumn(val NilInt32) {
 }
 
 // The evidence of the consent a consent column records (ADR 0077): each part given once for every row
-// as text, or read from the column it names on each row, exactly one of the two.
+// as text, or read from the column it names on each row, exactly one of the two. A proposal leaves a
+// part it has no source for null in both (the wording and brand of an export's Confirmations), and the
+// mapping is not saved until the Member gives it.
 // Ref: #/components/schemas/ContactImportConsentEvidenceInput
 type ContactImportConsentEvidenceInput struct {
 	// The consent wording the person was shown and agreed to; null when a column holds it.
@@ -10205,29 +10209,29 @@ func (s *ContactImportDateFormat) UnmarshalText(data []byte) error {
 	}
 }
 
-// The character a file's numbers write their decimals after.
+// The character a file's numbers write their decimals after: a point (`.`) or a comma (`,`).
 // Ref: #/components/schemas/ContactImportDecimalSeparator
 type ContactImportDecimalSeparator string
 
 const (
-	ContactImportDecimalSeparator_Dot ContactImportDecimalSeparator = "."
-	ContactImportDecimalSeparator_    ContactImportDecimalSeparator = ","
+	ContactImportDecimalSeparatorPoint ContactImportDecimalSeparator = "point"
+	ContactImportDecimalSeparatorComma ContactImportDecimalSeparator = "comma"
 )
 
 // AllValues returns all ContactImportDecimalSeparator values.
 func (ContactImportDecimalSeparator) AllValues() []ContactImportDecimalSeparator {
 	return []ContactImportDecimalSeparator{
-		ContactImportDecimalSeparator_Dot,
-		ContactImportDecimalSeparator_,
+		ContactImportDecimalSeparatorPoint,
+		ContactImportDecimalSeparatorComma,
 	}
 }
 
 // MarshalText implements encoding.TextMarshaler.
 func (s ContactImportDecimalSeparator) MarshalText() ([]byte, error) {
 	switch s {
-	case ContactImportDecimalSeparator_Dot:
+	case ContactImportDecimalSeparatorPoint:
 		return []byte(s), nil
-	case ContactImportDecimalSeparator_:
+	case ContactImportDecimalSeparatorComma:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -10237,11 +10241,11 @@ func (s ContactImportDecimalSeparator) MarshalText() ([]byte, error) {
 // UnmarshalText implements encoding.TextUnmarshaler.
 func (s *ContactImportDecimalSeparator) UnmarshalText(data []byte) error {
 	switch ContactImportDecimalSeparator(data) {
-	case ContactImportDecimalSeparator_Dot:
-		*s = ContactImportDecimalSeparator_Dot
+	case ContactImportDecimalSeparatorPoint:
+		*s = ContactImportDecimalSeparatorPoint
 		return nil
-	case ContactImportDecimalSeparator_:
-		*s = ContactImportDecimalSeparator_
+	case ContactImportDecimalSeparatorComma:
+		*s = ContactImportDecimalSeparatorComma
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -11377,9 +11381,9 @@ func (s *ContactImportPreviewRow) SetWarnings(val []ContactImportWarning) {
 	s.Warnings = val
 }
 
-// What a value of a refusal column records: an Unsubscribe of `everything` or of `broadcasts` (email
-// only), recorded as imported, which only the person can lift; or a Suppression of the `manual`
-// reason, which needs `suppressions:manage`.
+// What a value of a refusal column records: an Unsubscribe of `everything` or of `broadcasts` (not on
+// SMS, where a person stops everything), recorded as imported, which only the person can lift; or a
+// Suppression of the `manual` reason, which needs `suppressions:manage`.
 // Ref: #/components/schemas/ContactImportRefusal
 type ContactImportRefusal string
 
@@ -35583,9 +35587,10 @@ type SiteContactImportPreview struct {
 	MalformedRows int32 `json:"malformedRows"`
 	// Distinct Tags the rows would add, the Tag for every row included.
 	DistinctTags int32 `json:"distinctTags"`
-	// Opt-outs the refusal columns would record over the whole file: the rows with a Destination on the
-	// column's Channel whose value means an Unsubscribe (on Telegram, the rows that name a key). An
-	// imported Unsubscribe cannot be undone: only the person lifts it.
+	// Opt-outs the refusal columns would record over the whole file, at most: the rows with a Destination
+	// on the column's Channel whose value means an Unsubscribe (on Telegram, the rows that name a key,
+	// whose Contact may have no Binding to record it at). An imported Unsubscribe cannot be undone: only
+	// the person lifts it.
 	OptOuts int32 `json:"optOuts"`
 	// Suppressions the refusal columns would record over the whole file, counted as the opt-outs are.
 	Suppressions int32 `json:"suppressions"`
@@ -38468,7 +38473,7 @@ func (s *SiteNewPeoplePoint) SetImport(val int32) {
 // New people: Contacts created in the selected range, per Report day and by Contact source.
 // Ref: #/components/schemas/SiteNewPeopleReport
 type SiteNewPeopleReport struct {
-	// Contacts created within the range.
+	// Contacts who signed up within the range: those a CSV import created are in the series, not here.
 	Total int32 `json:"total"`
 	// One point per Report day in the range, oldest first.
 	Timeseries []SiteNewPeoplePoint `json:"timeseries"`

@@ -165,7 +165,7 @@ export default interface Resources {
       },
       "newPeople": {
         "empty": "No new people in this window",
-        "note": "Contacts created per day in your workspace time zone, by how each one first came to exist.",
+        "note": "Contacts created per day in your workspace time zone, by how each one first came to exist. The total leaves out imported contacts: they are not new sign-ups.",
         "total": "New people"
       },
       "opensByHour": {
@@ -1324,6 +1324,7 @@ export default interface Resources {
       "customFieldsGroup": "Custom fields",
       "dateFormat": "Date format",
       "dateFormatColumn": "Date format of {{column}}",
+      "dateFormatRequired": "Choose the date format.",
       "dateTime": "Date and time (RFC 3339)",
       "decimalSeparator": "Decimal separator",
       "defaultCountry": "Default country",
@@ -1340,6 +1341,7 @@ export default interface Resources {
           "telegram": "Telegram"
         },
         "chooseColumn": "Choose a column",
+        "consentChannelRequired": "Consent and tracking are on email or SMS: choose the channel.",
         "consentValues": "Values that mean consent",
         "countsRefusals": "{{optedOut}} opt-outs and {{suppressed}} suppressions recorded.",
         "denied": "Values that mean tracking is refused",
@@ -1354,7 +1356,7 @@ export default interface Resources {
           "time": "Time of a consent or refusal"
         },
         "optOutsFinal": "An imported unsubscribe cannot be undone: only the person can opt back in. Check the values each refusal column lists before you run the import.",
-        "previewRefusals": "The file would record {{optOuts}} opt-outs and {{suppressions}} suppressions.",
+        "previewRefusals": "The file would record up to {{optOuts}} opt-outs and {{suppressions}} suppressions.",
         "records": "Records",
         "recordsOf": "What value {{at}} of {{column}} records",
         "refusals": {
@@ -1364,6 +1366,7 @@ export default interface Resources {
         },
         "removeValue": "Remove the value",
         "source": "Source",
+        "suppressionNeedsPermission": "Recording a suppression needs a role that manages suppressions: a column of them is left out.",
         "timeOf": "Times the column",
         "timeOfColumn": "The column {{column}} times",
         "timeOfHint": "A time that is blank, unreadable or in the future is dropped and reported, and the fact recorded as of now.",
@@ -1410,7 +1413,6 @@ export default interface Resources {
       "row": "Row",
       "run": "Run import",
       "runError": "Could not run the import",
-      "runNeedsDateFormats": "Choose the format of every date column to run the import.",
       "saveError": "Could not save the mapping",
       "states": {
         "cancelled": "Cancelled",

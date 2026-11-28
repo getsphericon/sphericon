@@ -7,6 +7,7 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/attachment"
 	"github.com/getsphericon/sphericon/internal/kernel/narrow"
 	"github.com/getsphericon/sphericon/internal/kernel/seqreader"
 )
@@ -76,7 +77,7 @@ func (h *Handlers) SiteAuditExport(ctx context.Context, params siteapi.SiteAudit
 	// The response reads a page of rows only once it has sent the last, so a long log never
 	// sits in memory.
 	return &siteapi.SiteAuditExportOKHeaders{
-		ContentDisposition: `attachment; filename="audit-log-` + string(params.WorkspaceId) + `.csv"`,
+		ContentDisposition: attachment.ContentDisposition("audit-log-" + string(params.WorkspaceId) + ".csv"),
 		Response:           siteapi.SiteAuditExportOK{Data: seqreader.New(rows)},
 	}, nil
 }
