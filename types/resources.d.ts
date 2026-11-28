@@ -1310,6 +1310,13 @@ export default interface Resources {
         "timeZone": "Time zone"
       },
       "attributesGroup": "Attributes",
+      "cancel": "Cancel import",
+      "cancelConfirm": "Cancel import",
+      "cancelDescription": "The import stops after the batch of rows it is writing. The contacts it wrote stay, its file is deleted, and the rows it refused can still be downloaded.",
+      "cancelError": "Could not cancel the import",
+      "cancelKeep": "Keep importing",
+      "cancelTitle": "Cancel the import?",
+      "cancelled": "The import was cancelled. The contacts it wrote stay.",
       "chooseDateFormat": "Choose a format",
       "column": "Column",
       "comma": "Comma (1,5)",
@@ -1365,6 +1372,7 @@ export default interface Resources {
         "valuePlaceholder": "unsubscribed",
         "wording": "Wording"
       },
+      "failed": "The import failed after several tries. The contacts it wrote stay; download the refused rows to see what was not imported.",
       "file": "CSV file",
       "fileFacts": "{{rows}} rows, {{columns}} columns.",
       "fileHint": "UTF-8, with a header row, its cells separated by commas, semicolons or tabs.",
@@ -1412,6 +1420,7 @@ export default interface Resources {
         "running": "Running",
         "uploaded": "Uploaded"
       },
+      "stopping": "Stopping after the rows it is writing…",
       "tag": "Tag every row",
       "tagHint": "A tag given to every imported contact, to find them later.",
       "tags": "Tags",

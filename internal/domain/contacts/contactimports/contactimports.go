@@ -30,8 +30,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
-// The unique constraints of the import's tables (ADR 0106): no client can break either.
-var _ = db.Declare(
+// The unique constraints of the import's tables (ADR 0106): a second import run while one runs
+// is refused; no client can break the others.
+var constraints = db.Declare(
+	db.Refusal("contact_imports_one_running", ErrAlreadyRunning),
 	db.Fault("contactimportchunk_workspace_id_contact_import_id_seq", "an upload writes the chunks of a new import once each, numbered in order"),
 	db.Fault("contactimportreportrow_workspace_id_contact_import_id_row", "a report's row is inserted ON CONFLICT (workspace_id, contact_import_id, row) DO NOTHING"),
 )

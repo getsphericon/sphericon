@@ -20,14 +20,17 @@ const (
 	triggerRun trigger = "run"
 	// triggerFinish: the job has read the whole file.
 	triggerFinish trigger = "finish"
-	// triggerCancel: the run stops early, what it wrote kept: its Member left the Workspace.
+	// triggerCancel: the run stops early, what it wrote kept: a Member asked it to stop, or its
+	// Member left the Workspace or lost contacts:import.
 	triggerCancel trigger = "cancel"
+	// triggerFail: the run stops early, what it wrote kept: its job failed its last attempt.
+	triggerFail trigger = "fail"
 )
 
 // machine is the machine of the import id's state (ADR 0046, ADR 0109), written through ts, the
 // scope of the transaction the move is made in: a compare-and-swap on the state it leaves, which
 // also writes what set sets. uploaded and ready take a mapping, ready runs, a running import
-// finishes or is cancelled; nothing moves an import that ended.
+// finishes, is cancelled or fails; nothing moves an import that ended.
 func (m *Module) machine(ts *ent.Scoped, id int64, set func(*ent.ContactImportScopedUpdate)) *stateless.StateMachine {
 	mach := lifecycle.New(lifecycle.Storage[contactimport.State]{
 		Read: func(ctx context.Context) (contactimport.State, error) {
@@ -53,6 +56,7 @@ func (m *Module) machine(ts *ent.Scoped, id int64, set func(*ent.ContactImportSc
 		Permit(triggerRun, contactimport.StateRunning)
 	mach.Configure(contactimport.StateRunning).
 		Permit(triggerFinish, contactimport.StateDone).
-		Permit(triggerCancel, contactimport.StateCancelled)
+		Permit(triggerCancel, contactimport.StateCancelled).
+		Permit(triggerFail, contactimport.StateFailed)
 	return mach
 }
