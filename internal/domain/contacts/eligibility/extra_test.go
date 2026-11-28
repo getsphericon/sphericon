@@ -22,9 +22,9 @@ func TestCheckEmptyDestinationIsEligible(t *testing.T) {
 		ws      int64
 		channel channels.Channel
 	}{
-		"email":                    {fixtures.AcmeID, channels.Email},
-		"email under confirmation": {fixtures.LumonID, channels.Email},
-		"sms":                      {fixtures.TyrellID, channels.SMS},
+		"on email":                    {fixtures.AcmeID, channels.Email},
+		"on email under confirmation": {fixtures.LumonID, channels.Email},
+		"on sms":                      {fixtures.TyrellID, channels.SMS},
 	} {
 		d, err := eligibility.New().Check(t.Context(), env.DB.Scoped(tc.ws), eligibility.CheckInput{Channel: tc.channel, Destination: "   ", Mode: eligibility.Marketing(eligibility.SourceBroadcasts)})
 

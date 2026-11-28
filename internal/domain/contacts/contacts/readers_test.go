@@ -115,6 +115,23 @@ func TestADateAndTimeIsDatedInTheWorkspaceZone(t *testing.T) {
 	assert.Equal(t, "2024-03-04T20:00:00-05:00", value)
 }
 
+// The time a consent fact occurred is an instant: a date and time at its offset, a date alone at
+// the start of that day in the Workspace's time zone.
+func TestAMomentIsAnInstantDatedInTheWorkspaceZone(t *testing.T) {
+	tokyo, err := time.LoadLocation("Asia/Tokyo")
+	require.NoError(t, err)
+
+	stamped, stampedReason := contacts.ReadMoment("2024-03-04T20:00:00-05:00", csvimport.DateTimeRFC3339, tokyo)
+	day, dayReason := contacts.ReadMoment("04/03/2024", csvimport.DateDMYSlash, tokyo)
+	_, badReason := contacts.ReadMoment("yesterday", csvimport.DateISO, tokyo)
+
+	assert.Empty(t, stampedReason)
+	assert.True(t, time.Date(2024, 3, 5, 1, 0, 0, 0, time.UTC).Equal(stamped))
+	assert.Empty(t, dayReason)
+	assert.True(t, time.Date(2024, 3, 3, 15, 0, 0, 0, time.UTC).Equal(day))
+	assert.Equal(t, csvimport.ReasonNotDate, badReason)
+}
+
 func TestADateNotInItsFormatIsNotRead(t *testing.T) {
 	for _, c := range []struct {
 		cell   string

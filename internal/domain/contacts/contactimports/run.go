@@ -75,10 +75,14 @@ func (RunArgs) InsertOpts() river.InsertOpts {
 // created (which needs custom_fields:manage of role, and keys the Workspace has not taken since the
 // mapping was saved), and its job queued, in one transaction. An import not ready (no mapping
 // saved, running or ended) is lifecycle's ErrInvalidTransition; another import of the Workspace
-// running is ErrAlreadyRunning.
+// running is ErrAlreadyRunning; one whose mapping records a Suppression needs role to hold
+// suppressions:manage (ADR 0138).
 func (m *Module) Run(ctx context.Context, s *ent.Scoped, id int64, role membership.Role) (View, error) {
 	imp, err := load(ctx, s, id)
 	if err != nil {
+		return View{}, err
+	}
+	if err := mayRecord(imp.Mapping, role); err != nil {
 		return View{}, err
 	}
 	floor, err := m.contacts.Newest(ctx, s)
@@ -207,6 +211,7 @@ func (m *Module) work(ctx context.Context, s *ent.Scoped, in WorkInput) (Outcome
 	if err != nil {
 		return Ended, err
 	}
+	rd.now = m.now()
 	cause := events.Import(imp.ID)
 	if imp.AsNewSignUps {
 		cause = events.ImportAsNew(imp.ID)
@@ -337,6 +342,8 @@ func (m *Module) end(ctx context.Context, s *ent.Scoped, imp *ent.ContactImport,
 				contactimport.FieldUpdated:      done.Updated,
 				contactimport.FieldRefused:      done.Refused,
 				contactimport.FieldDropped:      done.Dropped,
+				contactimport.FieldOptedOut:     done.OptedOut,
+				contactimport.FieldSuppressed:   done.Suppressed,
 				contactimport.FieldMapping:      mappingSummary(done.Header, done.Mapping),
 				contactimport.FieldOnlyAddNew:   done.OnlyAddNew,
 				contactimport.FieldAsNewSignUps: done.AsNewSignUps,
@@ -359,6 +366,10 @@ func mappingSummary(header []string, mapping csvimport.Mapping) []string {
 			target = string(c.Kind) + " " + c.Key + " (" + c.FieldType + ")"
 		case csvimport.KindTags:
 			target = string(c.Kind)
+		case csvimport.KindRefusal, csvimport.KindConsent, csvimport.KindEngagementTracking:
+			target = string(c.Kind) + " " + lo.FromPtr(c.Fact).Channel
+		case csvimport.KindTime:
+			target = string(c.Kind) + " of " + cellAt(header, lo.FromPtr(lo.FromPtr(c.Fact).Of))
 		case csvimport.KindIgnore:
 			return "", false
 		}
@@ -382,6 +393,7 @@ type batchRun struct {
 // next batch's floor.
 type tally struct {
 	created, updated, refused, dropped int
+	optedOut, suppressed               int
 	report                             []*ent.ContactImportReportRowScopedCreate
 	floor, newest                      int64
 	seen                               map[int64]bool
@@ -413,6 +425,11 @@ func (b batchRun) write(ctx context.Context, recs []record) error {
 			return err
 		}
 		for i, item := range out.Items {
+			notRecorded, err := b.refuse(ctx, &t, written[i], item)
+			if err != nil {
+				return err
+			}
+			written[i].read.dropped = append(written[i].read.dropped, notRecorded...)
 			if err := t.add(b, written[i], item.Value, item.Err); err != nil {
 				return err
 			}
@@ -440,6 +457,8 @@ func (b batchRun) write(ctx context.Context, recs []record) error {
 			AddUpdated(t.updated).
 			AddRefused(t.refused).
 			AddDropped(t.dropped).
+			AddOptedOut(t.optedOut).
+			AddSuppressed(t.suppressed).
 			Exec(ctx)
 	})
 }

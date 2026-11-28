@@ -24,6 +24,8 @@ type reading struct {
 	header  []string
 	fields  map[string]customfield.Type
 	zone    *time.Location
+	// now is when the import reads its rows: a stated time after it is dropped (ADR 0138).
+	now time.Time
 }
 
 // readingOf is the reading of imp's file by mapping, for the Workspace of s.
@@ -53,6 +55,8 @@ type readRow struct {
 	in      contacts.IntakeInput
 	dropped []csvimport.Issue
 	refusal *csvimport.Issue
+	// refusals are the refusals the row records whatever the intake makes of it (ADR 0138).
+	refusals []refusalFact
 }
 
 // rowState is a row being read: its intake row, the values it drops so far and its phone cell,
@@ -64,6 +68,10 @@ type rowState struct {
 	phoneAt  int
 	hasPhone bool
 	reading  reading
+	// facts are the refusal, consent and tracking values its cells named, settled once its keys
+	// are read; refusals what they record of refusals.
+	facts    []pendingFact
+	refusals []refusalFact
 }
 
 // drop records that the value of column at could not be read, and why.
@@ -85,6 +93,12 @@ var cellReaders = map[csvimport.Kind]cellReader{
 	csvimport.KindNewCustomField: readCustomField,
 	csvimport.KindTags:           readTags,
 	csvimport.KindIgnore:         func(*rowState, csvimport.Column, int, string) {},
+
+	csvimport.KindRefusal:            readRefusal,
+	csvimport.KindConsent:            readConsent,
+	csvimport.KindEngagementTracking: readTracking,
+	// A time column is read with the fact it times (reading.settle).
+	csvimport.KindTime: func(*rowState, csvimport.Column, int, string) {},
 }
 
 // row reads the cells of a row: a row with another number of cells than the header is refused as
@@ -118,10 +132,11 @@ func (rd reading) row(cells []string) readRow {
 			state.drop(state.phoneAt, reason)
 		}
 	}
+	rd.settle(state, cells)
 	if rd.mapping.Tag != "" {
 		state.in.Tags = append(state.in.Tags, rd.mapping.Tag)
 	}
-	out := readRow{in: state.in, dropped: state.dropped}
+	out := readRow{in: state.in, dropped: state.dropped, refusals: state.refusals}
 	if state.in.SubjectID == nil && state.in.Email == nil && state.in.Phone == nil {
 		refusal := issue(nil, csvimport.ReasonNoKey, rd.header)
 		out.refusal = &refusal
@@ -230,6 +245,11 @@ var reasonMessages = map[csvimport.Reason]i18n.ID{
 	csvimport.ReasonNotImageURL:         i18n.ContactImportReasonNotImageUrl,
 	csvimport.ReasonNotTag:              i18n.ContactImportReasonNotTag,
 	csvimport.ReasonKeysNameTwoContacts: i18n.ContactImportReasonKeysNameTwoContacts,
+	csvimport.ReasonNoTime:              i18n.ContactImportReasonNoTime,
+	csvimport.ReasonTimeInFuture:        i18n.ContactImportReasonTimeInFuture,
+	csvimport.ReasonNoDestination:       i18n.ContactImportReasonNoDestination,
+	csvimport.ReasonNoEvidence:          i18n.ContactImportReasonNoEvidence,
+	csvimport.ReasonRefusalNotRecorded:  i18n.ContactImportReasonRefusalNotRecorded,
 }
 
 // issue is a value of the column at (nil for the whole row) not written for reason, worded with

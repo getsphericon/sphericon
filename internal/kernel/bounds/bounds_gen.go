@@ -316,6 +316,51 @@ const (
 	ContactImportColumnsMaxItems = 200
 )
 
+// ContactImportRefusalValues are the values a refusal column of a CSV import lists.
+// From site ContactImportRefusalColumnInput.values.
+const (
+	ContactImportRefusalValuesMinItems = 1
+	ContactImportRefusalValuesMaxItems = 50
+)
+
+// ContactImportRefusalValue is a value a refusal column of a CSV import lists.
+// From site ContactImportRefusalValueInput.value.
+const (
+	ContactImportRefusalValueMinLength = 1
+	ContactImportRefusalValueMaxLength = 255
+)
+
+// ContactImportConsentValues are the values a consent column of a CSV import lists.
+// From site ContactImportConsentColumnInput.values.
+const (
+	ContactImportConsentValuesMinItems = 1
+	ContactImportConsentValuesMaxItems = 50
+)
+
+// ContactImportTrackingValues are the values an Engagement tracking column of a CSV import lists for a grant or a refusal.
+// From site ContactImportEngagementTrackingColumnInput.granted, site ContactImportEngagementTrackingColumnInput.denied.
+const (
+	ContactImportTrackingValuesMaxItems = 50
+)
+
+// ContactImportEvidenceWording is the consent wording a consent column of a CSV import gives once.
+// From site ContactImportConsentEvidenceInput.wording.
+const (
+	ContactImportEvidenceWordingMaxLength = 2000
+)
+
+// ContactImportEvidenceSource is the consent source a consent column of a CSV import gives once.
+// From site ContactImportConsentEvidenceInput.source.
+const (
+	ContactImportEvidenceSourceMaxLength = 500
+)
+
+// ContactImportEvidenceBrand is the consent brand a consent column of a CSV import gives once.
+// From site ContactImportConsentEvidenceInput.brand.
+const (
+	ContactImportEvidenceBrandMaxLength = 255
+)
+
 // IdentifyPhone is the phone an Identify of the tracker names its Contact by.
 // From collect CollectIdentifyInput.phone.
 const (
@@ -455,109 +500,119 @@ const (
 // Owners names what checks each bound: an ent entity, whose owner writes the field, or the
 // package that owns it when no column holds the value. A test refuses a bound its owner does not use.
 var Owners = map[string][]string{
-	"NameMaxLength":                      {"internal/kernel/validation"},
-	"UserNameMaxLength":                  {"internal/kernel/validation"},
-	"EmailAddressMaxLength":              {"internal/kernel/validation"},
-	"HoldReasonCodeMinLength":            {"Hold"},
-	"HoldReasonCodeMaxLength":            {"Hold"},
-	"HoldReasonCodePattern":              {"Hold"},
-	"HoldMessageMinLength":               {"Hold"},
-	"HoldMessageMaxLength":               {"Hold"},
-	"HoldActionURLMaxLength":             {"Hold"},
-	"HoldActionURLPattern":               {"Hold"},
-	"MaxPerDayMin":                       {"Workspace", "DefaultSendCap", "Integration"},
-	"MaxPerDayMax":                       {"Workspace", "DefaultSendCap", "Integration"},
-	"MaxPerSecondMin":                    {"Integration"},
-	"MaxPerSecondMax":                    {"Integration"},
-	"SesConfigurationSetMinLength":       {"internal/domain/sending/integrations"},
-	"SesConfigurationSetMaxLength":       {"internal/domain/sending/integrations"},
-	"SesConfigurationSetPattern":         {"internal/domain/sending/integrations"},
-	"AttributionWindowDaysMin":           {"Workspace"},
-	"AttributionWindowDaysMax":           {"Workspace"},
-	"RetentionDaysMin":                   {"Workspace"},
-	"RetentionDaysMax":                   {"Workspace"},
-	"HTTPCallHeadersMaxItems":            {"internal/infra/httpcall"},
-	"ContactCityMaxLength":               {"Contact"},
-	"LocaleTagMaxLength":                 {"Contact"},
-	"LocaleTagPattern":                   {"Contact"},
-	"CountryCodePattern":                 {"Contact", "FrequencyCap", "SendingWindow"},
-	"FrequencyCapMaxMessagesMin":         {"FrequencyCap"},
-	"FrequencyCapMaxMessagesMax":         {"FrequencyCap"},
-	"FrequencyCapPeriodMinutesMin":       {"FrequencyCap"},
-	"FrequencyCapPeriodMinutesMax":       {"FrequencyCap"},
-	"MinuteOfDayMin":                     {"SendingWindow"},
-	"MinuteOfDayMax":                     {"SendingWindow"},
-	"FrequencyCapsMaxItems":              {"FrequencyCap"},
-	"SendingWindowsMaxItems":             {"SendingWindow"},
-	"SendingWindowHoursMaxItems":         {"SendingWindow"},
-	"ImageURLMaxLength":                  {"Contact"},
-	"ImageURLPattern":                    {"Contact"},
-	"BrandKitLogoURLMaxLength":           {"BrandKit"},
-	"BrandKitButtonRadiusMin":            {"BrandKit"},
-	"BrandKitButtonRadiusMax":            {"BrandKit"},
-	"BrandKitFooterTextMaxLength":        {"BrandKit"},
-	"SignupSurveyOtherMaxLength":         {"SignupSurveyResponse"},
-	"CollectEventsMaxItems":              {"packages/analytics/src"},
-	"SignupItemKeyMinLength":             {"SignupItem"},
-	"SignupItemKeyMaxLength":             {"SignupItem"},
-	"SignupItemKeyPattern":               {"SignupItem"},
-	"SignupItemTitleMinLength":           {"SignupItem"},
-	"SignupItemTitleMaxLength":           {"SignupItem"},
-	"LegalDocumentLabelMinLength":        {"LegalDocumentVersion"},
-	"LegalDocumentLabelMaxLength":        {"LegalDocumentVersion"},
-	"LegalDocumentMarkdownMaxLength":     {"LegalDocumentDraft"},
-	"ConsentWordingMinLength":            {"Confirmation"},
-	"ConsentWordingMaxLength":            {"Confirmation"},
-	"ConsentSourceMinLength":             {"Confirmation"},
-	"ConsentSourceMaxLength":             {"Confirmation"},
-	"ConsentBrandMinLength":              {"Confirmation"},
-	"ConsentBrandMaxLength":              {"Confirmation"},
-	"TrackingDomainHostMinLength":        {"TrackingDomain"},
-	"PageMin":                            {"internal/kernel/pagination"},
-	"PageDefault":                        {"internal/kernel/pagination"},
-	"PageSizeMin":                        {"internal/kernel/pagination"},
-	"PageSizeMax":                        {"internal/kernel/pagination"},
-	"PageSizeDefault":                    {"internal/kernel/pagination"},
-	"TelegramButtonsMaxItems":            {"internal/kernel/telegramrender"},
-	"TelegramUnsubscribeButtonMaxLength": {"internal/kernel/telegramrender"},
-	"VisitorIDMinLength":                 {"Visitor"},
-	"VisitorIDMaxLength":                 {"Visitor"},
-	"LinkIdentityHostMinLength":          {"Workspace"},
-	"LinkIdentityHostMaxLength":          {"Workspace"},
-	"LinkIdentityHostsMaxItems":          {"Workspace"},
-	"CollectEventActionMinLength":        {"internal/domain/contacts/visitors"},
-	"CollectEventActionMaxLength":        {"internal/domain/contacts/visitors"},
-	"ClientEventIDMinLength":             {"internal/domain/contacts/visitors", "internal/domain/contacts/eventrecording"},
-	"ClientEventIDMaxLength":             {"internal/domain/contacts/visitors", "internal/domain/contacts/eventrecording"},
-	"EventBatchMinItems":                 {"internal/domain/contacts/eventrecording"},
-	"EventBatchMaxItems":                 {"internal/domain/contacts/eventrecording"},
-	"ContactBatchMinItems":               {"Contact"},
-	"ContactBatchMaxItems":               {"Contact"},
-	"ContactImportColumnsMaxItems":       {"ContactImport"},
-	"IdentifyPhoneMaxLength":             {"internal/usecase/visitoridentification"},
-	"IdentifySubjectIDMaxLength":         {"internal/usecase/visitoridentification"},
-	"IdentifyTimeZoneMaxLength":          {"internal/usecase/visitoridentification"},
-	"IdentifyLocaleMaxLength":            {"internal/usecase/visitoridentification"},
-	"ConsentDestinationMaxLength":        {"Confirmation", "Suppression", "Unsubscribe", "EngagementTrackingConsent"},
-	"RuleTriggerEventsMinItems":          {"Rule"},
-	"EntryCooldownMin":                   {"AutomationVersion"},
-	"TriggerCooldownDefault":             {"AutomationVersion"},
-	"BranchPathsMinItems":                {"AutomationVersion"},
-	"BranchPathsMaxItems":                {"AutomationVersion"},
-	"DateOffsetDaysMin":                  {"internal/kernel/localcalendar"},
-	"DateOffsetDaysMax":                  {"internal/kernel/localcalendar"},
-	"LocalTimePattern":                   {"internal/kernel/localcalendar"},
-	"SplitPathsMinItems":                 {"AutomationVersion"},
-	"SplitPathsMaxItems":                 {"AutomationVersion"},
-	"SplitWeightMin":                     {"AutomationVersion"},
-	"WaitForEventNameMaxLength":          {"AutomationVersion"},
-	"WaitForEventNamePattern":            {"AutomationVersion"},
-	"WaitForEventTimeoutMin":             {"AutomationVersion"},
-	"AwaitedMatchersMinItems":            {"AutomationVersion"},
-	"ConditionWithinDaysMin":             {"internal/domain/contacts/condition"},
-	"ConditionEventTimesMin":             {"internal/domain/contacts/condition"},
-	"SigningSecretPattern":               {"internal/infra/httpcall"},
-	"CurrencyCodePattern":                {"Workspace"},
-	"RegionalFormatMaxLength":            {"User"},
-	"SuspensionReasonMinLength":          {"internal/domain/identity/suspension"},
+	"NameMaxLength":                         {"internal/kernel/validation"},
+	"UserNameMaxLength":                     {"internal/kernel/validation"},
+	"EmailAddressMaxLength":                 {"internal/kernel/validation"},
+	"HoldReasonCodeMinLength":               {"Hold"},
+	"HoldReasonCodeMaxLength":               {"Hold"},
+	"HoldReasonCodePattern":                 {"Hold"},
+	"HoldMessageMinLength":                  {"Hold"},
+	"HoldMessageMaxLength":                  {"Hold"},
+	"HoldActionURLMaxLength":                {"Hold"},
+	"HoldActionURLPattern":                  {"Hold"},
+	"MaxPerDayMin":                          {"Workspace", "DefaultSendCap", "Integration"},
+	"MaxPerDayMax":                          {"Workspace", "DefaultSendCap", "Integration"},
+	"MaxPerSecondMin":                       {"Integration"},
+	"MaxPerSecondMax":                       {"Integration"},
+	"SesConfigurationSetMinLength":          {"internal/domain/sending/integrations"},
+	"SesConfigurationSetMaxLength":          {"internal/domain/sending/integrations"},
+	"SesConfigurationSetPattern":            {"internal/domain/sending/integrations"},
+	"AttributionWindowDaysMin":              {"Workspace"},
+	"AttributionWindowDaysMax":              {"Workspace"},
+	"RetentionDaysMin":                      {"Workspace"},
+	"RetentionDaysMax":                      {"Workspace"},
+	"HTTPCallHeadersMaxItems":               {"internal/infra/httpcall"},
+	"ContactCityMaxLength":                  {"Contact"},
+	"LocaleTagMaxLength":                    {"Contact"},
+	"LocaleTagPattern":                      {"Contact"},
+	"CountryCodePattern":                    {"Contact", "FrequencyCap", "SendingWindow"},
+	"FrequencyCapMaxMessagesMin":            {"FrequencyCap"},
+	"FrequencyCapMaxMessagesMax":            {"FrequencyCap"},
+	"FrequencyCapPeriodMinutesMin":          {"FrequencyCap"},
+	"FrequencyCapPeriodMinutesMax":          {"FrequencyCap"},
+	"MinuteOfDayMin":                        {"SendingWindow"},
+	"MinuteOfDayMax":                        {"SendingWindow"},
+	"FrequencyCapsMaxItems":                 {"FrequencyCap"},
+	"SendingWindowsMaxItems":                {"SendingWindow"},
+	"SendingWindowHoursMaxItems":            {"SendingWindow"},
+	"ImageURLMaxLength":                     {"Contact"},
+	"ImageURLPattern":                       {"Contact"},
+	"BrandKitLogoURLMaxLength":              {"BrandKit"},
+	"BrandKitButtonRadiusMin":               {"BrandKit"},
+	"BrandKitButtonRadiusMax":               {"BrandKit"},
+	"BrandKitFooterTextMaxLength":           {"BrandKit"},
+	"SignupSurveyOtherMaxLength":            {"SignupSurveyResponse"},
+	"CollectEventsMaxItems":                 {"packages/analytics/src"},
+	"SignupItemKeyMinLength":                {"SignupItem"},
+	"SignupItemKeyMaxLength":                {"SignupItem"},
+	"SignupItemKeyPattern":                  {"SignupItem"},
+	"SignupItemTitleMinLength":              {"SignupItem"},
+	"SignupItemTitleMaxLength":              {"SignupItem"},
+	"LegalDocumentLabelMinLength":           {"LegalDocumentVersion"},
+	"LegalDocumentLabelMaxLength":           {"LegalDocumentVersion"},
+	"LegalDocumentMarkdownMaxLength":        {"LegalDocumentDraft"},
+	"ConsentWordingMinLength":               {"Confirmation"},
+	"ConsentWordingMaxLength":               {"Confirmation"},
+	"ConsentSourceMinLength":                {"Confirmation"},
+	"ConsentSourceMaxLength":                {"Confirmation"},
+	"ConsentBrandMinLength":                 {"Confirmation"},
+	"ConsentBrandMaxLength":                 {"Confirmation"},
+	"TrackingDomainHostMinLength":           {"TrackingDomain"},
+	"PageMin":                               {"internal/kernel/pagination"},
+	"PageDefault":                           {"internal/kernel/pagination"},
+	"PageSizeMin":                           {"internal/kernel/pagination"},
+	"PageSizeMax":                           {"internal/kernel/pagination"},
+	"PageSizeDefault":                       {"internal/kernel/pagination"},
+	"TelegramButtonsMaxItems":               {"internal/kernel/telegramrender"},
+	"TelegramUnsubscribeButtonMaxLength":    {"internal/kernel/telegramrender"},
+	"VisitorIDMinLength":                    {"Visitor"},
+	"VisitorIDMaxLength":                    {"Visitor"},
+	"LinkIdentityHostMinLength":             {"Workspace"},
+	"LinkIdentityHostMaxLength":             {"Workspace"},
+	"LinkIdentityHostsMaxItems":             {"Workspace"},
+	"CollectEventActionMinLength":           {"internal/domain/contacts/visitors"},
+	"CollectEventActionMaxLength":           {"internal/domain/contacts/visitors"},
+	"ClientEventIDMinLength":                {"internal/domain/contacts/visitors", "internal/domain/contacts/eventrecording"},
+	"ClientEventIDMaxLength":                {"internal/domain/contacts/visitors", "internal/domain/contacts/eventrecording"},
+	"EventBatchMinItems":                    {"internal/domain/contacts/eventrecording"},
+	"EventBatchMaxItems":                    {"internal/domain/contacts/eventrecording"},
+	"ContactBatchMinItems":                  {"Contact"},
+	"ContactBatchMaxItems":                  {"Contact"},
+	"ContactImportColumnsMaxItems":          {"ContactImport"},
+	"ContactImportRefusalValuesMinItems":    {"ContactImport"},
+	"ContactImportRefusalValuesMaxItems":    {"ContactImport"},
+	"ContactImportRefusalValueMinLength":    {"ContactImport"},
+	"ContactImportRefusalValueMaxLength":    {"ContactImport"},
+	"ContactImportConsentValuesMinItems":    {"ContactImport"},
+	"ContactImportConsentValuesMaxItems":    {"ContactImport"},
+	"ContactImportTrackingValuesMaxItems":   {"ContactImport"},
+	"ContactImportEvidenceWordingMaxLength": {"ContactImport"},
+	"ContactImportEvidenceSourceMaxLength":  {"ContactImport"},
+	"ContactImportEvidenceBrandMaxLength":   {"ContactImport"},
+	"IdentifyPhoneMaxLength":                {"internal/usecase/visitoridentification"},
+	"IdentifySubjectIDMaxLength":            {"internal/usecase/visitoridentification"},
+	"IdentifyTimeZoneMaxLength":             {"internal/usecase/visitoridentification"},
+	"IdentifyLocaleMaxLength":               {"internal/usecase/visitoridentification"},
+	"ConsentDestinationMaxLength":           {"Confirmation", "Suppression", "Unsubscribe", "EngagementTrackingConsent"},
+	"RuleTriggerEventsMinItems":             {"Rule"},
+	"EntryCooldownMin":                      {"AutomationVersion"},
+	"TriggerCooldownDefault":                {"AutomationVersion"},
+	"BranchPathsMinItems":                   {"AutomationVersion"},
+	"BranchPathsMaxItems":                   {"AutomationVersion"},
+	"DateOffsetDaysMin":                     {"internal/kernel/localcalendar"},
+	"DateOffsetDaysMax":                     {"internal/kernel/localcalendar"},
+	"LocalTimePattern":                      {"internal/kernel/localcalendar"},
+	"SplitPathsMinItems":                    {"AutomationVersion"},
+	"SplitPathsMaxItems":                    {"AutomationVersion"},
+	"SplitWeightMin":                        {"AutomationVersion"},
+	"WaitForEventNameMaxLength":             {"AutomationVersion"},
+	"WaitForEventNamePattern":               {"AutomationVersion"},
+	"WaitForEventTimeoutMin":                {"AutomationVersion"},
+	"AwaitedMatchersMinItems":               {"AutomationVersion"},
+	"ConditionWithinDaysMin":                {"internal/domain/contacts/condition"},
+	"ConditionEventTimesMin":                {"internal/domain/contacts/condition"},
+	"SigningSecretPattern":                  {"internal/infra/httpcall"},
+	"CurrencyCodePattern":                   {"Workspace"},
+	"RegionalFormatMaxLength":               {"User"},
+	"SuspensionReasonMinLength":             {"internal/domain/identity/suspension"},
 }

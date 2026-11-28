@@ -81,6 +81,8 @@ func contactImportColumn(c Converter, col csvimport.Column) siteapi.ContactImpor
 		return siteapi.ContactImportColumn{OneOf: siteapi.NewContactImportTagsColumnContactImportColumnSum(siteapi.ContactImportTagsColumn{
 			Kind: siteapi.ContactImportTagsColumnKindTags,
 		})}
+	case csvimport.KindRefusal, csvimport.KindConsent, csvimport.KindEngagementTracking, csvimport.KindTime:
+		return contactImportFactColumn(c, col, format)
 	case csvimport.KindIgnore:
 	}
 	return siteapi.ContactImportColumn{OneOf: siteapi.NewContactImportIgnoreColumnContactImportColumnSum(siteapi.ContactImportIgnoreColumn{
@@ -143,6 +145,113 @@ func contactImportColumnIn(c Inputs, col *siteapi.ContactImportColumnInput) csvi
 		return csvimport.Column{Kind: csvimport.KindTags}
 	case siteapi.ContactImportIgnoreColumnInputContactImportColumnInputSum:
 		return csvimport.Column{Kind: csvimport.KindIgnore}
+	case siteapi.ContactImportRefusalColumnInputContactImportColumnInputSum,
+		siteapi.ContactImportConsentColumnInputContactImportColumnInputSum,
+		siteapi.ContactImportEngagementTrackingColumnInputContactImportColumnInputSum,
+		siteapi.ContactImportTimeColumnInputContactImportColumnInputSum:
+		return contactImportFactColumnIn(c, col)
 	}
 	return csvimport.Column{}
+}
+
+// contactImportFactColumn is a refusal, consent, Engagement tracking or time column of a mapping.
+func contactImportFactColumn(c Converter, col csvimport.Column, format siteapi.NilContactImportDateFormat) siteapi.ContactImportColumn {
+	fact := lo.FromPtr(col.Fact)
+	switch col.Kind {
+	case csvimport.KindRefusal:
+		values := make([]siteapi.ContactImportRefusalValue, len(fact.Refusals))
+		for i, v := range fact.Refusals {
+			values[i] = siteapi.ContactImportRefusalValue{Value: v.Value, Refusal: c.ContactImportRefusal(v.Refusal)}
+		}
+		return siteapi.ContactImportColumn{OneOf: siteapi.NewContactImportRefusalColumnContactImportColumnSum(siteapi.ContactImportRefusalColumn{
+			Kind: siteapi.ContactImportRefusalColumnKindRefusal, Channel: siteapi.ContactImportRefusalChannel(fact.Channel), Values: values,
+		})}
+	case csvimport.KindConsent:
+		ev := lo.FromPtr(fact.Evidence)
+		return siteapi.ContactImportColumn{OneOf: siteapi.NewContactImportConsentColumnContactImportColumnSum(siteapi.ContactImportConsentColumn{
+			Kind: siteapi.ContactImportConsentColumnKindConsent, Channel: siteapi.ContactImportConsentChannel(fact.Channel),
+			Values: lo.CoalesceSliceOrEmpty(fact.Values),
+			Evidence: siteapi.ContactImportConsentEvidence{
+				Wording: evidenceText(ev.Wording), WordingColumn: evidenceColumn(ev.Wording),
+				Source: evidenceText(ev.Source), SourceColumn: evidenceColumn(ev.Source),
+				Brand: evidenceText(ev.Brand), BrandColumn: evidenceColumn(ev.Brand),
+			},
+		})}
+	case csvimport.KindEngagementTracking:
+		return siteapi.ContactImportColumn{OneOf: siteapi.NewContactImportEngagementTrackingColumnContactImportColumnSum(siteapi.ContactImportEngagementTrackingColumn{
+			Kind: siteapi.ContactImportEngagementTrackingColumnKindEngagementTracking, Channel: siteapi.ContactImportConsentChannel(fact.Channel),
+			Granted: lo.CoalesceSliceOrEmpty(fact.Values), Denied: lo.CoalesceSliceOrEmpty(fact.Denied),
+		})}
+	default:
+	}
+	return siteapi.ContactImportColumn{OneOf: siteapi.NewContactImportTimeColumnContactImportColumnSum(siteapi.ContactImportTimeColumn{
+		Kind: siteapi.ContactImportTimeColumnKindTime, Of: nilColumn(fact.Of), DateFormat: format,
+	})}
+}
+
+// evidenceText is the text of an evidence part, null when a column holds it.
+func evidenceText(p csvimport.EvidencePart) siteapi.NilString {
+	if p.Column != nil {
+		return siteapi.NilString{Null: true}
+	}
+	return siteapi.NewNilString(p.Text)
+}
+
+// evidenceColumn is the column of an evidence part, null when its text is given.
+func evidenceColumn(p csvimport.EvidencePart) siteapi.NilInt32 { return nilColumn(p.Column) }
+
+// nilColumn is a column of the file, counted from 0, null for none.
+func nilColumn(at *int) siteapi.NilInt32 {
+	if at == nil {
+		return siteapi.NilInt32{Null: true}
+	}
+	return siteapi.NewNilInt32(count(*at))
+}
+
+// contactImportFactColumnIn is a refusal, consent, Engagement tracking or time column a request
+// maps.
+func contactImportFactColumnIn(c Inputs, col *siteapi.ContactImportColumnInput) csvimport.Column {
+	switch col.OneOf.Type {
+	case siteapi.ContactImportRefusalColumnInputContactImportColumnInputSum:
+		v := col.OneOf.ContactImportRefusalColumnInput
+		values := make([]csvimport.RefusalValue, len(v.Values))
+		for i, value := range v.Values {
+			values[i] = csvimport.RefusalValue{Value: value.Value, Refusal: c.ContactImportRefusalIn(value.Refusal)}
+		}
+		return csvimport.Column{Kind: csvimport.KindRefusal, Fact: &csvimport.Fact{Channel: string(v.Channel), Refusals: values}}
+	case siteapi.ContactImportConsentColumnInputContactImportColumnInputSum:
+		v := col.OneOf.ContactImportConsentColumnInput
+		ev := v.Evidence
+		return csvimport.Column{Kind: csvimport.KindConsent, Fact: &csvimport.Fact{Channel: string(v.Channel), Values: v.Values, Evidence: &csvimport.Evidence{
+			Wording: evidencePartIn(ev.Wording, ev.WordingColumn),
+			Source:  evidencePartIn(ev.Source, ev.SourceColumn),
+			Brand:   evidencePartIn(ev.Brand, ev.BrandColumn),
+		}}}
+	case siteapi.ContactImportEngagementTrackingColumnInputContactImportColumnInputSum:
+		v := col.OneOf.ContactImportEngagementTrackingColumnInput
+		return csvimport.Column{Kind: csvimport.KindEngagementTracking, Fact: &csvimport.Fact{Channel: string(v.Channel), Values: v.Granted, Denied: v.Denied}}
+	default:
+	}
+	v := col.OneOf.ContactImportTimeColumnInput
+	var format csvimport.DateFormat
+	if f, ok := v.DateFormat.Get(); ok {
+		format = c.ContactImportDateFormatIn(f)
+	}
+	fact := &csvimport.Fact{}
+	if of, ok := v.Of.Get(); ok {
+		fact.Of = new(int(of))
+	}
+	return csvimport.Column{Kind: csvimport.KindTime, DateFormat: format, Fact: fact}
+}
+
+// evidencePartIn is an evidence part a request gives: its text, or the column that holds it.
+func evidencePartIn(text siteapi.NilString, column siteapi.NilInt32) csvimport.EvidencePart {
+	var p csvimport.EvidencePart
+	if v, ok := text.Get(); ok {
+		p.Text = v
+	}
+	if v, ok := column.Get(); ok {
+		p.Column = new(int(v))
+	}
+	return p
 }

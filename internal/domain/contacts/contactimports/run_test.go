@@ -75,13 +75,19 @@ func TestARunReadsAFileOfSeveralChunksInBatches(t *testing.T) {
 // key and runs it, its job queued: the import's id.
 func runningImport(t *testing.T, env *testhelper.TestEnv, file string, membershipID int64) int64 {
 	t.Helper()
+	return runningImportMapped(t, env, file, membershipID, []csvimport.Column{{Kind: csvimport.KindKey, Key: fieldname.Email}})
+}
+
+// runningImportMapped is runningImport with the columns of a file of several.
+func runningImportMapped(t *testing.T, env *testhelper.TestEnv, file string, membershipID int64, columns []csvimport.Column) int64 {
+	t.Helper()
 	ctx := t.Context()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	imports := testhelper.Module[*contactimports.Module](env)
 	uploaded, err := imports.Upload(ctx, acme, contactimports.UploadInput{File: strings.NewReader(file), MembershipID: membershipID})
 	require.NoError(t, err)
 	_, err = imports.SaveMapping(ctx, acme, uploaded.Import.ID, contactimports.MappingInput{Mapping: csvimport.Mapping{
-		Columns:          []csvimport.Column{{Kind: csvimport.KindKey, Key: fieldname.Email}},
+		Columns:          columns,
 		DecimalSeparator: csvimport.DecimalPoint,
 	}})
 	require.NoError(t, err)
@@ -119,27 +125,48 @@ func failContactWriteOnce(env *testhelper.TestEnv, address string) {
 	})
 }
 
+// resumedFile is a file of 2500 addresses and their status on the old platform: its row 1 is an
+// address the Workspace has, row 1200 has none, row 1300 repeats row 1100's, rows 5 and 1050
+// unsubscribed and row 1060 bounced.
+func resumedFile() string {
+	var file strings.Builder
+	file.WriteString("email,status\n")
+	for row := 1; row <= 2500; row++ {
+		email, status := fmt.Sprintf("r%d@example.com", row), ""
+		switch row {
+		case 1:
+			email = fixtures.ContactAliceEmail
+		case 5, 1050:
+			status = "unsubscribed"
+		case 1060:
+			status = "bounced"
+		case 1200:
+			email = ""
+		case 1300:
+			email = "r1100@example.com"
+		}
+		fmt.Fprintf(&file, "%s,%s\n", email, status)
+	}
+	return file.String()
+}
+
 // A run stopped in the middle of its second batch resumes from its checkpoint when its job runs
 // again: the batch is run again, each Contact is written once, and the counts are those of an
 // uninterrupted run (an existing Contact updated, a key repeated in the batch updated, a row
-// without a key refused and reported once).
+// without a key refused and reported once, the opt-outs and Suppressions of the batch run again
+// counted once).
 func TestARunStoppedMidFileResumesWithTheCountsOfAnUninterruptedRun(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	imports := testhelper.Module[*contactimports.Module](env)
-	file := emailFile(2500, func(row int) string {
-		switch row {
-		case 1:
-			return fixtures.ContactAliceEmail
-		case 1200:
-			return `""`
-		case 1300:
-			return "r1100@example.com"
-		}
-		return fmt.Sprintf("r%d@example.com", row)
+	id := runningImportMapped(t, env, resumedFile(), fixtures.AcmeOwnerMembershipID, []csvimport.Column{
+		{Kind: csvimport.KindKey, Key: fieldname.Email},
+		{Kind: csvimport.KindRefusal, Fact: &csvimport.Fact{Channel: "email", Refusals: []csvimport.RefusalValue{
+			{Value: "unsubscribed", Refusal: csvimport.RefusalEverything},
+			{Value: "bounced", Refusal: csvimport.RefusalSuppression},
+		}}},
 	})
-	id := runningImport(t, env, file, fixtures.AcmeOwnerMembershipID)
 	failContactWriteOnce(env, "r1500@example.com")
 
 	// The first try stops in the second batch; river tries the job again.
@@ -154,6 +181,8 @@ func TestARunStoppedMidFileResumesWithTheCountsOfAnUninterruptedRun(t *testing.T
 	assert.Equal(t, 2497, done.Import.Created)
 	assert.Equal(t, 2, done.Import.Updated)
 	assert.Equal(t, 1, done.Import.Refused)
+	assert.Equal(t, 2, done.Import.OptedOut)
+	assert.Equal(t, 1, done.Import.Suppressed)
 	assert.Equal(t, 1, done.ReportRows)
 	assert.Equal(t, 2497, made, "each Contact written once")
 }

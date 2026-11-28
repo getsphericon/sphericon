@@ -69,3 +69,51 @@ test('the targets are every key, every attribute and each Custom field', () => {
     'customField:renews_at',
   ])
 })
+
+test('a mapping of refusals, consent, tracking and their times reads back as it is saved', () => {
+  const facts: ContactImportMapping = {
+    ...proposal,
+    columns: [
+      { kind: 'key', key: 'email' },
+      {
+        kind: 'refusal',
+        channel: 'email',
+        values: [
+          { value: 'unsubscribed', refusal: 'unsubscribeEverything' },
+          { value: 'bounced', refusal: 'suppression' },
+        ],
+      },
+      { kind: 'time', of: 1, dateFormat: 'rfc3339' },
+      {
+        kind: 'consent',
+        channel: 'email',
+        values: ['yes'],
+        evidence: {
+          wording: 'Send me news',
+          wordingColumn: null,
+          source: null,
+          sourceColumn: 4,
+          brand: 'Acme',
+          brandColumn: null,
+        },
+      },
+      { kind: 'engagementTracking', channel: 'sms', granted: ['y'], denied: ['n'] },
+    ],
+  }
+
+  const input = mappingInputOf(valuesOf(facts), fields)
+
+  expect(input.columns).toEqual(facts.columns)
+  expect(columnsMissingDateFormat(valuesOf(facts), fields)).toEqual([])
+})
+
+test('a time column needs its format before the run', () => {
+  const values = valuesOf({
+    ...proposal,
+    columns: [{ kind: 'time', of: 0, dateFormat: 'rfc3339' }],
+  })
+  const cleared = { ...values, columns: values.columns.map((c) => ({ ...c, dateFormat: null })) }
+
+  expect(writesDate('time', fields)).toBe(true)
+  expect(columnsMissingDateFormat(cleared, fields)).toEqual([0])
+})

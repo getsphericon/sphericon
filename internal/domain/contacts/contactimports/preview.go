@@ -21,6 +21,10 @@ type Preview struct {
 	TotalRows, RowsWithoutKey, MalformedRows int
 	// DistinctTags are the Tags the rows it would write add, the Tag for every row included.
 	DistinctTags int
+	// OptOuts and Suppressions are the refusals its refusal columns would record (ADR 0138):
+	// the values that mean one on rows with a Destination on the column's Channel, a Telegram
+	// refusal on rows that reach the intake.
+	OptOuts, Suppressions int
 	// NewCustomFields are the Custom fields its run would create.
 	NewCustomFields int
 }
@@ -39,9 +43,10 @@ type PreviewRow struct {
 // Preview previews the import id with its mapping (the saved one, else the proposal), writing
 // nothing: the first rows, each read as the run reads it and, when it reaches the Contact intake,
 // judged by it as it would be (contacts.Module.Verdicts: the address check of ADR 0117 among
-// them), and over the whole file the rows, the rows without a key, the rows of another cell count
-// and the distinct Tags, and the Custom fields its run would create. Whether a row is new to the Workspace is not counted: it needs a lookup per
-// row.
+// them), and over the whole file the rows, the rows without a key, the rows of another cell count,
+// the distinct Tags, the opt-outs and Suppressions its refusal columns would record and the Custom
+// fields its run would create. Whether a row is new to the Workspace is not counted: it needs a
+// lookup per row.
 func (m *Module) Preview(ctx context.Context, s *ent.Scoped, id int64) (Preview, error) {
 	v, err := m.Get(ctx, s, id)
 	if err != nil {
@@ -51,6 +56,7 @@ func (m *Module) Preview(ctx context.Context, s *ent.Scoped, id int64) (Preview,
 	if err != nil {
 		return Preview{}, err
 	}
+	rd.now = m.now()
 	var (
 		out  Preview
 		read []readRow
@@ -71,6 +77,7 @@ func (m *Module) Preview(ctx context.Context, s *ent.Scoped, id int64) (Preview,
 			for _, name := range rr.in.Tags {
 				tags[tagname.Key(name)] = true
 			}
+			out.count(rr.refusals)
 		case rr.refusal.Reason == csvimport.ReasonNoKey:
 			out.RowsWithoutKey++
 		default:
@@ -104,4 +111,15 @@ func (m *Module) judge(ctx context.Context, s *ent.Scoped, rows []PreviewRow, re
 		rows[i].Refusal = &refusal
 	}
 	return nil
+}
+
+// count adds the refusals a row would record to the preview's counts.
+func (p *Preview) count(refusals []refusalFact) {
+	for _, f := range refusals {
+		if f.refusal == csvimport.RefusalSuppression {
+			p.Suppressions++
+		} else {
+			p.OptOuts++
+		}
+	}
 }

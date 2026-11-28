@@ -587,6 +587,8 @@ type Converter interface {
 	ContactImportDateFormat(source csvimport.DateFormat) siteapi.ContactImportDateFormat
 	// goverter:enum:transform value
 	ContactImportIssueReason(source csvimport.Reason) siteapi.ContactImportIssueReason
+	// goverter:enum:transform value
+	ContactImportRefusal(source csvimport.Refusal) siteapi.ContactImportRefusal
 	// A preview carries only the address check's traits (ADR 0117): the consent and the
 	// two-Contacts warnings are the run's.
 	// goverter:enum:transform value
