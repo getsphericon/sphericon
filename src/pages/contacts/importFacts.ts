@@ -1,6 +1,7 @@
 import type {
   ContactImportColumn,
   ContactImportColumnInput,
+  ContactImportConsentChannel,
   ContactImportConsentEvidenceInput,
   ContactImportDateFormat,
   ContactImportRefusalChannel,
@@ -69,7 +70,7 @@ export function factOf(column: ContactImportColumn): FactSettings | undefined {
 }
 
 // The channel of a consent or tracking column: email or sms, email for a refusal's telegram.
-function consentChannel(fact: FactSettings): 'email' | 'sms' {
+function consentChannel(fact: FactSettings): ContactImportConsentChannel {
   return fact.channel === 'sms' ? 'sms' : 'email'
 }
 
