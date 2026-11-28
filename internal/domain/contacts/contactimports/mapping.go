@@ -225,7 +225,8 @@ const sampleRows = 20
 // names an alias key, a core attribute or a Custom field of the Workspace (in any case, with or
 // without spaces, dashes or underscores), or Tags, is mapped to it, each target once, the first
 // header that names it; a header of a CSV export of Contacts is mapped as the export means it
-// (exported), so a Workspace's export imports into another as it is; a blank or repeated header and
+// (exported), so a Workspace's export imports into another as it is, but for a column the import's
+// Member's Role may not save (a new Custom field, a Suppression), which is ignored; a blank or repeated header and
 // any other is ignored. A date column gets the one format its sample's cells all read in (read
 // back as written, csvfile.Unguarded), none when several do or none does: the Member chooses then;
 // a column whose sample is blank gets the format the export writes (ISO for a date, RFC 3339 for a
@@ -265,7 +266,14 @@ func (m *Module) propose(ctx context.Context, s *ent.Scoped, imp *ent.ContactImp
 		DecimalSeparator: lo.Ternary(imp.Delimiter == contactimport.DelimiterSemicolon, csvimport.DecimalComma, csvimport.DecimalPoint),
 		Tag:              "Imported " + m.now().In(zone).Format("2006-01-02"),
 	}
+	ms, err := m.membership(ctx, s, imp)
+	if err != nil {
+		return csvimport.Mapping{}, err
+	}
 	export := exported{fields: fields, sep: mapping.DecimalSeparator}
+	if ms != nil {
+		export.role = ms.Role
+	}
 	used := map[string]bool{}
 	for at, h := range imp.Header {
 		cells := lo.Map(sample, func(cells []string, _ int) string { return csvfile.Unguarded(cellAt(cells, at)) })

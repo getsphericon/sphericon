@@ -7,10 +7,12 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/customfield"
+	"github.com/getsphericon/sphericon/ent/membership"
 	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contactsexport"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/csvimport"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -83,6 +85,9 @@ type exported struct {
 	fields map[string]customfield.Type
 	// sep is the decimal separator the proposal reads numbers with.
 	sep csvimport.DecimalSeparator
+	// role is the Role of the import's Member: a column it may not save (a new Custom field without
+	// custom_fields:manage, a Suppression without suppressions:manage) is not proposed.
+	role membership.Role
 }
 
 // column is the column proposed for header at, whose sample cells are cells (read back as written,
@@ -101,6 +106,9 @@ func (e exported) column(header string, at int, cells []string) (csvimport.Colum
 	case contactsexport.PartOptedOutScopes:
 		return csvimport.Column{Kind: csvimport.KindRefusal, Fact: &csvimport.Fact{Channel: string(cp.channel), Refusals: exportedRefusals(cp.channel)}}, true
 	case contactsexport.PartSuppressionReason:
+		if !memberships.Allows(e.role, memberships.PermSuppressionsManage) {
+			return csvimport.Column{}, false
+		}
 		return csvimport.Column{Kind: csvimport.KindRefusal, Fact: &csvimport.Fact{
 			Channel: string(cp.channel),
 			Refusals: lo.Map(suppressionReasons, func(r entsuppression.Reason, _ int) csvimport.RefusalValue {
@@ -128,7 +136,7 @@ func (e exported) column(header string, at int, cells []string) (csvimport.Colum
 
 // customField is the column of an export's Custom field key: the Workspace's field of the key, else
 // a new field of the key, labelled by it and typed as its sample reads (newFieldType); none when
-// no new field may take the key.
+// no new field may take the key or the Member's Role may not create one.
 func (e exported) customField(key string, cells []string) (csvimport.Column, bool) {
 	if t, ok := e.fields[key]; ok {
 		col := csvimport.Column{Kind: csvimport.KindCustomField, Key: key}
@@ -137,7 +145,7 @@ func (e exported) customField(key string, cells []string) (csvimport.Column, boo
 		}
 		return col, true
 	}
-	if contacts.CheckNewCustomFieldKey(key, false) != nil {
+	if !memberships.Allows(e.role, memberships.PermCustomFieldsManage) || contacts.CheckNewCustomFieldKey(key, false) != nil {
 		return csvimport.Column{}, false
 	}
 	label, err := validation.Name(key)
