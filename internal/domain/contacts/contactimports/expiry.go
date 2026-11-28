@@ -23,6 +23,7 @@ type Expired struct {
 // imports that run, each of which its river job checks for a run whose job is gone (Recover).
 type Swept struct {
 	Expired
+
 	Running []Running
 }
 

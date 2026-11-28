@@ -84,14 +84,14 @@ func runningImportMapped(t *testing.T, env *testhelper.TestEnv, file string, mem
 	ctx := t.Context()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	imports := testhelper.Module[*contactimports.Module](env)
+	ms, err := env.DB.Membership.Get(ctx, membershipID)
+	require.NoError(t, err)
 	uploaded, err := imports.Upload(ctx, acme, contactimports.UploadInput{File: strings.NewReader(file), MembershipID: membershipID})
 	require.NoError(t, err)
-	_, err = imports.SaveMapping(ctx, acme, uploaded.Import.ID, contactimports.MappingInput{Mapping: csvimport.Mapping{
+	_, err = imports.SaveMapping(ctx, acme, uploaded.Import.ID, contactimports.MappingInput{Role: ms.Role, Mapping: csvimport.Mapping{
 		Columns:          columns,
 		DecimalSeparator: csvimport.DecimalPoint,
 	}})
-	require.NoError(t, err)
-	ms, err := env.DB.Membership.Get(ctx, membershipID)
 	require.NoError(t, err)
 	_, err = imports.Run(ctx, acme, uploaded.Import.ID, ms.Role)
 	require.NoError(t, err)

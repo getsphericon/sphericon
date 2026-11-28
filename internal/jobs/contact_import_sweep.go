@@ -45,7 +45,7 @@ func (w *SweepContactImportsWorker) Work(ctx context.Context, _ *river.Job[Sweep
 		slog.InfoContext(ctx, "expired contact imports pruned", "uploads", swept.Uploads, "reports", swept.Reports)
 	}
 	return jobextension.QueueEach(ctx, swept.Running, func(r contactimports.Running) river.JobArgs {
-		return RecoverContactImportArgs{Workspace: jobkind.Workspace{WorkspaceID: r.WorkspaceID}, ImportID: r.ID}
+		return RecoverContactImportArgs{WorkspaceID: r.WorkspaceID, ImportID: r.ID}
 	})
 }
 
