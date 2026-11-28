@@ -1,5 +1,74 @@
 # Changelog
 
+## [0.8.0](https://github.com/getsphericon/sphericon/compare/v0.7.0...v0.8.0) (2026-11-28)
+
+
+### ⚠ BREAKING CHANGES
+
+* **sending:** the limiter columns second_fill and day_fill are replaced by second_tokens and day_tokens, which start NULL, a full bucket; existing limiter state is not converted. Upgrade: stop every instance before the migration, since an older build fails on the dropped columns, then start the new build; every Provider limit and Send cap bucket starts full once, which forgives whatever debt it held.
+* an Order's credit names its clicked message; old credited Orders are refused. Upgrade: reset a database holding credited Orders (`mise run db:reset`, `db:reset-test`).
+* **automations:** an Automation version's `triggerEvent` is now `trigger: {kind: "event", action, filter?}`; the column trigger_event is renamed trigger_action. Upgrade: run the migrations; stored Triggers become Event matchers without a filter. API clients send `trigger: {kind: "event", action}` instead of `triggerEvent`.
+* **automations:** an Automation version's Steps are a root path of typed Steps with ids; an Enrollment names its Step by id; Outbound messages, send keys, HTTP call ids and figures are keyed by version and Step id; Step records are kept for every Step.
+* **db:** the migration history is collapsed into one init at schema Major 4, and every database made before it is refused at start and at `migrate`, since no release upgrades it. Upgrade: reset every database: in development run `mise run db:reset` and `db:reset-test`; the guard refuses an existing Instance's database, so back it up and run this release on a new one.
+* **condition:** a Segment's and a Rule's Condition take a typed tree per place on /site, /api and MCP.
+* **sending:** an Outbound message's `reason` is split into `skipped_reason` (one of the Skipped reasons) and `failure`, in the Outbound messages export (`skipped_reason`, `failure`) and in the Data export (`skippedReason`, `failure`). Upgrade: run the migrations. A skipped Outbound message whose reason is none of the Skipped reasons, or a pending or sent one with a reason, stops the migration: set it by hand, then migrate again. A client of the exports reads the two new keys instead of `reason`.
+* the definition columns change type from text to jsonb, and a Segment's or a Rule version's Condition is required, the empty group when it has no tests.
+* **identity:** GET /site/me/identities/{provider}/link is gone; a link starts with POST /site/me/identities/link and a proof of identity.
+
+### Features
+
+* **analyzers:** every switch and map on a Channel names every Channel (rule 19) ([#1866](https://github.com/getsphericon/sphericon/issues/1866)) ([95f5c90](https://github.com/getsphericon/sphericon/commit/95f5c906b4281fd6158d429d763e6f9bc8201201))
+* **automations:** a Branch tests whether the Enrollment's own message was opened or clicked ([#1875](https://github.com/getsphericon/sphericon/issues/1875)) ([3692cd9](https://github.com/getsphericon/sphericon/commit/3692cd9fdb4f6305e31c9f582f3452f62d04c6fd))
+* **automations:** a date Trigger and the Wait until Step (ADR 0126) ([#1864](https://github.com/getsphericon/sphericon/issues/1864)) ([d5b7697](https://github.com/getsphericon/sphericon/commit/d5b7697d8667e26ae17b66f756b7e2d0504b78dc))
+* **automations:** hold Steps as a tree of typed Steps with ids, Step records and End (ADR 0122, 0124) ([#1852](https://github.com/getsphericon/sphericon/issues/1852)) ([ab20c91](https://github.com/getsphericon/sphericon/commit/ab20c91e6d7734544b6008320120a3fc9d44ea2e)), closes [#1558](https://github.com/getsphericon/sphericon/issues/1558) [#1559](https://github.com/getsphericon/sphericon/issues/1559) [#1560](https://github.com/getsphericon/sphericon/issues/1560) [#1561](https://github.com/getsphericon/sphericon/issues/1561) [#1562](https://github.com/getsphericon/sphericon/issues/1562)
+* **automations:** keep an HTTP step's JSON response for later Steps as http.&lt;name&gt; (ADR 0161) ([#1886](https://github.com/getsphericon/sphericon/issues/1886)) ([e5268ea](https://github.com/getsphericon/sphericon/commit/e5268eaabac8258b0a8aefc6097b185fe270f372)), closes [#1456](https://github.com/getsphericon/sphericon/issues/1456)
+* **automations:** match Events by filter, enroll again by policy and key, mark send-locked writes ([#1854](https://github.com/getsphericon/sphericon/issues/1854)) ([2de9282](https://github.com/getsphericon/sphericon/commit/2de92820a753ca384a05f09c8518c8e92fdc146f))
+* **automations:** the Step tree with Branch, Split, End and the editor on it (ADR 0122, 0124) ([#1861](https://github.com/getsphericon/sphericon/issues/1861)) ([8e472d8](https://github.com/getsphericon/sphericon/commit/8e472d8e3155b97fcca889a4eea6dba0a8f7258c)), closes [#1547](https://github.com/getsphericon/sphericon/issues/1547) [#1563](https://github.com/getsphericon/sphericon/issues/1563) [#1564](https://github.com/getsphericon/sphericon/issues/1564) [#1565](https://github.com/getsphericon/sphericon/issues/1565) [#1566](https://github.com/getsphericon/sphericon/issues/1566) [#1567](https://github.com/getsphericon/sphericon/issues/1567) [#1568](https://github.com/getsphericon/sphericon/issues/1568)
+* **automations:** wait for event and the kept awaited event (ADR 0124, 0136) ([#1881](https://github.com/getsphericon/sphericon/issues/1881)) ([f2371ad](https://github.com/getsphericon/sphericon/commit/f2371add8f9d55fe64244e25afc8dc20b50fe126))
+* **broadcasts:** cancel a sending Broadcast ([#1540](https://github.com/getsphericon/sphericon/issues/1540)) ([261bc5d](https://github.com/getsphericon/sphericon/commit/261bc5df6fd545eb8775fd43fdcd6aaa0e9639f1)), closes [#1435](https://github.com/getsphericon/sphericon/issues/1435)
+* **broadcasts:** freeze a cancelled Broadcast past the messages retention window ([#1612](https://github.com/getsphericon/sphericon/issues/1612)) ([69a39e5](https://github.com/getsphericon/sphericon/commit/69a39e525cbe5b5c74fb39e47774fd700e52a81b))
+* **condition:** type a Condition's shape by the place it is used (ADR 0181) ([#1851](https://github.com/getsphericon/sphericon/issues/1851)) ([7f50298](https://github.com/getsphericon/sphericon/commit/7f502983724b96a1972a26cec4dffb2ca2807c16))
+* **confirmations:** send the double opt-in confirmation email on a Confirmation request (ADR 0013) ([#1865](https://github.com/getsphericon/sphericon/issues/1865)) ([9b3d8bc](https://github.com/getsphericon/sphericon/commit/9b3d8bc493cf45a005c39770f20dfb61d9ded6a0))
+* **contacts:** import Contacts from a mapped CSV and export them as a streamed CSV ([#1882](https://github.com/getsphericon/sphericon/issues/1882)) ([b8bb3f7](https://github.com/getsphericon/sphericon/commit/b8bb3f7644dc9856f93a13fb72f3059b3d5c1116))
+* **ee:** fan the all-Workspace jobs out into a job per Workspace ([#1627](https://github.com/getsphericon/sphericon/issues/1627)) ([abd40bc](https://github.com/getsphericon/sphericon/commit/abd40bc4a728a7d468f492564c42881189b78785))
+* engagement tracking consent per Destination and unknown engagement history (ADR 0120, ADR 0123) ([#1859](https://github.com/getsphericon/sphericon/issues/1859)) ([cb10ae9](https://github.com/getsphericon/sphericon/commit/cb10ae96601b81f3bb715b747b015f90b63eff07))
+* filter the Events a Condition's event test counts by their properties (ADR 0153) ([#1862](https://github.com/getsphericon/sphericon/issues/1862)) ([1e2b462](https://github.com/getsphericon/sphericon/commit/1e2b46219971d4058f2c9b6c7e7dc4d3b6747dc2))
+* refuse a signing secret that cannot sign; update npm and Go dependencies, dbcleaner v2 ([#1735](https://github.com/getsphericon/sphericon/issues/1735)) ([b2aad76](https://github.com/getsphericon/sphericon/commit/b2aad760d6b7c0bb90b412943e5e6703e7cac5d1))
+* **sending-domains:** show each email Integration's envelope instead of an SPF record (ADR 0184) ([#1884](https://github.com/getsphericon/sphericon/issues/1884)) ([26d6db6](https://github.com/getsphericon/sphericon/commit/26d6db6065dcebd391d8740327e8176eb3e2ecc1))
+* **sending:** hold marketing sends to a Sending window and a Frequency cap (ADR 0134, 0137, 0178) ([#1869](https://github.com/getsphericon/sphericon/issues/1869)) ([e9dd411](https://github.com/getsphericon/sphericon/commit/e9dd411e477989a6473230149e2bdc12cb96d9f1))
+* store definition documents as typed jsonb (ADR 0169) ([#1578](https://github.com/getsphericon/sphericon/issues/1578)) ([9365274](https://github.com/getsphericon/sphericon/commit/93652749be11742296ab2859ba77277d23b1908f))
+* **ticketcheck:** accept a spec's slice as a wait, hold unsliced specs and Blocked by lines without an edge ([#1626](https://github.com/getsphericon/sphericon/issues/1626)) ([4c0d757](https://github.com/getsphericon/sphericon/commit/4c0d7571fd3485a9b31338978cc10e5b6d534309))
+* **ticketcheck:** hold a ticket that names an unbuilt ADR by one of its terms ([#1644](https://github.com/getsphericon/sphericon/issues/1644)) ([39f03cc](https://github.com/getsphericon/sphericon/commit/39f03cc6328a9b861c69e3138c07116fd0b31fa3))
+* **ticketcheck:** print the graph of open tickets with mise run tickets:graph ([#1628](https://github.com/getsphericon/sphericon/issues/1628)) ([743f400](https://github.com/getsphericon/sphericon/commit/743f400113e6a5121936be4ddbb27283f4517224))
+* **tracking:** link identity tokens on tracked links (ADR 0160) ([#1874](https://github.com/getsphericon/sphericon/issues/1874)) ([2ec45c8](https://github.com/getsphericon/sphericon/commit/2ec45c8bd88bf3c1095c4d199939823dfb1c37f9))
+* **workspaces:** turn on confirmed opt-in with its confirmation email and grandfathering ([#1643](https://github.com/getsphericon/sphericon/issues/1643)) ([b669c15](https://github.com/getsphericon/sphericon/commit/b669c15fe1b436f459ebb979ef7b21a5867f5406))
+
+
+### Bug Fixes
+
+* **dev:** give the demo storefront the Demo site token the fixtures hash ([#1820](https://github.com/getsphericon/sphericon/issues/1820)) ([ff22f37](https://github.com/getsphericon/sphericon/commit/ff22f370670f6956bbcf80397f7f0eb763a2fa38))
+* **engagement:** an open through Gmail's or Yahoo's display proxy is the person's ([#1785](https://github.com/getsphericon/sphericon/issues/1785)) ([11481f4](https://github.com/getsphericon/sphericon/commit/11481f4ff3cd982c21d46bc9100672e5cba4d2e7))
+* **fixtures:** keep sequences ahead of surviving rows on every load ([#1873](https://github.com/getsphericon/sphericon/issues/1873)) ([f184f0d](https://github.com/getsphericon/sphericon/commit/f184f0d934015215d62c70fd07b8528c762f8086))
+* **identity:** a Second factor reset needs the right in every Workspace of the member and tells them ([#1541](https://github.com/getsphericon/sphericon/issues/1541)) ([55210e2](https://github.com/getsphericon/sphericon/commit/55210e25f5fd83a364434be6f1399300ddf83736))
+* **identity:** linking a Sign-in provider asks for a fresh proof and mails the owner ([#1542](https://github.com/getsphericon/sphericon/issues/1542)) ([751f278](https://github.com/getsphericon/sphericon/commit/751f278a02cd8b7d5535c521e3ed8660480b6f95))
+* keep the secret rotation from writing between an edit's read and write ([#1583](https://github.com/getsphericon/sphericon/issues/1583)) ([54cf4a9](https://github.com/getsphericon/sphericon/commit/54cf4a9d638f7a6a41fb6cd001e7d99eaf8a00ec)), closes [#1480](https://github.com/getsphericon/sphericon/issues/1480)
+* **mcp:** the win-back and domain set-up prompts follow ADRs 0123 and 0184 ([#1883](https://github.com/getsphericon/sphericon/issues/1883)) ([3cae72f](https://github.com/getsphericon/sphericon/commit/3cae72f10b4f19b57326f0c9fdbec893437967c9))
+* **sending-domains:** find DMARC by RFC 9989's DNS tree walk ([#1880](https://github.com/getsphericon/sphericon/issues/1880)) ([c1f4728](https://github.com/getsphericon/sphericon/commit/c1f4728306b7ca5b8b8820bda7fe78243cab5c37))
+* **sending:** keep the send limit buckets in messages, so a raised ceiling keeps a debt in messages ([#1860](https://github.com/getsphericon/sphericon/issues/1860)) ([f9a6f8a](https://github.com/getsphericon/sphericon/commit/f9a6f8a3c95e34276bb6d76f570d8ba2a8c96e7f))
+* **sending:** link the zone database into the binary so every zone loads ([#1879](https://github.com/getsphericon/sphericon/issues/1879)) ([d7bd581](https://github.com/getsphericon/sphericon/commit/d7bd581cc53ac7ad095dbe1f08476be2c22026ba))
+* **test:** keep internal/app tests off the dev stack's metrics port ([612f1d7](https://github.com/getsphericon/sphericon/commit/612f1d719c1e84e46acdc947fcdc5fa82aa6022e))
+* **workspaces:** keep the confirmed opt-in switch once its Confirmations are recorded ([#1672](https://github.com/getsphericon/sphericon/issues/1672)) ([f5d61d2](https://github.com/getsphericon/sphericon/commit/f5d61d22b0e3ca54d043d758c4b87186fa69beea))
+
+
+### Miscellaneous Chores
+
+* **db:** collapse the migration history, the project carries no legacy ([#1853](https://github.com/getsphericon/sphericon/issues/1853)) ([38db877](https://github.com/getsphericon/sphericon/commit/38db8772893da50dafa71532e38ca55b1f6141f3))
+
+
+### Code Refactoring
+
+* **sending:** make the Skipped reasons and the Deferral causes closed lists ([#1719](https://github.com/getsphericon/sphericon/issues/1719)) ([8d1253a](https://github.com/getsphericon/sphericon/commit/8d1253a12ec1456d8db9cc00a2db733c447ef850))
+
 ## [0.7.0](https://github.com/getsphericon/sphericon/compare/v0.6.0...v0.7.0) (2026-11-17)
 
 
