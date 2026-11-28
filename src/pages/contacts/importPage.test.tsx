@@ -22,7 +22,7 @@ const RUNNING: SiteContactImport = {
   malformedRows: 0,
   mapping: {
     columns: [{ kind: 'key', key: 'email' }],
-    decimalSeparator: '.',
+    decimalSeparator: 'point',
     defaultCountry: null,
     tag: null,
     onlyAddNew: false,

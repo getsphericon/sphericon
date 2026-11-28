@@ -352,7 +352,7 @@ function MappingForm({ workspaceId, imp }: { workspaceId: string; imp: SiteConta
           data={zContactImportDecimalSeparator.options.map((sep) => ({
             value: sep,
             label:
-              sep === '.' ? t(($) => $.contactImports.point) : t(($) => $.contactImports.comma),
+              sep === 'point' ? t(($) => $.contactImports.point) : t(($) => $.contactImports.comma),
           }))}
           value={values.decimalSeparator}
           allowDeselect={false}

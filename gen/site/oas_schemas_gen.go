@@ -10209,29 +10209,29 @@ func (s *ContactImportDateFormat) UnmarshalText(data []byte) error {
 	}
 }
 
-// The character a file's numbers write their decimals after.
+// The character a file's numbers write their decimals after: a point (`.`) or a comma (`,`).
 // Ref: #/components/schemas/ContactImportDecimalSeparator
 type ContactImportDecimalSeparator string
 
 const (
-	ContactImportDecimalSeparator_Dot ContactImportDecimalSeparator = "."
-	ContactImportDecimalSeparator_    ContactImportDecimalSeparator = ","
+	ContactImportDecimalSeparatorPoint ContactImportDecimalSeparator = "point"
+	ContactImportDecimalSeparatorComma ContactImportDecimalSeparator = "comma"
 )
 
 // AllValues returns all ContactImportDecimalSeparator values.
 func (ContactImportDecimalSeparator) AllValues() []ContactImportDecimalSeparator {
 	return []ContactImportDecimalSeparator{
-		ContactImportDecimalSeparator_Dot,
-		ContactImportDecimalSeparator_,
+		ContactImportDecimalSeparatorPoint,
+		ContactImportDecimalSeparatorComma,
 	}
 }
 
 // MarshalText implements encoding.TextMarshaler.
 func (s ContactImportDecimalSeparator) MarshalText() ([]byte, error) {
 	switch s {
-	case ContactImportDecimalSeparator_Dot:
+	case ContactImportDecimalSeparatorPoint:
 		return []byte(s), nil
-	case ContactImportDecimalSeparator_:
+	case ContactImportDecimalSeparatorComma:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -10241,11 +10241,11 @@ func (s ContactImportDecimalSeparator) MarshalText() ([]byte, error) {
 // UnmarshalText implements encoding.TextUnmarshaler.
 func (s *ContactImportDecimalSeparator) UnmarshalText(data []byte) error {
 	switch ContactImportDecimalSeparator(data) {
-	case ContactImportDecimalSeparator_Dot:
-		*s = ContactImportDecimalSeparator_Dot
+	case ContactImportDecimalSeparatorPoint:
+		*s = ContactImportDecimalSeparatorPoint
 		return nil
-	case ContactImportDecimalSeparator_:
-		*s = ContactImportDecimalSeparator_
+	case ContactImportDecimalSeparatorComma:
+		*s = ContactImportDecimalSeparatorComma
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)

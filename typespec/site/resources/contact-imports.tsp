@@ -38,10 +38,10 @@ enum ContactImportDateFormat {
   rfc3339: "rfc3339",
 }
 
-/** The character a file's numbers write their decimals after */
+/** The character a file's numbers write their decimals after: a point (`.`) or a comma (`,`) */
 enum ContactImportDecimalSeparator {
-  point: ".",
-  comma: ",",
+  point,
+  comma,
 }
 
 /** The character a file's cells are separated by, detected at upload */

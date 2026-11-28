@@ -122,14 +122,25 @@ type Mapping struct {
 	Tag string `json:"tag,omitempty"`
 }
 
-// DecimalSeparator is the character a file's numbers write their decimals after: the values of
-// the contract's ContactImportDecimalSeparator.
+// DecimalSeparator is the character a file's numbers write their decimals after, by name: the
+// values of the contract's ContactImportDecimalSeparator.
 type DecimalSeparator string
 
 const (
-	DecimalPoint DecimalSeparator = "."
-	DecimalComma DecimalSeparator = ","
+	DecimalPoint DecimalSeparator = "point"
+	DecimalComma DecimalSeparator = "comma"
 )
+
+// Char is the character the separator names, "" for none of them.
+func (d DecimalSeparator) Char() string {
+	switch d {
+	case DecimalPoint:
+		return "."
+	case DecimalComma:
+		return ","
+	}
+	return ""
+}
 
 // DateFormat is how a column writes its dates: the values of the contract's ContactImportDateFormat.
 type DateFormat string

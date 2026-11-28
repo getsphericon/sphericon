@@ -15304,8 +15304,8 @@
       },
       "ContactImportDecimalSeparator": {
         "type": "string",
-        "enum": [".", ","],
-        "description": "The character a file's numbers write their decimals after"
+        "enum": ["point", "comma"],
+        "description": "The character a file's numbers write their decimals after: a point (`.`) or a comma (`,`)"
       },
       "ContactImportDelimiter": {
         "type": "string",

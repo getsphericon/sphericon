@@ -9,7 +9,7 @@
   size: 64
   row_count: 2
   malformed_rows: 0
-  mapping: '{"columns":[{"kind":"key","key":"email"},{"kind":"attribute","attribute":"firstName"}],"decimalSeparator":"."}'
+  mapping: '{"columns":[{"kind":"key","key":"email"},{"kind":"attribute","attribute":"firstName"}],"decimalSeparator":"point"}'
   processed: 2
   created: 1
   refused: 1

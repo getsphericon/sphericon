@@ -562,9 +562,9 @@ export const zContactImportCustomFieldColumnInput = z.strictObject({
 });
 
 /**
- * The character a file's numbers write their decimals after
+ * The character a file's numbers write their decimals after: a point (`.`) or a comma (`,`)
  */
-export const zContactImportDecimalSeparator = z.enum(['.', ',']);
+export const zContactImportDecimalSeparator = z.enum(['point', 'comma']);
 
 /**
  * The character a file's cells are separated by, detected at upload

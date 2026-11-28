@@ -2423,12 +2423,12 @@ export const ContactImportDateFormat = {
 export type ContactImportDateFormat = typeof ContactImportDateFormat[keyof typeof ContactImportDateFormat];
 
 /**
- * The character a file's numbers write their decimals after
+ * The character a file's numbers write their decimals after: a point (`.`) or a comma (`,`)
  */
-export const ContactImportDecimalSeparator = { '': '.', ',': ',' } as const;
+export const ContactImportDecimalSeparator = { POINT: 'point', COMMA: 'comma' } as const;
 
 /**
- * The character a file's numbers write their decimals after
+ * The character a file's numbers write their decimals after: a point (`.`) or a comma (`,`)
  */
 export type ContactImportDecimalSeparator = typeof ContactImportDecimalSeparator[keyof typeof ContactImportDecimalSeparator];
 

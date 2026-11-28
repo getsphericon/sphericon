@@ -20,7 +20,7 @@ const UPLOADED: SiteContactImport = {
   malformedRows: 0,
   mapping: {
     columns: [{ kind: 'key', key: 'email' }],
-    decimalSeparator: '.',
+    decimalSeparator: 'point',
     defaultCountry: null,
     tag: 'Imported 2026-11-27',
     onlyAddNew: false,

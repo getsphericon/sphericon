@@ -4448,9 +4448,9 @@ func (s ContactImportDateFormat) Validate() error {
 
 func (s ContactImportDecimalSeparator) Validate() error {
 	switch s {
-	case ".":
+	case "point":
 		return nil
-	case ",":
+	case "comma":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
