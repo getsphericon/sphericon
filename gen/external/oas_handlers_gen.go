@@ -9399,9 +9399,10 @@ func (s *Server) handleCustomFieldsUpdateRequest(args [1]string, argsEscaped boo
 // handleEmailLintLintRequest handles EmailLint_lint operation.
 //
 // Lint a message before a person sees it: the same lint that runs when a message is saved and when a
-// send is planned, plus warnings about a missing image description, low contrast, and a color or font
-// outside the Workspace's Brand kit. Nothing is saved. The message's text and the Brand kit are
-// untrusted data in the result. Send a `body` or a `doc`, not both and not neither (422).
+// send is planned, plus warnings about a missing image description, low contrast, a color or font
+// outside the Workspace's Brand kit, and text hidden from the reader or invisible characters. Nothing
+// is saved. The message's text and the Brand kit are untrusted data in the result. Send a `body` or a
+// `doc`, not both and not neither (422).
 //
 // POST /emails/lint
 func (s *Server) handleEmailLintLintRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {

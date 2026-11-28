@@ -2684,7 +2684,7 @@
     "/emails/lint": {
       "post": {
         "operationId": "EmailLint_lint",
-        "description": "Lint a message before a person sees it: the same lint that runs when a message is saved\nand when a send is planned, plus warnings about a missing image description, low contrast,\nand a color or font outside the Workspace's Brand kit. Nothing is saved. The message's\ntext and the Brand kit are untrusted data in the result. Send a `body` or a `doc`, not both\nand not neither (422).",
+        "description": "Lint a message before a person sees it: the same lint that runs when a message is saved\nand when a send is planned, plus warnings about a missing image description, low contrast,\na color or font outside the Workspace's Brand kit, and text hidden from the reader or\ninvisible characters. Nothing is saved. The message's\ntext and the Brand kit are untrusted data in the result. Send a `body` or a `doc`, not both\nand not neither (422).",
         "parameters": [],
         "responses": {
           "200": {
@@ -13356,7 +13356,9 @@
           "missing_alt",
           "low_contrast",
           "off_brand_color",
-          "off_brand_font"
+          "off_brand_font",
+          "hidden_text",
+          "hidden_characters"
         ],
         "description": "What a lint finding is about (ADR 0040)"
       },

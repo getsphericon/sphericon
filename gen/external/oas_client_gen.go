@@ -363,9 +363,10 @@ type Invoker interface {
 	// EmailLintLint invokes EmailLint_lint operation.
 	//
 	// Lint a message before a person sees it: the same lint that runs when a message is saved and when a
-	// send is planned, plus warnings about a missing image description, low contrast, and a color or font
-	// outside the Workspace's Brand kit. Nothing is saved. The message's text and the Brand kit are
-	// untrusted data in the result. Send a `body` or a `doc`, not both and not neither (422).
+	// send is planned, plus warnings about a missing image description, low contrast, a color or font
+	// outside the Workspace's Brand kit, and text hidden from the reader or invisible characters. Nothing
+	// is saved. The message's text and the Brand kit are untrusted data in the result. Send a `body` or a
+	// `doc`, not both and not neither (422).
 	//
 	// POST /emails/lint
 	EmailLintLint(ctx context.Context, request *LintEmailInput) (*LintEmailResult, error)
@@ -7269,9 +7270,10 @@ func (c *Client) sendCustomFieldsUpdate(ctx context.Context, request *UpdateCust
 // EmailLintLint invokes EmailLint_lint operation.
 //
 // Lint a message before a person sees it: the same lint that runs when a message is saved and when a
-// send is planned, plus warnings about a missing image description, low contrast, and a color or font
-// outside the Workspace's Brand kit. Nothing is saved. The message's text and the Brand kit are
-// untrusted data in the result. Send a `body` or a `doc`, not both and not neither (422).
+// send is planned, plus warnings about a missing image description, low contrast, a color or font
+// outside the Workspace's Brand kit, and text hidden from the reader or invisible characters. Nothing
+// is saved. The message's text and the Brand kit are untrusted data in the result. Send a `body` or a
+// `doc`, not both and not neither (422).
 //
 // POST /emails/lint
 func (c *Client) EmailLintLint(ctx context.Context, request *LintEmailInput) (*LintEmailResult, error) {
