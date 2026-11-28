@@ -62,6 +62,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendcaplimiter"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
+	"github.com/getsphericon/sphericon/ent/sendingdomainenvelope"
 	"github.com/getsphericon/sphericon/ent/sendingwindow"
 	"github.com/getsphericon/sphericon/ent/starttoken"
 	"github.com/getsphericon/sphericon/ent/suppression"
@@ -1392,6 +1393,21 @@ func (_c *WorkspaceCreate) AddIntegrationProviderStates(v ...*IntegrationProvide
 		ids[i] = v[i].ID
 	}
 	return _c.AddIntegrationProviderStateIDs(ids...)
+}
+
+// AddSendingDomainEnvelopeIDs adds the "sending_domain_envelopes" edge to the SendingDomainEnvelope entity by IDs.
+func (_c *WorkspaceCreate) AddSendingDomainEnvelopeIDs(ids ...int64) *WorkspaceCreate {
+	_c.mutation.AddSendingDomainEnvelopeIDs(ids...)
+	return _c
+}
+
+// AddSendingDomainEnvelopes adds the "sending_domain_envelopes" edges to the SendingDomainEnvelope entity.
+func (_c *WorkspaceCreate) AddSendingDomainEnvelopes(v ...*SendingDomainEnvelope) *WorkspaceCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddSendingDomainEnvelopeIDs(ids...)
 }
 
 // AddWebhookEndpointHealthIDs adds the "webhook_endpoint_healths" edge to the WebhookEndpointHealth entity by IDs.
@@ -2742,6 +2758,22 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(integrationproviderstate.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.SendingDomainEnvelopesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.SendingDomainEnvelopesTable,
+			Columns: []string{workspace.SendingDomainEnvelopesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sendingdomainenvelope.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

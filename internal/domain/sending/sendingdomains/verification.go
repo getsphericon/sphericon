@@ -16,25 +16,27 @@ import (
 )
 
 // Verify runs the live DNS check of the domain now, when a person asks for it, and returns the
-// domain as the check left it: `verified`, `lastCheckedAt`, `dmarcCheckedAt` and `dmarcFoundAt`
-// are the outcome. It confirms the domain is in the Workspace and kept first: an unknown or a
+// domain as the check left it: `verified`, `lastCheckedAt`, `dmarcCheckedAt`, `dmarcFoundAt` and
+// the envelopes are the outcome. It confirms the domain is in the Workspace and kept first: an unknown or a
 // deleted domain is ErrNotFound.
-func (m *Module) Verify(ctx context.Context, s *ent.Scoped, id int64) (*ent.SendingDomain, error) {
+func (m *Module) Verify(ctx context.Context, s *ent.Scoped, id int64) (View, error) {
 	if _, err := editable(ctx, s, id); err != nil {
-		return nil, err
+		return View{}, err
 	}
 	if err := m.Recheck(ctx, s, id); err != nil {
-		return nil, err
+		return View{}, err
 	}
 	return m.Get(ctx, s, id)
 }
 
-// Recheck checks one Sending domain: its DKIM, then its DMARC record. A DKIM lookup error is
-// returned so the job retries; DMARC never fails the check nor changes its DKIM result (ADR 0012).
+// Recheck checks one Sending domain: its DKIM, then its DMARC record, then the envelope of each
+// email Integration (ADR 0184), so a domain just verified shows its envelopes before any send. A
+// DKIM lookup error is returned so the job retries; DMARC and the envelopes never fail the check
+// nor change its DKIM result (ADR 0012).
 // A deleted domain is not kept working (ADR 0099): a check queued before the deletion does nothing.
 // An unknown id is ErrNotFound.
 func (m *Module) Recheck(ctx context.Context, s *ent.Scoped, id int64) error {
-	dom, err := m.Get(ctx, s, id)
+	dom, err := m.row(ctx, s, id)
 	if err != nil {
 		return err
 	}
@@ -45,6 +47,7 @@ func (m *Module) Recheck(ctx context.Context, s *ent.Scoped, id int64) error {
 		return err
 	}
 	m.checkDMARC(ctx, s, dom)
+	m.checkEnvelopes(ctx, s, dom)
 	return nil
 }
 

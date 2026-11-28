@@ -2820,6 +2820,9 @@ const (
 	RoleOf_IntegrationClient_QueryStartTokens      = RoleRead
 	RoleOf_Integration_QueryStartTokens            = RoleRead
 	RoleOf_IntegrationQuery_QueryStartTokens       = RoleRead
+	RoleOf_IntegrationClient_QueryEnvelopes        = RoleRead
+	RoleOf_Integration_QueryEnvelopes              = RoleRead
+	RoleOf_IntegrationQuery_QueryEnvelopes         = RoleRead
 	RoleOf_Integration_Update                      = RoleStart
 	RoleOf_IntegrationCreate_OnConflict            = RoleStart
 	RoleOf_IntegrationCreate_OnConflictColumns     = RoleStart
@@ -4602,11 +4605,82 @@ const (
 	RoleOf_SendingDomainClient_QueryWorkspace        = RoleRead
 	RoleOf_SendingDomain_QueryWorkspace              = RoleRead
 	RoleOf_SendingDomainQuery_QueryWorkspace         = RoleRead
+	RoleOf_SendingDomainClient_QueryEnvelopes        = RoleRead
+	RoleOf_SendingDomain_QueryEnvelopes              = RoleRead
+	RoleOf_SendingDomainQuery_QueryEnvelopes         = RoleRead
 	RoleOf_SendingDomain_Update                      = RoleStart
 	RoleOf_SendingDomainCreate_OnConflict            = RoleStart
 	RoleOf_SendingDomainCreate_OnConflictColumns     = RoleStart
 	RoleOf_SendingDomainCreateBulk_OnConflict        = RoleStart
 	RoleOf_SendingDomainCreateBulk_OnConflictColumns = RoleStart
+)
+
+// The types ent generates for SendingDomainEnvelope.
+const (
+	TypeOf_SendingDomainEnvelope             = TypeEntity
+	TypeOf_SendingDomainEnvelopes            = TypeOther
+	TypeOf_SendingDomainEnvelopeEdges        = TypeOther
+	EntityOf_SendingDomainEnvelopeEdges      = "SendingDomainEnvelope"
+	TypeOf_SendingDomainEnvelopeMutation     = TypeOther
+	TypeOf_SendingDomainEnvelopeClient       = TypeClient
+	TypeOf_SendingDomainEnvelopeQuery        = TypeQuery
+	TypeOf_SendingDomainEnvelopeSelect       = TypeQuery
+	TypeOf_SendingDomainEnvelopeGroupBy      = TypeQuery
+	TypeOf_SendingDomainEnvelopeCreate       = TypeCreate
+	TypeOf_SendingDomainEnvelopeCreateBulk   = TypeCreate
+	TypeOf_SendingDomainEnvelopeUpdate       = TypeUpdate
+	TypeOf_SendingDomainEnvelopeUpdateOne    = TypeUpdate
+	TypeOf_SendingDomainEnvelopeDelete       = TypeDelete
+	TypeOf_SendingDomainEnvelopeDeleteOne    = TypeDelete
+	TypeOf_SendingDomainEnvelopeUpsert       = TypeUpsert
+	TypeOf_SendingDomainEnvelopeUpsertOne    = TypeUpsert
+	TypeOf_SendingDomainEnvelopeUpsertBulk   = TypeUpsert
+	EntityOf_SendingDomainEnvelopes          = "SendingDomainEnvelope"
+	EntityOf_SendingDomainEnvelope           = "SendingDomainEnvelope"
+	EntityOf_SendingDomainEnvelopeMutation   = "SendingDomainEnvelope"
+	EntityOf_SendingDomainEnvelopeClient     = "SendingDomainEnvelope"
+	EntityOf_SendingDomainEnvelopeQuery      = "SendingDomainEnvelope"
+	EntityOf_SendingDomainEnvelopeSelect     = "SendingDomainEnvelope"
+	EntityOf_SendingDomainEnvelopeGroupBy    = "SendingDomainEnvelope"
+	EntityOf_SendingDomainEnvelopeCreate     = "SendingDomainEnvelope"
+	EntityOf_SendingDomainEnvelopeCreateBulk = "SendingDomainEnvelope"
+	EntityOf_SendingDomainEnvelopeUpdate     = "SendingDomainEnvelope"
+	EntityOf_SendingDomainEnvelopeUpdateOne  = "SendingDomainEnvelope"
+	EntityOf_SendingDomainEnvelopeDelete     = "SendingDomainEnvelope"
+	EntityOf_SendingDomainEnvelopeDeleteOne  = "SendingDomainEnvelope"
+	EntityOf_SendingDomainEnvelopeUpsert     = "SendingDomainEnvelope"
+	EntityOf_SendingDomainEnvelopeUpsertOne  = "SendingDomainEnvelope"
+	EntityOf_SendingDomainEnvelopeUpsertBulk = "SendingDomainEnvelope"
+)
+
+// The reads and the writes ent's methods for SendingDomainEnvelope start.
+const (
+	RoleOf_SendingDomainEnvelopeClient_Create                = RoleStart
+	RoleOf_SendingDomainEnvelopeClient_CreateBulk            = RoleStart
+	RoleOf_SendingDomainEnvelopeClient_MapCreateBulk         = RoleStart
+	RoleOf_SendingDomainEnvelopeClient_Update                = RoleStart
+	RoleOf_SendingDomainEnvelopeClient_UpdateOne             = RoleStart
+	RoleOf_SendingDomainEnvelopeClient_Delete                = RoleStart
+	RoleOf_SendingDomainEnvelopeClient_Query                 = RoleRead
+	RoleOf_SendingDomainEnvelopeClient_UpdateOneID           = RoleStart
+	RoleOf_SendingDomainEnvelopeClient_DeleteOne             = RoleStart
+	RoleOf_SendingDomainEnvelopeClient_DeleteOneID           = RoleStart
+	RoleOf_SendingDomainEnvelopeClient_Get                   = RoleRead
+	RoleOf_SendingDomainEnvelopeClient_GetX                  = RoleRead
+	RoleOf_SendingDomainEnvelopeClient_QueryWorkspace        = RoleRead
+	RoleOf_SendingDomainEnvelope_QueryWorkspace              = RoleRead
+	RoleOf_SendingDomainEnvelopeQuery_QueryWorkspace         = RoleRead
+	RoleOf_SendingDomainEnvelopeClient_QuerySendingDomain    = RoleRead
+	RoleOf_SendingDomainEnvelope_QuerySendingDomain          = RoleRead
+	RoleOf_SendingDomainEnvelopeQuery_QuerySendingDomain     = RoleRead
+	RoleOf_SendingDomainEnvelopeClient_QueryIntegration      = RoleRead
+	RoleOf_SendingDomainEnvelope_QueryIntegration            = RoleRead
+	RoleOf_SendingDomainEnvelopeQuery_QueryIntegration       = RoleRead
+	RoleOf_SendingDomainEnvelope_Update                      = RoleStart
+	RoleOf_SendingDomainEnvelopeCreate_OnConflict            = RoleStart
+	RoleOf_SendingDomainEnvelopeCreate_OnConflictColumns     = RoleStart
+	RoleOf_SendingDomainEnvelopeCreateBulk_OnConflict        = RoleStart
+	RoleOf_SendingDomainEnvelopeCreateBulk_OnConflictColumns = RoleStart
 )
 
 // The types ent generates for SendingWindow.
@@ -6068,6 +6142,9 @@ const (
 	RoleOf_WorkspaceClient_QueryIntegrationProviderStates   = RoleRead
 	RoleOf_Workspace_QueryIntegrationProviderStates         = RoleRead
 	RoleOf_WorkspaceQuery_QueryIntegrationProviderStates    = RoleRead
+	RoleOf_WorkspaceClient_QuerySendingDomainEnvelopes      = RoleRead
+	RoleOf_Workspace_QuerySendingDomainEnvelopes            = RoleRead
+	RoleOf_WorkspaceQuery_QuerySendingDomainEnvelopes       = RoleRead
 	RoleOf_WorkspaceClient_QueryWebhookEndpointHealths      = RoleRead
 	RoleOf_Workspace_QueryWebhookEndpointHealths            = RoleRead
 	RoleOf_WorkspaceQuery_QueryWebhookEndpointHealths       = RoleRead

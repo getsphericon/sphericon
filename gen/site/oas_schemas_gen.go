@@ -18616,6 +18616,63 @@ type LocalTime string
 
 type LocaleTag string
 
+// SES's status of a custom MAIL FROM domain: whether it found the domain's MX record.
+// Ref: #/components/schemas/MailFromStatus
+type MailFromStatus string
+
+const (
+	MailFromStatusPending          MailFromStatus = "pending"
+	MailFromStatusSuccess          MailFromStatus = "success"
+	MailFromStatusFailed           MailFromStatus = "failed"
+	MailFromStatusTemporaryFailure MailFromStatus = "temporary_failure"
+)
+
+// AllValues returns all MailFromStatus values.
+func (MailFromStatus) AllValues() []MailFromStatus {
+	return []MailFromStatus{
+		MailFromStatusPending,
+		MailFromStatusSuccess,
+		MailFromStatusFailed,
+		MailFromStatusTemporaryFailure,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s MailFromStatus) MarshalText() ([]byte, error) {
+	switch s {
+	case MailFromStatusPending:
+		return []byte(s), nil
+	case MailFromStatusSuccess:
+		return []byte(s), nil
+	case MailFromStatusFailed:
+		return []byte(s), nil
+	case MailFromStatusTemporaryFailure:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *MailFromStatus) UnmarshalText(data []byte) error {
+	switch MailFromStatus(data) {
+	case MailFromStatusPending:
+		*s = MailFromStatusPending
+		return nil
+	case MailFromStatusSuccess:
+		*s = MailFromStatusSuccess
+		return nil
+	case MailFromStatusFailed:
+		*s = MailFromStatusFailed
+		return nil
+	case MailFromStatusTemporaryFailure:
+		*s = MailFromStatusTemporaryFailure
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 type MaxPerDay int32
 
 type MaxPerSecond int32
@@ -18943,6 +19000,49 @@ func (s *MomentTestKind) UnmarshalText(data []byte) error {
 	switch MomentTestKind(data) {
 	case MomentTestKindMoment:
 		*s = MomentTestKindMoment
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// What SES does with a send while the custom MAIL FROM domain's MX record fails.
+// Ref: #/components/schemas/MxFailureBehavior
+type MxFailureBehavior string
+
+const (
+	MxFailureBehaviorFallBack MxFailureBehavior = "fall_back"
+	MxFailureBehaviorReject   MxFailureBehavior = "reject"
+)
+
+// AllValues returns all MxFailureBehavior values.
+func (MxFailureBehavior) AllValues() []MxFailureBehavior {
+	return []MxFailureBehavior{
+		MxFailureBehaviorFallBack,
+		MxFailureBehaviorReject,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s MxFailureBehavior) MarshalText() ([]byte, error) {
+	switch s {
+	case MxFailureBehaviorFallBack:
+		return []byte(s), nil
+	case MxFailureBehaviorReject:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *MxFailureBehavior) UnmarshalText(data []byte) error {
+	switch MxFailureBehavior(data) {
+	case MxFailureBehaviorFallBack:
+		*s = MxFailureBehaviorFallBack
+		return nil
+	case MxFailureBehaviorReject:
+		*s = MxFailureBehaviorReject
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -19800,6 +19900,51 @@ func (o NilRuleVersion) Get() (v RuleVersion, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o NilRuleVersion) Or(d RuleVersion) RuleVersion {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewNilSendingDomainMailFrom returns new NilSendingDomainMailFrom with value set to v.
+func NewNilSendingDomainMailFrom(v SendingDomainMailFrom) NilSendingDomainMailFrom {
+	return NilSendingDomainMailFrom{
+		Value: v,
+	}
+}
+
+// NilSendingDomainMailFrom is nullable SendingDomainMailFrom.
+type NilSendingDomainMailFrom struct {
+	Value SendingDomainMailFrom
+	Null  bool
+}
+
+// SetTo sets value to v.
+func (o *NilSendingDomainMailFrom) SetTo(v SendingDomainMailFrom) {
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o NilSendingDomainMailFrom) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *NilSendingDomainMailFrom) SetToNull() {
+	o.Null = true
+	var v SendingDomainMailFrom
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o NilSendingDomainMailFrom) Get() (v SendingDomainMailFrom, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o NilSendingDomainMailFrom) Or(d SendingDomainMailFrom) SendingDomainMailFrom {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -29992,6 +30137,197 @@ func (s *SendScope) UnmarshalText(data []byte) error {
 	}
 }
 
+// The envelope one email Integration of the Workspace sends the Sending domain's mail with (ADR 0184),
+// read with the domain's checks. The app reads it; a custom MAIL FROM is set at SES by the person,
+// never by the app.
+// Ref: #/components/schemas/SendingDomainEnvelope
+type SendingDomainEnvelope struct {
+	// The email Integration.
+	IntegrationId EntityId `json:"integrationId"`
+	// The Integration's name.
+	IntegrationName string `json:"integrationName"`
+	// Its provider.
+	Provider IntegrationProvider `json:"provider"`
+	// Where the envelope is set.
+	State SendingDomainEnvelopeState `json:"state"`
+	// The custom MAIL FROM; null unless `state` is `custom`.
+	MailFrom NilSendingDomainMailFrom `json:"mailFrom"`
+	// The permission the Integration's credentials need to read the identity at SES; null unless `state`
+	// is `unknown`.
+	PermissionNeeded NilString `json:"permissionNeeded"`
+	// When the envelope was last read; null for an SMTP relay and before the first read.
+	CheckedAt NilTimestamp `json:"checkedAt"`
+}
+
+// GetIntegrationId returns the value of IntegrationId.
+func (s *SendingDomainEnvelope) GetIntegrationId() EntityId {
+	return s.IntegrationId
+}
+
+// GetIntegrationName returns the value of IntegrationName.
+func (s *SendingDomainEnvelope) GetIntegrationName() string {
+	return s.IntegrationName
+}
+
+// GetProvider returns the value of Provider.
+func (s *SendingDomainEnvelope) GetProvider() IntegrationProvider {
+	return s.Provider
+}
+
+// GetState returns the value of State.
+func (s *SendingDomainEnvelope) GetState() SendingDomainEnvelopeState {
+	return s.State
+}
+
+// GetMailFrom returns the value of MailFrom.
+func (s *SendingDomainEnvelope) GetMailFrom() NilSendingDomainMailFrom {
+	return s.MailFrom
+}
+
+// GetPermissionNeeded returns the value of PermissionNeeded.
+func (s *SendingDomainEnvelope) GetPermissionNeeded() NilString {
+	return s.PermissionNeeded
+}
+
+// GetCheckedAt returns the value of CheckedAt.
+func (s *SendingDomainEnvelope) GetCheckedAt() NilTimestamp {
+	return s.CheckedAt
+}
+
+// SetIntegrationId sets the value of IntegrationId.
+func (s *SendingDomainEnvelope) SetIntegrationId(val EntityId) {
+	s.IntegrationId = val
+}
+
+// SetIntegrationName sets the value of IntegrationName.
+func (s *SendingDomainEnvelope) SetIntegrationName(val string) {
+	s.IntegrationName = val
+}
+
+// SetProvider sets the value of Provider.
+func (s *SendingDomainEnvelope) SetProvider(val IntegrationProvider) {
+	s.Provider = val
+}
+
+// SetState sets the value of State.
+func (s *SendingDomainEnvelope) SetState(val SendingDomainEnvelopeState) {
+	s.State = val
+}
+
+// SetMailFrom sets the value of MailFrom.
+func (s *SendingDomainEnvelope) SetMailFrom(val NilSendingDomainMailFrom) {
+	s.MailFrom = val
+}
+
+// SetPermissionNeeded sets the value of PermissionNeeded.
+func (s *SendingDomainEnvelope) SetPermissionNeeded(val NilString) {
+	s.PermissionNeeded = val
+}
+
+// SetCheckedAt sets the value of CheckedAt.
+func (s *SendingDomainEnvelope) SetCheckedAt(val NilTimestamp) {
+	s.CheckedAt = val
+}
+
+// Where an email Integration's envelope domain (MAIL FROM, Return-Path) is set for a Sending domain,
+// and so where SPF is checked for its mail (ADR 0184).
+// Ref: #/components/schemas/SendingDomainEnvelopeState
+type SendingDomainEnvelopeState string
+
+const (
+	SendingDomainEnvelopeStateProviderDefault SendingDomainEnvelopeState = "provider_default"
+	SendingDomainEnvelopeStateCustom          SendingDomainEnvelopeState = "custom"
+	SendingDomainEnvelopeStateUnknown         SendingDomainEnvelopeState = "unknown"
+	SendingDomainEnvelopeStateSetAtProvider   SendingDomainEnvelopeState = "set_at_provider"
+)
+
+// AllValues returns all SendingDomainEnvelopeState values.
+func (SendingDomainEnvelopeState) AllValues() []SendingDomainEnvelopeState {
+	return []SendingDomainEnvelopeState{
+		SendingDomainEnvelopeStateProviderDefault,
+		SendingDomainEnvelopeStateCustom,
+		SendingDomainEnvelopeStateUnknown,
+		SendingDomainEnvelopeStateSetAtProvider,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SendingDomainEnvelopeState) MarshalText() ([]byte, error) {
+	switch s {
+	case SendingDomainEnvelopeStateProviderDefault:
+		return []byte(s), nil
+	case SendingDomainEnvelopeStateCustom:
+		return []byte(s), nil
+	case SendingDomainEnvelopeStateUnknown:
+		return []byte(s), nil
+	case SendingDomainEnvelopeStateSetAtProvider:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SendingDomainEnvelopeState) UnmarshalText(data []byte) error {
+	switch SendingDomainEnvelopeState(data) {
+	case SendingDomainEnvelopeStateProviderDefault:
+		*s = SendingDomainEnvelopeStateProviderDefault
+		return nil
+	case SendingDomainEnvelopeStateCustom:
+		*s = SendingDomainEnvelopeStateCustom
+		return nil
+	case SendingDomainEnvelopeStateUnknown:
+		*s = SendingDomainEnvelopeStateUnknown
+		return nil
+	case SendingDomainEnvelopeStateSetAtProvider:
+		*s = SendingDomainEnvelopeStateSetAtProvider
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// The custom MAIL FROM domain set at SES on the Sending domain's identity.
+// Ref: #/components/schemas/SendingDomainMailFrom
+type SendingDomainMailFrom struct {
+	// The custom MAIL FROM domain, e.g. "bounce.mail.acme.com".
+	Domain string `json:"domain"`
+	// SES's status of it.
+	Status MailFromStatus `json:"status"`
+	// What SES does with a send while its MX record fails.
+	OnMxFailure MxFailureBehavior `json:"onMxFailure"`
+}
+
+// GetDomain returns the value of Domain.
+func (s *SendingDomainMailFrom) GetDomain() string {
+	return s.Domain
+}
+
+// GetStatus returns the value of Status.
+func (s *SendingDomainMailFrom) GetStatus() MailFromStatus {
+	return s.Status
+}
+
+// GetOnMxFailure returns the value of OnMxFailure.
+func (s *SendingDomainMailFrom) GetOnMxFailure() MxFailureBehavior {
+	return s.OnMxFailure
+}
+
+// SetDomain sets the value of Domain.
+func (s *SendingDomainMailFrom) SetDomain(val string) {
+	s.Domain = val
+}
+
+// SetStatus sets the value of Status.
+func (s *SendingDomainMailFrom) SetStatus(val MailFromStatus) {
+	s.Status = val
+}
+
+// SetOnMxFailure sets the value of OnMxFailure.
+func (s *SendingDomainMailFrom) SetOnMxFailure(val MxFailureBehavior) {
+	s.OnMxFailure = val
+}
+
 // Sending domain (ADR 0010). sphericon generates the DKIM keypair; the caller publishes the DKIM TXT
 // record. The private key is never returned. `verified` is re-checked in the background: the domain
 // loses it (`verificationLostAt`) if the DNS record disappears.
@@ -30007,8 +30343,10 @@ type SendingDomainResource struct {
 	Verified bool `json:"verified"`
 	// The required DKIM TXT record.
 	DkimRecord DnsRecord `json:"dkimRecord"`
-	// The suggested SPF TXT record (advisory: does not gate sending).
-	SpfRecord DnsRecord `json:"spfRecord"`
+	// The envelope of each email Integration of the Workspace, the Test inbox excepted, in the order of
+	// their ids (ADR 0184). SPF is checked on the envelope, not on the Sending domain, so the domain has
+	// no SPF record of its own; it never gates sending.
+	Envelopes []SendingDomainEnvelope `json:"envelopes"`
 	// The suggested DMARC TXT record (advisory bulk-readiness signal).
 	DmarcRecord DnsRecord `json:"dmarcRecord"`
 	// When a DMARC lookup of the domain most recently answered, the record found or not (null = none has).
@@ -30058,9 +30396,9 @@ func (s *SendingDomainResource) GetDkimRecord() DnsRecord {
 	return s.DkimRecord
 }
 
-// GetSpfRecord returns the value of SpfRecord.
-func (s *SendingDomainResource) GetSpfRecord() DnsRecord {
-	return s.SpfRecord
+// GetEnvelopes returns the value of Envelopes.
+func (s *SendingDomainResource) GetEnvelopes() []SendingDomainEnvelope {
+	return s.Envelopes
 }
 
 // GetDmarcRecord returns the value of DmarcRecord.
@@ -30133,9 +30471,9 @@ func (s *SendingDomainResource) SetDkimRecord(val DnsRecord) {
 	s.DkimRecord = val
 }
 
-// SetSpfRecord sets the value of SpfRecord.
-func (s *SendingDomainResource) SetSpfRecord(val DnsRecord) {
-	s.SpfRecord = val
+// SetEnvelopes sets the value of Envelopes.
+func (s *SendingDomainResource) SetEnvelopes(val []SendingDomainEnvelope) {
+	s.Envelopes = val
 }
 
 // SetDmarcRecord sets the value of DmarcRecord.

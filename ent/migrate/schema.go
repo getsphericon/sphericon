@@ -3282,14 +3282,61 @@ var (
 				},
 			},
 			{
-				Name:    "sendingdomain_workspace_id",
-				Unique:  false,
-				Columns: []*schema.Column{SendingDomainsColumns[13]},
-			},
-			{
 				Name:    "sendingdomain_last_checked_at",
 				Unique:  false,
 				Columns: []*schema.Column{SendingDomainsColumns[8]},
+			},
+		},
+	}
+	// SendingDomainEnvelopesColumns holds the columns for the "sending_domain_envelopes" table.
+	SendingDomainEnvelopesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "state", Type: field.TypeEnum, Enums: []string{"provider_default", "custom", "unknown"}},
+		{Name: "mail_from_domain", Type: field.TypeString, Nullable: true},
+		{Name: "mail_from_status", Type: field.TypeEnum, Nullable: true, Enums: []string{"pending", "success", "failed", "temporary_failure"}},
+		{Name: "mail_from_on_mx_failure", Type: field.TypeEnum, Nullable: true, Enums: []string{"fall_back", "reject"}},
+		{Name: "checked_at", Type: field.TypeTime},
+		{Name: "integration_id", Type: field.TypeInt64},
+		{Name: "sending_domain_id", Type: field.TypeInt64},
+		{Name: "workspace_id", Type: field.TypeInt64},
+	}
+	// SendingDomainEnvelopesTable holds the schema information for the "sending_domain_envelopes" table.
+	SendingDomainEnvelopesTable = &schema.Table{
+		Name:       "sending_domain_envelopes",
+		Columns:    SendingDomainEnvelopesColumns,
+		PrimaryKey: []*schema.Column{SendingDomainEnvelopesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "sending_domain_envelopes_integrations_envelopes",
+				Columns:    []*schema.Column{SendingDomainEnvelopesColumns[8]},
+				RefColumns: []*schema.Column{IntegrationsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "sending_domain_envelopes_sending_domains_envelopes",
+				Columns:    []*schema.Column{SendingDomainEnvelopesColumns[9]},
+				RefColumns: []*schema.Column{SendingDomainsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "sending_domain_envelopes_workspaces_sending_domain_envelopes",
+				Columns:    []*schema.Column{SendingDomainEnvelopesColumns[10]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "sending_domain_envelopes_workspace_domain_integration",
+				Unique:  true,
+				Columns: []*schema.Column{SendingDomainEnvelopesColumns[10], SendingDomainEnvelopesColumns[9], SendingDomainEnvelopesColumns[8]},
+			},
+			{
+				Name:    "sending_domain_envelopes_workspace_id_integration_id",
+				Unique:  false,
+				Columns: []*schema.Column{SendingDomainEnvelopesColumns[10], SendingDomainEnvelopesColumns[8]},
 			},
 		},
 	}
@@ -4123,6 +4170,7 @@ var (
 		SegmentsTable,
 		SendCapLimitersTable,
 		SendingDomainsTable,
+		SendingDomainEnvelopesTable,
 		SendingWindowsTable,
 		ServiceCredentialsTable,
 		SignupItemsTable,
@@ -4686,6 +4734,18 @@ func init() {
 	SendingDomainsTable.Annotation.Checks = map[string]string{
 		"sending_domains_domain_format":           "domain ~ '^[a-z0-9-]+(\\.[a-z0-9-]+)+$'",
 		"sending_domains_verification_lost_check": "verification_lost_at IS NULL OR verified_at IS NOT NULL",
+	}
+	SendingDomainEnvelopesTable.ForeignKeys[0].RefTable = IntegrationsTable
+	SendingDomainEnvelopesTable.ForeignKeys[1].RefTable = SendingDomainsTable
+	SendingDomainEnvelopesTable.ForeignKeys[2].RefTable = WorkspacesTable
+	SendingDomainEnvelopesTable.Annotation = &entsql.Annotation{
+		Table: "sending_domain_envelopes",
+	}
+	SendingDomainEnvelopesTable.Annotation.Checks = map[string]string{
+		"sending_domain_envelopes_mail_from_check":               "(state = 'provider_default' AND mail_from_domain IS NULL AND mail_from_status IS NULL AND mail_from_on_mx_failure IS NULL) OR (state = 'custom' AND mail_from_domain IS NOT NULL AND mail_from_status IS NOT NULL AND mail_from_on_mx_failure IS NOT NULL) OR (state = 'unknown' AND mail_from_domain IS NULL AND mail_from_status IS NULL AND mail_from_on_mx_failure IS NULL)",
+		"sending_domain_envelopes_mail_from_on_mx_failure_check": "mail_from_on_mx_failure IN ('fall_back', 'reject')",
+		"sending_domain_envelopes_mail_from_status_check":        "mail_from_status IN ('pending', 'success', 'failed', 'temporary_failure')",
+		"sending_domain_envelopes_state_check":                   "state IN ('provider_default', 'custom', 'unknown')",
 	}
 	SendingWindowsTable.ForeignKeys[0].RefTable = WorkspacesTable
 	SendingWindowsTable.Annotation = &entsql.Annotation{

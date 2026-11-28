@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -126,4 +127,55 @@ func TestMCPWinBackPromptNamesTheAudienceAndCountsItsRecipients(t *testing.T) {
 	assert.Contains(t, body, "`channel`", "the preview is asked on the Broadcast's Channel")
 	assert.Contains(t, body, "`recipients`", "the count read back is the recipients")
 	assert.NotContains(t, body, "broadcasts_set_segment", "the audience is named at create, not after")
+}
+
+// The win-back prompt measures engagement by clicks or a product action, never by opens: a mail
+// client's privacy proxy opens messages no one read (ADR 0123).
+func TestMCPWinBackPromptMeasuresClicksNotOpens(t *testing.T) {
+	env := testhelper.Setup(t)
+	s := env.MCPClient(t, env.ScopedBearer(t, apitokens.ScopeContactsRead))
+
+	body := promptText(t, s, "win-back")
+
+	measure := regexp.MustCompile(`measure engagement: ([^.]*)\.`).FindStringSubmatch(body)
+	require.NotNil(t, measure, "the prompt names the engagement to measure")
+	assert.Contains(t, measure[1], "clicks", "engagement is measured by clicks")
+	assert.NotContains(t, measure[1], "opens", "opens are not offered as a measure")
+	assert.Contains(t, body, "Opens are not a reliable signal", "the prompt says why opens are left out")
+}
+
+// The set-up prompt proposes a subdomain for marketing mail and one for Transactional mail, so the
+// reputation of one is kept apart from the other's, verifies both, and says how each kind of mail
+// comes to send from its own.
+func TestMCPSetUpSendingDomainPromptKeepsMarketingAndTransactionalApart(t *testing.T) {
+	env := testhelper.Setup(t)
+	s := env.MCPClient(t, env.ScopedBearer(t, apitokens.ScopeContactsRead))
+
+	body := promptText(t, s, "set-up-sending-domain")
+
+	assert.Contains(t, body, "`mail.example.com`", "a subdomain for marketing mail")
+	assert.Contains(t, body, "`notify.example.com`", "a subdomain for Transactional mail")
+	assert.Contains(t, body, "you verify both", "both subdomains are verified")
+	assert.Contains(t, body, "default email Integration", "the prompt says where Transactional mail takes its sender")
+}
+
+// The set-up prompt reads each email Integration's envelope, where SPF is checked, and suggests no
+// SPF record on the Sending domain: the domain has none of its own (ADR 0184). The custom MAIL FROM
+// is set at SES by the human, never by the agent.
+func TestMCPSetUpSendingDomainPromptReadsTheEnvelopesAndSuggestsNoSPFRecord(t *testing.T) {
+	env := testhelper.Setup(t)
+	s := env.MCPClient(t, env.ScopedBearer(t, apitokens.ScopeContactsRead))
+
+	body := promptText(t, s, "set-up-sending-domain")
+
+	assert.Contains(t, body, "`envelopes`", "the prompt names the envelopes")
+	for _, state := range externalapi.SendingDomainEnvelopeStateCustom.AllValues() {
+		assert.Containsf(t, body, "`"+string(state)+"`", "the prompt explains the %s envelope", state)
+	}
+	records := regexp.MustCompile("it carries the ([^`]*)").FindStringSubmatch(body)
+	require.NotNil(t, records, "the prompt says which records the domain carries")
+	assert.NotContains(t, records[1], "SPF", "the domain carries no SPF record")
+	assert.NotContains(t, body, "v=spf1", "no SPF value is suggested")
+	assert.NotRegexp(t, `SPF (and|or) DMARC`, body, "SPF is not a record of the domain beside DMARC")
+	assert.Regexp(t, `custom MAIL FROM[^.]*the human sets`, body, "the human sets the custom MAIL FROM at SES")
 }

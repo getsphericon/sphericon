@@ -83,6 +83,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendcaplimiter"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
+	"github.com/getsphericon/sphericon/ent/sendingdomainenvelope"
 	"github.com/getsphericon/sphericon/ent/sendingwindow"
 	"github.com/getsphericon/sphericon/ent/servicecredential"
 	"github.com/getsphericon/sphericon/ent/signupitem"
@@ -197,6 +198,7 @@ const (
 	TypeSegment                    = "Segment"
 	TypeSendCapLimiter             = "SendCapLimiter"
 	TypeSendingDomain              = "SendingDomain"
+	TypeSendingDomainEnvelope      = "SendingDomainEnvelope"
 	TypeSendingWindow              = "SendingWindow"
 	TypeServiceCredential          = "ServiceCredential"
 	TypeSignupItem                 = "SignupItem"
@@ -47726,6 +47728,9 @@ type IntegrationMutation struct {
 	start_tokens             map[int64]struct{}
 	removedstart_tokens      map[int64]struct{}
 	clearedstart_tokens      bool
+	envelopes                map[int64]struct{}
+	removedenvelopes         map[int64]struct{}
+	clearedenvelopes         bool
 	done                     bool
 	oldValue                 func(context.Context) (*Integration, error)
 	predicates               []predicate.Integration
@@ -48805,6 +48810,60 @@ func (m *IntegrationMutation) ResetStartTokens() {
 	m.removedstart_tokens = nil
 }
 
+// AddEnvelopeIDs adds the "envelopes" edge to the SendingDomainEnvelope entity by ids.
+func (m *IntegrationMutation) AddEnvelopeIDs(ids ...int64) {
+	if m.envelopes == nil {
+		m.envelopes = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.envelopes[ids[i]] = struct{}{}
+	}
+}
+
+// ClearEnvelopes clears the "envelopes" edge to the SendingDomainEnvelope entity.
+func (m *IntegrationMutation) ClearEnvelopes() {
+	m.clearedenvelopes = true
+}
+
+// EnvelopesCleared reports if the "envelopes" edge to the SendingDomainEnvelope entity was cleared.
+func (m *IntegrationMutation) EnvelopesCleared() bool {
+	return m.clearedenvelopes
+}
+
+// RemoveEnvelopeIDs removes the "envelopes" edge to the SendingDomainEnvelope entity by IDs.
+func (m *IntegrationMutation) RemoveEnvelopeIDs(ids ...int64) {
+	if m.removedenvelopes == nil {
+		m.removedenvelopes = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.envelopes, ids[i])
+		m.removedenvelopes[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedEnvelopes returns the removed IDs of the "envelopes" edge to the SendingDomainEnvelope entity.
+func (m *IntegrationMutation) RemovedEnvelopesIDs() (ids []int64) {
+	for id := range m.removedenvelopes {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// EnvelopesIDs returns the "envelopes" edge IDs in the mutation.
+func (m *IntegrationMutation) EnvelopesIDs() (ids []int64) {
+	for id := range m.envelopes {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetEnvelopes resets all changes to the "envelopes" edge.
+func (m *IntegrationMutation) ResetEnvelopes() {
+	m.envelopes = nil
+	m.clearedenvelopes = false
+	m.removedenvelopes = nil
+}
+
 // Where appends a list predicates to the IntegrationMutation builder.
 func (m *IntegrationMutation) Where(ps ...predicate.Integration) {
 	m.predicates = append(m.predicates, ps...)
@@ -49265,7 +49324,7 @@ func (m *IntegrationMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *IntegrationMutation) AddedEdges() []string {
-	edges := make([]string, 0, 6)
+	edges := make([]string, 0, 7)
 	if m.workspace != nil {
 		edges = append(edges, integration.EdgeWorkspace)
 	}
@@ -49283,6 +49342,9 @@ func (m *IntegrationMutation) AddedEdges() []string {
 	}
 	if m.start_tokens != nil {
 		edges = append(edges, integration.EdgeStartTokens)
+	}
+	if m.envelopes != nil {
+		edges = append(edges, integration.EdgeEnvelopes)
 	}
 	return edges
 }
@@ -49321,13 +49383,19 @@ func (m *IntegrationMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case integration.EdgeEnvelopes:
+		ids := make([]ent.Value, 0, len(m.envelopes))
+		for id := range m.envelopes {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *IntegrationMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 6)
+	edges := make([]string, 0, 7)
 	if m.removedcaptured_messages != nil {
 		edges = append(edges, integration.EdgeCapturedMessages)
 	}
@@ -49336,6 +49404,9 @@ func (m *IntegrationMutation) RemovedEdges() []string {
 	}
 	if m.removedstart_tokens != nil {
 		edges = append(edges, integration.EdgeStartTokens)
+	}
+	if m.removedenvelopes != nil {
+		edges = append(edges, integration.EdgeEnvelopes)
 	}
 	return edges
 }
@@ -49362,13 +49433,19 @@ func (m *IntegrationMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case integration.EdgeEnvelopes:
+		ids := make([]ent.Value, 0, len(m.removedenvelopes))
+		for id := range m.removedenvelopes {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *IntegrationMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 6)
+	edges := make([]string, 0, 7)
 	if m.clearedworkspace {
 		edges = append(edges, integration.EdgeWorkspace)
 	}
@@ -49386,6 +49463,9 @@ func (m *IntegrationMutation) ClearedEdges() []string {
 	}
 	if m.clearedstart_tokens {
 		edges = append(edges, integration.EdgeStartTokens)
+	}
+	if m.clearedenvelopes {
+		edges = append(edges, integration.EdgeEnvelopes)
 	}
 	return edges
 }
@@ -49406,6 +49486,8 @@ func (m *IntegrationMutation) EdgeCleared(name string) bool {
 		return m.clearedbindings
 	case integration.EdgeStartTokens:
 		return m.clearedstart_tokens
+	case integration.EdgeEnvelopes:
+		return m.clearedenvelopes
 	}
 	return false
 }
@@ -49448,6 +49530,9 @@ func (m *IntegrationMutation) ResetEdge(name string) error {
 		return nil
 	case integration.EdgeStartTokens:
 		m.ResetStartTokens()
+		return nil
+	case integration.EdgeEnvelopes:
+		m.ResetEnvelopes()
 		return nil
 	}
 	return fmt.Errorf("unknown Integration edge %s", name)
@@ -74589,6 +74674,9 @@ type SendingDomainMutation struct {
 	clearedFields              map[string]struct{}
 	workspace                  *int64
 	clearedworkspace           bool
+	envelopes                  map[int64]struct{}
+	removedenvelopes           map[int64]struct{}
+	clearedenvelopes           bool
 	done                       bool
 	oldValue                   func(context.Context) (*SendingDomain, error)
 	predicates                 []predicate.SendingDomain
@@ -75271,6 +75359,60 @@ func (m *SendingDomainMutation) ResetWorkspace() {
 	m.clearedworkspace = false
 }
 
+// AddEnvelopeIDs adds the "envelopes" edge to the SendingDomainEnvelope entity by ids.
+func (m *SendingDomainMutation) AddEnvelopeIDs(ids ...int64) {
+	if m.envelopes == nil {
+		m.envelopes = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.envelopes[ids[i]] = struct{}{}
+	}
+}
+
+// ClearEnvelopes clears the "envelopes" edge to the SendingDomainEnvelope entity.
+func (m *SendingDomainMutation) ClearEnvelopes() {
+	m.clearedenvelopes = true
+}
+
+// EnvelopesCleared reports if the "envelopes" edge to the SendingDomainEnvelope entity was cleared.
+func (m *SendingDomainMutation) EnvelopesCleared() bool {
+	return m.clearedenvelopes
+}
+
+// RemoveEnvelopeIDs removes the "envelopes" edge to the SendingDomainEnvelope entity by IDs.
+func (m *SendingDomainMutation) RemoveEnvelopeIDs(ids ...int64) {
+	if m.removedenvelopes == nil {
+		m.removedenvelopes = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.envelopes, ids[i])
+		m.removedenvelopes[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedEnvelopes returns the removed IDs of the "envelopes" edge to the SendingDomainEnvelope entity.
+func (m *SendingDomainMutation) RemovedEnvelopesIDs() (ids []int64) {
+	for id := range m.removedenvelopes {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// EnvelopesIDs returns the "envelopes" edge IDs in the mutation.
+func (m *SendingDomainMutation) EnvelopesIDs() (ids []int64) {
+	for id := range m.envelopes {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetEnvelopes resets all changes to the "envelopes" edge.
+func (m *SendingDomainMutation) ResetEnvelopes() {
+	m.envelopes = nil
+	m.clearedenvelopes = false
+	m.removedenvelopes = nil
+}
+
 // Where appends a list predicates to the SendingDomainMutation builder.
 func (m *SendingDomainMutation) Where(ps ...predicate.SendingDomain) {
 	m.predicates = append(m.predicates, ps...)
@@ -75650,9 +75792,12 @@ func (m *SendingDomainMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *SendingDomainMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.workspace != nil {
 		edges = append(edges, sendingdomain.EdgeWorkspace)
+	}
+	if m.envelopes != nil {
+		edges = append(edges, sendingdomain.EdgeEnvelopes)
 	}
 	return edges
 }
@@ -75665,27 +75810,47 @@ func (m *SendingDomainMutation) AddedIDs(name string) []ent.Value {
 		if id := m.workspace; id != nil {
 			return []ent.Value{*id}
 		}
+	case sendingdomain.EdgeEnvelopes:
+		ids := make([]ent.Value, 0, len(m.envelopes))
+		for id := range m.envelopes {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *SendingDomainMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
+	if m.removedenvelopes != nil {
+		edges = append(edges, sendingdomain.EdgeEnvelopes)
+	}
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *SendingDomainMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case sendingdomain.EdgeEnvelopes:
+		ids := make([]ent.Value, 0, len(m.removedenvelopes))
+		for id := range m.removedenvelopes {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *SendingDomainMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.clearedworkspace {
 		edges = append(edges, sendingdomain.EdgeWorkspace)
+	}
+	if m.clearedenvelopes {
+		edges = append(edges, sendingdomain.EdgeEnvelopes)
 	}
 	return edges
 }
@@ -75696,6 +75861,8 @@ func (m *SendingDomainMutation) EdgeCleared(name string) bool {
 	switch name {
 	case sendingdomain.EdgeWorkspace:
 		return m.clearedworkspace
+	case sendingdomain.EdgeEnvelopes:
+		return m.clearedenvelopes
 	}
 	return false
 }
@@ -75718,8 +75885,1038 @@ func (m *SendingDomainMutation) ResetEdge(name string) error {
 	case sendingdomain.EdgeWorkspace:
 		m.ResetWorkspace()
 		return nil
+	case sendingdomain.EdgeEnvelopes:
+		m.ResetEnvelopes()
+		return nil
 	}
 	return fmt.Errorf("unknown SendingDomain edge %s", name)
+}
+
+// SendingDomainEnvelopeMutation represents an operation that mutates the SendingDomainEnvelope nodes in the graph.
+type SendingDomainEnvelopeMutation struct {
+	config
+	op                      Op
+	typ                     string
+	id                      *int64
+	created_at              *time.Time
+	updated_at              *time.Time
+	state                   *sendingdomainenvelope.State
+	mail_from_domain        *string
+	mail_from_status        *providers.MailFromStatus
+	mail_from_on_mx_failure *providers.MXFailureBehavior
+	checked_at              *time.Time
+	clearedFields           map[string]struct{}
+	workspace               *int64
+	clearedworkspace        bool
+	sending_domain          *int64
+	clearedsending_domain   bool
+	integration             *int64
+	clearedintegration      bool
+	done                    bool
+	oldValue                func(context.Context) (*SendingDomainEnvelope, error)
+	predicates              []predicate.SendingDomainEnvelope
+}
+
+var _ ent.Mutation = (*SendingDomainEnvelopeMutation)(nil)
+
+// sendingdomainenvelopeOption allows management of the mutation configuration using functional options.
+type sendingdomainenvelopeOption func(*SendingDomainEnvelopeMutation)
+
+// newSendingDomainEnvelopeMutation creates new mutation for the SendingDomainEnvelope entity.
+func newSendingDomainEnvelopeMutation(c config, op Op, opts ...sendingdomainenvelopeOption) *SendingDomainEnvelopeMutation {
+	m := &SendingDomainEnvelopeMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeSendingDomainEnvelope,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withSendingDomainEnvelopeID sets the ID field of the mutation.
+func withSendingDomainEnvelopeID(id int64) sendingdomainenvelopeOption {
+	return func(m *SendingDomainEnvelopeMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *SendingDomainEnvelope
+		)
+		m.oldValue = func(ctx context.Context) (*SendingDomainEnvelope, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().SendingDomainEnvelope.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withSendingDomainEnvelope sets the old SendingDomainEnvelope of the mutation.
+func withSendingDomainEnvelope(node *SendingDomainEnvelope) sendingdomainenvelopeOption {
+	return func(m *SendingDomainEnvelopeMutation) {
+		m.oldValue = func(context.Context) (*SendingDomainEnvelope, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m SendingDomainEnvelopeMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m SendingDomainEnvelopeMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of SendingDomainEnvelope entities.
+func (m *SendingDomainEnvelopeMutation) SetID(id int64) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *SendingDomainEnvelopeMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *SendingDomainEnvelopeMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().SendingDomainEnvelope.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *SendingDomainEnvelopeMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *SendingDomainEnvelopeMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the SendingDomainEnvelope entity.
+// If the SendingDomainEnvelope object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SendingDomainEnvelopeMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *SendingDomainEnvelopeMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *SendingDomainEnvelopeMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *SendingDomainEnvelopeMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the SendingDomainEnvelope entity.
+// If the SendingDomainEnvelope object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SendingDomainEnvelopeMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *SendingDomainEnvelopeMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetWorkspaceID sets the "workspace_id" field.
+func (m *SendingDomainEnvelopeMutation) SetWorkspaceID(i int64) {
+	m.workspace = &i
+}
+
+// WorkspaceID returns the value of the "workspace_id" field in the mutation.
+func (m *SendingDomainEnvelopeMutation) WorkspaceID() (r int64, exists bool) {
+	v := m.workspace
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWorkspaceID returns the old "workspace_id" field's value of the SendingDomainEnvelope entity.
+// If the SendingDomainEnvelope object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SendingDomainEnvelopeMutation) OldWorkspaceID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWorkspaceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWorkspaceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWorkspaceID: %w", err)
+	}
+	return oldValue.WorkspaceID, nil
+}
+
+// ResetWorkspaceID resets all changes to the "workspace_id" field.
+func (m *SendingDomainEnvelopeMutation) ResetWorkspaceID() {
+	m.workspace = nil
+}
+
+// SetSendingDomainID sets the "sending_domain_id" field.
+func (m *SendingDomainEnvelopeMutation) SetSendingDomainID(i int64) {
+	m.sending_domain = &i
+}
+
+// SendingDomainID returns the value of the "sending_domain_id" field in the mutation.
+func (m *SendingDomainEnvelopeMutation) SendingDomainID() (r int64, exists bool) {
+	v := m.sending_domain
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSendingDomainID returns the old "sending_domain_id" field's value of the SendingDomainEnvelope entity.
+// If the SendingDomainEnvelope object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SendingDomainEnvelopeMutation) OldSendingDomainID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSendingDomainID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSendingDomainID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSendingDomainID: %w", err)
+	}
+	return oldValue.SendingDomainID, nil
+}
+
+// ResetSendingDomainID resets all changes to the "sending_domain_id" field.
+func (m *SendingDomainEnvelopeMutation) ResetSendingDomainID() {
+	m.sending_domain = nil
+}
+
+// SetIntegrationID sets the "integration_id" field.
+func (m *SendingDomainEnvelopeMutation) SetIntegrationID(i int64) {
+	m.integration = &i
+}
+
+// IntegrationID returns the value of the "integration_id" field in the mutation.
+func (m *SendingDomainEnvelopeMutation) IntegrationID() (r int64, exists bool) {
+	v := m.integration
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIntegrationID returns the old "integration_id" field's value of the SendingDomainEnvelope entity.
+// If the SendingDomainEnvelope object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SendingDomainEnvelopeMutation) OldIntegrationID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIntegrationID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIntegrationID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIntegrationID: %w", err)
+	}
+	return oldValue.IntegrationID, nil
+}
+
+// ResetIntegrationID resets all changes to the "integration_id" field.
+func (m *SendingDomainEnvelopeMutation) ResetIntegrationID() {
+	m.integration = nil
+}
+
+// SetState sets the "state" field.
+func (m *SendingDomainEnvelopeMutation) SetState(s sendingdomainenvelope.State) {
+	m.state = &s
+}
+
+// State returns the value of the "state" field in the mutation.
+func (m *SendingDomainEnvelopeMutation) State() (r sendingdomainenvelope.State, exists bool) {
+	v := m.state
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldState returns the old "state" field's value of the SendingDomainEnvelope entity.
+// If the SendingDomainEnvelope object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SendingDomainEnvelopeMutation) OldState(ctx context.Context) (v sendingdomainenvelope.State, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldState is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldState requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldState: %w", err)
+	}
+	return oldValue.State, nil
+}
+
+// ResetState resets all changes to the "state" field.
+func (m *SendingDomainEnvelopeMutation) ResetState() {
+	m.state = nil
+}
+
+// SetMailFromDomain sets the "mail_from_domain" field.
+func (m *SendingDomainEnvelopeMutation) SetMailFromDomain(s string) {
+	m.mail_from_domain = &s
+}
+
+// MailFromDomain returns the value of the "mail_from_domain" field in the mutation.
+func (m *SendingDomainEnvelopeMutation) MailFromDomain() (r string, exists bool) {
+	v := m.mail_from_domain
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMailFromDomain returns the old "mail_from_domain" field's value of the SendingDomainEnvelope entity.
+// If the SendingDomainEnvelope object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SendingDomainEnvelopeMutation) OldMailFromDomain(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMailFromDomain is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMailFromDomain requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMailFromDomain: %w", err)
+	}
+	return oldValue.MailFromDomain, nil
+}
+
+// ClearMailFromDomain clears the value of the "mail_from_domain" field.
+func (m *SendingDomainEnvelopeMutation) ClearMailFromDomain() {
+	m.mail_from_domain = nil
+	m.clearedFields[sendingdomainenvelope.FieldMailFromDomain] = struct{}{}
+}
+
+// MailFromDomainCleared returns if the "mail_from_domain" field was cleared in this mutation.
+func (m *SendingDomainEnvelopeMutation) MailFromDomainCleared() bool {
+	_, ok := m.clearedFields[sendingdomainenvelope.FieldMailFromDomain]
+	return ok
+}
+
+// ResetMailFromDomain resets all changes to the "mail_from_domain" field.
+func (m *SendingDomainEnvelopeMutation) ResetMailFromDomain() {
+	m.mail_from_domain = nil
+	delete(m.clearedFields, sendingdomainenvelope.FieldMailFromDomain)
+}
+
+// SetMailFromStatus sets the "mail_from_status" field.
+func (m *SendingDomainEnvelopeMutation) SetMailFromStatus(pfs providers.MailFromStatus) {
+	m.mail_from_status = &pfs
+}
+
+// MailFromStatus returns the value of the "mail_from_status" field in the mutation.
+func (m *SendingDomainEnvelopeMutation) MailFromStatus() (r providers.MailFromStatus, exists bool) {
+	v := m.mail_from_status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMailFromStatus returns the old "mail_from_status" field's value of the SendingDomainEnvelope entity.
+// If the SendingDomainEnvelope object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SendingDomainEnvelopeMutation) OldMailFromStatus(ctx context.Context) (v *providers.MailFromStatus, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMailFromStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMailFromStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMailFromStatus: %w", err)
+	}
+	return oldValue.MailFromStatus, nil
+}
+
+// ClearMailFromStatus clears the value of the "mail_from_status" field.
+func (m *SendingDomainEnvelopeMutation) ClearMailFromStatus() {
+	m.mail_from_status = nil
+	m.clearedFields[sendingdomainenvelope.FieldMailFromStatus] = struct{}{}
+}
+
+// MailFromStatusCleared returns if the "mail_from_status" field was cleared in this mutation.
+func (m *SendingDomainEnvelopeMutation) MailFromStatusCleared() bool {
+	_, ok := m.clearedFields[sendingdomainenvelope.FieldMailFromStatus]
+	return ok
+}
+
+// ResetMailFromStatus resets all changes to the "mail_from_status" field.
+func (m *SendingDomainEnvelopeMutation) ResetMailFromStatus() {
+	m.mail_from_status = nil
+	delete(m.clearedFields, sendingdomainenvelope.FieldMailFromStatus)
+}
+
+// SetMailFromOnMxFailure sets the "mail_from_on_mx_failure" field.
+func (m *SendingDomainEnvelopeMutation) SetMailFromOnMxFailure(pfb providers.MXFailureBehavior) {
+	m.mail_from_on_mx_failure = &pfb
+}
+
+// MailFromOnMxFailure returns the value of the "mail_from_on_mx_failure" field in the mutation.
+func (m *SendingDomainEnvelopeMutation) MailFromOnMxFailure() (r providers.MXFailureBehavior, exists bool) {
+	v := m.mail_from_on_mx_failure
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMailFromOnMxFailure returns the old "mail_from_on_mx_failure" field's value of the SendingDomainEnvelope entity.
+// If the SendingDomainEnvelope object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SendingDomainEnvelopeMutation) OldMailFromOnMxFailure(ctx context.Context) (v *providers.MXFailureBehavior, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMailFromOnMxFailure is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMailFromOnMxFailure requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMailFromOnMxFailure: %w", err)
+	}
+	return oldValue.MailFromOnMxFailure, nil
+}
+
+// ClearMailFromOnMxFailure clears the value of the "mail_from_on_mx_failure" field.
+func (m *SendingDomainEnvelopeMutation) ClearMailFromOnMxFailure() {
+	m.mail_from_on_mx_failure = nil
+	m.clearedFields[sendingdomainenvelope.FieldMailFromOnMxFailure] = struct{}{}
+}
+
+// MailFromOnMxFailureCleared returns if the "mail_from_on_mx_failure" field was cleared in this mutation.
+func (m *SendingDomainEnvelopeMutation) MailFromOnMxFailureCleared() bool {
+	_, ok := m.clearedFields[sendingdomainenvelope.FieldMailFromOnMxFailure]
+	return ok
+}
+
+// ResetMailFromOnMxFailure resets all changes to the "mail_from_on_mx_failure" field.
+func (m *SendingDomainEnvelopeMutation) ResetMailFromOnMxFailure() {
+	m.mail_from_on_mx_failure = nil
+	delete(m.clearedFields, sendingdomainenvelope.FieldMailFromOnMxFailure)
+}
+
+// SetCheckedAt sets the "checked_at" field.
+func (m *SendingDomainEnvelopeMutation) SetCheckedAt(t time.Time) {
+	m.checked_at = &t
+}
+
+// CheckedAt returns the value of the "checked_at" field in the mutation.
+func (m *SendingDomainEnvelopeMutation) CheckedAt() (r time.Time, exists bool) {
+	v := m.checked_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCheckedAt returns the old "checked_at" field's value of the SendingDomainEnvelope entity.
+// If the SendingDomainEnvelope object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SendingDomainEnvelopeMutation) OldCheckedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCheckedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCheckedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCheckedAt: %w", err)
+	}
+	return oldValue.CheckedAt, nil
+}
+
+// ResetCheckedAt resets all changes to the "checked_at" field.
+func (m *SendingDomainEnvelopeMutation) ResetCheckedAt() {
+	m.checked_at = nil
+}
+
+// ClearWorkspace clears the "workspace" edge to the Workspace entity.
+func (m *SendingDomainEnvelopeMutation) ClearWorkspace() {
+	m.clearedworkspace = true
+	m.clearedFields[sendingdomainenvelope.FieldWorkspaceID] = struct{}{}
+}
+
+// WorkspaceCleared reports if the "workspace" edge to the Workspace entity was cleared.
+func (m *SendingDomainEnvelopeMutation) WorkspaceCleared() bool {
+	return m.clearedworkspace
+}
+
+// WorkspaceIDs returns the "workspace" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// WorkspaceID instead. It exists only for internal usage by the builders.
+func (m *SendingDomainEnvelopeMutation) WorkspaceIDs() (ids []int64) {
+	if id := m.workspace; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetWorkspace resets all changes to the "workspace" edge.
+func (m *SendingDomainEnvelopeMutation) ResetWorkspace() {
+	m.workspace = nil
+	m.clearedworkspace = false
+}
+
+// ClearSendingDomain clears the "sending_domain" edge to the SendingDomain entity.
+func (m *SendingDomainEnvelopeMutation) ClearSendingDomain() {
+	m.clearedsending_domain = true
+	m.clearedFields[sendingdomainenvelope.FieldSendingDomainID] = struct{}{}
+}
+
+// SendingDomainCleared reports if the "sending_domain" edge to the SendingDomain entity was cleared.
+func (m *SendingDomainEnvelopeMutation) SendingDomainCleared() bool {
+	return m.clearedsending_domain
+}
+
+// SendingDomainIDs returns the "sending_domain" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// SendingDomainID instead. It exists only for internal usage by the builders.
+func (m *SendingDomainEnvelopeMutation) SendingDomainIDs() (ids []int64) {
+	if id := m.sending_domain; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetSendingDomain resets all changes to the "sending_domain" edge.
+func (m *SendingDomainEnvelopeMutation) ResetSendingDomain() {
+	m.sending_domain = nil
+	m.clearedsending_domain = false
+}
+
+// ClearIntegration clears the "integration" edge to the Integration entity.
+func (m *SendingDomainEnvelopeMutation) ClearIntegration() {
+	m.clearedintegration = true
+	m.clearedFields[sendingdomainenvelope.FieldIntegrationID] = struct{}{}
+}
+
+// IntegrationCleared reports if the "integration" edge to the Integration entity was cleared.
+func (m *SendingDomainEnvelopeMutation) IntegrationCleared() bool {
+	return m.clearedintegration
+}
+
+// IntegrationIDs returns the "integration" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// IntegrationID instead. It exists only for internal usage by the builders.
+func (m *SendingDomainEnvelopeMutation) IntegrationIDs() (ids []int64) {
+	if id := m.integration; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetIntegration resets all changes to the "integration" edge.
+func (m *SendingDomainEnvelopeMutation) ResetIntegration() {
+	m.integration = nil
+	m.clearedintegration = false
+}
+
+// Where appends a list predicates to the SendingDomainEnvelopeMutation builder.
+func (m *SendingDomainEnvelopeMutation) Where(ps ...predicate.SendingDomainEnvelope) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the SendingDomainEnvelopeMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *SendingDomainEnvelopeMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.SendingDomainEnvelope, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *SendingDomainEnvelopeMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *SendingDomainEnvelopeMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (SendingDomainEnvelope).
+func (m *SendingDomainEnvelopeMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *SendingDomainEnvelopeMutation) Fields() []string {
+	fields := make([]string, 0, 10)
+	if m.created_at != nil {
+		fields = append(fields, sendingdomainenvelope.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, sendingdomainenvelope.FieldUpdatedAt)
+	}
+	if m.workspace != nil {
+		fields = append(fields, sendingdomainenvelope.FieldWorkspaceID)
+	}
+	if m.sending_domain != nil {
+		fields = append(fields, sendingdomainenvelope.FieldSendingDomainID)
+	}
+	if m.integration != nil {
+		fields = append(fields, sendingdomainenvelope.FieldIntegrationID)
+	}
+	if m.state != nil {
+		fields = append(fields, sendingdomainenvelope.FieldState)
+	}
+	if m.mail_from_domain != nil {
+		fields = append(fields, sendingdomainenvelope.FieldMailFromDomain)
+	}
+	if m.mail_from_status != nil {
+		fields = append(fields, sendingdomainenvelope.FieldMailFromStatus)
+	}
+	if m.mail_from_on_mx_failure != nil {
+		fields = append(fields, sendingdomainenvelope.FieldMailFromOnMxFailure)
+	}
+	if m.checked_at != nil {
+		fields = append(fields, sendingdomainenvelope.FieldCheckedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *SendingDomainEnvelopeMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case sendingdomainenvelope.FieldCreatedAt:
+		return m.CreatedAt()
+	case sendingdomainenvelope.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case sendingdomainenvelope.FieldWorkspaceID:
+		return m.WorkspaceID()
+	case sendingdomainenvelope.FieldSendingDomainID:
+		return m.SendingDomainID()
+	case sendingdomainenvelope.FieldIntegrationID:
+		return m.IntegrationID()
+	case sendingdomainenvelope.FieldState:
+		return m.State()
+	case sendingdomainenvelope.FieldMailFromDomain:
+		return m.MailFromDomain()
+	case sendingdomainenvelope.FieldMailFromStatus:
+		return m.MailFromStatus()
+	case sendingdomainenvelope.FieldMailFromOnMxFailure:
+		return m.MailFromOnMxFailure()
+	case sendingdomainenvelope.FieldCheckedAt:
+		return m.CheckedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *SendingDomainEnvelopeMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case sendingdomainenvelope.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case sendingdomainenvelope.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case sendingdomainenvelope.FieldWorkspaceID:
+		return m.OldWorkspaceID(ctx)
+	case sendingdomainenvelope.FieldSendingDomainID:
+		return m.OldSendingDomainID(ctx)
+	case sendingdomainenvelope.FieldIntegrationID:
+		return m.OldIntegrationID(ctx)
+	case sendingdomainenvelope.FieldState:
+		return m.OldState(ctx)
+	case sendingdomainenvelope.FieldMailFromDomain:
+		return m.OldMailFromDomain(ctx)
+	case sendingdomainenvelope.FieldMailFromStatus:
+		return m.OldMailFromStatus(ctx)
+	case sendingdomainenvelope.FieldMailFromOnMxFailure:
+		return m.OldMailFromOnMxFailure(ctx)
+	case sendingdomainenvelope.FieldCheckedAt:
+		return m.OldCheckedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown SendingDomainEnvelope field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SendingDomainEnvelopeMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case sendingdomainenvelope.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case sendingdomainenvelope.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case sendingdomainenvelope.FieldWorkspaceID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWorkspaceID(v)
+		return nil
+	case sendingdomainenvelope.FieldSendingDomainID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSendingDomainID(v)
+		return nil
+	case sendingdomainenvelope.FieldIntegrationID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIntegrationID(v)
+		return nil
+	case sendingdomainenvelope.FieldState:
+		v, ok := value.(sendingdomainenvelope.State)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetState(v)
+		return nil
+	case sendingdomainenvelope.FieldMailFromDomain:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMailFromDomain(v)
+		return nil
+	case sendingdomainenvelope.FieldMailFromStatus:
+		v, ok := value.(providers.MailFromStatus)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMailFromStatus(v)
+		return nil
+	case sendingdomainenvelope.FieldMailFromOnMxFailure:
+		v, ok := value.(providers.MXFailureBehavior)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMailFromOnMxFailure(v)
+		return nil
+	case sendingdomainenvelope.FieldCheckedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCheckedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown SendingDomainEnvelope field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *SendingDomainEnvelopeMutation) AddedFields() []string {
+	var fields []string
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *SendingDomainEnvelopeMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SendingDomainEnvelopeMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown SendingDomainEnvelope numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *SendingDomainEnvelopeMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(sendingdomainenvelope.FieldMailFromDomain) {
+		fields = append(fields, sendingdomainenvelope.FieldMailFromDomain)
+	}
+	if m.FieldCleared(sendingdomainenvelope.FieldMailFromStatus) {
+		fields = append(fields, sendingdomainenvelope.FieldMailFromStatus)
+	}
+	if m.FieldCleared(sendingdomainenvelope.FieldMailFromOnMxFailure) {
+		fields = append(fields, sendingdomainenvelope.FieldMailFromOnMxFailure)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *SendingDomainEnvelopeMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *SendingDomainEnvelopeMutation) ClearField(name string) error {
+	switch name {
+	case sendingdomainenvelope.FieldMailFromDomain:
+		m.ClearMailFromDomain()
+		return nil
+	case sendingdomainenvelope.FieldMailFromStatus:
+		m.ClearMailFromStatus()
+		return nil
+	case sendingdomainenvelope.FieldMailFromOnMxFailure:
+		m.ClearMailFromOnMxFailure()
+		return nil
+	}
+	return fmt.Errorf("unknown SendingDomainEnvelope nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *SendingDomainEnvelopeMutation) ResetField(name string) error {
+	switch name {
+	case sendingdomainenvelope.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case sendingdomainenvelope.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case sendingdomainenvelope.FieldWorkspaceID:
+		m.ResetWorkspaceID()
+		return nil
+	case sendingdomainenvelope.FieldSendingDomainID:
+		m.ResetSendingDomainID()
+		return nil
+	case sendingdomainenvelope.FieldIntegrationID:
+		m.ResetIntegrationID()
+		return nil
+	case sendingdomainenvelope.FieldState:
+		m.ResetState()
+		return nil
+	case sendingdomainenvelope.FieldMailFromDomain:
+		m.ResetMailFromDomain()
+		return nil
+	case sendingdomainenvelope.FieldMailFromStatus:
+		m.ResetMailFromStatus()
+		return nil
+	case sendingdomainenvelope.FieldMailFromOnMxFailure:
+		m.ResetMailFromOnMxFailure()
+		return nil
+	case sendingdomainenvelope.FieldCheckedAt:
+		m.ResetCheckedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown SendingDomainEnvelope field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *SendingDomainEnvelopeMutation) AddedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.workspace != nil {
+		edges = append(edges, sendingdomainenvelope.EdgeWorkspace)
+	}
+	if m.sending_domain != nil {
+		edges = append(edges, sendingdomainenvelope.EdgeSendingDomain)
+	}
+	if m.integration != nil {
+		edges = append(edges, sendingdomainenvelope.EdgeIntegration)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *SendingDomainEnvelopeMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case sendingdomainenvelope.EdgeWorkspace:
+		if id := m.workspace; id != nil {
+			return []ent.Value{*id}
+		}
+	case sendingdomainenvelope.EdgeSendingDomain:
+		if id := m.sending_domain; id != nil {
+			return []ent.Value{*id}
+		}
+	case sendingdomainenvelope.EdgeIntegration:
+		if id := m.integration; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *SendingDomainEnvelopeMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 3)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *SendingDomainEnvelopeMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *SendingDomainEnvelopeMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.clearedworkspace {
+		edges = append(edges, sendingdomainenvelope.EdgeWorkspace)
+	}
+	if m.clearedsending_domain {
+		edges = append(edges, sendingdomainenvelope.EdgeSendingDomain)
+	}
+	if m.clearedintegration {
+		edges = append(edges, sendingdomainenvelope.EdgeIntegration)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *SendingDomainEnvelopeMutation) EdgeCleared(name string) bool {
+	switch name {
+	case sendingdomainenvelope.EdgeWorkspace:
+		return m.clearedworkspace
+	case sendingdomainenvelope.EdgeSendingDomain:
+		return m.clearedsending_domain
+	case sendingdomainenvelope.EdgeIntegration:
+		return m.clearedintegration
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *SendingDomainEnvelopeMutation) ClearEdge(name string) error {
+	switch name {
+	case sendingdomainenvelope.EdgeWorkspace:
+		m.ClearWorkspace()
+		return nil
+	case sendingdomainenvelope.EdgeSendingDomain:
+		m.ClearSendingDomain()
+		return nil
+	case sendingdomainenvelope.EdgeIntegration:
+		m.ClearIntegration()
+		return nil
+	}
+	return fmt.Errorf("unknown SendingDomainEnvelope unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *SendingDomainEnvelopeMutation) ResetEdge(name string) error {
+	switch name {
+	case sendingdomainenvelope.EdgeWorkspace:
+		m.ResetWorkspace()
+		return nil
+	case sendingdomainenvelope.EdgeSendingDomain:
+		m.ResetSendingDomain()
+		return nil
+	case sendingdomainenvelope.EdgeIntegration:
+		m.ResetIntegration()
+		return nil
+	}
+	return fmt.Errorf("unknown SendingDomainEnvelope edge %s", name)
 }
 
 // SendingWindowMutation represents an operation that mutates the SendingWindow nodes in the graph.
@@ -94168,6 +95365,9 @@ type WorkspaceMutation struct {
 	integration_provider_states          map[int64]struct{}
 	removedintegration_provider_states   map[int64]struct{}
 	clearedintegration_provider_states   bool
+	sending_domain_envelopes             map[int64]struct{}
+	removedsending_domain_envelopes      map[int64]struct{}
+	clearedsending_domain_envelopes      bool
 	webhook_endpoint_healths             map[int64]struct{}
 	removedwebhook_endpoint_healths      map[int64]struct{}
 	clearedwebhook_endpoint_healths      bool
@@ -98974,6 +100174,60 @@ func (m *WorkspaceMutation) ResetIntegrationProviderStates() {
 	m.removedintegration_provider_states = nil
 }
 
+// AddSendingDomainEnvelopeIDs adds the "sending_domain_envelopes" edge to the SendingDomainEnvelope entity by ids.
+func (m *WorkspaceMutation) AddSendingDomainEnvelopeIDs(ids ...int64) {
+	if m.sending_domain_envelopes == nil {
+		m.sending_domain_envelopes = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.sending_domain_envelopes[ids[i]] = struct{}{}
+	}
+}
+
+// ClearSendingDomainEnvelopes clears the "sending_domain_envelopes" edge to the SendingDomainEnvelope entity.
+func (m *WorkspaceMutation) ClearSendingDomainEnvelopes() {
+	m.clearedsending_domain_envelopes = true
+}
+
+// SendingDomainEnvelopesCleared reports if the "sending_domain_envelopes" edge to the SendingDomainEnvelope entity was cleared.
+func (m *WorkspaceMutation) SendingDomainEnvelopesCleared() bool {
+	return m.clearedsending_domain_envelopes
+}
+
+// RemoveSendingDomainEnvelopeIDs removes the "sending_domain_envelopes" edge to the SendingDomainEnvelope entity by IDs.
+func (m *WorkspaceMutation) RemoveSendingDomainEnvelopeIDs(ids ...int64) {
+	if m.removedsending_domain_envelopes == nil {
+		m.removedsending_domain_envelopes = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.sending_domain_envelopes, ids[i])
+		m.removedsending_domain_envelopes[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedSendingDomainEnvelopes returns the removed IDs of the "sending_domain_envelopes" edge to the SendingDomainEnvelope entity.
+func (m *WorkspaceMutation) RemovedSendingDomainEnvelopesIDs() (ids []int64) {
+	for id := range m.removedsending_domain_envelopes {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// SendingDomainEnvelopesIDs returns the "sending_domain_envelopes" edge IDs in the mutation.
+func (m *WorkspaceMutation) SendingDomainEnvelopesIDs() (ids []int64) {
+	for id := range m.sending_domain_envelopes {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetSendingDomainEnvelopes resets all changes to the "sending_domain_envelopes" edge.
+func (m *WorkspaceMutation) ResetSendingDomainEnvelopes() {
+	m.sending_domain_envelopes = nil
+	m.clearedsending_domain_envelopes = false
+	m.removedsending_domain_envelopes = nil
+}
+
 // AddWebhookEndpointHealthIDs adds the "webhook_endpoint_healths" edge to the WebhookEndpointHealth entity by ids.
 func (m *WorkspaceMutation) AddWebhookEndpointHealthIDs(ids ...int64) {
 	if m.webhook_endpoint_healths == nil {
@@ -99849,7 +101103,7 @@ func (m *WorkspaceMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *WorkspaceMutation) AddedEdges() []string {
-	edges := make([]string, 0, 63)
+	edges := make([]string, 0, 64)
 	if m.contacts != nil {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -100032,6 +101286,9 @@ func (m *WorkspaceMutation) AddedEdges() []string {
 	}
 	if m.integration_provider_states != nil {
 		edges = append(edges, workspace.EdgeIntegrationProviderStates)
+	}
+	if m.sending_domain_envelopes != nil {
+		edges = append(edges, workspace.EdgeSendingDomainEnvelopes)
 	}
 	if m.webhook_endpoint_healths != nil {
 		edges = append(edges, workspace.EdgeWebhookEndpointHealths)
@@ -100412,6 +101669,12 @@ func (m *WorkspaceMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case workspace.EdgeSendingDomainEnvelopes:
+		ids := make([]ent.Value, 0, len(m.sending_domain_envelopes))
+		for id := range m.sending_domain_envelopes {
+			ids = append(ids, id)
+		}
+		return ids
 	case workspace.EdgeWebhookEndpointHealths:
 		ids := make([]ent.Value, 0, len(m.webhook_endpoint_healths))
 		for id := range m.webhook_endpoint_healths {
@@ -100428,7 +101691,7 @@ func (m *WorkspaceMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *WorkspaceMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 63)
+	edges := make([]string, 0, 64)
 	if m.removedcontacts != nil {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -100611,6 +101874,9 @@ func (m *WorkspaceMutation) RemovedEdges() []string {
 	}
 	if m.removedintegration_provider_states != nil {
 		edges = append(edges, workspace.EdgeIntegrationProviderStates)
+	}
+	if m.removedsending_domain_envelopes != nil {
+		edges = append(edges, workspace.EdgeSendingDomainEnvelopes)
 	}
 	if m.removedwebhook_endpoint_healths != nil {
 		edges = append(edges, workspace.EdgeWebhookEndpointHealths)
@@ -100988,6 +102254,12 @@ func (m *WorkspaceMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case workspace.EdgeSendingDomainEnvelopes:
+		ids := make([]ent.Value, 0, len(m.removedsending_domain_envelopes))
+		for id := range m.removedsending_domain_envelopes {
+			ids = append(ids, id)
+		}
+		return ids
 	case workspace.EdgeWebhookEndpointHealths:
 		ids := make([]ent.Value, 0, len(m.removedwebhook_endpoint_healths))
 		for id := range m.removedwebhook_endpoint_healths {
@@ -101000,7 +102272,7 @@ func (m *WorkspaceMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *WorkspaceMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 63)
+	edges := make([]string, 0, 64)
 	if m.clearedcontacts {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -101184,6 +102456,9 @@ func (m *WorkspaceMutation) ClearedEdges() []string {
 	if m.clearedintegration_provider_states {
 		edges = append(edges, workspace.EdgeIntegrationProviderStates)
 	}
+	if m.clearedsending_domain_envelopes {
+		edges = append(edges, workspace.EdgeSendingDomainEnvelopes)
+	}
 	if m.clearedwebhook_endpoint_healths {
 		edges = append(edges, workspace.EdgeWebhookEndpointHealths)
 	}
@@ -101319,6 +102594,8 @@ func (m *WorkspaceMutation) EdgeCleared(name string) bool {
 		return m.clearedusages
 	case workspace.EdgeIntegrationProviderStates:
 		return m.clearedintegration_provider_states
+	case workspace.EdgeSendingDomainEnvelopes:
+		return m.clearedsending_domain_envelopes
 	case workspace.EdgeWebhookEndpointHealths:
 		return m.clearedwebhook_endpoint_healths
 	case workspace.EdgeStanding:
@@ -101524,6 +102801,9 @@ func (m *WorkspaceMutation) ResetEdge(name string) error {
 		return nil
 	case workspace.EdgeIntegrationProviderStates:
 		m.ResetIntegrationProviderStates()
+		return nil
+	case workspace.EdgeSendingDomainEnvelopes:
+		m.ResetSendingDomainEnvelopes()
 		return nil
 	case workspace.EdgeWebhookEndpointHealths:
 		m.ResetWebhookEndpointHealths()

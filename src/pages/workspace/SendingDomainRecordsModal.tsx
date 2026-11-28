@@ -3,7 +3,12 @@ import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { CopyTextButton } from '../../components/CopyTextButton.tsx'
-import type { SendingDomainResource } from '../../generated/site/types.gen.ts'
+import type {
+  MailFromStatus,
+  MxFailureBehavior,
+  SendingDomainEnvelope,
+  SendingDomainResource,
+} from '../../generated/site/types.gen.ts'
 import { useVerifySendingDomain } from '../../hooks/useVerifySendingDomain.ts'
 import { SendingDomainStatus } from './SendingDomainStatus.tsx'
 
@@ -108,6 +113,96 @@ function BulkReady({ record }: { record: SendingDomainResource }) {
   )
 }
 
+// mailFromStatusColor is how SES's status of a custom MAIL FROM reads at a glance: in use, not
+// yet, or broken.
+const mailFromStatusColor: Record<MailFromStatus, string> = {
+  pending: 'gray',
+  success: 'teal',
+  failed: 'red',
+  temporary_failure: 'yellow',
+}
+
+// EnvelopeDetail says where one email Integration's envelope is set for this domain (ADR 0184): at
+// an SMTP relay's provider, SES's own domain, a custom MAIL FROM with SES's status of it, or not
+// known for want of the permission to read it.
+function EnvelopeDetail({ envelope }: { envelope: SendingDomainEnvelope }) {
+  const { t } = useTranslation()
+  const mailFrom = envelope.mailFrom
+  if (envelope.state === 'set_at_provider') {
+    return <Text size="sm">{t(($) => $.settings.sendingDomains.envelopeSetAtProvider)}</Text>
+  }
+  if (envelope.state === 'unknown') {
+    return (
+      <Text size="sm">
+        {t(($) => $.settings.sendingDomains.envelopeUnknown, {
+          permission: envelope.permissionNeeded ?? '',
+        })}
+      </Text>
+    )
+  }
+  if (envelope.state === 'provider_default') {
+    return <Text size="sm">{t(($) => $.settings.sendingDomains.envelopeProviderDefault)}</Text>
+  }
+  if (!mailFrom) {
+    return null
+  }
+  const status: Record<MailFromStatus, string> = {
+    pending: t(($) => $.settings.sendingDomains.mailFromPending),
+    success: t(($) => $.settings.sendingDomains.mailFromSuccess),
+    failed: t(($) => $.settings.sendingDomains.mailFromFailed),
+    temporary_failure: t(($) => $.settings.sendingDomains.mailFromTemporaryFailure),
+  }
+  const onMxFailure: Record<MxFailureBehavior, string> = {
+    fall_back: t(($) => $.settings.sendingDomains.onMxFailureFallBack),
+    reject: t(($) => $.settings.sendingDomains.onMxFailureReject),
+  }
+  return (
+    <Stack gap={4}>
+      <Group gap="xs">
+        <Text size="sm">
+          {t(($) => $.settings.sendingDomains.envelopeCustom, { domain: mailFrom.domain })}
+        </Text>
+        <Badge color={mailFromStatusColor[mailFrom.status]} variant="light" size="sm">
+          {status[mailFrom.status]}
+        </Badge>
+      </Group>
+      <Text c="dimmed" size="xs">
+        {onMxFailure[mailFrom.onMxFailure]}
+      </Text>
+    </Stack>
+  )
+}
+
+// Envelopes lists, per email Integration of the Workspace, the envelope SPF is checked on for this
+// domain's mail: the domain has no SPF record of its own (ADR 0184).
+function Envelopes({ envelopes }: { envelopes: SendingDomainEnvelope[] }) {
+  const { t } = useTranslation()
+  return (
+    <Stack gap={6}>
+      <div>
+        <Text fw={600} size="sm">
+          {t(($) => $.settings.sendingDomains.envelopes)}
+        </Text>
+        <Text c="dimmed" size="xs">
+          {t(($) => $.settings.sendingDomains.envelopesHint)}
+        </Text>
+      </div>
+      {envelopes.length === 0 ? (
+        <Text size="sm">{t(($) => $.settings.sendingDomains.envelopesNone)}</Text>
+      ) : (
+        envelopes.map((envelope) => (
+          <Stack key={envelope.integrationId} gap={2}>
+            <Text fw={500} size="sm">
+              {envelope.integrationName}
+            </Text>
+            <EnvelopeDetail envelope={envelope} />
+          </Stack>
+        ))
+      )}
+    </Stack>
+  )
+}
+
 function SendingDomainRecords({ record }: { record: SendingDomainResource }) {
   const { t } = useTranslation()
   return (
@@ -119,16 +214,12 @@ function SendingDomainRecords({ record }: { record: SendingDomainResource }) {
         record={record.dkimRecord}
       />
       <DnsRecord
-        label={t(($) => $.settings.sendingDomains.spf)}
-        hint={t(($) => $.settings.sendingDomains.spfHint)}
-        record={record.spfRecord}
-      />
-      <DnsRecord
         label={t(($) => $.settings.sendingDomains.dmarc)}
         hint={t(($) => $.settings.sendingDomains.dmarcHint)}
         record={record.dmarcRecord}
         status={<BulkReady record={record} />}
       />
+      <Envelopes envelopes={record.envelopes} />
     </Stack>
   )
 }
@@ -137,7 +228,7 @@ function SendingDomainRecords({ record }: { record: SendingDomainResource }) {
 // the records to publish and the order of the steps. The record values are repeated so an agent
 // without an API token that may write Sending domains can still publish them.
 function agentPrompt(record: SendingDomainResource): string {
-  const records = [record.dkimRecord, record.spfRecord, record.dmarcRecord]
+  const records = [record.dkimRecord, record.dmarcRecord]
   const lines = records.map((r) => `- ${r.type} ${r.host} -> ${r.value}`)
   return [
     `Set up the Sending domain ${record.domain} (id ${record.id}) in sphericon.`,
@@ -145,7 +236,7 @@ function agentPrompt(record: SendingDomainResource): string {
     'Publish these DNS records at the DNS provider of the domain (create the ones that are missing, leave the others alone):',
     ...lines,
     '',
-    'The DKIM record is required; SPF and DMARC are recommended.',
+    'The DKIM record is required; DMARC is recommended. Publish no SPF record for the domain: SPF is checked on the envelope of each email integration, which sending_domains_list returns as envelopes.',
     `Then call sending_domains_verify for id ${record.id}, wait a minute, and read the domain again with sending_domains_list: it is done when "verified" is true. DNS can take a while to propagate: if it is not, say what is still missing.`,
   ].join('\n')
 }

@@ -1329,8 +1329,9 @@ transport). sphericon owns a per-domain DKIM keypair and **signs every outbound 
 re-verification. A `from_email` is a verified Sending domain plus a local part — never a free
 string; the send path **hard-requires** the From domain to match a verified Sending domain on
 all three surfaces (Broadcast, Automation, Transactional) and rejects otherwise.
-`verified` is a **live** property: the gate is the published DKIM TXT matching our key (SPF and
-DMARC are generated, shown, and checked but do **not** block). It is re-checked over time — if
+`verified` is a **live** property: the gate is the published DKIM TXT matching our key (DMARC is
+generated, shown, and checked but does **not** block; the domain has no SPF record of its own, as
+SPF is checked on each email Integration's **Envelope**, ADR 0184). It is re-checked over time — if
 the DKIM record disappears, the domain reverts to unverified, its sends block, and the owner is
 notified. Distinct from a **Sending source** (that is the unsubscribe scope, not an identity).
 Beyond `verified` (the DKIM send-gate) the domain carries a separate **bulk-ready** signal: a
@@ -1339,6 +1340,14 @@ absence **warns but does not block** — the send-gate stays DKIM-only (ADR 0010
 advisory-with-teeth (ADR 0012), because a missing `_dmarc` record gets otherwise-authed mail
 rejected (a bounce) or spam-foldered by bulk-sender policy.
 _Avoid_: From domain, verified domain, sender identity, SPF domain
+
+**Envelope**:
+The domain an email Integration's provider sends a Sending domain's mail with as its MAIL FROM
+(the `Return-Path`), where SPF is checked: the provider's own, or a custom MAIL FROM subdomain the
+sender sets at the provider (SES's custom MAIL FROM of the domain's identity). The domain's checks
+read it per Integration and keep it (ADR 0184); the app never sets it, and it never gates sending.
+An SMTP relay's is set at a provider the app does not know, and the Test inbox has none.
+_Avoid_: Return-Path domain, bounce domain, SPF record
 
 **Feedback-ID**:
 The header on every email that Gmail counts spam reports by: the send's origin (an opaque id of the

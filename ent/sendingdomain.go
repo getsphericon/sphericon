@@ -54,9 +54,11 @@ type SendingDomain struct {
 type SendingDomainEdges struct {
 	// Workspace holds the value of the workspace edge.
 	Workspace *Workspace `json:"workspace,omitempty"`
+	// Envelopes holds the value of the envelopes edge.
+	Envelopes []*SendingDomainEnvelope `json:"envelopes,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 }
 
 // WorkspaceOrErr returns the Workspace value or an error if the edge
@@ -68,6 +70,15 @@ func (e SendingDomainEdges) WorkspaceOrErr() (*Workspace, error) {
 		return nil, &NotFoundError{label: workspace.Label}
 	}
 	return nil, &NotLoadedError{edge: "workspace"}
+}
+
+// EnvelopesOrErr returns the Envelopes value or an error if the edge
+// was not loaded in eager-loading.
+func (e SendingDomainEdges) EnvelopesOrErr() ([]*SendingDomainEnvelope, error) {
+	if e.loadedTypes[1] {
+		return e.Envelopes, nil
+	}
+	return nil, &NotLoadedError{edge: "envelopes"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -202,6 +213,11 @@ func (_m *SendingDomain) Value(name string) (ent.Value, error) {
 // QueryWorkspace queries the "workspace" edge of the SendingDomain entity.
 func (_m *SendingDomain) QueryWorkspace() *WorkspaceQuery {
 	return NewSendingDomainClient(_m.config).QueryWorkspace(_m)
+}
+
+// QueryEnvelopes queries the "envelopes" edge of the SendingDomain entity.
+func (_m *SendingDomain) QueryEnvelopes() *SendingDomainEnvelopeQuery {
+	return NewSendingDomainClient(_m.config).QueryEnvelopes(_m)
 }
 
 // Update returns a builder for updating this SendingDomain.

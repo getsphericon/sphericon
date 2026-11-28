@@ -2130,6 +2130,22 @@ func (c *ConverterImpl) LintFindingsToResource(source []emailrender.Finding) []s
 	}
 	return siteapiLintFindingList
 }
+func (c *ConverterImpl) MailFromStatusToResource(source providers.MailFromStatus) site.MailFromStatus {
+	var siteapiMailFromStatus site.MailFromStatus
+	switch source {
+	case providers.MailFromFailed:
+		siteapiMailFromStatus = site.MailFromStatusFailed
+	case providers.MailFromPending:
+		siteapiMailFromStatus = site.MailFromStatusPending
+	case providers.MailFromSuccess:
+		siteapiMailFromStatus = site.MailFromStatusSuccess
+	case providers.MailFromTemporaryFailure:
+		siteapiMailFromStatus = site.MailFromStatusTemporaryFailure
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiMailFromStatus
+}
 func (c *ConverterImpl) MembershipRoleToResource(source membership.Role) site.SiteMembershipRole {
 	var siteapiSiteMembershipRole site.SiteMembershipRole
 	switch source {
@@ -2221,6 +2237,18 @@ func (c *ConverterImpl) MomentOperatorToResource(source conditiontree.MomentOper
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return siteapiMomentOperator
+}
+func (c *ConverterImpl) MxFailureBehaviorToResource(source providers.MXFailureBehavior) site.MxFailureBehavior {
+	var siteapiMxFailureBehavior site.MxFailureBehavior
+	switch source {
+	case providers.MXFailureFallBack:
+		siteapiMxFailureBehavior = site.MxFailureBehaviorFallBack
+	case providers.MXFailureReject:
+		siteapiMxFailureBehavior = site.MxFailureBehaviorReject
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiMxFailureBehavior
 }
 func (c *ConverterImpl) NumberOperatorToResource(source conditiontree.NumberOperator) site.NumberOperator {
 	var siteapiNumberOperator site.NumberOperator
@@ -2950,6 +2978,48 @@ func (c *ConverterImpl) SendCapToResource(source providerlimit.SendCapStatus) si
 	siteapiSendCap.SentLast24h = count(source.Sent24h)
 	return siteapiSendCap
 }
+func (c *ConverterImpl) SendingDomainEnvelopeStateToResource(source sendingdomains.EnvelopeState) site.SendingDomainEnvelopeState {
+	var siteapiSendingDomainEnvelopeState site.SendingDomainEnvelopeState
+	switch source {
+	case sendingdomains.EnvelopeCustom:
+		siteapiSendingDomainEnvelopeState = site.SendingDomainEnvelopeStateCustom
+	case sendingdomains.EnvelopeProviderDefault:
+		siteapiSendingDomainEnvelopeState = site.SendingDomainEnvelopeStateProviderDefault
+	case sendingdomains.EnvelopeSetAtProvider:
+		siteapiSendingDomainEnvelopeState = site.SendingDomainEnvelopeStateSetAtProvider
+	case sendingdomains.EnvelopeUnknown:
+		siteapiSendingDomainEnvelopeState = site.SendingDomainEnvelopeStateUnknown
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiSendingDomainEnvelopeState
+}
+func (c *ConverterImpl) SendingDomainEnvelopeToResource(source sendingdomains.Envelope) site.SendingDomainEnvelope {
+	var siteapiSendingDomainEnvelope site.SendingDomainEnvelope
+	siteapiSendingDomainEnvelope.IntegrationId = site.EntityId(source.IntegrationID)
+	siteapiSendingDomainEnvelope.IntegrationName = source.IntegrationName
+	siteapiSendingDomainEnvelope.Provider = c.IntegrationProviderToResource(source.Provider)
+	siteapiSendingDomainEnvelope.State = c.SendingDomainEnvelopeStateToResource(source.State)
+	siteapiSendingDomainEnvelope.MailFrom = envelopeMailFrom(c, source.MailFrom)
+	siteapiSendingDomainEnvelope.PermissionNeeded = envelopePermission(source.PermissionNeeded)
+	siteapiSendingDomainEnvelope.CheckedAt = envelopeCheckedAt(source.CheckedAt)
+	return siteapiSendingDomainEnvelope
+}
+func (c *ConverterImpl) SendingDomainEnvelopesToResource(source []sendingdomains.Envelope) []site.SendingDomainEnvelope {
+	var siteapiSendingDomainEnvelopeList []site.SendingDomainEnvelope
+	siteapiSendingDomainEnvelopeList = make([]site.SendingDomainEnvelope, len(source))
+	for i := 0; i < len(source); i++ {
+		siteapiSendingDomainEnvelopeList[i] = c.SendingDomainEnvelopeToResource(source[i])
+	}
+	return siteapiSendingDomainEnvelopeList
+}
+func (c *ConverterImpl) SendingDomainMailFromToResource(source messaging.MailFrom) site.SendingDomainMailFrom {
+	var siteapiSendingDomainMailFrom site.SendingDomainMailFrom
+	siteapiSendingDomainMailFrom.Domain = source.Domain
+	siteapiSendingDomainMailFrom.Status = c.MailFromStatusToResource(source.Status)
+	siteapiSendingDomainMailFrom.OnMxFailure = c.MxFailureBehaviorToResource(source.OnMXFailure)
+	return siteapiSendingDomainMailFrom
+}
 func (c *ConverterImpl) SendingDomainToResource(source *ent.SendingDomain) site.SendingDomainResource {
 	var siteapiSendingDomainResource site.SendingDomainResource
 	if source != nil {
@@ -2958,7 +3028,7 @@ func (c *ConverterImpl) SendingDomainToResource(source *ent.SendingDomain) site.
 		siteapiSendingDomainResource.DkimSelector = (*source).DkimSelector
 		siteapiSendingDomainResource.Verified = sendingDomainVerified((*source))
 		// siteapiSendingDomainResource.DkimRecord: ignore
-		// siteapiSendingDomainResource.SpfRecord: ignore
+		// siteapiSendingDomainResource.Envelopes: ignore
 		// siteapiSendingDomainResource.DmarcRecord: ignore
 		siteapiSendingDomainResource.DmarcCheckedAt = optNilTimestamp((*source).DmarcCheckedAt)
 		siteapiSendingDomainResource.DmarcFoundAt = optNilTimestamp((*source).DmarcFoundAt)

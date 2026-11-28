@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"fmt"
 	"math"
 
@@ -14,6 +15,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
+	"github.com/getsphericon/sphericon/ent/sendingdomainenvelope"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
@@ -25,6 +27,7 @@ type SendingDomainQuery struct {
 	inters        []Interceptor
 	predicates    []predicate.SendingDomain
 	withWorkspace *WorkspaceQuery
+	withEnvelopes *SendingDomainEnvelopeQuery
 	modifiers     []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -77,6 +80,28 @@ func (_q *SendingDomainQuery) QueryWorkspace() *WorkspaceQuery {
 			sqlgraph.From(sendingdomain.Table, sendingdomain.FieldID, selector),
 			sqlgraph.To(workspace.Table, workspace.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, sendingdomain.WorkspaceTable, sendingdomain.WorkspaceColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryEnvelopes chains the current query on the "envelopes" edge.
+func (_q *SendingDomainQuery) QueryEnvelopes() *SendingDomainEnvelopeQuery {
+	query := (&SendingDomainEnvelopeClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(sendingdomain.Table, sendingdomain.FieldID, selector),
+			sqlgraph.To(sendingdomainenvelope.Table, sendingdomainenvelope.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, sendingdomain.EnvelopesTable, sendingdomain.EnvelopesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -277,6 +302,7 @@ func (_q *SendingDomainQuery) Clone() *SendingDomainQuery {
 		inters:        append([]Interceptor{}, _q.inters...),
 		predicates:    append([]predicate.SendingDomain{}, _q.predicates...),
 		withWorkspace: _q.withWorkspace.Clone(),
+		withEnvelopes: _q.withEnvelopes.Clone(),
 		// clone intermediate query.
 		sql:       _q.sql.Clone(),
 		path:      _q.path,
@@ -292,6 +318,17 @@ func (_q *SendingDomainQuery) WithWorkspace(opts ...func(*WorkspaceQuery)) *Send
 		opt(query)
 	}
 	_q.withWorkspace = query
+	return _q
+}
+
+// WithEnvelopes tells the query-builder to eager-load the nodes that are connected to
+// the "envelopes" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *SendingDomainQuery) WithEnvelopes(opts ...func(*SendingDomainEnvelopeQuery)) *SendingDomainQuery {
+	query := (&SendingDomainEnvelopeClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withEnvelopes = query
 	return _q
 }
 
@@ -373,8 +410,9 @@ func (_q *SendingDomainQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([
 	var (
 		nodes       = []*SendingDomain{}
 		_spec       = _q.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
 			_q.withWorkspace != nil,
+			_q.withEnvelopes != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -401,6 +439,13 @@ func (_q *SendingDomainQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([
 	if query := _q.withWorkspace; query != nil {
 		if err := _q.loadWorkspace(ctx, query, nodes, nil,
 			func(n *SendingDomain, e *Workspace) { n.Edges.Workspace = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withEnvelopes; query != nil {
+		if err := _q.loadEnvelopes(ctx, query, nodes,
+			func(n *SendingDomain) { n.Edges.Envelopes = []*SendingDomainEnvelope{} },
+			func(n *SendingDomain, e *SendingDomainEnvelope) { n.Edges.Envelopes = append(n.Edges.Envelopes, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -433,6 +478,36 @@ func (_q *SendingDomainQuery) loadWorkspace(ctx context.Context, query *Workspac
 		for i := range nodes {
 			assign(nodes[i], n)
 		}
+	}
+	return nil
+}
+func (_q *SendingDomainQuery) loadEnvelopes(ctx context.Context, query *SendingDomainEnvelopeQuery, nodes []*SendingDomain, init func(*SendingDomain), assign func(*SendingDomain, *SendingDomainEnvelope)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*SendingDomain)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(sendingdomainenvelope.FieldSendingDomainID)
+	}
+	query.Where(predicate.SendingDomainEnvelope(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(sendingdomain.EnvelopesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.SendingDomainID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "sending_domain_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
 	}
 	return nil
 }

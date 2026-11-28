@@ -81,6 +81,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendcaplimiter"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
+	"github.com/getsphericon/sphericon/ent/sendingdomainenvelope"
 	"github.com/getsphericon/sphericon/ent/sendingwindow"
 	"github.com/getsphericon/sphericon/ent/servicecredential"
 	"github.com/getsphericon/sphericon/ent/signupitem"
@@ -231,6 +232,7 @@ func checkColumn(t, c string) error {
 			segment.Table:                    segment.ValidColumn,
 			sendcaplimiter.Table:             sendcaplimiter.ValidColumn,
 			sendingdomain.Table:              sendingdomain.ValidColumn,
+			sendingdomainenvelope.Table:      sendingdomainenvelope.ValidColumn,
 			sendingwindow.Table:              sendingwindow.ValidColumn,
 			servicecredential.Table:          servicecredential.ValidColumn,
 			signupitem.Table:                 signupitem.ValidColumn,

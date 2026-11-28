@@ -14,12 +14,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
 )
 
-func TestSPFAndDMARCRecords(t *testing.T) {
-	host, value := sendingdomains.SPFRecord("mail.acme.com")
-	require.Equal(t, "mail.acme.com", host)
-	require.Equal(t, "v=spf1 include:amazonses.com ~all", value)
-
-	host, value = sendingdomains.DMARCRecord("mail.acme.com")
+func TestDMARCRecord(t *testing.T) {
+	host, value := sendingdomains.DMARCRecord("mail.acme.com")
 	require.Equal(t, "_dmarc.mail.acme.com", host)
 	require.Equal(t, "v=DMARC1; p=none;", value)
 }

@@ -1336,6 +1336,16 @@ export const zDateTriggerInput = z.strictObject({
 export const zLocaleTag = z.string().max(35).regex(/^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$/);
 
 /**
+ * SES's status of a custom MAIL FROM domain: whether it found the domain's MX record
+ */
+export const zMailFromStatus = z.enum([
+  'pending',
+  'success',
+  'failed',
+  'temporary_failure'
+]);
+
+/**
  * A rolling 24-hour limit the caller may set: a Provider limit's daily value or a Send cap
  */
 export const zMaxPerDay = z.int().gte(1).lte(100000000);
@@ -1407,6 +1417,11 @@ export const zMinuteOfDay = z.int().gte(0).lte(1440);
  * split time at `at`
  */
 export const zMomentOperator = z.enum(['before', 'after']);
+
+/**
+ * What SES does with a send while the custom MAIL FROM domain's MX record fails
+ */
+export const zMxFailureBehavior = z.enum(['fall_back', 'reject']);
 
 /**
  * What a person calls a named row (a Tag, a Segment, a Rule, an Automation, a Template, a
@@ -1855,6 +1870,26 @@ export const zSendScope = z.enum([
   'confirmations:send',
   'mcp:send'
 ]);
+
+/**
+ * Where an email Integration's envelope domain (MAIL FROM, Return-Path) is set for a Sending
+ * domain, and so where SPF is checked for its mail (ADR 0184).
+ */
+export const zSendingDomainEnvelopeState = z.enum([
+  'provider_default',
+  'custom',
+  'unknown',
+  'set_at_provider'
+]);
+
+/**
+ * The custom MAIL FROM domain set at SES on the Sending domain's identity
+ */
+export const zSendingDomainMailFrom = z.object({
+  domain: z.string(),
+  status: zMailFromStatus,
+  onMxFailure: zMxFailureBehavior
+});
 
 /**
  * A Channel a Sending window holds (ADR 0134): only SMS, since email and Telegram go out at any
@@ -4463,6 +4498,21 @@ export const zScheduleBroadcastInput = z.strictObject({
 });
 
 /**
+ * The envelope one email Integration of the Workspace sends the Sending domain's mail with
+ * (ADR 0184), read with the domain's checks. The app reads it; a custom MAIL FROM is set at SES by
+ * the person, never by the app.
+ */
+export const zSendingDomainEnvelope = z.object({
+  integrationId: zEntityId,
+  integrationName: z.string(),
+  provider: zIntegrationProvider,
+  state: zSendingDomainEnvelopeState,
+  mailFrom: zSendingDomainMailFrom.nullable(),
+  permissionNeeded: z.string().nullable(),
+  checkedAt: zTimestamp.nullable()
+});
+
+/**
  * Sending domain (ADR 0010). sphericon generates the DKIM keypair; the caller publishes the
  * DKIM TXT record. The private key is never returned. `verified` is re-checked in the
  * background: the domain loses it (`verificationLostAt`) if the DNS record disappears.
@@ -4473,7 +4523,7 @@ export const zSendingDomainResource = z.object({
   dkimSelector: z.string(),
   verified: z.boolean(),
   dkimRecord: zDnsRecord,
-  spfRecord: zDnsRecord,
+  envelopes: z.array(zSendingDomainEnvelope),
   dmarcRecord: zDnsRecord,
   dmarcCheckedAt: zTimestamp.nullable().exactOptional(),
   dmarcFoundAt: zTimestamp.nullable().exactOptional(),

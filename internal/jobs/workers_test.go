@@ -37,6 +37,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
+	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/domain/sending/trackingdomains"
@@ -499,13 +500,13 @@ func TestVerifySendingDomainWorker(t *testing.T) {
 	gone := dnstest.Resolver(t, nil).LookupTXT
 
 	// Verified domain whose DNS vanished: flips, owner is emailed.
-	w := jobs.NewVerifySendingDomainWorker(env.DB, sendingdomains.New(env.DB, env.Bus, nil, gone, time.Now))
+	w := jobs.NewVerifySendingDomainWorker(env.DB, sendingdomains.New(env.DB, env.Bus, nil, gone, testhelper.Module[*integrations.Module](env), time.Now))
 	require.NoError(t, w.Work(ctx, job(jobs.VerifySendingDomainArgs{SendingDomainID: fixtures.SendingDomainVerifiedID})))
 	assert.Len(t, env.SystemMail.Messages(), 1)
 
 	// A failing alert never fails the verification.
 	env.SystemMail.SetErr(errors.New("smtp down"))
-	require.NoError(t, jobs.NewVerifySendingDomainWorker(env.DB, sendingdomains.New(env.DB, env.Bus, nil, gone, time.Now)).
+	require.NoError(t, jobs.NewVerifySendingDomainWorker(env.DB, sendingdomains.New(env.DB, env.Bus, nil, gone, testhelper.Module[*integrations.Module](env), time.Now)).
 		Work(ctx, job(jobs.VerifySendingDomainArgs{SendingDomainID: fixtures.SendingDomainVerifiedID})))
 
 	// Unknown domain id is an error.
@@ -517,7 +518,7 @@ func TestRecheckSendingDomainsWorkerFansOut(t *testing.T) {
 	total, err := e.DB.SendingDomain.Query().Where(sendingdomain.DiscardedAtIsNil()).Count(t.Context())
 	require.NoError(t, err)
 
-	require.NoError(t, jobs.NewRecheckSendingDomainsWorker(sendingdomains.New(e.DB, e.Bus, nil, nil, time.Now)).Work(e.workCtx(), job(jobs.RecheckSendingDomainsArgs{})))
+	require.NoError(t, jobs.NewRecheckSendingDomainsWorker(sendingdomains.New(e.DB, e.Bus, nil, nil, testhelper.Module[*integrations.Module](e.TestEnv), time.Now)).Work(e.workCtx(), job(jobs.RecheckSendingDomainsArgs{})))
 
 	kinds := e.queued(t)
 	assert.Len(t, kinds, total)

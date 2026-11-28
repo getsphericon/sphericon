@@ -213,6 +213,9 @@ type SendCapLimiter func(*sql.Selector)
 // SendingDomain is the predicate function for sendingdomain builders.
 type SendingDomain func(*sql.Selector)
 
+// SendingDomainEnvelope is the predicate function for sendingdomainenvelope builders.
+type SendingDomainEnvelope func(*sql.Selector)
+
 // SendingWindow is the predicate function for sendingwindow builders.
 type SendingWindow func(*sql.Selector)
 

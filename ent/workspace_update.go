@@ -64,6 +64,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendcaplimiter"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
+	"github.com/getsphericon/sphericon/ent/sendingdomainenvelope"
 	"github.com/getsphericon/sphericon/ent/sendingwindow"
 	"github.com/getsphericon/sphericon/ent/starttoken"
 	"github.com/getsphericon/sphericon/ent/suppression"
@@ -1520,6 +1521,21 @@ func (_u *WorkspaceUpdate) AddIntegrationProviderStates(v ...*IntegrationProvide
 	return _u.AddIntegrationProviderStateIDs(ids...)
 }
 
+// AddSendingDomainEnvelopeIDs adds the "sending_domain_envelopes" edge to the SendingDomainEnvelope entity by IDs.
+func (_u *WorkspaceUpdate) AddSendingDomainEnvelopeIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.AddSendingDomainEnvelopeIDs(ids...)
+	return _u
+}
+
+// AddSendingDomainEnvelopes adds the "sending_domain_envelopes" edges to the SendingDomainEnvelope entity.
+func (_u *WorkspaceUpdate) AddSendingDomainEnvelopes(v ...*SendingDomainEnvelope) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddSendingDomainEnvelopeIDs(ids...)
+}
+
 // AddWebhookEndpointHealthIDs adds the "webhook_endpoint_healths" edge to the WebhookEndpointHealth entity by IDs.
 func (_u *WorkspaceUpdate) AddWebhookEndpointHealthIDs(ids ...int64) *WorkspaceUpdate {
 	_u.mutation.AddWebhookEndpointHealthIDs(ids...)
@@ -2838,6 +2854,27 @@ func (_u *WorkspaceUpdate) RemoveIntegrationProviderStates(v ...*IntegrationProv
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveIntegrationProviderStateIDs(ids...)
+}
+
+// ClearSendingDomainEnvelopes clears all "sending_domain_envelopes" edges to the SendingDomainEnvelope entity.
+func (_u *WorkspaceUpdate) ClearSendingDomainEnvelopes() *WorkspaceUpdate {
+	_u.mutation.ClearSendingDomainEnvelopes()
+	return _u
+}
+
+// RemoveSendingDomainEnvelopeIDs removes the "sending_domain_envelopes" edge to SendingDomainEnvelope entities by IDs.
+func (_u *WorkspaceUpdate) RemoveSendingDomainEnvelopeIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.RemoveSendingDomainEnvelopeIDs(ids...)
+	return _u
+}
+
+// RemoveSendingDomainEnvelopes removes "sending_domain_envelopes" edges to SendingDomainEnvelope entities.
+func (_u *WorkspaceUpdate) RemoveSendingDomainEnvelopes(v ...*SendingDomainEnvelope) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveSendingDomainEnvelopeIDs(ids...)
 }
 
 // ClearWebhookEndpointHealths clears all "webhook_endpoint_healths" edges to the WebhookEndpointHealth entity.
@@ -5888,6 +5925,51 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.SendingDomainEnvelopesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.SendingDomainEnvelopesTable,
+			Columns: []string{workspace.SendingDomainEnvelopesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sendingdomainenvelope.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedSendingDomainEnvelopesIDs(); len(nodes) > 0 && !_u.mutation.SendingDomainEnvelopesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.SendingDomainEnvelopesTable,
+			Columns: []string{workspace.SendingDomainEnvelopesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sendingdomainenvelope.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SendingDomainEnvelopesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.SendingDomainEnvelopesTable,
+			Columns: []string{workspace.SendingDomainEnvelopesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sendingdomainenvelope.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _u.mutation.WebhookEndpointHealthsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -7411,6 +7493,21 @@ func (_u *WorkspaceUpdateOne) AddIntegrationProviderStates(v ...*IntegrationProv
 	return _u.AddIntegrationProviderStateIDs(ids...)
 }
 
+// AddSendingDomainEnvelopeIDs adds the "sending_domain_envelopes" edge to the SendingDomainEnvelope entity by IDs.
+func (_u *WorkspaceUpdateOne) AddSendingDomainEnvelopeIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.AddSendingDomainEnvelopeIDs(ids...)
+	return _u
+}
+
+// AddSendingDomainEnvelopes adds the "sending_domain_envelopes" edges to the SendingDomainEnvelope entity.
+func (_u *WorkspaceUpdateOne) AddSendingDomainEnvelopes(v ...*SendingDomainEnvelope) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddSendingDomainEnvelopeIDs(ids...)
+}
+
 // AddWebhookEndpointHealthIDs adds the "webhook_endpoint_healths" edge to the WebhookEndpointHealth entity by IDs.
 func (_u *WorkspaceUpdateOne) AddWebhookEndpointHealthIDs(ids ...int64) *WorkspaceUpdateOne {
 	_u.mutation.AddWebhookEndpointHealthIDs(ids...)
@@ -8729,6 +8826,27 @@ func (_u *WorkspaceUpdateOne) RemoveIntegrationProviderStates(v ...*IntegrationP
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveIntegrationProviderStateIDs(ids...)
+}
+
+// ClearSendingDomainEnvelopes clears all "sending_domain_envelopes" edges to the SendingDomainEnvelope entity.
+func (_u *WorkspaceUpdateOne) ClearSendingDomainEnvelopes() *WorkspaceUpdateOne {
+	_u.mutation.ClearSendingDomainEnvelopes()
+	return _u
+}
+
+// RemoveSendingDomainEnvelopeIDs removes the "sending_domain_envelopes" edge to SendingDomainEnvelope entities by IDs.
+func (_u *WorkspaceUpdateOne) RemoveSendingDomainEnvelopeIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.RemoveSendingDomainEnvelopeIDs(ids...)
+	return _u
+}
+
+// RemoveSendingDomainEnvelopes removes "sending_domain_envelopes" edges to SendingDomainEnvelope entities.
+func (_u *WorkspaceUpdateOne) RemoveSendingDomainEnvelopes(v ...*SendingDomainEnvelope) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveSendingDomainEnvelopeIDs(ids...)
 }
 
 // ClearWebhookEndpointHealths clears all "webhook_endpoint_healths" edges to the WebhookEndpointHealth entity.
@@ -11802,6 +11920,51 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(integrationproviderstate.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.SendingDomainEnvelopesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.SendingDomainEnvelopesTable,
+			Columns: []string{workspace.SendingDomainEnvelopesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sendingdomainenvelope.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedSendingDomainEnvelopesIDs(); len(nodes) > 0 && !_u.mutation.SendingDomainEnvelopesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.SendingDomainEnvelopesTable,
+			Columns: []string{workspace.SendingDomainEnvelopesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sendingdomainenvelope.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SendingDomainEnvelopesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.SendingDomainEnvelopesTable,
+			Columns: []string{workspace.SendingDomainEnvelopesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sendingdomainenvelope.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

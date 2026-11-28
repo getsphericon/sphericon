@@ -199,6 +199,8 @@ const (
 	EdgeUsages = "usages"
 	// EdgeIntegrationProviderStates holds the string denoting the integration_provider_states edge name in mutations.
 	EdgeIntegrationProviderStates = "integration_provider_states"
+	// EdgeSendingDomainEnvelopes holds the string denoting the sending_domain_envelopes edge name in mutations.
+	EdgeSendingDomainEnvelopes = "sending_domain_envelopes"
 	// EdgeWebhookEndpointHealths holds the string denoting the webhook_endpoint_healths edge name in mutations.
 	EdgeWebhookEndpointHealths = "webhook_endpoint_healths"
 	// EdgeStanding holds the string denoting the standing edge name in mutations.
@@ -639,6 +641,13 @@ const (
 	IntegrationProviderStatesInverseTable = "integration_provider_state"
 	// IntegrationProviderStatesColumn is the table column denoting the integration_provider_states relation/edge.
 	IntegrationProviderStatesColumn = "workspace_id"
+	// SendingDomainEnvelopesTable is the table that holds the sending_domain_envelopes relation/edge.
+	SendingDomainEnvelopesTable = "sending_domain_envelopes"
+	// SendingDomainEnvelopesInverseTable is the table name for the SendingDomainEnvelope entity.
+	// It exists in this package in order to avoid circular dependency with the "sendingdomainenvelope" package.
+	SendingDomainEnvelopesInverseTable = "sending_domain_envelopes"
+	// SendingDomainEnvelopesColumn is the table column denoting the sending_domain_envelopes relation/edge.
+	SendingDomainEnvelopesColumn = "workspace_id"
 	// WebhookEndpointHealthsTable is the table that holds the webhook_endpoint_healths relation/edge.
 	WebhookEndpointHealthsTable = "webhook_endpoint_health"
 	// WebhookEndpointHealthsInverseTable is the table name for the WebhookEndpointHealth entity.
@@ -1820,6 +1829,20 @@ func ByIntegrationProviderStates(term sql.OrderTerm, terms ...sql.OrderTerm) Ord
 	}
 }
 
+// BySendingDomainEnvelopesCount orders the results by sending_domain_envelopes count.
+func BySendingDomainEnvelopesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newSendingDomainEnvelopesStep(), opts...)
+	}
+}
+
+// BySendingDomainEnvelopes orders the results by sending_domain_envelopes terms.
+func BySendingDomainEnvelopes(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newSendingDomainEnvelopesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByWebhookEndpointHealthsCount orders the results by webhook_endpoint_healths count.
 func ByWebhookEndpointHealthsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -2272,6 +2295,13 @@ func newIntegrationProviderStatesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(IntegrationProviderStatesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, IntegrationProviderStatesTable, IntegrationProviderStatesColumn),
+	)
+}
+func newSendingDomainEnvelopesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(SendingDomainEnvelopesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, SendingDomainEnvelopesTable, SendingDomainEnvelopesColumn),
 	)
 }
 func newWebhookEndpointHealthsStep() *sqlgraph.Step {

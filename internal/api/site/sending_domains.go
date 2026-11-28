@@ -3,19 +3,19 @@ package site
 import (
 	"context"
 
-	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
-// sendingDomainResource maps the row, then attaches the DNS records the user publishes, which
-// the sendingdomains module derives and the mapper cannot see.
-func (h *Handlers) sendingDomainResource(d *ent.SendingDomain) siteapi.SendingDomainResource {
-	rec := h.sendingDomains.Records(d)
-	res := mapper.SendingDomainToResource(d)
+// sendingDomainResource maps the View, then attaches what the mapper cannot see of the row: the
+// DNS records the user publishes, which the sendingdomains module derives.
+func (h *Handlers) sendingDomainResource(v sendingdomains.View) siteapi.SendingDomainResource {
+	rec := h.sendingDomains.Records(v.Domain)
+	res := mapper.SendingDomainToResource(v.Domain)
 	res.DkimRecord = mapper.DnsRecordToResource(rec.DKIM)
-	res.SpfRecord = mapper.DnsRecordToResource(rec.SPF)
 	res.DmarcRecord = mapper.DnsRecordToResource(rec.DMARC)
+	res.Envelopes = mapper.SendingDomainEnvelopesToResource(v.Envelopes)
 	return res
 }
 
@@ -26,7 +26,6 @@ func (h *Handlers) SiteSendingDomainsList(ctx context.Context, params siteapi.Si
 	if err != nil {
 		return nil, err
 	}
-
 	return mapper.SendingDomainsListPage(page.Map(h.sendingDomainResource)), nil
 }
 

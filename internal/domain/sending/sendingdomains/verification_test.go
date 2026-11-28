@@ -15,6 +15,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/dnstest"
+	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/devdns"
@@ -26,7 +27,7 @@ import (
 
 // domains is the module over the test's database, its checks resolving through lookup.
 func domains(env *testhelper.TestEnv, lookup domainname.TXTLookup) *sendingdomains.Module {
-	return sendingdomains.New(env.DB, env.Bus, nil, lookup, time.Now)
+	return sendingdomains.New(env.DB, env.Bus, nil, lookup, testhelper.Module[*integrations.Module](env), time.Now)
 }
 
 // acme is the scope of the Workspace the checked fixture domains belong to.
@@ -41,7 +42,7 @@ func TestDue_neverCheckedFirstAndArchivedSkipped(t *testing.T) {
 
 	// Fixtures: the verified domain has last_checked_at set; the unverified one is never
 	// checked (NULL). NULLS FIRST must surface it ahead.
-	due, err := sendingdomains.New(env.DB, env.Bus, nil, nil, time.Now).Due(t.Context(), 100)
+	due, err := sendingdomains.New(env.DB, env.Bus, nil, nil, testhelper.Module[*integrations.Module](env), time.Now).Due(t.Context(), 100)
 	require.NoError(t, err)
 	ids := lo.Map(due, func(d *ent.SendingDomain, _ int) int64 { return d.ID })
 	require.Contains(t, ids, int64(fixtures.SendingDomainUnverifiedID))
@@ -62,7 +63,7 @@ func TestDevRecords_trustsSeededDomains(t *testing.T) {
 	row, err := domains(env, devLookup(env)).Verify(t.Context(), acme(env), fixtures.SendingDomainUnverifiedID)
 
 	require.NoError(t, err)
-	assert.True(t, dkimstate.Is(row), "dev lookup makes a seeded domain verify")
+	assert.True(t, dkimstate.Is(row.Domain), "dev lookup makes a seeded domain verify")
 }
 
 // The end-to-end resolver answers a Sending domain's DMARC record with the suggested one, so a
@@ -88,7 +89,7 @@ func TestVerify_becomesVerified(t *testing.T) {
 	lookup := dnstest.Resolver(t, map[string]mockdns.Zone{"sphericon._domainkey.news.acme.com.": {TXT: []string{dom.DkimPublicKey}}}).LookupTXT
 	row, err := domains(env, lookup).Verify(ctx, acme(env), fixtures.SendingDomainUnverifiedID)
 	require.NoError(t, err)
-	assert.True(t, dkimstate.Is(row))
+	assert.True(t, dkimstate.Is(row.Domain))
 
 	reloaded, err := env.DB.SendingDomain.Get(ctx, fixtures.SendingDomainUnverifiedID)
 	require.NoError(t, err)
@@ -106,7 +107,7 @@ func TestVerify_flipsToUnverifiedWhenRecordGoneAndEmailsOwner(t *testing.T) {
 
 	row, err := domains(env, gone).Verify(ctx, acme(env), fixtures.SendingDomainVerifiedID)
 	require.NoError(t, err)
-	assert.False(t, dkimstate.Is(row))
+	assert.False(t, dkimstate.Is(row.Domain))
 
 	reloaded, err := env.DB.SendingDomain.Get(ctx, fixtures.SendingDomainVerifiedID)
 	require.NoError(t, err)
@@ -143,7 +144,7 @@ func TestVerify_verifiedAgainClearsTheLoss(t *testing.T) {
 	verified, err := domains(env, back).Verify(ctx, acme(env), dom.ID)
 
 	require.NoError(t, err)
-	assert.True(t, dkimstate.Is(verified))
+	assert.True(t, dkimstate.Is(verified.Domain))
 	row, err := env.DB.SendingDomain.Get(ctx, dom.ID)
 	require.NoError(t, err)
 	assert.True(t, dkimstate.Is(row))
@@ -159,7 +160,7 @@ func TestVerify_aFailingNoticeNeverFailsTheCheck(t *testing.T) {
 	checked, err := domains(env, dnstest.Resolver(t, nil).LookupTXT).Verify(ctx, acme(env), fixtures.SendingDomainVerifiedID)
 
 	require.NoError(t, err)
-	assert.False(t, dkimstate.Is(checked))
+	assert.False(t, dkimstate.Is(checked.Domain))
 	row, err := env.DB.SendingDomain.Get(ctx, fixtures.SendingDomainVerifiedID)
 	require.NoError(t, err)
 	assert.False(t, dkimstate.Is(row))
@@ -169,7 +170,7 @@ func TestVerify_aFailingNoticeNeverFailsTheCheck(t *testing.T) {
 func TestRecheck_withoutASystemSenderStillFlips(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithoutSystemSender())
 	ctx := t.Context()
-	m := sendingdomains.New(env.DB, env.Bus, nil, dnstest.Resolver(t, nil).LookupTXT, time.Now)
+	m := sendingdomains.New(env.DB, env.Bus, nil, dnstest.Resolver(t, nil).LookupTXT, testhelper.Module[*integrations.Module](env), time.Now)
 
 	err := m.Recheck(ctx, acme(env), fixtures.SendingDomainVerifiedID)
 
@@ -260,9 +261,9 @@ func TestUpdate_movingTheSelectorOfAVerifiedDomainLosesItWithoutANotice(t *testi
 		sendingdomains.UpdateInput{Selector: patch.Set("moved")})
 
 	require.NoError(t, err)
-	assert.Equal(t, "moved", row.DkimSelector)
-	assert.False(t, dkimstate.Is(row))
-	assert.NotNil(t, row.VerificationLostAt)
+	assert.Equal(t, "moved", row.Domain.DkimSelector)
+	assert.False(t, dkimstate.Is(row.Domain))
+	assert.NotNil(t, row.Domain.VerificationLostAt)
 	assert.Empty(t, env.SystemMail.Messages(), "the Owner who moved it is not told")
 }
 

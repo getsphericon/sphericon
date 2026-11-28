@@ -1,0 +1,26 @@
+# What the last check of a Sending domain read of its envelope at an SES Integration (ADR 0184):
+# one row per (Sending domain, Integration).
+#
+# Workspace acme (id 1): mail.acme.com (sending domain 1) sends through
+# Amazon SES (integration 2) with a custom MAIL FROM that SES uses.
+- id: 1
+  sending_domain_id: 1
+  integration_id: 2
+  state: custom
+  mail_from_domain: bounce.mail.acme.com
+  mail_from_status: success
+  mail_from_on_mx_failure: fall_back
+  checked_at: '{{daysAgo 1}}'
+  workspace_id: 1
+  created_at: '{{daysAgo 30}}'
+  updated_at: '{{daysAgo 1}}'
+# Workspace globex (id 2): mail.globex.test (sending domain 900) through Globex SES (integration
+# 901), whose credentials could not read the identity.
+- id: 2
+  sending_domain_id: 900
+  integration_id: 901
+  state: unknown
+  checked_at: '{{daysAgo 1}}'
+  workspace_id: 2
+  created_at: '{{daysAgo 10}}'
+  updated_at: '{{daysAgo 1}}'

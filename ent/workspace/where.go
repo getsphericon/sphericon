@@ -3086,6 +3086,29 @@ func HasIntegrationProviderStatesWith(preds ...predicate.IntegrationProviderStat
 	})
 }
 
+// HasSendingDomainEnvelopes applies the HasEdge predicate on the "sending_domain_envelopes" edge.
+func HasSendingDomainEnvelopes() predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, SendingDomainEnvelopesTable, SendingDomainEnvelopesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasSendingDomainEnvelopesWith applies the HasEdge predicate on the "sending_domain_envelopes" edge with a given conditions (other predicates).
+func HasSendingDomainEnvelopesWith(preds ...predicate.SendingDomainEnvelope) predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := newSendingDomainEnvelopesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasWebhookEndpointHealths applies the HasEdge predicate on the "webhook_endpoint_healths" edge.
 func HasWebhookEndpointHealths() predicate.Workspace {
 	return predicate.Workspace(func(s *sql.Selector) {

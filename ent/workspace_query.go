@@ -66,6 +66,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendcaplimiter"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
+	"github.com/getsphericon/sphericon/ent/sendingdomainenvelope"
 	"github.com/getsphericon/sphericon/ent/sendingwindow"
 	"github.com/getsphericon/sphericon/ent/starttoken"
 	"github.com/getsphericon/sphericon/ent/suppression"
@@ -150,6 +151,7 @@ type WorkspaceQuery struct {
 	withErasures                    *ErasureQuery
 	withUsages                      *UsageQuery
 	withIntegrationProviderStates   *IntegrationProviderStateQuery
+	withSendingDomainEnvelopes      *SendingDomainEnvelopeQuery
 	withWebhookEndpointHealths      *WebhookEndpointHealthQuery
 	withStanding                    *WorkspaceStandingQuery
 	modifiers                       []func(*sql.Selector)
@@ -1553,6 +1555,28 @@ func (_q *WorkspaceQuery) QueryIntegrationProviderStates() *IntegrationProviderS
 	return query
 }
 
+// QuerySendingDomainEnvelopes chains the current query on the "sending_domain_envelopes" edge.
+func (_q *WorkspaceQuery) QuerySendingDomainEnvelopes() *SendingDomainEnvelopeQuery {
+	query := (&SendingDomainEnvelopeClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
+			sqlgraph.To(sendingdomainenvelope.Table, sendingdomainenvelope.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.SendingDomainEnvelopesTable, workspace.SendingDomainEnvelopesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // QueryWebhookEndpointHealths chains the current query on the "webhook_endpoint_healths" edge.
 func (_q *WorkspaceQuery) QueryWebhookEndpointHealths() *WebhookEndpointHealthQuery {
 	query := (&WebhookEndpointHealthClient{config: _q.config}).Query()
@@ -1851,6 +1875,7 @@ func (_q *WorkspaceQuery) Clone() *WorkspaceQuery {
 		withErasures:                    _q.withErasures.Clone(),
 		withUsages:                      _q.withUsages.Clone(),
 		withIntegrationProviderStates:   _q.withIntegrationProviderStates.Clone(),
+		withSendingDomainEnvelopes:      _q.withSendingDomainEnvelopes.Clone(),
 		withWebhookEndpointHealths:      _q.withWebhookEndpointHealths.Clone(),
 		withStanding:                    _q.withStanding.Clone(),
 		// clone intermediate query.
@@ -2542,6 +2567,17 @@ func (_q *WorkspaceQuery) WithIntegrationProviderStates(opts ...func(*Integratio
 	return _q
 }
 
+// WithSendingDomainEnvelopes tells the query-builder to eager-load the nodes that are connected to
+// the "sending_domain_envelopes" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *WorkspaceQuery) WithSendingDomainEnvelopes(opts ...func(*SendingDomainEnvelopeQuery)) *WorkspaceQuery {
+	query := (&SendingDomainEnvelopeClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withSendingDomainEnvelopes = query
+	return _q
+}
+
 // WithWebhookEndpointHealths tells the query-builder to eager-load the nodes that are connected to
 // the "webhook_endpoint_healths" edge. The optional arguments are used to configure the query builder of the edge.
 func (_q *WorkspaceQuery) WithWebhookEndpointHealths(opts ...func(*WebhookEndpointHealthQuery)) *WorkspaceQuery {
@@ -2642,7 +2678,7 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 	var (
 		nodes       = []*Workspace{}
 		_spec       = _q.querySpec()
-		loadedTypes = [64]bool{
+		loadedTypes = [65]bool{
 			_q.withContacts != nil,
 			_q.withCustomFields != nil,
 			_q.withTags != nil,
@@ -2705,6 +2741,7 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 			_q.withErasures != nil,
 			_q.withUsages != nil,
 			_q.withIntegrationProviderStates != nil,
+			_q.withSendingDomainEnvelopes != nil,
 			_q.withWebhookEndpointHealths != nil,
 			_q.withStanding != nil,
 		}
@@ -3184,6 +3221,15 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 			func(n *Workspace) { n.Edges.IntegrationProviderStates = []*IntegrationProviderState{} },
 			func(n *Workspace, e *IntegrationProviderState) {
 				n.Edges.IntegrationProviderStates = append(n.Edges.IntegrationProviderStates, e)
+			}); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withSendingDomainEnvelopes; query != nil {
+		if err := _q.loadSendingDomainEnvelopes(ctx, query, nodes,
+			func(n *Workspace) { n.Edges.SendingDomainEnvelopes = []*SendingDomainEnvelope{} },
+			func(n *Workspace, e *SendingDomainEnvelope) {
+				n.Edges.SendingDomainEnvelopes = append(n.Edges.SendingDomainEnvelopes, e)
 			}); err != nil {
 			return nil, err
 		}
@@ -5054,6 +5100,36 @@ func (_q *WorkspaceQuery) loadIntegrationProviderStates(ctx context.Context, que
 	}
 	query.Where(predicate.IntegrationProviderState(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(workspace.IntegrationProviderStatesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.WorkspaceID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "workspace_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *WorkspaceQuery) loadSendingDomainEnvelopes(ctx context.Context, query *SendingDomainEnvelopeQuery, nodes []*Workspace, init func(*Workspace), assign func(*Workspace, *SendingDomainEnvelope)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Workspace)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(sendingdomainenvelope.FieldWorkspaceID)
+	}
+	query.Where(predicate.SendingDomainEnvelope(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(workspace.SendingDomainEnvelopesColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

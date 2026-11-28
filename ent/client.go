@@ -84,6 +84,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendcaplimiter"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
+	"github.com/getsphericon/sphericon/ent/sendingdomainenvelope"
 	"github.com/getsphericon/sphericon/ent/sendingwindow"
 	"github.com/getsphericon/sphericon/ent/servicecredential"
 	"github.com/getsphericon/sphericon/ent/signupitem"
@@ -252,6 +253,8 @@ type Client struct {
 	SendCapLimiter *SendCapLimiterClient
 	// SendingDomain is the client for interacting with the SendingDomain builders.
 	SendingDomain *SendingDomainClient
+	// SendingDomainEnvelope is the client for interacting with the SendingDomainEnvelope builders.
+	SendingDomainEnvelope *SendingDomainEnvelopeClient
 	// SendingWindow is the client for interacting with the SendingWindow builders.
 	SendingWindow *SendingWindowClient
 	// ServiceCredential is the client for interacting with the ServiceCredential builders.
@@ -374,6 +377,7 @@ func (c *Client) init() {
 	c.Segment = NewSegmentClient(c.config)
 	c.SendCapLimiter = NewSendCapLimiterClient(c.config)
 	c.SendingDomain = NewSendingDomainClient(c.config)
+	c.SendingDomainEnvelope = NewSendingDomainEnvelopeClient(c.config)
 	c.SendingWindow = NewSendingWindowClient(c.config)
 	c.ServiceCredential = NewServiceCredentialClient(c.config)
 	c.SignupItem = NewSignupItemClient(c.config)
@@ -556,6 +560,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Segment:                    NewSegmentClient(cfg),
 		SendCapLimiter:             NewSendCapLimiterClient(cfg),
 		SendingDomain:              NewSendingDomainClient(cfg),
+		SendingDomainEnvelope:      NewSendingDomainEnvelopeClient(cfg),
 		SendingWindow:              NewSendingWindowClient(cfg),
 		ServiceCredential:          NewServiceCredentialClient(cfg),
 		SignupItem:                 NewSignupItemClient(cfg),
@@ -665,6 +670,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Segment:                    NewSegmentClient(cfg),
 		SendCapLimiter:             NewSendCapLimiterClient(cfg),
 		SendingDomain:              NewSendingDomainClient(cfg),
+		SendingDomainEnvelope:      NewSendingDomainEnvelopeClient(cfg),
 		SendingWindow:              NewSendingWindowClient(cfg),
 		ServiceCredential:          NewServiceCredentialClient(cfg),
 		SignupItem:                 NewSignupItemClient(cfg),
@@ -731,10 +737,10 @@ func (c *Client) Use(hooks ...Hook) {
 		c.PasskeyChallenge, c.PendingSignup, c.PrivateRelayRange, c.ProviderLimiter,
 		c.RecoveryCode, c.Rule, c.RuleFiring, c.RuleVersion, c.RuleVersionTrigger,
 		c.SchemaState, c.SecondFactor, c.Segment, c.SendCapLimiter, c.SendingDomain,
-		c.SendingWindow, c.ServiceCredential, c.SignupItem, c.SignupSurveyResponse,
-		c.StaffMember, c.StartToken, c.Suppression, c.Tag, c.TrackedLink,
-		c.TrackingDomain, c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User,
-		c.UserIdentity, c.UserTombstone, c.Visitor, c.WebhookEndpoint,
+		c.SendingDomainEnvelope, c.SendingWindow, c.ServiceCredential, c.SignupItem,
+		c.SignupSurveyResponse, c.StaffMember, c.StartToken, c.Suppression, c.Tag,
+		c.TrackedLink, c.TrackingDomain, c.TrackingHostChange, c.Unsubscribe, c.Usage,
+		c.User, c.UserIdentity, c.UserTombstone, c.Visitor, c.WebhookEndpoint,
 		c.WebhookEndpointHealth, c.Workspace, c.WorkspaceStanding,
 	} {
 		n.Use(hooks...)
@@ -761,10 +767,10 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.PasskeyChallenge, c.PendingSignup, c.PrivateRelayRange, c.ProviderLimiter,
 		c.RecoveryCode, c.Rule, c.RuleFiring, c.RuleVersion, c.RuleVersionTrigger,
 		c.SchemaState, c.SecondFactor, c.Segment, c.SendCapLimiter, c.SendingDomain,
-		c.SendingWindow, c.ServiceCredential, c.SignupItem, c.SignupSurveyResponse,
-		c.StaffMember, c.StartToken, c.Suppression, c.Tag, c.TrackedLink,
-		c.TrackingDomain, c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User,
-		c.UserIdentity, c.UserTombstone, c.Visitor, c.WebhookEndpoint,
+		c.SendingDomainEnvelope, c.SendingWindow, c.ServiceCredential, c.SignupItem,
+		c.SignupSurveyResponse, c.StaffMember, c.StartToken, c.Suppression, c.Tag,
+		c.TrackedLink, c.TrackingDomain, c.TrackingHostChange, c.Unsubscribe, c.Usage,
+		c.User, c.UserIdentity, c.UserTombstone, c.Visitor, c.WebhookEndpoint,
 		c.WebhookEndpointHealth, c.Workspace, c.WorkspaceStanding,
 	} {
 		n.Intercept(interceptors...)
@@ -912,6 +918,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.SendCapLimiter.mutate(ctx, m)
 	case *SendingDomainMutation:
 		return c.SendingDomain.mutate(ctx, m)
+	case *SendingDomainEnvelopeMutation:
+		return c.SendingDomainEnvelope.mutate(ctx, m)
 	case *SendingWindowMutation:
 		return c.SendingWindow.mutate(ctx, m)
 	case *ServiceCredentialMutation:
@@ -8030,6 +8038,22 @@ func (c *IntegrationClient) QueryStartTokens(_m *Integration) *StartTokenQuery {
 	return query
 }
 
+// QueryEnvelopes queries the envelopes edge of a Integration.
+func (c *IntegrationClient) QueryEnvelopes(_m *Integration) *SendingDomainEnvelopeQuery {
+	query := (&SendingDomainEnvelopeClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(integration.Table, integration.FieldID, id),
+			sqlgraph.To(sendingdomainenvelope.Table, sendingdomainenvelope.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, integration.EnvelopesTable, integration.EnvelopesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *IntegrationClient) Hooks() []Hook {
 	return c.hooks.Integration
@@ -12661,6 +12685,22 @@ func (c *SendingDomainClient) QueryWorkspace(_m *SendingDomain) *WorkspaceQuery 
 	return query
 }
 
+// QueryEnvelopes queries the envelopes edge of a SendingDomain.
+func (c *SendingDomainClient) QueryEnvelopes(_m *SendingDomain) *SendingDomainEnvelopeQuery {
+	query := (&SendingDomainEnvelopeClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(sendingdomain.Table, sendingdomain.FieldID, id),
+			sqlgraph.To(sendingdomainenvelope.Table, sendingdomainenvelope.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, sendingdomain.EnvelopesTable, sendingdomain.EnvelopesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *SendingDomainClient) Hooks() []Hook {
 	return c.hooks.SendingDomain
@@ -12683,6 +12723,187 @@ func (c *SendingDomainClient) mutate(ctx context.Context, m *SendingDomainMutati
 		return (&SendingDomainDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown SendingDomain mutation op: %q", m.Op())
+	}
+}
+
+// SendingDomainEnvelopeClient is a client for the SendingDomainEnvelope schema.
+type SendingDomainEnvelopeClient struct {
+	config
+}
+
+// NewSendingDomainEnvelopeClient returns a client for the SendingDomainEnvelope from the given config.
+func NewSendingDomainEnvelopeClient(c config) *SendingDomainEnvelopeClient {
+	return &SendingDomainEnvelopeClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `sendingdomainenvelope.Hooks(f(g(h())))`.
+func (c *SendingDomainEnvelopeClient) Use(hooks ...Hook) {
+	c.hooks.SendingDomainEnvelope = append(c.hooks.SendingDomainEnvelope, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `sendingdomainenvelope.Intercept(f(g(h())))`.
+func (c *SendingDomainEnvelopeClient) Intercept(interceptors ...Interceptor) {
+	c.inters.SendingDomainEnvelope = append(c.inters.SendingDomainEnvelope, interceptors...)
+}
+
+// Create returns a builder for creating a SendingDomainEnvelope entity.
+func (c *SendingDomainEnvelopeClient) Create() *SendingDomainEnvelopeCreate {
+	mutation := newSendingDomainEnvelopeMutation(c.config, OpCreate)
+	return &SendingDomainEnvelopeCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of SendingDomainEnvelope entities.
+func (c *SendingDomainEnvelopeClient) CreateBulk(builders ...*SendingDomainEnvelopeCreate) *SendingDomainEnvelopeCreateBulk {
+	return &SendingDomainEnvelopeCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *SendingDomainEnvelopeClient) MapCreateBulk(slice any, setFunc func(*SendingDomainEnvelopeCreate, int)) *SendingDomainEnvelopeCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &SendingDomainEnvelopeCreateBulk{err: fmt.Errorf("calling to SendingDomainEnvelopeClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*SendingDomainEnvelopeCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &SendingDomainEnvelopeCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for SendingDomainEnvelope.
+func (c *SendingDomainEnvelopeClient) Update() *SendingDomainEnvelopeUpdate {
+	mutation := newSendingDomainEnvelopeMutation(c.config, OpUpdate)
+	return &SendingDomainEnvelopeUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *SendingDomainEnvelopeClient) UpdateOne(_m *SendingDomainEnvelope) *SendingDomainEnvelopeUpdateOne {
+	mutation := newSendingDomainEnvelopeMutation(c.config, OpUpdateOne, withSendingDomainEnvelope(_m))
+	return &SendingDomainEnvelopeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *SendingDomainEnvelopeClient) UpdateOneID(id int64) *SendingDomainEnvelopeUpdateOne {
+	mutation := newSendingDomainEnvelopeMutation(c.config, OpUpdateOne, withSendingDomainEnvelopeID(id))
+	return &SendingDomainEnvelopeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for SendingDomainEnvelope.
+func (c *SendingDomainEnvelopeClient) Delete() *SendingDomainEnvelopeDelete {
+	mutation := newSendingDomainEnvelopeMutation(c.config, OpDelete)
+	return &SendingDomainEnvelopeDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *SendingDomainEnvelopeClient) DeleteOne(_m *SendingDomainEnvelope) *SendingDomainEnvelopeDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *SendingDomainEnvelopeClient) DeleteOneID(id int64) *SendingDomainEnvelopeDeleteOne {
+	builder := c.Delete().Where(sendingdomainenvelope.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &SendingDomainEnvelopeDeleteOne{builder}
+}
+
+// Query returns a query builder for SendingDomainEnvelope.
+func (c *SendingDomainEnvelopeClient) Query() *SendingDomainEnvelopeQuery {
+	return &SendingDomainEnvelopeQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeSendingDomainEnvelope},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a SendingDomainEnvelope entity by its id.
+func (c *SendingDomainEnvelopeClient) Get(ctx context.Context, id int64) (*SendingDomainEnvelope, error) {
+	return c.Query().Where(sendingdomainenvelope.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *SendingDomainEnvelopeClient) GetX(ctx context.Context, id int64) *SendingDomainEnvelope {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryWorkspace queries the workspace edge of a SendingDomainEnvelope.
+func (c *SendingDomainEnvelopeClient) QueryWorkspace(_m *SendingDomainEnvelope) *WorkspaceQuery {
+	query := (&WorkspaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(sendingdomainenvelope.Table, sendingdomainenvelope.FieldID, id),
+			sqlgraph.To(workspace.Table, workspace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, sendingdomainenvelope.WorkspaceTable, sendingdomainenvelope.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QuerySendingDomain queries the sending_domain edge of a SendingDomainEnvelope.
+func (c *SendingDomainEnvelopeClient) QuerySendingDomain(_m *SendingDomainEnvelope) *SendingDomainQuery {
+	query := (&SendingDomainClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(sendingdomainenvelope.Table, sendingdomainenvelope.FieldID, id),
+			sqlgraph.To(sendingdomain.Table, sendingdomain.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, sendingdomainenvelope.SendingDomainTable, sendingdomainenvelope.SendingDomainColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryIntegration queries the integration edge of a SendingDomainEnvelope.
+func (c *SendingDomainEnvelopeClient) QueryIntegration(_m *SendingDomainEnvelope) *IntegrationQuery {
+	query := (&IntegrationClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(sendingdomainenvelope.Table, sendingdomainenvelope.FieldID, id),
+			sqlgraph.To(integration.Table, integration.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, sendingdomainenvelope.IntegrationTable, sendingdomainenvelope.IntegrationColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *SendingDomainEnvelopeClient) Hooks() []Hook {
+	return c.hooks.SendingDomainEnvelope
+}
+
+// Interceptors returns the client interceptors.
+func (c *SendingDomainEnvelopeClient) Interceptors() []Interceptor {
+	return c.inters.SendingDomainEnvelope
+}
+
+func (c *SendingDomainEnvelopeClient) mutate(ctx context.Context, m *SendingDomainEnvelopeMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&SendingDomainEnvelopeCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&SendingDomainEnvelopeUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&SendingDomainEnvelopeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&SendingDomainEnvelopeDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown SendingDomainEnvelope mutation op: %q", m.Op())
 	}
 }
 
@@ -16889,6 +17110,22 @@ func (c *WorkspaceClient) QueryIntegrationProviderStates(_m *Workspace) *Integra
 	return query
 }
 
+// QuerySendingDomainEnvelopes queries the sending_domain_envelopes edge of a Workspace.
+func (c *WorkspaceClient) QuerySendingDomainEnvelopes(_m *Workspace) *SendingDomainEnvelopeQuery {
+	query := (&SendingDomainEnvelopeClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, id),
+			sqlgraph.To(sendingdomainenvelope.Table, sendingdomainenvelope.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.SendingDomainEnvelopesTable, workspace.SendingDomainEnvelopesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryWebhookEndpointHealths queries the webhook_endpoint_healths edge of a Workspace.
 func (c *WorkspaceClient) QueryWebhookEndpointHealths(_m *Workspace) *WebhookEndpointHealthQuery {
 	query := (&WebhookEndpointHealthClient{config: c.config}).Query()
@@ -17112,11 +17349,12 @@ type (
 		OAuthRefreshToken, Order, OrderMovement, OutboundMessage, Passkey,
 		PasskeyChallenge, PendingSignup, PrivateRelayRange, ProviderLimiter,
 		RecoveryCode, Rule, RuleFiring, RuleVersion, RuleVersionTrigger, SchemaState,
-		SecondFactor, Segment, SendCapLimiter, SendingDomain, SendingWindow,
-		ServiceCredential, SignupItem, SignupSurveyResponse, StaffMember, StartToken,
-		Suppression, Tag, TrackedLink, TrackingDomain, TrackingHostChange, Unsubscribe,
-		Usage, User, UserIdentity, UserTombstone, Visitor, WebhookEndpoint,
-		WebhookEndpointHealth, Workspace, WorkspaceStanding []ent.Hook
+		SecondFactor, Segment, SendCapLimiter, SendingDomain, SendingDomainEnvelope,
+		SendingWindow, ServiceCredential, SignupItem, SignupSurveyResponse,
+		StaffMember, StartToken, Suppression, Tag, TrackedLink, TrackingDomain,
+		TrackingHostChange, Unsubscribe, Usage, User, UserIdentity, UserTombstone,
+		Visitor, WebhookEndpoint, WebhookEndpointHealth, Workspace,
+		WorkspaceStanding []ent.Hook
 	}
 	inters struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationFigure,
@@ -17133,11 +17371,12 @@ type (
 		OAuthRefreshToken, Order, OrderMovement, OutboundMessage, Passkey,
 		PasskeyChallenge, PendingSignup, PrivateRelayRange, ProviderLimiter,
 		RecoveryCode, Rule, RuleFiring, RuleVersion, RuleVersionTrigger, SchemaState,
-		SecondFactor, Segment, SendCapLimiter, SendingDomain, SendingWindow,
-		ServiceCredential, SignupItem, SignupSurveyResponse, StaffMember, StartToken,
-		Suppression, Tag, TrackedLink, TrackingDomain, TrackingHostChange, Unsubscribe,
-		Usage, User, UserIdentity, UserTombstone, Visitor, WebhookEndpoint,
-		WebhookEndpointHealth, Workspace, WorkspaceStanding []ent.Interceptor
+		SecondFactor, Segment, SendCapLimiter, SendingDomain, SendingDomainEnvelope,
+		SendingWindow, ServiceCredential, SignupItem, SignupSurveyResponse,
+		StaffMember, StartToken, Suppression, Tag, TrackedLink, TrackingDomain,
+		TrackingHostChange, Unsubscribe, Usage, User, UserIdentity, UserTombstone,
+		Visitor, WebhookEndpoint, WebhookEndpointHealth, Workspace,
+		WorkspaceStanding []ent.Interceptor
 	}
 )
 
