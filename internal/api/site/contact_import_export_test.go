@@ -20,6 +20,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/csvimport"
+	"github.com/getsphericon/sphericon/internal/kernel/narrow"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -89,7 +90,7 @@ func TestAnExportsConsentIsProposedWithoutTheEvidenceItLacks(t *testing.T) {
 
 	assert.Empty(t, consent.Evidence.Wording.Value, "no wording is made up")
 	assert.Empty(t, consent.Evidence.Brand.Value, "no brand is made up")
-	assert.Equal(t, siteapi.NewNilInt32(int32(at)), consent.Evidence.SourceColumn, "the provenance is the source")
+	assert.Equal(t, siteapi.NewNilInt32(narrow.Int32(at)), consent.Evidence.SourceColumn, "the provenance is the source")
 	testhelper.SiteRefusal(t, unsaved, http.StatusUnprocessableEntity)
 }
 
