@@ -1,6 +1,7 @@
 package contactimports
 
 import (
+	"slices"
 	"strings"
 
 	"github.com/samber/lo"
@@ -40,16 +41,13 @@ func exportedRefusals(channel channels.Channel) []csvimport.RefusalValue {
 	}
 }
 
-// suppressionReasons are the reasons of a Suppression an export writes, each recorded as a
-// Suppression (of the manual reason) in the importing Workspace.
-var suppressionReasons = []entsuppression.Reason{entsuppression.ReasonBounce, entsuppression.ReasonComplaint, entsuppression.ReasonManual}
+// suppressionReasons are the reasons of a Suppression an export writes, every reason the schema has,
+// each recorded as a Suppression (of the manual reason) in the importing Workspace.
+var suppressionReasons = entsuppression.Reason("").Values()
 
-// provenances are the provenances of a Confirmation an export writes, each recorded as an imported
-// Confirmation.
-var provenances = []confirmation.Provenance{
-	confirmation.ProvenanceDoubleOptIn, confirmation.ProvenanceGrandfathered,
-	confirmation.ProvenanceImported, confirmation.ProvenanceKeyword,
-}
+// provenances are the provenances of a Confirmation an export writes, every provenance the schema
+// has, each recorded as an imported Confirmation.
+var provenances = confirmation.Provenance("").Values()
 
 // channelPart is a header of a Channel's state: the Channel and the part of its state.
 type channelPart struct {
@@ -111,8 +109,8 @@ func (e exported) column(header string, at int, cells []string) (csvimport.Colum
 		}
 		return csvimport.Column{Kind: csvimport.KindRefusal, Fact: &csvimport.Fact{
 			Channel: string(cp.channel),
-			Refusals: lo.Map(suppressionReasons, func(r entsuppression.Reason, _ int) csvimport.RefusalValue {
-				return csvimport.RefusalValue{Value: string(r), Refusal: csvimport.RefusalSuppression}
+			Refusals: lo.Map(suppressionReasons, func(r string, _ int) csvimport.RefusalValue {
+				return csvimport.RefusalValue{Value: r, Refusal: csvimport.RefusalSuppression}
 			}),
 		}}, true
 	case contactsexport.PartConfirmation:
@@ -121,7 +119,7 @@ func (e exported) column(header string, at int, cells []string) (csvimport.Colum
 		}
 		return csvimport.Column{Kind: csvimport.KindConsent, Fact: &csvimport.Fact{
 			Channel: string(cp.channel),
-			Values:  lo.Map(provenances, func(p confirmation.Provenance, _ int) string { return string(p) }),
+			Values:  slices.Clone(provenances),
 			// The provenance is how the consent was collected, the closest an export holds to where.
 			// The export holds neither the wording the person was shown nor the brand they agreed to:
 			// both are left blank, which the save refuses until the Member gives them, so no proof of

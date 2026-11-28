@@ -447,3 +447,13 @@ func newStepRecordsStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.O2M, true, StepRecordsTable, StepRecordsColumn),
 	)
 }
+
+// Values is every value of the Status enum, in the schema's order.
+func (Status) Values() []string {
+	return []string{"active", "completed", "failed", "exited", "goal_reached"}
+}
+
+// Values is every value of the FailureKind enum, in the schema's order.
+func (FailureKind) Values() []string {
+	return []string{"invalid_body", "timeout", "blocked_address", "http_status", "network"}
+}

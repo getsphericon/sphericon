@@ -2288,3 +2288,13 @@ func newStandingStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.O2O, false, StandingTable, StandingColumn),
 	)
 }
+
+// Values is every value of the EngagementTrackingDefault enum, in the schema's order.
+func (EngagementTrackingDefault) Values() []string {
+	return []string{"track", "dont_track"}
+}
+
+// Values is every value of the SuspendedByKind enum, in the schema's order.
+func (SuspendedByKind) Values() []string {
+	return []string{"system", "cli", "staff"}
+}

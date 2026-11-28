@@ -468,3 +468,13 @@ func newReportRowsStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.O2M, false, ReportRowsTable, ReportRowsColumn),
 	)
 }
+
+// Values is every value of the State enum, in the schema's order.
+func (State) Values() []string {
+	return []string{"uploaded", "ready", "running", "cancelled", "failed", "done"}
+}
+
+// Values is every value of the Delimiter enum, in the schema's order.
+func (Delimiter) Values() []string {
+	return []string{"comma", "semicolon", "tab"}
+}

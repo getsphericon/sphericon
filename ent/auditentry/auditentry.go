@@ -228,3 +228,8 @@ func newWorkspaceStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.M2O, true, WorkspaceTable, WorkspaceColumn),
 	)
 }
+
+// Values is every value of the ActorKind enum, in the schema's order.
+func (ActorKind) Values() []string {
+	return []string{"user", "api_token", "staff", "service", "system"}
+}

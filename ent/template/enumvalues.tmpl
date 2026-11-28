@@ -1,0 +1,17 @@
+{{/*
+Every value of a plain enum field's type, in the schema's order, as the kernel's enums list theirs
+(skipreason.Reason.Values): a reader that needs the whole closed set derives it from the schema
+instead of listing it again (review rule 6). An enum of a Go type declares its own.
+*/}}
+{{ define "meta/additional/enumvalues" }}
+{{- range $f := $.EnumFields }}
+	{{- if not $f.HasGoType }}
+		{{- $enum := trimPackage $f.Type.String $.Package }}
+
+// Values is every value of the {{ $enum }} enum, in the schema's order.
+func ({{ $enum }}) Values() []string {
+	return []string{ {{- range $i, $e := $f.Enums }}{{ if ne $i 0 }}, {{ end }}"{{ $e.Value }}"{{ end -}} }
+}
+	{{- end }}
+{{- end }}
+{{ end }}

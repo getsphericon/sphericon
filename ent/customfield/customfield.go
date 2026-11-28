@@ -165,3 +165,8 @@ func newWorkspaceStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.M2O, true, WorkspaceTable, WorkspaceColumn),
 	)
 }
+
+// Values is every value of the Type enum, in the schema's order.
+func (Type) Values() []string {
+	return []string{"string", "number", "bool", "datetime"}
+}

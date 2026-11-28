@@ -248,3 +248,8 @@ func newVisitorStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.M2O, true, VisitorTable, VisitorColumn),
 	)
 }
+
+// Values is every value of the Channel enum, in the schema's order.
+func (Channel) Values() []string {
+	return []string{"telegram"}
+}

@@ -314,3 +314,8 @@ func newOccurrenceCursorStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.O2O, false, OccurrenceCursorTable, OccurrenceCursorColumn),
 	)
 }
+
+// Values is every value of the Status enum, in the schema's order.
+func (Status) Values() []string {
+	return []string{"active", "inactive"}
+}

@@ -205,3 +205,8 @@ func newContactStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.M2O, false, ContactTable, ContactColumn),
 	)
 }
+
+// Values is every value of the Via enum, in the schema's order.
+func (Via) Values() []string {
+	return []string{"keyword", "button", "block", "link", "refused_send", "manual", "imported"}
+}
