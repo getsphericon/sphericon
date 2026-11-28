@@ -1338,6 +1338,7 @@
     "customFieldsGroup": "Custom fields",
     "dateFormat": "Date format",
     "dateFormatColumn": "Date format of {{column}}",
+    "dateFormatRequired": "Choose the date format.",
     "dateTime": "Date and time (RFC 3339)",
     "decimalSeparator": "Decimal separator",
     "defaultCountry": "Default country",
@@ -1354,6 +1355,7 @@
         "telegram": "Telegram"
       },
       "chooseColumn": "Choose a column",
+      "consentChannelRequired": "Consent and tracking are on email or SMS: choose the channel.",
       "consentValues": "Values that mean consent",
       "countsRefusals": "{{optedOut}} opt-outs and {{suppressed}} suppressions recorded.",
       "denied": "Values that mean tracking is refused",
@@ -1384,8 +1386,7 @@
       "value": "Cell value",
       "valueOf": "Value {{at}} of {{column}}",
       "valuePlaceholder": "unsubscribed",
-      "wording": "Wording",
-      "consentChannelRequired": "Consent and tracking are on email or SMS: choose the channel."
+      "wording": "Wording"
     },
     "failed": "The import failed after several tries. The contacts it wrote stay; download the refused rows to see what was not imported.",
     "file": "CSV file",
@@ -1446,8 +1447,7 @@
     "uploadError": "Could not upload the file",
     "uploadTitle": "Import contacts",
     "writes": "Imports as",
-    "writesColumn": "What {{column}} imports as",
-    "dateFormatRequired": "Choose the date format."
+    "writesColumn": "What {{column}} imports as"
   },
   "contacts": {
     "addContact": "Add contact",
