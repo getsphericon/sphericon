@@ -72,6 +72,32 @@ model KeptEvent {
   properties: JsonObject;
 }
 
+/** Why an HTTP step kept no body of a 2xx response (ADR 0161): it was not JSON (or held a NUL
+ * character, which cannot be stored), it was JSON but not an object, or it weighed more than an
+ * Event's properties may (32 KiB). */
+enum HttpBodyDropped {
+  notJson: "not_json",
+  notObject: "not_object",
+  tooLarge: "too_large",
+}
+
+/** The response an Enrollment keeps of one of its HTTP steps (ADR 0161), which later Steps read as
+ * `http.<name>`: its status and, when it was a JSON object it could keep, its body. */
+model KeptResponse {
+  /** The name of the HTTP step that received it */
+  name: string;
+
+  /** The response's status code, a 2xx */
+  status: int32;
+
+  /** The JSON object the response carried; absent when it was dropped */
+  @untrusted
+  body?: JsonObject;
+
+  /** Why the body was dropped; absent when it was kept */
+  dropped?: HttpBodyDropped;
+}
+
 /** One Contact's progress through an Automation. Erased with the Contact. */
 model EnrollmentResource {
   /** Unique identifier */
@@ -117,6 +143,9 @@ model EnrollmentResource {
 
   /** The Events its Wait for event Steps arrived on, by name (ADR 0136): kept while the Enrollment runs, and cleared when it ends, so empty once it ended */
   awaited: KeptEvent[];
+
+  /** The responses its HTTP steps received, by name (ADR 0161): kept while the Enrollment runs, and cleared when it ends, so empty once it ended */
+  http: KeptResponse[];
 
   /** When the Contact was enrolled */
   createdAt: Timestamp;

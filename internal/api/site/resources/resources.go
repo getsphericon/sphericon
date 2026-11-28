@@ -164,7 +164,7 @@ import (
 // goverter:extend branchStepType
 // goverter:extend splitStepType
 // goverter:extend waitForEventStepType
-// goverter:extend waitForEventName
+// goverter:extend stepName
 // goverter:extend waitForEventAwaits
 // goverter:extend splitPathStepViews
 // goverter:extend pathStepViews
@@ -717,11 +717,19 @@ type Converter interface {
 	// goverter:map . Failure | enrollmentFailure
 	// goverter:map Occurrence | enrollmentOccurrence
 	// goverter:map . Awaited | enrollmentAwaited
+	// goverter:map . HTTP | enrollmentHTTP
 	EnrollmentToResource(source *ent.AutomationRun) siteapi.EnrollmentResource
 	// goverter:map Properties | awaitedProperties
 	KeptEventToResource(source automations.KeptEvent) siteapi.KeptEvent
 	// goverter:useEmptyOnNil:slice
 	KeptEventsToResources(source []automations.KeptEvent) []siteapi.KeptEvent
+	// goverter:map Body | keptBody
+	// goverter:map Dropped | keptDropped
+	KeptResponseToResource(source automations.KeptResponse) siteapi.KeptResponse
+	// goverter:useEmptyOnNil:slice
+	KeptResponsesToResources(source []automations.KeptResponse) []siteapi.KeptResponse
+	// goverter:enum:transform value
+	BodyDroppedToResource(source automationstep.BodyDropped) siteapi.HttpBodyDropped
 	// The store names the triggering Event's source id; the contract says whose it is.
 	// goverter:map SourceID EventSourceId
 	SkippedEntryToResource(source *ent.AutomationSkippedEntry) siteapi.SkippedEntryResource
@@ -1467,7 +1475,7 @@ func splitStepType(automationstep.Kind) siteapi.SplitStepType {
 func waitForEventStepType(automationstep.Kind) siteapi.WaitForEventStepType {
 	return siteapi.WaitForEventStepTypeWaitForEvent
 }
-func waitForEventName(name string) siteapi.WaitForEventName { return siteapi.WaitForEventName(name) }
+func stepName(name string) siteapi.StepName { return siteapi.StepName(name) }
 
 // waitForEventAwaits is the arm of what a Wait for event waits for: a oneOf is beyond goverter, so
 // only the switch is written here. One with no arm fails the response.
@@ -1714,6 +1722,30 @@ func enrollmentAwaited(c Converter, r ent.AutomationRun) []siteapi.KeptEvent {
 // awaitedProperties is a kept Event's properties, an empty object when it kept none.
 func awaitedProperties(m map[string]any) siteapi.JsonObject {
 	return convert.RawObject[siteapi.JsonObject](m)
+}
+
+// enrollmentHTTP is what the enrollment keeps of the responses its HTTP steps received (ADR 0161),
+// by name: empty unless it was read with them, and once it ended.
+func enrollmentHTTP(c Converter, r ent.AutomationRun) []siteapi.KeptResponse {
+	return c.KeptResponsesToResources(automations.KeptResponses(&r))
+}
+
+// keptBody is the JSON object a kept response carried, absent when its body was dropped; a kept
+// empty object is present and empty.
+func keptBody(m map[string]any) siteapi.OptJsonObject {
+	if m == nil {
+		return siteapi.OptJsonObject{}
+	}
+	body := convert.RawObject[siteapi.JsonObject](m)
+	if body == nil {
+		body = siteapi.JsonObject{}
+	}
+	return siteapi.NewOptJsonObject(body)
+}
+
+// keptDropped is why a kept response's body was dropped, absent when it was kept.
+func keptDropped(c Converter, d *automationstep.BodyDropped) siteapi.OptHttpBodyDropped {
+	return convert.OptVia[siteapi.OptHttpBodyDropped](d, c.BodyDroppedToResource)
 }
 
 // enrollmentFailure is the enrollment's failure detail; absent unless it failed.

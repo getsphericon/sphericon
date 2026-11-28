@@ -402,10 +402,23 @@ model AwaitedSource {
   kind: "awaited";
 
   /** The Wait for event's name */
-  name: WaitForEventName;
+  name: StepName;
 }
 
 model AwaitedSourceInput is AwaitedSource;
+
+/** The JSON object an HTTP step of the Automation answered with, kept by the Enrollment under the
+ * HTTP step's name (ADR 0161), whose keys a property test reads. The HTTP step must be one that can
+ * come before the Branch holding the test. Where the Enrollment keeps no body of it (the path never
+ * passed it, or its body was not a JSON object it could keep), the test fails. */
+model HttpSource {
+  kind: "http";
+
+  /** The HTTP step's name */
+  name: StepName;
+}
+
+model HttpSourceInput is HttpSource;
 
 /** Whose properties a Rule's property test reads, by `kind`: the triggering Event */
 @discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
@@ -420,19 +433,23 @@ union RulePropertySourceInput {
 }
 
 /** Whose properties a Branch path's property test reads, by `kind`: the Event the Enrollment
- * began with, or the one an earlier Wait for event arrived on */
+ * began with, the one an earlier Wait for event arrived on, or the body an earlier HTTP step
+ * answered with */
 @discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
 union BranchPropertySource {
   trigger: TriggerSource,
   awaited: AwaitedSource,
+  http: HttpSource,
 }
 
 /** Whose properties a Branch path's property test reads, by `kind`: the Event the Enrollment
- * began with, or the one an earlier Wait for event arrived on */
+ * began with, the one an earlier Wait for event arrived on, or the body an earlier HTTP step
+ * answered with */
 @discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
 union BranchPropertySourceInput {
   trigger: TriggerSourceInput,
   awaited: AwaitedSourceInput,
+  http: HttpSourceInput,
 }
 
 /** Whose properties a Wait for event's property test reads, by `kind`: the Event the Enrollment

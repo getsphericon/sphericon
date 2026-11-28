@@ -18,7 +18,7 @@ import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { useFormat } from '../../hooks/useFormat.ts'
-import { awaitedWarnings } from './awaitedNames.ts'
+import { keptWarnings } from './awaitedNames.ts'
 import type { CanvasFigures } from './canvasFigures.ts'
 import { sendsMessage } from './definition.ts'
 import type { Flow, FlowStep, InsertedKind } from './definition.ts'
@@ -45,7 +45,7 @@ interface CanvasControls {
 }
 
 // What the nodes read beside the controls: by Step id, the names of the Wait for events a Step reads
-// that not every path before it passes (awaitedWarnings).
+// that not every path before it passes (keptWarnings).
 type CanvasContext = CanvasControls & { warnings: Map<string, string[]> }
 
 const Controls = createContext<CanvasContext | null>(null)
@@ -391,7 +391,7 @@ const nodeTypes = {
 export function FlowCanvas(controls: CanvasControls) {
   const { flow } = controls
   const { nodes, edges } = useMemo(() => layoutFlow(flow), [flow])
-  const warnings = useMemo(() => awaitedWarnings(flow.path), [flow])
+  const warnings = useMemo(() => keptWarnings(flow.path), [flow])
   const scheme = useComputedColorScheme('light', { getInitialValueInEffect: true })
 
   return (

@@ -432,6 +432,7 @@ test('an HTTP step keeps its id and header names but never carries a secret into
   const stored: AutomationStep = {
     id: stepId(11),
     type: 'http',
+    name: 'notify',
     body: '{"a":1}',
     headers: [{ name: 'Authorization' }, { name: 'X-Key' }],
     hasSecret: true,
@@ -444,6 +445,7 @@ test('an HTTP step keeps its id and header names but never carries a secret into
       kind: 'http',
       draft: {
         stored: true,
+        name: 'notify',
         url: '',
         headers: [{ name: 'Authorization' }, { name: 'X-Key' }],
         body: '{"a":1}',
@@ -457,6 +459,7 @@ test('an HTTP step keeps its id and header names but never carries a secret into
     {
       id: stepId(11),
       type: 'http',
+      name: 'notify',
       body: '{"a":1}',
       headers: [{ name: 'Authorization' }, { name: 'X-Key' }],
     },
@@ -475,6 +478,7 @@ test('an HTTP step with a new URL, header value and secret sends them, and drops
           kind: 'http',
           draft: {
             stored: false,
+            name: 'notify',
             url: ' https://hooks.example.com/x ',
             headers: [
               { name: 'Authorization', value: 'Bearer a:b' },
@@ -494,6 +498,7 @@ test('an HTTP step with a new URL, header value and secret sends them, and drops
     {
       id: stepId(11),
       type: 'http',
+      name: 'notify',
       body: '{}',
       url: 'https://hooks.example.com/x',
       headers: [

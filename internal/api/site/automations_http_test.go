@@ -29,6 +29,7 @@ func TestSiteHTTPStepIsMaskedOnReadKeptOnEditAndAbsentFromTheAuditLog(t *testing
 	created, err := c.SiteAutomationsCreate(ctx, &siteapi.CreateAutomationInput{
 		Name: "Notify Slack", Trigger: testhelper.SiteTrigger("signup"),
 		Steps: testhelper.SitePathEdit(siteapi.HttpStepInput{
+			Name:    "notify",
 			Body:    body,
 			URL:     siteapi.NewOptString("https://hooks.slack.com/services/T0/SECRETPATH"),
 			Headers: []siteapi.AutomationHttpHeaderInput{{Name: "Authorization", Value: siteapi.NewOptString("Bearer hunter2")}},
@@ -55,7 +56,8 @@ func TestSiteHTTPStepIsMaskedOnReadKeptOnEditAndAbsentFromTheAuditLog(t *testing
 	// Editing the body and resending the step id and the header names keeps the stored secrets.
 	updated, err := c.SiteAutomationsUpdate(ctx, &siteapi.UpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(res.ID))),
 		Steps: testhelper.SitePathEdit(siteapi.HttpStepInput{
-			ID: siteapi.NewOptStepId(step.ID), Body: `{"text":"edited"}`,
+			Name: "notify",
+			ID:   siteapi.NewOptStepId(step.ID), Body: `{"text":"edited"}`,
 			Headers: []siteapi.AutomationHttpHeaderInput{{Name: step.Headers[0].Name}},
 		})},
 		siteapi.SiteAutomationsUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
@@ -124,6 +126,7 @@ func TestSiteHTTPStepRefusedAtSaveIsUnprocessable(t *testing.T) {
 	_, err := c.SiteAutomationsCreate(t.Context(), &siteapi.CreateAutomationInput{
 		Name: "Bad", Trigger: testhelper.SiteTrigger("signup"),
 		Steps: testhelper.SitePathEdit(siteapi.HttpStepInput{
+			Name: "notify",
 			URL:  siteapi.NewOptString("https://hooks.example.com/x"),
 			Body: `{"a": {{ nope }}}`,
 		}),

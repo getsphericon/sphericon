@@ -2,7 +2,7 @@ import { expect, test } from 'vitest'
 
 import { stepSchemas } from './stepSchemas.ts'
 
-const HTTP = { stored: true, url: '', headers: [], body: '{}', secret: '' }
+const HTTP = { stored: true, name: 'notify', url: '', headers: [], body: '{}', secret: '' }
 
 test('the HTTP step form takes a base64 signing secret, or none to keep the stored one', () => {
   const taken = ['', 'whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw', 'dGVzdC1zZWNyZXQ=']

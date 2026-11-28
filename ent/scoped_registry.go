@@ -668,6 +668,15 @@ func ScopedEntities() []*ScopedEntity {
 				if !reflect.ValueOf(src.DeclinedEventIds).IsZero() {
 					b.SetDeclinedEventIds(src.DeclinedEventIds)
 				}
+				if src.HTTPStatus != nil {
+					b.SetHTTPStatus(*src.HTTPStatus)
+				}
+				if !reflect.ValueOf(src.HTTPBody).IsZero() {
+					b.SetHTTPBody(src.HTTPBody)
+				}
+				if src.HTTPDropped != nil {
+					b.SetHTTPDropped(*src.HTTPDropped)
+				}
 				created, err := b.Save(ctx)
 				if err != nil {
 					return 0, err

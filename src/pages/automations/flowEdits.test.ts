@@ -88,7 +88,7 @@ test('a new Step opens with what its kind starts with', () => {
       linkPreview: true,
     },
     { integrationId: '', text: '', linkTracking: true },
-    { stored: false, url: '', headers: [], body: '{}', secret: '' },
+    { stored: false, name: '', url: '', headers: [], body: '{}', secret: '' },
     { seconds: 3600 },
   ])
 })
@@ -113,11 +113,18 @@ test('a copied Step follows its original with a new id', () => {
 })
 
 // A stored HTTP step's URL, secret and header values are kept by the server under its id, which a
-// copy does not have: the copy asks for them as a new step does.
-test('a copied HTTP step is not stored: it asks for its URL, secret and header values', () => {
+// copy does not have, and its name is its own (ADR 0161): the copy asks for them as a new step does.
+test('a copied HTTP step is not stored: it asks for its name, URL, secret and header values', () => {
   const flow = flowOf(
     version([
-      { id: stepId(11), type: 'http', body: '{}', headers: [{ name: 'X-Key' }], hasSecret: true },
+      {
+        id: stepId(11),
+        type: 'http',
+        name: 'notify',
+        body: '{}',
+        headers: [{ name: 'X-Key' }],
+        hasSecret: true,
+      },
     ]),
   )
 
@@ -125,7 +132,7 @@ test('a copied HTTP step is not stored: it asks for its URL, secret and header v
 
   expect(copied).toMatchObject({
     kind: 'http',
-    draft: { stored: false, url: '', headers: [{ name: 'X-Key' }], secret: '' },
+    draft: { stored: false, name: '', url: '', headers: [{ name: 'X-Key' }], secret: '' },
   })
 })
 

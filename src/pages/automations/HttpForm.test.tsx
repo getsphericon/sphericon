@@ -23,7 +23,14 @@ const EDIT_ROUTE = routeMount(automationsEditRoute, {
 
 type StepData = StepDrafts['http']
 
-const NEW: StepData = { stored: false, url: '', headers: [], body: '{}', secret: '' }
+const NEW: StepData = {
+  stored: false,
+  name: 'notify',
+  url: '',
+  headers: [],
+  body: '{}',
+  secret: '',
+}
 
 // The HTTP step's form as the side panel renders it, over the draft the flow holds.
 function StepField({ data, onChange }: { data: StepData; onChange?: (data: StepData) => void }) {
@@ -33,7 +40,8 @@ function StepField({ data, onChange }: { data: StepData; onChange?: (data: StepD
       step={{ id: stepId(11), kind: 'http', draft: data }}
       onEdit={(step) => onChange?.(step.draft)}
       validatorRef={validatorRef}
-      bound={automationTags([])}
+      bound={automationTags([], [])}
+      storedName={undefined}
     />
   )
 }

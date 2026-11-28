@@ -223,6 +223,65 @@ func (_u *AutomationStepRecordUpdate) ClearDeclinedEventIds() *AutomationStepRec
 	return _u
 }
 
+// SetHTTPStatus sets the "http_status" field.
+func (_u *AutomationStepRecordUpdate) SetHTTPStatus(v int32) *AutomationStepRecordUpdate {
+	_u.mutation.ResetHTTPStatus()
+	_u.mutation.SetHTTPStatus(v)
+	return _u
+}
+
+// SetNillableHTTPStatus sets the "http_status" field if the given value is not nil.
+func (_u *AutomationStepRecordUpdate) SetNillableHTTPStatus(v *int32) *AutomationStepRecordUpdate {
+	if v != nil {
+		_u.SetHTTPStatus(*v)
+	}
+	return _u
+}
+
+// AddHTTPStatus adds value to the "http_status" field.
+func (_u *AutomationStepRecordUpdate) AddHTTPStatus(v int32) *AutomationStepRecordUpdate {
+	_u.mutation.AddHTTPStatus(v)
+	return _u
+}
+
+// ClearHTTPStatus clears the value of the "http_status" field.
+func (_u *AutomationStepRecordUpdate) ClearHTTPStatus() *AutomationStepRecordUpdate {
+	_u.mutation.ClearHTTPStatus()
+	return _u
+}
+
+// SetHTTPBody sets the "http_body" field.
+func (_u *AutomationStepRecordUpdate) SetHTTPBody(v map[string]interface{}) *AutomationStepRecordUpdate {
+	_u.mutation.SetHTTPBody(v)
+	return _u
+}
+
+// ClearHTTPBody clears the value of the "http_body" field.
+func (_u *AutomationStepRecordUpdate) ClearHTTPBody() *AutomationStepRecordUpdate {
+	_u.mutation.ClearHTTPBody()
+	return _u
+}
+
+// SetHTTPDropped sets the "http_dropped" field.
+func (_u *AutomationStepRecordUpdate) SetHTTPDropped(v automationstep.BodyDropped) *AutomationStepRecordUpdate {
+	_u.mutation.SetHTTPDropped(v)
+	return _u
+}
+
+// SetNillableHTTPDropped sets the "http_dropped" field if the given value is not nil.
+func (_u *AutomationStepRecordUpdate) SetNillableHTTPDropped(v *automationstep.BodyDropped) *AutomationStepRecordUpdate {
+	if v != nil {
+		_u.SetHTTPDropped(*v)
+	}
+	return _u
+}
+
+// ClearHTTPDropped clears the value of the "http_dropped" field.
+func (_u *AutomationStepRecordUpdate) ClearHTTPDropped() *AutomationStepRecordUpdate {
+	_u.mutation.ClearHTTPDropped()
+	return _u
+}
+
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_u *AutomationStepRecordUpdate) SetWorkspace(v *Workspace) *AutomationStepRecordUpdate {
 	return _u.SetWorkspaceID(v.ID)
@@ -285,6 +344,11 @@ func (_u *AutomationStepRecordUpdate) check() error {
 	if v, ok := _u.mutation.SkipReason(); ok {
 		if err := automationsteprecord.SkipReasonValidator(v); err != nil {
 			return &ValidationError{Name: "skip_reason", err: fmt.Errorf(`ent: validator failed for field "AutomationStepRecord.skip_reason": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.HTTPDropped(); ok {
+		if err := automationsteprecord.HTTPDroppedValidator(v); err != nil {
+			return &ValidationError{Name: "http_dropped", err: fmt.Errorf(`ent: validator failed for field "AutomationStepRecord.http_dropped": %w`, err)}
 		}
 	}
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
@@ -387,6 +451,27 @@ func (_u *AutomationStepRecordUpdate) sqlSave(ctx context.Context) (_node int, e
 	}
 	if _u.mutation.DeclinedEventIdsCleared() {
 		_spec.ClearField(automationsteprecord.FieldDeclinedEventIds, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.HTTPStatus(); ok {
+		_spec.SetField(automationsteprecord.FieldHTTPStatus, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.AddedHTTPStatus(); ok {
+		_spec.AddField(automationsteprecord.FieldHTTPStatus, field.TypeInt32, value)
+	}
+	if _u.mutation.HTTPStatusCleared() {
+		_spec.ClearField(automationsteprecord.FieldHTTPStatus, field.TypeInt32)
+	}
+	if value, ok := _u.mutation.HTTPBody(); ok {
+		_spec.SetField(automationsteprecord.FieldHTTPBody, field.TypeJSON, value)
+	}
+	if _u.mutation.HTTPBodyCleared() {
+		_spec.ClearField(automationsteprecord.FieldHTTPBody, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.HTTPDropped(); ok {
+		_spec.SetField(automationsteprecord.FieldHTTPDropped, field.TypeEnum, value)
+	}
+	if _u.mutation.HTTPDroppedCleared() {
+		_spec.ClearField(automationsteprecord.FieldHTTPDropped, field.TypeEnum)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -628,6 +713,65 @@ func (_u *AutomationStepRecordUpdateOne) ClearDeclinedEventIds() *AutomationStep
 	return _u
 }
 
+// SetHTTPStatus sets the "http_status" field.
+func (_u *AutomationStepRecordUpdateOne) SetHTTPStatus(v int32) *AutomationStepRecordUpdateOne {
+	_u.mutation.ResetHTTPStatus()
+	_u.mutation.SetHTTPStatus(v)
+	return _u
+}
+
+// SetNillableHTTPStatus sets the "http_status" field if the given value is not nil.
+func (_u *AutomationStepRecordUpdateOne) SetNillableHTTPStatus(v *int32) *AutomationStepRecordUpdateOne {
+	if v != nil {
+		_u.SetHTTPStatus(*v)
+	}
+	return _u
+}
+
+// AddHTTPStatus adds value to the "http_status" field.
+func (_u *AutomationStepRecordUpdateOne) AddHTTPStatus(v int32) *AutomationStepRecordUpdateOne {
+	_u.mutation.AddHTTPStatus(v)
+	return _u
+}
+
+// ClearHTTPStatus clears the value of the "http_status" field.
+func (_u *AutomationStepRecordUpdateOne) ClearHTTPStatus() *AutomationStepRecordUpdateOne {
+	_u.mutation.ClearHTTPStatus()
+	return _u
+}
+
+// SetHTTPBody sets the "http_body" field.
+func (_u *AutomationStepRecordUpdateOne) SetHTTPBody(v map[string]interface{}) *AutomationStepRecordUpdateOne {
+	_u.mutation.SetHTTPBody(v)
+	return _u
+}
+
+// ClearHTTPBody clears the value of the "http_body" field.
+func (_u *AutomationStepRecordUpdateOne) ClearHTTPBody() *AutomationStepRecordUpdateOne {
+	_u.mutation.ClearHTTPBody()
+	return _u
+}
+
+// SetHTTPDropped sets the "http_dropped" field.
+func (_u *AutomationStepRecordUpdateOne) SetHTTPDropped(v automationstep.BodyDropped) *AutomationStepRecordUpdateOne {
+	_u.mutation.SetHTTPDropped(v)
+	return _u
+}
+
+// SetNillableHTTPDropped sets the "http_dropped" field if the given value is not nil.
+func (_u *AutomationStepRecordUpdateOne) SetNillableHTTPDropped(v *automationstep.BodyDropped) *AutomationStepRecordUpdateOne {
+	if v != nil {
+		_u.SetHTTPDropped(*v)
+	}
+	return _u
+}
+
+// ClearHTTPDropped clears the value of the "http_dropped" field.
+func (_u *AutomationStepRecordUpdateOne) ClearHTTPDropped() *AutomationStepRecordUpdateOne {
+	_u.mutation.ClearHTTPDropped()
+	return _u
+}
+
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_u *AutomationStepRecordUpdateOne) SetWorkspace(v *Workspace) *AutomationStepRecordUpdateOne {
 	return _u.SetWorkspaceID(v.ID)
@@ -703,6 +847,11 @@ func (_u *AutomationStepRecordUpdateOne) check() error {
 	if v, ok := _u.mutation.SkipReason(); ok {
 		if err := automationsteprecord.SkipReasonValidator(v); err != nil {
 			return &ValidationError{Name: "skip_reason", err: fmt.Errorf(`ent: validator failed for field "AutomationStepRecord.skip_reason": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.HTTPDropped(); ok {
+		if err := automationsteprecord.HTTPDroppedValidator(v); err != nil {
+			return &ValidationError{Name: "http_dropped", err: fmt.Errorf(`ent: validator failed for field "AutomationStepRecord.http_dropped": %w`, err)}
 		}
 	}
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
@@ -822,6 +971,27 @@ func (_u *AutomationStepRecordUpdateOne) sqlSave(ctx context.Context) (_node *Au
 	}
 	if _u.mutation.DeclinedEventIdsCleared() {
 		_spec.ClearField(automationsteprecord.FieldDeclinedEventIds, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.HTTPStatus(); ok {
+		_spec.SetField(automationsteprecord.FieldHTTPStatus, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.AddedHTTPStatus(); ok {
+		_spec.AddField(automationsteprecord.FieldHTTPStatus, field.TypeInt32, value)
+	}
+	if _u.mutation.HTTPStatusCleared() {
+		_spec.ClearField(automationsteprecord.FieldHTTPStatus, field.TypeInt32)
+	}
+	if value, ok := _u.mutation.HTTPBody(); ok {
+		_spec.SetField(automationsteprecord.FieldHTTPBody, field.TypeJSON, value)
+	}
+	if _u.mutation.HTTPBodyCleared() {
+		_spec.ClearField(automationsteprecord.FieldHTTPBody, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.HTTPDropped(); ok {
+		_spec.SetField(automationsteprecord.FieldHTTPDropped, field.TypeEnum, value)
+	}
+	if _u.mutation.HTTPDroppedCleared() {
+		_spec.ClearField(automationsteprecord.FieldHTTPDropped, field.TypeEnum)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{

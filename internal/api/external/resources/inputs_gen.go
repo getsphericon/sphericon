@@ -480,6 +480,7 @@ func (c *InputsImpl) Events(source []external.EventInput, context bool) ([]event
 }
 func (c *InputsImpl) HttpStepIn(source external.HttpStepInput) automationstep.HTTP {
 	var automationstepHTTP automationstep.HTTP
+	automationstepHTTP.Name = string(source.Name)
 	automationstepHTTP.URL = stringIn(source.URL)
 	if source.Headers != nil {
 		automationstepHTTP.Headers = make([]httpheader.Header, len(source.Headers))

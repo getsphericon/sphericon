@@ -223,6 +223,40 @@ func (_c *AutomationStepRecordCreate) SetDeclinedEventIds(v []int64) *Automation
 	return _c
 }
 
+// SetHTTPStatus sets the "http_status" field.
+func (_c *AutomationStepRecordCreate) SetHTTPStatus(v int32) *AutomationStepRecordCreate {
+	_c.mutation.SetHTTPStatus(v)
+	return _c
+}
+
+// SetNillableHTTPStatus sets the "http_status" field if the given value is not nil.
+func (_c *AutomationStepRecordCreate) SetNillableHTTPStatus(v *int32) *AutomationStepRecordCreate {
+	if v != nil {
+		_c.SetHTTPStatus(*v)
+	}
+	return _c
+}
+
+// SetHTTPBody sets the "http_body" field.
+func (_c *AutomationStepRecordCreate) SetHTTPBody(v map[string]interface{}) *AutomationStepRecordCreate {
+	_c.mutation.SetHTTPBody(v)
+	return _c
+}
+
+// SetHTTPDropped sets the "http_dropped" field.
+func (_c *AutomationStepRecordCreate) SetHTTPDropped(v automationstep.BodyDropped) *AutomationStepRecordCreate {
+	_c.mutation.SetHTTPDropped(v)
+	return _c
+}
+
+// SetNillableHTTPDropped sets the "http_dropped" field if the given value is not nil.
+func (_c *AutomationStepRecordCreate) SetNillableHTTPDropped(v *automationstep.BodyDropped) *AutomationStepRecordCreate {
+	if v != nil {
+		_c.SetHTTPDropped(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *AutomationStepRecordCreate) SetID(v int64) *AutomationStepRecordCreate {
 	_c.mutation.SetID(v)
@@ -317,6 +351,11 @@ func (_c *AutomationStepRecordCreate) check() error {
 	if v, ok := _c.mutation.WentOn(); ok {
 		if err := automationsteprecord.WentOnValidator(v); err != nil {
 			return &ValidationError{Name: "went_on", err: fmt.Errorf(`ent: validator failed for field "AutomationStepRecord.went_on": %w`, err)}
+		}
+	}
+	if v, ok := _c.mutation.HTTPDropped(); ok {
+		if err := automationsteprecord.HTTPDroppedValidator(v); err != nil {
+			return &ValidationError{Name: "http_dropped", err: fmt.Errorf(`ent: validator failed for field "AutomationStepRecord.http_dropped": %w`, err)}
 		}
 	}
 	if len(_c.mutation.WorkspaceIDs()) == 0 {
@@ -421,6 +460,18 @@ func (_c *AutomationStepRecordCreate) createSpec() (*AutomationStepRecord, *sqlg
 	if value, ok := _c.mutation.DeclinedEventIds(); ok {
 		_spec.SetField(automationsteprecord.FieldDeclinedEventIds, field.TypeJSON, value)
 		_node.DeclinedEventIds = value
+	}
+	if value, ok := _c.mutation.HTTPStatus(); ok {
+		_spec.SetField(automationsteprecord.FieldHTTPStatus, field.TypeInt32, value)
+		_node.HTTPStatus = &value
+	}
+	if value, ok := _c.mutation.HTTPBody(); ok {
+		_spec.SetField(automationsteprecord.FieldHTTPBody, field.TypeJSON, value)
+		_node.HTTPBody = value
+	}
+	if value, ok := _c.mutation.HTTPDropped(); ok {
+		_spec.SetField(automationsteprecord.FieldHTTPDropped, field.TypeEnum, value)
+		_node.HTTPDropped = &value
 	}
 	if nodes := _c.mutation.WorkspaceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -697,6 +748,66 @@ func (u *AutomationStepRecordUpsert) UpdateDeclinedEventIds() *AutomationStepRec
 // ClearDeclinedEventIds clears the value of the "declined_event_ids" field.
 func (u *AutomationStepRecordUpsert) ClearDeclinedEventIds() *AutomationStepRecordUpsert {
 	u.SetNull(automationsteprecord.FieldDeclinedEventIds)
+	return u
+}
+
+// SetHTTPStatus sets the "http_status" field.
+func (u *AutomationStepRecordUpsert) SetHTTPStatus(v int32) *AutomationStepRecordUpsert {
+	u.Set(automationsteprecord.FieldHTTPStatus, v)
+	return u
+}
+
+// UpdateHTTPStatus sets the "http_status" field to the value that was provided on create.
+func (u *AutomationStepRecordUpsert) UpdateHTTPStatus() *AutomationStepRecordUpsert {
+	u.SetExcluded(automationsteprecord.FieldHTTPStatus)
+	return u
+}
+
+// AddHTTPStatus adds v to the "http_status" field.
+func (u *AutomationStepRecordUpsert) AddHTTPStatus(v int32) *AutomationStepRecordUpsert {
+	u.Add(automationsteprecord.FieldHTTPStatus, v)
+	return u
+}
+
+// ClearHTTPStatus clears the value of the "http_status" field.
+func (u *AutomationStepRecordUpsert) ClearHTTPStatus() *AutomationStepRecordUpsert {
+	u.SetNull(automationsteprecord.FieldHTTPStatus)
+	return u
+}
+
+// SetHTTPBody sets the "http_body" field.
+func (u *AutomationStepRecordUpsert) SetHTTPBody(v map[string]interface{}) *AutomationStepRecordUpsert {
+	u.Set(automationsteprecord.FieldHTTPBody, v)
+	return u
+}
+
+// UpdateHTTPBody sets the "http_body" field to the value that was provided on create.
+func (u *AutomationStepRecordUpsert) UpdateHTTPBody() *AutomationStepRecordUpsert {
+	u.SetExcluded(automationsteprecord.FieldHTTPBody)
+	return u
+}
+
+// ClearHTTPBody clears the value of the "http_body" field.
+func (u *AutomationStepRecordUpsert) ClearHTTPBody() *AutomationStepRecordUpsert {
+	u.SetNull(automationsteprecord.FieldHTTPBody)
+	return u
+}
+
+// SetHTTPDropped sets the "http_dropped" field.
+func (u *AutomationStepRecordUpsert) SetHTTPDropped(v automationstep.BodyDropped) *AutomationStepRecordUpsert {
+	u.Set(automationsteprecord.FieldHTTPDropped, v)
+	return u
+}
+
+// UpdateHTTPDropped sets the "http_dropped" field to the value that was provided on create.
+func (u *AutomationStepRecordUpsert) UpdateHTTPDropped() *AutomationStepRecordUpsert {
+	u.SetExcluded(automationsteprecord.FieldHTTPDropped)
+	return u
+}
+
+// ClearHTTPDropped clears the value of the "http_dropped" field.
+func (u *AutomationStepRecordUpsert) ClearHTTPDropped() *AutomationStepRecordUpsert {
+	u.SetNull(automationsteprecord.FieldHTTPDropped)
 	return u
 }
 
@@ -990,6 +1101,76 @@ func (u *AutomationStepRecordUpsertOne) UpdateDeclinedEventIds() *AutomationStep
 func (u *AutomationStepRecordUpsertOne) ClearDeclinedEventIds() *AutomationStepRecordUpsertOne {
 	return u.Update(func(s *AutomationStepRecordUpsert) {
 		s.ClearDeclinedEventIds()
+	})
+}
+
+// SetHTTPStatus sets the "http_status" field.
+func (u *AutomationStepRecordUpsertOne) SetHTTPStatus(v int32) *AutomationStepRecordUpsertOne {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.SetHTTPStatus(v)
+	})
+}
+
+// AddHTTPStatus adds v to the "http_status" field.
+func (u *AutomationStepRecordUpsertOne) AddHTTPStatus(v int32) *AutomationStepRecordUpsertOne {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.AddHTTPStatus(v)
+	})
+}
+
+// UpdateHTTPStatus sets the "http_status" field to the value that was provided on create.
+func (u *AutomationStepRecordUpsertOne) UpdateHTTPStatus() *AutomationStepRecordUpsertOne {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.UpdateHTTPStatus()
+	})
+}
+
+// ClearHTTPStatus clears the value of the "http_status" field.
+func (u *AutomationStepRecordUpsertOne) ClearHTTPStatus() *AutomationStepRecordUpsertOne {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.ClearHTTPStatus()
+	})
+}
+
+// SetHTTPBody sets the "http_body" field.
+func (u *AutomationStepRecordUpsertOne) SetHTTPBody(v map[string]interface{}) *AutomationStepRecordUpsertOne {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.SetHTTPBody(v)
+	})
+}
+
+// UpdateHTTPBody sets the "http_body" field to the value that was provided on create.
+func (u *AutomationStepRecordUpsertOne) UpdateHTTPBody() *AutomationStepRecordUpsertOne {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.UpdateHTTPBody()
+	})
+}
+
+// ClearHTTPBody clears the value of the "http_body" field.
+func (u *AutomationStepRecordUpsertOne) ClearHTTPBody() *AutomationStepRecordUpsertOne {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.ClearHTTPBody()
+	})
+}
+
+// SetHTTPDropped sets the "http_dropped" field.
+func (u *AutomationStepRecordUpsertOne) SetHTTPDropped(v automationstep.BodyDropped) *AutomationStepRecordUpsertOne {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.SetHTTPDropped(v)
+	})
+}
+
+// UpdateHTTPDropped sets the "http_dropped" field to the value that was provided on create.
+func (u *AutomationStepRecordUpsertOne) UpdateHTTPDropped() *AutomationStepRecordUpsertOne {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.UpdateHTTPDropped()
+	})
+}
+
+// ClearHTTPDropped clears the value of the "http_dropped" field.
+func (u *AutomationStepRecordUpsertOne) ClearHTTPDropped() *AutomationStepRecordUpsertOne {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.ClearHTTPDropped()
 	})
 }
 
@@ -1449,6 +1630,76 @@ func (u *AutomationStepRecordUpsertBulk) UpdateDeclinedEventIds() *AutomationSte
 func (u *AutomationStepRecordUpsertBulk) ClearDeclinedEventIds() *AutomationStepRecordUpsertBulk {
 	return u.Update(func(s *AutomationStepRecordUpsert) {
 		s.ClearDeclinedEventIds()
+	})
+}
+
+// SetHTTPStatus sets the "http_status" field.
+func (u *AutomationStepRecordUpsertBulk) SetHTTPStatus(v int32) *AutomationStepRecordUpsertBulk {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.SetHTTPStatus(v)
+	})
+}
+
+// AddHTTPStatus adds v to the "http_status" field.
+func (u *AutomationStepRecordUpsertBulk) AddHTTPStatus(v int32) *AutomationStepRecordUpsertBulk {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.AddHTTPStatus(v)
+	})
+}
+
+// UpdateHTTPStatus sets the "http_status" field to the value that was provided on create.
+func (u *AutomationStepRecordUpsertBulk) UpdateHTTPStatus() *AutomationStepRecordUpsertBulk {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.UpdateHTTPStatus()
+	})
+}
+
+// ClearHTTPStatus clears the value of the "http_status" field.
+func (u *AutomationStepRecordUpsertBulk) ClearHTTPStatus() *AutomationStepRecordUpsertBulk {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.ClearHTTPStatus()
+	})
+}
+
+// SetHTTPBody sets the "http_body" field.
+func (u *AutomationStepRecordUpsertBulk) SetHTTPBody(v map[string]interface{}) *AutomationStepRecordUpsertBulk {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.SetHTTPBody(v)
+	})
+}
+
+// UpdateHTTPBody sets the "http_body" field to the value that was provided on create.
+func (u *AutomationStepRecordUpsertBulk) UpdateHTTPBody() *AutomationStepRecordUpsertBulk {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.UpdateHTTPBody()
+	})
+}
+
+// ClearHTTPBody clears the value of the "http_body" field.
+func (u *AutomationStepRecordUpsertBulk) ClearHTTPBody() *AutomationStepRecordUpsertBulk {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.ClearHTTPBody()
+	})
+}
+
+// SetHTTPDropped sets the "http_dropped" field.
+func (u *AutomationStepRecordUpsertBulk) SetHTTPDropped(v automationstep.BodyDropped) *AutomationStepRecordUpsertBulk {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.SetHTTPDropped(v)
+	})
+}
+
+// UpdateHTTPDropped sets the "http_dropped" field to the value that was provided on create.
+func (u *AutomationStepRecordUpsertBulk) UpdateHTTPDropped() *AutomationStepRecordUpsertBulk {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.UpdateHTTPDropped()
+	})
+}
+
+// ClearHTTPDropped clears the value of the "http_dropped" field.
+func (u *AutomationStepRecordUpsertBulk) ClearHTTPDropped() *AutomationStepRecordUpsertBulk {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.ClearHTTPDropped()
 	})
 }
 

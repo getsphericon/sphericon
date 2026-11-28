@@ -166,6 +166,30 @@ test("a test of an awaited Event survives the walk as that Wait for event's, and
   expect(toCondition(back, 'rule')).toBeUndefined()
 })
 
+// A test of the body an earlier HTTP step kept of its response (ADR 0161, ADR 0181): the step's name
+// and the key each in a field of their own.
+const response: BranchConditionInput = {
+  kind: 'group',
+  combinator: 'and',
+  entries: [
+    {
+      kind: 'property',
+      of: { kind: 'http', name: 'coupon' },
+      key: 'code',
+      test: { kind: 'text', operator: 'eq', value: 'X1' },
+    },
+  ],
+}
+
+test("a test of an HTTP step's response survives the walk as that step's, and only a Branch takes it", () => {
+  const back = toDraft(toQuery(response))
+
+  expect(back).toEqual(response)
+  expect(toCondition(back, 'branch')).toEqual(response)
+  expect(toCondition(back, 'waitForEvent')).toBeUndefined()
+  expect(toCondition(back, 'rule')).toBeUndefined()
+})
+
 test('a message test with an engagement it does not know is dropped', () => {
   const draft = toDraft({
     combinator: 'and',

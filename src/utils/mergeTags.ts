@@ -33,20 +33,39 @@ export function awaitedActionTag(name: string): string {
   return `${awaitedEvent(name)}.action`
 }
 
+// The response an HTTP step of the name got, which an Enrollment keeps for its later Steps (ADR
+// 0161): they bind it as `http.<name>`, its `status` and the JSON object its `body` carried. It
+// renders nothing where the Enrollment keeps none.
+export function httpResponse(name: string): string {
+  return `http.${name}`
+}
+
+// The merge tag of the status of that response.
+function httpStatusTag(name: string): string {
+  return `${httpResponse(name)}.status`
+}
+
+// Where a source's properties are: an HTTP step's response holds them in its body, an Event in its
+// properties.
+function propertiesOf(source: string): string {
+  return source.startsWith('http.') ? 'body' : 'properties'
+}
+
 const PLAIN_NAME = /^[A-Za-z_][A-Za-z0-9_]*$/
 
 // A Liquid string literal has no escapes, and `}` would end the tag early.
 const UNQUOTABLE = /["}]/
 
-// The merge tag of one property of an Event a message binds (`event`, or an awaitedEvent): dotted
-// for a plain name, bracketed for any other (a name with a space or a dash), null for a blank name
-// or one a tag cannot quote.
+// The merge tag of one property of an Event a message binds (`event`, or an awaitedEvent), or of
+// one key of the body of an httpResponse: dotted for a plain name, bracketed for any other (a name
+// with a space or a dash), null for a blank name or one a tag cannot quote.
 export function propertyTag(source: string, name: string): string | null {
   const key = name.trim()
   if (key === '' || UNQUOTABLE.test(key)) {
     return null
   }
-  return PLAIN_NAME.test(key) ? `${source}.properties.${key}` : `${source}.properties["${key}"]`
+  const of = `${source}.${propertiesOf(source)}`
+  return PLAIN_NAME.test(key) ? `${of}.${key}` : `${of}["${key}"]`
 }
 
 // The source-scoped unsubscribe link a Telegram message may carry (ADR 0078): it opts the chat out
@@ -54,14 +73,26 @@ export function propertyTag(source: string, name: string): string | null {
 export const UNSUBSCRIBE_URL_TAG = 'unsubscribe_url'
 
 // What an Automation's message binds beyond the Contact's, given the names of the Wait for events
-// that can come before its Step: the merge tags of the Events' actions, and the Events whose
-// properties it reads by name (`event`, then each `awaited.<name>`).
-export function automationTags(awaited: readonly string[]): {
+// and of the HTTP steps that can come before its Step: the merge tags of the Events' actions and of
+// the responses' statuses, and the Events and responses whose properties it reads by name (`event`,
+// then each `awaited.<name>`, then each `http.<name>`).
+export function automationTags(
+  awaited: readonly string[],
+  http: readonly string[],
+): {
   tags: string[]
   sources: string[]
 } {
   return {
-    tags: [EVENT_ACTION_TAG, ...awaited.map((name) => awaitedActionTag(name))],
-    sources: [EVENT, ...awaited.map((name) => awaitedEvent(name))],
+    tags: [
+      EVENT_ACTION_TAG,
+      ...awaited.map((name) => awaitedActionTag(name)),
+      ...http.map((name) => httpStatusTag(name)),
+    ],
+    sources: [
+      EVENT,
+      ...awaited.map((name) => awaitedEvent(name)),
+      ...http.map((name) => httpResponse(name)),
+    ],
   }
 }

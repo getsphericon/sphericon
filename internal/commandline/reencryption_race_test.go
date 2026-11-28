@@ -90,7 +90,7 @@ func TestReencryptRacingAnAutomationEditKeepsTheEdit(t *testing.T) {
 	rotation, retired := rotated(t)
 	env.DB.AutomationVersion.Intercept(raceOnRead(func(v *ent.AutomationVersion) int64 { return v.ID }, draft.ID, func() {
 		_, err := module.Update(ctx, acme, fixtures.AutomationSealedDraftID, automations.UpdateInput{Revision: env.AutomationRevision(ctx, t, fixtures.AutomationSealedDraftID), Steps: new(automationstep.Root(automationstep.Step{
-			ID: draft.Steps.Steps[0].ID, Payload: automationstep.HTTP{Body: `{"v":2}`},
+			ID: draft.Steps.Steps[0].ID, Payload: automationstep.HTTP{Name: "notify", Body: `{"v":2}`},
 		}))})
 		require.NoError(t, err)
 	}))

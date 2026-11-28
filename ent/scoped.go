@@ -11586,6 +11586,50 @@ func (x *AutomationStepRecordScopedCreate) SetDeclinedEventIds(v []int64) *Autom
 
 const RoleOf_AutomationStepRecordScopedCreate_SetDeclinedEventIds = RoleStep
 
+// SetHTTPStatus sets the "http_status" field.
+func (x *AutomationStepRecordScopedCreate) SetHTTPStatus(v int32) *AutomationStepRecordScopedCreate {
+	x.set = append(x.set, func(b *AutomationStepRecordCreate) { b.SetHTTPStatus(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedCreate_SetHTTPStatus = RoleStep
+
+// SetNillableHTTPStatus sets the "http_status" field if the given value is not nil.
+func (x *AutomationStepRecordScopedCreate) SetNillableHTTPStatus(v *int32) *AutomationStepRecordScopedCreate {
+	if v != nil {
+		x.SetHTTPStatus(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedCreate_SetNillableHTTPStatus = RoleStep
+
+// SetHTTPBody sets the "http_body" field.
+func (x *AutomationStepRecordScopedCreate) SetHTTPBody(v map[string]interface{}) *AutomationStepRecordScopedCreate {
+	x.set = append(x.set, func(b *AutomationStepRecordCreate) { b.SetHTTPBody(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedCreate_SetHTTPBody = RoleStep
+
+// SetHTTPDropped sets the "http_dropped" field.
+func (x *AutomationStepRecordScopedCreate) SetHTTPDropped(v automationstep.BodyDropped) *AutomationStepRecordScopedCreate {
+	x.set = append(x.set, func(b *AutomationStepRecordCreate) { b.SetHTTPDropped(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedCreate_SetHTTPDropped = RoleStep
+
+// SetNillableHTTPDropped sets the "http_dropped" field if the given value is not nil.
+func (x *AutomationStepRecordScopedCreate) SetNillableHTTPDropped(v *automationstep.BodyDropped) *AutomationStepRecordScopedCreate {
+	if v != nil {
+		x.SetHTTPDropped(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedCreate_SetNillableHTTPDropped = RoleStep
+
 // SetRun sets the "run" edge to the AutomationRun entity.
 func (x *AutomationStepRecordScopedCreate) SetRun(v *AutomationRun) *AutomationStepRecordScopedCreate {
 	x.set = append(x.set, func(b *AutomationStepRecordCreate) { b.SetRun(v) })
@@ -11958,6 +12002,86 @@ func (u *AutomationStepRecordScopedUpsert) ClearDeclinedEventIds() *AutomationSt
 }
 
 const RoleOf_AutomationStepRecordScopedUpsert_ClearDeclinedEventIds = RoleStep
+
+// SetHTTPStatus sets the "http_status" field.
+func (u *AutomationStepRecordScopedUpsert) SetHTTPStatus(v int32) *AutomationStepRecordScopedUpsert {
+	u.u.Set(automationsteprecord.FieldHTTPStatus, v)
+	return u
+}
+
+const RoleOf_AutomationStepRecordScopedUpsert_SetHTTPStatus = RoleStep
+
+// AddHTTPStatus adds v to the "http_status" field.
+func (u *AutomationStepRecordScopedUpsert) AddHTTPStatus(v int32) *AutomationStepRecordScopedUpsert {
+	u.u.Add(automationsteprecord.FieldHTTPStatus, v)
+	return u
+}
+
+const RoleOf_AutomationStepRecordScopedUpsert_AddHTTPStatus = RoleStep
+
+// UpdateHTTPStatus sets the "http_status" field to the value that was provided on create.
+func (u *AutomationStepRecordScopedUpsert) UpdateHTTPStatus() *AutomationStepRecordScopedUpsert {
+	u.u.SetExcluded(automationsteprecord.FieldHTTPStatus)
+	return u
+}
+
+const RoleOf_AutomationStepRecordScopedUpsert_UpdateHTTPStatus = RoleStep
+
+// ClearHTTPStatus clears the value of the "http_status" field.
+func (u *AutomationStepRecordScopedUpsert) ClearHTTPStatus() *AutomationStepRecordScopedUpsert {
+	u.u.SetNull(automationsteprecord.FieldHTTPStatus)
+	return u
+}
+
+const RoleOf_AutomationStepRecordScopedUpsert_ClearHTTPStatus = RoleStep
+
+// SetHTTPBody sets the "http_body" field.
+func (u *AutomationStepRecordScopedUpsert) SetHTTPBody(v map[string]interface{}) *AutomationStepRecordScopedUpsert {
+	u.u.Set(automationsteprecord.FieldHTTPBody, v)
+	return u
+}
+
+const RoleOf_AutomationStepRecordScopedUpsert_SetHTTPBody = RoleStep
+
+// UpdateHTTPBody sets the "http_body" field to the value that was provided on create.
+func (u *AutomationStepRecordScopedUpsert) UpdateHTTPBody() *AutomationStepRecordScopedUpsert {
+	u.u.SetExcluded(automationsteprecord.FieldHTTPBody)
+	return u
+}
+
+const RoleOf_AutomationStepRecordScopedUpsert_UpdateHTTPBody = RoleStep
+
+// ClearHTTPBody clears the value of the "http_body" field.
+func (u *AutomationStepRecordScopedUpsert) ClearHTTPBody() *AutomationStepRecordScopedUpsert {
+	u.u.SetNull(automationsteprecord.FieldHTTPBody)
+	return u
+}
+
+const RoleOf_AutomationStepRecordScopedUpsert_ClearHTTPBody = RoleStep
+
+// SetHTTPDropped sets the "http_dropped" field.
+func (u *AutomationStepRecordScopedUpsert) SetHTTPDropped(v automationstep.BodyDropped) *AutomationStepRecordScopedUpsert {
+	u.u.Set(automationsteprecord.FieldHTTPDropped, v)
+	return u
+}
+
+const RoleOf_AutomationStepRecordScopedUpsert_SetHTTPDropped = RoleStep
+
+// UpdateHTTPDropped sets the "http_dropped" field to the value that was provided on create.
+func (u *AutomationStepRecordScopedUpsert) UpdateHTTPDropped() *AutomationStepRecordScopedUpsert {
+	u.u.SetExcluded(automationsteprecord.FieldHTTPDropped)
+	return u
+}
+
+const RoleOf_AutomationStepRecordScopedUpsert_UpdateHTTPDropped = RoleStep
+
+// ClearHTTPDropped clears the value of the "http_dropped" field.
+func (u *AutomationStepRecordScopedUpsert) ClearHTTPDropped() *AutomationStepRecordScopedUpsert {
+	u.u.SetNull(automationsteprecord.FieldHTTPDropped)
+	return u
+}
+
+const RoleOf_AutomationStepRecordScopedUpsert_ClearHTTPDropped = RoleStep
 
 // conflictOptions confines the DO UPDATE part to rows of the Workspace.
 // target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
@@ -12398,6 +12522,82 @@ func (x *AutomationStepRecordScopedUpdateOne) ClearDeclinedEventIds() *Automatio
 
 const RoleOf_AutomationStepRecordScopedUpdateOne_ClearDeclinedEventIds = RoleStep
 
+// SetHTTPStatus sets the "http_status" field.
+func (x *AutomationStepRecordScopedUpdateOne) SetHTTPStatus(v int32) *AutomationStepRecordScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdateOne) { b.SetHTTPStatus(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdateOne_SetHTTPStatus = RoleStep
+
+// SetNillableHTTPStatus sets the "http_status" field if the given value is not nil.
+func (x *AutomationStepRecordScopedUpdateOne) SetNillableHTTPStatus(v *int32) *AutomationStepRecordScopedUpdateOne {
+	if v != nil {
+		x.SetHTTPStatus(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdateOne_SetNillableHTTPStatus = RoleStep
+
+// AddHTTPStatus adds value to the "http_status" field.
+func (x *AutomationStepRecordScopedUpdateOne) AddHTTPStatus(v int32) *AutomationStepRecordScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdateOne) { b.AddHTTPStatus(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdateOne_AddHTTPStatus = RoleStep
+
+// ClearHTTPStatus clears the value of the "http_status" field.
+func (x *AutomationStepRecordScopedUpdateOne) ClearHTTPStatus() *AutomationStepRecordScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdateOne) { b.ClearHTTPStatus() })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdateOne_ClearHTTPStatus = RoleStep
+
+// SetHTTPBody sets the "http_body" field.
+func (x *AutomationStepRecordScopedUpdateOne) SetHTTPBody(v map[string]interface{}) *AutomationStepRecordScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdateOne) { b.SetHTTPBody(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdateOne_SetHTTPBody = RoleStep
+
+// ClearHTTPBody clears the value of the "http_body" field.
+func (x *AutomationStepRecordScopedUpdateOne) ClearHTTPBody() *AutomationStepRecordScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdateOne) { b.ClearHTTPBody() })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdateOne_ClearHTTPBody = RoleStep
+
+// SetHTTPDropped sets the "http_dropped" field.
+func (x *AutomationStepRecordScopedUpdateOne) SetHTTPDropped(v automationstep.BodyDropped) *AutomationStepRecordScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdateOne) { b.SetHTTPDropped(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdateOne_SetHTTPDropped = RoleStep
+
+// SetNillableHTTPDropped sets the "http_dropped" field if the given value is not nil.
+func (x *AutomationStepRecordScopedUpdateOne) SetNillableHTTPDropped(v *automationstep.BodyDropped) *AutomationStepRecordScopedUpdateOne {
+	if v != nil {
+		x.SetHTTPDropped(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdateOne_SetNillableHTTPDropped = RoleStep
+
+// ClearHTTPDropped clears the value of the "http_dropped" field.
+func (x *AutomationStepRecordScopedUpdateOne) ClearHTTPDropped() *AutomationStepRecordScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdateOne) { b.ClearHTTPDropped() })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdateOne_ClearHTTPDropped = RoleStep
+
 // Save verifies the references against the Workspace, then updates the AutomationStepRecord.
 func (x *AutomationStepRecordScopedUpdateOne) Save(ctx context.Context) (*AutomationStepRecord, error) {
 	return x.save(ctx, "update", skipUnchanged)
@@ -12720,6 +12920,82 @@ func (x *AutomationStepRecordScopedUpdate) ClearDeclinedEventIds() *AutomationSt
 }
 
 const RoleOf_AutomationStepRecordScopedUpdate_ClearDeclinedEventIds = RoleStep
+
+// SetHTTPStatus sets the "http_status" field.
+func (x *AutomationStepRecordScopedUpdate) SetHTTPStatus(v int32) *AutomationStepRecordScopedUpdate {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdate) { b.SetHTTPStatus(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdate_SetHTTPStatus = RoleStep
+
+// SetNillableHTTPStatus sets the "http_status" field if the given value is not nil.
+func (x *AutomationStepRecordScopedUpdate) SetNillableHTTPStatus(v *int32) *AutomationStepRecordScopedUpdate {
+	if v != nil {
+		x.SetHTTPStatus(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdate_SetNillableHTTPStatus = RoleStep
+
+// AddHTTPStatus adds value to the "http_status" field.
+func (x *AutomationStepRecordScopedUpdate) AddHTTPStatus(v int32) *AutomationStepRecordScopedUpdate {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdate) { b.AddHTTPStatus(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdate_AddHTTPStatus = RoleStep
+
+// ClearHTTPStatus clears the value of the "http_status" field.
+func (x *AutomationStepRecordScopedUpdate) ClearHTTPStatus() *AutomationStepRecordScopedUpdate {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdate) { b.ClearHTTPStatus() })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdate_ClearHTTPStatus = RoleStep
+
+// SetHTTPBody sets the "http_body" field.
+func (x *AutomationStepRecordScopedUpdate) SetHTTPBody(v map[string]interface{}) *AutomationStepRecordScopedUpdate {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdate) { b.SetHTTPBody(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdate_SetHTTPBody = RoleStep
+
+// ClearHTTPBody clears the value of the "http_body" field.
+func (x *AutomationStepRecordScopedUpdate) ClearHTTPBody() *AutomationStepRecordScopedUpdate {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdate) { b.ClearHTTPBody() })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdate_ClearHTTPBody = RoleStep
+
+// SetHTTPDropped sets the "http_dropped" field.
+func (x *AutomationStepRecordScopedUpdate) SetHTTPDropped(v automationstep.BodyDropped) *AutomationStepRecordScopedUpdate {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdate) { b.SetHTTPDropped(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdate_SetHTTPDropped = RoleStep
+
+// SetNillableHTTPDropped sets the "http_dropped" field if the given value is not nil.
+func (x *AutomationStepRecordScopedUpdate) SetNillableHTTPDropped(v *automationstep.BodyDropped) *AutomationStepRecordScopedUpdate {
+	if v != nil {
+		x.SetHTTPDropped(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdate_SetNillableHTTPDropped = RoleStep
+
+// ClearHTTPDropped clears the value of the "http_dropped" field.
+func (x *AutomationStepRecordScopedUpdate) ClearHTTPDropped() *AutomationStepRecordScopedUpdate {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdate) { b.ClearHTTPDropped() })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdate_ClearHTTPDropped = RoleStep
 
 // build makes the ent update on the client of s and verifies the references it sets.
 func (x *AutomationStepRecordScopedUpdate) build(ctx context.Context, s *Scoped) (*AutomationStepRecordUpdate, error) {

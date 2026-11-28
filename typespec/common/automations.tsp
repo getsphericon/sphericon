@@ -339,6 +339,10 @@ model HttpStep {
 
   type: "http";
 
+  /** The Step's name, fixed when it is created: later Steps read the response it kept as
+   * `http.<name>` (ADR 0161) */
+  name: StepName;
+
   /** The Liquid JSON request body, bound as an email Step's body is */
   body: string;
 
@@ -355,6 +359,11 @@ model HttpStepInput {
   id?: StepId;
 
   type: "http";
+
+  /** The Step's name, fixed when it is created: later Steps read the response it kept as
+   * `http.<name>` (ADR 0161). A save that renames the Step, or gives it a name another HTTP step
+   * or Wait for event of the Automation holds, in any version, is refused, naming the Step. */
+  name: StepName;
 
   /** The Liquid JSON request body: strings JSON-escaped, up to 64 KiB, must render to valid JSON, also with every tag empty */
   body: string;
@@ -516,11 +525,13 @@ model SplitStepInput {
   paths: SplitPathInput[];
 }
 
-/** The name of a Wait for event (ADR 0136): lower-case letters, digits and underscores, starting
- * with a letter. It belongs to one Step id across every version of its Automation. */
+/** The name of a Wait for event (ADR 0136) or an HTTP step (ADR 0161), which later Steps read what
+ * it kept by, as `awaited.<name>` or `http.<name>`: lower-case letters, digits and underscores,
+ * starting with a letter. It belongs to one Step id across every version of its Automation, and no
+ * other Wait for event or HTTP step there holds it. */
 @pattern("^[a-z][a-z0-9_]*$")
 @maxLength(64)
-scalar WaitForEventName extends string;
+scalar StepName extends string;
 
 /** A Wait for event waits for an Event one of its Event matchers matches, on the Contact its
  * Condition, if any, holds for (ADR 0124, ADR 0180) */
@@ -602,7 +613,7 @@ model WaitForEventStep {
   type: "wait_for_event";
 
   /** The Step's name, fixed when it is created */
-  name: WaitForEventName;
+  name: StepName;
 
   /** How long the Step waits, in seconds from the moment the Enrollment reaches it */
   @minValue(1)
@@ -633,7 +644,7 @@ model WaitForEventStepInput {
 
   /** The Step's name, fixed when it is created: a save that renames the Step, or gives two Wait for
    * event Steps of the Automation the same name, is refused, naming the Step */
-  name: WaitForEventName;
+  name: StepName;
 
   /** How long the Step waits, in seconds, as a wait's delay is: at least one */
   @minValue(1)

@@ -334,6 +334,20 @@ func (c *ConverterImpl) AutomationsToResources(source []*ent.Automation) ([]exte
 	}
 	return externalapiAutomationResourceList, nil
 }
+func (c *ConverterImpl) BodyDroppedToResource(source automationstep.BodyDropped) external.HttpBodyDropped {
+	var externalapiHttpBodyDropped external.HttpBodyDropped
+	switch source {
+	case automationstep.BodyNotJSON:
+		externalapiHttpBodyDropped = external.HttpBodyDroppedNotJSON
+	case automationstep.BodyNotObject:
+		externalapiHttpBodyDropped = external.HttpBodyDroppedNotObject
+	case automationstep.BodyTooLarge:
+		externalapiHttpBodyDropped = external.HttpBodyDroppedTooLarge
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiHttpBodyDropped
+}
 func (c *ConverterImpl) BranchPathToResource(source automations.BranchPathView) (external.BranchPath, error) {
 	var externalapiBranchPath external.BranchPath
 	externalapiBranchPath.ID = c.automationstepIDToExternalapiStepId(source.ID)
@@ -1102,6 +1116,7 @@ func (c *ConverterImpl) EnrollmentToResource(source *ent.AutomationRun) external
 		externalapiEnrollmentResource.DeferralCause = optDeferralCause(c, (*source).DeferralCause)
 		externalapiEnrollmentResource.Failure = enrollmentFailure(c, (*source))
 		externalapiEnrollmentResource.Awaited = enrollmentAwaited(c, (*source))
+		externalapiEnrollmentResource.HTTP = enrollmentHTTP(c, (*source))
 		externalapiEnrollmentResource.CreatedAt = timestamp((*source).CreatedAt)
 		externalapiEnrollmentResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
@@ -1214,6 +1229,7 @@ func (c *ConverterImpl) HttpStepToResource(source automations.HTTPView) external
 	var externalapiHttpStep external.HttpStep
 	externalapiHttpStep.ID = c.automationstepIDToExternalapiStepId(source.ID)
 	externalapiHttpStep.Type = httpStepType(source.Type)
+	externalapiHttpStep.Name = stepName(source.Name)
 	externalapiHttpStep.Body = source.Body
 	if source.Headers != nil {
 		externalapiHttpStep.Headers = make([]external.AutomationHttpHeader, len(source.Headers))
@@ -1303,6 +1319,22 @@ func (c *ConverterImpl) KeptEventsToResources(source []automations.KeptEvent) []
 		externalapiKeptEventList[i] = c.KeptEventToResource(source[i])
 	}
 	return externalapiKeptEventList
+}
+func (c *ConverterImpl) KeptResponseToResource(source automations.KeptResponse) external.KeptResponse {
+	var externalapiKeptResponse external.KeptResponse
+	externalapiKeptResponse.Name = source.Name
+	externalapiKeptResponse.Status = source.Status
+	externalapiKeptResponse.Body = keptBody(source.Body)
+	externalapiKeptResponse.Dropped = keptDropped(c, source.Dropped)
+	return externalapiKeptResponse
+}
+func (c *ConverterImpl) KeptResponsesToResources(source []automations.KeptResponse) []external.KeptResponse {
+	var externalapiKeptResponseList []external.KeptResponse
+	externalapiKeptResponseList = make([]external.KeptResponse, len(source))
+	for i := 0; i < len(source); i++ {
+		externalapiKeptResponseList[i] = c.KeptResponseToResource(source[i])
+	}
+	return externalapiKeptResponseList
 }
 func (c *ConverterImpl) LintCodeToResource(source emailrender.Code) external.LintCode {
 	var externalapiLintCode external.LintCode
@@ -2497,7 +2529,7 @@ func (c *ConverterImpl) WaitForEventStepToResource(source automations.WaitForEve
 	var externalapiWaitForEventStep external.WaitForEventStep
 	externalapiWaitForEventStep.ID = c.automationstepIDToExternalapiStepId(source.ID)
 	externalapiWaitForEventStep.Type = waitForEventStepType(source.Type)
-	externalapiWaitForEventStep.Name = waitForEventName(source.Name)
+	externalapiWaitForEventStep.Name = stepName(source.Name)
 	externalapiWaitForEventStep.TimeoutSeconds = count(source.TimeoutSeconds)
 	externalapiWaitForEventAwaits, err := waitForEventAwaits(c, source.Awaits)
 	if err != nil {

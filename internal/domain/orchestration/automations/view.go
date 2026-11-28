@@ -81,6 +81,7 @@ type TagView struct {
 type HTTPView struct {
 	ID        automationstep.ID
 	Type      automationstep.Kind
+	Name      string
 	Body      string
 	Headers   []HeaderName
 	HasSecret bool
@@ -257,7 +258,7 @@ func leafView(st *automationstep.Step) StepView {
 	case automationstep.Tagging:
 		return TagView{ID: st.ID, Type: st.Kind(), Tag: s.TagName()}
 	case automationstep.HTTP:
-		v := HTTPView{ID: st.ID, Type: st.Kind(), Body: s.Body, HasSecret: s.Secret != "", Headers: make([]HeaderName, len(s.Headers))}
+		v := HTTPView{ID: st.ID, Type: st.Kind(), Name: s.Name, Body: s.Body, HasSecret: s.Secret != "", Headers: make([]HeaderName, len(s.Headers))}
 		for i, h := range s.Headers {
 			v.Headers[i] = HeaderName{Name: h.Name}
 		}

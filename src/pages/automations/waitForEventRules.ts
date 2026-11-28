@@ -5,7 +5,7 @@ import * as z from 'zod'
 import type { MessageStep } from '../../components/conditions/ConditionBuilder.tsx'
 import {
   zMessageEngagement,
-  zWaitForEventName,
+  zStepName,
   zWaitForEventStepInput,
 } from '../../generated/site/zod.gen.ts'
 import { AWAITED_FORMS, awaitedMatchersOf, waitForEventConditionOf } from './definition.ts'
@@ -40,7 +40,7 @@ function waitForEventSchema(texts: WaitForEventTexts, messageSteps: AwaitableSte
       name: z.string().superRefine((name, context) => {
         if (name === '') {
           context.addIssue({ code: 'custom', input: '' })
-        } else if (!zWaitForEventName.safeParse(name).success) {
+        } else if (!zStepName.safeParse(name).success) {
           context.addIssue({ code: 'custom', message: texts.nameFormat })
         }
       }),

@@ -163,8 +163,8 @@ func TestExternalAutomationKeepsAWaitForEventsNameAcrossEdits(t *testing.T) {
 
 // What the contract does not admit in a Wait for event is refused with a 400 naming its path: a
 // missing timeout, a timeout of zero, a name not of lower-case letters, digits and underscores starting with a letter,
-// no awaited matcher, a field it does not hold, and a test of the Enrollment's own message in its
-// Condition, which is a Branch's alone (ADR 0181).
+// no awaited matcher, a field it does not hold, and a test of the Enrollment's own message or of an
+// HTTP step's response in its Condition, which are a Branch's alone (ADR 0181).
 func TestExternalAutomationRefusesAWaitForEventOutsideTheContract(t *testing.T) {
 	for _, tc := range []struct {
 		name string
@@ -180,6 +180,10 @@ func TestExternalAutomationRefusesAWaitForEventOutsideTheContract(t *testing.T) 
 			step["awaits"].(map[string]any)["condition"] = testhelper.NestedCondition(t,
 				`{"kind":"stepMessage","step":"`+thankedID+`","engagement":"opened"}`)
 		}, "steps.steps.0.awaits.condition.entries.1.entries.1"},
+		{"a test of an http step's response", func(step map[string]any) {
+			step["awaits"].(map[string]any)["condition"] = testhelper.NestedCondition(t,
+				`{"kind":"property","of":{"kind":"http","name":"coupon"},"key":"code","test":{"kind":"text","operator":"eq","value":"X1"}}`)
+		}, "steps.steps.0.awaits.condition.entries.1.entries.1.of"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			env := testhelper.Setup(t)

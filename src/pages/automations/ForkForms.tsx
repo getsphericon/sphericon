@@ -9,7 +9,7 @@ import { zSplitPathInput } from '../../generated/site/zod.gen.ts'
 import { useSchemaForm } from '../../resources/schemaForm.ts'
 import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
 import { boundsOf } from '../../utils/bounds.ts'
-import { awaitedBefore } from './awaitedNames.ts'
+import { awaitedBefore, httpBefore } from './awaitedNames.ts'
 import { branchConditionOf, filterText } from './definition.ts'
 import type { BranchStep, FlowPath, ListedFork, SplitStep } from './definition.ts'
 import type { PathPatch } from './flowEdits.ts'
@@ -126,6 +126,7 @@ export function BranchForm({
   const infoOf = useStepInfo()
   const messageSteps = useMemo(() => messageStepsOf(infoOf, root, step.id), [infoOf, root, step.id])
   const awaitedNames = useMemo(() => awaitedBefore(root, step.id), [root, step.id])
+  const httpNames = useMemo(() => httpBefore(root, step.id), [root, step.id])
   const form = useSchemaForm(
     forkSchemas.branch,
     { paths: step.paths.map(({ id, conditionText }) => ({ id, conditionText })) },
@@ -167,6 +168,7 @@ export function BranchForm({
                 place="branch"
                 messageSteps={messageSteps}
                 awaitedNames={awaitedNames}
+                httpNames={httpNames}
                 initialValue={branchConditionOf(path.conditionText) ?? emptyGroup}
                 onChange={(draft) => form.setFieldValue(field, filterText(draft))}
               />

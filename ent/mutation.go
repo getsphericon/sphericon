@@ -11036,6 +11036,10 @@ type AutomationStepRecordMutation struct {
 	awaited_properties       *map[string]interface{}
 	declined_event_ids       *[]int64
 	appenddeclined_event_ids []int64
+	http_status              *int32
+	addhttp_status           *int32
+	http_body                *map[string]interface{}
+	http_dropped             *automationstep.BodyDropped
 	clearedFields            map[string]struct{}
 	workspace                *int64
 	clearedworkspace         bool
@@ -11991,6 +11995,174 @@ func (m *AutomationStepRecordMutation) ResetDeclinedEventIds() {
 	delete(m.clearedFields, automationsteprecord.FieldDeclinedEventIds)
 }
 
+// SetHTTPStatus sets the "http_status" field.
+func (m *AutomationStepRecordMutation) SetHTTPStatus(i int32) {
+	m.http_status = &i
+	m.addhttp_status = nil
+}
+
+// HTTPStatus returns the value of the "http_status" field in the mutation.
+func (m *AutomationStepRecordMutation) HTTPStatus() (r int32, exists bool) {
+	v := m.http_status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldHTTPStatus returns the old "http_status" field's value of the AutomationStepRecord entity.
+// If the AutomationStepRecord object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationStepRecordMutation) OldHTTPStatus(ctx context.Context) (v *int32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldHTTPStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldHTTPStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldHTTPStatus: %w", err)
+	}
+	return oldValue.HTTPStatus, nil
+}
+
+// AddHTTPStatus adds i to the "http_status" field.
+func (m *AutomationStepRecordMutation) AddHTTPStatus(i int32) {
+	if m.addhttp_status != nil {
+		*m.addhttp_status += i
+	} else {
+		m.addhttp_status = &i
+	}
+}
+
+// AddedHTTPStatus returns the value that was added to the "http_status" field in this mutation.
+func (m *AutomationStepRecordMutation) AddedHTTPStatus() (r int32, exists bool) {
+	v := m.addhttp_status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearHTTPStatus clears the value of the "http_status" field.
+func (m *AutomationStepRecordMutation) ClearHTTPStatus() {
+	m.http_status = nil
+	m.addhttp_status = nil
+	m.clearedFields[automationsteprecord.FieldHTTPStatus] = struct{}{}
+}
+
+// HTTPStatusCleared returns if the "http_status" field was cleared in this mutation.
+func (m *AutomationStepRecordMutation) HTTPStatusCleared() bool {
+	_, ok := m.clearedFields[automationsteprecord.FieldHTTPStatus]
+	return ok
+}
+
+// ResetHTTPStatus resets all changes to the "http_status" field.
+func (m *AutomationStepRecordMutation) ResetHTTPStatus() {
+	m.http_status = nil
+	m.addhttp_status = nil
+	delete(m.clearedFields, automationsteprecord.FieldHTTPStatus)
+}
+
+// SetHTTPBody sets the "http_body" field.
+func (m *AutomationStepRecordMutation) SetHTTPBody(value map[string]interface{}) {
+	m.http_body = &value
+}
+
+// HTTPBody returns the value of the "http_body" field in the mutation.
+func (m *AutomationStepRecordMutation) HTTPBody() (r map[string]interface{}, exists bool) {
+	v := m.http_body
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldHTTPBody returns the old "http_body" field's value of the AutomationStepRecord entity.
+// If the AutomationStepRecord object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationStepRecordMutation) OldHTTPBody(ctx context.Context) (v map[string]interface{}, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldHTTPBody is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldHTTPBody requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldHTTPBody: %w", err)
+	}
+	return oldValue.HTTPBody, nil
+}
+
+// ClearHTTPBody clears the value of the "http_body" field.
+func (m *AutomationStepRecordMutation) ClearHTTPBody() {
+	m.http_body = nil
+	m.clearedFields[automationsteprecord.FieldHTTPBody] = struct{}{}
+}
+
+// HTTPBodyCleared returns if the "http_body" field was cleared in this mutation.
+func (m *AutomationStepRecordMutation) HTTPBodyCleared() bool {
+	_, ok := m.clearedFields[automationsteprecord.FieldHTTPBody]
+	return ok
+}
+
+// ResetHTTPBody resets all changes to the "http_body" field.
+func (m *AutomationStepRecordMutation) ResetHTTPBody() {
+	m.http_body = nil
+	delete(m.clearedFields, automationsteprecord.FieldHTTPBody)
+}
+
+// SetHTTPDropped sets the "http_dropped" field.
+func (m *AutomationStepRecordMutation) SetHTTPDropped(ad automationstep.BodyDropped) {
+	m.http_dropped = &ad
+}
+
+// HTTPDropped returns the value of the "http_dropped" field in the mutation.
+func (m *AutomationStepRecordMutation) HTTPDropped() (r automationstep.BodyDropped, exists bool) {
+	v := m.http_dropped
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldHTTPDropped returns the old "http_dropped" field's value of the AutomationStepRecord entity.
+// If the AutomationStepRecord object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationStepRecordMutation) OldHTTPDropped(ctx context.Context) (v *automationstep.BodyDropped, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldHTTPDropped is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldHTTPDropped requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldHTTPDropped: %w", err)
+	}
+	return oldValue.HTTPDropped, nil
+}
+
+// ClearHTTPDropped clears the value of the "http_dropped" field.
+func (m *AutomationStepRecordMutation) ClearHTTPDropped() {
+	m.http_dropped = nil
+	m.clearedFields[automationsteprecord.FieldHTTPDropped] = struct{}{}
+}
+
+// HTTPDroppedCleared returns if the "http_dropped" field was cleared in this mutation.
+func (m *AutomationStepRecordMutation) HTTPDroppedCleared() bool {
+	_, ok := m.clearedFields[automationsteprecord.FieldHTTPDropped]
+	return ok
+}
+
+// ResetHTTPDropped resets all changes to the "http_dropped" field.
+func (m *AutomationStepRecordMutation) ResetHTTPDropped() {
+	m.http_dropped = nil
+	delete(m.clearedFields, automationsteprecord.FieldHTTPDropped)
+}
+
 // ClearWorkspace clears the "workspace" edge to the Workspace entity.
 func (m *AutomationStepRecordMutation) ClearWorkspace() {
 	m.clearedworkspace = true
@@ -12079,7 +12251,7 @@ func (m *AutomationStepRecordMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *AutomationStepRecordMutation) Fields() []string {
-	fields := make([]string, 0, 18)
+	fields := make([]string, 0, 21)
 	if m.created_at != nil {
 		fields = append(fields, automationsteprecord.FieldCreatedAt)
 	}
@@ -12134,6 +12306,15 @@ func (m *AutomationStepRecordMutation) Fields() []string {
 	if m.declined_event_ids != nil {
 		fields = append(fields, automationsteprecord.FieldDeclinedEventIds)
 	}
+	if m.http_status != nil {
+		fields = append(fields, automationsteprecord.FieldHTTPStatus)
+	}
+	if m.http_body != nil {
+		fields = append(fields, automationsteprecord.FieldHTTPBody)
+	}
+	if m.http_dropped != nil {
+		fields = append(fields, automationsteprecord.FieldHTTPDropped)
+	}
 	return fields
 }
 
@@ -12178,6 +12359,12 @@ func (m *AutomationStepRecordMutation) Field(name string) (ent.Value, bool) {
 		return m.AwaitedProperties()
 	case automationsteprecord.FieldDeclinedEventIds:
 		return m.DeclinedEventIds()
+	case automationsteprecord.FieldHTTPStatus:
+		return m.HTTPStatus()
+	case automationsteprecord.FieldHTTPBody:
+		return m.HTTPBody()
+	case automationsteprecord.FieldHTTPDropped:
+		return m.HTTPDropped()
 	}
 	return nil, false
 }
@@ -12223,6 +12410,12 @@ func (m *AutomationStepRecordMutation) OldField(ctx context.Context, name string
 		return m.OldAwaitedProperties(ctx)
 	case automationsteprecord.FieldDeclinedEventIds:
 		return m.OldDeclinedEventIds(ctx)
+	case automationsteprecord.FieldHTTPStatus:
+		return m.OldHTTPStatus(ctx)
+	case automationsteprecord.FieldHTTPBody:
+		return m.OldHTTPBody(ctx)
+	case automationsteprecord.FieldHTTPDropped:
+		return m.OldHTTPDropped(ctx)
 	}
 	return nil, fmt.Errorf("unknown AutomationStepRecord field %s", name)
 }
@@ -12358,6 +12551,27 @@ func (m *AutomationStepRecordMutation) SetField(name string, value ent.Value) er
 		}
 		m.SetDeclinedEventIds(v)
 		return nil
+	case automationsteprecord.FieldHTTPStatus:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetHTTPStatus(v)
+		return nil
+	case automationsteprecord.FieldHTTPBody:
+		v, ok := value.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetHTTPBody(v)
+		return nil
+	case automationsteprecord.FieldHTTPDropped:
+		v, ok := value.(automationstep.BodyDropped)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetHTTPDropped(v)
+		return nil
 	}
 	return fmt.Errorf("unknown AutomationStepRecord field %s", name)
 }
@@ -12369,6 +12583,9 @@ func (m *AutomationStepRecordMutation) AddedFields() []string {
 	if m.addawaited_event_id != nil {
 		fields = append(fields, automationsteprecord.FieldAwaitedEventID)
 	}
+	if m.addhttp_status != nil {
+		fields = append(fields, automationsteprecord.FieldHTTPStatus)
+	}
 	return fields
 }
 
@@ -12379,6 +12596,8 @@ func (m *AutomationStepRecordMutation) AddedField(name string) (ent.Value, bool)
 	switch name {
 	case automationsteprecord.FieldAwaitedEventID:
 		return m.AddedAwaitedEventID()
+	case automationsteprecord.FieldHTTPStatus:
+		return m.AddedHTTPStatus()
 	}
 	return nil, false
 }
@@ -12394,6 +12613,13 @@ func (m *AutomationStepRecordMutation) AddField(name string, value ent.Value) er
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddAwaitedEventID(v)
+		return nil
+	case automationsteprecord.FieldHTTPStatus:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddHTTPStatus(v)
 		return nil
 	}
 	return fmt.Errorf("unknown AutomationStepRecord numeric field %s", name)
@@ -12438,6 +12664,15 @@ func (m *AutomationStepRecordMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(automationsteprecord.FieldDeclinedEventIds) {
 		fields = append(fields, automationsteprecord.FieldDeclinedEventIds)
+	}
+	if m.FieldCleared(automationsteprecord.FieldHTTPStatus) {
+		fields = append(fields, automationsteprecord.FieldHTTPStatus)
+	}
+	if m.FieldCleared(automationsteprecord.FieldHTTPBody) {
+		fields = append(fields, automationsteprecord.FieldHTTPBody)
+	}
+	if m.FieldCleared(automationsteprecord.FieldHTTPDropped) {
+		fields = append(fields, automationsteprecord.FieldHTTPDropped)
 	}
 	return fields
 }
@@ -12488,6 +12723,15 @@ func (m *AutomationStepRecordMutation) ClearField(name string) error {
 		return nil
 	case automationsteprecord.FieldDeclinedEventIds:
 		m.ClearDeclinedEventIds()
+		return nil
+	case automationsteprecord.FieldHTTPStatus:
+		m.ClearHTTPStatus()
+		return nil
+	case automationsteprecord.FieldHTTPBody:
+		m.ClearHTTPBody()
+		return nil
+	case automationsteprecord.FieldHTTPDropped:
+		m.ClearHTTPDropped()
 		return nil
 	}
 	return fmt.Errorf("unknown AutomationStepRecord nullable field %s", name)
@@ -12550,6 +12794,15 @@ func (m *AutomationStepRecordMutation) ResetField(name string) error {
 		return nil
 	case automationsteprecord.FieldDeclinedEventIds:
 		m.ResetDeclinedEventIds()
+		return nil
+	case automationsteprecord.FieldHTTPStatus:
+		m.ResetHTTPStatus()
+		return nil
+	case automationsteprecord.FieldHTTPBody:
+		m.ResetHTTPBody()
+		return nil
+	case automationsteprecord.FieldHTTPDropped:
+		m.ResetHTTPDropped()
 		return nil
 	}
 	return fmt.Errorf("unknown AutomationStepRecord field %s", name)

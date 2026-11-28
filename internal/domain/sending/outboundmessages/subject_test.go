@@ -48,7 +48,7 @@ func TestBroadcastAndAutomationSendsKeepTheirRenderedSubject(t *testing.T) {
 
 	broadcastReq, err := outboundmessages.BroadcastRecipient(bc, rec, contact)
 	require.NoError(t, err)
-	stepReq := outboundmessages.AutomationStep(automation, run, nil, welcomeFirstEmailStepID, nil, contact,
+	stepReq := outboundmessages.AutomationStep(automation, run, outboundmessages.Kept{}, welcomeFirstEmailStepID, nil, contact,
 		outboundmessages.EmailContent{Subject: "Hi {{ first_name }}, from a step", Body: htmlBody}, outboundmessages.Waited{})
 
 	for name, req := range map[string]outboundmessages.Request{"a recipient": broadcastReq, "a step": stepReq} {

@@ -97,6 +97,9 @@ func TestAnErasureRemovesThePersonsDataAndKeepsTheFactsAnonymous(t *testing.T) {
 	// A Wait for event's copy of the Event it arrived on (ADR 0136) is of the Contact's runs alone.
 	awaited := env.DB.AutomationStepRecord.Query().Where(automationsteprecord.WorkspaceID(fixtures.InitechID), automationsteprecord.AwaitedEventIDNotNil())
 	require.True(t, awaited.Clone().ExistX(ctx), "the erasable run keeps a copy of the Event a Wait for event arrived on")
+	// An HTTP step's kept response (ADR 0161) is of the Contact's runs alone.
+	responses := env.DB.AutomationStepRecord.Query().Where(automationsteprecord.WorkspaceID(fixtures.InitechID), automationsteprecord.HTTPStatusNotNil())
+	require.True(t, responses.Clone().ExistX(ctx), "the erasable run keeps the response an HTTP step received")
 
 	eraseErasable(t, env)
 
@@ -111,6 +114,7 @@ func TestAnErasureRemovesThePersonsDataAndKeepsTheFactsAnonymous(t *testing.T) {
 	_, err = stepRecords()
 	require.ErrorIs(t, err, automations.ErrEnrollmentNotFound, "the run goes, and its Step records with it")
 	assert.False(t, awaited.Clone().ExistX(ctx), "no copy of an awaited Event is left")
+	assert.False(t, responses.Clone().ExistX(ctx), "no response an HTTP step kept is left")
 
 	// Events: customer-tracked and marketing.confirmed are deleted ...
 	for _, id := range []int64{

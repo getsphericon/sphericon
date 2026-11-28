@@ -112,6 +112,7 @@ function httpServer() {
             steps: [
               {
                 type: 'http',
+                name: 'notify',
                 id: step.id,
                 body: step.body,
                 headers: [],
@@ -204,7 +205,9 @@ test('two Saves keep an HTTP step by its id and its stored secret while preservi
     ...DRAFT,
     steps: {
       id: stepId(1),
-      steps: [{ id: stepId(7), type: 'http', body: '{}', headers: [], hasSecret: false }],
+      steps: [
+        { id: stepId(7), type: 'http', name: 'notify', body: '{}', headers: [], hasSecret: false },
+      ],
     },
   })
   const submitted = withHttp(inserted, {
@@ -226,7 +229,14 @@ test('two Saves keep an HTTP step by its id and its stored secret while preservi
   expect(second.context.result).toBe('success')
   expect(second.context.saved).toBe(automationSnapshot('HTTP flow', current))
   expect(persisted.draft?.steps.steps).toEqual([
-    { type: 'http', id: stepId(7), body: '{"newer":true}', headers: [], hasSecret: true },
+    {
+      type: 'http',
+      id: stepId(7),
+      name: 'notify',
+      body: '{"newer":true}',
+      headers: [],
+      hasSecret: true,
+    },
   ])
 })
 

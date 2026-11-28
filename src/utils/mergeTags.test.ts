@@ -1,6 +1,13 @@
 import { expect, test } from 'vitest'
 
-import { awaitedActionTag, awaitedEvent, EVENT, propertyTag } from './mergeTags.ts'
+import {
+  automationTags,
+  awaitedActionTag,
+  awaitedEvent,
+  EVENT,
+  httpResponse,
+  propertyTag,
+} from './mergeTags.ts'
 
 test('names a plain property of the triggering Event with a dot', () => {
   expect(propertyTag(EVENT, ' amount ')).toBe('event.properties.amount')
@@ -25,4 +32,13 @@ test('names the action and a property of the Event a Wait for event arrived on b
   expect(propertyTag(awaitedEvent('purchase'), 'line item')).toBe(
     'awaited.purchase.properties["line item"]',
   )
+})
+
+test("a key of an HTTP step's response is read from its body, and its status is a tag of its own", () => {
+  expect(propertyTag(httpResponse('coupon'), 'code')).toBe('http.coupon.body.code')
+  expect(propertyTag(httpResponse('coupon'), 'valid until')).toBe('http.coupon.body["valid until"]')
+  expect(automationTags(['purchase'], ['coupon'])).toEqual({
+    tags: ['event.action', 'awaited.purchase.action', 'http.coupon.status'],
+    sources: ['event', 'awaited.purchase', 'http.coupon'],
+  })
 })

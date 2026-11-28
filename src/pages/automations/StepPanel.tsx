@@ -16,7 +16,7 @@ import { useTranslation } from 'react-i18next'
 
 import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
 import { automationTags } from '../../utils/mergeTags.ts'
-import { awaitedBefore, awaitedWarnings } from './awaitedNames.ts'
+import { awaitedBefore, httpBefore, keptWarnings } from './awaitedNames.ts'
 import { allSteps, forkPaths } from './definition.ts'
 import type {
   AwaitedForm,
@@ -115,7 +115,8 @@ function StepBody({
       step={step}
       onEdit={onStep}
       validatorRef={validatorRef}
-      bound={automationTags(awaitedBefore(root, step.id))}
+      bound={automationTags(awaitedBefore(root, step.id), httpBefore(root, step.id))}
+      storedName={forks.storedName(step.id)}
       checked={forks.checked(step.id)}
       onChecked={() => forks.onChecked(step.id)}
     />
@@ -152,7 +153,7 @@ export function StepPanel({
 }) {
   const { t } = useTranslation()
   const info = useStepInfo()
-  const warnings = useMemo(() => awaitedWarnings(flow.path), [flow])
+  const warnings = useMemo(() => keptWarnings(flow.path), [flow])
   const step = allSteps(flow.path).find((candidate) => candidate.id === selected)
   const unpassed = step === undefined ? undefined : warnings.get(step.id)
   if (selected !== TRIGGER_NODE_ID && step === undefined) {

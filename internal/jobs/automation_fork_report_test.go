@@ -71,7 +71,7 @@ func TestTheReportCountsEachBranchPathsEnrollmentsAndGoals(t *testing.T) {
 	}}
 	// The queued Steps run up to the HTTP call after the Branch, whose job they leave queued: each
 	// Enrollment stays active there, for the goal.
-	call := automationstep.New(automationstep.HTTP{URL: "https://hooks.example.com/forked", Body: `{"ok":true}`})
+	call := automationstep.New(automationstep.HTTP{Name: "notify", URL: "https://hooks.example.com/forked", Body: `{"ok":true}`})
 	automationID := publishedWithGoal(t, env, branch, call)
 	tagContact(t, env, fixtures.AcmeID, fixtures.ContactAliceID, "fork-first")
 	tagContact(t, env, fixtures.AcmeID, fixtures.ContactCarolID, "fork-second")

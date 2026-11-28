@@ -4211,7 +4211,7 @@ func (s *AwaitedMessageKind) UnmarshalText(data []byte) error {
 type AwaitedSource struct {
 	Kind AwaitedSourceKind `json:"kind"`
 	// The Wait for event's name.
-	Name WaitForEventName `json:"name"`
+	Name StepName `json:"name"`
 }
 
 // GetKind returns the value of Kind.
@@ -4220,7 +4220,7 @@ func (s *AwaitedSource) GetKind() AwaitedSourceKind {
 }
 
 // GetName returns the value of Name.
-func (s *AwaitedSource) GetName() WaitForEventName {
+func (s *AwaitedSource) GetName() StepName {
 	return s.Name
 }
 
@@ -4230,7 +4230,7 @@ func (s *AwaitedSource) SetKind(val AwaitedSourceKind) {
 }
 
 // SetName sets the value of Name.
-func (s *AwaitedSource) SetName(val WaitForEventName) {
+func (s *AwaitedSource) SetName(val StepName) {
 	s.Name = val
 }
 
@@ -4242,7 +4242,7 @@ func (s *AwaitedSource) SetName(val WaitForEventName) {
 type AwaitedSourceInput struct {
 	Kind AwaitedSourceInputKind `json:"kind"`
 	// The Wait for event's name.
-	Name WaitForEventName `json:"name"`
+	Name StepName `json:"name"`
 }
 
 // GetKind returns the value of Kind.
@@ -4251,7 +4251,7 @@ func (s *AwaitedSourceInput) GetKind() AwaitedSourceInputKind {
 }
 
 // GetName returns the value of Name.
-func (s *AwaitedSourceInput) GetName() WaitForEventName {
+func (s *AwaitedSourceInput) GetName() StepName {
 	return s.Name
 }
 
@@ -4261,7 +4261,7 @@ func (s *AwaitedSourceInput) SetKind(val AwaitedSourceInputKind) {
 }
 
 // SetName sets the value of Name.
-func (s *AwaitedSourceInput) SetName(val WaitForEventName) {
+func (s *AwaitedSourceInput) SetName(val StepName) {
 	s.Name = val
 }
 
@@ -5827,7 +5827,7 @@ func (s *BranchPropertyLeafKind) UnmarshalText(data []byte) error {
 }
 
 // Whose properties a Branch path's property test reads, by `kind`: the Event the Enrollment began
-// with, or the one an earlier Wait for event arrived on.
+// with, the one an earlier Wait for event arrived on, or the body an earlier HTTP step answered with.
 // Ref: #/components/schemas/BranchPropertySource
 type BranchPropertySource struct {
 	OneOf BranchPropertySourceSum
@@ -5844,7 +5844,7 @@ func (s *BranchPropertySource) SetOneOf(val BranchPropertySourceSum) {
 }
 
 // Whose properties a Branch path's property test reads, by `kind`: the Event the Enrollment began
-// with, or the one an earlier Wait for event arrived on.
+// with, the one an earlier Wait for event arrived on, or the body an earlier HTTP step answered with.
 // Ref: #/components/schemas/BranchPropertySourceInput
 type BranchPropertySourceInput struct {
 	OneOf BranchPropertySourceInputSum
@@ -5866,6 +5866,7 @@ type BranchPropertySourceInputSum struct {
 	Type               BranchPropertySourceInputSumType
 	TriggerSourceInput TriggerSourceInput
 	AwaitedSourceInput AwaitedSourceInput
+	HttpSourceInput    HttpSourceInput
 }
 
 // BranchPropertySourceInputSumType is oneOf type of BranchPropertySourceInputSum.
@@ -5875,6 +5876,7 @@ type BranchPropertySourceInputSumType string
 const (
 	TriggerSourceInputBranchPropertySourceInputSum BranchPropertySourceInputSumType = "trigger"
 	AwaitedSourceInputBranchPropertySourceInputSum BranchPropertySourceInputSumType = "awaited"
+	HttpSourceInputBranchPropertySourceInputSum    BranchPropertySourceInputSumType = "http"
 )
 
 // IsTriggerSourceInput reports whether BranchPropertySourceInputSum is TriggerSourceInput.
@@ -5885,6 +5887,11 @@ func (s BranchPropertySourceInputSum) IsTriggerSourceInput() bool {
 // IsAwaitedSourceInput reports whether BranchPropertySourceInputSum is AwaitedSourceInput.
 func (s BranchPropertySourceInputSum) IsAwaitedSourceInput() bool {
 	return s.Type == AwaitedSourceInputBranchPropertySourceInputSum
+}
+
+// IsHttpSourceInput reports whether BranchPropertySourceInputSum is HttpSourceInput.
+func (s BranchPropertySourceInputSum) IsHttpSourceInput() bool {
+	return s.Type == HttpSourceInputBranchPropertySourceInputSum
 }
 
 // SetTriggerSourceInput sets BranchPropertySourceInputSum to TriggerSourceInput.
@@ -5929,12 +5936,34 @@ func NewAwaitedSourceInputBranchPropertySourceInputSum(v AwaitedSourceInput) Bra
 	return s
 }
 
+// SetHttpSourceInput sets BranchPropertySourceInputSum to HttpSourceInput.
+func (s *BranchPropertySourceInputSum) SetHttpSourceInput(v HttpSourceInput) {
+	s.Type = HttpSourceInputBranchPropertySourceInputSum
+	s.HttpSourceInput = v
+}
+
+// GetHttpSourceInput returns HttpSourceInput and true boolean if BranchPropertySourceInputSum is HttpSourceInput.
+func (s BranchPropertySourceInputSum) GetHttpSourceInput() (v HttpSourceInput, ok bool) {
+	if !s.IsHttpSourceInput() {
+		return v, false
+	}
+	return s.HttpSourceInput, true
+}
+
+// NewHttpSourceInputBranchPropertySourceInputSum returns new BranchPropertySourceInputSum from HttpSourceInput.
+func NewHttpSourceInputBranchPropertySourceInputSum(v HttpSourceInput) BranchPropertySourceInputSum {
+	var s BranchPropertySourceInputSum
+	s.SetHttpSourceInput(v)
+	return s
+}
+
 // BranchPropertySourceSum represents sum type.
 type BranchPropertySourceSum struct {
 	// Type selects the active sum variant, switch on this field.
 	Type          BranchPropertySourceSumType
 	TriggerSource TriggerSource
 	AwaitedSource AwaitedSource
+	HttpSource    HttpSource
 }
 
 // BranchPropertySourceSumType is oneOf type of BranchPropertySourceSum.
@@ -5944,6 +5973,7 @@ type BranchPropertySourceSumType string
 const (
 	TriggerSourceBranchPropertySourceSum BranchPropertySourceSumType = "trigger"
 	AwaitedSourceBranchPropertySourceSum BranchPropertySourceSumType = "awaited"
+	HttpSourceBranchPropertySourceSum    BranchPropertySourceSumType = "http"
 )
 
 // IsTriggerSource reports whether BranchPropertySourceSum is TriggerSource.
@@ -5954,6 +5984,11 @@ func (s BranchPropertySourceSum) IsTriggerSource() bool {
 // IsAwaitedSource reports whether BranchPropertySourceSum is AwaitedSource.
 func (s BranchPropertySourceSum) IsAwaitedSource() bool {
 	return s.Type == AwaitedSourceBranchPropertySourceSum
+}
+
+// IsHttpSource reports whether BranchPropertySourceSum is HttpSource.
+func (s BranchPropertySourceSum) IsHttpSource() bool {
+	return s.Type == HttpSourceBranchPropertySourceSum
 }
 
 // SetTriggerSource sets BranchPropertySourceSum to TriggerSource.
@@ -5995,6 +6030,27 @@ func (s BranchPropertySourceSum) GetAwaitedSource() (v AwaitedSource, ok bool) {
 func NewAwaitedSourceBranchPropertySourceSum(v AwaitedSource) BranchPropertySourceSum {
 	var s BranchPropertySourceSum
 	s.SetAwaitedSource(v)
+	return s
+}
+
+// SetHttpSource sets BranchPropertySourceSum to HttpSource.
+func (s *BranchPropertySourceSum) SetHttpSource(v HttpSource) {
+	s.Type = HttpSourceBranchPropertySourceSum
+	s.HttpSource = v
+}
+
+// GetHttpSource returns HttpSource and true boolean if BranchPropertySourceSum is HttpSource.
+func (s BranchPropertySourceSum) GetHttpSource() (v HttpSource, ok bool) {
+	if !s.IsHttpSource() {
+		return v, false
+	}
+	return s.HttpSource, true
+}
+
+// NewHttpSourceBranchPropertySourceSum returns new BranchPropertySourceSum from HttpSource.
+func NewHttpSourceBranchPropertySourceSum(v HttpSource) BranchPropertySourceSum {
+	var s BranchPropertySourceSum
+	s.SetHttpSource(v)
 	return s
 }
 
@@ -15678,6 +15734,9 @@ type EnrollmentResource struct {
 	// The Events its Wait for event Steps arrived on, by name (ADR 0136): kept while the Enrollment runs,
 	// and cleared when it ends, so empty once it ended.
 	Awaited []KeptEvent `json:"awaited"`
+	// The responses its HTTP steps received, by name (ADR 0161): kept while the Enrollment runs, and
+	// cleared when it ends, so empty once it ended.
+	HTTP []KeptResponse `json:"http"`
 	// When the Contact was enrolled.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -15747,6 +15806,11 @@ func (s *EnrollmentResource) GetFailure() OptEnrollmentFailure {
 // GetAwaited returns the value of Awaited.
 func (s *EnrollmentResource) GetAwaited() []KeptEvent {
 	return s.Awaited
+}
+
+// GetHTTP returns the value of HTTP.
+func (s *EnrollmentResource) GetHTTP() []KeptResponse {
+	return s.HTTP
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -15822,6 +15886,11 @@ func (s *EnrollmentResource) SetFailure(val OptEnrollmentFailure) {
 // SetAwaited sets the value of Awaited.
 func (s *EnrollmentResource) SetAwaited(val []KeptEvent) {
 	s.Awaited = val
+}
+
+// SetHTTP sets the value of HTTP.
+func (s *EnrollmentResource) SetHTTP(val []KeptResponse) {
+	s.HTTP = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.
@@ -17610,6 +17679,188 @@ func (s *HoldReason) UnmarshalText(data []byte) error {
 	}
 }
 
+// Why an HTTP step kept no body of a 2xx response (ADR 0161): it was not JSON (or held a NUL
+// character, which cannot be stored), it was JSON but not an object, or it weighed more than an
+// Event's properties may (32 KiB).
+// Ref: #/components/schemas/HttpBodyDropped
+type HttpBodyDropped string
+
+const (
+	HttpBodyDroppedNotJSON   HttpBodyDropped = "not_json"
+	HttpBodyDroppedNotObject HttpBodyDropped = "not_object"
+	HttpBodyDroppedTooLarge  HttpBodyDropped = "too_large"
+)
+
+// AllValues returns all HttpBodyDropped values.
+func (HttpBodyDropped) AllValues() []HttpBodyDropped {
+	return []HttpBodyDropped{
+		HttpBodyDroppedNotJSON,
+		HttpBodyDroppedNotObject,
+		HttpBodyDroppedTooLarge,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s HttpBodyDropped) MarshalText() ([]byte, error) {
+	switch s {
+	case HttpBodyDroppedNotJSON:
+		return []byte(s), nil
+	case HttpBodyDroppedNotObject:
+		return []byte(s), nil
+	case HttpBodyDroppedTooLarge:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *HttpBodyDropped) UnmarshalText(data []byte) error {
+	switch HttpBodyDropped(data) {
+	case HttpBodyDroppedNotJSON:
+		*s = HttpBodyDroppedNotJSON
+		return nil
+	case HttpBodyDroppedNotObject:
+		*s = HttpBodyDroppedNotObject
+		return nil
+	case HttpBodyDroppedTooLarge:
+		*s = HttpBodyDroppedTooLarge
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// The JSON object an HTTP step of the Automation answered with, kept by the Enrollment under the HTTP
+// step's name (ADR 0161), whose keys a property test reads. The HTTP step must be one that can come
+// before the Branch holding the test. Where the Enrollment keeps no body of it (the path never passed
+// it, or its body was not a JSON object it could keep), the test fails.
+// Ref: #/components/schemas/HttpSource
+type HttpSource struct {
+	Kind HttpSourceKind `json:"kind"`
+	// The HTTP step's name.
+	Name StepName `json:"name"`
+}
+
+// GetKind returns the value of Kind.
+func (s *HttpSource) GetKind() HttpSourceKind {
+	return s.Kind
+}
+
+// GetName returns the value of Name.
+func (s *HttpSource) GetName() StepName {
+	return s.Name
+}
+
+// SetKind sets the value of Kind.
+func (s *HttpSource) SetKind(val HttpSourceKind) {
+	s.Kind = val
+}
+
+// SetName sets the value of Name.
+func (s *HttpSource) SetName(val StepName) {
+	s.Name = val
+}
+
+// The JSON object an HTTP step of the Automation answered with, kept by the Enrollment under the HTTP
+// step's name (ADR 0161), whose keys a property test reads. The HTTP step must be one that can come
+// before the Branch holding the test. Where the Enrollment keeps no body of it (the path never passed
+// it, or its body was not a JSON object it could keep), the test fails.
+// Ref: #/components/schemas/HttpSourceInput
+type HttpSourceInput struct {
+	Kind HttpSourceInputKind `json:"kind"`
+	// The HTTP step's name.
+	Name StepName `json:"name"`
+}
+
+// GetKind returns the value of Kind.
+func (s *HttpSourceInput) GetKind() HttpSourceInputKind {
+	return s.Kind
+}
+
+// GetName returns the value of Name.
+func (s *HttpSourceInput) GetName() StepName {
+	return s.Name
+}
+
+// SetKind sets the value of Kind.
+func (s *HttpSourceInput) SetKind(val HttpSourceInputKind) {
+	s.Kind = val
+}
+
+// SetName sets the value of Name.
+func (s *HttpSourceInput) SetName(val StepName) {
+	s.Name = val
+}
+
+type HttpSourceInputKind string
+
+const (
+	HttpSourceInputKindHTTP HttpSourceInputKind = "http"
+)
+
+// AllValues returns all HttpSourceInputKind values.
+func (HttpSourceInputKind) AllValues() []HttpSourceInputKind {
+	return []HttpSourceInputKind{
+		HttpSourceInputKindHTTP,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s HttpSourceInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case HttpSourceInputKindHTTP:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *HttpSourceInputKind) UnmarshalText(data []byte) error {
+	switch HttpSourceInputKind(data) {
+	case HttpSourceInputKindHTTP:
+		*s = HttpSourceInputKindHTTP
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type HttpSourceKind string
+
+const (
+	HttpSourceKindHTTP HttpSourceKind = "http"
+)
+
+// AllValues returns all HttpSourceKind values.
+func (HttpSourceKind) AllValues() []HttpSourceKind {
+	return []HttpSourceKind{
+		HttpSourceKindHTTP,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s HttpSourceKind) MarshalText() ([]byte, error) {
+	switch s {
+	case HttpSourceKindHTTP:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *HttpSourceKind) UnmarshalText(data []byte) error {
+	switch HttpSourceKind(data) {
+	case HttpSourceKindHTTP:
+		*s = HttpSourceKindHTTP
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // A Step that POSTs a JSON body to a hook URL (ADR 0039). Its URL, header values and signing secret
 // are secrets: never returned.
 // Ref: #/components/schemas/HttpStep
@@ -17617,6 +17868,9 @@ type HttpStep struct {
 	// The Step's id: send it back on edit so the Step keeps its secrets.
 	ID   StepId       `json:"id"`
 	Type HttpStepType `json:"type"`
+	// The Step's name, fixed when it is created: later Steps read the response it kept as `http.<name>`
+	// (ADR 0161).
+	Name StepName `json:"name"`
 	// The Liquid JSON request body, bound as an email Step's body is.
 	Body string `json:"body"`
 	// The request headers, by name only.
@@ -17633,6 +17887,11 @@ func (s *HttpStep) GetID() StepId {
 // GetType returns the value of Type.
 func (s *HttpStep) GetType() HttpStepType {
 	return s.Type
+}
+
+// GetName returns the value of Name.
+func (s *HttpStep) GetName() StepName {
+	return s.Name
 }
 
 // GetBody returns the value of Body.
@@ -17660,6 +17919,11 @@ func (s *HttpStep) SetType(val HttpStepType) {
 	s.Type = val
 }
 
+// SetName sets the value of Name.
+func (s *HttpStep) SetName(val StepName) {
+	s.Name = val
+}
+
 // SetBody sets the value of Body.
 func (s *HttpStep) SetBody(val string) {
 	s.Body = val
@@ -17683,6 +17947,10 @@ type HttpStepInput struct {
 	// secrets.
 	ID   OptStepId         `json:"id"`
 	Type HttpStepInputType `json:"type"`
+	// The Step's name, fixed when it is created: later Steps read the response it kept as `http.<name>`
+	// (ADR 0161). A save that renames the Step, or gives it a name another HTTP step or Wait for event of
+	// the Automation holds, in any version, is refused, naming the Step.
+	Name StepName `json:"name"`
 	// The Liquid JSON request body: strings JSON-escaped, up to 64 KiB, must render to valid JSON, also
 	// with every tag empty.
 	Body string `json:"body"`
@@ -17705,6 +17973,11 @@ func (s *HttpStepInput) GetID() OptStepId {
 // GetType returns the value of Type.
 func (s *HttpStepInput) GetType() HttpStepInputType {
 	return s.Type
+}
+
+// GetName returns the value of Name.
+func (s *HttpStepInput) GetName() StepName {
+	return s.Name
 }
 
 // GetBody returns the value of Body.
@@ -17740,6 +18013,11 @@ func (s *HttpStepInput) SetID(val OptStepId) {
 // SetType sets the value of Type.
 func (s *HttpStepInput) SetType(val HttpStepInputType) {
 	s.Type = val
+}
+
+// SetName sets the value of Name.
+func (s *HttpStepInput) SetName(val StepName) {
+	s.Name = val
 }
 
 // SetBody sets the value of Body.
@@ -18457,6 +18735,60 @@ func (s *KeptEvent) SetAction(val string) {
 // SetProperties sets the value of Properties.
 func (s *KeptEvent) SetProperties(val JsonObject) {
 	s.Properties = val
+}
+
+// The response an Enrollment keeps of one of its HTTP steps (ADR 0161), which later Steps read as
+// `http.<name>`: its status and, when it was a JSON object it could keep, its body.
+// Ref: #/components/schemas/KeptResponse
+type KeptResponse struct {
+	// The name of the HTTP step that received it.
+	Name string `json:"name"`
+	// The response's status code, a 2xx.
+	Status int32 `json:"status"`
+	// The JSON object the response carried; absent when it was dropped.
+	Body OptJsonObject `json:"body"`
+	// Why the body was dropped; absent when it was kept.
+	Dropped OptHttpBodyDropped `json:"dropped"`
+}
+
+// GetName returns the value of Name.
+func (s *KeptResponse) GetName() string {
+	return s.Name
+}
+
+// GetStatus returns the value of Status.
+func (s *KeptResponse) GetStatus() int32 {
+	return s.Status
+}
+
+// GetBody returns the value of Body.
+func (s *KeptResponse) GetBody() OptJsonObject {
+	return s.Body
+}
+
+// GetDropped returns the value of Dropped.
+func (s *KeptResponse) GetDropped() OptHttpBodyDropped {
+	return s.Dropped
+}
+
+// SetName sets the value of Name.
+func (s *KeptResponse) SetName(val string) {
+	s.Name = val
+}
+
+// SetStatus sets the value of Status.
+func (s *KeptResponse) SetStatus(val int32) {
+	s.Status = val
+}
+
+// SetBody sets the value of Body.
+func (s *KeptResponse) SetBody(val OptJsonObject) {
+	s.Body = val
+}
+
+// SetDropped sets the value of Dropped.
+func (s *KeptResponse) SetDropped(val OptHttpBodyDropped) {
+	s.Dropped = val
 }
 
 type LegalDocumentLabel string
@@ -21441,6 +21773,52 @@ func (o OptEventTriggerInputEntryPolicy) Get() (v EventTriggerInputEntryPolicy, 
 
 // Or returns value if set, or given parameter if does not.
 func (o OptEventTriggerInputEntryPolicy) Or(d EventTriggerInputEntryPolicy) EventTriggerInputEntryPolicy {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptHttpBodyDropped returns new OptHttpBodyDropped with value set to v.
+func NewOptHttpBodyDropped(v HttpBodyDropped) OptHttpBodyDropped {
+	return OptHttpBodyDropped{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptHttpBodyDropped is optional HttpBodyDropped.
+type OptHttpBodyDropped struct {
+	Value HttpBodyDropped
+	Set   bool
+}
+
+// IsSet returns true if OptHttpBodyDropped was set.
+func (o OptHttpBodyDropped) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptHttpBodyDropped) Reset() {
+	var v HttpBodyDropped
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptHttpBodyDropped) SetTo(v HttpBodyDropped) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptHttpBodyDropped) Get() (v HttpBodyDropped, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptHttpBodyDropped) Or(d HttpBodyDropped) HttpBodyDropped {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -47231,6 +47609,8 @@ func (s *StepMessageLeafKind) UnmarshalText(data []byte) error {
 	}
 }
 
+type StepName string
+
 // A Channel a destination can be suppressed on.
 // Ref: #/components/schemas/SuppressionChannel
 type SuppressionChannel string
@@ -50834,8 +51214,6 @@ func NewWaitForEventPropertyLeafWaitForEventConditionNodeSum(v WaitForEventPrope
 	return s
 }
 
-type WaitForEventName string
-
 // A test of one property of an Event: whose it is in `of`, its key in a field of its own, so a key
 // holding a dot is one key.
 // Ref: #/components/schemas/WaitForEventPropertyLeaf
@@ -51198,7 +51576,7 @@ type WaitForEventStep struct {
 	ID   StepId               `json:"id"`
 	Type WaitForEventStepType `json:"type"`
 	// The Step's name, fixed when it is created.
-	Name WaitForEventName `json:"name"`
+	Name StepName `json:"name"`
 	// How long the Step waits, in seconds from the moment the Enrollment reaches it.
 	TimeoutSeconds int32 `json:"timeoutSeconds"`
 	// What the Step waits for.
@@ -51223,7 +51601,7 @@ func (s *WaitForEventStep) GetType() WaitForEventStepType {
 }
 
 // GetName returns the value of Name.
-func (s *WaitForEventStep) GetName() WaitForEventName {
+func (s *WaitForEventStep) GetName() StepName {
 	return s.Name
 }
 
@@ -51263,7 +51641,7 @@ func (s *WaitForEventStep) SetType(val WaitForEventStepType) {
 }
 
 // SetName sets the value of Name.
-func (s *WaitForEventStep) SetName(val WaitForEventName) {
+func (s *WaitForEventStep) SetName(val StepName) {
 	s.Name = val
 }
 
@@ -51302,7 +51680,7 @@ type WaitForEventStepInput struct {
 	Type WaitForEventStepInputType `json:"type"`
 	// The Step's name, fixed when it is created: a save that renames the Step, or gives two Wait for event
 	// Steps of the Automation the same name, is refused, naming the Step.
-	Name WaitForEventName `json:"name"`
+	Name StepName `json:"name"`
 	// How long the Step waits, in seconds, as a wait's delay is: at least one.
 	TimeoutSeconds int32 `json:"timeoutSeconds"`
 	// What the Step waits for.
@@ -51328,7 +51706,7 @@ func (s *WaitForEventStepInput) GetType() WaitForEventStepInputType {
 }
 
 // GetName returns the value of Name.
-func (s *WaitForEventStepInput) GetName() WaitForEventName {
+func (s *WaitForEventStepInput) GetName() StepName {
 	return s.Name
 }
 
@@ -51368,7 +51746,7 @@ func (s *WaitForEventStepInput) SetType(val WaitForEventStepInputType) {
 }
 
 // SetName sets the value of Name.
-func (s *WaitForEventStepInput) SetName(val WaitForEventName) {
+func (s *WaitForEventStepInput) SetName(val StepName) {
 	s.Name = val
 }
 

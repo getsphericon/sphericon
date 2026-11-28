@@ -1165,6 +1165,17 @@ export const zHoldReason = z.enum([
 ]);
 
 /**
+ * Why an HTTP step kept no body of a 2xx response (ADR 0161): it was not JSON (or held a NUL
+ * character, which cannot be stored), it was JSON but not an object, or it weighed more than an
+ * Event's properties may (32 KiB).
+ */
+export const zHttpBodyDropped = z.enum([
+  'not_json',
+  'not_object',
+  'too_large'
+]);
+
+/**
  * The https URL of an image
  */
 export const zImageUrl = z.string().max(2048).regex(/^https:\/\/\S+$/);
@@ -1224,6 +1235,17 @@ export const zKeptEvent = z.object({
   name: z.string(),
   action: z.string(),
   properties: zJsonObject
+});
+
+/**
+ * The response an Enrollment keeps of one of its HTTP steps (ADR 0161), which later Steps read as
+ * `http.<name>`: its status and, when it was a JSON object it could keep, its body.
+ */
+export const zKeptResponse = z.object({
+  name: z.string(),
+  status: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  body: zJsonObject.exactOptional(),
+  dropped: zHttpBodyDropped.exactOptional()
 });
 
 /**
@@ -3687,30 +3709,6 @@ export const zEndStepInput = z.strictObject({
 });
 
 /**
- * A Step that POSTs a JSON body to a hook URL (ADR 0039). Its URL, header values and signing secret are secrets: never returned.
- */
-export const zHttpStep = z.object({
-  id: zStepId,
-  type: z.enum(['http']),
-  body: z.string(),
-  headers: z.array(zAutomationHttpHeader),
-  hasSecret: z.boolean()
-});
-
-/**
- * A Step that POSTs a JSON body to a hook URL, as a request writes it. A secret omitted keeps the stored value of the Step with the same id.
- */
-export const zHttpStepInput = z.strictObject({
-  id: zStepId.exactOptional(),
-  type: z.enum(['http']),
-  body: z.string(),
-  url: z.string().exactOptional(),
-  headers: z.array(zAutomationHttpHeaderInput).max(5).exactOptional(),
-  secret: zSigningSecret.exactOptional(),
-  clearSecret: z.boolean().exactOptional()
-});
-
-/**
  * A Step that removes a Tag from the enrolled Contact
  */
 export const zRemoveTagStep = z.object({
@@ -3778,6 +3776,84 @@ export const zStepMessageLeafInput = z.strictObject({
   kind: z.enum(['stepMessage']),
   step: zStepId,
   engagement: zMessageEngagement
+});
+
+/**
+ * The name of a Wait for event (ADR 0136) or an HTTP step (ADR 0161), which later Steps read what
+ * it kept by, as `awaited.<name>` or `http.<name>`: lower-case letters, digits and underscores,
+ * starting with a letter. It belongs to one Step id across every version of its Automation, and no
+ * other Wait for event or HTTP step there holds it.
+ */
+export const zStepName = z.string().max(64).regex(/^[a-z][a-z0-9_]*$/);
+
+/**
+ * The Event a Wait for event of the Automation arrived on, kept by the Enrollment under the Wait
+ * for event's name (ADR 0136), whose properties a property test reads. The Wait for event must be
+ * one that can come before the Step holding the test. Where the Enrollment keeps no copy of it
+ * (the Wait for event timed out, or its path never passed it), the test fails.
+ */
+export const zAwaitedSource = z.object({
+  kind: z.enum(['awaited']),
+  name: zStepName
+});
+
+/**
+ * The Event a Wait for event of the Automation arrived on, kept by the Enrollment under the Wait
+ * for event's name (ADR 0136), whose properties a property test reads. The Wait for event must be
+ * one that can come before the Step holding the test. Where the Enrollment keeps no copy of it
+ * (the Wait for event timed out, or its path never passed it), the test fails.
+ */
+export const zAwaitedSourceInput = z.strictObject({
+  kind: z.enum(['awaited']),
+  name: zStepName
+});
+
+/**
+ * The JSON object an HTTP step of the Automation answered with, kept by the Enrollment under the
+ * HTTP step's name (ADR 0161), whose keys a property test reads. The HTTP step must be one that can
+ * come before the Branch holding the test. Where the Enrollment keeps no body of it (the path never
+ * passed it, or its body was not a JSON object it could keep), the test fails.
+ */
+export const zHttpSource = z.object({
+  kind: z.enum(['http']),
+  name: zStepName
+});
+
+/**
+ * The JSON object an HTTP step of the Automation answered with, kept by the Enrollment under the
+ * HTTP step's name (ADR 0161), whose keys a property test reads. The HTTP step must be one that can
+ * come before the Branch holding the test. Where the Enrollment keeps no body of it (the path never
+ * passed it, or its body was not a JSON object it could keep), the test fails.
+ */
+export const zHttpSourceInput = z.strictObject({
+  kind: z.enum(['http']),
+  name: zStepName
+});
+
+/**
+ * A Step that POSTs a JSON body to a hook URL (ADR 0039). Its URL, header values and signing secret are secrets: never returned.
+ */
+export const zHttpStep = z.object({
+  id: zStepId,
+  type: z.enum(['http']),
+  name: zStepName,
+  body: z.string(),
+  headers: z.array(zAutomationHttpHeader),
+  hasSecret: z.boolean()
+});
+
+/**
+ * A Step that POSTs a JSON body to a hook URL, as a request writes it. A secret omitted keeps the stored value of the Step with the same id.
+ */
+export const zHttpStepInput = z.strictObject({
+  id: zStepId.exactOptional(),
+  type: z.enum(['http']),
+  name: zStepName,
+  body: z.string(),
+  url: z.string().exactOptional(),
+  headers: z.array(zAutomationHttpHeaderInput).max(5).exactOptional(),
+  secret: zSigningSecret.exactOptional(),
+  clearSecret: z.boolean().exactOptional()
 });
 
 /**
@@ -5207,6 +5283,28 @@ export const zTriggerSource = z.object({
 });
 
 /**
+ * Whose properties a Branch path's property test reads, by `kind`: the Event the Enrollment
+ * began with, the one an earlier Wait for event arrived on, or the body an earlier HTTP step
+ * answered with
+ */
+export const zBranchPropertySource = z.discriminatedUnion('kind', [
+  zTriggerSource.extend({ kind: z.literal('trigger') }),
+  zAwaitedSource.extend({ kind: z.literal('awaited') }),
+  zHttpSource.extend({ kind: z.literal('http') })
+]);
+
+/**
+ * A test of one property of an Event: whose it is in `of`, its key in a field of its own, so a
+ * key holding a dot is one key
+ */
+export const zBranchPropertyLeaf = z.object({
+  kind: z.enum(['property']),
+  of: zBranchPropertySource,
+  key: z.string(),
+  test: zPropertyTest
+});
+
+/**
  * Whose properties a Rule's property test reads, by `kind`: the triggering Event
  */
 export const zRulePropertySource = zTriggerSource;
@@ -5227,6 +5325,28 @@ export const zRulePropertyLeaf = z.object({
  */
 export const zTriggerSourceInput = z.strictObject({
   kind: z.enum(['trigger'])
+});
+
+/**
+ * Whose properties a Branch path's property test reads, by `kind`: the Event the Enrollment
+ * began with, the one an earlier Wait for event arrived on, or the body an earlier HTTP step
+ * answered with
+ */
+export const zBranchPropertySourceInput = z.discriminatedUnion('kind', [
+  zTriggerSourceInput.extend({ kind: z.literal('trigger') }),
+  zAwaitedSourceInput.extend({ kind: z.literal('awaited') }),
+  zHttpSourceInput.extend({ kind: z.literal('http') })
+]);
+
+/**
+ * A test of one property of an Event: whose it is in `of`, its key in a field of its own, so a
+ * key holding a dot is one key
+ */
+export const zBranchPropertyLeafInput = z.strictObject({
+  kind: z.enum(['property']),
+  of: zBranchPropertySourceInput,
+  key: z.string(),
+  test: zPropertyTestInput
 });
 
 /**
@@ -5468,74 +5588,6 @@ export const zSiteUpdateMeInput = z.strictObject({
   regionalFormat: zRegionalFormat.nullable().exactOptional(),
   currentPassword: z.string().exactOptional(),
   newPassword: z.string().exactOptional()
-});
-
-/**
- * The name of a Wait for event (ADR 0136): lower-case letters, digits and underscores, starting
- * with a letter. It belongs to one Step id across every version of its Automation.
- */
-export const zWaitForEventName = z.string().max(64).regex(/^[a-z][a-z0-9_]*$/);
-
-/**
- * The Event a Wait for event of the Automation arrived on, kept by the Enrollment under the Wait
- * for event's name (ADR 0136), whose properties a property test reads. The Wait for event must be
- * one that can come before the Step holding the test. Where the Enrollment keeps no copy of it
- * (the Wait for event timed out, or its path never passed it), the test fails.
- */
-export const zAwaitedSource = z.object({
-  kind: z.enum(['awaited']),
-  name: zWaitForEventName
-});
-
-/**
- * The Event a Wait for event of the Automation arrived on, kept by the Enrollment under the Wait
- * for event's name (ADR 0136), whose properties a property test reads. The Wait for event must be
- * one that can come before the Step holding the test. Where the Enrollment keeps no copy of it
- * (the Wait for event timed out, or its path never passed it), the test fails.
- */
-export const zAwaitedSourceInput = z.strictObject({
-  kind: z.enum(['awaited']),
-  name: zWaitForEventName
-});
-
-/**
- * Whose properties a Branch path's property test reads, by `kind`: the Event the Enrollment
- * began with, or the one an earlier Wait for event arrived on
- */
-export const zBranchPropertySource = z.discriminatedUnion('kind', [
-  zTriggerSource.extend({ kind: z.literal('trigger') }),
-  zAwaitedSource.extend({ kind: z.literal('awaited') })
-]);
-
-/**
- * A test of one property of an Event: whose it is in `of`, its key in a field of its own, so a
- * key holding a dot is one key
- */
-export const zBranchPropertyLeaf = z.object({
-  kind: z.enum(['property']),
-  of: zBranchPropertySource,
-  key: z.string(),
-  test: zPropertyTest
-});
-
-/**
- * Whose properties a Branch path's property test reads, by `kind`: the Event the Enrollment
- * began with, or the one an earlier Wait for event arrived on
- */
-export const zBranchPropertySourceInput = z.discriminatedUnion('kind', [
-  zTriggerSourceInput.extend({ kind: z.literal('trigger') }),
-  zAwaitedSourceInput.extend({ kind: z.literal('awaited') })
-]);
-
-/**
- * A test of one property of an Event: whose it is in `of`, its key in a field of its own, so a
- * key holding a dot is one key
- */
-export const zBranchPropertyLeafInput = z.strictObject({
-  kind: z.enum(['property']),
-  of: zBranchPropertySourceInput,
-  key: z.string(),
-  test: zPropertyTestInput
 });
 
 /**
@@ -6052,6 +6104,7 @@ export const zEnrollmentResource = z.object({
   deferralCause: zDeferralCause.exactOptional(),
   failure: zEnrollmentFailure.exactOptional(),
   awaited: z.array(zKeptEvent),
+  http: z.array(zKeptResponse),
   createdAt: zTimestamp,
   updatedAt: zTimestamp
 });
@@ -7030,7 +7083,7 @@ export const zWaitForEventConditionNodeInput = z.discriminatedUnion('kind', [
 export const zWaitForEventStep = z.object({
   id: zStepId,
   type: z.enum(['wait_for_event']),
-  name: zWaitForEventName,
+  name: zStepName,
   timeoutSeconds: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   awaits: zWaitForEventAwaits,
   arrived: zAutomationPath,
@@ -7044,7 +7097,7 @@ export const zWaitForEventStep = z.object({
 export const zWaitForEventStepInput = z.strictObject({
   id: zStepId.exactOptional(),
   type: z.enum(['wait_for_event']),
-  name: zWaitForEventName,
+  name: zStepName,
   timeoutSeconds: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   awaits: zWaitForEventAwaitsInput,
   arrived: zAutomationPathInput,

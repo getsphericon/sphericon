@@ -2,6 +2,7 @@ package automations_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"maps"
 	"slices"
 	"strings"
@@ -32,7 +33,7 @@ func openStored(cipher *secrets.Cipher, p automationstep.Payload) (httpcall.Open
 }
 
 func httpStep(url string) automationstep.HTTP {
-	return automationstep.HTTP{URL: url, Body: slackBody}
+	return automationstep.HTTP{Name: "notify", URL: url, Body: slackBody}
 }
 
 // Fixtures: Babel's Contact with quotes in both names, the last one an attempt to add a key.
@@ -95,7 +96,9 @@ func TestSavingRefusesAnHTTPStepThatCannotBeSent(t *testing.T) {
 	noURL := httpStep("")
 	tooMany := make([]automationstep.Payload, 11)
 	for i := range tooMany {
-		tooMany[i] = httpStep("https://hooks.example.com/x")
+		call := httpStep("https://hooks.example.com/x")
+		call.Name = fmt.Sprintf("notify_%d", i)
+		tooMany[i] = call
 	}
 	six := httpStep("https://hooks.example.com/x")
 	six.Headers = headers(6)
@@ -123,7 +126,9 @@ func TestSavingRefusesAnHTTPStepThatCannotBeSent(t *testing.T) {
 	five.Headers = headers(5)
 	ten := make([]automationstep.Payload, 10)
 	for i := range ten {
-		ten[i] = httpStep("https://hooks.example.com/x")
+		call := httpStep("https://hooks.example.com/x")
+		call.Name = fmt.Sprintf("notify_%d", i)
+		ten[i] = call
 	}
 	for name, kept := range map[string][]automationstep.Payload{"five headers": {five}, "ten steps": ten} {
 		_, err := m.Create(ctx, acme, automations.CreateInput{Name: name, Trigger: automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: "signup"}}, Steps: steps(kept...)})
@@ -173,6 +178,7 @@ func TestStoredHTTPStepHoldsNoPlaintextAndAnEditKeepsTheSecrets(t *testing.T) {
 
 	// An edit that resends only the id, with a new body, keeps URL, headers and secret.
 	edit := automationstep.Step{ID: id, Payload: automationstep.HTTP{
+		Name: "notify",
 		Body: `{"edited":true}`, Headers: []httpheader.Header{{Name: "Authorization"}},
 	}}
 	updated, err := m.Update(ctx, acme, created.ID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, created.ID), Steps: new(automationstep.Root(edit))})
@@ -191,7 +197,8 @@ func TestStoredHTTPStepHoldsNoPlaintextAndAnEditKeepsTheSecrets(t *testing.T) {
 
 	// A new URL, header and a cleared secret replace what was stored.
 	replace := automationstep.Step{ID: id, Payload: automationstep.HTTP{
-		URL: "https://hooks.zapier.com/a", Body: slackBody, Headers: []httpheader.Header{{Name: "X-Key", Value: "k"}}, ClearSecret: true,
+		Name: "notify",
+		URL:  "https://hooks.zapier.com/a", Body: slackBody, Headers: []httpheader.Header{{Name: "X-Key", Value: "k"}}, ClearSecret: true,
 	}}
 	updated, err = m.Update(ctx, acme, created.ID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, created.ID), Steps: new(automationstep.Root(replace))})
 	require.NoError(t, err)
@@ -202,7 +209,7 @@ func TestStoredHTTPStepHoldsNoPlaintextAndAnEditKeepsTheSecrets(t *testing.T) {
 	assert.Empty(t, opened.Secret)
 
 	// A header with no stored value to keep is refused.
-	bad := automationstep.Step{ID: id, Payload: automationstep.HTTP{Body: slackBody, Headers: []httpheader.Header{{Name: "Nope"}}}}
+	bad := automationstep.Step{ID: id, Payload: automationstep.HTTP{Name: "notify", Body: slackBody, Headers: []httpheader.Header{{Name: "Nope"}}}}
 	_, err = m.Update(ctx, acme, created.ID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, created.ID), Steps: new(automationstep.Root(bad))})
 	assert.ErrorIs(t, err, automations.ErrInvalidStep)
 }
@@ -217,7 +224,7 @@ func TestAnHTTPStepWithAnUnknownIDKeepsNoStoredSecret(t *testing.T) {
 	created, err := m.Create(ctx, acme, automations.CreateInput{Name: "Notify", Trigger: automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: "signup"}}, Steps: steps(httpStep("https://hooks.example.com/x"))})
 	require.NoError(t, err)
 
-	other := automationstep.Step{ID: automationstep.NewID(), Payload: automationstep.HTTP{Body: slackBody}}
+	other := automationstep.Step{ID: automationstep.NewID(), Payload: automationstep.HTTP{Name: "notify", Body: slackBody}}
 	_, err = m.Update(ctx, acme, created.ID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, created.ID), Steps: new(automationstep.Root(other))})
 
 	require.ErrorIs(t, err, automations.ErrInvalidStep)

@@ -138,12 +138,20 @@ function SmsForm({ step, onEdit, validatorRef, bound }: StepFormProps<'sms'>) {
 // An HTTP step's headers are rows, as a Rule's http Action edits them, and its body has a dry run
 // and the merge tags it binds, inserted at the caret. Only the names of saved headers come back from
 // the server, so a stored step keeps a header whose value is left empty, and its URL and secret when
-// they are.
-export function HttpForm({ step, onEdit, validatorRef, bound }: StepFormProps<'http'>) {
+// they are. Its name, which later Steps read its response by, is fixed once it is saved (ADR 0161).
+export function HttpForm({
+  step,
+  onEdit,
+  validatorRef,
+  bound,
+  storedName,
+}: StepFormProps<'http'> & { storedName: string | undefined }) {
   const { t } = useTranslation()
   const form = useSchemaForm(stepSchemas.http, step.draft, (draft) => onEdit({ ...step, draft }))
   useValidator(form, validatorRef)
   const { values } = form
+  // A name typed while the first Save was pending is no stored one: it stays editable.
+  const locked = storedName !== undefined && values.name === storedName
   const body = useRef<HTMLTextAreaElement>(null)
   const insert = (tag: string) => {
     const at = body.current?.selectionStart ?? values.body.length
@@ -153,6 +161,14 @@ export function HttpForm({ step, onEdit, validatorRef, bound }: StepFormProps<'h
 
   return (
     <Stack>
+      <TextInput
+        label={t(($) => $.automations.httpNameLabel)}
+        description={
+          locked ? t(($) => $.automations.httpNameLocked) : t(($) => $.automations.httpNameHint)
+        }
+        disabled={locked}
+        {...form.getInputProps('name')}
+      />
       <TextInput
         label={t(($) => $.automations.httpUrlLabel)}
         placeholder={t(($) => $.automations.httpUrlHint)}
@@ -285,11 +301,14 @@ export function StepForm({
   checked,
   onChecked,
   bound,
+  storedName,
 }: {
   step: EditedStep
   onEdit: (step: EditedStep) => void
   validatorRef: StepValidator
   bound: BoundTags
+  // The name stored under the Step's id, fixed (an HTTP step's, ADR 0161); undefined for none.
+  storedName: string | undefined
 } & CheckedProps) {
   switch (step.kind) {
     case 'email':
@@ -299,7 +318,15 @@ export function StepForm({
     case 'sms':
       return <SmsForm step={step} onEdit={onEdit} validatorRef={validatorRef} bound={bound} />
     case 'http':
-      return <HttpForm step={step} onEdit={onEdit} validatorRef={validatorRef} bound={bound} />
+      return (
+        <HttpForm
+          step={step}
+          onEdit={onEdit}
+          validatorRef={validatorRef}
+          bound={bound}
+          storedName={storedName}
+        />
+      )
     case 'wait':
       return <WaitForm step={step} onEdit={onEdit} validatorRef={validatorRef} bound={bound} />
     case 'wait_until':

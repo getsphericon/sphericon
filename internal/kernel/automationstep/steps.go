@@ -191,13 +191,35 @@ func (p RemoveTag) TagName() string { return p.Tag }
 
 // HTTP calls a hook (ADR 0039) with a Liquid JSON Body. Stored, URL, header values and Secret are
 // ciphertext, sealed per field; in a step being saved, an empty one keeps the stored value of the
-// step with the same id, and ClearSecret drops the signing secret.
+// step with the same id, and ClearSecret drops the signing secret. Name is the key later Steps read
+// the response it kept by, `http.<name>` (ADR 0161): it belongs to one Step id for the Automation's
+// whole life, as a Wait for event's does.
 type HTTP struct {
+	Name        string              `json:"name"`
 	URL         string              `json:"url,omitempty"`
 	Headers     []httpheader.Header `json:"headers,omitempty"`
 	Body        string              `json:"body"`
 	Secret      string              `json:"secret,omitempty"`
 	ClearSecret bool                `json:"-"`
+}
+
+// BodyDropped is why an HTTP step kept no body of a 2xx response (ADR 0161), recorded on its Step
+// record: the call succeeded all the same, and `http.<name>` holds only the status.
+type BodyDropped string
+
+// The reasons an HTTP step keeps no body.
+const (
+	// BodyNotJSON: the body is no JSON document, or one PostgreSQL cannot store (a NUL character).
+	BodyNotJSON BodyDropped = "not_json"
+	// BodyNotObject: the body is JSON, but no object.
+	BodyNotObject BodyDropped = "not_object"
+	// BodyTooLarge: the body weighs more than an Event's properties may.
+	BodyTooLarge BodyDropped = "too_large"
+)
+
+// Values is every reason, as an ent enum column takes them.
+func (BodyDropped) Values() []string {
+	return []string{string(BodyNotJSON), string(BodyNotObject), string(BodyTooLarge)}
 }
 
 // End finishes its path and ends the Enrollment as completed at once (ADR 0124): a path stops early
@@ -361,7 +383,7 @@ func (p Wait) Stored() Payload      { return p }
 func (p ApplyTag) Stored() Payload  { return ApplyTag{Tag: strings.TrimSpace(p.Tag)} }
 func (p RemoveTag) Stored() Payload { return RemoveTag{Tag: strings.TrimSpace(p.Tag)} }
 func (p HTTP) Stored() Payload {
-	return HTTP{URL: p.URL, Headers: p.Headers, Body: p.Body, Secret: p.Secret}
+	return HTTP{Name: p.Name, URL: p.URL, Headers: p.Headers, Body: p.Body, Secret: p.Secret}
 }
 func (p End) Stored() Payload { return p }
 

@@ -89,7 +89,7 @@
   automation_id: 105
   trigger_action: http_demo
   version: 1
-  steps: '{"id":"f6fe4f32-9c43-584b-9848-fbb9d3f688d5","steps":[{"id":"01900000-0000-0000-0000-000000000001","type":"http","url":"{{ encrypt "https://hooks.slack.com/services/T000/B000/XXXX" }}","headers":[{"name":"Authorization","value":"{{ encrypt "Bearer slack-demo-token" }}"}],"body":"{\"text\": \"New signup: {{ "{{ first_name }} {{ last_name }}" }}\"}","secret":"{{ encrypt "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw" }}"}]}'
+  steps: '{"id":"f6fe4f32-9c43-584b-9848-fbb9d3f688d5","steps":[{"id":"01900000-0000-0000-0000-000000000001","type":"http","name":"notify","url":"{{ encrypt "https://hooks.slack.com/services/T000/B000/XXXX" }}","headers":[{"name":"Authorization","value":"{{ encrypt "Bearer slack-demo-token" }}"}],"body":"{\"text\": \"New signup: {{ "{{ first_name }} {{ last_name }}" }}\"}","secret":"{{ encrypt "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw" }}"}]}'
   workspace_id: 1
   created_at: '{{daysAgo 3}}'
   updated_at: '{{daysAgo 3}}'
@@ -188,7 +188,7 @@
   automation_id: 301
   trigger_action: initech_hook
   version: 1
-  steps: '{"id":"5d78ee8e-19ed-58f6-baf1-ead51fa45509","steps":[{"id":"01900000-0000-0000-0000-000000000002","type":"http","url":"{{ encrypt "https://hooks.initech.test/services/T000/B000/XXXX" }}","headers":[],"body":"{\"email\": \"{{ "{{ email }}" }}\"}","secret":"{{ encrypt "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw" }}"}]}'
+  steps: '{"id":"5d78ee8e-19ed-58f6-baf1-ead51fa45509","steps":[{"id":"01900000-0000-0000-0000-000000000002","type":"http","name":"notify","url":"{{ encrypt "https://hooks.initech.test/services/T000/B000/XXXX" }}","headers":[],"body":"{\"email\": \"{{ "{{ email }}" }}\"}","secret":"{{ encrypt "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw" }}"}]}'
   workspace_id: 3
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
@@ -423,7 +423,7 @@
   automation_id: 5580
   trigger_action: http_execution
   version: 1
-  steps: '{"id":"c66b2a87-7977-5684-b108-0d3d4a14613a","steps":[{"id":"01900000-0000-0000-0000-000000000001","type":"http","url":"{{ encrypt "https://hooks.example.com/notify" }}","body":"{}"}]}'
+  steps: '{"id":"c66b2a87-7977-5684-b108-0d3d4a14613a","steps":[{"id":"01900000-0000-0000-0000-000000000001","type":"http","name":"notify","url":"{{ encrypt "https://hooks.example.com/notify" }}","body":"{}"}]}'
   workspace_id: 1
   created_at: '{{daysAgo 3}}'
   updated_at: '{{daysAgo 3}}'
@@ -432,7 +432,7 @@
   automation_id: 5581
   trigger_action: http_below_a_wait
   version: 1
-  steps: '{"id":"9d5f3a40-6c1e-4b8a-a7d2-3e0f5b9c1a24","steps":[{"id":"5e2b7c91-0d4a-4f63-8b15-c7a9e2d40f18","type":"wait","seconds":60},{"id":"01900000-0000-0000-0000-000000000001","type":"http","url":"{{ encrypt "https://hooks.example.com/notify" }}","body":"{}","secret":"{{ encrypt "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw" }}"}]}'
+  steps: '{"id":"9d5f3a40-6c1e-4b8a-a7d2-3e0f5b9c1a24","steps":[{"id":"5e2b7c91-0d4a-4f63-8b15-c7a9e2d40f18","type":"wait","seconds":60},{"id":"01900000-0000-0000-0000-000000000001","type":"http","name":"notify","url":"{{ encrypt "https://hooks.example.com/notify" }}","body":"{}","secret":"{{ encrypt "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw" }}"}]}'
   workspace_id: 1
   created_at: '{{daysAgo 3}}'
   updated_at: '{{daysAgo 3}}'
@@ -441,7 +441,7 @@
   automation_id: 7310
   trigger_action: sealed_draft
   version: 1
-  steps: '{"id":"4708af4f-e58f-5901-ba4c-ff441e25287a","steps":[{"id":"01900000-0000-0000-0000-000000000001","type":"http","url":"{{ encrypt "https://hooks.example.com/sealed" }}","body":"{\"v\":1}"}]}'
+  steps: '{"id":"4708af4f-e58f-5901-ba4c-ff441e25287a","steps":[{"id":"01900000-0000-0000-0000-000000000001","type":"http","name":"notify","url":"{{ encrypt "https://hooks.example.com/sealed" }}","body":"{\"v\":1}"}]}'
   workspace_id: 1
   created_at: '{{daysAgo 2}}'
   updated_at: '{{daysAgo 2}}'
@@ -688,7 +688,7 @@
   automation_id: 7403
   trigger_action: meridian_no_email
   version: 1
-  steps: '{"id":"cef668e9-38c9-5207-a8f7-988ae44afffa","steps":[{"id":"ebedb3d7-a2d0-5241-87db-03ec457a82ce","type":"http","body":"email"},{"id":"d0a30be6-aaec-5334-9f3c-de4ec861c903","type":"apply_tag","tag":"email"}]}'
+  steps: '{"id":"cef668e9-38c9-5207-a8f7-988ae44afffa","steps":[{"id":"ebedb3d7-a2d0-5241-87db-03ec457a82ce","type":"http","name":"notify","body":"email"},{"id":"d0a30be6-aaec-5334-9f3c-de4ec861c903","type":"apply_tag","tag":"email"}]}'
   workspace_id: 83
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
@@ -861,7 +861,7 @@
   automation_id: 7650
   trigger_action: quahog_hook_7650
   version: 1
-  steps: '{"id":"93193733-579f-5722-9ab7-e4d1bacd8f1a","steps":[{"id":"01900000-0000-0000-0000-000000000001","type":"http","url":"{{ encrypt "http://hooks.quahog.test/notify" }}","headers":[{"name":"Authorization","value":"{{ encrypt "Bearer slack-demo-token" }}"}],"body":"{\"email\":\"{{ "{{ email }}" }}\"}","secret":"{{ encrypt "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw" }}"},{"id":"050e1a8e-6605-5238-90d8-02ba37b97cd8","type":"apply_tag","tag":"notified"}]}'
+  steps: '{"id":"93193733-579f-5722-9ab7-e4d1bacd8f1a","steps":[{"id":"01900000-0000-0000-0000-000000000001","type":"http","name":"notify","url":"{{ encrypt "http://hooks.quahog.test/notify" }}","headers":[{"name":"Authorization","value":"{{ encrypt "Bearer slack-demo-token" }}"}],"body":"{\"email\":\"{{ "{{ email }}" }}\"}","secret":"{{ encrypt "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw" }}"},{"id":"050e1a8e-6605-5238-90d8-02ba37b97cd8","type":"apply_tag","tag":"notified"}]}'
   workspace_id: 92
   created_at: '{{daysAgo 3}}'
   updated_at: '{{daysAgo 3}}'
@@ -869,7 +869,7 @@
   automation_id: 7651
   trigger_action: quahog_hook_7651
   version: 1
-  steps: '{"id":"6be9e0a9-8d01-5217-81ab-39c4cbd9ff46","steps":[{"id":"01900000-0000-0000-0000-000000000001","type":"http","url":"{{ encrypt "http://hooks.quahog.test/notify" }}","headers":[{"name":"Authorization","value":"{{ encrypt "Bearer slack-demo-token" }}"}],"body":"{\"action\":\"{{ "{{ event.action }}" }}\",\"amount\":\"{{ "{{ event.properties.amount }}" }}\",\"plan\":\"{{ "{{ event.properties.plan }}" }}\",\"missing\":\"{{ "{{ event.properties.missing }}" }}\"}"},{"id":"e1bf54b4-30a5-5c49-880b-5f489102b7f1","type":"apply_tag","tag":"notified"}]}'
+  steps: '{"id":"6be9e0a9-8d01-5217-81ab-39c4cbd9ff46","steps":[{"id":"01900000-0000-0000-0000-000000000001","type":"http","name":"notify","url":"{{ encrypt "http://hooks.quahog.test/notify" }}","headers":[{"name":"Authorization","value":"{{ encrypt "Bearer slack-demo-token" }}"}],"body":"{\"action\":\"{{ "{{ event.action }}" }}\",\"amount\":\"{{ "{{ event.properties.amount }}" }}\",\"plan\":\"{{ "{{ event.properties.plan }}" }}\",\"missing\":\"{{ "{{ event.properties.missing }}" }}\"}"},{"id":"e1bf54b4-30a5-5c49-880b-5f489102b7f1","type":"apply_tag","tag":"notified"}]}'
   workspace_id: 92
   created_at: '{{daysAgo 3}}'
   updated_at: '{{daysAgo 3}}'
@@ -877,7 +877,7 @@
   automation_id: 7652
   trigger_action: quahog_hook_7652
   version: 1
-  steps: '{"id":"7d08bc60-0d2c-51d9-b01c-d28f8aa12f33","steps":[{"id":"01900000-0000-0000-0000-000000000001","type":"http","url":"{{ encrypt "http://hooks.quahog.test/notify" }}","headers":[{"name":"Authorization","value":"{{ encrypt "Bearer slack-demo-token" }}"}],"body":"{\"ok\":true}"},{"id":"a8072e5d-1a73-5f1c-867f-00d36f23f9b2","type":"apply_tag","tag":"notified"}]}'
+  steps: '{"id":"7d08bc60-0d2c-51d9-b01c-d28f8aa12f33","steps":[{"id":"01900000-0000-0000-0000-000000000001","type":"http","name":"notify","url":"{{ encrypt "http://hooks.quahog.test/notify" }}","headers":[{"name":"Authorization","value":"{{ encrypt "Bearer slack-demo-token" }}"}],"body":"{\"ok\":true}"},{"id":"a8072e5d-1a73-5f1c-867f-00d36f23f9b2","type":"apply_tag","tag":"notified"}]}'
   workspace_id: 92
   created_at: '{{daysAgo 3}}'
   updated_at: '{{daysAgo 3}}'
@@ -885,7 +885,7 @@
   automation_id: 7653
   trigger_action: quahog_hook_7653
   version: 1
-  steps: '{"id":"d9cf6e50-3e65-5948-93c4-7221fdad81ad","steps":[{"id":"01900000-0000-0000-0000-000000000001","type":"http","url":"{{ encrypt "http://hooks.quahog.test/notify" }}","headers":[{"name":"Authorization","value":"{{ encrypt "Bearer slack-demo-token" }}"}],"body":"{\"ok\":true}","secret":"{{ encrypt "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw" }}"},{"id":"a5977361-0951-5219-9335-44cdf83364b4","type":"apply_tag","tag":"notified"}]}'
+  steps: '{"id":"d9cf6e50-3e65-5948-93c4-7221fdad81ad","steps":[{"id":"01900000-0000-0000-0000-000000000001","type":"http","name":"notify","url":"{{ encrypt "http://hooks.quahog.test/notify" }}","headers":[{"name":"Authorization","value":"{{ encrypt "Bearer slack-demo-token" }}"}],"body":"{\"ok\":true}","secret":"{{ encrypt "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw" }}"},{"id":"a5977361-0951-5219-9335-44cdf83364b4","type":"apply_tag","tag":"notified"}]}'
   workspace_id: 92
   created_at: '{{daysAgo 3}}'
   updated_at: '{{daysAgo 3}}'
@@ -893,7 +893,7 @@
   automation_id: 7654
   trigger_action: quahog_hook_7654
   version: 1
-  steps: '{"id":"62149480-1db6-5d0e-b6d5-a98cddee6528","steps":[{"id":"01900000-0000-0000-0000-000000000001","type":"http","url":"{{ encrypt "http://hooks.quahog.test/notify" }}","headers":[{"name":"Authorization","value":"{{ encrypt "Bearer slack-demo-token" }}"}],"body":"{\"n\": {{ "{{ first_name | default: 1 }}" }}}","secret":"{{ encrypt "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw" }}"},{"id":"8fc263f2-31c6-581e-9517-005ee1615a6f","type":"apply_tag","tag":"notified"}]}'
+  steps: '{"id":"62149480-1db6-5d0e-b6d5-a98cddee6528","steps":[{"id":"01900000-0000-0000-0000-000000000001","type":"http","name":"notify","url":"{{ encrypt "http://hooks.quahog.test/notify" }}","headers":[{"name":"Authorization","value":"{{ encrypt "Bearer slack-demo-token" }}"}],"body":"{\"n\": {{ "{{ first_name | default: 1 }}" }}}","secret":"{{ encrypt "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw" }}"},{"id":"8fc263f2-31c6-581e-9517-005ee1615a6f","type":"apply_tag","tag":"notified"}]}'
   workspace_id: 92
   created_at: '{{daysAgo 3}}'
   updated_at: '{{daysAgo 3}}'

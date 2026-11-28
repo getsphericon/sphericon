@@ -5,8 +5,10 @@ import {
   zEditorDocument,
   zEmailStepInput,
   zSigningSecret,
+  zStepName,
   zTelegramButton,
 } from '../../generated/site/zod.gen.ts'
+import { i18n } from '../../i18n.ts'
 import type { EditedKind, StepDrafts } from './definition.ts'
 
 // The rules each Step's form checks, on blur and on Save (docs/standards/ui.md), over the draft
@@ -31,18 +33,28 @@ export const stepSchemas = {
   }),
   sms: z.object({ integrationId, text: z.string(), linkTracking: z.boolean() }),
   // A stored step keeps its URL when the field is left empty; a new one needs one. An empty secret
-  // keeps the stored one, or sets none.
+  // keeps the stored one, or sets none. Its name is the form later Steps read its response by.
   http: z
     .object({
       stored: z.boolean(),
+      name: z.string(),
       url: z.string(),
       headers: z.array(zAutomationHttpHeader),
       body: z.string(),
       secret: z.union([z.literal(''), zSigningSecret]),
     })
     .superRefine((draft, context) => {
+      // An empty input is a missing value: the zod error map (src/i18n.ts) says so.
+      if (draft.name === '') {
+        context.addIssue({ code: 'custom', path: ['name'], input: '' })
+      } else if (!zStepName.safeParse(draft.name).success) {
+        context.addIssue({
+          code: 'custom',
+          path: ['name'],
+          message: i18n.t(($) => $.automations.httpNameFormat),
+        })
+      }
       if (!draft.stored && draft.url.trim() === '') {
-        // An empty input is a missing value: the zod error map (src/i18n.ts) says so.
         context.addIssue({ code: 'custom', path: ['url'], input: '' })
       }
     }),

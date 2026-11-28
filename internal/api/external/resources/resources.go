@@ -258,8 +258,8 @@ func splitStepType(automationstep.Kind) externalapi.SplitStepType {
 func waitForEventStepType(automationstep.Kind) externalapi.WaitForEventStepType {
 	return externalapi.WaitForEventStepTypeWaitForEvent
 }
-func waitForEventName(name string) externalapi.WaitForEventName {
-	return externalapi.WaitForEventName(name)
+func stepName(name string) externalapi.StepName {
+	return externalapi.StepName(name)
 }
 
 // waitForEventAwaits is the arm of what a Wait for event waits for: a oneOf is beyond goverter, so
@@ -389,7 +389,7 @@ func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {
 // goverter:extend branchStepType
 // goverter:extend splitStepType
 // goverter:extend waitForEventStepType
-// goverter:extend waitForEventName
+// goverter:extend stepName
 // goverter:extend waitForEventAwaits
 // goverter:extend splitPathStepViews
 // goverter:extend pathStepViews
@@ -663,11 +663,19 @@ type Converter interface {
 	// goverter:map . Failure | enrollmentFailure
 	// goverter:map Occurrence | enrollmentOccurrence
 	// goverter:map . Awaited | enrollmentAwaited
+	// goverter:map . HTTP | enrollmentHTTP
 	EnrollmentToResource(source *ent.AutomationRun) externalapi.EnrollmentResource
 	// goverter:map Properties | awaitedProperties
 	KeptEventToResource(source automations.KeptEvent) externalapi.KeptEvent
 	// goverter:useEmptyOnNil:slice
 	KeptEventsToResources(source []automations.KeptEvent) []externalapi.KeptEvent
+	// goverter:map Body | keptBody
+	// goverter:map Dropped | keptDropped
+	KeptResponseToResource(source automations.KeptResponse) externalapi.KeptResponse
+	// goverter:useEmptyOnNil:slice
+	KeptResponsesToResources(source []automations.KeptResponse) []externalapi.KeptResponse
+	// goverter:enum:transform value
+	BodyDroppedToResource(source automationstep.BodyDropped) externalapi.HttpBodyDropped
 	// The store names the triggering Event's source id; the contract says whose it is.
 	// goverter:map SourceID EventSourceId
 	SkippedEntryToResource(source *ent.AutomationSkippedEntry) externalapi.SkippedEntryResource
@@ -1253,6 +1261,30 @@ func enrollmentAwaited(c Converter, r ent.AutomationRun) []externalapi.KeptEvent
 // awaitedProperties is a kept Event's properties, an empty object when it kept none.
 func awaitedProperties(m map[string]any) externalapi.JsonObject {
 	return convert.RawObject[externalapi.JsonObject](m)
+}
+
+// enrollmentHTTP is what the enrollment keeps of the responses its HTTP steps received (ADR 0161),
+// by name: empty unless it was read with them, and once it ended.
+func enrollmentHTTP(c Converter, r ent.AutomationRun) []externalapi.KeptResponse {
+	return c.KeptResponsesToResources(automations.KeptResponses(&r))
+}
+
+// keptBody is the JSON object a kept response carried, absent when its body was dropped; a kept
+// empty object is present and empty.
+func keptBody(m map[string]any) externalapi.OptJsonObject {
+	if m == nil {
+		return externalapi.OptJsonObject{}
+	}
+	body := convert.RawObject[externalapi.JsonObject](m)
+	if body == nil {
+		body = externalapi.JsonObject{}
+	}
+	return externalapi.NewOptJsonObject(body)
+}
+
+// keptDropped is why a kept response's body was dropped, absent when it was kept.
+func keptDropped(c Converter, d *automationstep.BodyDropped) externalapi.OptHttpBodyDropped {
+	return convert.OptVia[externalapi.OptHttpBodyDropped](d, c.BodyDroppedToResource)
 }
 
 // enrollmentFailure is the enrollment's failure detail; absent unless it failed.

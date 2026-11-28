@@ -53,6 +53,12 @@ const (
 	FieldAwaitedProperties = "awaited_properties"
 	// FieldDeclinedEventIds holds the string denoting the declined_event_ids field in the database.
 	FieldDeclinedEventIds = "declined_event_ids"
+	// FieldHTTPStatus holds the string denoting the http_status field in the database.
+	FieldHTTPStatus = "http_status"
+	// FieldHTTPBody holds the string denoting the http_body field in the database.
+	FieldHTTPBody = "http_body"
+	// FieldHTTPDropped holds the string denoting the http_dropped field in the database.
+	FieldHTTPDropped = "http_dropped"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
 	EdgeWorkspace = "workspace"
 	// EdgeRun holds the string denoting the run edge name in mutations.
@@ -96,6 +102,9 @@ var Columns = []string{
 	FieldAwaitedAction,
 	FieldAwaitedProperties,
 	FieldDeclinedEventIds,
+	FieldHTTPStatus,
+	FieldHTTPBody,
+	FieldHTTPDropped,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -158,6 +167,16 @@ func WentOnValidator(wo automationstep.WentOn) error {
 		return nil
 	default:
 		return fmt.Errorf("automationsteprecord: invalid enum value for went_on field: %q", wo)
+	}
+}
+
+// HTTPDroppedValidator is a validator for the "http_dropped" field enum values. It is called by the builders before save.
+func HTTPDroppedValidator(hd automationstep.BodyDropped) error {
+	switch hd {
+	case "not_json", "not_object", "too_large":
+		return nil
+	default:
+		return fmt.Errorf("automationsteprecord: invalid enum value for http_dropped field: %q", hd)
 	}
 }
 
@@ -242,6 +261,16 @@ func ByAwaitedEventID(opts ...sql.OrderTermOption) OrderOption {
 // ByAwaitedAction orders the results by the awaited_action field.
 func ByAwaitedAction(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldAwaitedAction, opts...).ToFunc()
+}
+
+// ByHTTPStatus orders the results by the http_status field.
+func ByHTTPStatus(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldHTTPStatus, opts...).ToFunc()
+}
+
+// ByHTTPDropped orders the results by the http_dropped field.
+func ByHTTPDropped(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldHTTPDropped, opts...).ToFunc()
 }
 
 // ByWorkspaceField orders the results by workspace field.
