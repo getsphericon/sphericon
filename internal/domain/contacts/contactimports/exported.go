@@ -20,10 +20,10 @@ import (
 // proposal maps by itself so that one Workspace's export imports into another as it is: a Custom
 // field's, and each Channel's state.
 
-// ExportedConsentWording is the consent wording a proposal gives once for the Confirmations an export
+// exportedConsentWording is the consent wording a proposal gives once for the Confirmations an export
 // carries: the export holds how each was confirmed, not what the person was shown. The Member may
 // change it.
-const ExportedConsentWording = "Consent given before this file was exported from another Workspace"
+const exportedConsentWording = "Consent given before this file was exported from another Workspace"
 
 // exportedRefusals are the opted-out scopes of an export that a refusal column records, by Channel:
 // `everything`, and `broadcasts` on email; an opt-out of one Automation (its scope
@@ -123,7 +123,7 @@ func (e exported) column(header string, at int, cells []string) (csvimport.Colum
 			Values:  lo.Map(provenances, func(p confirmation.Provenance, _ int) string { return string(p) }),
 			// The provenance is how the consent was collected, the closest an export holds to where.
 			Evidence: &csvimport.Evidence{
-				Wording: csvimport.EvidencePart{Text: ExportedConsentWording},
+				Wording: csvimport.EvidencePart{Text: exportedConsentWording},
 				Source:  csvimport.EvidencePart{Column: lo.ToPtr(at)},
 				Brand:   csvimport.EvidencePart{Text: e.brand},
 			},

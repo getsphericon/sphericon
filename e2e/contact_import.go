@@ -3,6 +3,8 @@
 package e2e
 
 import (
+	"io"
+	"path"
 	"strings"
 	"time"
 
@@ -29,6 +31,29 @@ func (w *Workspace) ImportCSVAsNewSignUps(file, tag string) *siteapi.SiteContact
 		m.Tag = siteapi.NewNilName(siteapi.Name(tag))
 		m.AsNewSignUps = true
 	})
+}
+
+// ImportCSVAsProposed imports a CSV file as ImportCSV does, saving the mapping the app proposes
+// from its header without changing anything, the Tag for every row included.
+func (w *Workspace) ImportCSVAsProposed(file string) *siteapi.SiteContactImport {
+	w.t.Helper()
+	return w.importCSV(file, func(*siteapi.ContactImportMappingInput) {})
+}
+
+// ExportCSV downloads the CSV export of every Contact of the Workspace with every column, as its
+// owner does (ADR 0138): it asks for the one-time link and follows it. It returns the file.
+func (w *Workspace) ExportCSV() string {
+	w.t.Helper()
+	ctx := w.t.Context()
+	ws := siteapi.WorkspaceId(w.publicID)
+	link, err := w.site.SiteContactCsvExportsCreate(ctx, &siteapi.SiteContactCsvExportInput{Columns: siteapi.ContactCsvColumn("").AllValues()},
+		siteapi.SiteContactCsvExportsCreateParams{WorkspaceId: ws})
+	require.NoError(w.t, err, "ask for the export's link")
+	res, err := w.site.SiteContactCsvExportsDownload(ctx, siteapi.SiteContactCsvExportsDownloadParams{WorkspaceId: ws, Token: path.Base(link.URL)})
+	require.NoError(w.t, err, "follow the export's link")
+	file, err := io.ReadAll(res.Response.Data)
+	require.NoError(w.t, err, "read the export")
+	return string(file)
 }
 
 // importCSV uploads file, saves the mapping the app proposes as mapped changes it, runs the import

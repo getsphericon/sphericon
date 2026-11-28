@@ -18,25 +18,15 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/csvimport"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
-
-// everyExportColumn is every column a CSV export of Contacts has.
-var everyExportColumn = []siteapi.ContactCsvColumn{
-	siteapi.ContactCsvColumnSubjectId, siteapi.ContactCsvColumnEmail, siteapi.ContactCsvColumnPhone,
-	siteapi.ContactCsvColumnFirstName, siteapi.ContactCsvColumnLastName, siteapi.ContactCsvColumnTimeZone,
-	siteapi.ContactCsvColumnCountry, siteapi.ContactCsvColumnLocale, siteapi.ContactCsvColumnBirthday,
-	siteapi.ContactCsvColumnCity, siteapi.ContactCsvColumnAvatar, siteapi.ContactCsvColumnSource,
-	siteapi.ContactCsvColumnCreatedAt, siteapi.ContactCsvColumnUpdatedAt, siteapi.ContactCsvColumnCustomFields,
-	siteapi.ContactCsvColumnTags, siteapi.ContactCsvColumnEmailChannel, siteapi.ContactCsvColumnSmsChannel,
-	siteapi.ContactCsvColumnTelegramChannel,
-}
 
 // acmeExport is the CSV export of every Acme Contact with every column, as its owner downloads it.
 func acmeExport(t *testing.T, env *testhelper.TestEnv) string {
 	t.Helper()
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	token := csvExportLink(t, owner, siteapi.SiteContactCsvExportInput{Columns: everyExportColumn})
+	token := csvExportLink(t, owner, siteapi.SiteContactCsvExportInput{Columns: siteapi.ContactCsvColumn("").AllValues()})
 	res, err := followCSVExport(t, owner, token)
 	require.NoError(t, err)
 	body, err := io.ReadAll(res.Response.Data)
@@ -125,14 +115,14 @@ func TestAnExportImportsIntoAnotherWorkspaceAsItIs(t *testing.T) {
 }
 
 // proposedKinds are the kinds of the columns an upload's proposal maps, by the file's header.
-func proposedKinds(t *testing.T, imp *siteapi.SiteContactImport) map[string]string {
+func proposedKinds(t *testing.T, imp *siteapi.SiteContactImport) map[string]csvimport.Kind {
 	t.Helper()
 	header := imp.Header
-	return lo.SliceToMap(lo.Range(len(header)), func(i int) (string, string) {
+	return lo.SliceToMap(lo.Range(len(header)), func(i int) (string, csvimport.Kind) {
 		raw, err := imp.Mapping.Columns[i].MarshalJSON()
 		require.NoError(t, err)
 		var col struct {
-			Kind string `json:"kind"`
+			Kind csvimport.Kind `json:"kind"`
 		}
 		require.NoError(t, json.Unmarshal(raw, &col))
 		return header[i], col.Kind
@@ -152,21 +142,21 @@ func TestEveryHeaderOfAnExportIsProposed(t *testing.T) {
 	require.NoError(t, err)
 	kinds := proposedKinds(t, imp)
 
-	assert.Equal(t, map[string]string{
-		"subjectId": "key", "email": "key", "phone": "key",
-		"firstName": "attribute", "lastName": "attribute", "timeZone": "attribute", "country": "attribute",
-		"locale": "attribute", "birthday": "attribute", "city": "attribute", "avatar": "attribute",
-		"source": "ignore", "createdAt": "ignore", "updatedAt": "ignore",
-		"customFields.courses_completed": "newCustomField", "customFields.is_trial": "newCustomField",
-		"customFields.plan": "newCustomField", "customFields.renewal_on": "newCustomField",
-		"customFields.signup_source": "newCustomField", "customFields.trial_ends_at": "newCustomField",
-		"tags": "tags",
-		"email.state": "ignore", "email.optedOutScopes": "refusal", "email.optedOutAt": "time",
-		"email.suppressionReason": "refusal", "email.confirmation": "consent", "email.confirmedAt": "time",
-		"sms.state": "ignore", "sms.optedOutScopes": "refusal", "sms.optedOutAt": "time",
-		"sms.suppressionReason": "refusal", "sms.confirmation": "consent", "sms.confirmedAt": "time",
-		"telegram.state": "ignore", "telegram.optedOutScopes": "refusal", "telegram.optedOutAt": "time",
-		"telegram.suppressionReason": "refusal", "telegram.confirmation": "ignore", "telegram.confirmedAt": "ignore",
+	assert.Equal(t, map[string]csvimport.Kind{
+		string(siteapi.ContactCsvColumnSubjectId): csvimport.KindKey, string(siteapi.ContactCsvColumnEmail): csvimport.KindKey, string(siteapi.ContactCsvColumnPhone): csvimport.KindKey,
+		string(siteapi.ContactCsvColumnFirstName): csvimport.KindAttribute, string(siteapi.ContactCsvColumnLastName): csvimport.KindAttribute, string(siteapi.ContactCsvColumnTimeZone): csvimport.KindAttribute, string(siteapi.ContactCsvColumnCountry): csvimport.KindAttribute,
+		string(siteapi.ContactCsvColumnLocale): csvimport.KindAttribute, string(siteapi.ContactCsvColumnBirthday): csvimport.KindAttribute, string(siteapi.ContactCsvColumnCity): csvimport.KindAttribute, string(siteapi.ContactCsvColumnAvatar): csvimport.KindAttribute,
+		string(siteapi.ContactCsvColumnSource): csvimport.KindIgnore, string(siteapi.ContactCsvColumnCreatedAt): csvimport.KindIgnore, string(siteapi.ContactCsvColumnUpdatedAt): csvimport.KindIgnore,
+		"customFields.courses_completed": csvimport.KindNewCustomField, "customFields.is_trial": csvimport.KindNewCustomField,
+		"customFields.plan": csvimport.KindNewCustomField, "customFields.renewal_on": csvimport.KindNewCustomField,
+		"customFields.signup_source": csvimport.KindNewCustomField, "customFields.trial_ends_at": csvimport.KindNewCustomField,
+		string(siteapi.ContactCsvColumnTags): csvimport.KindTags,
+		"email.state":                        csvimport.KindIgnore, "email.optedOutScopes": csvimport.KindRefusal, "email.optedOutAt": csvimport.KindTime,
+		"email.suppressionReason": csvimport.KindRefusal, "email.confirmation": csvimport.KindConsent, "email.confirmedAt": csvimport.KindTime,
+		"sms.state": csvimport.KindIgnore, "sms.optedOutScopes": csvimport.KindRefusal, "sms.optedOutAt": csvimport.KindTime,
+		"sms.suppressionReason": csvimport.KindRefusal, "sms.confirmation": csvimport.KindConsent, "sms.confirmedAt": csvimport.KindTime,
+		"telegram.state": csvimport.KindIgnore, "telegram.optedOutScopes": csvimport.KindRefusal, "telegram.optedOutAt": csvimport.KindTime,
+		"telegram.suppressionReason": csvimport.KindRefusal, "telegram.confirmation": csvimport.KindIgnore, "telegram.confirmedAt": csvimport.KindIgnore,
 	}, kinds)
 }
 
@@ -186,7 +176,7 @@ func TestAnExportsGuardedCellsReadBackAsWritten(t *testing.T) {
 	score, err := env.DB.Scoped(fixtures.AcmeID).CustomField().Query().Where(customfield.Key("score")).Only(t.Context())
 	require.NoError(t, err)
 
-	assert.Equal(t, "customField", kinds["customFields.courses_completed"], "the Workspace's own field")
+	assert.Equal(t, csvimport.KindCustomField, kinds["customFields.courses_completed"], "the Workspace's own field")
 	assert.Equal(t, customfield.TypeNumber, score.Type)
 	require.NotNil(t, ann)
 	assert.Equal(t, map[string]any{"courses_completed": -3.0, "signup_source": "'hello", "score": -1.5}, ann.CustomFields)
