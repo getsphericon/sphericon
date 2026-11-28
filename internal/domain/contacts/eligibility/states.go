@@ -287,8 +287,11 @@ func readFacts(ctx context.Context, s *ent.Scoped, dests map[channels.Channel][]
 // number or its hash.
 func keys(channel channels.Channel, destination string) []destKey {
 	k := destKey{channel, destination}
-	if channel == channels.SMS {
+	switch channel {
+	case channels.SMS:
 		return []destKey{k, {channel, phone.Hash(destination)}}
+	case channels.Email, channels.Telegram:
+		// Kept by the Destination alone.
 	}
 	return []destKey{k}
 }

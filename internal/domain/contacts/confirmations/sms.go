@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/consentstamps"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
@@ -218,13 +219,18 @@ func (m *Module) StartSMSIn(ctx context.Context, s *ent.Scoped, number string, a
 }
 
 // holderOf is the id of the Contact whose address (on email) or phone (on sms) destination is, 0
-// when no Contact has it.
+// when no Contact has it. Telegram has no Confirmation: ErrConfirmationChannel.
 func holderOf(ctx context.Context, s *ent.Scoped, channel channels.Channel, destination string) (int64, error) {
-	q := s.Contact().Query().Where(contact.Phone(destination))
-	if channel == channels.Email {
-		q = s.Contact().Query().Where(contact.Email(destination))
+	var holds predicate.Contact
+	switch channel {
+	case channels.Email:
+		holds = contact.Email(destination)
+	case channels.SMS:
+		holds = contact.Phone(destination)
+	case channels.Telegram:
+		return 0, ErrConfirmationChannel
 	}
-	id, err := q.OnlyID(ctx)
+	id, err := s.Contact().Query().Where(holds).OnlyID(ctx)
 	if ent.IsNotFound(err) {
 		return 0, nil
 	}

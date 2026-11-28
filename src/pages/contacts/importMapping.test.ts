@@ -2,6 +2,7 @@ import { expect, test } from 'vitest'
 
 import type { ContactImportMapping } from '../../generated/site/types.gen.ts'
 import { zConfirmationProvenance, zSuppressionReason } from '../../generated/site/zod.gen.ts'
+import { emptyFact } from './importFacts.ts'
 import {
   columnsMissingDateFormat,
   mappingInputOf,
@@ -179,4 +180,21 @@ test("an export's proposal is saved as it was proposed", () => {
   const input = mappingInputOf(valuesOf(exportProposal), fields)
 
   expect(input).toEqual(exportProposal)
+})
+
+// A Telegram refusal column turned into a consent or tracking column, which Telegram has none of, is
+// never sent as one of email: the Member chooses its Channel first.
+test('a consent or tracking column on Telegram is not sent as one on email', () => {
+  for (const kind of ['consent', 'engagementTracking'] as const) {
+    const values = valuesOf(proposal)
+    values.columns[4] = {
+      target: kind,
+      dateFormat: null,
+      fact: { ...emptyFact(), channel: 'telegram', values: ['yes'] },
+    }
+
+    expect(() => mappingInputOf(values, fields)).toThrow(
+      'a consent or tracking column is not on telegram',
+    )
+  }
 })
