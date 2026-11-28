@@ -2,12 +2,9 @@ package jobs
 
 import (
 	"context"
-	"database/sql"
 	"log/slog"
-	"strconv"
 
 	"github.com/riverqueue/river"
-	"github.com/riverqueue/river/rivertype"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contactimports"
@@ -65,8 +62,8 @@ func (RecoverContactImportArgs) InsertOpts() river.InsertOpts {
 	return river.InsertOpts{UniqueOpts: jobkind.QueuedOnce()}
 }
 
-// RecoverContactImportWorker checks one running import's job in river's queue and recovers the
-// run whose job is gone.
+// RecoverContactImportWorker recovers one running import whose job is gone
+// (contactimports.Module.Recover).
 type RecoverContactImportWorker struct {
 	river.WorkerDefaults[RecoverContactImportArgs]
 
@@ -79,22 +76,7 @@ func NewRecoverContactImportWorker(imports *contactimports.Module, client *ent.C
 	return &RecoverContactImportWorker{imports: imports, ent: client}
 }
 
-// liveRunStates are the states of a run's job that will still work it.
-var liveRunStates = []rivertype.JobState{
-	rivertype.JobStateAvailable, rivertype.JobStatePending, rivertype.JobStateRetryable,
-	rivertype.JobStateRunning, rivertype.JobStateScheduled,
-}
-
 func (w *RecoverContactImportWorker) Work(ctx context.Context, job *river.Job[RecoverContactImportArgs]) error {
-	live, err := river.ClientFromContext[*sql.Tx](ctx).JobList(ctx, river.NewJobListParams().
-		Kinds(contactimports.RunArgs{}.Kind()).
-		States(liveRunStates...).
-		Where("args->>'import_id' = @import_id", river.NamedArgs{"import_id": strconv.FormatInt(job.Args.ImportID, 10)}).
-		First(1))
-	if err != nil || len(live.Jobs) > 0 {
-		return err
-	}
-	slog.WarnContext(ctx, "contact import run without a job recovered", "import_id", job.Args.ImportID)
 	// The Workspace comes from the job's args, which the sweep read from the import (ADR 0017).
 	return w.imports.Recover(ctx, w.ent.Scoped(job.Args.WorkspaceID), job.Args.ImportID)
 }

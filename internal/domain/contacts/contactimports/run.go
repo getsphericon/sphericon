@@ -111,27 +111,47 @@ func (m *Module) Run(ctx context.Context, s *ent.Scoped, id int64, role membersh
 
 // Recover queues again the run of the running import id whose job is gone (a process killed on
 // the job's last try, which river gives up on without its worker): the run resumes from its
-// checkpoint. After RunRecoveries it fails instead, keeping what it wrote and its report, so it no
-// longer holds the Workspace's one run. An import no longer running is left as it is.
+// checkpoint. A run whose job still waits or works is left to it: RunArgs is unique while its job
+// has not ended, so none is queued beside it. After RunRecoveries the run fails instead, keeping
+// what it wrote and its report, so it no longer holds the Workspace's one run. An import no
+// longer running is left as it is.
 func (m *Module) Recover(ctx context.Context, s *ent.Scoped, id int64) error {
 	imp, err := load(ctx, s, id)
 	if err != nil || imp.State != contactimport.StateRunning {
 		return err
 	}
-	if imp.Recoveries >= RunRecoveries {
-		return m.fail(ctx, s, id)
-	}
-	return m.bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher, q events.Enqueuer) error {
+	err = m.bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher, q events.Enqueuer) error {
+		queued, err := q.EnqueueNew(ctx, RunArgs{WorkspaceID: ts.WorkspaceID(), ImportID: id}, nil)
+		if err != nil || !queued {
+			return err
+		}
+		if imp.Recoveries >= RunRecoveries {
+			return errRecoveriesSpent
+		}
 		n, err := ts.ContactImport().Update().
 			Where(contactimport.ID(id), contactimport.StateEQ(contactimport.StateRunning), contactimport.Recoveries(imp.Recoveries)).
 			AddRecoveries(1).
 			Save(ctx)
-		if err != nil || n == 0 {
-			return err
+		if err == nil && n == 0 {
+			return errRecoveredElsewhere
 		}
-		return q.Enqueue(ctx, RunArgs{WorkspaceID: ts.WorkspaceID(), ImportID: id}, nil)
+		return err
 	})
+	if errors.Is(err, errRecoveriesSpent) {
+		return m.fail(ctx, s, id)
+	}
+	if errors.Is(err, errRecoveredElsewhere) {
+		return nil
+	}
+	return err
 }
+
+// Rollbacks of Recover's transaction, which take back the job it queued: the run's recoveries are
+// spent, or another check recovered it first.
+var (
+	errRecoveriesSpent    = errors.New("contactimports: the run's recoveries are spent")
+	errRecoveredElsewhere = errors.New("contactimports: the run was recovered by another check")
+)
 
 // Cancel asks the running import id to stop: its job stops after the batch it is writing, and the
 // import ends `cancelled`, keeping what it wrote and its report. An import not running, or asked
