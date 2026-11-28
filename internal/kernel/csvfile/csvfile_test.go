@@ -153,3 +153,53 @@ func TestAListOfPlainNamesIsTheNamesJoinedByCommas(t *testing.T) {
 	assert.Equal(t, `"a, b",c`, csvfile.List([]string{"a, b", "c"}))
 	assert.Empty(t, csvfile.List(nil))
 }
+
+// A cell the writer guarded reads back as it was written: the apostrophe before a character a
+// spreadsheet would run is taken off once, and an apostrophe the cell begins with otherwise is the
+// cell's own.
+func TestAGuardedCellReadsBackAsItWasWritten(t *testing.T) {
+	cases := []struct {
+		name string
+		cell string
+		want string
+	}{
+		{"a phone", "'+14155550100", "+14155550100"},
+		{"a negative number", "'-3", "-3"},
+		{"a formula", "'=1+1", "=1+1"},
+		{"an at sign", "'@ada", "@ada"},
+		{"a tab", "'\tx", "\tx"},
+		{"a carriage return", "'\rx", "\rx"},
+		{"the cell's own apostrophe", "'hello", "'hello"},
+		{"a lone apostrophe", "'", "'"},
+		{"two apostrophes", "''+1", "''+1"},
+		{"no apostrophe", "+1", "+1"},
+		{"blank", "", ""},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			got := csvfile.Unguarded(c.cell)
+
+			assert.Equal(t, c.want, got)
+		})
+	}
+}
+
+// Any cell the writer writes reads back as it was, but one that begins with an apostrophe before a
+// character a spreadsheet would run: the writer cannot tell it from one it guarded itself.
+func TestEveryWrittenCellReadsBackUnguarded(t *testing.T) {
+	rapid.Check(t, func(t *rapid.T) {
+		cell := rapid.String().Filter(func(s string) bool {
+			return !strings.HasPrefix(s, "'") || len(s) < 2 || !strings.ContainsRune("=+-@\t\r", rune(s[1]))
+		}).Draw(t, "cell")
+		var buf bytes.Buffer
+		w := csvfile.NewWriter(&buf)
+		require.NoError(t, w.Write([]string{cell, "x"}))
+		require.NoError(t, w.Flush())
+
+		record, err := csv.NewReader(strings.NewReader(strings.TrimPrefix(buf.String(), bom))).Read()
+		require.NoError(t, err)
+		got := csvfile.Unguarded(record[0])
+
+		assert.Equal(t, strings.ReplaceAll(cell, "\r\n", "\n"), got)
+	})
+}

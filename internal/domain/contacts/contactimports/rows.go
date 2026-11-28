@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	"github.com/getsphericon/sphericon/internal/kernel/csvfile"
 	"github.com/getsphericon/sphericon/internal/kernel/csvimport"
 	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
@@ -102,7 +103,7 @@ var cellReaders = map[csvimport.Kind]cellReader{
 }
 
 // row reads the cells of a row: a row with another number of cells than the header is refused as
-// it is, a blank cell is no value and changes nothing, every other cell is read by its column's
+// it is, each cell is read back as the app's CSV writer was given it (csvfile.Unguarded), a blank cell is no value and changes nothing, every other cell is read by its column's
 // reader, the phone last in the country the row names (else the import's default), and a row that
 // names no alias key is refused. The Tag for every row is added to every row.
 func (rd reading) row(cells []string) readRow {
@@ -111,9 +112,10 @@ func (rd reading) row(cells []string) readRow {
 		return readRow{refusal: &refusal}
 	}
 	state := &rowState{reading: rd}
+	// A cell the app's own CSV writer guarded with a leading apostrophe (a phone in E.164, a
+	// negative number) is read as it was written, by every reader and by settle.
+	cells = lo.Map(cells, func(cell string, _ int) string { return csvfile.Unguarded(cell) })
 	for at, col := range rd.mapping.Columns {
-		// Every cell passes here before its reader: where a cell the app's own CSV writer guarded
-		// with a leading apostrophe (csvfile) would be read back as written.
 		cell := cells[at]
 		if strings.TrimSpace(cell) == "" {
 			continue
