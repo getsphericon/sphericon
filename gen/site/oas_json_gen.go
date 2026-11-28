@@ -5354,6 +5354,127 @@ func (s *AutomationStepSum) UnmarshalJSON(data []byte) error {
 }
 
 // Encode implements json.Marshaler.
+func (s *AutomationStepWarnings) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *AutomationStepWarnings) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("stepId")
+		s.StepId.Encode(e)
+	}
+	{
+		e.FieldStart("warnings")
+		e.ArrStart()
+		for _, elem := range s.Warnings {
+			elem.Encode(e)
+		}
+		e.ArrEnd()
+	}
+}
+
+var jsonFieldsNameOfAutomationStepWarnings = [2]string{
+	0: "stepId",
+	1: "warnings",
+}
+
+// Decode decodes AutomationStepWarnings from json.
+func (s *AutomationStepWarnings) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode AutomationStepWarnings to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "stepId":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.StepId.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"stepId\"")
+			}
+		case "warnings":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				s.Warnings = make([]LintFinding, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem LintFinding
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.Warnings = append(s.Warnings, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"warnings\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode AutomationStepWarnings")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000011,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfAutomationStepWarnings) {
+					name = jsonFieldsNameOfAutomationStepWarnings[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *AutomationStepWarnings) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *AutomationStepWarnings) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
 func (s *AutomationTrigger) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
@@ -54180,6 +54301,16 @@ func (s *SiteAutomationResource) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.Warnings != nil {
+			e.FieldStart("warnings")
+			e.ArrStart()
+			for _, elem := range s.Warnings {
+				elem.Encode(e)
+			}
+			e.ArrEnd()
+		}
+	}
+	{
 		e.FieldStart("revision")
 		s.Revision.Encode(e)
 	}
@@ -54193,17 +54324,18 @@ func (s *SiteAutomationResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteAutomationResource = [10]string{
-	0: "id",
-	1: "name",
-	2: "status",
-	3: "live",
-	4: "draft",
-	5: "archivedAt",
-	6: "revenue",
-	7: "revision",
-	8: "createdAt",
-	9: "updatedAt",
+var jsonFieldsNameOfSiteAutomationResource = [11]string{
+	0:  "id",
+	1:  "name",
+	2:  "status",
+	3:  "live",
+	4:  "draft",
+	5:  "archivedAt",
+	6:  "revenue",
+	7:  "warnings",
+	8:  "revision",
+	9:  "createdAt",
+	10: "updatedAt",
 }
 
 // Decode decodes SiteAutomationResource from json.
@@ -54287,8 +54419,25 @@ func (s *SiteAutomationResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"revenue\"")
 			}
+		case "warnings":
+			if err := func() error {
+				s.Warnings = make([]AutomationStepWarnings, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem AutomationStepWarnings
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.Warnings = append(s.Warnings, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"warnings\"")
+			}
 		case "revision":
-			requiredBitSet[0] |= 1 << 7
+			requiredBitSet[1] |= 1 << 0
 			if err := func() error {
 				if err := s.Revision.Decode(d); err != nil {
 					return err
@@ -54298,7 +54447,7 @@ func (s *SiteAutomationResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"revision\"")
 			}
 		case "createdAt":
-			requiredBitSet[1] |= 1 << 0
+			requiredBitSet[1] |= 1 << 1
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -54308,7 +54457,7 @@ func (s *SiteAutomationResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"createdAt\"")
 			}
 		case "updatedAt":
-			requiredBitSet[1] |= 1 << 1
+			requiredBitSet[1] |= 1 << 2
 			if err := func() error {
 				if err := s.UpdatedAt.Decode(d); err != nil {
 					return err
@@ -54327,8 +54476,8 @@ func (s *SiteAutomationResource) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [2]uint8{
-		0b10011111,
-		0b00000011,
+		0b00011111,
+		0b00000111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

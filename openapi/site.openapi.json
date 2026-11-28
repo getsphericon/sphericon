@@ -12994,6 +12994,28 @@
         },
         "description": "One Step of an automation, by `type`, as a request writes it. A field of another kind is refused."
       },
+      "AutomationStepWarnings": {
+        "type": "object",
+        "required": ["stepId", "warnings"],
+        "properties": {
+          "stepId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StepId"
+              }
+            ],
+            "description": "The email step they are about"
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LintFinding"
+            },
+            "description": "Its warnings, never empty"
+          }
+        },
+        "description": "The lint warnings of one email step of an automation (ADR 0040)"
+      },
       "AutomationTrigger": {
         "type": "object",
         "oneOf": [
@@ -21645,6 +21667,13 @@
             ],
             "description": "Orders credited to the automation and their net revenue (ADR 0064); set on the list and on\nthe single read, absent on the responses of a change"
           },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AutomationStepWarnings"
+            },
+            "description": "Warnings of the lint over each email step of the draft, else the live version (ADR 0040): the\nsteps that have any, in no particular order. Set on the single read and on the response of a\nsave; they never block a save or Publish"
+          },
           "revision": {
             "allOf": [
               {
@@ -21886,7 +21915,7 @@
             "items": {
               "$ref": "#/components/schemas/LintFinding"
             },
-            "description": "Warnings of the lint over the stored content (ADR 0040); set on the response of a save, never blocks it"
+            "description": "Warnings of the lint over the stored email content (ADR 0040); set on the single read of a draft and on the response of a save, never block a save or Schedule"
           },
           "segmentId": {
             "type": "string",
@@ -23537,7 +23566,7 @@
             "items": {
               "$ref": "#/components/schemas/LintFinding"
             },
-            "description": "Warnings of the lint over the stored content (ADR 0040); set on the response of a save, never blocks it"
+            "description": "Warnings of the lint over the stored content (ADR 0040); set on the single read and on the response of a save, never block it"
           },
           "revision": {
             "allOf": [

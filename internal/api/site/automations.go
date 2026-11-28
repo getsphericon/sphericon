@@ -4,6 +4,7 @@ import (
 	"context"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
@@ -24,28 +25,25 @@ func (h *Handlers) SiteAutomationsCreate(ctx context.Context, req *siteapi.Creat
 	if err != nil {
 		return nil, err
 	}
-	a, err := h.automations.Create(ctx, ws, in)
+	l, err := h.automationViews.Create(ctx, ws, in)
 	if err != nil {
 		return nil, err
 	}
-	res, err := mapper.AutomationToResource(a)
-	if err != nil {
-		return nil, err
-	}
-	return &res, nil
+	return savedAutomation(l)
 }
 
 func (h *Handlers) SiteAutomationsGet(ctx context.Context, params siteapi.SiteAutomationsGetParams) (*siteapi.SiteAutomationResource, error) {
 	ws := workspaceScope(ctx)
 
-	a, err := h.automations.GetWithRevenue(ctx, ws, int64(params.ID))
+	l, err := h.automationViews.Get(ctx, ws, int64(params.ID))
 	if err != nil {
 		return nil, err
 	}
-	res, err := mapper.AutomationWithRevenueToResource(a)
+	res, err := mapper.AutomationWithRevenueToResource(l.WithRevenue)
 	if err != nil {
 		return nil, err
 	}
+	res.Warnings = mapper.AutomationStepsWarningsToResource(l.Warnings)
 	return &res, nil
 }
 
@@ -57,14 +55,21 @@ func (h *Handlers) SiteAutomationsUpdate(ctx context.Context, req *siteapi.Updat
 	if err != nil {
 		return nil, err
 	}
-	a, err := h.automations.Update(ctx, ws, id, in)
+	l, err := h.automationViews.Update(ctx, ws, id, in)
 	if err != nil {
 		return nil, err
 	}
-	res, err := mapper.AutomationToResource(a)
+	return savedAutomation(l)
+}
+
+// savedAutomation maps a saved Automation, which a change answers without its revenue, and attaches
+// the lint warnings of its email steps (ADR 0040).
+func savedAutomation(l automations.Linted) (*siteapi.SiteAutomationResource, error) {
+	res, err := mapper.AutomationToResource(l.Automation)
 	if err != nil {
 		return nil, err
 	}
+	res.Warnings = mapper.AutomationStepsWarningsToResource(l.Warnings)
 	return &res, nil
 }
 

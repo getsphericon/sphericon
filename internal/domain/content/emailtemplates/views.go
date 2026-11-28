@@ -7,14 +7,14 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
 )
 
-// Saved is a Template a save stored, with the lint warnings of its content (ADR 0040): advice for
-// the author, which never block the save.
+// Saved is a Template as stored, with the lint warnings of its content (ADR 0040): advice for the
+// author, which never block a save.
 type Saved struct {
 	Template *ent.EmailTemplate
 	Warnings []emailrender.Finding
 }
 
-// Views are the Module's saves answered with the lint of what they stored: the lint reads the Brand
+// Views are the Module's single read and saves answered with the lint of what is stored: the lint reads the Brand
 // kit, which the row alone does not, so only a surface whose contract shows the warnings calls
 // Views, and one that shows the Template calls the Module.
 type Views struct {
@@ -24,6 +24,16 @@ type Views struct {
 // NewViews builds the views over the saves of m.
 func NewViews(m *Module) *Views {
 	return &Views{m: m}
+}
+
+// Get returns one Template (Module.Get) with the lint warnings of its content: what its editor shows
+// before anything is saved.
+func (v *Views) Get(ctx context.Context, s *ent.Scoped, id int64) (Saved, error) {
+	tpl, err := v.m.Get(ctx, s, id)
+	if err != nil {
+		return Saved{}, err
+	}
+	return v.saved(ctx, s, tpl)
 }
 
 // Create stores a Template (Module.Create) and returns it with the lint warnings of its content.
@@ -45,8 +55,8 @@ func (v *Views) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateIn
 	return v.saved(ctx, s, tpl)
 }
 
-// saved lints what a save stored: the body as it was written, or a document's rendered HTML. A
-// message that cannot render was refused by the save.
+// saved lints what is stored: the body as it was written, or a document's rendered HTML. A message
+// that cannot render was refused by its save.
 func (v *Views) saved(ctx context.Context, s *ent.Scoped, tpl *ent.EmailTemplate) (Saved, error) {
 	report, err := v.m.lint(ctx, s, tpl.Subject, tpl.Body)
 	if err != nil {

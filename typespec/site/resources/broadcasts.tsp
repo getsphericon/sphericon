@@ -140,7 +140,7 @@ model SiteBroadcastResource {
   /** What the broadcast says, in the shape of its Channel */
   content: BroadcastContent;
 
-  /** Warnings of the lint over the stored content (ADR 0040); set on the response of a save, never blocks it */
+  /** Warnings of the lint over the stored email content (ADR 0040); set on the single read of a draft and on the response of a save, never block a save or Schedule */
   warnings?: LintFinding[];
 
   /**

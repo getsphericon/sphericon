@@ -841,6 +841,20 @@ export type AutomationStepInput = ({
 } & WaitForEventStepInput);
 
 /**
+ * The lint warnings of one email step of an automation (ADR 0040)
+ */
+export type AutomationStepWarnings = {
+  /**
+   * The email step they are about
+   */
+  stepId: StepId;
+  /**
+   * Its warnings, never empty
+   */
+  warnings: Array<LintFinding>;
+};
+
+/**
  * What enrolls a Contact in an automation, by `kind`: an Event matcher or a date
  */
 export type AutomationTrigger = ({
@@ -7119,6 +7133,12 @@ export type SiteAutomationResource = {
    */
   revenue?: MessageRevenue;
   /**
+   * Warnings of the lint over each email step of the draft, else the live version (ADR 0040): the
+   * steps that have any, in no particular order. Set on the single read and on the response of a
+   * save; they never block a save or Publish
+   */
+  warnings?: Array<AutomationStepWarnings>;
+  /**
    * The revision of the state this answer shows (ADR 0119): an update, Publish and Revert name it
    */
   revision: Revision;
@@ -7289,7 +7309,7 @@ export type SiteBroadcastResource = {
    */
   content: BroadcastContent;
   /**
-   * Warnings of the lint over the stored content (ADR 0040); set on the response of a save, never blocks it
+   * Warnings of the lint over the stored email content (ADR 0040); set on the single read of a draft and on the response of a save, never block a save or Schedule
    */
   warnings?: Array<LintFinding>;
   /**
@@ -8301,7 +8321,7 @@ export type SiteEmailTemplateResource = {
    */
   editorVersion?: string | null;
   /**
-   * Warnings of the lint over the stored content (ADR 0040); set on the response of a save, never blocks it
+   * Warnings of the lint over the stored content (ADR 0040); set on the single read and on the response of a save, never block it
    */
   warnings?: Array<LintFinding>;
   /**

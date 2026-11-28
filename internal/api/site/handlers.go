@@ -120,6 +120,7 @@ type Handlers struct {
 	templateViews         *emailtemplates.Views
 	brandKit              *brandkits.Module
 	automations           *automations.Module
+	automationViews       *automations.Views
 	rules                 *rules.Module
 	oauth                 *oauthclients.Module
 	apiTokens             *apitokens.Module
@@ -213,6 +214,7 @@ type Deps struct {
 	TemplateViews       *emailtemplates.Views
 	BrandKit            *brandkits.Module
 	Automations         *automations.Module
+	AutomationViews     *automations.Views
 	Rules               *rules.Module
 	Broadcasts          *broadcasts.Module
 	BroadcastViews      *broadcasts.Views
@@ -312,7 +314,7 @@ func NewHandlers(d *Deps) *Handlers {
 	h := &Handlers{
 		users: d.Users, invitations: d.Invitations, workspaces: d.Workspaces, memberships: d.Memberships, deletion: d.Deletion, bus: d.Bus, webhooks: d.Webhooks, identityTokens: d.IdentityTokens, outbound: d.Outbound,
 		segments: d.Segments, contactsExport: d.ContactsExport, segmentSaving: d.SegmentSaving, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, tagDeletion: d.TagDeletion, customFieldRetyping: d.CustomFieldRetyping, unsubscribe: d.Unsubscribe, bindings: d.Bindings, templates: d.Templates, templateViews: d.TemplateViews, brandKit: d.BrandKit,
-		automations: d.Automations, rules: d.Rules, broadcasts: d.Broadcasts, broadcastViews: d.BroadcastViews,
+		automations: d.Automations, automationViews: d.AutomationViews, rules: d.Rules, broadcasts: d.Broadcasts, broadcastViews: d.BroadcastViews,
 		sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, joinDomains: d.JoinDomains, integrations: d.Integrations, integrationDeletion: d.IntegrationDeletion, sendingDomainDeletion: d.SendingDomainDeletion, captured: d.CapturedMessages, links: users.NewLinks(d.Users, d.Tokens), requests: users.NewRequests(d.Users, d.Attempts), tracker: d.Tracker, appURL: d.AppURL,
 		oauth: d.OAuth, apiTokens: d.APITokens, audit: d.Audit, attention: d.Attention, setupChecklist: d.SetupChecklist, supportEmail: d.SupportEmail, origins: d.Origins, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, admission: d.Admission, signUp: d.SignUp, userDeletion: d.UserDeletion, passkeys: d.Passkeys, now: now, instance: d.Instance, accountLink: d.AccountLink, workspaceView: d.WorkspaceView, signupSurvey: d.SignupSurvey, signupItems: d.SignupItems, consentRecords: d.ConsentRecords,
 		suppressions: d.Suppressions, confirmations: d.Confirmations, confirmationRequests: d.ConfirmationRequests, tracking: d.Tracking, channelStops: d.ChannelStops, exports: d.Exports, contactImports: d.ContactImports,

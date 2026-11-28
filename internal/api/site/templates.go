@@ -34,11 +34,11 @@ func (h *Handlers) SiteTemplatesGet(ctx context.Context, params siteapi.SiteTemp
 	scoped := workspaceScope(ctx)
 
 	id := int64(params.ID)
-	tpl, err := h.templates.Get(ctx, scoped, id)
+	saved, err := h.templateViews.Get(ctx, scoped, id)
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.EmailTemplateToResource(tpl)
+	res := savedTemplate(saved)
 	return &res, nil
 }
 
@@ -66,7 +66,7 @@ func (h *Handlers) SiteTemplatesDelete(ctx context.Context, params siteapi.SiteT
 	return nil
 }
 
-// savedTemplate maps a saved Template and attaches the lint warnings of its content (ADR 0040).
+// savedTemplate maps a stored Template and attaches the lint warnings of its content (ADR 0040).
 func savedTemplate(saved emailtemplates.Saved) siteapi.SiteEmailTemplateResource {
 	res := mapper.EmailTemplateToResource(saved.Template)
 	res.Warnings = mapper.LintFindingsToResource(saved.Warnings)

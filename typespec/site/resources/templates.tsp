@@ -28,7 +28,7 @@ model SiteEmailTemplateResource {
   /** Version of the editor that rendered the document; null with it */
   editorVersion?: string | null;
 
-  /** Warnings of the lint over the stored content (ADR 0040); set on the response of a save, never blocks it */
+  /** Warnings of the lint over the stored content (ADR 0040); set on the single read and on the response of a save, never block it */
   warnings?: LintFinding[];
 
   /** The revision of the state this answer shows (ADR 0119): an update names it */

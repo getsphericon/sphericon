@@ -1052,6 +1052,11 @@ var contentPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*automations.Module, error) {
 		return automations.New(do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*emaildoc.Renderer](i), do.MustInvoke[*outboundmessages.Module](i), do.MustInvoke[*linkclick.Module](i), do.MustInvoke[*rules.Module](i), do.MustInvoke[*contacts.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
+	// The views answer with the lint of an Automation's email steps, for the surfaces whose contract
+	// shows it; they lint through the Templates' lint of a message without a save.
+	do.Lazy(func(i do.Injector) (*automations.Views, error) {
+		return automations.NewViews(do.MustInvoke[*automations.Module](i), do.MustInvoke[*emailtemplates.Module](i)), nil
+	}),
 	do.Lazy(func(i do.Injector) (*rules.Module, error) {
 		client := webhook.NewClientAllowing(webhook.DeliveryTimeout, do.MustInvoke[*config.Config](i).OutboundAllow)
 		return rules.New(do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[*events.Bus](i), client, do.MustInvoke[Clock](i)), nil
@@ -1367,6 +1372,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		Rules:                 do.MustInvoke[*rules.Module](i),
 		Broadcasts:            do.MustInvoke[*broadcasts.Module](i),
 		BroadcastViews:        do.MustInvoke[*broadcasts.Views](i),
+		AutomationViews:       do.MustInvoke[*automations.Views](i),
 		SendingDomains:        do.MustInvoke[*sendingdomains.Module](i),
 		SendingDomainDeletion: do.MustInvoke[*sendingdomaindeletion.UseCase](i),
 		TrackingDomains:       do.MustInvoke[*trackingdomains.Module](i),

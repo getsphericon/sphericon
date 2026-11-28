@@ -3507,6 +3507,35 @@ func NewWaitForEventStepAutomationStepSum(v WaitForEventStep) AutomationStepSum 
 	return s
 }
 
+// The lint warnings of one email step of an automation (ADR 0040).
+// Ref: #/components/schemas/AutomationStepWarnings
+type AutomationStepWarnings struct {
+	// The email step they are about.
+	StepId StepId `json:"stepId"`
+	// Its warnings, never empty.
+	Warnings []LintFinding `json:"warnings"`
+}
+
+// GetStepId returns the value of StepId.
+func (s *AutomationStepWarnings) GetStepId() StepId {
+	return s.StepId
+}
+
+// GetWarnings returns the value of Warnings.
+func (s *AutomationStepWarnings) GetWarnings() []LintFinding {
+	return s.Warnings
+}
+
+// SetStepId sets the value of StepId.
+func (s *AutomationStepWarnings) SetStepId(val StepId) {
+	s.StepId = val
+}
+
+// SetWarnings sets the value of Warnings.
+func (s *AutomationStepWarnings) SetWarnings(val []LintFinding) {
+	s.Warnings = val
+}
+
 // What enrolls a Contact in an automation, by `kind`: an Event matcher or a date.
 // Ref: #/components/schemas/AutomationTrigger
 type AutomationTrigger struct {
@@ -33642,6 +33671,10 @@ type SiteAutomationResource struct {
 	// Orders credited to the automation and their net revenue (ADR 0064); set on the list and on the
 	// single read, absent on the responses of a change.
 	Revenue OptMessageRevenue `json:"revenue"`
+	// Warnings of the lint over each email step of the draft, else the live version (ADR 0040): the steps
+	// that have any, in no particular order. Set on the single read and on the response of a save; they
+	// never block a save or Publish.
+	Warnings []AutomationStepWarnings `json:"warnings"`
 	// The revision of the state this answer shows (ADR 0119): an update, Publish and Revert name it.
 	Revision Revision `json:"revision"`
 	// Creation timestamp.
@@ -33683,6 +33716,11 @@ func (s *SiteAutomationResource) GetArchivedAt() OptNilTimestamp {
 // GetRevenue returns the value of Revenue.
 func (s *SiteAutomationResource) GetRevenue() OptMessageRevenue {
 	return s.Revenue
+}
+
+// GetWarnings returns the value of Warnings.
+func (s *SiteAutomationResource) GetWarnings() []AutomationStepWarnings {
+	return s.Warnings
 }
 
 // GetRevision returns the value of Revision.
@@ -33733,6 +33771,11 @@ func (s *SiteAutomationResource) SetArchivedAt(val OptNilTimestamp) {
 // SetRevenue sets the value of Revenue.
 func (s *SiteAutomationResource) SetRevenue(val OptMessageRevenue) {
 	s.Revenue = val
+}
+
+// SetWarnings sets the value of Warnings.
+func (s *SiteAutomationResource) SetWarnings(val []AutomationStepWarnings) {
+	s.Warnings = val
 }
 
 // SetRevision sets the value of Revision.
@@ -34187,8 +34230,8 @@ type SiteBroadcastResource struct {
 	Channel BroadcastChannel `json:"channel"`
 	// What the broadcast says, in the shape of its Channel.
 	Content BroadcastContent `json:"content"`
-	// Warnings of the lint over the stored content (ADR 0040); set on the response of a save, never blocks
-	// it.
+	// Warnings of the lint over the stored email content (ADR 0040); set on the single read of a draft and
+	// on the response of a save, never block a save or Schedule.
 	Warnings []LintFinding `json:"warnings"`
 	// Target segment; null means all contacts. Once the broadcast leaves draft it holds a copy of the
 	// segment's condition taken then, and this names the segment only as where its audience came from.
@@ -37190,8 +37233,8 @@ type SiteEmailTemplateResource struct {
 	Doc OptNilEditorDocument `json:"doc"`
 	// Version of the editor that rendered the document; null with it.
 	EditorVersion OptNilString `json:"editorVersion"`
-	// Warnings of the lint over the stored content (ADR 0040); set on the response of a save, never blocks
-	// it.
+	// Warnings of the lint over the stored content (ADR 0040); set on the single read and on the response
+	// of a save, never block it.
 	Warnings []LintFinding `json:"warnings"`
 	// The revision of the state this answer shows (ADR 0119): an update names it.
 	Revision Revision `json:"revision"`

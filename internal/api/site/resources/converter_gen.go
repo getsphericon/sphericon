@@ -489,6 +489,20 @@ func (c *ConverterImpl) AutomationStatusToResource(source automation.Status) sit
 	}
 	return siteapiAutomationStatus
 }
+func (c *ConverterImpl) AutomationStepWarningsToResource(source automations.StepWarnings) site.AutomationStepWarnings {
+	var siteapiAutomationStepWarnings site.AutomationStepWarnings
+	siteapiAutomationStepWarnings.StepId = c.automationstepIDToSiteapiStepId(source.Step)
+	siteapiAutomationStepWarnings.Warnings = c.LintFindingsToResource(source.Warnings)
+	return siteapiAutomationStepWarnings
+}
+func (c *ConverterImpl) AutomationStepsWarningsToResource(source []automations.StepWarnings) []site.AutomationStepWarnings {
+	var siteapiAutomationStepWarningsList []site.AutomationStepWarnings
+	siteapiAutomationStepWarningsList = make([]site.AutomationStepWarnings, len(source))
+	for i := 0; i < len(source); i++ {
+		siteapiAutomationStepWarningsList[i] = c.AutomationStepWarningsToResource(source[i])
+	}
+	return siteapiAutomationStepWarningsList
+}
 func (c *ConverterImpl) AutomationToResource(source *ent.Automation) (site.SiteAutomationResource, error) {
 	var siteapiSiteAutomationResource site.SiteAutomationResource
 	if source != nil {
@@ -507,6 +521,7 @@ func (c *ConverterImpl) AutomationToResource(source *ent.Automation) (site.SiteA
 		siteapiSiteAutomationResource.Draft = siteapiNilAutomationVersion2
 		siteapiSiteAutomationResource.ArchivedAt = optNilTimestamp((*source).ArchivedAt)
 		// siteapiSiteAutomationResource.Revenue: ignore
+		// siteapiSiteAutomationResource.Warnings: ignore
 		siteapiSiteAutomationResource.Revision = revision((*source).Revision)
 		siteapiSiteAutomationResource.CreatedAt = timestamp((*source).CreatedAt)
 		siteapiSiteAutomationResource.UpdatedAt = timestamp((*source).UpdatedAt)
@@ -587,6 +602,7 @@ func (c *ConverterImpl) AutomationWithRevenueToResource(source automations.WithR
 	}
 	siteapiSiteAutomationResource.ArchivedAt = optNilTimestamp(pTimeTime)
 	siteapiSiteAutomationResource.Revenue = optMessageRevenue(c, source.Revenue)
+	// siteapiSiteAutomationResource.Warnings: ignore
 	var pInt642 *int64
 	if source.Automation != nil {
 		pInt642 = &source.Automation.Revision

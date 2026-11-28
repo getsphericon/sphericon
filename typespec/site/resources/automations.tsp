@@ -33,6 +33,13 @@ model SiteAutomationResource {
    * the single read, absent on the responses of a change */
   revenue?: MessageRevenue;
 
+  /**
+   * Warnings of the lint over each email step of the draft, else the live version (ADR 0040): the
+   * steps that have any, in no particular order. Set on the single read and on the response of a
+   * save; they never block a save or Publish
+   */
+  warnings?: AutomationStepWarnings[];
+
   /** The revision of the state this answer shows (ADR 0119): an update, Publish and Revert name it */
   revision: Revision;
 
@@ -41,6 +48,15 @@ model SiteAutomationResource {
 
   /** Last update timestamp */
   updatedAt: Timestamp;
+}
+
+/** The lint warnings of one email step of an automation (ADR 0040) */
+model AutomationStepWarnings {
+  /** The email step they are about */
+  stepId: StepId;
+
+  /** Its warnings, never empty */
+  warnings: LintFinding[];
 }
 
 /** The state an automation is in, as the list shows it: draft until it is first published, then

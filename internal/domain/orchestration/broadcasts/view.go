@@ -6,6 +6,7 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
@@ -41,13 +42,18 @@ func NewViews(m *Module) *Views {
 	return &Views{m: m}
 }
 
-// Get returns the view of one Broadcast of the Workspace, its Progress included.
+// Get returns the view of one Broadcast of the Workspace, its Progress included, and the lint
+// warnings of a draft's content: what its editor and Schedule show before anything is saved.
 func (v *Views) Get(ctx context.Context, s *ent.Scoped, id int64) (View, error) {
 	b, err := v.m.Get(ctx, s, id)
 	if err != nil {
 		return View{}, err
 	}
-	return v.detailed(ctx, s, b)
+	view, err := v.detailed(ctx, s, b)
+	if err != nil || b.Status != broadcast.StatusDraft {
+		return view, err
+	}
+	return v.linted(ctx, s, view)
 }
 
 // List returns one page of the Workspace's Broadcasts that f lets through, in its order, with their
@@ -165,12 +171,21 @@ func (v *Views) detailed(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (
 }
 
 // saved builds the view of a Broadcast a save stored, with its figures and the lint warnings of its
-// content against the Workspace's Brand kit. Only email is linted, its stored body: as it was
-// written, or a document's rendered HTML. A message that cannot render was refused by the save.
+// content. A message that cannot render was refused by the save.
 func (v *Views) saved(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (View, error) {
 	view, err := v.figured(ctx, s, b)
-	if err != nil || b.Channel != channels.Email {
-		return view, err
+	if err != nil {
+		return View{}, err
+	}
+	return v.linted(ctx, s, view)
+}
+
+// linted adds to a Broadcast's view the lint warnings of its content against the Workspace's Brand
+// kit. Only email is linted, its stored body: as it was written, or a document's rendered HTML.
+func (v *Views) linted(ctx context.Context, s *ent.Scoped, view View) (View, error) {
+	b := view.Broadcast
+	if b.Channel != channels.Email {
+		return view, nil
 	}
 	brand, err := brandkits.NewBrands().Brand(ctx, s)
 	if err != nil {

@@ -3569,6 +3569,14 @@ export const zAutomationStepFigures = z.object({
 });
 
 /**
+ * The lint warnings of one email step of an automation (ADR 0040)
+ */
+export const zAutomationStepWarnings = z.object({
+  stepId: zStepId,
+  warnings: z.array(zLintFinding)
+});
+
+/**
  * The messages one version's send Step sent
  */
 export const zAutomationVersionStepFigures = z.object({
@@ -6728,6 +6736,7 @@ export const zSiteAutomationResource = z.object({
   draft: zAutomationVersion.nullable(),
   archivedAt: zTimestamp.nullable().exactOptional(),
   revenue: zMessageRevenue.exactOptional(),
+  warnings: z.array(zAutomationStepWarnings).exactOptional(),
   revision: zRevision,
   createdAt: zTimestamp,
   updatedAt: zTimestamp

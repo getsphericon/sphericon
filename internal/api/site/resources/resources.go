@@ -446,12 +446,19 @@ type Converter interface {
 	// The revenue is summed from Order Movements, which the mapper cannot see: an Automation the
 	// automations module read with its revenue maps through AutomationWithRevenueToResource.
 	// goverter:ignore Revenue
+	// The lint of the email steps reads the Brand kit: a handler attaches what automations.Views linted.
+	// goverter:ignore Warnings
 	AutomationToResource(source *ent.Automation) (siteapi.SiteAutomationResource, error)
 	// An Automation with the revenue the automations module read for it (ADR 0064).
 	// goverter:autoMap Automation
+	// goverter:ignore Warnings
 	// goverter:map Automation.Edges.LiveVersion Live | automationVersionOrNull
 	// goverter:map Automation.Edges.DraftVersion Draft | automationVersionOrNull
 	AutomationWithRevenueToResource(source automations.WithRevenue) (siteapi.SiteAutomationResource, error)
+	// goverter:map Step StepId
+	AutomationStepWarningsToResource(source automations.StepWarnings) siteapi.AutomationStepWarnings
+	// goverter:useEmptyOnNil:slice
+	AutomationStepsWarningsToResource(source []automations.StepWarnings) []siteapi.AutomationStepWarnings
 	// goverter:useEmptyOnNil:slice
 	AutomationsWithRevenueToResources(source []automations.WithRevenue) ([]siteapi.SiteAutomationResource, error)
 	// The stored definition string (the executor's JSON format) is decoded into the typed steps
