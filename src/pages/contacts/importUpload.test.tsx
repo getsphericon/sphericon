@@ -6,6 +6,7 @@ import { handleSiteContactImportsUpload } from '../../generated/site/msw.gen.ts'
 import type { SiteContactImport } from '../../generated/site/types.gen.ts'
 import { Route as importRoute } from '../../routes/workspaces/$workspaceId/contacts/import.tsx'
 import { TIMESTAMPS, testId } from '../../test/payloads.ts'
+import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
@@ -68,4 +69,26 @@ test('uploads the chosen file as text/csv and opens its import', async () => {
   await expect
     .poll(() => navigate.mock.calls[0]?.[0])
     .toMatchObject({ params: { workspaceId: 'TestWs01', importId: testId(7) } })
+})
+
+// Nothing is sent before a file is chosen; a file the server refuses says why.
+test('uploads nothing without a file, and says why a file is refused', async () => {
+  worker.use(
+    handleSiteContactImportsUpload(() => problem(422, { detail: 'The file is not UTF-8.' })),
+  )
+  const { screen } = await renderWithRouter(
+    <ContactImportUploadPage />,
+    routeMount(importRoute, { workspaceId: 'TestWs01' }),
+  )
+
+  await expect.element(screen.getByRole('button', { name: 'Upload' })).toBeDisabled()
+  const input = screen.container.querySelector('input[type="file"]')
+  await userEvent.upload(
+    input ?? document.body,
+    new File(['\xff'], 'contacts.csv', { type: 'text/csv' }),
+  )
+  await screen.getByRole('button', { name: 'Upload' }).click()
+
+  await expect.element(screen.getByText('Could not upload the file')).toBeVisible()
+  await expect.element(screen.getByText('The file is not UTF-8.')).toBeVisible()
 })
