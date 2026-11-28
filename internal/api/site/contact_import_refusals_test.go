@@ -152,7 +152,7 @@ func TestARefusalColumnRecordingASuppressionNeedsSuppressionsManage(t *testing.T
 	mapping := func(refusal csvimport.Refusal, channel channels.Channel) csvimport.Mapping {
 		return csvimport.Mapping{DecimalSeparator: csvimport.DecimalPoint, Columns: []csvimport.Column{
 			{Kind: csvimport.KindKey, Key: "email"},
-			{Kind: csvimport.KindRefusal, Fact: &csvimport.Fact{Channel: string(channel), Refusals: []csvimport.RefusalValue{{Value: "bounced", Refusal: refusal}}}},
+			{Kind: csvimport.KindRefusal, Fact: &csvimport.Fact{Channel: channel, Refusals: []csvimport.RefusalValue{{Value: "bounced", Refusal: refusal}}}},
 		}}
 	}
 

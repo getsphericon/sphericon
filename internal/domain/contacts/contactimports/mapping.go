@@ -198,7 +198,7 @@ func checkedColumn(col csvimport.Column, fields map[string]customfield.Type) (cs
 		return out, "", err
 	case csvimport.KindConsent, csvimport.KindEngagementTracking:
 		out, err := checkedFactColumn(&col)
-		return out, string(col.Kind) + ":" + lo.FromPtr(col.Fact).Channel, err
+		return out, string(col.Kind) + ":" + string(lo.FromPtr(col.Fact).Channel), err
 	}
 	return col, "", ErrUnknownTarget
 }
@@ -313,7 +313,7 @@ func targetOf(col csvimport.Column) string {
 	case csvimport.KindTags:
 		return "tags"
 	case csvimport.KindConsent:
-		return "consent:" + col.Fact.Channel
+		return "consent:" + string(col.Fact.Channel)
 	case csvimport.KindRefusal, csvimport.KindTime, csvimport.KindEngagementTracking, csvimport.KindIgnore:
 	}
 	return ""

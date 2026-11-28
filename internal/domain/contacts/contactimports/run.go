@@ -394,7 +394,7 @@ func mappingSummary(header []string, mapping csvimport.Mapping) []string {
 		case csvimport.KindTags:
 			target = string(c.Kind)
 		case csvimport.KindRefusal, csvimport.KindConsent, csvimport.KindEngagementTracking:
-			target = string(c.Kind) + " " + lo.FromPtr(c.Fact).Channel
+			target = string(c.Kind) + " " + string(lo.FromPtr(c.Fact).Channel)
 		case csvimport.KindTime:
 			target = string(c.Kind) + " of " + cellAt(header, lo.FromPtr(lo.FromPtr(c.Fact).Of))
 		case csvimport.KindIgnore:

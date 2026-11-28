@@ -8,6 +8,7 @@ import (
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contactimports"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
 	"github.com/getsphericon/sphericon/internal/kernel/csvimport"
 	"github.com/getsphericon/sphericon/internal/kernel/paths"
@@ -223,18 +224,18 @@ func contactImportFactColumnIn(c Inputs, col *siteapi.ContactImportColumnInput) 
 		for i, value := range v.Values {
 			values[i] = csvimport.RefusalValue{Value: value.Value, Refusal: c.ContactImportRefusalIn(value.Refusal)}
 		}
-		return csvimport.Column{Kind: csvimport.KindRefusal, Fact: &csvimport.Fact{Channel: string(v.Channel), Refusals: values}}
+		return csvimport.Column{Kind: csvimport.KindRefusal, Fact: &csvimport.Fact{Channel: channels.Channel(v.Channel), Refusals: values}}
 	case siteapi.ContactImportConsentColumnInputContactImportColumnInputSum:
 		v := col.OneOf.ContactImportConsentColumnInput
 		ev := v.Evidence
-		return csvimport.Column{Kind: csvimport.KindConsent, Fact: &csvimport.Fact{Channel: string(v.Channel), Values: v.Values, Evidence: &csvimport.Evidence{
+		return csvimport.Column{Kind: csvimport.KindConsent, Fact: &csvimport.Fact{Channel: channels.Channel(v.Channel), Values: v.Values, Evidence: &csvimport.Evidence{
 			Wording: evidencePartIn(ev.Wording, ev.WordingColumn),
 			Source:  evidencePartIn(ev.Source, ev.SourceColumn),
 			Brand:   evidencePartIn(ev.Brand, ev.BrandColumn),
 		}}}
 	case siteapi.ContactImportEngagementTrackingColumnInputContactImportColumnInputSum:
 		v := col.OneOf.ContactImportEngagementTrackingColumnInput
-		return csvimport.Column{Kind: csvimport.KindEngagementTracking, Fact: &csvimport.Fact{Channel: string(v.Channel), Values: v.Granted, Denied: v.Denied}}
+		return csvimport.Column{Kind: csvimport.KindEngagementTracking, Fact: &csvimport.Fact{Channel: channels.Channel(v.Channel), Values: v.Granted, Denied: v.Denied}}
 	case siteapi.ContactImportTimeColumnInputContactImportColumnInputSum:
 		v := col.OneOf.ContactImportTimeColumnInput
 		var format csvimport.DateFormat

@@ -23,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/csvimport"
 	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
@@ -163,7 +164,7 @@ func TestARunStoppedMidFileResumesWithTheCountsOfAnUninterruptedRun(t *testing.T
 	imports := testhelper.Module[*contactimports.Module](env)
 	id := runningImportMapped(t, env, resumedFile(), fixtures.AcmeOwnerMembershipID, []csvimport.Column{
 		{Kind: csvimport.KindKey, Key: fieldname.Email},
-		{Kind: csvimport.KindRefusal, Fact: &csvimport.Fact{Channel: "email", Refusals: []csvimport.RefusalValue{
+		{Kind: csvimport.KindRefusal, Fact: &csvimport.Fact{Channel: channels.Email, Refusals: []csvimport.RefusalValue{
 			{Value: "unsubscribed", Refusal: csvimport.RefusalEverything},
 			{Value: "bounced", Refusal: csvimport.RefusalSuppression},
 		}}},

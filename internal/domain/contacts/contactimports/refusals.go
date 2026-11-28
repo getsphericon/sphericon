@@ -81,7 +81,7 @@ func checkedFactColumn(col *csvimport.Column) (csvimport.Column, error) {
 // checkedRefusal is a refusal column's fact: its Channel, and each value non-blank and recording
 // an Unsubscribe (of `broadcasts` off SMS only) or a Suppression.
 func checkedRefusal(in csvimport.Fact) (csvimport.Fact, error) {
-	channel := channels.Channel(in.Channel)
+	channel := in.Channel
 	if !lo.Contains(refusalChannels, channel) {
 		return in, ErrUnknownTarget
 	}
@@ -113,7 +113,7 @@ func checkedRefusal(in csvimport.Fact) (csvimport.Fact, error) {
 // checkedConsent is a consent column's fact: its Channel, its values and its evidence, each part
 // given once (within the Confirmation's bounds) or read from a column.
 func checkedConsent(in csvimport.Fact) (csvimport.Fact, error) {
-	if !lo.Contains(consentChannels, channels.Channel(in.Channel)) {
+	if !lo.Contains(consentChannels, in.Channel) {
 		return in, ErrUnknownTarget
 	}
 	values, err := checkedValues(in.Values, bounds.ContactImportConsentValuesMinItems, bounds.ContactImportConsentValuesMaxItems)
@@ -146,7 +146,7 @@ func checkedConsent(in csvimport.Fact) (csvimport.Fact, error) {
 // checkedTracking is an Engagement tracking column's fact: its Channel and the values of a grant
 // and of a refusal, at least one of them.
 func checkedTracking(in csvimport.Fact) (csvimport.Fact, error) {
-	if !lo.Contains(consentChannels, channels.Channel(in.Channel)) {
+	if !lo.Contains(consentChannels, in.Channel) {
 		return in, ErrUnknownTarget
 	}
 	granted, err := checkedValues(in.Values, 0, bounds.ContactImportTrackingValuesMaxItems)
@@ -269,7 +269,7 @@ func readRefusal(r *rowState, col csvimport.Column, at int, cell string) {
 	for _, v := range fact.Refusals {
 		if matches(cell, v.Value) && !noted[v.Refusal] {
 			noted[v.Refusal] = true
-			r.facts = append(r.facts, pendingFact{column: at, channel: channels.Channel(fact.Channel), refusal: v.Refusal})
+			r.facts = append(r.facts, pendingFact{column: at, channel: fact.Channel, refusal: v.Refusal})
 		}
 	}
 }
@@ -282,7 +282,7 @@ func is(cell, value string) bool { return strings.EqualFold(strings.TrimSpace(ce
 func readConsent(r *rowState, col csvimport.Column, at int, cell string) {
 	fact := lo.FromPtr(col.Fact)
 	if lo.SomeBy(fact.Values, func(v string) bool { return is(cell, v) }) {
-		r.facts = append(r.facts, pendingFact{column: at, channel: channels.Channel(fact.Channel)})
+		r.facts = append(r.facts, pendingFact{column: at, channel: fact.Channel})
 	}
 }
 
@@ -299,7 +299,7 @@ func readTracking(r *rowState, col csvimport.Column, at int, cell string) {
 	default:
 		return
 	}
-	r.facts = append(r.facts, pendingFact{column: at, channel: channels.Channel(fact.Channel), state: state})
+	r.facts = append(r.facts, pendingFact{column: at, channel: fact.Channel, state: state})
 }
 
 // settle turns the facts the row's cells noted into what it records, once its keys are read: each

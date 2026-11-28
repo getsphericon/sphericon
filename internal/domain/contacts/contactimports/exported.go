@@ -102,13 +102,13 @@ func (e exported) column(header string, at int, cells []string) (csvimport.Colum
 	}
 	switch cp.part {
 	case contactsexport.PartOptedOutScopes:
-		return csvimport.Column{Kind: csvimport.KindRefusal, Fact: &csvimport.Fact{Channel: string(cp.channel), Refusals: exportedRefusals(cp.channel)}}, true
+		return csvimport.Column{Kind: csvimport.KindRefusal, Fact: &csvimport.Fact{Channel: cp.channel, Refusals: exportedRefusals(cp.channel)}}, true
 	case contactsexport.PartSuppressionReason:
 		if !memberships.Allows(e.role, memberships.PermSuppressionsManage) {
 			return csvimport.Column{}, false
 		}
 		return csvimport.Column{Kind: csvimport.KindRefusal, Fact: &csvimport.Fact{
-			Channel: string(cp.channel),
+			Channel: cp.channel,
 			Refusals: lo.Map(suppressionReasons, func(r string, _ int) csvimport.RefusalValue {
 				return csvimport.RefusalValue{Value: r, Refusal: csvimport.RefusalSuppression}
 			}),
@@ -118,7 +118,7 @@ func (e exported) column(header string, at int, cells []string) (csvimport.Colum
 			return csvimport.Column{}, false
 		}
 		return csvimport.Column{Kind: csvimport.KindConsent, Fact: &csvimport.Fact{
-			Channel: string(cp.channel),
+			Channel: cp.channel,
 			Values:  slices.Clone(provenances),
 			// The provenance is how the consent was collected, the closest an export holds to where.
 			// The export holds neither the wording the person was shown nor the brand they agreed to:
