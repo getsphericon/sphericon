@@ -1237,6 +1237,12 @@ func (c *ConverterImpl) ContactImportRefusal(source csvimport.Refusal) site.Cont
 	}
 	return siteapiContactImportRefusal
 }
+func (c *ConverterImpl) ContactImportReportLink(source contactimports.ReportLink) site.DownloadLink {
+	var siteapiDownloadLink site.DownloadLink
+	siteapiDownloadLink.URL = contactImportReportURL(source)
+	siteapiDownloadLink.ExpiresAt = timestamp(source.ExpiresAt)
+	return siteapiDownloadLink
+}
 func (c *ConverterImpl) ContactImportState(source contactimport.State) site.ContactImportState {
 	var siteapiContactImportState site.ContactImportState
 	switch source {
@@ -1522,12 +1528,6 @@ func (c *ConverterImpl) DomainJoinToResource(source *ent.Workspace) *site.SiteDo
 		pSiteapiSiteDomainJoinResource = &siteapiSiteDomainJoinResource
 	}
 	return pSiteapiSiteDomainJoinResource
-}
-func (c *ConverterImpl) DownloadLinkToResource(source DownloadLinkView) site.DownloadLink {
-	var siteapiDownloadLink site.DownloadLink
-	siteapiDownloadLink.URL = source.URL
-	siteapiDownloadLink.ExpiresAt = timestamp(source.ExpiresAt)
-	return siteapiDownloadLink
 }
 func (c *ConverterImpl) EmailBroadcastContentToResource(source *ent.Broadcast) site.EmailBroadcastContent {
 	var siteapiEmailBroadcastContent site.EmailBroadcastContent

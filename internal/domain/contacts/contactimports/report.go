@@ -4,6 +4,7 @@ import (
 	"context"
 	"iter"
 	"strings"
+	"time"
 
 	"github.com/samber/lo"
 
@@ -34,21 +35,38 @@ const reportPage = 1000
 // IssuesHeader is the header of the report's column that says why each row is in it.
 const IssuesHeader = "Issues"
 
+// ReportLink is the one-time link to an import's report: its Workspace's public id and the
+// import, which the download's path names, the link's token and when it lapses.
+type ReportLink struct {
+	Workspace string
+	ImportID  int64
+	Token     string
+	ExpiresAt time.Time
+}
+
 // ReportLink issues the link to the refused rows' report of the import id, in the session the
 // request is made in (downloadlinks): an import that has not ended is ErrReportPending, one whose
 // report has no row ErrNoReport.
-func (m *Module) ReportLink(ctx context.Context, s *ent.Scoped, id int64, session string) (downloadlinks.Link, error) {
+func (m *Module) ReportLink(ctx context.Context, s *ent.Scoped, id int64, session string) (ReportLink, error) {
 	v, err := m.Get(ctx, s, id)
 	if err != nil {
-		return downloadlinks.Link{}, err
+		return ReportLink{}, err
 	}
 	if !ended(v.Import.State) {
-		return downloadlinks.Link{}, ErrReportPending
+		return ReportLink{}, ErrReportPending
 	}
 	if v.ReportRows == 0 {
-		return downloadlinks.Link{}, ErrNoReport
+		return ReportLink{}, ErrNoReport
 	}
-	return m.links.Issue(ctx, s, downloadlinks.IssueInput{Purpose: downloadlinks.PurposeImportReport, Session: session, Payload: reportPayload{ImportID: id}})
+	ws, err := s.Workspace(ctx)
+	if err != nil {
+		return ReportLink{}, err
+	}
+	link, err := m.links.Issue(ctx, s, downloadlinks.IssueInput{Purpose: downloadlinks.PurposeImportReport, Session: session, Payload: reportPayload{ImportID: id}})
+	if err != nil {
+		return ReportLink{}, err
+	}
+	return ReportLink{Workspace: ws.PublicID, ImportID: id, Token: link.Token, ExpiresAt: link.ExpiresAt}, nil
 }
 
 // reportPayload is what a report's link names: its import.

@@ -2,13 +2,9 @@ package site
 
 import (
 	"context"
-	"net/url"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/api/site/resources"
-	"github.com/getsphericon/sphericon/internal/kernel/paths"
-	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 )
 
 // SiteContactImportsUpload keeps an uploaded CSV file of Contacts as a new import (ADR 0138), the
@@ -68,15 +64,14 @@ func (h *Handlers) SiteContactImportsRun(ctx context.Context, params siteapi.Sit
 }
 
 // SiteContactImportsReportLink issues the link to an import's refused rows' report, bound to the
-// caller's session (downloadlinks): the path of SiteContactImportsReport with the link's token.
+// caller's session (downloadlinks): the path of SiteContactImportsReport with the link's token
+// (resources.contactImportReportURL).
 func (h *Handlers) SiteContactImportsReportLink(ctx context.Context, params siteapi.SiteContactImportsReportLinkParams) (*siteapi.DownloadLink, error) {
-	id := int64(params.ImportId)
-	link, err := h.contactImports.ReportLink(ctx, workspaceScope(ctx), id, auth.GetSiteAuth(ctx).Token)
+	link, err := h.contactImports.ReportLink(ctx, workspaceScope(ctx), int64(params.ImportId), auth.GetSiteAuth(ctx).Token)
 	if err != nil {
 		return nil, err
 	}
-	path := paths.Site + "/workspaces/" + url.PathEscape(string(params.WorkspaceId)) + "/contact-imports/" + publicid.Encode(id) + "/report/" + url.PathEscape(link.Token)
-	res := mapper.DownloadLinkToResource(resources.DownloadLinkView{URL: path, ExpiresAt: link.ExpiresAt})
+	res := mapper.ContactImportReportLink(link)
 	return &res, nil
 }
 

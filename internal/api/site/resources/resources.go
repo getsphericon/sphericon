@@ -602,7 +602,8 @@ type Converter interface {
 	ContactImportPreviewRowToResource(source contactimports.PreviewRow) siteapi.ContactImportPreviewRow
 	ContactImportIssueToResource(source csvimport.Issue) siteapi.ContactImportIssue
 	// A link to download a file (downloadlinks): its path, which the handler builds, and its expiry.
-	DownloadLinkToResource(source DownloadLinkView) siteapi.DownloadLink
+	// goverter:map . URL | contactImportReportURL
+	ContactImportReportLink(source contactimports.ReportLink) siteapi.DownloadLink
 	// goverter:useEmptyOnNil:slice
 	CustomFieldsToResources(source []*ent.CustomField) []siteapi.SiteCustomFieldResource
 	StartLinkToResource(source bindings.StartLink) siteapi.TelegramStartLinkResource

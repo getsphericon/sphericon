@@ -2,7 +2,7 @@ package resources
 
 import (
 	"io"
-	"time"
+	"net/url"
 
 	"github.com/samber/lo"
 
@@ -10,13 +10,14 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contactimports"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
 	"github.com/getsphericon/sphericon/internal/kernel/csvimport"
+	"github.com/getsphericon/sphericon/internal/kernel/paths"
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 )
 
-// DownloadLinkView is a download link as the answer shows it: the path the browser follows,
-// which the handler builds from the link's token, and when the link expires.
-type DownloadLinkView struct {
-	URL       string
-	ExpiresAt time.Time
+// contactImportReportURL is the path the browser follows to download an import's refused rows'
+// report: the contract's SiteContactImports report under the /site prefix (ADR 0138).
+func contactImportReportURL(l contactimports.ReportLink) string {
+	return paths.Site + "/workspaces/" + url.PathEscape(l.Workspace) + "/contact-imports/" + publicid.Encode(l.ImportID) + "/report/" + url.PathEscape(l.Token)
 }
 
 // contactImportMapping is the mapping of an import in the contract's shape: each column by its
