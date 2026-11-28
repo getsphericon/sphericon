@@ -9,7 +9,7 @@ import { PublishReview } from './PublishReview.tsx'
 // usePublishReview is the last look before Publish arms the saved version: the lint's warnings of
 // its email steps (ADR 0188), each step's under its name, over the flow of that version. They hold
 // nothing back: `review` runs the Publish it is given at once while there is no warning, and once
-// the person confirms otherwise. `modal` is placed beside the Publish button.
+// the person confirms otherwise. `modal` is placed once in the page, outside the row of buttons.
 export function usePublishReview(flow: Flow, warnings: AutomationStepWarnings[] | undefined) {
   const { t } = useTranslation()
   const [pending, setPending] = useState<(() => void) | null>(null)
