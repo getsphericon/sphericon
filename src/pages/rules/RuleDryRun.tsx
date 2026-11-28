@@ -9,8 +9,10 @@ import {
   siteRulesDryRunMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { RuleDryRunOutcome } from '../../generated/site/types.gen.ts'
+import { zSiteEventsListQuery } from '../../generated/site/zod.gen.ts'
 import { useEventActionLabel } from '../../hooks/useEventActionLabel.ts'
 import { useFormat } from '../../hooks/useFormat.ts'
+import { maxPageSize } from '../../utils/bounds.ts'
 
 // Tries the saved Rule on one stored Event: whether it would fire and which Actions would run.
 // A dry run writes and runs nothing, so it is safe to repeat.
@@ -20,7 +22,10 @@ export function RuleDryRun({ workspaceId, ruleId }: { workspaceId: string; ruleI
   const labelOf = useEventActionLabel()
   const [eventId, setEventId] = useState<string | null>(null)
   const events = useQuery(
-    siteEventsListOptions({ path: { workspaceId }, query: { page: 1, pageSize: 50 } }),
+    siteEventsListOptions({
+      path: { workspaceId },
+      query: { page: 1, pageSize: maxPageSize(zSiteEventsListQuery) },
+    }),
   )
   const dryRun = useMutation(siteRulesDryRunMutation())
 
