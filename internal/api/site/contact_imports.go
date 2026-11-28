@@ -5,6 +5,7 @@ import (
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/kernel/attachment"
 )
 
 // SiteContactImportsUpload keeps an uploaded CSV file of Contacts as a new import (ADR 0138), the
@@ -85,7 +86,7 @@ func (h *Handlers) SiteContactImportsReport(ctx context.Context, params siteapi.
 		return nil, err
 	}
 	return &siteapi.SiteContactImportsReportOKHeaders{
-		ContentDisposition: `attachment; filename="` + d.Filename + `"`,
+		ContentDisposition: attachment.ContentDisposition(d.Filename),
 		Response:           siteapi.SiteContactImportsReportOK{Data: delivered(ctx, d.Chunks, d.Delivered)},
 	}, nil
 }
