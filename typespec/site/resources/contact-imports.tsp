@@ -176,7 +176,9 @@ model ContactImportRefusalColumn {
 
 /**
  * The evidence of the consent a consent column records (ADR 0077): each part given once for every
- * row as text, or read from the column it names on each row, exactly one of the two
+ * row as text, or read from the column it names on each row, exactly one of the two. A proposal
+ * leaves a part it has no source for null in both (the wording and brand of an export's
+ * Confirmations), and the mapping is not saved until the Member gives it
  */
 model ContactImportConsentEvidence {
   /** The consent wording the person was shown and agreed to; null when a column holds it */

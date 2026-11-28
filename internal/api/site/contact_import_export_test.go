@@ -3,6 +3,7 @@ package site_test
 import (
 	"encoding/json"
 	"io"
+	"net/http"
 	"strings"
 	"testing"
 
@@ -34,8 +35,9 @@ func acmeExport(t *testing.T, env *testhelper.TestEnv) string {
 	return string(body)
 }
 
-// importIntoGlobex uploads file into Globex as its owner, saves the mapping the app proposes as it
-// is, runs the import and works its job: the import as it ended.
+// importIntoGlobex uploads file into Globex as its owner, saves the mapping the app proposes with
+// the consent's wording and brand the export does not hold, runs the import and works its job: the
+// import as it ended.
 func importIntoGlobex(t *testing.T, env *testhelper.TestEnv, file string) *siteapi.SiteContactImport {
 	t.Helper()
 	ctx := t.Context()
@@ -43,15 +45,52 @@ func importIntoGlobex(t *testing.T, env *testhelper.TestEnv, file string) *sitea
 	imp, err := owner.SiteContactImportsUpload(ctx, siteapi.SiteContactImportsUploadReq{Data: strings.NewReader(file)},
 		siteapi.SiteContactImportsUploadParams{WorkspaceId: fixtures.GlobexPublicID})
 	require.NoError(t, err)
-	in := mappingInput(t, imp)
+	in := withConsentEvidence(mappingInput(t, imp), "Sign me up for the newsletter", "Globex")
 	_, err = owner.SiteContactImportsSaveMapping(ctx, in, siteapi.SiteContactImportsSaveMappingParams{WorkspaceId: fixtures.GlobexPublicID, ImportId: imp.ID})
-	require.NoError(t, err, "the proposal saves as it is")
+	require.NoError(t, err, "the proposal saves with the consent's evidence given")
 	_, err = owner.SiteContactImportsRun(ctx, siteapi.SiteContactImportsRunParams{WorkspaceId: fixtures.GlobexPublicID, ImportId: imp.ID})
-	require.NoError(t, err, "the proposal runs as it is")
+	require.NoError(t, err, "the proposal runs with the consent's evidence given")
 	env.PerformEnqueuedJobs(t)
 	done, err := owner.SiteContactImportsGet(ctx, siteapi.SiteContactImportsGetParams{WorkspaceId: fixtures.GlobexPublicID, ImportId: imp.ID})
 	require.NoError(t, err)
 	return done
+}
+
+// withConsentEvidence is in with wording and brand given as the evidence of each consent column,
+// as the Member fills in what a proposal leaves blank.
+func withConsentEvidence(in *siteapi.ContactImportMappingInput, wording, brand string) *siteapi.ContactImportMappingInput {
+	for i := range in.Columns {
+		consent, ok := in.Columns[i].OneOf.GetContactImportConsentColumnInput()
+		if !ok {
+			continue
+		}
+		consent.Evidence.Wording = siteapi.NewNilString(wording)
+		consent.Evidence.Brand = siteapi.NewNilString(brand)
+		in.Columns[i].OneOf.SetContactImportConsentColumnInput(consent)
+	}
+	return in
+}
+
+// An export holds how each Confirmation was collected, which a proposal reads as the consent's
+// source, but not the wording the person was shown nor the brand they agreed to hear from: the
+// proposal leaves both blank, and its mapping is not saved until the Member gives them.
+func TestAnExportsConsentIsProposedWithoutTheEvidenceItLacks(t *testing.T) {
+	env := testhelper.Setup(t)
+	owner := env.SiteActor(t, fixtures.OwnerJaneEmail)
+	imp, err := owner.SiteContactImportsUpload(t.Context(), siteapi.SiteContactImportsUploadReq{Data: strings.NewReader(acmeExport(t, env))},
+		siteapi.SiteContactImportsUploadParams{WorkspaceId: fixtures.GlobexPublicID})
+	require.NoError(t, err)
+	at := lo.IndexOf(imp.Header, "email.confirmation")
+	require.GreaterOrEqual(t, at, 0)
+	consent, ok := imp.Mapping.Columns[at].OneOf.GetContactImportConsentColumn()
+	require.True(t, ok)
+
+	_, unsaved := owner.SiteContactImportsSaveMapping(t.Context(), mappingInput(t, imp), siteapi.SiteContactImportsSaveMappingParams{WorkspaceId: fixtures.GlobexPublicID, ImportId: imp.ID})
+
+	assert.Empty(t, consent.Evidence.Wording.Value, "no wording is made up")
+	assert.Empty(t, consent.Evidence.Brand.Value, "no brand is made up")
+	assert.Equal(t, siteapi.NewNilInt32(int32(at)), consent.Evidence.SourceColumn, "the provenance is the source")
+	testhelper.SiteRefusal(t, unsaved, http.StatusUnprocessableEntity)
 }
 
 // globexStates are the Channel states of Globex's Contacts, by the Contact's email, else phone.

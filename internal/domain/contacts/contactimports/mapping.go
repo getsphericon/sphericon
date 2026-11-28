@@ -265,7 +265,7 @@ func (m *Module) propose(ctx context.Context, s *ent.Scoped, imp *ent.ContactImp
 		DecimalSeparator: lo.Ternary(imp.Delimiter == contactimport.DelimiterSemicolon, csvimport.DecimalComma, csvimport.DecimalPoint),
 		Tag:              "Imported " + m.now().In(zone).Format("2006-01-02"),
 	}
-	export := exported{fields: fields, sep: mapping.DecimalSeparator, brand: ws.Name}
+	export := exported{fields: fields, sep: mapping.DecimalSeparator}
 	used := map[string]bool{}
 	for at, h := range imp.Header {
 		cells := lo.Map(sample, func(cells []string, _ int) string { return csvfile.Unguarded(cellAt(cells, at)) })

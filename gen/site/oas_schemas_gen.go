@@ -9725,7 +9725,9 @@ func (s *ContactImportConsentColumnKind) UnmarshalText(data []byte) error {
 }
 
 // The evidence of the consent a consent column records (ADR 0077): each part given once for every row
-// as text, or read from the column it names on each row, exactly one of the two.
+// as text, or read from the column it names on each row, exactly one of the two. A proposal leaves a
+// part it has no source for null in both (the wording and brand of an export's Confirmations), and the
+// mapping is not saved until the Member gives it.
 // Ref: #/components/schemas/ContactImportConsentEvidence
 type ContactImportConsentEvidence struct {
 	// The consent wording the person was shown and agreed to; null when a column holds it.
@@ -9803,7 +9805,9 @@ func (s *ContactImportConsentEvidence) SetBrandColumn(val NilInt32) {
 }
 
 // The evidence of the consent a consent column records (ADR 0077): each part given once for every row
-// as text, or read from the column it names on each row, exactly one of the two.
+// as text, or read from the column it names on each row, exactly one of the two. A proposal leaves a
+// part it has no source for null in both (the wording and brand of an export's Confirmations), and the
+// mapping is not saved until the Member gives it.
 // Ref: #/components/schemas/ContactImportConsentEvidenceInput
 type ContactImportConsentEvidenceInput struct {
 	// The consent wording the person was shown and agreed to; null when a column holds it.

@@ -20,11 +20,6 @@ import (
 // proposal maps by itself so that one Workspace's export imports into another as it is: a Custom
 // field's, and each Channel's state.
 
-// exportedConsentWording is the consent wording a proposal gives once for the Confirmations an export
-// carries: the export holds how each was confirmed, not what the person was shown. The Member may
-// change it.
-const exportedConsentWording = "Consent given before this file was exported from another Workspace"
-
 // exportedRefusals are the opted-out scopes of an export that a refusal column records, by Channel:
 // `everything`, and `broadcasts` on email; an opt-out of one Automation (its scope
 // `automation:<id>`) means nothing in another Workspace and is not listed. Off email a person stops
@@ -88,8 +83,6 @@ type exported struct {
 	fields map[string]customfield.Type
 	// sep is the decimal separator the proposal reads numbers with.
 	sep csvimport.DecimalSeparator
-	// brand is the brand the Confirmations an export carries were given to: the Workspace's name.
-	brand string
 }
 
 // column is the column proposed for header at, whose sample cells are cells (read back as written,
@@ -122,11 +115,10 @@ func (e exported) column(header string, at int, cells []string) (csvimport.Colum
 			Channel: string(cp.channel),
 			Values:  lo.Map(provenances, func(p confirmation.Provenance, _ int) string { return string(p) }),
 			// The provenance is how the consent was collected, the closest an export holds to where.
-			Evidence: &csvimport.Evidence{
-				Wording: csvimport.EvidencePart{Text: exportedConsentWording},
-				Source:  csvimport.EvidencePart{Column: new(at)},
-				Brand:   csvimport.EvidencePart{Text: e.brand},
-			},
+			// The export holds neither the wording the person was shown nor the brand they agreed to:
+			// both are left blank, which the save refuses until the Member gives them, so no proof of
+			// consent is made up.
+			Evidence: &csvimport.Evidence{Source: csvimport.EvidencePart{Column: new(at)}},
 		}}, true
 	case contactsexport.PartOptedOutAt, contactsexport.PartConfirmedAt:
 		return csvimport.Column{Kind: csvimport.KindTime, DateFormat: csvimport.DateTimeRFC3339, Fact: &csvimport.Fact{}}, true

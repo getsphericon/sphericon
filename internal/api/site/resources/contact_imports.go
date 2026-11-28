@@ -189,9 +189,9 @@ func contactImportFactColumn(c Converter, col csvimport.Column, format siteapi.N
 	})}
 }
 
-// evidenceText is the text of an evidence part, null when a column holds it.
+// evidenceText is the text of an evidence part, null when a column holds it or none is given yet.
 func evidenceText(p csvimport.EvidencePart) siteapi.NilString {
-	if p.Column != nil {
+	if p.Column != nil || p.Text == "" {
 		return siteapi.NilString{Null: true}
 	}
 	return siteapi.NewNilString(p.Text)

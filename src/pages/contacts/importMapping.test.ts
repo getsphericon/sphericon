@@ -119,8 +119,9 @@ test('a time column needs its format before the run', () => {
   expect(columnsMissingDateFormat(cleared, fields)).toEqual([0])
 })
 
-// The proposal for a CSV export of Contacts (ADR 0138) holds every kind of column; a Member who
-// changes nothing saves it as it was proposed.
+// The proposal for a CSV export of Contacts (ADR 0138) holds every kind of column, its consent's
+// wording and brand null (an export holds neither); a Member who changes nothing sends it as it was
+// proposed, and the save refuses the blank evidence.
 const exportProposal: ContactImportMapping = {
   columns: [
     { kind: 'key', key: 'email' },
@@ -155,11 +156,11 @@ const exportProposal: ContactImportMapping = {
       channel: 'email',
       values: [...zConfirmationProvenance.options],
       evidence: {
-        wording: 'Consent given before this file was exported from another Workspace',
+        wording: null,
         wordingColumn: null,
         source: null,
         sourceColumn: 7,
-        brand: 'Globex',
+        brand: null,
         brandColumn: null,
       },
     },

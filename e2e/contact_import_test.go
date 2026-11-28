@@ -68,7 +68,7 @@ func TestAnImportedUnsubscribeKeepsABroadcastAway(t *testing.T) {
 }
 
 // A Workspace's export imports into another Workspace as it is (ADR 0138): the mapping the app
-// proposes from the export's headers is saved unchanged, and brings the Contacts with their Tags and
+// proposes from the export's headers is saved with only the consent's wording and brand given, and brings the Contacts with their Tags and
 // their refusals, so a Broadcast there reaches the others and not the address that opted out.
 func TestAnExportImportsIntoAnotherWorkspaceAsItIs(t *testing.T) {
 	t.Parallel()
