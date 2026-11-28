@@ -23,12 +23,61 @@ const (
 	KindTags Kind = "tags"
 	// KindIgnore is not read.
 	KindIgnore Kind = "ignore"
+	// KindRefusal records the refusals its cells name on a Channel (Fact.Channel), at the row's
+	// Destination there: an Unsubscribe or a Suppression (Fact.Refusals).
+	KindRefusal Kind = "refusal"
+	// KindConsent records an imported Confirmation on a Channel (Fact.Channel) for a row whose
+	// cell is one of Fact.Values, with Fact.Evidence.
+	KindConsent Kind = "consent"
+	// KindEngagementTracking records the Engagement tracking consent its cells name on a Channel
+	// (Fact.Channel): granted by Fact.Values, denied by Fact.Denied (ADR 0120).
+	KindEngagementTracking Kind = "engagementTracking"
+	// KindTime states when the fact of the refusal, consent or Engagement tracking column Fact.Of
+	// occurred, read in Column.DateFormat (ADR 0154).
+	KindTime Kind = "time"
 )
+
+// Refusal is what a value of a refusal column records: the values of the contract's
+// ContactImportRefusal.
+type Refusal string
+
+const (
+	// RefusalEverything records an Unsubscribe of `everything`, `via: imported`.
+	RefusalEverything Refusal = "unsubscribeEverything"
+	// RefusalBroadcasts records an Unsubscribe of `broadcasts` (email only), `via: imported`.
+	RefusalBroadcasts Refusal = "unsubscribeBroadcasts"
+	// RefusalSuppression records a Suppression of the `manual` reason.
+	RefusalSuppression Refusal = "suppression"
+)
+
+// RefusalValue is a cell value of a refusal column and the refusal it records. A cell records it
+// when the cell is the value, or one of the cell's items read as a list (a CSV record, as an export
+// writes several opt-out scopes) is, ignoring case and the spaces around it.
+type RefusalValue struct {
+	Value   string  `json:"value"`
+	Refusal Refusal `json:"refusal"`
+}
+
+// EvidencePart is one part of a consent column's evidence: the text given once for every row, or
+// the column (counted from 0) whose cell holds it on each row. Exactly one is set.
+type EvidencePart struct {
+	Text   string `json:"text,omitempty"`
+	Column *int   `json:"column,omitempty"`
+}
+
+// Evidence is the evidence of the consent a consent column records: the wording the person
+// agreed to, where it was collected and the brand (ADR 0077).
+type Evidence struct {
+	Wording EvidencePart `json:"wording"`
+	Source  EvidencePart `json:"source"`
+	Brand   EvidencePart `json:"brand"`
+}
 
 // Column is what one column of the file is. Key names the alias key of a key column and the Custom
 // field of a customField or newCustomField one; Attribute the core attribute; DateFormat how a date
-// column writes its dates. Label and FieldType are the display name and the type (a Custom field
-// type's value: string, number, bool or datetime) of the field a newCustomField column creates.
+// or time column writes its dates. Label and FieldType are the display name and the type (a Custom
+// field type's value: string, number, bool or datetime) of the field a newCustomField column
+// creates.
 type Column struct {
 	Kind       Kind       `json:"kind"`
 	Key        string     `json:"key,omitempty"`
@@ -36,6 +85,26 @@ type Column struct {
 	DateFormat DateFormat `json:"dateFormat,omitempty"`
 	Label      string     `json:"label,omitempty"`
 	FieldType  string     `json:"fieldType,omitempty"`
+	// Fact is what a refusal, consent, Engagement tracking or time column records; nil on a
+	// column of another kind.
+	Fact *Fact `json:"fact,omitempty"`
+}
+
+// Fact is what a refusal, consent, Engagement tracking or time column records.
+type Fact struct {
+	// Channel is the Channel of a refusal, consent or Engagement tracking column: email or sms,
+	// and telegram for a refusal.
+	Channel string `json:"channel,omitempty"`
+	// Refusals are the values of a refusal column, each with what it records.
+	Refusals []RefusalValue `json:"refusals,omitempty"`
+	// Values mean consent in a consent column, and a grant in an Engagement tracking one.
+	Values []string `json:"values,omitempty"`
+	// Denied mean a refusal of tracking in an Engagement tracking column.
+	Denied []string `json:"denied,omitempty"`
+	// Evidence is a consent column's evidence.
+	Evidence *Evidence `json:"evidence,omitempty"`
+	// Of is the refusal, consent or Engagement tracking column a time column times, from 0.
+	Of *int `json:"of,omitempty"`
 }
 
 // Mapping is how an import reads its file: a Column per column of the file, in its order, and the
@@ -134,6 +203,22 @@ const (
 	// ReasonKeysNameTwoContacts: the row's keys named two Contacts and it was written to the one
 	// their rank picks; the row is reported, not refused.
 	ReasonKeysNameTwoContacts Reason = "keysNameTwoContacts"
+
+	// ReasonNoTime: a time column's cell is blank on a row whose fact it times; the fact is
+	// recorded as occurring now.
+	ReasonNoTime Reason = "noTime"
+	// ReasonTimeInFuture: a time column's cell is later than the run; the fact is recorded as
+	// occurring now.
+	ReasonTimeInFuture Reason = "timeInFuture"
+	// ReasonNoDestination: a refusal, consent or tracking value on a row that has no Destination
+	// on its Channel; nothing is recorded for it.
+	ReasonNoDestination Reason = "noDestination"
+	// ReasonNoEvidence: a consent value on a row whose evidence cell is blank or too long; no
+	// consent is recorded for it.
+	ReasonNoEvidence Reason = "noEvidence"
+	// ReasonRefusalNotRecorded: a refusal the row names could not be recorded; the message says
+	// why.
+	ReasonRefusalNotRecorded Reason = "refusalNotRecorded"
 )
 
 // Issue is a value or a row an import does not write, or a row it wrote with a warning, and why.

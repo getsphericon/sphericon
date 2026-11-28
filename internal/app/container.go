@@ -913,7 +913,8 @@ var audiencePackage = do.Package(
 	}),
 	do.Lazy(func(i do.Injector) (*contactimports.Module, error) {
 		return contactimports.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*contacts.Module](i),
-			do.MustInvoke[*memberships.Module](i), do.MustInvoke[*downloadlinks.Module](i), do.MustInvoke[Clock](i)), nil
+			do.MustInvoke[*memberships.Module](i), do.MustInvoke[*downloadlinks.Module](i),
+			do.MustInvoke[*unsubscriberecording.UseCase](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*visitors.Module, error) {
 		return visitors.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil

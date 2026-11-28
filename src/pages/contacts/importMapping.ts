@@ -9,9 +9,12 @@ import type {
   CustomFieldType,
 } from '../../generated/site/types.gen.ts'
 import { zContactImportAttribute, zContactImportKey } from '../../generated/site/zod.gen.ts'
+import { factColumnOf, factOf, factTargets, time } from './importFacts.ts'
+import type { FactSettings } from './importFacts.ts'
 
 // What a column of a CSV import writes, as the value of its type control: `ignore`, `tags`,
-// `key:<key>`, `attribute:<attribute>`, `customField:<key>` or `newCustomField` (ADR 0138). The control and the
+// `key:<key>`, `attribute:<attribute>`, `customField:<key>`, `newCustomField`, or a fact kind of
+// importFacts.ts (`refusal`, `consent`, `engagementTracking`, `time`) (ADR 0138). The control and the
 // mapping a request saves are both read from it, so the two never disagree.
 export type Target = string
 
@@ -35,6 +38,8 @@ export interface ColumnChoice {
   target: Target
   dateFormat: ContactImportDateFormat | null
   newField?: NewFieldChoice
+  // What a refusal, consent, tracking or time column records; undefined for any other target.
+  fact?: FactSettings | undefined
 }
 
 // The mapping form's values: a choice per column of the file and the choices for every row, the
@@ -98,12 +103,15 @@ function targetOf(column: ContactImportColumn): Target {
   if (column.kind === 'newCustomField') {
     return newCustomField
   }
+  if (factTargets.includes(column.kind)) {
+    return column.kind
+  }
   return column.kind === 'tags' ? tags : ignore
 }
 
 // Whether a target writes a date, which needs its format: the birthday, or a datetime Custom field.
 export function writesDate(target: Target, fields: readonly FieldOption[]): boolean {
-  if (target === 'attribute:birthday') {
+  if (target === 'attribute:birthday' || target === time) {
     return true
   }
   const key = target.startsWith('customField:') ? target.slice('customField:'.length) : undefined
@@ -116,6 +124,7 @@ export function valuesOf(mapping: ContactImportMapping): MappingValues {
     columns: mapping.columns.map((column) => ({
       target: targetOf(column),
       dateFormat: 'dateFormat' in column ? column.dateFormat : null,
+      fact: factOf(column),
       ...(column.kind === 'newCustomField'
         ? { newField: { key: column.key, label: column.label, type: column.type } }
         : {}),
@@ -146,6 +155,10 @@ function columnOf(choice: ColumnChoice, fields: readonly FieldOption[]): Contact
   if (kind === newCustomField) {
     const field = choice.newField ?? newFieldFor('')
     return { kind: 'newCustomField', ...field, dateFormat }
+  }
+  const fact = choice.fact === undefined ? undefined : factColumnOf(kind, choice.fact, dateFormat)
+  if (fact !== undefined) {
+    return fact
   }
   return kind === 'tags' ? { kind: 'tags' } : { kind: 'ignore' }
 }

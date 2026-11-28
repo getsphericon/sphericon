@@ -8927,13 +8927,17 @@ func (s *ContactImportColumnInput) SetOneOf(val ContactImportColumnInputSum) {
 // ContactImportColumnInputSum represents sum type.
 type ContactImportColumnInputSum struct {
 	// Type selects the active sum variant, switch on this field.
-	Type                                   ContactImportColumnInputSumType
-	ContactImportKeyColumnInput            ContactImportKeyColumnInput
-	ContactImportAttributeColumnInput      ContactImportAttributeColumnInput
-	ContactImportCustomFieldColumnInput    ContactImportCustomFieldColumnInput
-	ContactImportNewCustomFieldColumnInput ContactImportNewCustomFieldColumnInput
-	ContactImportTagsColumnInput           ContactImportTagsColumnInput
-	ContactImportIgnoreColumnInput         ContactImportIgnoreColumnInput
+	Type                                       ContactImportColumnInputSumType
+	ContactImportKeyColumnInput                ContactImportKeyColumnInput
+	ContactImportAttributeColumnInput          ContactImportAttributeColumnInput
+	ContactImportCustomFieldColumnInput        ContactImportCustomFieldColumnInput
+	ContactImportNewCustomFieldColumnInput     ContactImportNewCustomFieldColumnInput
+	ContactImportTagsColumnInput               ContactImportTagsColumnInput
+	ContactImportIgnoreColumnInput             ContactImportIgnoreColumnInput
+	ContactImportRefusalColumnInput            ContactImportRefusalColumnInput
+	ContactImportConsentColumnInput            ContactImportConsentColumnInput
+	ContactImportEngagementTrackingColumnInput ContactImportEngagementTrackingColumnInput
+	ContactImportTimeColumnInput               ContactImportTimeColumnInput
 }
 
 // ContactImportColumnInputSumType is oneOf type of ContactImportColumnInputSum.
@@ -8941,12 +8945,16 @@ type ContactImportColumnInputSumType string
 
 // Possible values for ContactImportColumnInputSumType.
 const (
-	ContactImportKeyColumnInputContactImportColumnInputSum            ContactImportColumnInputSumType = "key"
-	ContactImportAttributeColumnInputContactImportColumnInputSum      ContactImportColumnInputSumType = "attribute"
-	ContactImportCustomFieldColumnInputContactImportColumnInputSum    ContactImportColumnInputSumType = "customField"
-	ContactImportNewCustomFieldColumnInputContactImportColumnInputSum ContactImportColumnInputSumType = "newCustomField"
-	ContactImportTagsColumnInputContactImportColumnInputSum           ContactImportColumnInputSumType = "tags"
-	ContactImportIgnoreColumnInputContactImportColumnInputSum         ContactImportColumnInputSumType = "ignore"
+	ContactImportKeyColumnInputContactImportColumnInputSum                ContactImportColumnInputSumType = "key"
+	ContactImportAttributeColumnInputContactImportColumnInputSum          ContactImportColumnInputSumType = "attribute"
+	ContactImportCustomFieldColumnInputContactImportColumnInputSum        ContactImportColumnInputSumType = "customField"
+	ContactImportNewCustomFieldColumnInputContactImportColumnInputSum     ContactImportColumnInputSumType = "newCustomField"
+	ContactImportTagsColumnInputContactImportColumnInputSum               ContactImportColumnInputSumType = "tags"
+	ContactImportIgnoreColumnInputContactImportColumnInputSum             ContactImportColumnInputSumType = "ignore"
+	ContactImportRefusalColumnInputContactImportColumnInputSum            ContactImportColumnInputSumType = "refusal"
+	ContactImportConsentColumnInputContactImportColumnInputSum            ContactImportColumnInputSumType = "consent"
+	ContactImportEngagementTrackingColumnInputContactImportColumnInputSum ContactImportColumnInputSumType = "engagementTracking"
+	ContactImportTimeColumnInputContactImportColumnInputSum               ContactImportColumnInputSumType = "time"
 )
 
 // IsContactImportKeyColumnInput reports whether ContactImportColumnInputSum is ContactImportKeyColumnInput.
@@ -8977,6 +8985,26 @@ func (s ContactImportColumnInputSum) IsContactImportTagsColumnInput() bool {
 // IsContactImportIgnoreColumnInput reports whether ContactImportColumnInputSum is ContactImportIgnoreColumnInput.
 func (s ContactImportColumnInputSum) IsContactImportIgnoreColumnInput() bool {
 	return s.Type == ContactImportIgnoreColumnInputContactImportColumnInputSum
+}
+
+// IsContactImportRefusalColumnInput reports whether ContactImportColumnInputSum is ContactImportRefusalColumnInput.
+func (s ContactImportColumnInputSum) IsContactImportRefusalColumnInput() bool {
+	return s.Type == ContactImportRefusalColumnInputContactImportColumnInputSum
+}
+
+// IsContactImportConsentColumnInput reports whether ContactImportColumnInputSum is ContactImportConsentColumnInput.
+func (s ContactImportColumnInputSum) IsContactImportConsentColumnInput() bool {
+	return s.Type == ContactImportConsentColumnInputContactImportColumnInputSum
+}
+
+// IsContactImportEngagementTrackingColumnInput reports whether ContactImportColumnInputSum is ContactImportEngagementTrackingColumnInput.
+func (s ContactImportColumnInputSum) IsContactImportEngagementTrackingColumnInput() bool {
+	return s.Type == ContactImportEngagementTrackingColumnInputContactImportColumnInputSum
+}
+
+// IsContactImportTimeColumnInput reports whether ContactImportColumnInputSum is ContactImportTimeColumnInput.
+func (s ContactImportColumnInputSum) IsContactImportTimeColumnInput() bool {
+	return s.Type == ContactImportTimeColumnInputContactImportColumnInputSum
 }
 
 // SetContactImportKeyColumnInput sets ContactImportColumnInputSum to ContactImportKeyColumnInput.
@@ -9105,16 +9133,104 @@ func NewContactImportIgnoreColumnInputContactImportColumnInputSum(v ContactImpor
 	return s
 }
 
+// SetContactImportRefusalColumnInput sets ContactImportColumnInputSum to ContactImportRefusalColumnInput.
+func (s *ContactImportColumnInputSum) SetContactImportRefusalColumnInput(v ContactImportRefusalColumnInput) {
+	s.Type = ContactImportRefusalColumnInputContactImportColumnInputSum
+	s.ContactImportRefusalColumnInput = v
+}
+
+// GetContactImportRefusalColumnInput returns ContactImportRefusalColumnInput and true boolean if ContactImportColumnInputSum is ContactImportRefusalColumnInput.
+func (s ContactImportColumnInputSum) GetContactImportRefusalColumnInput() (v ContactImportRefusalColumnInput, ok bool) {
+	if !s.IsContactImportRefusalColumnInput() {
+		return v, false
+	}
+	return s.ContactImportRefusalColumnInput, true
+}
+
+// NewContactImportRefusalColumnInputContactImportColumnInputSum returns new ContactImportColumnInputSum from ContactImportRefusalColumnInput.
+func NewContactImportRefusalColumnInputContactImportColumnInputSum(v ContactImportRefusalColumnInput) ContactImportColumnInputSum {
+	var s ContactImportColumnInputSum
+	s.SetContactImportRefusalColumnInput(v)
+	return s
+}
+
+// SetContactImportConsentColumnInput sets ContactImportColumnInputSum to ContactImportConsentColumnInput.
+func (s *ContactImportColumnInputSum) SetContactImportConsentColumnInput(v ContactImportConsentColumnInput) {
+	s.Type = ContactImportConsentColumnInputContactImportColumnInputSum
+	s.ContactImportConsentColumnInput = v
+}
+
+// GetContactImportConsentColumnInput returns ContactImportConsentColumnInput and true boolean if ContactImportColumnInputSum is ContactImportConsentColumnInput.
+func (s ContactImportColumnInputSum) GetContactImportConsentColumnInput() (v ContactImportConsentColumnInput, ok bool) {
+	if !s.IsContactImportConsentColumnInput() {
+		return v, false
+	}
+	return s.ContactImportConsentColumnInput, true
+}
+
+// NewContactImportConsentColumnInputContactImportColumnInputSum returns new ContactImportColumnInputSum from ContactImportConsentColumnInput.
+func NewContactImportConsentColumnInputContactImportColumnInputSum(v ContactImportConsentColumnInput) ContactImportColumnInputSum {
+	var s ContactImportColumnInputSum
+	s.SetContactImportConsentColumnInput(v)
+	return s
+}
+
+// SetContactImportEngagementTrackingColumnInput sets ContactImportColumnInputSum to ContactImportEngagementTrackingColumnInput.
+func (s *ContactImportColumnInputSum) SetContactImportEngagementTrackingColumnInput(v ContactImportEngagementTrackingColumnInput) {
+	s.Type = ContactImportEngagementTrackingColumnInputContactImportColumnInputSum
+	s.ContactImportEngagementTrackingColumnInput = v
+}
+
+// GetContactImportEngagementTrackingColumnInput returns ContactImportEngagementTrackingColumnInput and true boolean if ContactImportColumnInputSum is ContactImportEngagementTrackingColumnInput.
+func (s ContactImportColumnInputSum) GetContactImportEngagementTrackingColumnInput() (v ContactImportEngagementTrackingColumnInput, ok bool) {
+	if !s.IsContactImportEngagementTrackingColumnInput() {
+		return v, false
+	}
+	return s.ContactImportEngagementTrackingColumnInput, true
+}
+
+// NewContactImportEngagementTrackingColumnInputContactImportColumnInputSum returns new ContactImportColumnInputSum from ContactImportEngagementTrackingColumnInput.
+func NewContactImportEngagementTrackingColumnInputContactImportColumnInputSum(v ContactImportEngagementTrackingColumnInput) ContactImportColumnInputSum {
+	var s ContactImportColumnInputSum
+	s.SetContactImportEngagementTrackingColumnInput(v)
+	return s
+}
+
+// SetContactImportTimeColumnInput sets ContactImportColumnInputSum to ContactImportTimeColumnInput.
+func (s *ContactImportColumnInputSum) SetContactImportTimeColumnInput(v ContactImportTimeColumnInput) {
+	s.Type = ContactImportTimeColumnInputContactImportColumnInputSum
+	s.ContactImportTimeColumnInput = v
+}
+
+// GetContactImportTimeColumnInput returns ContactImportTimeColumnInput and true boolean if ContactImportColumnInputSum is ContactImportTimeColumnInput.
+func (s ContactImportColumnInputSum) GetContactImportTimeColumnInput() (v ContactImportTimeColumnInput, ok bool) {
+	if !s.IsContactImportTimeColumnInput() {
+		return v, false
+	}
+	return s.ContactImportTimeColumnInput, true
+}
+
+// NewContactImportTimeColumnInputContactImportColumnInputSum returns new ContactImportColumnInputSum from ContactImportTimeColumnInput.
+func NewContactImportTimeColumnInputContactImportColumnInputSum(v ContactImportTimeColumnInput) ContactImportColumnInputSum {
+	var s ContactImportColumnInputSum
+	s.SetContactImportTimeColumnInput(v)
+	return s
+}
+
 // ContactImportColumnSum represents sum type.
 type ContactImportColumnSum struct {
 	// Type selects the active sum variant, switch on this field.
-	Type                              ContactImportColumnSumType
-	ContactImportKeyColumn            ContactImportKeyColumn
-	ContactImportAttributeColumn      ContactImportAttributeColumn
-	ContactImportCustomFieldColumn    ContactImportCustomFieldColumn
-	ContactImportNewCustomFieldColumn ContactImportNewCustomFieldColumn
-	ContactImportTagsColumn           ContactImportTagsColumn
-	ContactImportIgnoreColumn         ContactImportIgnoreColumn
+	Type                                  ContactImportColumnSumType
+	ContactImportKeyColumn                ContactImportKeyColumn
+	ContactImportAttributeColumn          ContactImportAttributeColumn
+	ContactImportCustomFieldColumn        ContactImportCustomFieldColumn
+	ContactImportNewCustomFieldColumn     ContactImportNewCustomFieldColumn
+	ContactImportTagsColumn               ContactImportTagsColumn
+	ContactImportIgnoreColumn             ContactImportIgnoreColumn
+	ContactImportRefusalColumn            ContactImportRefusalColumn
+	ContactImportConsentColumn            ContactImportConsentColumn
+	ContactImportEngagementTrackingColumn ContactImportEngagementTrackingColumn
+	ContactImportTimeColumn               ContactImportTimeColumn
 }
 
 // ContactImportColumnSumType is oneOf type of ContactImportColumnSum.
@@ -9122,12 +9238,16 @@ type ContactImportColumnSumType string
 
 // Possible values for ContactImportColumnSumType.
 const (
-	ContactImportKeyColumnContactImportColumnSum            ContactImportColumnSumType = "key"
-	ContactImportAttributeColumnContactImportColumnSum      ContactImportColumnSumType = "attribute"
-	ContactImportCustomFieldColumnContactImportColumnSum    ContactImportColumnSumType = "customField"
-	ContactImportNewCustomFieldColumnContactImportColumnSum ContactImportColumnSumType = "newCustomField"
-	ContactImportTagsColumnContactImportColumnSum           ContactImportColumnSumType = "tags"
-	ContactImportIgnoreColumnContactImportColumnSum         ContactImportColumnSumType = "ignore"
+	ContactImportKeyColumnContactImportColumnSum                ContactImportColumnSumType = "key"
+	ContactImportAttributeColumnContactImportColumnSum          ContactImportColumnSumType = "attribute"
+	ContactImportCustomFieldColumnContactImportColumnSum        ContactImportColumnSumType = "customField"
+	ContactImportNewCustomFieldColumnContactImportColumnSum     ContactImportColumnSumType = "newCustomField"
+	ContactImportTagsColumnContactImportColumnSum               ContactImportColumnSumType = "tags"
+	ContactImportIgnoreColumnContactImportColumnSum             ContactImportColumnSumType = "ignore"
+	ContactImportRefusalColumnContactImportColumnSum            ContactImportColumnSumType = "refusal"
+	ContactImportConsentColumnContactImportColumnSum            ContactImportColumnSumType = "consent"
+	ContactImportEngagementTrackingColumnContactImportColumnSum ContactImportColumnSumType = "engagementTracking"
+	ContactImportTimeColumnContactImportColumnSum               ContactImportColumnSumType = "time"
 )
 
 // IsContactImportKeyColumn reports whether ContactImportColumnSum is ContactImportKeyColumn.
@@ -9158,6 +9278,26 @@ func (s ContactImportColumnSum) IsContactImportTagsColumn() bool {
 // IsContactImportIgnoreColumn reports whether ContactImportColumnSum is ContactImportIgnoreColumn.
 func (s ContactImportColumnSum) IsContactImportIgnoreColumn() bool {
 	return s.Type == ContactImportIgnoreColumnContactImportColumnSum
+}
+
+// IsContactImportRefusalColumn reports whether ContactImportColumnSum is ContactImportRefusalColumn.
+func (s ContactImportColumnSum) IsContactImportRefusalColumn() bool {
+	return s.Type == ContactImportRefusalColumnContactImportColumnSum
+}
+
+// IsContactImportConsentColumn reports whether ContactImportColumnSum is ContactImportConsentColumn.
+func (s ContactImportColumnSum) IsContactImportConsentColumn() bool {
+	return s.Type == ContactImportConsentColumnContactImportColumnSum
+}
+
+// IsContactImportEngagementTrackingColumn reports whether ContactImportColumnSum is ContactImportEngagementTrackingColumn.
+func (s ContactImportColumnSum) IsContactImportEngagementTrackingColumn() bool {
+	return s.Type == ContactImportEngagementTrackingColumnContactImportColumnSum
+}
+
+// IsContactImportTimeColumn reports whether ContactImportColumnSum is ContactImportTimeColumn.
+func (s ContactImportColumnSum) IsContactImportTimeColumn() bool {
+	return s.Type == ContactImportTimeColumnContactImportColumnSum
 }
 
 // SetContactImportKeyColumn sets ContactImportColumnSum to ContactImportKeyColumn.
@@ -9286,6 +9426,460 @@ func NewContactImportIgnoreColumnContactImportColumnSum(v ContactImportIgnoreCol
 	return s
 }
 
+// SetContactImportRefusalColumn sets ContactImportColumnSum to ContactImportRefusalColumn.
+func (s *ContactImportColumnSum) SetContactImportRefusalColumn(v ContactImportRefusalColumn) {
+	s.Type = ContactImportRefusalColumnContactImportColumnSum
+	s.ContactImportRefusalColumn = v
+}
+
+// GetContactImportRefusalColumn returns ContactImportRefusalColumn and true boolean if ContactImportColumnSum is ContactImportRefusalColumn.
+func (s ContactImportColumnSum) GetContactImportRefusalColumn() (v ContactImportRefusalColumn, ok bool) {
+	if !s.IsContactImportRefusalColumn() {
+		return v, false
+	}
+	return s.ContactImportRefusalColumn, true
+}
+
+// NewContactImportRefusalColumnContactImportColumnSum returns new ContactImportColumnSum from ContactImportRefusalColumn.
+func NewContactImportRefusalColumnContactImportColumnSum(v ContactImportRefusalColumn) ContactImportColumnSum {
+	var s ContactImportColumnSum
+	s.SetContactImportRefusalColumn(v)
+	return s
+}
+
+// SetContactImportConsentColumn sets ContactImportColumnSum to ContactImportConsentColumn.
+func (s *ContactImportColumnSum) SetContactImportConsentColumn(v ContactImportConsentColumn) {
+	s.Type = ContactImportConsentColumnContactImportColumnSum
+	s.ContactImportConsentColumn = v
+}
+
+// GetContactImportConsentColumn returns ContactImportConsentColumn and true boolean if ContactImportColumnSum is ContactImportConsentColumn.
+func (s ContactImportColumnSum) GetContactImportConsentColumn() (v ContactImportConsentColumn, ok bool) {
+	if !s.IsContactImportConsentColumn() {
+		return v, false
+	}
+	return s.ContactImportConsentColumn, true
+}
+
+// NewContactImportConsentColumnContactImportColumnSum returns new ContactImportColumnSum from ContactImportConsentColumn.
+func NewContactImportConsentColumnContactImportColumnSum(v ContactImportConsentColumn) ContactImportColumnSum {
+	var s ContactImportColumnSum
+	s.SetContactImportConsentColumn(v)
+	return s
+}
+
+// SetContactImportEngagementTrackingColumn sets ContactImportColumnSum to ContactImportEngagementTrackingColumn.
+func (s *ContactImportColumnSum) SetContactImportEngagementTrackingColumn(v ContactImportEngagementTrackingColumn) {
+	s.Type = ContactImportEngagementTrackingColumnContactImportColumnSum
+	s.ContactImportEngagementTrackingColumn = v
+}
+
+// GetContactImportEngagementTrackingColumn returns ContactImportEngagementTrackingColumn and true boolean if ContactImportColumnSum is ContactImportEngagementTrackingColumn.
+func (s ContactImportColumnSum) GetContactImportEngagementTrackingColumn() (v ContactImportEngagementTrackingColumn, ok bool) {
+	if !s.IsContactImportEngagementTrackingColumn() {
+		return v, false
+	}
+	return s.ContactImportEngagementTrackingColumn, true
+}
+
+// NewContactImportEngagementTrackingColumnContactImportColumnSum returns new ContactImportColumnSum from ContactImportEngagementTrackingColumn.
+func NewContactImportEngagementTrackingColumnContactImportColumnSum(v ContactImportEngagementTrackingColumn) ContactImportColumnSum {
+	var s ContactImportColumnSum
+	s.SetContactImportEngagementTrackingColumn(v)
+	return s
+}
+
+// SetContactImportTimeColumn sets ContactImportColumnSum to ContactImportTimeColumn.
+func (s *ContactImportColumnSum) SetContactImportTimeColumn(v ContactImportTimeColumn) {
+	s.Type = ContactImportTimeColumnContactImportColumnSum
+	s.ContactImportTimeColumn = v
+}
+
+// GetContactImportTimeColumn returns ContactImportTimeColumn and true boolean if ContactImportColumnSum is ContactImportTimeColumn.
+func (s ContactImportColumnSum) GetContactImportTimeColumn() (v ContactImportTimeColumn, ok bool) {
+	if !s.IsContactImportTimeColumn() {
+		return v, false
+	}
+	return s.ContactImportTimeColumn, true
+}
+
+// NewContactImportTimeColumnContactImportColumnSum returns new ContactImportColumnSum from ContactImportTimeColumn.
+func NewContactImportTimeColumnContactImportColumnSum(v ContactImportTimeColumn) ContactImportColumnSum {
+	var s ContactImportColumnSum
+	s.SetContactImportTimeColumn(v)
+	return s
+}
+
+// The Channel of a consent or Engagement tracking column: its Destination is the row's email address
+// or phone.
+// Ref: #/components/schemas/ContactImportConsentChannel
+type ContactImportConsentChannel string
+
+const (
+	ContactImportConsentChannelEmail ContactImportConsentChannel = "email"
+	ContactImportConsentChannelSMS   ContactImportConsentChannel = "sms"
+)
+
+// AllValues returns all ContactImportConsentChannel values.
+func (ContactImportConsentChannel) AllValues() []ContactImportConsentChannel {
+	return []ContactImportConsentChannel{
+		ContactImportConsentChannelEmail,
+		ContactImportConsentChannelSMS,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ContactImportConsentChannel) MarshalText() ([]byte, error) {
+	switch s {
+	case ContactImportConsentChannelEmail:
+		return []byte(s), nil
+	case ContactImportConsentChannelSMS:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ContactImportConsentChannel) UnmarshalText(data []byte) error {
+	switch ContactImportConsentChannel(data) {
+	case ContactImportConsentChannelEmail:
+		*s = ContactImportConsentChannelEmail
+		return nil
+	case ContactImportConsentChannelSMS:
+		*s = ContactImportConsentChannelSMS
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A column of the consent the Workspace collected: a row whose cell is one of the listed values
+// records an imported Confirmation of its Destination on the Channel, which lifts no refusal; any
+// other value records nothing.
+// Ref: #/components/schemas/ContactImportConsentColumn
+type ContactImportConsentColumn struct {
+	Kind    ContactImportConsentColumnKind `json:"kind"`
+	Channel ContactImportConsentChannel    `json:"channel"`
+	// The values that mean consent, matched ignoring case and the spaces around them.
+	Values   []string                     `json:"values"`
+	Evidence ContactImportConsentEvidence `json:"evidence"`
+}
+
+// GetKind returns the value of Kind.
+func (s *ContactImportConsentColumn) GetKind() ContactImportConsentColumnKind {
+	return s.Kind
+}
+
+// GetChannel returns the value of Channel.
+func (s *ContactImportConsentColumn) GetChannel() ContactImportConsentChannel {
+	return s.Channel
+}
+
+// GetValues returns the value of Values.
+func (s *ContactImportConsentColumn) GetValues() []string {
+	return s.Values
+}
+
+// GetEvidence returns the value of Evidence.
+func (s *ContactImportConsentColumn) GetEvidence() ContactImportConsentEvidence {
+	return s.Evidence
+}
+
+// SetKind sets the value of Kind.
+func (s *ContactImportConsentColumn) SetKind(val ContactImportConsentColumnKind) {
+	s.Kind = val
+}
+
+// SetChannel sets the value of Channel.
+func (s *ContactImportConsentColumn) SetChannel(val ContactImportConsentChannel) {
+	s.Channel = val
+}
+
+// SetValues sets the value of Values.
+func (s *ContactImportConsentColumn) SetValues(val []string) {
+	s.Values = val
+}
+
+// SetEvidence sets the value of Evidence.
+func (s *ContactImportConsentColumn) SetEvidence(val ContactImportConsentEvidence) {
+	s.Evidence = val
+}
+
+// A column of the consent the Workspace collected, as a request writes it.
+// Ref: #/components/schemas/ContactImportConsentColumnInput
+type ContactImportConsentColumnInput struct {
+	Kind    ContactImportConsentColumnInputKind `json:"kind"`
+	Channel ContactImportConsentChannel         `json:"channel"`
+	// The values that mean consent, matched ignoring case and the spaces around them.
+	Values   []string                          `json:"values"`
+	Evidence ContactImportConsentEvidenceInput `json:"evidence"`
+}
+
+// GetKind returns the value of Kind.
+func (s *ContactImportConsentColumnInput) GetKind() ContactImportConsentColumnInputKind {
+	return s.Kind
+}
+
+// GetChannel returns the value of Channel.
+func (s *ContactImportConsentColumnInput) GetChannel() ContactImportConsentChannel {
+	return s.Channel
+}
+
+// GetValues returns the value of Values.
+func (s *ContactImportConsentColumnInput) GetValues() []string {
+	return s.Values
+}
+
+// GetEvidence returns the value of Evidence.
+func (s *ContactImportConsentColumnInput) GetEvidence() ContactImportConsentEvidenceInput {
+	return s.Evidence
+}
+
+// SetKind sets the value of Kind.
+func (s *ContactImportConsentColumnInput) SetKind(val ContactImportConsentColumnInputKind) {
+	s.Kind = val
+}
+
+// SetChannel sets the value of Channel.
+func (s *ContactImportConsentColumnInput) SetChannel(val ContactImportConsentChannel) {
+	s.Channel = val
+}
+
+// SetValues sets the value of Values.
+func (s *ContactImportConsentColumnInput) SetValues(val []string) {
+	s.Values = val
+}
+
+// SetEvidence sets the value of Evidence.
+func (s *ContactImportConsentColumnInput) SetEvidence(val ContactImportConsentEvidenceInput) {
+	s.Evidence = val
+}
+
+type ContactImportConsentColumnInputKind string
+
+const (
+	ContactImportConsentColumnInputKindConsent ContactImportConsentColumnInputKind = "consent"
+)
+
+// AllValues returns all ContactImportConsentColumnInputKind values.
+func (ContactImportConsentColumnInputKind) AllValues() []ContactImportConsentColumnInputKind {
+	return []ContactImportConsentColumnInputKind{
+		ContactImportConsentColumnInputKindConsent,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ContactImportConsentColumnInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case ContactImportConsentColumnInputKindConsent:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ContactImportConsentColumnInputKind) UnmarshalText(data []byte) error {
+	switch ContactImportConsentColumnInputKind(data) {
+	case ContactImportConsentColumnInputKindConsent:
+		*s = ContactImportConsentColumnInputKindConsent
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type ContactImportConsentColumnKind string
+
+const (
+	ContactImportConsentColumnKindConsent ContactImportConsentColumnKind = "consent"
+)
+
+// AllValues returns all ContactImportConsentColumnKind values.
+func (ContactImportConsentColumnKind) AllValues() []ContactImportConsentColumnKind {
+	return []ContactImportConsentColumnKind{
+		ContactImportConsentColumnKindConsent,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ContactImportConsentColumnKind) MarshalText() ([]byte, error) {
+	switch s {
+	case ContactImportConsentColumnKindConsent:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ContactImportConsentColumnKind) UnmarshalText(data []byte) error {
+	switch ContactImportConsentColumnKind(data) {
+	case ContactImportConsentColumnKindConsent:
+		*s = ContactImportConsentColumnKindConsent
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// The evidence of the consent a consent column records (ADR 0077): each part given once for every row
+// as text, or read from the column it names on each row, exactly one of the two.
+// Ref: #/components/schemas/ContactImportConsentEvidence
+type ContactImportConsentEvidence struct {
+	// The consent wording the person was shown and agreed to; null when a column holds it.
+	Wording NilString `json:"wording"`
+	// The column, counted from 0, whose cell is the wording; null when the wording is given.
+	WordingColumn NilInt32 `json:"wordingColumn"`
+	// Where the consent was collected; null when a column holds it.
+	Source NilString `json:"source"`
+	// The column, counted from 0, whose cell is the source; null when the source is given.
+	SourceColumn NilInt32 `json:"sourceColumn"`
+	// The brand the person agreed to hear from; null when a column holds it.
+	Brand NilString `json:"brand"`
+	// The column, counted from 0, whose cell is the brand; null when the brand is given.
+	BrandColumn NilInt32 `json:"brandColumn"`
+}
+
+// GetWording returns the value of Wording.
+func (s *ContactImportConsentEvidence) GetWording() NilString {
+	return s.Wording
+}
+
+// GetWordingColumn returns the value of WordingColumn.
+func (s *ContactImportConsentEvidence) GetWordingColumn() NilInt32 {
+	return s.WordingColumn
+}
+
+// GetSource returns the value of Source.
+func (s *ContactImportConsentEvidence) GetSource() NilString {
+	return s.Source
+}
+
+// GetSourceColumn returns the value of SourceColumn.
+func (s *ContactImportConsentEvidence) GetSourceColumn() NilInt32 {
+	return s.SourceColumn
+}
+
+// GetBrand returns the value of Brand.
+func (s *ContactImportConsentEvidence) GetBrand() NilString {
+	return s.Brand
+}
+
+// GetBrandColumn returns the value of BrandColumn.
+func (s *ContactImportConsentEvidence) GetBrandColumn() NilInt32 {
+	return s.BrandColumn
+}
+
+// SetWording sets the value of Wording.
+func (s *ContactImportConsentEvidence) SetWording(val NilString) {
+	s.Wording = val
+}
+
+// SetWordingColumn sets the value of WordingColumn.
+func (s *ContactImportConsentEvidence) SetWordingColumn(val NilInt32) {
+	s.WordingColumn = val
+}
+
+// SetSource sets the value of Source.
+func (s *ContactImportConsentEvidence) SetSource(val NilString) {
+	s.Source = val
+}
+
+// SetSourceColumn sets the value of SourceColumn.
+func (s *ContactImportConsentEvidence) SetSourceColumn(val NilInt32) {
+	s.SourceColumn = val
+}
+
+// SetBrand sets the value of Brand.
+func (s *ContactImportConsentEvidence) SetBrand(val NilString) {
+	s.Brand = val
+}
+
+// SetBrandColumn sets the value of BrandColumn.
+func (s *ContactImportConsentEvidence) SetBrandColumn(val NilInt32) {
+	s.BrandColumn = val
+}
+
+// The evidence of the consent a consent column records (ADR 0077): each part given once for every row
+// as text, or read from the column it names on each row, exactly one of the two.
+// Ref: #/components/schemas/ContactImportConsentEvidenceInput
+type ContactImportConsentEvidenceInput struct {
+	// The consent wording the person was shown and agreed to; null when a column holds it.
+	Wording NilString `json:"wording"`
+	// The column, counted from 0, whose cell is the wording; null when the wording is given.
+	WordingColumn NilInt32 `json:"wordingColumn"`
+	// Where the consent was collected; null when a column holds it.
+	Source NilString `json:"source"`
+	// The column, counted from 0, whose cell is the source; null when the source is given.
+	SourceColumn NilInt32 `json:"sourceColumn"`
+	// The brand the person agreed to hear from; null when a column holds it.
+	Brand NilString `json:"brand"`
+	// The column, counted from 0, whose cell is the brand; null when the brand is given.
+	BrandColumn NilInt32 `json:"brandColumn"`
+}
+
+// GetWording returns the value of Wording.
+func (s *ContactImportConsentEvidenceInput) GetWording() NilString {
+	return s.Wording
+}
+
+// GetWordingColumn returns the value of WordingColumn.
+func (s *ContactImportConsentEvidenceInput) GetWordingColumn() NilInt32 {
+	return s.WordingColumn
+}
+
+// GetSource returns the value of Source.
+func (s *ContactImportConsentEvidenceInput) GetSource() NilString {
+	return s.Source
+}
+
+// GetSourceColumn returns the value of SourceColumn.
+func (s *ContactImportConsentEvidenceInput) GetSourceColumn() NilInt32 {
+	return s.SourceColumn
+}
+
+// GetBrand returns the value of Brand.
+func (s *ContactImportConsentEvidenceInput) GetBrand() NilString {
+	return s.Brand
+}
+
+// GetBrandColumn returns the value of BrandColumn.
+func (s *ContactImportConsentEvidenceInput) GetBrandColumn() NilInt32 {
+	return s.BrandColumn
+}
+
+// SetWording sets the value of Wording.
+func (s *ContactImportConsentEvidenceInput) SetWording(val NilString) {
+	s.Wording = val
+}
+
+// SetWordingColumn sets the value of WordingColumn.
+func (s *ContactImportConsentEvidenceInput) SetWordingColumn(val NilInt32) {
+	s.WordingColumn = val
+}
+
+// SetSource sets the value of Source.
+func (s *ContactImportConsentEvidenceInput) SetSource(val NilString) {
+	s.Source = val
+}
+
+// SetSourceColumn sets the value of SourceColumn.
+func (s *ContactImportConsentEvidenceInput) SetSourceColumn(val NilInt32) {
+	s.SourceColumn = val
+}
+
+// SetBrand sets the value of Brand.
+func (s *ContactImportConsentEvidenceInput) SetBrand(val NilString) {
+	s.Brand = val
+}
+
+// SetBrandColumn sets the value of BrandColumn.
+func (s *ContactImportConsentEvidenceInput) SetBrandColumn(val NilInt32) {
+	s.BrandColumn = val
+}
+
 // What an import's run has written so far.
 // Ref: #/components/schemas/ContactImportCounts
 type ContactImportCounts struct {
@@ -9300,6 +9894,10 @@ type ContactImportCounts struct {
 	Refused int32 `json:"refused"`
 	// Values dropped from rows that were written, because their column could not read them.
 	Dropped int32 `json:"dropped"`
+	// Opt-outs the refusal columns recorded.
+	OptedOut int32 `json:"optedOut"`
+	// Suppressions the refusal columns recorded.
+	Suppressed int32 `json:"suppressed"`
 }
 
 // GetProcessed returns the value of Processed.
@@ -9327,6 +9925,16 @@ func (s *ContactImportCounts) GetDropped() int32 {
 	return s.Dropped
 }
 
+// GetOptedOut returns the value of OptedOut.
+func (s *ContactImportCounts) GetOptedOut() int32 {
+	return s.OptedOut
+}
+
+// GetSuppressed returns the value of Suppressed.
+func (s *ContactImportCounts) GetSuppressed() int32 {
+	return s.Suppressed
+}
+
 // SetProcessed sets the value of Processed.
 func (s *ContactImportCounts) SetProcessed(val int32) {
 	s.Processed = val
@@ -9350,6 +9958,16 @@ func (s *ContactImportCounts) SetRefused(val int32) {
 // SetDropped sets the value of Dropped.
 func (s *ContactImportCounts) SetDropped(val int32) {
 	s.Dropped = val
+}
+
+// SetOptedOut sets the value of OptedOut.
+func (s *ContactImportCounts) SetOptedOut(val int32) {
+	s.OptedOut = val
+}
+
+// SetSuppressed sets the value of Suppressed.
+func (s *ContactImportCounts) SetSuppressed(val int32) {
+	s.Suppressed = val
 }
 
 // A column whose cells write a Custom field the Workspace has, by its key.
@@ -9680,6 +10298,180 @@ func (s *ContactImportDelimiter) UnmarshalText(data []byte) error {
 	}
 }
 
+// A column of Engagement tracking consent (ADR 0120): a row whose cell is one of the granted values
+// records a grant at its Destination on the Channel, one of the denied values a refusal; any other
+// value records nothing.
+// Ref: #/components/schemas/ContactImportEngagementTrackingColumn
+type ContactImportEngagementTrackingColumn struct {
+	Kind    ContactImportEngagementTrackingColumnKind `json:"kind"`
+	Channel ContactImportConsentChannel               `json:"channel"`
+	// The values that mean tracking is granted.
+	Granted []string `json:"granted"`
+	// The values that mean tracking is denied.
+	Denied []string `json:"denied"`
+}
+
+// GetKind returns the value of Kind.
+func (s *ContactImportEngagementTrackingColumn) GetKind() ContactImportEngagementTrackingColumnKind {
+	return s.Kind
+}
+
+// GetChannel returns the value of Channel.
+func (s *ContactImportEngagementTrackingColumn) GetChannel() ContactImportConsentChannel {
+	return s.Channel
+}
+
+// GetGranted returns the value of Granted.
+func (s *ContactImportEngagementTrackingColumn) GetGranted() []string {
+	return s.Granted
+}
+
+// GetDenied returns the value of Denied.
+func (s *ContactImportEngagementTrackingColumn) GetDenied() []string {
+	return s.Denied
+}
+
+// SetKind sets the value of Kind.
+func (s *ContactImportEngagementTrackingColumn) SetKind(val ContactImportEngagementTrackingColumnKind) {
+	s.Kind = val
+}
+
+// SetChannel sets the value of Channel.
+func (s *ContactImportEngagementTrackingColumn) SetChannel(val ContactImportConsentChannel) {
+	s.Channel = val
+}
+
+// SetGranted sets the value of Granted.
+func (s *ContactImportEngagementTrackingColumn) SetGranted(val []string) {
+	s.Granted = val
+}
+
+// SetDenied sets the value of Denied.
+func (s *ContactImportEngagementTrackingColumn) SetDenied(val []string) {
+	s.Denied = val
+}
+
+// A column of Engagement tracking consent (ADR 0120): a row whose cell is one of the granted values
+// records a grant at its Destination on the Channel, one of the denied values a refusal; any other
+// value records nothing.
+// Ref: #/components/schemas/ContactImportEngagementTrackingColumnInput
+type ContactImportEngagementTrackingColumnInput struct {
+	Kind    ContactImportEngagementTrackingColumnInputKind `json:"kind"`
+	Channel ContactImportConsentChannel                    `json:"channel"`
+	// The values that mean tracking is granted.
+	Granted []string `json:"granted"`
+	// The values that mean tracking is denied.
+	Denied []string `json:"denied"`
+}
+
+// GetKind returns the value of Kind.
+func (s *ContactImportEngagementTrackingColumnInput) GetKind() ContactImportEngagementTrackingColumnInputKind {
+	return s.Kind
+}
+
+// GetChannel returns the value of Channel.
+func (s *ContactImportEngagementTrackingColumnInput) GetChannel() ContactImportConsentChannel {
+	return s.Channel
+}
+
+// GetGranted returns the value of Granted.
+func (s *ContactImportEngagementTrackingColumnInput) GetGranted() []string {
+	return s.Granted
+}
+
+// GetDenied returns the value of Denied.
+func (s *ContactImportEngagementTrackingColumnInput) GetDenied() []string {
+	return s.Denied
+}
+
+// SetKind sets the value of Kind.
+func (s *ContactImportEngagementTrackingColumnInput) SetKind(val ContactImportEngagementTrackingColumnInputKind) {
+	s.Kind = val
+}
+
+// SetChannel sets the value of Channel.
+func (s *ContactImportEngagementTrackingColumnInput) SetChannel(val ContactImportConsentChannel) {
+	s.Channel = val
+}
+
+// SetGranted sets the value of Granted.
+func (s *ContactImportEngagementTrackingColumnInput) SetGranted(val []string) {
+	s.Granted = val
+}
+
+// SetDenied sets the value of Denied.
+func (s *ContactImportEngagementTrackingColumnInput) SetDenied(val []string) {
+	s.Denied = val
+}
+
+type ContactImportEngagementTrackingColumnInputKind string
+
+const (
+	ContactImportEngagementTrackingColumnInputKindEngagementTracking ContactImportEngagementTrackingColumnInputKind = "engagementTracking"
+)
+
+// AllValues returns all ContactImportEngagementTrackingColumnInputKind values.
+func (ContactImportEngagementTrackingColumnInputKind) AllValues() []ContactImportEngagementTrackingColumnInputKind {
+	return []ContactImportEngagementTrackingColumnInputKind{
+		ContactImportEngagementTrackingColumnInputKindEngagementTracking,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ContactImportEngagementTrackingColumnInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case ContactImportEngagementTrackingColumnInputKindEngagementTracking:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ContactImportEngagementTrackingColumnInputKind) UnmarshalText(data []byte) error {
+	switch ContactImportEngagementTrackingColumnInputKind(data) {
+	case ContactImportEngagementTrackingColumnInputKindEngagementTracking:
+		*s = ContactImportEngagementTrackingColumnInputKindEngagementTracking
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type ContactImportEngagementTrackingColumnKind string
+
+const (
+	ContactImportEngagementTrackingColumnKindEngagementTracking ContactImportEngagementTrackingColumnKind = "engagementTracking"
+)
+
+// AllValues returns all ContactImportEngagementTrackingColumnKind values.
+func (ContactImportEngagementTrackingColumnKind) AllValues() []ContactImportEngagementTrackingColumnKind {
+	return []ContactImportEngagementTrackingColumnKind{
+		ContactImportEngagementTrackingColumnKindEngagementTracking,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ContactImportEngagementTrackingColumnKind) MarshalText() ([]byte, error) {
+	switch s {
+	case ContactImportEngagementTrackingColumnKindEngagementTracking:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ContactImportEngagementTrackingColumnKind) UnmarshalText(data []byte) error {
+	switch ContactImportEngagementTrackingColumnKind(data) {
+	case ContactImportEngagementTrackingColumnKindEngagementTracking:
+		*s = ContactImportEngagementTrackingColumnKindEngagementTracking
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // A column the import does not read.
 // Ref: #/components/schemas/ContactImportIgnoreColumn
 type ContactImportIgnoreColumn struct {
@@ -9839,6 +10631,11 @@ const (
 	ContactImportIssueReasonNotLocale           ContactImportIssueReason = "notLocale"
 	ContactImportIssueReasonNotImageUrl         ContactImportIssueReason = "notImageUrl"
 	ContactImportIssueReasonNotTag              ContactImportIssueReason = "notTag"
+	ContactImportIssueReasonNoTime              ContactImportIssueReason = "noTime"
+	ContactImportIssueReasonTimeInFuture        ContactImportIssueReason = "timeInFuture"
+	ContactImportIssueReasonNoDestination       ContactImportIssueReason = "noDestination"
+	ContactImportIssueReasonNoEvidence          ContactImportIssueReason = "noEvidence"
+	ContactImportIssueReasonRefusalNotRecorded  ContactImportIssueReason = "refusalNotRecorded"
 	ContactImportIssueReasonKeysNameTwoContacts ContactImportIssueReason = "keysNameTwoContacts"
 )
 
@@ -9859,6 +10656,11 @@ func (ContactImportIssueReason) AllValues() []ContactImportIssueReason {
 		ContactImportIssueReasonNotLocale,
 		ContactImportIssueReasonNotImageUrl,
 		ContactImportIssueReasonNotTag,
+		ContactImportIssueReasonNoTime,
+		ContactImportIssueReasonTimeInFuture,
+		ContactImportIssueReasonNoDestination,
+		ContactImportIssueReasonNoEvidence,
+		ContactImportIssueReasonRefusalNotRecorded,
 		ContactImportIssueReasonKeysNameTwoContacts,
 	}
 }
@@ -9893,6 +10695,16 @@ func (s ContactImportIssueReason) MarshalText() ([]byte, error) {
 	case ContactImportIssueReasonNotImageUrl:
 		return []byte(s), nil
 	case ContactImportIssueReasonNotTag:
+		return []byte(s), nil
+	case ContactImportIssueReasonNoTime:
+		return []byte(s), nil
+	case ContactImportIssueReasonTimeInFuture:
+		return []byte(s), nil
+	case ContactImportIssueReasonNoDestination:
+		return []byte(s), nil
+	case ContactImportIssueReasonNoEvidence:
+		return []byte(s), nil
+	case ContactImportIssueReasonRefusalNotRecorded:
 		return []byte(s), nil
 	case ContactImportIssueReasonKeysNameTwoContacts:
 		return []byte(s), nil
@@ -9945,6 +10757,21 @@ func (s *ContactImportIssueReason) UnmarshalText(data []byte) error {
 		return nil
 	case ContactImportIssueReasonNotTag:
 		*s = ContactImportIssueReasonNotTag
+		return nil
+	case ContactImportIssueReasonNoTime:
+		*s = ContactImportIssueReasonNoTime
+		return nil
+	case ContactImportIssueReasonTimeInFuture:
+		*s = ContactImportIssueReasonTimeInFuture
+		return nil
+	case ContactImportIssueReasonNoDestination:
+		*s = ContactImportIssueReasonNoDestination
+		return nil
+	case ContactImportIssueReasonNoEvidence:
+		*s = ContactImportIssueReasonNoEvidence
+		return nil
+	case ContactImportIssueReasonRefusalNotRecorded:
+		*s = ContactImportIssueReasonRefusalNotRecorded
 		return nil
 	case ContactImportIssueReasonKeysNameTwoContacts:
 		*s = ContactImportIssueReasonKeysNameTwoContacts
@@ -10550,6 +11377,315 @@ func (s *ContactImportPreviewRow) SetWarnings(val []ContactImportWarning) {
 	s.Warnings = val
 }
 
+// What a value of a refusal column records: an Unsubscribe of `everything` or of `broadcasts` (email
+// only), recorded as imported, which only the person can lift; or a Suppression of the `manual`
+// reason, which needs `suppressions:manage`.
+// Ref: #/components/schemas/ContactImportRefusal
+type ContactImportRefusal string
+
+const (
+	ContactImportRefusalUnsubscribeEverything ContactImportRefusal = "unsubscribeEverything"
+	ContactImportRefusalUnsubscribeBroadcasts ContactImportRefusal = "unsubscribeBroadcasts"
+	ContactImportRefusalSuppression           ContactImportRefusal = "suppression"
+)
+
+// AllValues returns all ContactImportRefusal values.
+func (ContactImportRefusal) AllValues() []ContactImportRefusal {
+	return []ContactImportRefusal{
+		ContactImportRefusalUnsubscribeEverything,
+		ContactImportRefusalUnsubscribeBroadcasts,
+		ContactImportRefusalSuppression,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ContactImportRefusal) MarshalText() ([]byte, error) {
+	switch s {
+	case ContactImportRefusalUnsubscribeEverything:
+		return []byte(s), nil
+	case ContactImportRefusalUnsubscribeBroadcasts:
+		return []byte(s), nil
+	case ContactImportRefusalSuppression:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ContactImportRefusal) UnmarshalText(data []byte) error {
+	switch ContactImportRefusal(data) {
+	case ContactImportRefusalUnsubscribeEverything:
+		*s = ContactImportRefusalUnsubscribeEverything
+		return nil
+	case ContactImportRefusalUnsubscribeBroadcasts:
+		*s = ContactImportRefusalUnsubscribeBroadcasts
+		return nil
+	case ContactImportRefusalSuppression:
+		*s = ContactImportRefusalSuppression
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// The Channel of a refusal column: its Destination is the row's email address or phone, or on Telegram
+// the users of the Contact's Bindings.
+// Ref: #/components/schemas/ContactImportRefusalChannel
+type ContactImportRefusalChannel string
+
+const (
+	ContactImportRefusalChannelEmail    ContactImportRefusalChannel = "email"
+	ContactImportRefusalChannelSMS      ContactImportRefusalChannel = "sms"
+	ContactImportRefusalChannelTelegram ContactImportRefusalChannel = "telegram"
+)
+
+// AllValues returns all ContactImportRefusalChannel values.
+func (ContactImportRefusalChannel) AllValues() []ContactImportRefusalChannel {
+	return []ContactImportRefusalChannel{
+		ContactImportRefusalChannelEmail,
+		ContactImportRefusalChannelSMS,
+		ContactImportRefusalChannelTelegram,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ContactImportRefusalChannel) MarshalText() ([]byte, error) {
+	switch s {
+	case ContactImportRefusalChannelEmail:
+		return []byte(s), nil
+	case ContactImportRefusalChannelSMS:
+		return []byte(s), nil
+	case ContactImportRefusalChannelTelegram:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ContactImportRefusalChannel) UnmarshalText(data []byte) error {
+	switch ContactImportRefusalChannel(data) {
+	case ContactImportRefusalChannelEmail:
+		*s = ContactImportRefusalChannelEmail
+		return nil
+	case ContactImportRefusalChannelSMS:
+		*s = ContactImportRefusalChannelSMS
+		return nil
+	case ContactImportRefusalChannelTelegram:
+		*s = ContactImportRefusalChannelTelegram
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A column of the old platform's refusals: a row whose cell is one of the listed values records that
+// refusal at its Destination on the Channel, whether its Contact is new or not; any other value
+// records nothing.
+// Ref: #/components/schemas/ContactImportRefusalColumn
+type ContactImportRefusalColumn struct {
+	Kind    ContactImportRefusalColumnKind `json:"kind"`
+	Channel ContactImportRefusalChannel    `json:"channel"`
+	// The values that mean a refusal, each with what it records.
+	Values []ContactImportRefusalValue `json:"values"`
+}
+
+// GetKind returns the value of Kind.
+func (s *ContactImportRefusalColumn) GetKind() ContactImportRefusalColumnKind {
+	return s.Kind
+}
+
+// GetChannel returns the value of Channel.
+func (s *ContactImportRefusalColumn) GetChannel() ContactImportRefusalChannel {
+	return s.Channel
+}
+
+// GetValues returns the value of Values.
+func (s *ContactImportRefusalColumn) GetValues() []ContactImportRefusalValue {
+	return s.Values
+}
+
+// SetKind sets the value of Kind.
+func (s *ContactImportRefusalColumn) SetKind(val ContactImportRefusalColumnKind) {
+	s.Kind = val
+}
+
+// SetChannel sets the value of Channel.
+func (s *ContactImportRefusalColumn) SetChannel(val ContactImportRefusalChannel) {
+	s.Channel = val
+}
+
+// SetValues sets the value of Values.
+func (s *ContactImportRefusalColumn) SetValues(val []ContactImportRefusalValue) {
+	s.Values = val
+}
+
+// A column of the old platform's refusals, as a request writes it.
+// Ref: #/components/schemas/ContactImportRefusalColumnInput
+type ContactImportRefusalColumnInput struct {
+	Kind    ContactImportRefusalColumnInputKind `json:"kind"`
+	Channel ContactImportRefusalChannel         `json:"channel"`
+	// The values that mean a refusal, each with what it records.
+	Values []ContactImportRefusalValueInput `json:"values"`
+}
+
+// GetKind returns the value of Kind.
+func (s *ContactImportRefusalColumnInput) GetKind() ContactImportRefusalColumnInputKind {
+	return s.Kind
+}
+
+// GetChannel returns the value of Channel.
+func (s *ContactImportRefusalColumnInput) GetChannel() ContactImportRefusalChannel {
+	return s.Channel
+}
+
+// GetValues returns the value of Values.
+func (s *ContactImportRefusalColumnInput) GetValues() []ContactImportRefusalValueInput {
+	return s.Values
+}
+
+// SetKind sets the value of Kind.
+func (s *ContactImportRefusalColumnInput) SetKind(val ContactImportRefusalColumnInputKind) {
+	s.Kind = val
+}
+
+// SetChannel sets the value of Channel.
+func (s *ContactImportRefusalColumnInput) SetChannel(val ContactImportRefusalChannel) {
+	s.Channel = val
+}
+
+// SetValues sets the value of Values.
+func (s *ContactImportRefusalColumnInput) SetValues(val []ContactImportRefusalValueInput) {
+	s.Values = val
+}
+
+type ContactImportRefusalColumnInputKind string
+
+const (
+	ContactImportRefusalColumnInputKindRefusal ContactImportRefusalColumnInputKind = "refusal"
+)
+
+// AllValues returns all ContactImportRefusalColumnInputKind values.
+func (ContactImportRefusalColumnInputKind) AllValues() []ContactImportRefusalColumnInputKind {
+	return []ContactImportRefusalColumnInputKind{
+		ContactImportRefusalColumnInputKindRefusal,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ContactImportRefusalColumnInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case ContactImportRefusalColumnInputKindRefusal:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ContactImportRefusalColumnInputKind) UnmarshalText(data []byte) error {
+	switch ContactImportRefusalColumnInputKind(data) {
+	case ContactImportRefusalColumnInputKindRefusal:
+		*s = ContactImportRefusalColumnInputKindRefusal
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type ContactImportRefusalColumnKind string
+
+const (
+	ContactImportRefusalColumnKindRefusal ContactImportRefusalColumnKind = "refusal"
+)
+
+// AllValues returns all ContactImportRefusalColumnKind values.
+func (ContactImportRefusalColumnKind) AllValues() []ContactImportRefusalColumnKind {
+	return []ContactImportRefusalColumnKind{
+		ContactImportRefusalColumnKindRefusal,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ContactImportRefusalColumnKind) MarshalText() ([]byte, error) {
+	switch s {
+	case ContactImportRefusalColumnKindRefusal:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ContactImportRefusalColumnKind) UnmarshalText(data []byte) error {
+	switch ContactImportRefusalColumnKind(data) {
+	case ContactImportRefusalColumnKindRefusal:
+		*s = ContactImportRefusalColumnKindRefusal
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A cell value of a refusal column and what it records.
+// Ref: #/components/schemas/ContactImportRefusalValue
+type ContactImportRefusalValue struct {
+	// The value, matched ignoring case and the spaces around it, as a whole cell or as one item of a cell
+	// holding a comma-separated list.
+	Value   string               `json:"value"`
+	Refusal ContactImportRefusal `json:"refusal"`
+}
+
+// GetValue returns the value of Value.
+func (s *ContactImportRefusalValue) GetValue() string {
+	return s.Value
+}
+
+// GetRefusal returns the value of Refusal.
+func (s *ContactImportRefusalValue) GetRefusal() ContactImportRefusal {
+	return s.Refusal
+}
+
+// SetValue sets the value of Value.
+func (s *ContactImportRefusalValue) SetValue(val string) {
+	s.Value = val
+}
+
+// SetRefusal sets the value of Refusal.
+func (s *ContactImportRefusalValue) SetRefusal(val ContactImportRefusal) {
+	s.Refusal = val
+}
+
+// A cell value of a refusal column and what it records.
+// Ref: #/components/schemas/ContactImportRefusalValueInput
+type ContactImportRefusalValueInput struct {
+	// The value, matched ignoring case and the spaces around it, as a whole cell or as one item of a cell
+	// holding a comma-separated list.
+	Value   string               `json:"value"`
+	Refusal ContactImportRefusal `json:"refusal"`
+}
+
+// GetValue returns the value of Value.
+func (s *ContactImportRefusalValueInput) GetValue() string {
+	return s.Value
+}
+
+// GetRefusal returns the value of Refusal.
+func (s *ContactImportRefusalValueInput) GetRefusal() ContactImportRefusal {
+	return s.Refusal
+}
+
+// SetValue sets the value of Value.
+func (s *ContactImportRefusalValueInput) SetValue(val string) {
+	s.Value = val
+}
+
+// SetRefusal sets the value of Refusal.
+func (s *ContactImportRefusalValueInput) SetRefusal(val ContactImportRefusal) {
+	s.Refusal = val
+}
+
 // Where an import stands: `uploaded` until a mapping is saved, `ready` to run, `running` while its job
 // writes the rows, then `done`; `cancelled` and `failed` end it early, keeping what it wrote.
 // Ref: #/components/schemas/ContactImportState
@@ -10716,6 +11852,162 @@ func (s *ContactImportTagsColumnKind) UnmarshalText(data []byte) error {
 	switch ContactImportTagsColumnKind(data) {
 	case ContactImportTagsColumnKindTags:
 		*s = ContactImportTagsColumnKindTags
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A column of when the fact of a refusal, consent or Engagement tracking column occurred (ADR 0154),
+// so an older fact does not override a newer one: a time blank, unreadable or later than the run is
+// dropped and reported, and the fact recorded as occurring now.
+// Ref: #/components/schemas/ContactImportTimeColumn
+type ContactImportTimeColumn struct {
+	Kind ContactImportTimeColumnKind `json:"kind"`
+	// The refusal, consent or Engagement tracking column it times, counted from 0; required, null only
+	// while the Member has not chosen it.
+	Of NilInt32 `json:"of"`
+	// How the cells write their dates, a date without an offset read in the Workspace time zone; required,
+	// null only while the Member has not chosen it.
+	DateFormat NilContactImportDateFormat `json:"dateFormat"`
+}
+
+// GetKind returns the value of Kind.
+func (s *ContactImportTimeColumn) GetKind() ContactImportTimeColumnKind {
+	return s.Kind
+}
+
+// GetOf returns the value of Of.
+func (s *ContactImportTimeColumn) GetOf() NilInt32 {
+	return s.Of
+}
+
+// GetDateFormat returns the value of DateFormat.
+func (s *ContactImportTimeColumn) GetDateFormat() NilContactImportDateFormat {
+	return s.DateFormat
+}
+
+// SetKind sets the value of Kind.
+func (s *ContactImportTimeColumn) SetKind(val ContactImportTimeColumnKind) {
+	s.Kind = val
+}
+
+// SetOf sets the value of Of.
+func (s *ContactImportTimeColumn) SetOf(val NilInt32) {
+	s.Of = val
+}
+
+// SetDateFormat sets the value of DateFormat.
+func (s *ContactImportTimeColumn) SetDateFormat(val NilContactImportDateFormat) {
+	s.DateFormat = val
+}
+
+// A column of when the fact of a refusal, consent or Engagement tracking column occurred (ADR 0154),
+// so an older fact does not override a newer one: a time blank, unreadable or later than the run is
+// dropped and reported, and the fact recorded as occurring now.
+// Ref: #/components/schemas/ContactImportTimeColumnInput
+type ContactImportTimeColumnInput struct {
+	Kind ContactImportTimeColumnInputKind `json:"kind"`
+	// The refusal, consent or Engagement tracking column it times, counted from 0; required, null only
+	// while the Member has not chosen it.
+	Of NilInt32 `json:"of"`
+	// How the cells write their dates, a date without an offset read in the Workspace time zone; required,
+	// null only while the Member has not chosen it.
+	DateFormat NilContactImportDateFormat `json:"dateFormat"`
+}
+
+// GetKind returns the value of Kind.
+func (s *ContactImportTimeColumnInput) GetKind() ContactImportTimeColumnInputKind {
+	return s.Kind
+}
+
+// GetOf returns the value of Of.
+func (s *ContactImportTimeColumnInput) GetOf() NilInt32 {
+	return s.Of
+}
+
+// GetDateFormat returns the value of DateFormat.
+func (s *ContactImportTimeColumnInput) GetDateFormat() NilContactImportDateFormat {
+	return s.DateFormat
+}
+
+// SetKind sets the value of Kind.
+func (s *ContactImportTimeColumnInput) SetKind(val ContactImportTimeColumnInputKind) {
+	s.Kind = val
+}
+
+// SetOf sets the value of Of.
+func (s *ContactImportTimeColumnInput) SetOf(val NilInt32) {
+	s.Of = val
+}
+
+// SetDateFormat sets the value of DateFormat.
+func (s *ContactImportTimeColumnInput) SetDateFormat(val NilContactImportDateFormat) {
+	s.DateFormat = val
+}
+
+type ContactImportTimeColumnInputKind string
+
+const (
+	ContactImportTimeColumnInputKindTime ContactImportTimeColumnInputKind = "time"
+)
+
+// AllValues returns all ContactImportTimeColumnInputKind values.
+func (ContactImportTimeColumnInputKind) AllValues() []ContactImportTimeColumnInputKind {
+	return []ContactImportTimeColumnInputKind{
+		ContactImportTimeColumnInputKindTime,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ContactImportTimeColumnInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case ContactImportTimeColumnInputKindTime:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ContactImportTimeColumnInputKind) UnmarshalText(data []byte) error {
+	switch ContactImportTimeColumnInputKind(data) {
+	case ContactImportTimeColumnInputKindTime:
+		*s = ContactImportTimeColumnInputKindTime
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type ContactImportTimeColumnKind string
+
+const (
+	ContactImportTimeColumnKindTime ContactImportTimeColumnKind = "time"
+)
+
+// AllValues returns all ContactImportTimeColumnKind values.
+func (ContactImportTimeColumnKind) AllValues() []ContactImportTimeColumnKind {
+	return []ContactImportTimeColumnKind{
+		ContactImportTimeColumnKindTime,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ContactImportTimeColumnKind) MarshalText() ([]byte, error) {
+	switch s {
+	case ContactImportTimeColumnKindTime:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ContactImportTimeColumnKind) UnmarshalText(data []byte) error {
+	switch ContactImportTimeColumnKind(data) {
+	case ContactImportTimeColumnKindTime:
+		*s = ContactImportTimeColumnKindTime
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -34278,6 +35570,12 @@ type SiteContactImportPreview struct {
 	MalformedRows int32 `json:"malformedRows"`
 	// Distinct Tags the rows would add, the Tag for every row included.
 	DistinctTags int32 `json:"distinctTags"`
+	// Opt-outs the refusal columns would record over the whole file: the rows with a Destination on the
+	// column's Channel whose value means an Unsubscribe (on Telegram, the rows that name a key). An
+	// imported Unsubscribe cannot be undone: only the person lifts it.
+	OptOuts int32 `json:"optOuts"`
+	// Suppressions the refusal columns would record over the whole file, counted as the opt-outs are.
+	Suppressions int32 `json:"suppressions"`
 	// Custom fields the run would create: the columns mapped to a new field.
 	NewCustomFields int32 `json:"newCustomFields"`
 }
@@ -34305,6 +35603,16 @@ func (s *SiteContactImportPreview) GetMalformedRows() int32 {
 // GetDistinctTags returns the value of DistinctTags.
 func (s *SiteContactImportPreview) GetDistinctTags() int32 {
 	return s.DistinctTags
+}
+
+// GetOptOuts returns the value of OptOuts.
+func (s *SiteContactImportPreview) GetOptOuts() int32 {
+	return s.OptOuts
+}
+
+// GetSuppressions returns the value of Suppressions.
+func (s *SiteContactImportPreview) GetSuppressions() int32 {
+	return s.Suppressions
 }
 
 // GetNewCustomFields returns the value of NewCustomFields.
@@ -34335,6 +35643,16 @@ func (s *SiteContactImportPreview) SetMalformedRows(val int32) {
 // SetDistinctTags sets the value of DistinctTags.
 func (s *SiteContactImportPreview) SetDistinctTags(val int32) {
 	s.DistinctTags = val
+}
+
+// SetOptOuts sets the value of OptOuts.
+func (s *SiteContactImportPreview) SetOptOuts(val int32) {
+	s.OptOuts = val
+}
+
+// SetSuppressions sets the value of Suppressions.
+func (s *SiteContactImportPreview) SetSuppressions(val int32) {
+	s.Suppressions = val
 }
 
 // SetNewCustomFields sets the value of NewCustomFields.

@@ -2196,7 +2196,15 @@ export type ContactImportColumn = ({
   kind: 'tags';
 } & ContactImportTagsColumn) | ({
   kind: 'ignore';
-} & ContactImportIgnoreColumn);
+} & ContactImportIgnoreColumn) | ({
+  kind: 'refusal';
+} & ContactImportRefusalColumn) | ({
+  kind: 'consent';
+} & ContactImportConsentColumn) | ({
+  kind: 'engagementTracking';
+} & ContactImportEngagementTrackingColumn) | ({
+  kind: 'time';
+} & ContactImportTimeColumn);
 
 /**
  * What a column of the file is, by `kind`, as a request writes it
@@ -2213,7 +2221,115 @@ export type ContactImportColumnInput = ({
   kind: 'tags';
 } & ContactImportTagsColumnInput) | ({
   kind: 'ignore';
-} & ContactImportIgnoreColumnInput);
+} & ContactImportIgnoreColumnInput) | ({
+  kind: 'refusal';
+} & ContactImportRefusalColumnInput) | ({
+  kind: 'consent';
+} & ContactImportConsentColumnInput) | ({
+  kind: 'engagementTracking';
+} & ContactImportEngagementTrackingColumnInput) | ({
+  kind: 'time';
+} & ContactImportTimeColumnInput);
+
+/**
+ * The Channel of a consent or Engagement tracking column: its Destination is the row's email address or phone
+ */
+export const ContactImportConsentChannel = { EMAIL: 'email', SMS: 'sms' } as const;
+
+/**
+ * The Channel of a consent or Engagement tracking column: its Destination is the row's email address or phone
+ */
+export type ContactImportConsentChannel = typeof ContactImportConsentChannel[keyof typeof ContactImportConsentChannel];
+
+/**
+ * A column of the consent the Workspace collected: a row whose cell is one of the listed values
+ * records an imported Confirmation of its Destination on the Channel, which lifts no refusal; any
+ * other value records nothing
+ */
+export type ContactImportConsentColumn = {
+  kind: 'consent';
+  channel: ContactImportConsentChannel;
+  /**
+   * The values that mean consent, matched ignoring case and the spaces around them
+   */
+  values: Array<string>;
+  evidence: ContactImportConsentEvidence;
+};
+
+/**
+ * A column of the consent the Workspace collected, as a request writes it
+ */
+export type ContactImportConsentColumnInput = {
+  kind: 'consent';
+  channel: ContactImportConsentChannel;
+  /**
+   * The values that mean consent, matched ignoring case and the spaces around them
+   */
+  values: Array<string>;
+  evidence: ContactImportConsentEvidenceInput;
+};
+
+/**
+ * The evidence of the consent a consent column records (ADR 0077): each part given once for every
+ * row as text, or read from the column it names on each row, exactly one of the two
+ */
+export type ContactImportConsentEvidence = {
+  /**
+   * The consent wording the person was shown and agreed to; null when a column holds it
+   */
+  wording: string | null;
+  /**
+   * The column, counted from 0, whose cell is the wording; null when the wording is given
+   */
+  wordingColumn: number | null;
+  /**
+   * Where the consent was collected; null when a column holds it
+   */
+  source: string | null;
+  /**
+   * The column, counted from 0, whose cell is the source; null when the source is given
+   */
+  sourceColumn: number | null;
+  /**
+   * The brand the person agreed to hear from; null when a column holds it
+   */
+  brand: string | null;
+  /**
+   * The column, counted from 0, whose cell is the brand; null when the brand is given
+   */
+  brandColumn: number | null;
+};
+
+/**
+ * The evidence of the consent a consent column records (ADR 0077): each part given once for every
+ * row as text, or read from the column it names on each row, exactly one of the two
+ */
+export type ContactImportConsentEvidenceInput = {
+  /**
+   * The consent wording the person was shown and agreed to; null when a column holds it
+   */
+  wording: string | null;
+  /**
+   * The column, counted from 0, whose cell is the wording; null when the wording is given
+   */
+  wordingColumn: number | null;
+  /**
+   * Where the consent was collected; null when a column holds it
+   */
+  source: string | null;
+  /**
+   * The column, counted from 0, whose cell is the source; null when the source is given
+   */
+  sourceColumn: number | null;
+  /**
+   * The brand the person agreed to hear from; null when a column holds it
+   */
+  brand: string | null;
+  /**
+   * The column, counted from 0, whose cell is the brand; null when the brand is given
+   */
+  brandColumn: number | null;
+};
 
 /**
  * What an import's run has written so far
@@ -2239,6 +2355,14 @@ export type ContactImportCounts = {
    * Values dropped from rows that were written, because their column could not read them
    */
   dropped: number;
+  /**
+   * Opt-outs the refusal columns recorded
+   */
+  optedOut: number;
+  /**
+   * Suppressions the refusal columns recorded
+   */
+  suppressed: number;
 };
 
 /**
@@ -2319,6 +2443,42 @@ export const ContactImportDelimiter = {
 export type ContactImportDelimiter = typeof ContactImportDelimiter[keyof typeof ContactImportDelimiter];
 
 /**
+ * A column of Engagement tracking consent (ADR 0120): a row whose cell is one of the granted values
+ * records a grant at its Destination on the Channel, one of the denied values a refusal; any other
+ * value records nothing
+ */
+export type ContactImportEngagementTrackingColumn = {
+  kind: 'engagementTracking';
+  channel: ContactImportConsentChannel;
+  /**
+   * The values that mean tracking is granted
+   */
+  granted: Array<string>;
+  /**
+   * The values that mean tracking is denied
+   */
+  denied: Array<string>;
+};
+
+/**
+ * A column of Engagement tracking consent (ADR 0120): a row whose cell is one of the granted values
+ * records a grant at its Destination on the Channel, one of the denied values a refusal; any other
+ * value records nothing
+ */
+export type ContactImportEngagementTrackingColumnInput = {
+  kind: 'engagementTracking';
+  channel: ContactImportConsentChannel;
+  /**
+   * The values that mean tracking is granted
+   */
+  granted: Array<string>;
+  /**
+   * The values that mean tracking is denied
+   */
+  denied: Array<string>;
+};
+
+/**
  * A column the import does not read
  */
 export type ContactImportIgnoreColumn = {
@@ -2365,6 +2525,11 @@ export const ContactImportIssueReason = {
   NOT_LOCALE: 'notLocale',
   NOT_IMAGE_URL: 'notImageUrl',
   NOT_TAG: 'notTag',
+  NO_TIME: 'noTime',
+  TIME_IN_FUTURE: 'timeInFuture',
+  NO_DESTINATION: 'noDestination',
+  NO_EVIDENCE: 'noEvidence',
+  REFUSAL_NOT_RECORDED: 'refusalNotRecorded',
   KEYS_NAME_TWO_CONTACTS: 'keysNameTwoContacts'
 } as const;
 
@@ -2543,6 +2708,86 @@ export type ContactImportPreviewRow = {
 };
 
 /**
+ * What a value of a refusal column records: an Unsubscribe of `everything` or of `broadcasts`
+ * (email only), recorded as imported, which only the person can lift; or a Suppression of the
+ * `manual` reason, which needs `suppressions:manage`
+ */
+export const ContactImportRefusal = {
+  UNSUBSCRIBE_EVERYTHING: 'unsubscribeEverything',
+  UNSUBSCRIBE_BROADCASTS: 'unsubscribeBroadcasts',
+  SUPPRESSION: 'suppression'
+} as const;
+
+/**
+ * What a value of a refusal column records: an Unsubscribe of `everything` or of `broadcasts`
+ * (email only), recorded as imported, which only the person can lift; or a Suppression of the
+ * `manual` reason, which needs `suppressions:manage`
+ */
+export type ContactImportRefusal = typeof ContactImportRefusal[keyof typeof ContactImportRefusal];
+
+/**
+ * The Channel of a refusal column: its Destination is the row's email address or phone, or on Telegram the users of the Contact's Bindings
+ */
+export const ContactImportRefusalChannel = {
+  EMAIL: 'email',
+  SMS: 'sms',
+  TELEGRAM: 'telegram'
+} as const;
+
+/**
+ * The Channel of a refusal column: its Destination is the row's email address or phone, or on Telegram the users of the Contact's Bindings
+ */
+export type ContactImportRefusalChannel = typeof ContactImportRefusalChannel[keyof typeof ContactImportRefusalChannel];
+
+/**
+ * A column of the old platform's refusals: a row whose cell is one of the listed values records
+ * that refusal at its Destination on the Channel, whether its Contact is new or not; any other
+ * value records nothing
+ */
+export type ContactImportRefusalColumn = {
+  kind: 'refusal';
+  channel: ContactImportRefusalChannel;
+  /**
+   * The values that mean a refusal, each with what it records
+   */
+  values: Array<ContactImportRefusalValue>;
+};
+
+/**
+ * A column of the old platform's refusals, as a request writes it
+ */
+export type ContactImportRefusalColumnInput = {
+  kind: 'refusal';
+  channel: ContactImportRefusalChannel;
+  /**
+   * The values that mean a refusal, each with what it records
+   */
+  values: Array<ContactImportRefusalValueInput>;
+};
+
+/**
+ * A cell value of a refusal column and what it records
+ */
+export type ContactImportRefusalValue = {
+  /**
+   * The value, matched ignoring case and the spaces around it, as a whole cell or as one item of a cell holding a comma-separated list
+   */
+  value: string;
+  refusal: ContactImportRefusal;
+};
+
+/**
+ * A cell value of a refusal column and what it records
+ */
+export type ContactImportRefusalValueInput = {
+  /**
+   * The value, matched ignoring case and the spaces around it, as a whole cell or as one item of a cell holding a comma-separated list
+   */
+  value: string;
+  refusal: ContactImportRefusal;
+};
+
+/**
  * Where an import stands: `uploaded` until a mapping is saved, `ready` to run, `running` while its
  * job writes the rows, then `done`; `cancelled` and `failed` end it early, keeping what it wrote.
  */
@@ -2573,6 +2818,40 @@ export type ContactImportTagsColumn = {
  */
 export type ContactImportTagsColumnInput = {
   kind: 'tags';
+};
+
+/**
+ * A column of when the fact of a refusal, consent or Engagement tracking column occurred (ADR
+ * 0154), so an older fact does not override a newer one: a time blank, unreadable or later than the
+ * run is dropped and reported, and the fact recorded as occurring now
+ */
+export type ContactImportTimeColumn = {
+  kind: 'time';
+  /**
+   * The refusal, consent or Engagement tracking column it times, counted from 0; required, null only while the Member has not chosen it
+   */
+  of: number | null;
+  /**
+   * How the cells write their dates, a date without an offset read in the Workspace time zone; required, null only while the Member has not chosen it
+   */
+  dateFormat: ContactImportDateFormat | null;
+};
+
+/**
+ * A column of when the fact of a refusal, consent or Engagement tracking column occurred (ADR
+ * 0154), so an older fact does not override a newer one: a time blank, unreadable or later than the
+ * run is dropped and reported, and the fact recorded as occurring now
+ */
+export type ContactImportTimeColumnInput = {
+  kind: 'time';
+  /**
+   * The refusal, consent or Engagement tracking column it times, counted from 0; required, null only while the Member has not chosen it
+   */
+  of: number | null;
+  /**
+   * How the cells write their dates, a date without an offset read in the Workspace time zone; required, null only while the Member has not chosen it
+   */
+  dateFormat: ContactImportDateFormat | null;
 };
 
 /**
@@ -7515,6 +7794,14 @@ export type SiteContactImportPreview = {
    * Distinct Tags the rows would add, the Tag for every row included
    */
   distinctTags: number;
+  /**
+   * Opt-outs the refusal columns would record over the whole file: the rows with a Destination on the column's Channel whose value means an Unsubscribe (on Telegram, the rows that name a key). An imported Unsubscribe cannot be undone: only the person lifts it
+   */
+  optOuts: number;
+  /**
+   * Suppressions the refusal columns would record over the whole file, counted as the opt-outs are
+   */
+  suppressions: number;
   /**
    * Custom fields the run would create: the columns mapped to a new field
    */

@@ -5616,7 +5616,7 @@
     "/workspaces/{workspaceId}/contact-imports/{importId}/mapping": {
       "put": {
         "operationId": "SiteContactImports_saveMapping",
-        "description": "Save how the import reads its file, one entry per column; it is then `ready`. Refused before it\nruns only: a running or ended import keeps its mapping (409). A column mapped to a new Custom\nfield needs `custom_fields:manage` (403), and its key must be new to the Workspace (409).",
+        "description": "Save how the import reads its file, one entry per column; it is then `ready`. Refused before it\nruns only: a running or ended import keeps its mapping (409). A column mapped to a new Custom\nfield needs `custom_fields:manage` (403), and its key must be new to the Workspace (409); a\nrefusal column recording a Suppression needs `suppressions:manage` (403).",
         "parameters": [
           {
             "name": "workspaceId",
@@ -5835,7 +5835,7 @@
     "/workspaces/{workspaceId}/contact-imports/{importId}/run": {
       "post": {
         "operationId": "SiteContactImports_run",
-        "description": "Run a `ready` import: its job writes the rows through the Contact intake, acting as the Member,\nand starts nothing (its Events are history). A date column without a format is refused (422).\nThe new Custom fields its mapping names are created first, which needs `custom_fields:manage`\nagain (403); a key the Workspace has taken since the mapping was saved is refused (409).",
+        "description": "Run a `ready` import: its job writes the rows through the Contact intake, acting as the Member,\nand starts nothing (its Events are history). A date column without a format is refused (422),\nand a refusal column recording a Suppression without `suppressions:manage` (403).\nThe new Custom fields its mapping names are created first, which needs `custom_fields:manage`\nagain (403); a key the Workspace has taken since the mapping was saved is refused (409).",
         "parameters": [
           {
             "name": "workspaceId",
@@ -14914,6 +14914,18 @@
           },
           {
             "$ref": "#/components/schemas/ContactImportIgnoreColumn"
+          },
+          {
+            "$ref": "#/components/schemas/ContactImportRefusalColumn"
+          },
+          {
+            "$ref": "#/components/schemas/ContactImportConsentColumn"
+          },
+          {
+            "$ref": "#/components/schemas/ContactImportEngagementTrackingColumn"
+          },
+          {
+            "$ref": "#/components/schemas/ContactImportTimeColumn"
           }
         ],
         "discriminator": {
@@ -14924,7 +14936,11 @@
             "customField": "#/components/schemas/ContactImportCustomFieldColumn",
             "newCustomField": "#/components/schemas/ContactImportNewCustomFieldColumn",
             "tags": "#/components/schemas/ContactImportTagsColumn",
-            "ignore": "#/components/schemas/ContactImportIgnoreColumn"
+            "ignore": "#/components/schemas/ContactImportIgnoreColumn",
+            "refusal": "#/components/schemas/ContactImportRefusalColumn",
+            "consent": "#/components/schemas/ContactImportConsentColumn",
+            "engagementTracking": "#/components/schemas/ContactImportEngagementTrackingColumn",
+            "time": "#/components/schemas/ContactImportTimeColumn"
           }
         },
         "description": "What a column of the file is, by `kind`"
@@ -14949,6 +14965,18 @@
           },
           {
             "$ref": "#/components/schemas/ContactImportIgnoreColumnInput"
+          },
+          {
+            "$ref": "#/components/schemas/ContactImportRefusalColumnInput"
+          },
+          {
+            "$ref": "#/components/schemas/ContactImportConsentColumnInput"
+          },
+          {
+            "$ref": "#/components/schemas/ContactImportEngagementTrackingColumnInput"
+          },
+          {
+            "$ref": "#/components/schemas/ContactImportTimeColumnInput"
           }
         ],
         "discriminator": {
@@ -14959,14 +14987,171 @@
             "customField": "#/components/schemas/ContactImportCustomFieldColumnInput",
             "newCustomField": "#/components/schemas/ContactImportNewCustomFieldColumnInput",
             "tags": "#/components/schemas/ContactImportTagsColumnInput",
-            "ignore": "#/components/schemas/ContactImportIgnoreColumnInput"
+            "ignore": "#/components/schemas/ContactImportIgnoreColumnInput",
+            "refusal": "#/components/schemas/ContactImportRefusalColumnInput",
+            "consent": "#/components/schemas/ContactImportConsentColumnInput",
+            "engagementTracking": "#/components/schemas/ContactImportEngagementTrackingColumnInput",
+            "time": "#/components/schemas/ContactImportTimeColumnInput"
           }
         },
         "description": "What a column of the file is, by `kind`, as a request writes it"
       },
+      "ContactImportConsentChannel": {
+        "type": "string",
+        "enum": ["email", "sms"],
+        "description": "The Channel of a consent or Engagement tracking column: its Destination is the row's email address or phone"
+      },
+      "ContactImportConsentColumn": {
+        "type": "object",
+        "required": ["kind", "channel", "values", "evidence"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["consent"]
+          },
+          "channel": {
+            "$ref": "#/components/schemas/ContactImportConsentChannel"
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "maxItems": 50,
+            "description": "The values that mean consent, matched ignoring case and the spaces around them"
+          },
+          "evidence": {
+            "$ref": "#/components/schemas/ContactImportConsentEvidence"
+          }
+        },
+        "description": "A column of the consent the Workspace collected: a row whose cell is one of the listed values\nrecords an imported Confirmation of its Destination on the Channel, which lifts no refusal; any\nother value records nothing"
+      },
+      "ContactImportConsentColumnInput": {
+        "type": "object",
+        "required": ["kind", "channel", "values", "evidence"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["consent"]
+          },
+          "channel": {
+            "$ref": "#/components/schemas/ContactImportConsentChannel"
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "maxItems": 50,
+            "description": "The values that mean consent, matched ignoring case and the spaces around them"
+          },
+          "evidence": {
+            "$ref": "#/components/schemas/ContactImportConsentEvidenceInput"
+          }
+        },
+        "description": "A column of the consent the Workspace collected, as a request writes it",
+        "additionalProperties": false
+      },
+      "ContactImportConsentEvidence": {
+        "type": "object",
+        "required": ["wording", "wordingColumn", "source", "sourceColumn", "brand", "brandColumn"],
+        "properties": {
+          "wording": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 2000,
+            "description": "The consent wording the person was shown and agreed to; null when a column holds it"
+          },
+          "wordingColumn": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true,
+            "description": "The column, counted from 0, whose cell is the wording; null when the wording is given"
+          },
+          "source": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 500,
+            "description": "Where the consent was collected; null when a column holds it"
+          },
+          "sourceColumn": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true,
+            "description": "The column, counted from 0, whose cell is the source; null when the source is given"
+          },
+          "brand": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 255,
+            "description": "The brand the person agreed to hear from; null when a column holds it"
+          },
+          "brandColumn": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true,
+            "description": "The column, counted from 0, whose cell is the brand; null when the brand is given"
+          }
+        },
+        "description": "The evidence of the consent a consent column records (ADR 0077): each part given once for every\nrow as text, or read from the column it names on each row, exactly one of the two"
+      },
+      "ContactImportConsentEvidenceInput": {
+        "type": "object",
+        "required": ["wording", "wordingColumn", "source", "sourceColumn", "brand", "brandColumn"],
+        "properties": {
+          "wording": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 2000,
+            "description": "The consent wording the person was shown and agreed to; null when a column holds it"
+          },
+          "wordingColumn": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true,
+            "description": "The column, counted from 0, whose cell is the wording; null when the wording is given"
+          },
+          "source": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 500,
+            "description": "Where the consent was collected; null when a column holds it"
+          },
+          "sourceColumn": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true,
+            "description": "The column, counted from 0, whose cell is the source; null when the source is given"
+          },
+          "brand": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 255,
+            "description": "The brand the person agreed to hear from; null when a column holds it"
+          },
+          "brandColumn": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true,
+            "description": "The column, counted from 0, whose cell is the brand; null when the brand is given"
+          }
+        },
+        "description": "The evidence of the consent a consent column records (ADR 0077): each part given once for every\nrow as text, or read from the column it names on each row, exactly one of the two",
+        "additionalProperties": false
+      },
       "ContactImportCounts": {
         "type": "object",
-        "required": ["processed", "created", "updated", "refused", "dropped"],
+        "required": [
+          "processed",
+          "created",
+          "updated",
+          "refused",
+          "dropped",
+          "optedOut",
+          "suppressed"
+        ],
         "properties": {
           "processed": {
             "type": "integer",
@@ -14992,6 +15177,16 @@
             "type": "integer",
             "format": "int32",
             "description": "Values dropped from rows that were written, because their column could not read them"
+          },
+          "optedOut": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Opt-outs the refusal columns recorded"
+          },
+          "suppressed": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Suppressions the refusal columns recorded"
           }
         },
         "description": "What an import's run has written so far"
@@ -15069,6 +15264,67 @@
         "enum": ["comma", "semicolon", "tab"],
         "description": "The character a file's cells are separated by, detected at upload"
       },
+      "ContactImportEngagementTrackingColumn": {
+        "type": "object",
+        "required": ["kind", "channel", "granted", "denied"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["engagementTracking"]
+          },
+          "channel": {
+            "$ref": "#/components/schemas/ContactImportConsentChannel"
+          },
+          "granted": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50,
+            "description": "The values that mean tracking is granted"
+          },
+          "denied": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50,
+            "description": "The values that mean tracking is denied"
+          }
+        },
+        "description": "A column of Engagement tracking consent (ADR 0120): a row whose cell is one of the granted values\nrecords a grant at its Destination on the Channel, one of the denied values a refusal; any other\nvalue records nothing"
+      },
+      "ContactImportEngagementTrackingColumnInput": {
+        "type": "object",
+        "required": ["kind", "channel", "granted", "denied"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["engagementTracking"]
+          },
+          "channel": {
+            "$ref": "#/components/schemas/ContactImportConsentChannel"
+          },
+          "granted": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50,
+            "description": "The values that mean tracking is granted"
+          },
+          "denied": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50,
+            "description": "The values that mean tracking is denied"
+          }
+        },
+        "description": "A column of Engagement tracking consent (ADR 0120): a row whose cell is one of the granted values\nrecords a grant at its Destination on the Channel, one of the denied values a refusal; any other\nvalue records nothing",
+        "additionalProperties": false
+      },
       "ContactImportIgnoreColumn": {
         "type": "object",
         "required": ["kind"],
@@ -15129,6 +15385,11 @@
           "notLocale",
           "notImageUrl",
           "notTag",
+          "noTime",
+          "timeInFuture",
+          "noDestination",
+          "noEvidence",
+          "refusalNotRecorded",
           "keysNameTwoContacts"
         ],
         "description": "Why a value or a row of an import is not written"
@@ -15416,6 +15677,96 @@
         },
         "description": "A row of the file as the import would write it"
       },
+      "ContactImportRefusal": {
+        "type": "string",
+        "enum": ["unsubscribeEverything", "unsubscribeBroadcasts", "suppression"],
+        "description": "What a value of a refusal column records: an Unsubscribe of `everything` or of `broadcasts`\n(email only), recorded as imported, which only the person can lift; or a Suppression of the\n`manual` reason, which needs `suppressions:manage`"
+      },
+      "ContactImportRefusalChannel": {
+        "type": "string",
+        "enum": ["email", "sms", "telegram"],
+        "description": "The Channel of a refusal column: its Destination is the row's email address or phone, or on Telegram the users of the Contact's Bindings"
+      },
+      "ContactImportRefusalColumn": {
+        "type": "object",
+        "required": ["kind", "channel", "values"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["refusal"]
+          },
+          "channel": {
+            "$ref": "#/components/schemas/ContactImportRefusalChannel"
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContactImportRefusalValue"
+            },
+            "minItems": 1,
+            "maxItems": 50,
+            "description": "The values that mean a refusal, each with what it records"
+          }
+        },
+        "description": "A column of the old platform's refusals: a row whose cell is one of the listed values records\nthat refusal at its Destination on the Channel, whether its Contact is new or not; any other\nvalue records nothing"
+      },
+      "ContactImportRefusalColumnInput": {
+        "type": "object",
+        "required": ["kind", "channel", "values"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["refusal"]
+          },
+          "channel": {
+            "$ref": "#/components/schemas/ContactImportRefusalChannel"
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContactImportRefusalValueInput"
+            },
+            "minItems": 1,
+            "maxItems": 50,
+            "description": "The values that mean a refusal, each with what it records"
+          }
+        },
+        "description": "A column of the old platform's refusals, as a request writes it",
+        "additionalProperties": false
+      },
+      "ContactImportRefusalValue": {
+        "type": "object",
+        "required": ["value", "refusal"],
+        "properties": {
+          "value": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "The value, matched ignoring case and the spaces around it, as a whole cell or as one item of a cell holding a comma-separated list"
+          },
+          "refusal": {
+            "$ref": "#/components/schemas/ContactImportRefusal"
+          }
+        },
+        "description": "A cell value of a refusal column and what it records"
+      },
+      "ContactImportRefusalValueInput": {
+        "type": "object",
+        "required": ["value", "refusal"],
+        "properties": {
+          "value": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "The value, matched ignoring case and the spaces around it, as a whole cell or as one item of a cell holding a comma-separated list"
+          },
+          "refusal": {
+            "$ref": "#/components/schemas/ContactImportRefusal"
+          }
+        },
+        "description": "A cell value of a refusal column and what it records",
+        "additionalProperties": false
+      },
       "ContactImportState": {
         "type": "string",
         "enum": ["uploaded", "ready", "running", "cancelled", "failed", "done"],
@@ -15442,6 +15793,59 @@
           }
         },
         "description": "A column whose cells name the Tags a row adds, separated by commas; a Tag holding a comma is quoted",
+        "additionalProperties": false
+      },
+      "ContactImportTimeColumn": {
+        "type": "object",
+        "required": ["kind", "of", "dateFormat"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["time"]
+          },
+          "of": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true,
+            "description": "The refusal, consent or Engagement tracking column it times, counted from 0; required, null only while the Member has not chosen it"
+          },
+          "dateFormat": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContactImportDateFormat"
+              }
+            ],
+            "nullable": true,
+            "description": "How the cells write their dates, a date without an offset read in the Workspace time zone; required, null only while the Member has not chosen it"
+          }
+        },
+        "description": "A column of when the fact of a refusal, consent or Engagement tracking column occurred (ADR\n0154), so an older fact does not override a newer one: a time blank, unreadable or later than the\nrun is dropped and reported, and the fact recorded as occurring now"
+      },
+      "ContactImportTimeColumnInput": {
+        "type": "object",
+        "required": ["kind", "of", "dateFormat"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["time"]
+          },
+          "of": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true,
+            "description": "The refusal, consent or Engagement tracking column it times, counted from 0; required, null only while the Member has not chosen it"
+          },
+          "dateFormat": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContactImportDateFormat"
+              }
+            ],
+            "nullable": true,
+            "description": "How the cells write their dates, a date without an offset read in the Workspace time zone; required, null only while the Member has not chosen it"
+          }
+        },
+        "description": "A column of when the fact of a refusal, consent or Engagement tracking column occurred (ADR\n0154), so an older fact does not override a newer one: a time blank, unreadable or later than the\nrun is dropped and reported, and the fact recorded as occurring now",
         "additionalProperties": false
       },
       "ContactImportWarning": {
@@ -22278,6 +22682,8 @@
           "rowsWithoutKey",
           "malformedRows",
           "distinctTags",
+          "optOuts",
+          "suppressions",
           "newCustomFields"
         ],
         "properties": {
@@ -22308,6 +22714,16 @@
             "type": "integer",
             "format": "int32",
             "description": "Distinct Tags the rows would add, the Tag for every row included"
+          },
+          "optOuts": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Opt-outs the refusal columns would record over the whole file: the rows with a Destination on the column's Channel whose value means an Unsubscribe (on Telegram, the rows that name a key). An imported Unsubscribe cannot be undone: only the person lifts it"
+          },
+          "suppressions": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Suppressions the refusal columns would record over the whole file, counted as the opt-outs are"
           },
           "newCustomFields": {
             "type": "integer",

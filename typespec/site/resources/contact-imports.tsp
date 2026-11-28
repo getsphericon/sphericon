@@ -125,6 +125,163 @@ model ContactImportIgnoreColumn {
   kind: "ignore";
 }
 
+/** The Channel of a refusal column: its Destination is the row's email address or phone, or on Telegram the users of the Contact's Bindings */
+enum ContactImportRefusalChannel {
+  email,
+  sms,
+  telegram,
+}
+
+/** The Channel of a consent or Engagement tracking column: its Destination is the row's email address or phone */
+enum ContactImportConsentChannel {
+  email,
+  sms,
+}
+
+/**
+ * What a value of a refusal column records: an Unsubscribe of `everything` or of `broadcasts`
+ * (email only), recorded as imported, which only the person can lift; or a Suppression of the
+ * `manual` reason, which needs `suppressions:manage`
+ */
+enum ContactImportRefusal {
+  unsubscribeEverything,
+  unsubscribeBroadcasts,
+  suppression,
+}
+
+/** A cell value of a refusal column and what it records */
+model ContactImportRefusalValue {
+  /** The value, matched ignoring case and the spaces around it, as a whole cell or as one item of a cell holding a comma-separated list */
+  @minLength(1)
+  @maxLength(255)
+  value: string;
+
+  refusal: ContactImportRefusal;
+}
+
+/**
+ * A column of the old platform's refusals: a row whose cell is one of the listed values records
+ * that refusal at its Destination on the Channel, whether its Contact is new or not; any other
+ * value records nothing
+ */
+model ContactImportRefusalColumn {
+  kind: "refusal";
+  channel: ContactImportRefusalChannel;
+
+  /** The values that mean a refusal, each with what it records */
+  @minItems(1)
+  @maxItems(50)
+  values: ContactImportRefusalValue[];
+}
+
+/**
+ * The evidence of the consent a consent column records (ADR 0077): each part given once for every
+ * row as text, or read from the column it names on each row, exactly one of the two
+ */
+model ContactImportConsentEvidence {
+  /** The consent wording the person was shown and agreed to; null when a column holds it */
+  @maxLength(2000)
+  wording: string | null;
+
+  /** The column, counted from 0, whose cell is the wording; null when the wording is given */
+  wordingColumn: int32 | null;
+
+  /** Where the consent was collected; null when a column holds it */
+  @maxLength(500)
+  source: string | null;
+
+  /** The column, counted from 0, whose cell is the source; null when the source is given */
+  sourceColumn: int32 | null;
+
+  /** The brand the person agreed to hear from; null when a column holds it */
+  @maxLength(255)
+  brand: string | null;
+
+  /** The column, counted from 0, whose cell is the brand; null when the brand is given */
+  brandColumn: int32 | null;
+}
+
+/**
+ * A column of the consent the Workspace collected: a row whose cell is one of the listed values
+ * records an imported Confirmation of its Destination on the Channel, which lifts no refusal; any
+ * other value records nothing
+ */
+model ContactImportConsentColumn {
+  kind: "consent";
+  channel: ContactImportConsentChannel;
+
+  /** The values that mean consent, matched ignoring case and the spaces around them */
+  @minItems(1)
+  @maxItems(50)
+  values: string[];
+
+  evidence: ContactImportConsentEvidence;
+}
+
+/**
+ * A column of Engagement tracking consent (ADR 0120): a row whose cell is one of the granted values
+ * records a grant at its Destination on the Channel, one of the denied values a refusal; any other
+ * value records nothing
+ */
+model ContactImportEngagementTrackingColumn {
+  kind: "engagementTracking";
+  channel: ContactImportConsentChannel;
+
+  /** The values that mean tracking is granted */
+  @maxItems(50)
+  granted: string[];
+
+  /** The values that mean tracking is denied */
+  @maxItems(50)
+  denied: string[];
+}
+
+/**
+ * A column of when the fact of a refusal, consent or Engagement tracking column occurred (ADR
+ * 0154), so an older fact does not override a newer one: a time blank, unreadable or later than the
+ * run is dropped and reported, and the fact recorded as occurring now
+ */
+model ContactImportTimeColumn {
+  kind: "time";
+
+  /** The refusal, consent or Engagement tracking column it times, counted from 0; required, null only while the Member has not chosen it */
+  of: int32 | null;
+
+  /** How the cells write their dates, a date without an offset read in the Workspace time zone; required, null only while the Member has not chosen it */
+  dateFormat: ContactImportDateFormat | null;
+}
+
+model ContactImportConsentEvidenceInput is ContactImportConsentEvidence;
+model ContactImportRefusalValueInput is ContactImportRefusalValue;
+
+/** A column of the old platform's refusals, as a request writes it */
+model ContactImportRefusalColumnInput {
+  kind: "refusal";
+  channel: ContactImportRefusalChannel;
+
+  /** The values that mean a refusal, each with what it records */
+  @minItems(1)
+  @maxItems(50)
+  values: ContactImportRefusalValueInput[];
+}
+
+/** A column of the consent the Workspace collected, as a request writes it */
+model ContactImportConsentColumnInput {
+  kind: "consent";
+  channel: ContactImportConsentChannel;
+
+  /** The values that mean consent, matched ignoring case and the spaces around them */
+  @minItems(1)
+  @maxItems(50)
+  values: string[];
+
+  evidence: ContactImportConsentEvidenceInput;
+}
+
+model ContactImportEngagementTrackingColumnInput
+  is ContactImportEngagementTrackingColumn;
+model ContactImportTimeColumnInput is ContactImportTimeColumn;
+
 model ContactImportKeyColumnInput is ContactImportKeyColumn;
 model ContactImportAttributeColumnInput is ContactImportAttributeColumn;
 model ContactImportCustomFieldColumnInput is ContactImportCustomFieldColumn;
@@ -142,6 +299,10 @@ union ContactImportColumn {
   newCustomField: ContactImportNewCustomFieldColumn,
   tags: ContactImportTagsColumn,
   ignore: ContactImportIgnoreColumn,
+  refusal: ContactImportRefusalColumn,
+  consent: ContactImportConsentColumn,
+  engagementTracking: ContactImportEngagementTrackingColumn,
+  time: ContactImportTimeColumn,
 }
 
 /** What a column of the file is, by `kind`, as a request writes it */
@@ -153,6 +314,10 @@ union ContactImportColumnInput {
   newCustomField: ContactImportNewCustomFieldColumnInput,
   tags: ContactImportTagsColumnInput,
   ignore: ContactImportIgnoreColumnInput,
+  refusal: ContactImportRefusalColumnInput,
+  consent: ContactImportConsentColumnInput,
+  engagementTracking: ContactImportEngagementTrackingColumnInput,
+  time: ContactImportTimeColumnInput,
 }
 
 /** How an import reads its file: what each column is, and the choices that hold for every row */
@@ -214,6 +379,12 @@ model ContactImportCounts {
 
   /** Values dropped from rows that were written, because their column could not read them */
   dropped: int32;
+
+  /** Opt-outs the refusal columns recorded */
+  optedOut: int32;
+
+  /** Suppressions the refusal columns recorded */
+  suppressed: int32;
 }
 
 /** A CSV import of Contacts (ADR 0138): its file's facts, its mapping and how far its run is */
@@ -297,6 +468,21 @@ enum ContactImportIssueReason {
   /** Not a Tag name */
   notTag,
 
+  /** A time column's cell is blank on a row whose fact it times: the fact is recorded as occurring now */
+  noTime,
+
+  /** A time later than the run: the fact is recorded as occurring now */
+  timeInFuture,
+
+  /** A refusal, consent or tracking value on a row with no Destination on its Channel: nothing is recorded for it */
+  noDestination,
+
+  /** A consent value on a row whose evidence cell is blank or too long: no consent is recorded for it */
+  noEvidence,
+
+  /** A refusal the row names could not be recorded; the message says why */
+  refusalNotRecorded,
+
   /** The row's alias keys name two Contacts: it was written to the one the keys' rank picks (subject ID, then email, then phone), without the keys of the other */
   keysNameTwoContacts,
 }
@@ -356,6 +542,12 @@ model SiteContactImportPreview {
   /** Distinct Tags the rows would add, the Tag for every row included */
   distinctTags: int32;
 
+  /** Opt-outs the refusal columns would record over the whole file: the rows with a Destination on the column's Channel whose value means an Unsubscribe (on Telegram, the rows that name a key). An imported Unsubscribe cannot be undone: only the person lifts it */
+  optOuts: int32;
+
+  /** Suppressions the refusal columns would record over the whole file, counted as the opt-outs are */
+  suppressions: int32;
+
   /** Custom fields the run would create: the columns mapped to a new field */
   newCustomFields: int32;
 }
@@ -397,7 +589,8 @@ namespace SiteContactImports {
   /**
    * Save how the import reads its file, one entry per column; it is then `ready`. Refused before it
    * runs only: a running or ended import keeps its mapping (409). A column mapped to a new Custom
-   * field needs `custom_fields:manage` (403), and its key must be new to the Workspace (409).
+   * field needs `custom_fields:manage` (403), and its key must be new to the Workspace (409); a
+   * refusal column recording a Suppression needs `suppressions:manage` (403).
    */
   @put
   @route("/{importId}/mapping")
@@ -418,7 +611,8 @@ namespace SiteContactImports {
 
   /**
    * Run a `ready` import: its job writes the rows through the Contact intake, acting as the Member,
-   * and starts nothing (its Events are history). A date column without a format is refused (422).
+   * and starts nothing (its Events are history). A date column without a format is refused (422),
+   * and a refusal column recording a Suppression without `suppressions:manage` (403).
    * The new Custom fields its mapping names are created first, which needs `custom_fields:manage`
    * again (403); a key the Workspace has taken since the mapping was saved is refused (409).
    */

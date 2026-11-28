@@ -13959,9 +13959,10 @@ func (s *Server) handleSiteContactImportsReportLinkRequest(args [2]string, argsE
 // handleSiteContactImportsRunRequest handles SiteContactImports_run operation.
 //
 // Run a `ready` import: its job writes the rows through the Contact intake, acting as the Member, and
-// starts nothing (its Events are history). A date column without a format is refused (422). The new
-// Custom fields its mapping names are created first, which needs `custom_fields:manage` again (403); a
-// key the Workspace has taken since the mapping was saved is refused (409).
+// starts nothing (its Events are history). A date column without a format is refused (422), and a
+// refusal column recording a Suppression without `suppressions:manage` (403). The new Custom fields
+// its mapping names are created first, which needs `custom_fields:manage` again (403); a key the
+// Workspace has taken since the mapping was saved is refused (409).
 //
 // POST /workspaces/{workspaceId}/contact-imports/{importId}/run
 func (s *Server) handleSiteContactImportsRunRequest(args [2]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -14167,7 +14168,8 @@ func (s *Server) handleSiteContactImportsRunRequest(args [2]string, argsEscaped 
 //
 // Save how the import reads its file, one entry per column; it is then `ready`. Refused before it runs
 // only: a running or ended import keeps its mapping (409). A column mapped to a new Custom field needs
-// `custom_fields:manage` (403), and its key must be new to the Workspace (409).
+// `custom_fields:manage` (403), and its key must be new to the Workspace (409); a refusal column
+// recording a Suppression needs `suppressions:manage` (403).
 //
 // PUT /workspaces/{workspaceId}/contact-imports/{importId}/mapping
 func (s *Server) handleSiteContactImportsSaveMappingRequest(args [2]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {

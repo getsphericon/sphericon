@@ -35,7 +35,7 @@ func (h *Handlers) SiteContactImportsGet(ctx context.Context, params siteapi.Sit
 	return &res, nil
 }
 
-// SiteContactImportsSaveMapping saves how an import reads its file.
+// SiteContactImportsSaveMapping saves how an import reads its file, as the caller's role may.
 func (h *Handlers) SiteContactImportsSaveMapping(ctx context.Context, req *siteapi.ContactImportMappingInput, params siteapi.SiteContactImportsSaveMappingParams) (*siteapi.SiteContactImport, error) {
 	in := inputs.ContactImportMapping(req)
 	in.Role = callerMembership(ctx).Role
@@ -58,7 +58,7 @@ func (h *Handlers) SiteContactImportsPreview(ctx context.Context, params siteapi
 }
 
 // SiteContactImportsRun runs an import as the caller, whose Role creating its new Custom fields
-// asks: its job writes the rows.
+// and recording its Suppressions asks: its job writes the rows.
 func (h *Handlers) SiteContactImportsRun(ctx context.Context, params siteapi.SiteContactImportsRunParams) (*siteapi.SiteContactImport, error) {
 	v, err := h.contactImports.Run(ctx, workspaceScope(ctx), int64(params.ImportId), callerMembership(ctx).Role)
 	if err != nil {

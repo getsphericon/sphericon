@@ -14,7 +14,7 @@ import {
   Title,
 } from '@mantine/core'
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
@@ -50,6 +50,15 @@ import { Route as importPageRoute } from '../../routes/workspaces/$workspaceId/c
 import { countryOptions } from '../../utils/countries.ts'
 import { can } from '../../utils/permissions.ts'
 import { workspaceOptions } from '../../utils/workspace.ts'
+import { FactColumnEditor } from './importFactEditor.tsx'
+import {
+  consent,
+  emptyFact,
+  engagementTracking,
+  factTargets,
+  refusal,
+  time,
+} from './importFacts.ts'
 import {
   choiceWritesDate,
   columnsMissingDateFormat,
@@ -207,6 +216,18 @@ function MappingForm({ workspaceId, imp }: { workspaceId: string; imp: SiteConta
         },
       ],
     },
+    {
+      group: t(($) => $.contactImports.facts.group),
+      items: [
+        { value: refusal, label: t(($) => $.contactImports.facts.kinds.refusal) },
+        { value: consent, label: t(($) => $.contactImports.facts.kinds.consent) },
+        {
+          value: engagementTracking,
+          label: t(($) => $.contactImports.facts.kinds.engagementTracking),
+        },
+        { value: time, label: t(($) => $.contactImports.facts.kinds.time) },
+      ],
+    },
   ]
   const dateFormats = zContactImportDateFormat.options.map((format) => ({
     value: format,
@@ -243,54 +264,80 @@ function MappingForm({ workspaceId, imp }: { workspaceId: string; imp: SiteConta
         <Table.Tbody>
           {imp.header.map((header, at) => {
             const choice = values.columns[at] ?? { target: ignore, dateFormat: null }
+            const fact = factTargets.includes(choice.target) ? choice.fact : undefined
             return (
-              <Table.Tr key={at}>
-                <Table.Td>{header === '' ? '-' : header}</Table.Td>
-                <Table.Td>
-                  <Select
-                    aria-label={t(($) => $.contactImports.writesColumn, { column: header })}
-                    data={targetData}
-                    value={choice.target}
-                    allowDeselect={false}
-                    searchable
-                    onChange={(target) => {
-                      setColumn(at, {
-                        target: target ?? ignore,
-                        newField: choice.newField ?? newFieldFor(header),
-                      })
-                      setPreviewed(false)
-                    }}
-                  />
-                  {choice.target === newCustomField ? (
-                    <NewFieldInputs
-                      column={header}
-                      field={choice.newField ?? newFieldFor(header)}
-                      onChange={(newField) => {
-                        setColumn(at, { newField })
-                        setPreviewed(false)
-                      }}
-                    />
-                  ) : null}
-                </Table.Td>
-                <Table.Td>
-                  {choiceWritesDate(choice, fields) ? (
+              <Fragment key={at}>
+                <Table.Tr>
+                  <Table.Td>{header === '' ? '-' : header}</Table.Td>
+                  <Table.Td>
                     <Select
-                      aria-label={t(($) => $.contactImports.dateFormatColumn, { column: header })}
-                      placeholder={t(($) => $.contactImports.chooseDateFormat)}
-                      data={dateFormats}
-                      value={choice.dateFormat}
-                      onChange={(format) => {
+                      aria-label={t(($) => $.contactImports.writesColumn, { column: header })}
+                      data={targetData}
+                      value={choice.target}
+                      allowDeselect={false}
+                      searchable
+                      onChange={(target) => {
+                        const next = target ?? ignore
                         setColumn(at, {
-                          dateFormat: zContactImportDateFormat.nullable().parse(format),
+                          target: next,
+                          newField: choice.newField ?? newFieldFor(header),
+                          fact: factTargets.includes(next)
+                            ? (choice.fact ?? emptyFact())
+                            : undefined,
                         })
                         setPreviewed(false)
                       }}
                     />
-                  ) : (
-                    '-'
-                  )}
-                </Table.Td>
-              </Table.Tr>
+                    {choice.target === newCustomField ? (
+                      <NewFieldInputs
+                        column={header}
+                        field={choice.newField ?? newFieldFor(header)}
+                        onChange={(newField) => {
+                          setColumn(at, { newField })
+                          setPreviewed(false)
+                        }}
+                      />
+                    ) : null}
+                  </Table.Td>
+                  <Table.Td>
+                    {choiceWritesDate(choice, fields) ? (
+                      <Select
+                        aria-label={t(($) => $.contactImports.dateFormatColumn, { column: header })}
+                        placeholder={t(($) => $.contactImports.chooseDateFormat)}
+                        data={dateFormats}
+                        value={choice.dateFormat}
+                        onChange={(format) => {
+                          setColumn(at, {
+                            dateFormat: zContactImportDateFormat.nullable().parse(format),
+                          })
+                          setPreviewed(false)
+                        }}
+                      />
+                    ) : (
+                      '-'
+                    )}
+                  </Table.Td>
+                </Table.Tr>
+                {fact === undefined ? null : (
+                  <Table.Tr>
+                    <Table.Td />
+                    <Table.Td colSpan={2}>
+                      <FactColumnEditor
+                        kind={choice.target}
+                        column={header}
+                        fact={fact}
+                        header={imp.header}
+                        targets={values.columns.map((c) => c.target)}
+                        canSuppress={can(workspace, 'suppressions:manage')}
+                        onChange={(next) => {
+                          setColumn(at, { fact: next })
+                          setPreviewed(false)
+                        }}
+                      />
+                    </Table.Td>
+                  </Table.Tr>
+                )}
+              </Fragment>
             )
           })}
         </Table.Tbody>
@@ -440,6 +487,17 @@ function PreviewView({ header, preview }: { header: string[]; preview: SiteConta
           newFields: preview.newCustomFields,
         })}
       </Text>
+      {preview.optOuts > 0 || preview.suppressions > 0 ? (
+        <Alert
+          color="yellow"
+          title={t(($) => $.contactImports.facts.previewRefusals, {
+            optOuts: preview.optOuts,
+            suppressions: preview.suppressions,
+          })}
+        >
+          {t(($) => $.contactImports.facts.optOutsFinal)}
+        </Alert>
+      ) : null}
       <Table.ScrollContainer minWidth={600}>
         <Table striped>
           <Table.Thead>
@@ -510,6 +568,14 @@ function RunView({ workspaceId, imp }: { workspaceId: string; imp: SiteContactIm
           dropped: counts.dropped,
         })}
       </Text>
+      {counts.optedOut > 0 || counts.suppressed > 0 ? (
+        <Text>
+          {t(($) => $.contactImports.facts.countsRefusals, {
+            optedOut: counts.optedOut,
+            suppressed: counts.suppressed,
+          })}
+        </Text>
+      ) : null}
       {imp.reportRows > 0 && imp.state !== 'running' ? (
         <Group>
           <Button
