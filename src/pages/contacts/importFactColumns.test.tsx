@@ -20,17 +20,19 @@ import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
 import { ContactImportPage } from './importPage.tsx'
 
-// An uploaded file of a key, a consent, the time it was given, where it was given and tracking.
+// An uploaded file of a key, a consent, the time it was given, where it was given, tracking and a
+// column with no header.
 const UPLOADED: SiteContactImport = {
   id: testId(7),
   state: 'uploaded',
   delimiter: 'comma',
-  header: ['email', 'Consent', 'When', 'Form', 'Track'],
+  header: ['email', 'Consent', 'When', 'Form', 'Track', ''],
   rows: 1,
   malformedRows: 0,
   mapping: {
     columns: [
       { kind: 'key', key: 'email' },
+      { kind: 'ignore' },
       { kind: 'ignore' },
       { kind: 'ignore' },
       { kind: 'ignore' },
@@ -89,7 +91,8 @@ async function renderImport(sent: ContactImportMappingInput[]) {
   )
 }
 
-// A consent column on SMS with its wording given once and its source read from another column, the
+// A consent column on SMS with its wording and brand read from other columns (one with no header)
+// and its source given once, the
 // time column of it, and an Engagement tracking column, save as the Member set them.
 test('maps a consent with its evidence, its time and a tracking column', async () => {
   const sent: ContactImportMappingInput[] = []
@@ -103,10 +106,11 @@ test('maps a consent with its evidence, its time and a tracking column', async (
   await choose('Channel of Consent', 'SMS')
   await screen.getByRole('combobox', { name: 'Values that mean consent' }).fill('yes')
   await userEvent.keyboard('{Enter}')
-  await screen.getByRole('textbox', { name: 'Wording' }).fill('Text me deals')
-  await screen.getByRole('combobox', { name: 'Or read from column' }).nth(1).click()
+  await screen.getByRole('combobox', { name: 'Or read from column' }).nth(0).click()
   await screen.getByRole('option', { name: 'Form', exact: true }).click()
-  await screen.getByRole('textbox', { name: 'Brand' }).fill('Acme')
+  await screen.getByRole('textbox', { name: 'Source' }).fill('Signup form')
+  await screen.getByRole('combobox', { name: 'Or read from column' }).nth(2).click()
+  await screen.getByRole('option', { name: '#6', exact: true }).click()
   await choose('What When imports as', 'Time of a consent or refusal')
   await choose('The column When times', 'Consent')
   await choose('Date format of When', 'Date and time (RFC 3339)')
@@ -125,17 +129,18 @@ test('maps a consent with its evidence, its time and a tracking column', async (
         channel: 'sms',
         values: ['yes'],
         evidence: {
-          wording: 'Text me deals',
-          wordingColumn: null,
-          source: null,
-          sourceColumn: 3,
-          brand: 'Acme',
-          brandColumn: null,
+          wording: null,
+          wordingColumn: 3,
+          source: 'Signup form',
+          sourceColumn: null,
+          brand: null,
+          brandColumn: 5,
         },
       },
       { kind: 'time', of: 1, dateFormat: 'rfc3339' },
       { kind: 'ignore' },
       { kind: 'engagementTracking', channel: 'email', granted: ['on'], denied: ['off'] },
+      { kind: 'ignore' },
     ])
 })
 
