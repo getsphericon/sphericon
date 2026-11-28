@@ -130,6 +130,7 @@ var owners = map[string]string{
 	"Segment":                    "internal/domain/contacts/segments",
 	"SendCapLimiter":             "internal/domain/sending/providerlimit",
 	"SendingDomain":              "internal/domain/sending/sendingdomains",
+	"SendingDomainEnvelope":      "internal/domain/sending/sendingdomains",
 	"SendingWindow":              "internal/domain/identity/workspaces",
 	"ServiceCredential":          "ee/domain/identity/servicecredentials",
 	"SignupItem":                 "internal/domain/identity/signupitems",

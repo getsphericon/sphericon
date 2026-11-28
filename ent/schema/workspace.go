@@ -264,6 +264,7 @@ func (Workspace) Edges() []ent.Edge {
 		edge.To("erasures", Erasure.Type),
 		edge.To("usages", Usage.Type),
 		edge.To("integration_provider_states", IntegrationProviderState.Type),
+		edge.To("sending_domain_envelopes", SendingDomainEnvelope.Type),
 		edge.To("webhook_endpoint_healths", WebhookEndpointHealth.Type),
 		edge.To("standing", WorkspaceStanding.Type).Unique(),
 	}

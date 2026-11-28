@@ -515,3 +515,74 @@ func TestConfigurationSetMissing(t *testing.T) {
 		assert.Zero(t, api.hits)
 	})
 }
+
+func mailFromReader(t *testing.T, endpoint string) messaging.MailFromReader {
+	t.Helper()
+	reader, ok := messaging.AsMailFromReader(build(t, endpoint))
+	require.True(t, ok, "the SES sender can read a Sending domain's MAIL FROM")
+	return reader
+}
+
+// The envelope of an SES Integration is the custom MAIL FROM of the Sending domain's identity at
+// SES (GetEmailIdentity, ADR 0184): its domain, SES's status of it and what SES does when its MX
+// record fails. The app reads it; it never sets it.
+func TestMailFrom(t *testing.T) {
+	t.Run("an identity with a custom MAIL FROM reads it", func(t *testing.T) {
+		api := newSESAPI(t, http.StatusOK, `{"MailFromAttributes":{"MailFromDomain":"bounce.mail.acme.com","MailFromDomainStatus":"TEMPORARY_FAILURE","BehaviorOnMxFailure":"REJECT_MESSAGE"}}`)
+
+		got, err := mailFromReader(t, api.srv.URL).MailFrom(t.Context(), "mail.acme.com")
+
+		require.NoError(t, err)
+		assert.Equal(t, messaging.MailFrom{
+			Domain:      "bounce.mail.acme.com",
+			Status:      providers.MailFromTemporaryFailure,
+			OnMXFailure: providers.MXFailureReject,
+		}, got)
+		assert.Equal(t, "/v2/email/identities/mail.acme.com", api.path)
+	})
+
+	t.Run("each status and behaviour maps to its own", func(t *testing.T) {
+		for status, want := range map[string]providers.MailFromStatus{
+			"PENDING": providers.MailFromPending, "SUCCESS": providers.MailFromSuccess, "FAILED": providers.MailFromFailed,
+		} {
+			api := newSESAPI(t, http.StatusOK, `{"MailFromAttributes":{"MailFromDomain":"bounce.mail.acme.com","MailFromDomainStatus":"`+status+`","BehaviorOnMxFailure":"USE_DEFAULT_VALUE"}}`)
+			got, err := mailFromReader(t, api.srv.URL).MailFrom(t.Context(), "mail.acme.com")
+			require.NoError(t, err)
+			assert.Equal(t, want, got.Status, status)
+			assert.Equal(t, providers.MXFailureFallBack, got.OnMXFailure)
+		}
+	})
+
+	t.Run("an identity without one reads the provider's own", func(t *testing.T) {
+		api := newSESAPI(t, http.StatusOK, `{"IdentityType":"DOMAIN","VerifiedForSendingStatus":true}`)
+
+		got, err := mailFromReader(t, api.srv.URL).MailFrom(t.Context(), "mail.acme.com")
+
+		require.NoError(t, err)
+		assert.Equal(t, messaging.MailFrom{}, got)
+	})
+
+	t.Run("a denied read is no answer", func(t *testing.T) {
+		api := newSESAPIWithErrorType(t, http.StatusForbidden, "AccessDeniedException", `{"message":"not authorized to perform ses:GetEmailIdentity"}`)
+
+		_, err := mailFromReader(t, api.srv.URL).MailFrom(t.Context(), "mail.acme.com")
+
+		assert.ErrorContains(t, err, "ses: get email identity")
+	})
+
+	t.Run("an identity SES does not have is no answer", func(t *testing.T) {
+		api := newSESAPIWithErrorType(t, http.StatusNotFound, "NotFoundException", `{"message":"Email identity <mail.acme.com> does not exist."}`)
+
+		_, err := mailFromReader(t, api.srv.URL).MailFrom(t.Context(), "mail.acme.com")
+
+		assert.ErrorContains(t, err, "ses: get email identity")
+	})
+
+	t.Run("a status SES adds later is no answer", func(t *testing.T) {
+		api := newSESAPI(t, http.StatusOK, `{"MailFromAttributes":{"MailFromDomain":"bounce.mail.acme.com","MailFromDomainStatus":"SOMETHING_NEW","BehaviorOnMxFailure":"USE_DEFAULT_VALUE"}}`)
+
+		_, err := mailFromReader(t, api.srv.URL).MailFrom(t.Context(), "mail.acme.com")
+
+		assert.Error(t, err)
+	})
+}

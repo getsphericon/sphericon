@@ -42,6 +42,8 @@ const (
 	FieldDmarcFoundAt = "dmarc_found_at"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
 	EdgeWorkspace = "workspace"
+	// EdgeEnvelopes holds the string denoting the envelopes edge name in mutations.
+	EdgeEnvelopes = "envelopes"
 	// Table holds the table name of the sendingdomain in the database.
 	Table = "sending_domains"
 	// WorkspaceTable is the table that holds the workspace relation/edge.
@@ -51,6 +53,13 @@ const (
 	WorkspaceInverseTable = "workspaces"
 	// WorkspaceColumn is the table column denoting the workspace relation/edge.
 	WorkspaceColumn = "workspace_id"
+	// EnvelopesTable is the table that holds the envelopes relation/edge.
+	EnvelopesTable = "sending_domain_envelopes"
+	// EnvelopesInverseTable is the table name for the SendingDomainEnvelope entity.
+	// It exists in this package in order to avoid circular dependency with the "sendingdomainenvelope" package.
+	EnvelopesInverseTable = "sending_domain_envelopes"
+	// EnvelopesColumn is the table column denoting the envelopes relation/edge.
+	EnvelopesColumn = "sending_domain_id"
 )
 
 // Columns holds all SQL columns for sendingdomain fields.
@@ -175,10 +184,31 @@ func ByWorkspaceField(field string, opts ...sql.OrderTermOption) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newWorkspaceStep(), sql.OrderByField(field, opts...))
 	}
 }
+
+// ByEnvelopesCount orders the results by envelopes count.
+func ByEnvelopesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newEnvelopesStep(), opts...)
+	}
+}
+
+// ByEnvelopes orders the results by envelopes terms.
+func ByEnvelopes(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newEnvelopesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newWorkspaceStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(WorkspaceInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, WorkspaceTable, WorkspaceColumn),
+	)
+}
+func newEnvelopesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(EnvelopesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, EnvelopesTable, EnvelopesColumn),
 	)
 }

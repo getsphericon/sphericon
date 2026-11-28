@@ -699,13 +699,22 @@ type Converter interface {
 	// goverter:useEmptyOnNil:slice
 	JoinDomainsToResources(source []*ent.JoinDomain) []siteapi.SiteJoinDomainResource
 
-	// The DNS records are derived by the sendingdomains module, which the mapper cannot
-	// see: the handler attaches them. The private key is never exposed.
+	// The DNS records are derived by the sendingdomains module and the envelopes read by its
+	// checks, which the mapper cannot see: the handler attaches them. The private key is never
+	// exposed.
 	// goverter:ignore DkimRecord
-	// goverter:ignore SpfRecord
 	// goverter:ignore DmarcRecord
+	// goverter:ignore Envelopes
 	// goverter:map . Verified | sendingDomainVerified
 	SendingDomainToResource(source *ent.SendingDomain) siteapi.SendingDomainResource
+	// goverter:useEmptyOnNil:slice
+	SendingDomainEnvelopesToResource(source []sendingdomains.Envelope) []siteapi.SendingDomainEnvelope
+	// goverter:map MailFrom | envelopeMailFrom
+	// goverter:map PermissionNeeded | envelopePermission
+	// goverter:map CheckedAt | envelopeCheckedAt
+	SendingDomainEnvelopeToResource(source sendingdomains.Envelope) siteapi.SendingDomainEnvelope
+	// goverter:map OnMXFailure OnMxFailure
+	SendingDomainMailFromToResource(source messaging.MailFrom) siteapi.SendingDomainMailFrom
 	// goverter:map . Type | dnsRecordType
 	DnsRecordToResource(source sendingdomains.Record) siteapi.DnsRecord
 
@@ -877,6 +886,12 @@ type Converter interface {
 	IntegrationChannelToResource(source channels.Channel) siteapi.IntegrationChannel
 	// goverter:enum:transform value
 	IntegrationProviderToResource(source providers.Provider) siteapi.IntegrationProvider
+	// goverter:enum:transform value
+	SendingDomainEnvelopeStateToResource(source sendingdomains.EnvelopeState) siteapi.SendingDomainEnvelopeState
+	// goverter:enum:transform value
+	MailFromStatusToResource(source providers.MailFromStatus) siteapi.MailFromStatus
+	// goverter:enum:transform value
+	MxFailureBehaviorToResource(source providers.MXFailureBehavior) siteapi.MxFailureBehavior
 	// goverter:enum:transform value
 	InvitableRoleToResource(source invitation.Role) siteapi.SiteInvitableRole
 	// goverter:enum:transform value
@@ -1854,4 +1869,25 @@ func revision(v int64) siteapi.Revision {
 // ownershipRecordType is the type of a Tracking domain's ownership record (ADR 0173).
 func ownershipRecordType(trackingdomains.OwnershipRecord) siteapi.DnsRecordType {
 	return siteapi.DnsRecordTypeTXT
+}
+
+// envelopeMailFrom is an envelope's custom MAIL FROM, null for any other envelope.
+func envelopeMailFrom(c Converter, v *messaging.MailFrom) siteapi.NilSendingDomainMailFrom {
+	if v == nil {
+		return siteapi.NilSendingDomainMailFrom{Null: true}
+	}
+	return siteapi.NewNilSendingDomainMailFrom(c.SendingDomainMailFromToResource(*v))
+}
+
+// envelopePermission is the permission an unknown envelope needs, null for any other envelope.
+func envelopePermission(v string) siteapi.NilString {
+	if v == "" {
+		return siteapi.NilString{Null: true}
+	}
+	return siteapi.NewNilString(v)
+}
+
+// envelopeCheckedAt is when an envelope was read, null when it never was.
+func envelopeCheckedAt(v *time.Time) siteapi.NilTimestamp {
+	return convert.Nil[siteapi.NilTimestamp]((*siteapi.Timestamp)(v))
 }

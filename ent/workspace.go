@@ -203,13 +203,15 @@ type WorkspaceEdges struct {
 	Usages []*Usage `json:"usages,omitempty"`
 	// IntegrationProviderStates holds the value of the integration_provider_states edge.
 	IntegrationProviderStates []*IntegrationProviderState `json:"integration_provider_states,omitempty"`
+	// SendingDomainEnvelopes holds the value of the sending_domain_envelopes edge.
+	SendingDomainEnvelopes []*SendingDomainEnvelope `json:"sending_domain_envelopes,omitempty"`
 	// WebhookEndpointHealths holds the value of the webhook_endpoint_healths edge.
 	WebhookEndpointHealths []*WebhookEndpointHealth `json:"webhook_endpoint_healths,omitempty"`
 	// Standing holds the value of the standing edge.
 	Standing *WorkspaceStanding `json:"standing,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [60]bool
+	loadedTypes [61]bool
 }
 
 // ContactsOrErr returns the Contacts value or an error if the edge
@@ -734,10 +736,19 @@ func (e WorkspaceEdges) IntegrationProviderStatesOrErr() ([]*IntegrationProvider
 	return nil, &NotLoadedError{edge: "integration_provider_states"}
 }
 
+// SendingDomainEnvelopesOrErr returns the SendingDomainEnvelopes value or an error if the edge
+// was not loaded in eager-loading.
+func (e WorkspaceEdges) SendingDomainEnvelopesOrErr() ([]*SendingDomainEnvelope, error) {
+	if e.loadedTypes[58] {
+		return e.SendingDomainEnvelopes, nil
+	}
+	return nil, &NotLoadedError{edge: "sending_domain_envelopes"}
+}
+
 // WebhookEndpointHealthsOrErr returns the WebhookEndpointHealths value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) WebhookEndpointHealthsOrErr() ([]*WebhookEndpointHealth, error) {
-	if e.loadedTypes[58] {
+	if e.loadedTypes[59] {
 		return e.WebhookEndpointHealths, nil
 	}
 	return nil, &NotLoadedError{edge: "webhook_endpoint_healths"}
@@ -748,7 +759,7 @@ func (e WorkspaceEdges) WebhookEndpointHealthsOrErr() ([]*WebhookEndpointHealth,
 func (e WorkspaceEdges) StandingOrErr() (*WorkspaceStanding, error) {
 	if e.Standing != nil {
 		return e.Standing, nil
-	} else if e.loadedTypes[59] {
+	} else if e.loadedTypes[60] {
 		return nil, &NotFoundError{label: workspacestanding.Label}
 	}
 	return nil, &NotLoadedError{edge: "standing"}
@@ -1289,6 +1300,11 @@ func (_m *Workspace) QueryUsages() *UsageQuery {
 // QueryIntegrationProviderStates queries the "integration_provider_states" edge of the Workspace entity.
 func (_m *Workspace) QueryIntegrationProviderStates() *IntegrationProviderStateQuery {
 	return NewWorkspaceClient(_m.config).QueryIntegrationProviderStates(_m)
+}
+
+// QuerySendingDomainEnvelopes queries the "sending_domain_envelopes" edge of the Workspace entity.
+func (_m *Workspace) QuerySendingDomainEnvelopes() *SendingDomainEnvelopeQuery {
+	return NewWorkspaceClient(_m.config).QuerySendingDomainEnvelopes(_m)
 }
 
 // QueryWebhookEndpointHealths queries the "webhook_endpoint_healths" edge of the Workspace entity.

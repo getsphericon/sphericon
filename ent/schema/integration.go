@@ -118,6 +118,9 @@ func (Integration) Edges() []ent.Edge {
 			Annotations(entsql.OnDelete(entsql.Cascade)),
 		edge.To("start_tokens", StartToken.Type).
 			Annotations(entsql.OnDelete(entsql.Cascade)),
+		// The envelopes a Sending domain's check read through it (ADR 0184) die with it.
+		edge.To("envelopes", SendingDomainEnvelope.Type).
+			Annotations(entsql.OnDelete(entsql.Cascade)),
 	}
 }
 

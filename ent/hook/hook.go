@@ -789,6 +789,18 @@ func (f SendingDomainFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Valu
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SendingDomainMutation", m)
 }
 
+// The SendingDomainEnvelopeFunc type is an adapter to allow the use of ordinary
+// function as SendingDomainEnvelope mutator.
+type SendingDomainEnvelopeFunc func(context.Context, *ent.SendingDomainEnvelopeMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f SendingDomainEnvelopeFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.SendingDomainEnvelopeMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SendingDomainEnvelopeMutation", m)
+}
+
 // The SendingWindowFunc type is an adapter to allow the use of ordinary
 // function as SendingWindow mutator.
 type SendingWindowFunc func(context.Context, *ent.SendingWindowMutation) (ent.Value, error)

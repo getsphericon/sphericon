@@ -144,6 +144,8 @@ type Tx struct {
 	SendCapLimiter *SendCapLimiterClient
 	// SendingDomain is the client for interacting with the SendingDomain builders.
 	SendingDomain *SendingDomainClient
+	// SendingDomainEnvelope is the client for interacting with the SendingDomainEnvelope builders.
+	SendingDomainEnvelope *SendingDomainEnvelopeClient
 	// SendingWindow is the client for interacting with the SendingWindow builders.
 	SendingWindow *SendingWindowClient
 	// ServiceCredential is the client for interacting with the ServiceCredential builders.
@@ -382,6 +384,7 @@ func (tx *Tx) init() {
 	tx.Segment = NewSegmentClient(tx.config)
 	tx.SendCapLimiter = NewSendCapLimiterClient(tx.config)
 	tx.SendingDomain = NewSendingDomainClient(tx.config)
+	tx.SendingDomainEnvelope = NewSendingDomainEnvelopeClient(tx.config)
 	tx.SendingWindow = NewSendingWindowClient(tx.config)
 	tx.ServiceCredential = NewServiceCredentialClient(tx.config)
 	tx.SignupItem = NewSignupItemClient(tx.config)

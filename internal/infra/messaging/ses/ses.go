@@ -230,6 +230,48 @@ func (s *sender) ConfigurationSetMissing(ctx context.Context) (bool, error) {
 	return false, nil
 }
 
+// MailFromPermission is the permission an SES Integration's credentials need for MailFrom to read a
+// Sending domain's identity.
+const MailFromPermission = "ses:GetEmailIdentity"
+
+// MailFrom reads the custom MAIL FROM of the domain's identity at SES (GetEmailIdentity, permission
+// ses:GetEmailIdentity; see messaging.MailFromReader). An identity without one is the zero
+// MailFrom; an identity SES does not have, a denied read and a status or behaviour this build does
+// not know are errors, no answer.
+func (s *sender) MailFrom(ctx context.Context, domain string) (messaging.MailFrom, error) {
+	out, err := s.client().GetEmailIdentity(ctx, &sesv2.GetEmailIdentityInput{EmailIdentity: aws.String(domain)})
+	if err != nil {
+		return messaging.MailFrom{}, fmt.Errorf("ses: get email identity: %w", err)
+	}
+	attrs := out.MailFromAttributes
+	if attrs == nil || aws.ToString(attrs.MailFromDomain) == "" {
+		return messaging.MailFrom{}, nil
+	}
+	status, ok := mailFromStatuses[attrs.MailFromDomainStatus]
+	if !ok {
+		return messaging.MailFrom{}, fmt.Errorf("ses: get email identity: unknown MAIL FROM status %q", attrs.MailFromDomainStatus)
+	}
+	behavior, ok := mxFailureBehaviors[attrs.BehaviorOnMxFailure]
+	if !ok {
+		return messaging.MailFrom{}, fmt.Errorf("ses: get email identity: unknown MX failure behaviour %q", attrs.BehaviorOnMxFailure)
+	}
+	return messaging.MailFrom{Domain: aws.ToString(attrs.MailFromDomain), Status: status, OnMXFailure: behavior}, nil
+}
+
+// mailFromStatuses maps SES's MailFromDomainStatus.
+var mailFromStatuses = map[types.MailFromDomainStatus]providers.MailFromStatus{
+	types.MailFromDomainStatusPending:          providers.MailFromPending,
+	types.MailFromDomainStatusSuccess:          providers.MailFromSuccess,
+	types.MailFromDomainStatusFailed:           providers.MailFromFailed,
+	types.MailFromDomainStatusTemporaryFailure: providers.MailFromTemporaryFailure,
+}
+
+// mxFailureBehaviors maps SES's BehaviorOnMxFailure.
+var mxFailureBehaviors = map[types.BehaviorOnMxFailure]providers.MXFailureBehavior{
+	types.BehaviorOnMxFailureUseDefaultValue: providers.MXFailureFallBack,
+	types.BehaviorOnMxFailureRejectMessage:   providers.MXFailureReject,
+}
+
 // enforcement maps SES's EnforcementStatus; HEALTHY, a missing status and one SES may add
 // later are no enforcement, so an unknown answer never stops sending.
 func enforcement(status string) providers.Enforcement {

@@ -61,6 +61,8 @@ const (
 	EdgeBindings = "bindings"
 	// EdgeStartTokens holds the string denoting the start_tokens edge name in mutations.
 	EdgeStartTokens = "start_tokens"
+	// EdgeEnvelopes holds the string denoting the envelopes edge name in mutations.
+	EdgeEnvelopes = "envelopes"
 	// Table holds the table name of the integration in the database.
 	Table = "integrations"
 	// WorkspaceTable is the table that holds the workspace relation/edge.
@@ -105,6 +107,13 @@ const (
 	StartTokensInverseTable = "start_tokens"
 	// StartTokensColumn is the table column denoting the start_tokens relation/edge.
 	StartTokensColumn = "integration_id"
+	// EnvelopesTable is the table that holds the envelopes relation/edge.
+	EnvelopesTable = "sending_domain_envelopes"
+	// EnvelopesInverseTable is the table name for the SendingDomainEnvelope entity.
+	// It exists in this package in order to avoid circular dependency with the "sendingdomainenvelope" package.
+	EnvelopesInverseTable = "sending_domain_envelopes"
+	// EnvelopesColumn is the table column denoting the envelopes relation/edge.
+	EnvelopesColumn = "integration_id"
 )
 
 // Columns holds all SQL columns for integration fields.
@@ -335,6 +344,20 @@ func ByStartTokens(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newStartTokensStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByEnvelopesCount orders the results by envelopes count.
+func ByEnvelopesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newEnvelopesStep(), opts...)
+	}
+}
+
+// ByEnvelopes orders the results by envelopes terms.
+func ByEnvelopes(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newEnvelopesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newWorkspaceStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -375,5 +398,12 @@ func newStartTokensStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(StartTokensInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, StartTokensTable, StartTokensColumn),
+	)
+}
+func newEnvelopesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(EnvelopesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, EnvelopesTable, EnvelopesColumn),
 	)
 }

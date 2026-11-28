@@ -679,13 +679,22 @@ type Converter interface {
 	// goverter:map . Enabled | webhookEnabled
 	WebhookToResource(source *ent.WebhookEndpoint) externalapi.WebhookResource
 
-	// The DNS records are derived by the sendingdomains module, which the mapper cannot
-	// see: the handler attaches them. The private key is never exposed.
+	// The DNS records are derived by the sendingdomains module and the envelopes read by its
+	// checks, which the mapper cannot see: the handler attaches them. The private key is never
+	// exposed.
 	// goverter:ignore DkimRecord
-	// goverter:ignore SpfRecord
 	// goverter:ignore DmarcRecord
+	// goverter:ignore Envelopes
 	// goverter:map . Verified | sendingDomainVerified
 	SendingDomainToResource(source *ent.SendingDomain) externalapi.SendingDomainResource
+	// goverter:useEmptyOnNil:slice
+	SendingDomainEnvelopesToResource(source []sendingdomains.Envelope) []externalapi.SendingDomainEnvelope
+	// goverter:map MailFrom | envelopeMailFrom
+	// goverter:map PermissionNeeded | envelopePermission
+	// goverter:map CheckedAt | envelopeCheckedAt
+	SendingDomainEnvelopeToResource(source sendingdomains.Envelope) externalapi.SendingDomainEnvelope
+	// goverter:map OnMXFailure OnMxFailure
+	SendingDomainMailFromToResource(source messaging.MailFrom) externalapi.SendingDomainMailFrom
 	// goverter:map . Type | dnsRecordType
 	DnsRecordToResource(source sendingdomains.Record) externalapi.DnsRecord
 
@@ -844,6 +853,12 @@ type Converter interface {
 	IntegrationChannelToResource(source channels.Channel) externalapi.IntegrationChannel
 	// goverter:enum:transform value
 	IntegrationProviderToResource(source providers.Provider) externalapi.IntegrationProvider
+	// goverter:enum:transform value
+	SendingDomainEnvelopeStateToResource(source sendingdomains.EnvelopeState) externalapi.SendingDomainEnvelopeState
+	// goverter:enum:transform value
+	MailFromStatusToResource(source providers.MailFromStatus) externalapi.MailFromStatus
+	// goverter:enum:transform value
+	MxFailureBehaviorToResource(source providers.MXFailureBehavior) externalapi.MxFailureBehavior
 	// goverter:enum:transform value
 	LintCodeToResource(source emailrender.Code) externalapi.LintCode
 	// goverter:enum:transform value
@@ -1463,3 +1478,24 @@ func nilFrequencyCapPeriodMinutes(v *int) externalapi.NilFrequencyCapPeriodMinut
 }
 
 func minuteOfDay(v int) externalapi.MinuteOfDay { return externalapi.MinuteOfDay(narrow.Int32(v)) }
+
+// envelopeMailFrom is an envelope's custom MAIL FROM, null for any other envelope.
+func envelopeMailFrom(c Converter, v *messaging.MailFrom) externalapi.NilSendingDomainMailFrom {
+	if v == nil {
+		return externalapi.NilSendingDomainMailFrom{Null: true}
+	}
+	return externalapi.NewNilSendingDomainMailFrom(c.SendingDomainMailFromToResource(*v))
+}
+
+// envelopePermission is the permission an unknown envelope needs, null for any other envelope.
+func envelopePermission(v string) externalapi.NilString {
+	if v == "" {
+		return externalapi.NilString{Null: true}
+	}
+	return externalapi.NewNilString(v)
+}
+
+// envelopeCheckedAt is when an envelope was read, null when it never was.
+func envelopeCheckedAt(v *time.Time) externalapi.NilTimestamp {
+	return convert.Nil[externalapi.NilTimestamp]((*externalapi.Timestamp)(v))
+}

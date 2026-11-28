@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -16,7 +17,7 @@ import (
 func TestCreateRefusesADomainTheWorkspaceKeeps(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	_, err := sendingdomains.New(env.DB, env.Bus, env.Cipher, nil, time.Now).
+	_, err := sendingdomains.New(env.DB, env.Bus, env.Cipher, nil, testhelper.Module[*integrations.Module](env), time.Now).
 		Create(t.Context(), env.DB.Scoped(fixtures.AcmeID), sendingdomains.CreateInput{Domain: fixtures.SendingDomainLaunchDomain})
 
 	require.ErrorIs(t, err, sendingdomains.ErrAlreadyExists)

@@ -13398,6 +13398,11 @@
         "pattern": "^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$",
         "description": "A BCP 47 language tag: a language, optionally with a script and a region (`de`, `pt-BR`)"
       },
+      "MailFromStatus": {
+        "type": "string",
+        "enum": ["pending", "success", "failed", "temporary_failure"],
+        "description": "SES's status of a custom MAIL FROM domain: whether it found the domain's MX record"
+      },
       "MaxPerDay": {
         "type": "integer",
         "format": "int32",
@@ -13515,6 +13520,11 @@
         },
         "description": "A test of a moment: before or after `at`. Only a date-time with a UTC offset is a moment: a\nmissing value, a date without a time, a date-time without an offset or a value that is not a\ndate-time fails it.",
         "additionalProperties": false
+      },
+      "MxFailureBehavior": {
+        "type": "string",
+        "enum": ["fall_back", "reject"],
+        "description": "What SES does with a send while the custom MAIL FROM domain's MX record fails"
       },
       "Name": {
         "type": "string",
@@ -15314,6 +15324,106 @@
         },
         "description": "Result of a transactional send"
       },
+      "SendingDomainEnvelope": {
+        "type": "object",
+        "required": [
+          "integrationId",
+          "integrationName",
+          "provider",
+          "state",
+          "mailFrom",
+          "permissionNeeded",
+          "checkedAt"
+        ],
+        "properties": {
+          "integrationId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "The email Integration"
+          },
+          "integrationName": {
+            "type": "string",
+            "description": "The Integration's name"
+          },
+          "provider": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/IntegrationProvider"
+              }
+            ],
+            "description": "Its provider"
+          },
+          "state": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SendingDomainEnvelopeState"
+              }
+            ],
+            "description": "Where the envelope is set"
+          },
+          "mailFrom": {
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SendingDomainMailFrom"
+              }
+            ],
+            "nullable": true,
+            "description": "The custom MAIL FROM; null unless `state` is `custom`"
+          },
+          "permissionNeeded": {
+            "type": "string",
+            "nullable": true,
+            "description": "The permission the Integration's credentials need to read the identity at SES; null unless `state` is `unknown`"
+          },
+          "checkedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the envelope was last read; null for an SMTP relay and before the first read"
+          }
+        },
+        "description": "The envelope one email Integration of the Workspace sends the Sending domain's mail with\n(ADR 0184), read with the domain's checks. The app reads it; a custom MAIL FROM is set at SES by\nthe person, never by the app."
+      },
+      "SendingDomainEnvelopeState": {
+        "type": "string",
+        "enum": ["provider_default", "custom", "unknown", "set_at_provider"],
+        "description": "Where an email Integration's envelope domain (MAIL FROM, Return-Path) is set for a Sending\ndomain, and so where SPF is checked for its mail (ADR 0184)."
+      },
+      "SendingDomainMailFrom": {
+        "type": "object",
+        "required": ["domain", "status", "onMxFailure"],
+        "properties": {
+          "domain": {
+            "type": "string",
+            "description": "The custom MAIL FROM domain, e.g. \"bounce.mail.acme.com\""
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailFromStatus"
+              }
+            ],
+            "description": "SES's status of it"
+          },
+          "onMxFailure": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MxFailureBehavior"
+              }
+            ],
+            "description": "What SES does with a send while its MX record fails"
+          }
+        },
+        "description": "The custom MAIL FROM domain set at SES on the Sending domain's identity"
+      },
       "SendingDomainRatesResource": {
         "type": "object",
         "required": ["sendingDomainId", "domain", "windowDays", "complaintRate", "bounceRate"],
@@ -15362,7 +15472,7 @@
           "dkimSelector",
           "verified",
           "dkimRecord",
-          "spfRecord",
+          "envelopes",
           "dmarcRecord",
           "createdAt",
           "updatedAt"
@@ -15396,13 +15506,12 @@
             ],
             "description": "The required DKIM TXT record"
           },
-          "spfRecord": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/DnsRecord"
-              }
-            ],
-            "description": "The suggested SPF TXT record (advisory: does not gate sending)"
+          "envelopes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SendingDomainEnvelope"
+            },
+            "description": "The envelope of each email Integration of the Workspace, the Test inbox excepted, in the order\nof their ids (ADR 0184). SPF is checked on the envelope, not on the Sending domain, so the\ndomain has no SPF record of its own; it never gates sending."
           },
           "dmarcRecord": {
             "allOf": [

@@ -70,6 +70,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendcaplimiter"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
+	"github.com/getsphericon/sphericon/ent/sendingdomainenvelope"
 	"github.com/getsphericon/sphericon/ent/sendingwindow"
 	"github.com/getsphericon/sphericon/ent/servicecredential"
 	"github.com/getsphericon/sphericon/ent/signupitem"
@@ -1808,6 +1809,21 @@ func init() {
 	sendingdomainDescDkimPublicKey := sendingdomainFields[4].Descriptor()
 	// sendingdomain.DkimPublicKeyValidator is a validator for the "dkim_public_key" field. It is called by the builders before save.
 	sendingdomain.DkimPublicKeyValidator = sendingdomainDescDkimPublicKey.Validators[0].(func(string) error)
+	sendingdomainenvelopeMixin := schema.SendingDomainEnvelope{}.Mixin()
+	sendingdomainenvelopeMixinFields0 := sendingdomainenvelopeMixin[0].Fields()
+	_ = sendingdomainenvelopeMixinFields0
+	sendingdomainenvelopeFields := schema.SendingDomainEnvelope{}.Fields()
+	_ = sendingdomainenvelopeFields
+	// sendingdomainenvelopeDescCreatedAt is the schema descriptor for created_at field.
+	sendingdomainenvelopeDescCreatedAt := sendingdomainenvelopeMixinFields0[0].Descriptor()
+	// sendingdomainenvelope.DefaultCreatedAt holds the default value on creation for the created_at field.
+	sendingdomainenvelope.DefaultCreatedAt = sendingdomainenvelopeDescCreatedAt.Default.(func() time.Time)
+	// sendingdomainenvelopeDescUpdatedAt is the schema descriptor for updated_at field.
+	sendingdomainenvelopeDescUpdatedAt := sendingdomainenvelopeMixinFields0[1].Descriptor()
+	// sendingdomainenvelope.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	sendingdomainenvelope.DefaultUpdatedAt = sendingdomainenvelopeDescUpdatedAt.Default.(func() time.Time)
+	// sendingdomainenvelope.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	sendingdomainenvelope.UpdateDefaultUpdatedAt = sendingdomainenvelopeDescUpdatedAt.UpdateDefault.(func() time.Time)
 	sendingwindowMixin := schema.SendingWindow{}.Mixin()
 	sendingwindowMixinFields0 := sendingwindowMixin[0].Fields()
 	_ = sendingwindowMixinFields0
