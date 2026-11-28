@@ -327,6 +327,10 @@ func proposedFormat(cells []string, blank csvimport.DateFormat) csvimport.DateFo
 	fits := lo.Filter(csvimport.DateFormats, func(f csvimport.DateFormat, _ int) bool {
 		return lo.EveryBy(filled, func(c string) bool { _, reason := contacts.ReadDatetime(c, f); return reason == "" })
 	})
+	// Dates alone read alike in ISO and in RFC 3339 (its full-date): ISO is proposed then.
+	if lo.Contains(fits, csvimport.DateISO) {
+		fits = lo.Without(fits, csvimport.DateTimeRFC3339)
+	}
 	if len(fits) != 1 {
 		return ""
 	}

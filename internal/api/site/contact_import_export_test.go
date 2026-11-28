@@ -100,7 +100,7 @@ func TestAnExportImportsIntoAnotherWorkspaceAsItIs(t *testing.T) {
 	assert.Subset(t, lo.Map(alice.Edges.Tags, func(tg *ent.Tag, _ int) string { return tg.Name }), []string{"vip", "newsletter"})
 	subject := contacts["export.subject@example.com"]
 	require.NotNil(t, subject)
-	assert.Equal(t, "+14155550800", lo.FromPtr(subject.Phone), "the phone the export guarded with an apostrophe reads back")
+	assert.Equal(t, "+14155550800", lo.FromPtr(subject.Phone), "the export's phone reads back")
 	assert.Equal(t, "user:export-subject", lo.FromPtr(subject.SubjectID))
 	assert.Equal(t, "Europe/Berlin", lo.FromPtr(subject.TimeZone))
 	assert.Equal(t, []string{eligibility.SourceEverything}, scopes(states["scarlett.sql@codebasics.dev"].Email))
@@ -183,4 +183,45 @@ func TestAnExportsGuardedCellsReadBackAsWritten(t *testing.T) {
 	assert.Equal(t, map[string]any{"courses_completed": -3.0, "signup_source": "'hello", "score": -1.5}, ann.CustomFields)
 	require.NotNil(t, bob)
 	assert.Equal(t, "=x", bob.CustomFields["signup_source"])
+}
+
+// The date columns of an export save unchanged: a blank one is proposed in the format the export
+// writes (ISO for the birthday, RFC 3339 for a datetime field), and a datetime field's column, which
+// holds a date alone or a date and time as each was written, reads both in RFC 3339; a new field of
+// such values is a datetime field.
+func TestAnExportsDateColumnsSaveUnchanged(t *testing.T) {
+	env := testhelper.Setup(t)
+	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	imp := uploaded(t, owner, "email,birthday,customFields.renewal_on,customFields.trial_ends_at,customFields.seen_at,customFields.met_on\n"+
+		"ann.moved@example.com,,,2026-03-01T10:00:00Z,2026-02-01T09:30:00Z,2026-01-05\n"+
+		"bob.moved@example.com,,,2026-04-01,2026-02-02,\n")
+
+	done := runImport(t, env, owner, imp, mappingInput(t, imp))
+	ann := contactByEmail(t, env, "ann.moved@example.com")
+	bob := contactByEmail(t, env, "bob.moved@example.com")
+	fields, err := env.DB.Scoped(fixtures.AcmeID).CustomField().Query().Where(customfield.KeyIn("seen_at", "met_on")).All(t.Context())
+	require.NoError(t, err)
+	types := lo.SliceToMap(fields, func(f *ent.CustomField) (string, customfield.Type) { return f.Key, f.Type })
+
+	assert.Equal(t, siteapi.ContactImportStateDone, done.State)
+	assert.Zero(t, done.ReportRows, "no value is dropped")
+	assert.Equal(t, map[string]customfield.Type{"seen_at": customfield.TypeDatetime, "met_on": customfield.TypeDatetime}, types)
+	require.NotNil(t, ann)
+	require.NotNil(t, bob)
+	assert.Equal(t, "2026-03-01T10:00:00Z", ann.CustomFields["trial_ends_at"])
+	assert.Equal(t, "2026-04-01", bob.CustomFields["trial_ends_at"])
+	assert.Equal(t, "2026-02-02", bob.CustomFields["seen_at"])
+	assert.Equal(t, "2026-01-05", ann.CustomFields["met_on"])
+}
+
+// A refusal cell whose items name the same refusal twice records it once: an export's SMS opt-out
+// of everything and of broadcasts is one opt-out of everything.
+func TestARefusalNamedTwiceInACellIsRecordedOnce(t *testing.T) {
+	env := testhelper.Setup(t)
+	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	imp := uploaded(t, owner, "phone,sms.optedOutScopes\n'+14155550199,\"everything,broadcasts\"\n")
+
+	done := runImport(t, env, owner, imp, mappingInput(t, imp))
+
+	assert.Equal(t, siteapi.ContactImportCounts{Processed: 1, Created: 1, OptedOut: 1}, done.Counts)
 }

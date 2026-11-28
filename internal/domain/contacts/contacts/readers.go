@@ -143,17 +143,25 @@ func ReadDatetime(cell string, f csvimport.DateFormat) (string, csvimport.Reason
 	return t.Format(time.RFC3339), ""
 }
 
-// parseDate reads cell in format f: the date it writes and whether it is a date alone.
+// parseDate reads cell in format f: the date it writes and whether it is a date alone. RFC 3339
+// writes a date alone as its full-date (`2006-01-02`), as a datetime Custom field holds one, so
+// an rfc3339 column reads one too.
 func parseDate(cell string, f csvimport.DateFormat) (time.Time, bool, csvimport.Reason) {
 	layout := f.Layout()
 	if layout == "" {
 		return time.Time{}, false, csvimport.ReasonNotDate
 	}
-	t, err := time.Parse(layout, strings.TrimSpace(cell))
+	cell = strings.TrimSpace(cell)
+	dated := f != csvimport.DateTimeRFC3339
+	t, err := time.Parse(layout, cell)
+	if err != nil && !dated {
+		t, err = time.Parse(time.DateOnly, cell)
+		dated = true
+	}
 	if err != nil || t.Year() < 1 {
 		return time.Time{}, false, csvimport.ReasonNotDate
 	}
-	return t, f != csvimport.DateTimeRFC3339, ""
+	return t, dated, ""
 }
 
 // ReadPhone is a phone number in E.164 (ADR 0075): one written without its country code is read in
