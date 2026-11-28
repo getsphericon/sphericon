@@ -79,6 +79,16 @@ func TestLintLeavesABlockAMediaQueryShowsAlone(t *testing.T) {
 	assert.Empty(t, elements(report, emailrender.CodeHiddenText))
 }
 
+func TestLintReadsEverySelectorOfAMediaRule(t *testing.T) {
+	style := `<style>@media (max-width:480px){.desktop-only{display:none !important}.mobile-only, td.mobile-cta{display:block !important}}</style>`
+	report := emailrender.Lint("Hi", style+`<p>Hello</p>`+
+		`<div class="mobile-only" style="display:none">Tap to call us</div>`+
+		`<table><tr><td class="mobile-cta" style="display:none">Open the app</td></tr></table>`, nil)
+
+	require.NoError(t, report.Error)
+	assert.Empty(t, elements(report, emailrender.CodeHiddenText))
+}
+
 func TestLintWarnsOnABlockAMediaQueryKeepsHidden(t *testing.T) {
 	for name, style := range map[string]string{
 		"the rule keeps it hidden":   `<style>@media (max-width:480px){.mobile-only{display:none}}</style>`,
