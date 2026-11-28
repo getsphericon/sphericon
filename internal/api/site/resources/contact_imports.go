@@ -183,11 +183,15 @@ func contactImportFactColumn(c Converter, col csvimport.Column, format siteapi.N
 			Kind: siteapi.ContactImportEngagementTrackingColumnKindEngagementTracking, Channel: siteapi.ContactImportConsentChannel(fact.Channel),
 			Granted: lo.CoalesceSliceOrEmpty(fact.Values), Denied: lo.CoalesceSliceOrEmpty(fact.Denied),
 		})}
-	default:
+	case csvimport.KindTime:
+		return siteapi.ContactImportColumn{OneOf: siteapi.NewContactImportTimeColumnContactImportColumnSum(siteapi.ContactImportTimeColumn{
+			Kind: siteapi.ContactImportTimeColumnKindTime, Of: nilColumn(fact.Of), DateFormat: format,
+		})}
+	case csvimport.KindKey, csvimport.KindAttribute, csvimport.KindCustomField, csvimport.KindNewCustomField,
+		csvimport.KindTags, csvimport.KindIgnore:
+		// No fact column: contactImportColumn maps it.
 	}
-	return siteapi.ContactImportColumn{OneOf: siteapi.NewContactImportTimeColumnContactImportColumnSum(siteapi.ContactImportTimeColumn{
-		Kind: siteapi.ContactImportTimeColumnKindTime, Of: nilColumn(fact.Of), DateFormat: format,
-	})}
+	return siteapi.ContactImportColumn{}
 }
 
 // evidenceText is the text of an evidence part, null when a column holds it or none is given yet.
@@ -231,18 +235,26 @@ func contactImportFactColumnIn(c Inputs, col *siteapi.ContactImportColumnInput) 
 	case siteapi.ContactImportEngagementTrackingColumnInputContactImportColumnInputSum:
 		v := col.OneOf.ContactImportEngagementTrackingColumnInput
 		return csvimport.Column{Kind: csvimport.KindEngagementTracking, Fact: &csvimport.Fact{Channel: string(v.Channel), Values: v.Granted, Denied: v.Denied}}
-	default:
+	case siteapi.ContactImportTimeColumnInputContactImportColumnInputSum:
+		v := col.OneOf.ContactImportTimeColumnInput
+		var format csvimport.DateFormat
+		if f, ok := v.DateFormat.Get(); ok {
+			format = c.ContactImportDateFormatIn(f)
+		}
+		fact := &csvimport.Fact{}
+		if of, ok := v.Of.Get(); ok {
+			fact.Of = new(int(of))
+		}
+		return csvimport.Column{Kind: csvimport.KindTime, DateFormat: format, Fact: fact}
+	case siteapi.ContactImportKeyColumnInputContactImportColumnInputSum,
+		siteapi.ContactImportAttributeColumnInputContactImportColumnInputSum,
+		siteapi.ContactImportCustomFieldColumnInputContactImportColumnInputSum,
+		siteapi.ContactImportNewCustomFieldColumnInputContactImportColumnInputSum,
+		siteapi.ContactImportTagsColumnInputContactImportColumnInputSum,
+		siteapi.ContactImportIgnoreColumnInputContactImportColumnInputSum:
+		// No fact column: contactImportColumnIn maps it.
 	}
-	v := col.OneOf.ContactImportTimeColumnInput
-	var format csvimport.DateFormat
-	if f, ok := v.DateFormat.Get(); ok {
-		format = c.ContactImportDateFormatIn(f)
-	}
-	fact := &csvimport.Fact{}
-	if of, ok := v.Of.Get(); ok {
-		fact.Of = new(int(of))
-	}
-	return csvimport.Column{Kind: csvimport.KindTime, DateFormat: format, Fact: fact}
+	return csvimport.Column{}
 }
 
 // evidencePartIn is an evidence part a request gives: its text, or the column that holds it.

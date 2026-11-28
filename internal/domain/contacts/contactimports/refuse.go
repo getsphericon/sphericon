@@ -38,7 +38,8 @@ func (b batchRun) refuse(ctx context.Context, t *tally, r readRecord, item batch
 		if item.Err == nil && item.Value.Contact != nil {
 			contactID = item.Value.Contact.ID
 		}
-		if f.channel == channels.Telegram {
+		switch f.channel {
+		case channels.Telegram:
 			users, err := telegramUsersOf(ctx, s, contactID)
 			if err != nil {
 				return nil, err
@@ -48,6 +49,8 @@ func (b batchRun) refuse(ctx context.Context, t *tally, r readRecord, item batch
 				at := f.column
 				notRecorded = append(notRecorded, issue(&at, csvimport.ReasonNoDestination, b.rd.header))
 			}
+		case channels.Email, channels.SMS:
+			// The row's own Destination, read with its keys.
 		}
 		for _, dest := range destinations {
 			stands, err := b.record(ctx, s, f, dest, contactID)

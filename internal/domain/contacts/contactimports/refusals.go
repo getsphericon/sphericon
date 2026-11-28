@@ -203,7 +203,9 @@ func pairs(columns []csvimport.Column) error {
 					return ErrEvidencePart.On(at)
 				}
 			}
-		default:
+		case csvimport.KindKey, csvimport.KindAttribute, csvimport.KindCustomField, csvimport.KindNewCustomField,
+			csvimport.KindTags, csvimport.KindIgnore, csvimport.KindRefusal, csvimport.KindEngagementTracking:
+			// Names no other column.
 		}
 	}
 	return nil
@@ -309,15 +311,18 @@ func (rd reading) settle(r *rowState, cells []string) {
 	times := map[int]time.Time{}
 	for _, f := range r.facts {
 		kind := rd.mapping.Columns[f.column].Kind
-		destination := ""
+		destination, reachable := "", true
 		switch f.channel {
 		case channels.Email:
 			destination = lo.FromPtr(r.in.Email)
+			reachable = destination != ""
 		case channels.SMS:
 			destination = lo.FromPtr(r.in.Phone)
+			reachable = destination != ""
 		case channels.Telegram:
+			// Its Destinations are the Bindings of the Contact the row writes, found at the run.
 		}
-		if destination == "" && f.channel != channels.Telegram {
+		if !reachable {
 			r.drop(f.column, csvimport.ReasonNoDestination)
 			continue
 		}
@@ -333,12 +338,17 @@ func (rd reading) settle(r *rowState, cells []string) {
 			rd.consent(r, f, cells, at)
 		case csvimport.KindEngagementTracking:
 			ob := &engagementtracking.Observation{State: f.state, OccurredAt: at}
-			if f.channel == channels.Email {
+			switch f.channel {
+			case channels.Email:
 				r.in.EngagementTracking.Email = ob
-			} else {
+			case channels.SMS:
 				r.in.EngagementTracking.SMS = ob
+			case channels.Telegram:
+				// No tracking column is of Telegram (checkedTracking).
 			}
-		default:
+		case csvimport.KindKey, csvimport.KindAttribute, csvimport.KindCustomField, csvimport.KindNewCustomField,
+			csvimport.KindTags, csvimport.KindIgnore, csvimport.KindTime:
+			// Notes no fact.
 		}
 	}
 }
@@ -361,10 +371,13 @@ func (rd reading) consent(r *rowState, f pendingFact, cells []string, at time.Ti
 		return
 	}
 	evidence := &confirmations.Evidence{Wording: wording, Source: source, Brand: brand, OccurredAt: at}
-	if f.channel == channels.Email {
+	switch f.channel {
+	case channels.Email:
 		r.in.EmailConsent = evidence
-	} else {
+	case channels.SMS:
 		r.in.SMSConsent = evidence
+	case channels.Telegram:
+		// No consent column is of Telegram (checkedConsent).
 	}
 }
 
