@@ -20,11 +20,12 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// sweepContactImports works the periodic sweep of the CSV imports, as river runs it.
+// sweepContactImports works the periodic sweep of the CSV imports, as river runs it, and the
+// checks of the running imports' jobs it queues.
 func sweepContactImports(t *testing.T, env *testhelper.TestEnv) {
 	t.Helper()
 	env.EnqueueJob(t, jobs.SweepContactImportsArgs{})
-	env.PerformEnqueuedJobs(t, jobs.SweepContactImportsArgs{})
+	env.PerformEnqueuedJobs(t, jobs.SweepContactImportsArgs{}, jobs.RecoverContactImportArgs{})
 }
 
 // What a CSV import keeps of personal data expires (ADR 0138): an upload that never ran after a

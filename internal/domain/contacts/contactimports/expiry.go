@@ -19,11 +19,29 @@ type Expired struct {
 	Uploads, Reports int
 }
 
-// Expire deletes what the imports of every Workspace keep past its time (ADR 0138): an import
-// uploaded or ready for longer than UploadKept, with its file, and the refused rows' report of an
-// import whose report expired, the import itself kept with its counts. It is Instance-wide, so it
+// Swept is what a sweep of the imports of every Workspace did and found: what it expired, and the
+// imports that run, each of which its river job checks for a run whose job is gone (Recover).
+type Swept struct {
+	Expired
+	Running []Running
+}
+
+// Sweep is the periodic sweep of the imports of every Workspace (ADR 0138): it deletes what they
+// keep past its time (expire) and lists the imports that run. It is Instance-wide, so it reads and
 // writes through the raw client its river job hands it, by the module's clock.
-func (m *Module) Expire(ctx context.Context, client *ent.Client) (Expired, error) {
+func (m *Module) Sweep(ctx context.Context, client *ent.Client) (Swept, error) {
+	expired, err := m.expire(ctx, client)
+	if err != nil {
+		return Swept{}, err
+	}
+	running, err := runningIn(ctx, client)
+	return Swept{Expired: expired, Running: running}, err
+}
+
+// expire deletes what the imports of every Workspace keep past its time: an import uploaded or
+// ready for longer than UploadKept, with its file, and the refused rows' report of an import whose
+// report expired, the import itself kept with its counts.
+func (m *Module) expire(ctx context.Context, client *ent.Client) (Expired, error) {
 	now := m.now()
 	uploads, err := client.ContactImport.Delete().
 		Where(contactimport.StateIn(contactimport.StateUploaded, contactimport.StateReady), contactimport.CreatedAtLT(now.Add(-UploadKept))).
@@ -49,10 +67,8 @@ type Running struct {
 	ID, WorkspaceID int64
 }
 
-// RunningIn are the running imports of every Workspace, for the sweep that finds a run whose job
-// is gone (Recover). It is Instance-wide, so it reads through the raw client its river job hands
-// it.
-func (m *Module) RunningIn(ctx context.Context, client *ent.Client) ([]Running, error) {
+// runningIn are the running imports of every Workspace.
+func runningIn(ctx context.Context, client *ent.Client) ([]Running, error) {
 	imps, err := client.ContactImport.Query().Where(contactimport.StateEQ(contactimport.StateRunning)).
 		Select(contactimport.FieldID, contactimport.FieldWorkspaceID).All(ctx)
 	if err != nil {

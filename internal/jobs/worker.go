@@ -188,6 +188,7 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 	river.AddWorker(workers, NewVerifySendingDomainWorker(entClient, deps.SendingDomains))
 	river.AddWorker(workers, NewRunContactImportWorker(entClient, deps.ContactImports, now))
 	river.AddWorker(workers, NewSweepContactImportsWorker(deps.ContactImports, entClient))
+	river.AddWorker(workers, NewRecoverContactImportWorker(deps.ContactImports, entClient))
 	river.AddWorker(workers, NewRecheckSendingDomainsWorker(deps.SendingDomains))
 	river.AddWorker(workers, NewVerifyJoinDomainWorker(deps.JoinDomains))
 	river.AddWorker(workers, NewRecheckJoinDomainsWorker(deps.JoinDomains))
