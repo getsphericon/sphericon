@@ -238,3 +238,18 @@ func newWorkspaceStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.M2O, true, WorkspaceTable, WorkspaceColumn),
 	)
 }
+
+// Values is every value of the Role enum, in the schema's order.
+func (Role) Values() []string {
+	return []string{"current", "replacement", "retired"}
+}
+
+// Values is every value of the State enum, in the schema's order.
+func (State) Values() []string {
+	return []string{"pending", "dns_verified", "serving"}
+}
+
+// Values is every value of the Reason enum, in the schema's order.
+func (Reason) Values() []string {
+	return []string{"host_taken"}
+}

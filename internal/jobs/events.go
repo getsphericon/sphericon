@@ -51,8 +51,8 @@ func (WebhookEventArgs) Kind() string { return "event_webhook" }
 
 // reachesWebhooks wants every event a Workspace's endpoints may receive (events.ReachesWebhooks).
 // Which endpoints receive one is the job's to find.
-func reachesWebhooks(_ events.Envelope, ev events.DomainEvent) bool {
-	return events.ReachesWebhooks(ev)
+func reachesWebhooks(env events.Envelope, ev events.DomainEvent) bool {
+	return events.ReachesWebhooks(env, ev)
 }
 
 // WebhookEventWorker serializes an event into its public webhook body (events.WebhookDeliveryOf)
@@ -85,12 +85,13 @@ func (w *WebhookEventWorker) Work(ctx context.Context, job *river.Job[WebhookEve
 	return w.dispatcher.Dispatch(ctx, w.ent.Scoped(env.WorkspaceID), d)
 }
 
-// triggers wants an Event a Contact's Automations may react to: one with a Contact, live (loaded
-// history enrolls nobody) and made by a person (a scanner's open or click neither enrolls nor ends
-// an Enrollment, ADR 0053). An administrative action (an Audit entry) is never one.
-func triggers(_ events.Envelope, ev events.DomainEvent) bool {
+// triggers wants an Event a Contact's Automations may react to: one with a Contact, live (history,
+// a Backfill or an import's, enrolls nobody, ends no Enrollment and wakes no Wait for event:
+// events.IsHistory) and made by a person (a scanner's open or click neither enrolls nor ends an
+// Enrollment, ADR 0053). An administrative action (an Audit entry) is never one.
+func triggers(env events.Envelope, ev events.DomainEvent) bool {
 	p, projected := events.ProjectionOf(ev)
-	return projected && !events.IsBackfill(ev) && p.ContactID != 0 && !p.Machine
+	return projected && !events.IsHistory(env) && p.ContactID != 0 && !p.Machine
 }
 
 // firesRules wants what triggers wants, except an event a Rule's Action published (its envelope

@@ -161,7 +161,7 @@ func (recordedWorker) Work(context.Context, *river.Job[recordedArgs]) error { re
 
 // recorder is the harness's consumer of every live event (recordedArgs).
 var recorder = events.Consumer{
-	Wants: func(_ events.Envelope, ev events.DomainEvent) bool { return !events.IsBackfill(ev) },
+	Wants: func(env events.Envelope, _ events.DomainEvent) bool { return !events.IsHistory(env) },
 	Job: func(env events.Envelope, _ events.DomainEvent) river.JobArgs {
 		return recordedArgs{events.EventJob{Envelope: env}}
 	},

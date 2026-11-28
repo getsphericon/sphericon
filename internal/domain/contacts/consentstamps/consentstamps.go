@@ -101,6 +101,19 @@ func (m *Module) Hold(ctx context.Context, s *ent.Scoped, k Key) (*ent.ConsentSt
 	return row, nil
 }
 
+// Stamped is the Occurrence that set fact of the key k, nil when nothing has: when a refusal or a
+// consent occurred, as the observation that set it stated (an imported opt-out's stated time).
+func (m *Module) Stamped(ctx context.Context, s *ent.Scoped, k Key, fact Fact) (*Occurrence, error) {
+	row, err := s.ConsentStamp().Query().Where(of(Stored(k))...).Only(ctx)
+	if ent.IsNotFound(err) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("read the consent stamp: %w", err)
+	}
+	return stampOf(row, fact), nil
+}
+
 // Stored is the key k's stamp is stored by: on sms the number's hash (phone.Hash), never the
 // number, so a stamp holds nothing an Erasure would have to find and remove (ADR 0021); on the
 // other Channels the Destination, as its opt-out is kept.

@@ -458,3 +458,8 @@ func newIntegrationStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.M2O, false, IntegrationTable, IntegrationColumn),
 	)
 }
+
+// Values is every value of the Status enum, in the schema's order.
+func (Status) Values() []string {
+	return []string{"draft", "scheduled", "sending", "sent", "failed", "cancelled"}
+}

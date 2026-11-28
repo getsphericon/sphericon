@@ -15,7 +15,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
-	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -197,7 +196,7 @@ func TestASegmentOfContactsThatCanBeTextedCountsAndListsThem(t *testing.T) {
 		t.Helper()
 		count, err := m.Count(ctx, ws, id)
 		require.NoError(t, err)
-		page, err := m.Contacts(ctx, ws, id, pagination.Params{Page: 1, PageSize: 100})
+		page, err := m.Contacts(ctx, ws, segments.ContactsInput{SegmentID: &id, Limit: 100})
 		require.NoError(t, err)
 		ids := make([]int64, len(page.Items))
 		for i, c := range page.Items {

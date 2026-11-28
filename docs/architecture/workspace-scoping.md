@@ -96,7 +96,10 @@ They take a `*ent.Scoped` (modules: an explicit `s *ent.Scoped` parameter) and n
 4. jobs and event consumers, right after the row that names the Workspace is loaded
    (`client.Scoped(run.WorkspaceID)` in `internal/jobs`; `EvaluateTriggerWorker` loads the
    contact and scopes from its Workspace; `DecideOccurrencesWorker`, the date scheduler's decision
-   of one Automation (ADR 0126), loads the Automation its tick named and scopes from its Workspace; the suppression consumer (`jobs.SuppressEventWorker`), and the webhooks
+   of one Automation (ADR 0126), loads the Automation its tick named and scopes from its Workspace; the run of a CSV import
+   (`RunContactImportWorker`, ADR 0138) loads the import its job names and scopes from its Workspace,
+   and the run then acts as the import's Member through `memberships.Module.ScopeOf` of the
+   Membership it reads there; the suppression consumer (`jobs.SuppressEventWorker`), and the webhooks
    consumer (`jobs.WebhookEventWorker`), which builds the scope it hands to `Dispatch` from the
    event envelope: an event job is the raw-client entry, an envelope carries only a Workspace
    id; and the orders consumer (`events.RecordOrder`, ADR 0064), which opens a transaction on the raw
@@ -173,7 +176,7 @@ They take a `*ent.Scoped` (modules: an explicit `s *ent.Scoped` parameter) and n
 
 ## Raw-client holders
 
-**The raw `*ent.Client` is allowed only in:** `internal/domain/sending/bindings` (only `Chats.PruneStartTokens`, the Instance-wide purge of lapsed and used Start tokens, ADR 0076, called by a river job; every other function takes a `*ent.Scoped`), `internal/domain/sending/capturedmessages` (only `Purge`, the Instance-wide age purge of Captured messages, ADR 0058, called by a river job; every other function takes a `*ent.Scoped`), `internal/domain/sending/frequencycap` (only `Module.Prune`, the Instance-wide age prune of the Frequency cap's count rows, ADR 0178, called by a river job; every other function takes a `*ent.Scoped` or the `*ent.DestinationLocked` of its lock transaction), `internal/domain/identity/users` (the User,
+**The raw `*ent.Client` is allowed only in:** `internal/domain/sending/bindings` (only `Chats.PruneStartTokens`, the Instance-wide purge of lapsed and used Start tokens, ADR 0076, called by a river job; every other function takes a `*ent.Scoped`), `internal/domain/sending/capturedmessages` (only `Purge`, the Instance-wide age purge of Captured messages, ADR 0058, called by a river job; every other function takes a `*ent.Scoped`), `internal/domain/contacts/contactimports` (only `Module.Expire`, the Instance-wide expiry of the CSV imports' abandoned uploads and old reports, ADR 0138, which takes the raw client its river job hands it; every other function takes a `*ent.Scoped`), `internal/domain/sending/frequencycap` (only `Module.Prune`, the Instance-wide age prune of the Frequency cap's count rows, ADR 0178, called by a river job; every other function takes a `*ent.Scoped` or the `*ent.DestinationLocked` of its lock transaction), `internal/domain/identity/users` (the User,
 ADR 0102, and the Pending sign-up of a Sign-in provider, ADR 0062: no User
 or Workspace exists yet, and its completion creates them, its Consent records and an Invitation's Membership in one
 transaction, which the Sign-up (`internal/domain/identity/signup`) opens; the prune river jobs only call it), `internal/domain/identity/invitations` (the lookup of a pending Invitation by its

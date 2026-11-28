@@ -69,6 +69,15 @@ type Contact func(*sql.Selector)
 // ContactDate is the predicate function for contactdate builders.
 type ContactDate func(*sql.Selector)
 
+// ContactImport is the predicate function for contactimport builders.
+type ContactImport func(*sql.Selector)
+
+// ContactImportChunk is the predicate function for contactimportchunk builders.
+type ContactImportChunk func(*sql.Selector)
+
+// ContactImportReportRow is the predicate function for contactimportreportrow builders.
+type ContactImportReportRow func(*sql.Selector)
+
 // ContactTag is the predicate function for contacttag builders.
 type ContactTag func(*sql.Selector)
 
@@ -77,6 +86,9 @@ type CustomField func(*sql.Selector)
 
 // DefaultSendCap is the predicate function for defaultsendcap builders.
 type DefaultSendCap func(*sql.Selector)
+
+// DownloadLink is the predicate function for downloadlink builders.
+type DownloadLink func(*sql.Selector)
 
 // EmailTemplate is the predicate function for emailtemplate builders.
 type EmailTemplate func(*sql.Selector)

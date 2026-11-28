@@ -128,13 +128,16 @@ func (h *Handlers) SiteSegmentsPreview(ctx context.Context, req *siteapi.SitePre
 }
 
 // SiteSegmentContactsList lists the Contacts a Segment matches right now: its rule alone,
-// like the Segment's count; Send-eligibility is subtracted only at send (ADR 0001).
-func (h *Handlers) SiteSegmentContactsList(ctx context.Context, params siteapi.SiteSegmentContactsListParams) (*siteapi.SiteSegmentContactsListOK, error) {
-	ws := workspaceScope(ctx)
-
-	page, err := h.segments.Contacts(ctx, ws, int64(params.SegmentId), pagination.ParamsOf(params.Page, params.PageSize))
+// like the Segment's count; Send-eligibility is subtracted only at send (ADR 0001). It is read by a
+// cursor on the Contact id (ADR 0138).
+func (h *Handlers) SiteSegmentContactsList(ctx context.Context, params siteapi.SiteSegmentContactsListParams) (*siteapi.SiteSegmentContactList, error) {
+	page, err := h.segments.ContactsPage(ctx, workspaceScope(ctx), inputs.SegmentContactsPage(params))
 	if err != nil {
 		return nil, err
 	}
-	return mapper.SegmentContactsListPage(page), nil
+	out := &siteapi.SiteSegmentContactList{Items: mapper.ContactsToResources(page.Contacts)}
+	if page.Next != "" {
+		out.NextCursor = siteapi.NewOptNilString(page.Next)
+	}
+	return out, nil
 }

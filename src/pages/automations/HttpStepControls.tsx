@@ -8,7 +8,9 @@ import {
   siteAutomationsDryRunHttpStepMutation,
   siteContactsListOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
+import { zSiteContactsListQuery } from '../../generated/site/zod.gen.ts'
 import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
+import { maxPageSize } from '../../utils/bounds.ts'
 
 // The dry run of an HTTP step's body: the server renders the body being edited for a chosen
 // Contact and checks it is valid JSON, calling nothing, so the body is checked before it is saved.
@@ -17,7 +19,10 @@ export function HttpDryRun({ body }: { body: string }) {
   const { workspaceId } = workspaceRoute.useParams()
   const [contactId, setContactId] = useState<string | null>(null)
   const contacts = useQuery(
-    siteContactsListOptions({ path: { workspaceId }, query: { page: 1, pageSize: 50 } }),
+    siteContactsListOptions({
+      path: { workspaceId },
+      query: { page: 1, pageSize: maxPageSize(zSiteContactsListQuery) },
+    }),
   )
   const dryRun = useMutation(siteAutomationsDryRunHttpStepMutation())
   const result = dryRun.data

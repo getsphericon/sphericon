@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net/url"
 	"time"
 
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
@@ -17,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 	"github.com/getsphericon/sphericon/internal/kernel/httpheader"
 	"github.com/getsphericon/sphericon/internal/kernel/localcalendar"
+	"github.com/getsphericon/sphericon/internal/kernel/paths"
 	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
@@ -31,6 +33,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/consentrecord"
 	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/contactimport"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
 	"github.com/getsphericon/sphericon/ent/invitation"
@@ -44,6 +47,9 @@ import (
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contactimports"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contactsexport"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
@@ -85,6 +91,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/dkimstate"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
+	"github.com/getsphericon/sphericon/internal/kernel/csvimport"
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 	"github.com/getsphericon/sphericon/internal/kernel/narrow"
@@ -559,9 +566,55 @@ type Converter interface {
 	PresenceOperatorToResource(source conditiontree.PresenceOperator) siteapi.PresenceOperator
 	// goverter:map Type ConditionTests | customFieldConditionTests
 	CustomFieldToResource(source *ent.CustomField) siteapi.SiteCustomFieldResource
+
+	// A CSV import (ADR 0138): its row, the mapping it reads its file by (the saved one or the
+	// proposal) with its "only add new" choice, what its run wrote and its report's rows.
+	// goverter:autoMap Import
+	// goverter:map Import.RowCount Rows
+	// goverter:map . Mapping | contactImportMapping
+	// goverter:map Import Counts
+	// goverter:map Import.StartedAt StartedAt
+	// goverter:map Import.EndedAt EndedAt
+	// goverter:map Import.CancelRequestedAt CancelRequestedAt
+	// goverter:useEmptyOnNil:slice
+	ContactImportToResource(source contactimports.View) siteapi.SiteContactImport
+	ContactImportCounts(source *ent.ContactImport) siteapi.ContactImportCounts
+	// goverter:enum:transform value
+	ContactImportState(source contactimport.State) siteapi.ContactImportState
+	// goverter:enum:transform value
+	ContactImportDelimiter(source contactimport.Delimiter) siteapi.ContactImportDelimiter
+	// goverter:enum:transform value
+	ContactImportDateFormat(source csvimport.DateFormat) siteapi.ContactImportDateFormat
+	// goverter:enum:transform value
+	ContactImportIssueReason(source csvimport.Reason) siteapi.ContactImportIssueReason
+	// goverter:enum:transform value
+	ContactImportRefusal(source csvimport.Refusal) siteapi.ContactImportRefusal
+	// goverter:enum:transform value
+	ContactImportRefusalChannel(source channels.Channel) siteapi.ContactImportRefusalChannel
+	// A consent or tracking column is never of Telegram (the save refuses it).
+	// goverter:enum:transform value
+	// goverter:enum:map Telegram @panic
+	ContactImportConsentChannel(source channels.Channel) siteapi.ContactImportConsentChannel
+	// A preview carries only the address check's traits (ADR 0117): the consent and the
+	// two-Contacts warnings are the run's.
+	// goverter:enum:transform value
+	// goverter:enum:map WarningConsentTimeInFuture @panic
+	// goverter:enum:map WarningKeysNameTwoContacts @panic
+	ContactImportWarning(source contacts.Warning) siteapi.ContactImportWarning
+	// goverter:useEmptyOnNil:slice
+	ContactImportPreviewToResource(source contactimports.Preview) siteapi.SiteContactImportPreview
+	// goverter:map Refusal | contactImportRefusal
+	// goverter:useEmptyOnNil:slice
+	ContactImportPreviewRowToResource(source contactimports.PreviewRow) siteapi.ContactImportPreviewRow
+	ContactImportIssueToResource(source csvimport.Issue) siteapi.ContactImportIssue
+	// A link to download a file (downloadlinks): its path, which the handler builds, and its expiry.
+	// goverter:map . URL | contactImportReportURL
+	ContactImportReportLink(source contactimports.ReportLink) siteapi.DownloadLink
 	// goverter:useEmptyOnNil:slice
 	CustomFieldsToResources(source []*ent.CustomField) []siteapi.SiteCustomFieldResource
 	StartLinkToResource(source bindings.StartLink) siteapi.TelegramStartLinkResource
+	// goverter:map . URL | contactCsvExportURL
+	ContactCsvExportLink(source contactsexport.Link) *siteapi.SiteContactCsvExportLink
 	BindingToResource(source bindings.Chat) siteapi.SiteBindingResource
 	// goverter:useEmptyOnNil:slice
 	BindingsToResources(source []bindings.Chat) []siteapi.SiteBindingResource
@@ -795,8 +848,6 @@ type Converter interface {
 	// page of resources (Page.Map), an unpaginated list as pagination.Whole.
 	// goverter:useEmptyOnNil:slice
 	ContactsListPage(source pagination.Page[*ent.Contact]) *siteapi.SiteContactsListOK
-	// goverter:useEmptyOnNil:slice
-	SegmentContactsListPage(source pagination.Page[*ent.Contact]) *siteapi.SiteSegmentContactsListOK
 	// goverter:useEmptyOnNil:slice
 	SegmentsListPage(source pagination.Page[*ent.Segment]) (*siteapi.SiteSegmentsListOK, error)
 	// goverter:useEmptyOnNil:slice
@@ -1869,6 +1920,12 @@ func revision(v int64) siteapi.Revision {
 // ownershipRecordType is the type of a Tracking domain's ownership record (ADR 0173).
 func ownershipRecordType(trackingdomains.OwnershipRecord) siteapi.DnsRecordType {
 	return siteapi.DnsRecordTypeTXT
+}
+
+// contactCsvExportURL is the path the browser follows to download a CSV export of Contacts: the
+// contract's SiteContactCsvExports download under the /site prefix (ADR 0138).
+func contactCsvExportURL(l contactsexport.Link) string {
+	return paths.Site + "/workspaces/" + url.PathEscape(l.Workspace) + "/contact-exports/" + url.PathEscape(l.Token)
 }
 
 // envelopeMailFrom is an envelope's custom MAIL FROM, null for any other envelope.

@@ -501,6 +501,86 @@ type Handler interface {
 	//
 	// GET /workspaces/{workspaceId}/connections
 	SiteConnectionsList(ctx context.Context, params SiteConnectionsListParams) ([]SiteConnectionResource, error)
+	// SiteContactCsvExportsCreate implements SiteContactCsvExports_create operation.
+	//
+	// Ask for the CSV export of a segment's contacts, or of all of them, with the columns chosen. The
+	// answer is a one-time link the browser follows to download the file, which is written as it is read:
+	// no file is kept. An unknown segment is a 404, no column a 422. Owners and admins only.
+	//
+	// POST /workspaces/{workspaceId}/contact-exports
+	SiteContactCsvExportsCreate(ctx context.Context, req *SiteContactCsvExportInput, params SiteContactCsvExportsCreateParams) (*SiteContactCsvExportLink, error)
+	// SiteContactCsvExportsDownload implements SiteContactCsvExports_download operation.
+	//
+	// Download the CSV export a link was issued for. The link works once, for the session that asked for
+	// it, within a minute of being issued; any other is a 400. The export is recorded in the Audit log as
+	// it starts. Owners and admins only.
+	//
+	// GET /workspaces/{workspaceId}/contact-exports/{token}
+	SiteContactCsvExportsDownload(ctx context.Context, params SiteContactCsvExportsDownloadParams) (*SiteContactCsvExportsDownloadOKHeaders, error)
+	// SiteContactImportsCancel implements SiteContactImports_cancel operation.
+	//
+	// Stop a running import: its job stops after the batch it is writing and it ends `cancelled`, keeping
+	// the Contacts it wrote and its report; its file is deleted. An import not running, or asked to stop
+	// already, is refused (409).
+	//
+	// POST /workspaces/{workspaceId}/contact-imports/{importId}/cancel
+	SiteContactImportsCancel(ctx context.Context, params SiteContactImportsCancelParams) (*SiteContactImport, error)
+	// SiteContactImportsGet implements SiteContactImports_get operation.
+	//
+	// Read an import: its state, its mapping and how far its run is.
+	//
+	// GET /workspaces/{workspaceId}/contact-imports/{importId}
+	SiteContactImportsGet(ctx context.Context, params SiteContactImportsGetParams) (*SiteContactImport, error)
+	// SiteContactImportsPreview implements SiteContactImports_preview operation.
+	//
+	// Preview the saved mapping over the file, writing nothing.
+	//
+	// GET /workspaces/{workspaceId}/contact-imports/{importId}/preview
+	SiteContactImportsPreview(ctx context.Context, params SiteContactImportsPreviewParams) (*SiteContactImportPreview, error)
+	// SiteContactImportsReport implements SiteContactImports_report operation.
+	//
+	// Download the refused rows' report the link names: the file's header and each reported row's original
+	// cells, with a column saying why. It is deleted once downloaded whole; the link works once, in the
+	// session that asked for it, within a minute (400 otherwise).
+	//
+	// GET /workspaces/{workspaceId}/contact-imports/{importId}/report/{token}
+	SiteContactImportsReport(ctx context.Context, params SiteContactImportsReportParams) (*SiteContactImportsReportOKHeaders, error)
+	// SiteContactImportsReportLink implements SiteContactImports_reportLink operation.
+	//
+	// A link to the refused rows' report, good once, for this session, for a minute.
+	//
+	// POST /workspaces/{workspaceId}/contact-imports/{importId}/report-link
+	SiteContactImportsReportLink(ctx context.Context, params SiteContactImportsReportLinkParams) (*DownloadLink, error)
+	// SiteContactImportsRun implements SiteContactImports_run operation.
+	//
+	// Run a `ready` import: its job writes the rows through the Contact intake, acting as the Member, and
+	// starts nothing (its Events are history). A date column without a format is refused (422), and a
+	// refusal column recording a Suppression without `suppressions:manage` (403). The new Custom fields
+	// its mapping names are created first, which needs `custom_fields:manage` again (403); a key the
+	// Workspace has taken since the mapping was saved is refused (409); so is a run while another import
+	// of the Workspace runs (409): one runs at a time. A run resumes from its last batch after a restart,
+	// and ends `failed` when its job's tries are spent.
+	//
+	// POST /workspaces/{workspaceId}/contact-imports/{importId}/run
+	SiteContactImportsRun(ctx context.Context, params SiteContactImportsRunParams) (*SiteContactImport, error)
+	// SiteContactImportsSaveMapping implements SiteContactImports_saveMapping operation.
+	//
+	// Save how the import reads its file, one entry per column; it is then `ready`. Refused before it runs
+	// only: a running or ended import keeps its mapping (409). A column mapped to a new Custom field needs
+	// `custom_fields:manage` (403), and its key must be new to the Workspace (409); a refusal column
+	// recording a Suppression needs `suppressions:manage` (403).
+	//
+	// PUT /workspaces/{workspaceId}/contact-imports/{importId}/mapping
+	SiteContactImportsSaveMapping(ctx context.Context, req *ContactImportMappingInput, params SiteContactImportsSaveMappingParams) (*SiteContactImport, error)
+	// SiteContactImportsUpload implements SiteContactImports_upload operation.
+	//
+	// Upload a CSV file of Contacts to import (ADR 0138): UTF-8 (a byte order mark allowed), its cells
+	// separated by commas, semicolons or tabs, a header row first. It is refused whole when it is not
+	// UTF-8, is larger than the Instance's import limit (413), has no header, has more than 200 columns or
+	// cannot be read as CSV. The answer proposes a mapping from the header.
+	//
+	// POST /workspaces/{workspaceId}/contact-imports
+	SiteContactImportsUpload(ctx context.Context, req SiteContactImportsUploadReq, params SiteContactImportsUploadParams) (*SiteContactImport, error)
 	// SiteContactsCreate implements SiteContacts_create operation.
 	//
 	// Create a resource from the site UI.
@@ -1123,11 +1203,13 @@ type Handler interface {
 	SiteSecondFactorStartEnrollment(ctx context.Context, req *SiteSecondFactorStartInput) (*SiteSecondFactorEnrollment, error)
 	// SiteSegmentContactsList implements SiteSegmentContacts_list operation.
 	//
-	// List the contacts a segment matches right now, evaluated live, ascending by id. A stored condition
-	// that no longer fits the contact schema is a 422.
+	// List the contacts a segment matches right now, evaluated live, ascending by id, read by a cursor on
+	// the contact id: a contact that joins while the pages are read neither shifts a page nor comes twice.
+	// A stored condition that no longer fits the contact schema is a 422; a cursor no page handed out is a
+	// 400.
 	//
 	// GET /workspaces/{workspaceId}/segments/{segmentId}/contacts
-	SiteSegmentContactsList(ctx context.Context, params SiteSegmentContactsListParams) (*SiteSegmentContactsListOK, error)
+	SiteSegmentContactsList(ctx context.Context, params SiteSegmentContactsListParams) (*SiteSegmentContactList, error)
 	// SiteSegmentsArchive implements SiteSegments_archive operation.
 	//
 	// Archive a resource: it leaves the list and new work, keeps its history, and can be restored. Refused

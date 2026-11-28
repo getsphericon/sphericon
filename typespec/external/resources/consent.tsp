@@ -97,16 +97,24 @@ model ConfirmationResource {
   createdAt: Timestamp;
 }
 
+/** The evidence of consent collected outside sphericon (ADR 0077), with when the person gave it (ADR 0154) */
+model ImportedConsentEvidence {
+  ...ConsentEvidence;
+
+  /** When the person gave the consent; now when omitted. A time in the future is taken as now. Consent given before the destination last withdrew it changes nothing */
+  occurredAt?: Timestamp | null;
+}
+
 /** Request body for recording consent collected outside sphericon */
 model CreateConfirmationInput {
-  /** The Channel the consent is for. Only `sms` takes a recorded consent: email is confirmed by its own double opt-in link, and a Telegram chat is its own opt-in */
+  /** The Channel the consent is for: `email` or `sms`. A Telegram chat is its own opt-in and takes none */
   channel: ConsentChannel;
 
-  /** The phone number that consented, with its country code; stored in E.164 */
+  /** What consented: an email address on `email`, a phone number with its country code on `sms` (stored in E.164) */
   @maxLength(320)
   destination: string;
 
-  ...ConsentEvidence;
+  ...ImportedConsentEvidence;
 }
 
 // Consent narrows through /api and MCP, and widens only by the evidence of consent the customer
@@ -154,13 +162,14 @@ namespace Unsubscribes {
 @tag("Consent")
 namespace Confirmations {
   /**
-   * Record consent a phone number gave outside sphericon (a form of your own, a verification
-   * service), as an `imported` confirmation with its evidence: the wording shown, where it was
-   * collected and the brand. The evidence is kept in the immutable `sms.confirmed` event.
-   * A number already confirmed keeps its confirmation unless the new one is stronger, so the
-   * answer is the confirmation that stands. It does not lift an opt-out: only the person can, by
-   * texting START. Consent recorded before the number last withdrew it changes nothing and is
-   * refused with a conflict.
+   * Record consent an email address or a phone number gave outside sphericon (a form of your own,
+   * a verification service), as an `imported` confirmation with its evidence: the wording shown,
+   * where it was collected and the brand. The evidence is kept in the immutable
+   * `marketing.confirmed` or `sms.confirmed` event. A destination already confirmed keeps its
+   * confirmation unless the new one is stronger, so the answer is the confirmation that stands.
+   * It does not lift an opt-out: only the person can, by a confirmation link or by texting START.
+   * Consent given before the destination last withdrew it changes nothing and is refused with a
+   * conflict.
    */
   @post
   @requiresScopes(#[ApiTokenScope.contactsWrite])

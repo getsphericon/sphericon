@@ -5,6 +5,7 @@ package server
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -80,7 +81,7 @@ func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.C
 	if err != nil {
 		return nil, err
 	}
-	mux.Handle(paths.Site+"/", problem.Middleware[siteapi.Handler](siteSrv))
+	mux.Handle(paths.Site+"/", problem.Middleware[siteapi.Handler](apisite.Responses(siteSrv)))
 
 	// The Account link's public key set: published only when the link is configured.
 	if site.AccountLink != nil {
@@ -166,7 +167,7 @@ func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.C
 		// whole protection.
 		outer = append(outer, SchemaGuard(schema))
 	}
-	inner := chi.Middlewares{clientip.New(cfg.TrustedProxyCIDRs).Middleware, limiter.Middleware, middleware.Timeout(requestTimeout), bodyLimit(cfg.BodyLimits), noNUL, collectEventLimit(cfg.BodyLimits.CollectEvent), guard}
+	inner := chi.Middlewares{clientip.New(cfg.TrustedProxyCIDRs).Middleware, limiter.Middleware, Timeouts(cfg.BodyLimits, site.Clock), bodyLimit(cfg.BodyLimits), noNUL, collectEventLimit(cfg.BodyLimits.CollectEvent), guard}
 	return chi.Chain(append(outer, inner...)...).Handler(trackingHostGate(cfg, domains, mux, links)), nil
 }
 
@@ -343,8 +344,9 @@ func recoverer(next http.Handler) http.Handler {
 func isCollectPath(path string) bool { return strings.HasPrefix(path, paths.Collect+"/") }
 
 // bodyLimit caps every request body before a handler or the ogen decoder reads it:
-// collect gets its own (smaller) caps (a batch of events, or a single event), everything else the default. An oversized
-// body surfaces as *http.MaxBytesError, which problem.ErrorHandler renders as 413.
+// collect gets its own (smaller) caps (a batch of events, or a single event), the upload of a CSV
+// import its own (larger) one, everything else the default. An oversized body surfaces as
+// *http.MaxBytesError, which problem.ErrorHandler renders as 413 with the cap.
 func bodyLimit(limits config.BodyLimits) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -354,11 +356,20 @@ func bodyLimit(limits config.BodyLimits) func(http.Handler) http.Handler {
 				limit = limits.Collect // a batch
 			case isCollectPath(r.URL.Path):
 				limit = limits.CollectEvent // one event
+			case isContactImportUpload(r):
+				limit = limits.CSVImport // a CSV file of Contacts (ADR 0138)
 			}
 			r.Body = http.MaxBytesReader(w, r.Body, limit)
 			next.ServeHTTP(w, r)
 		})
 	}
+}
+
+// isContactImportUpload is the upload of a CSV import's file (POST
+// /site/workspaces/{workspaceId}/contact-imports), which has its own cap.
+func isContactImportUpload(r *http.Request) bool {
+	rest, ok := strings.CutPrefix(r.URL.Path, paths.Site+"/workspaces/")
+	return ok && r.Method == http.MethodPost && strings.Count(rest, "/") == 1 && strings.HasSuffix(rest, "/contact-imports")
 }
 
 func requestID(next http.Handler) http.Handler {
@@ -468,3 +479,31 @@ func crossOriginGuard(appURL string, allowed []string) (func(http.Handler) http.
 
 // requestTimeout is how long a request may run before it is answered 504.
 const requestTimeout = 30 * time.Second * raceSlowdown
+
+// slowestUpload is the slowest upstream the upload of a CSV import's file is given time for: a
+// megabit a second, in bytes.
+const slowestUpload = 125_000
+
+// Timeouts answers 504 to a request that runs longer than it may (chi's Timeout): the upload of a
+// CSV import's file (ADR 0138) the time its own cap takes at slowestUpload beside the request
+// timeout, every other request the request timeout. The server's ReadTimeout bounds the reading
+// of the body too, so the upload also moves its read deadline, from now, the Instance clock; a
+// writer that cannot (a test's recorder) leaves it.
+func Timeouts(limits config.BodyLimits, now func() time.Time) func(http.Handler) http.Handler {
+	upload := requestTimeout + time.Duration(limits.CSVImport/slowestUpload)*time.Second
+	return func(next http.Handler) http.Handler {
+		standard := middleware.Timeout(requestTimeout)(next)
+		long := middleware.Timeout(upload)(next)
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if !isContactImportUpload(r) {
+				standard.ServeHTTP(w, r)
+				return
+			}
+			err := http.NewResponseController(w).SetReadDeadline(now().Add(upload))
+			if err != nil && !errors.Is(err, http.ErrNotSupported) {
+				slog.WarnContext(r.Context(), "the upload's read deadline was not moved", "err", err)
+			}
+			long.ServeHTTP(w, r)
+		})
+	}
+}

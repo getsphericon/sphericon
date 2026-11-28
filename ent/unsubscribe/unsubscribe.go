@@ -113,6 +113,7 @@ const (
 	ViaLink        Via = "link"
 	ViaRefusedSend Via = "refused_send"
 	ViaManual      Via = "manual"
+	ViaImported    Via = "imported"
 )
 
 func (v Via) String() string {
@@ -122,7 +123,7 @@ func (v Via) String() string {
 // ViaValidator is a validator for the "via" field enum values. It is called by the builders before save.
 func ViaValidator(v Via) error {
 	switch v {
-	case ViaKeyword, ViaButton, ViaBlock, ViaLink, ViaRefusedSend, ViaManual:
+	case ViaKeyword, ViaButton, ViaBlock, ViaLink, ViaRefusedSend, ViaManual, ViaImported:
 		return nil
 	default:
 		return fmt.Errorf("unsubscribe: invalid enum value for via field: %q", v)
@@ -203,4 +204,9 @@ func newContactStep() *sqlgraph.Step {
 		sqlgraph.To(ContactInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, false, ContactTable, ContactColumn),
 	)
+}
+
+// Values is every value of the Via enum, in the schema's order.
+func (Via) Values() []string {
+	return []string{"keyword", "button", "block", "link", "refused_send", "manual", "imported"}
 }

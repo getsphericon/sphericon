@@ -244,3 +244,8 @@ func newIntegrationStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.M2O, true, IntegrationTable, IntegrationColumn),
 	)
 }
+
+// Values is every value of the State enum, in the schema's order.
+func (State) Values() []string {
+	return []string{"provider_default", "custom", "unknown"}
+}

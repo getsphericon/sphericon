@@ -191,6 +191,7 @@ const (
 	SourceManual  Source = "manual"
 	SourceAPI     Source = "api"
 	SourceTracker Source = "tracker"
+	SourceImport  Source = "import"
 )
 
 func (s Source) String() string {
@@ -200,7 +201,7 @@ func (s Source) String() string {
 // SourceValidator is a validator for the "source" field enum values. It is called by the builders before save.
 func SourceValidator(s Source) error {
 	switch s {
-	case SourceManual, SourceAPI, SourceTracker:
+	case SourceManual, SourceAPI, SourceTracker, SourceImport:
 		return nil
 	default:
 		return fmt.Errorf("contact: invalid enum value for source field: %q", s)
@@ -475,4 +476,9 @@ func newContactTagsStep() *sqlgraph.Step {
 		sqlgraph.To(ContactTagsInverseTable, ContactTagsColumn),
 		sqlgraph.Edge(sqlgraph.O2M, true, ContactTagsTable, ContactTagsColumn),
 	)
+}
+
+// Values is every value of the Source enum, in the schema's order.
+func (Source) Values() []string {
+	return []string{"manual", "api", "tracker", "import"}
 }

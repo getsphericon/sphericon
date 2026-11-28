@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/customfield"
 	collectapi "github.com/getsphericon/sphericon/gen/collect"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -27,9 +28,9 @@ func TestIdentifyWritesCoreAttributesFromTraitsAndFillsFromTheBrowser(t *testing
 		VisitorId: "v-core",
 		Email:     collectapi.NewOptNilEmailAddress("core.traits@example.com"),
 		Traits: collectapi.NewOptNilJsonObject(collectapi.JsonObject{
-			"firstName": jx.Raw(`"Ada"`),
-			"country":   jx.Raw(`"gb"`),
-			"timeZone":  jx.Raw(`"Mars/Olympus"`),
+			fieldname.FirstName: jx.Raw(`"Ada"`),
+			fieldname.Country:   jx.Raw(`"gb"`),
+			fieldname.TimeZone:  jx.Raw(`"Mars/Olympus"`),
 		}),
 		Context: collectapi.NewOptNilCollectIdentifyContext(collectapi.CollectIdentifyContext{
 			TimeZone: collectapi.NewOptNilString("Europe/London"),

@@ -30,6 +30,9 @@ type JobQueue interface {
 // was never written.
 type Enqueuer interface {
 	Enqueue(ctx context.Context, args river.JobArgs, opts *river.InsertOpts) error
+	// EnqueueNew is Enqueue for a job unique by its options: false when a job they match stands
+	// already, which is left as it is and none inserted.
+	EnqueueNew(ctx context.Context, args river.JobArgs, opts *river.InsertOpts) (bool, error)
 }
 
 // UseJobs gives the Bus the queue its transactional enqueues insert into and its purges
@@ -54,6 +57,19 @@ func (p *txPublisher) Enqueue(ctx context.Context, args river.JobArgs, opts *riv
 	}
 	_, err := p.bus.jobs.InsertTx(ctx, p.tx, args, opts)
 	return err
+}
+
+// EnqueueNew inserts a job on the publisher's transaction unless its unique options match one
+// that stands (Enqueuer).
+func (p *txPublisher) EnqueueNew(ctx context.Context, args river.JobArgs, opts *river.InsertOpts) (bool, error) {
+	if p.bus.jobs == nil {
+		return false, ErrNoJobQueue
+	}
+	res, err := p.bus.jobs.InsertTx(ctx, p.tx, args, opts)
+	if err != nil {
+		return false, err
+	}
+	return !res.UniqueSkippedAsDuplicate, nil
 }
 
 // insertMany inserts the jobs of params on the publisher's transaction, none when params is empty.

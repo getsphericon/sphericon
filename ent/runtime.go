@@ -26,8 +26,12 @@ import (
 	"github.com/getsphericon/sphericon/ent/consentstamp"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/contactdate"
+	"github.com/getsphericon/sphericon/ent/contactimport"
+	"github.com/getsphericon/sphericon/ent/contactimportchunk"
+	"github.com/getsphericon/sphericon/ent/contactimportreportrow"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/defaultsendcap"
+	"github.com/getsphericon/sphericon/ent/downloadlink"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
 	"github.com/getsphericon/sphericon/ent/erasure"
@@ -770,6 +774,107 @@ func init() {
 	contactdate.DefaultUpdatedAt = contactdateDescUpdatedAt.Default.(func() time.Time)
 	// contactdate.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	contactdate.UpdateDefaultUpdatedAt = contactdateDescUpdatedAt.UpdateDefault.(func() time.Time)
+	contactimportMixin := schema.ContactImport{}.Mixin()
+	contactimportMixinFields0 := contactimportMixin[0].Fields()
+	_ = contactimportMixinFields0
+	contactimportFields := schema.ContactImport{}.Fields()
+	_ = contactimportFields
+	// contactimportDescCreatedAt is the schema descriptor for created_at field.
+	contactimportDescCreatedAt := contactimportMixinFields0[0].Descriptor()
+	// contactimport.DefaultCreatedAt holds the default value on creation for the created_at field.
+	contactimport.DefaultCreatedAt = contactimportDescCreatedAt.Default.(func() time.Time)
+	// contactimportDescUpdatedAt is the schema descriptor for updated_at field.
+	contactimportDescUpdatedAt := contactimportMixinFields0[1].Descriptor()
+	// contactimport.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	contactimport.DefaultUpdatedAt = contactimportDescUpdatedAt.Default.(func() time.Time)
+	// contactimport.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	contactimport.UpdateDefaultUpdatedAt = contactimportDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// contactimportDescOnlyAddNew is the schema descriptor for only_add_new field.
+	contactimportDescOnlyAddNew := contactimportFields[10].Descriptor()
+	// contactimport.DefaultOnlyAddNew holds the default value on creation for the only_add_new field.
+	contactimport.DefaultOnlyAddNew = contactimportDescOnlyAddNew.Default.(bool)
+	// contactimportDescAsNewSignUps is the schema descriptor for as_new_sign_ups field.
+	contactimportDescAsNewSignUps := contactimportFields[11].Descriptor()
+	// contactimport.DefaultAsNewSignUps holds the default value on creation for the as_new_sign_ups field.
+	contactimport.DefaultAsNewSignUps = contactimportDescAsNewSignUps.Default.(bool)
+	// contactimportDescCheckpointRow is the schema descriptor for checkpoint_row field.
+	contactimportDescCheckpointRow := contactimportFields[12].Descriptor()
+	// contactimport.DefaultCheckpointRow holds the default value on creation for the checkpoint_row field.
+	contactimport.DefaultCheckpointRow = contactimportDescCheckpointRow.Default.(int)
+	// contactimportDescCheckpointChunk is the schema descriptor for checkpoint_chunk field.
+	contactimportDescCheckpointChunk := contactimportFields[13].Descriptor()
+	// contactimport.DefaultCheckpointChunk holds the default value on creation for the checkpoint_chunk field.
+	contactimport.DefaultCheckpointChunk = contactimportDescCheckpointChunk.Default.(int)
+	// contactimportDescCheckpointOffset is the schema descriptor for checkpoint_offset field.
+	contactimportDescCheckpointOffset := contactimportFields[14].Descriptor()
+	// contactimport.DefaultCheckpointOffset holds the default value on creation for the checkpoint_offset field.
+	contactimport.DefaultCheckpointOffset = contactimportDescCheckpointOffset.Default.(int64)
+	// contactimportDescCheckpointContactFloor is the schema descriptor for checkpoint_contact_floor field.
+	contactimportDescCheckpointContactFloor := contactimportFields[15].Descriptor()
+	// contactimport.DefaultCheckpointContactFloor holds the default value on creation for the checkpoint_contact_floor field.
+	contactimport.DefaultCheckpointContactFloor = contactimportDescCheckpointContactFloor.Default.(int64)
+	// contactimportDescRecoveries is the schema descriptor for recoveries field.
+	contactimportDescRecoveries := contactimportFields[16].Descriptor()
+	// contactimport.DefaultRecoveries holds the default value on creation for the recoveries field.
+	contactimport.DefaultRecoveries = contactimportDescRecoveries.Default.(int)
+	// contactimportDescProcessed is the schema descriptor for processed field.
+	contactimportDescProcessed := contactimportFields[17].Descriptor()
+	// contactimport.DefaultProcessed holds the default value on creation for the processed field.
+	contactimport.DefaultProcessed = contactimportDescProcessed.Default.(int)
+	// contactimportDescCreated is the schema descriptor for created field.
+	contactimportDescCreated := contactimportFields[18].Descriptor()
+	// contactimport.DefaultCreated holds the default value on creation for the created field.
+	contactimport.DefaultCreated = contactimportDescCreated.Default.(int)
+	// contactimportDescUpdated is the schema descriptor for updated field.
+	contactimportDescUpdated := contactimportFields[19].Descriptor()
+	// contactimport.DefaultUpdated holds the default value on creation for the updated field.
+	contactimport.DefaultUpdated = contactimportDescUpdated.Default.(int)
+	// contactimportDescRefused is the schema descriptor for refused field.
+	contactimportDescRefused := contactimportFields[20].Descriptor()
+	// contactimport.DefaultRefused holds the default value on creation for the refused field.
+	contactimport.DefaultRefused = contactimportDescRefused.Default.(int)
+	// contactimportDescDropped is the schema descriptor for dropped field.
+	contactimportDescDropped := contactimportFields[21].Descriptor()
+	// contactimport.DefaultDropped holds the default value on creation for the dropped field.
+	contactimport.DefaultDropped = contactimportDescDropped.Default.(int)
+	// contactimportDescOptedOut is the schema descriptor for opted_out field.
+	contactimportDescOptedOut := contactimportFields[22].Descriptor()
+	// contactimport.DefaultOptedOut holds the default value on creation for the opted_out field.
+	contactimport.DefaultOptedOut = contactimportDescOptedOut.Default.(int)
+	// contactimportDescSuppressed is the schema descriptor for suppressed field.
+	contactimportDescSuppressed := contactimportFields[23].Descriptor()
+	// contactimport.DefaultSuppressed holds the default value on creation for the suppressed field.
+	contactimport.DefaultSuppressed = contactimportDescSuppressed.Default.(int)
+	contactimportchunkMixin := schema.ContactImportChunk{}.Mixin()
+	contactimportchunkMixinFields0 := contactimportchunkMixin[0].Fields()
+	_ = contactimportchunkMixinFields0
+	contactimportchunkFields := schema.ContactImportChunk{}.Fields()
+	_ = contactimportchunkFields
+	// contactimportchunkDescCreatedAt is the schema descriptor for created_at field.
+	contactimportchunkDescCreatedAt := contactimportchunkMixinFields0[0].Descriptor()
+	// contactimportchunk.DefaultCreatedAt holds the default value on creation for the created_at field.
+	contactimportchunk.DefaultCreatedAt = contactimportchunkDescCreatedAt.Default.(func() time.Time)
+	// contactimportchunkDescUpdatedAt is the schema descriptor for updated_at field.
+	contactimportchunkDescUpdatedAt := contactimportchunkMixinFields0[1].Descriptor()
+	// contactimportchunk.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	contactimportchunk.DefaultUpdatedAt = contactimportchunkDescUpdatedAt.Default.(func() time.Time)
+	// contactimportchunk.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	contactimportchunk.UpdateDefaultUpdatedAt = contactimportchunkDescUpdatedAt.UpdateDefault.(func() time.Time)
+	contactimportreportrowMixin := schema.ContactImportReportRow{}.Mixin()
+	contactimportreportrowMixinFields0 := contactimportreportrowMixin[0].Fields()
+	_ = contactimportreportrowMixinFields0
+	contactimportreportrowFields := schema.ContactImportReportRow{}.Fields()
+	_ = contactimportreportrowFields
+	// contactimportreportrowDescCreatedAt is the schema descriptor for created_at field.
+	contactimportreportrowDescCreatedAt := contactimportreportrowMixinFields0[0].Descriptor()
+	// contactimportreportrow.DefaultCreatedAt holds the default value on creation for the created_at field.
+	contactimportreportrow.DefaultCreatedAt = contactimportreportrowDescCreatedAt.Default.(func() time.Time)
+	// contactimportreportrowDescUpdatedAt is the schema descriptor for updated_at field.
+	contactimportreportrowDescUpdatedAt := contactimportreportrowMixinFields0[1].Descriptor()
+	// contactimportreportrow.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	contactimportreportrow.DefaultUpdatedAt = contactimportreportrowDescUpdatedAt.Default.(func() time.Time)
+	// contactimportreportrow.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	contactimportreportrow.UpdateDefaultUpdatedAt = contactimportreportrowDescUpdatedAt.UpdateDefault.(func() time.Time)
 	customfieldMixin := schema.CustomField{}.Mixin()
 	customfieldMixinFields0 := customfieldMixin[0].Fields()
 	_ = customfieldMixinFields0
@@ -820,6 +925,29 @@ func init() {
 	defaultsendcapDescPerDay := defaultsendcapFields[1].Descriptor()
 	// defaultsendcap.PerDayValidator is a validator for the "per_day" field. It is called by the builders before save.
 	defaultsendcap.PerDayValidator = defaultsendcapDescPerDay.Validators[0].(func(int) error)
+	downloadlinkMixin := schema.DownloadLink{}.Mixin()
+	downloadlinkMixinFields0 := downloadlinkMixin[0].Fields()
+	_ = downloadlinkMixinFields0
+	downloadlinkFields := schema.DownloadLink{}.Fields()
+	_ = downloadlinkFields
+	// downloadlinkDescCreatedAt is the schema descriptor for created_at field.
+	downloadlinkDescCreatedAt := downloadlinkMixinFields0[0].Descriptor()
+	// downloadlink.DefaultCreatedAt holds the default value on creation for the created_at field.
+	downloadlink.DefaultCreatedAt = downloadlinkDescCreatedAt.Default.(func() time.Time)
+	// downloadlinkDescUpdatedAt is the schema descriptor for updated_at field.
+	downloadlinkDescUpdatedAt := downloadlinkMixinFields0[1].Descriptor()
+	// downloadlink.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	downloadlink.DefaultUpdatedAt = downloadlinkDescUpdatedAt.Default.(func() time.Time)
+	// downloadlink.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	downloadlink.UpdateDefaultUpdatedAt = downloadlinkDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// downloadlinkDescTokenHash is the schema descriptor for token_hash field.
+	downloadlinkDescTokenHash := downloadlinkFields[2].Descriptor()
+	// downloadlink.TokenHashValidator is a validator for the "token_hash" field. It is called by the builders before save.
+	downloadlink.TokenHashValidator = downloadlinkDescTokenHash.Validators[0].(func(string) error)
+	// downloadlinkDescSessionHash is the schema descriptor for session_hash field.
+	downloadlinkDescSessionHash := downloadlinkFields[3].Descriptor()
+	// downloadlink.SessionHashValidator is a validator for the "session_hash" field. It is called by the builders before save.
+	downloadlink.SessionHashValidator = downloadlinkDescSessionHash.Validators[0].(func(string) error)
 	emailtemplateMixin := schema.EmailTemplate{}.Mixin()
 	emailtemplateMixinFields0 := emailtemplateMixin[0].Fields()
 	_ = emailtemplateMixinFields0

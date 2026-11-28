@@ -15,7 +15,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/api/site/resources"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/channelstop"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contactimports"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contactsexport"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/identitytokens"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
@@ -101,10 +103,12 @@ type Handlers struct {
 	outbound        *outboundmessages.Module
 	segments        *segments.Module
 	segmentSaving   *segmentsaving.UseCase
-	contacts        *contacts.Module
-	erasure         *contacterasure.UseCase
-	tags            *tags.Module
-	tagDeletion     *tagdeletion.UseCase
+	// contactsExport is the CSV export of a Segment's Contacts, or of all of them (ADR 0138).
+	contactsExport *contactsexport.Module
+	contacts       *contacts.Module
+	erasure        *contacterasure.UseCase
+	tags           *tags.Module
+	tagDeletion    *tagdeletion.UseCase
 	// customFieldRetyping is the use case behind editing a Custom field.
 	customFieldRetyping *customfieldretyping.UseCase
 	// integrationDeletion and sendingDomainDeletion are the use cases behind deleting an Integration
@@ -156,6 +160,8 @@ type Handlers struct {
 	tracking             *engagementtracking.Module
 	channelStops         *channelstop.Module
 	exports              *dataexport.Exporter
+	// contactImports is the CSV import of Contacts (ADR 0138).
+	contactImports *contactimports.Module
 }
 
 // Origins are the public origins besides the app's own that a Workspace resource names: where an
@@ -194,6 +200,7 @@ type Deps struct {
 	IdentityTokens *identitytokens.Module
 	Outbound       *outboundmessages.Module
 	Segments       *segments.Module
+	ContactsExport *contactsexport.Module
 	SegmentSaving  *segmentsaving.UseCase
 	Contacts       *contacts.Module
 	Erasure        *contacterasure.UseCase
@@ -287,6 +294,8 @@ type Deps struct {
 	// Exports is the Data export of a Contact (ADR 0021), projected onto this surface's contract
 	// (resources.ExportMapper).
 	Exports *dataexport.Exporter
+	// ContactImports is the CSV import of Contacts (ADR 0138).
+	ContactImports *contactimports.Module
 }
 
 // Migrations is the seam of the error page's button: it runs the migrations the database has
@@ -302,11 +311,11 @@ func NewHandlers(d *Deps) *Handlers {
 	}
 	h := &Handlers{
 		users: d.Users, invitations: d.Invitations, workspaces: d.Workspaces, memberships: d.Memberships, deletion: d.Deletion, bus: d.Bus, webhooks: d.Webhooks, identityTokens: d.IdentityTokens, outbound: d.Outbound,
-		segments: d.Segments, segmentSaving: d.SegmentSaving, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, tagDeletion: d.TagDeletion, customFieldRetyping: d.CustomFieldRetyping, unsubscribe: d.Unsubscribe, bindings: d.Bindings, templates: d.Templates, templateViews: d.TemplateViews, brandKit: d.BrandKit,
+		segments: d.Segments, contactsExport: d.ContactsExport, segmentSaving: d.SegmentSaving, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, tagDeletion: d.TagDeletion, customFieldRetyping: d.CustomFieldRetyping, unsubscribe: d.Unsubscribe, bindings: d.Bindings, templates: d.Templates, templateViews: d.TemplateViews, brandKit: d.BrandKit,
 		automations: d.Automations, rules: d.Rules, broadcasts: d.Broadcasts, broadcastViews: d.BroadcastViews,
 		sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, joinDomains: d.JoinDomains, integrations: d.Integrations, integrationDeletion: d.IntegrationDeletion, sendingDomainDeletion: d.SendingDomainDeletion, captured: d.CapturedMessages, links: users.NewLinks(d.Users, d.Tokens), requests: users.NewRequests(d.Users, d.Attempts), tracker: d.Tracker, appURL: d.AppURL,
 		oauth: d.OAuth, apiTokens: d.APITokens, audit: d.Audit, attention: d.Attention, setupChecklist: d.SetupChecklist, supportEmail: d.SupportEmail, origins: d.Origins, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, admission: d.Admission, signUp: d.SignUp, userDeletion: d.UserDeletion, passkeys: d.Passkeys, now: now, instance: d.Instance, accountLink: d.AccountLink, workspaceView: d.WorkspaceView, signupSurvey: d.SignupSurvey, signupItems: d.SignupItems, consentRecords: d.ConsentRecords,
-		suppressions: d.Suppressions, confirmations: d.Confirmations, confirmationRequests: d.ConfirmationRequests, tracking: d.Tracking, channelStops: d.ChannelStops, exports: d.Exports,
+		suppressions: d.Suppressions, confirmations: d.Confirmations, confirmationRequests: d.ConfirmationRequests, tracking: d.Tracking, channelStops: d.ChannelStops, exports: d.Exports, contactImports: d.ContactImports,
 		signin:     d.Signin,
 		migrations: d.Migrations,
 		login:      d.UserLogin,

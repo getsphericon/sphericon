@@ -261,6 +261,42 @@ func (f ContactDateFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value,
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ContactDateMutation", m)
 }
 
+// The ContactImportFunc type is an adapter to allow the use of ordinary
+// function as ContactImport mutator.
+type ContactImportFunc func(context.Context, *ent.ContactImportMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ContactImportFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ContactImportMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ContactImportMutation", m)
+}
+
+// The ContactImportChunkFunc type is an adapter to allow the use of ordinary
+// function as ContactImportChunk mutator.
+type ContactImportChunkFunc func(context.Context, *ent.ContactImportChunkMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ContactImportChunkFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ContactImportChunkMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ContactImportChunkMutation", m)
+}
+
+// The ContactImportReportRowFunc type is an adapter to allow the use of ordinary
+// function as ContactImportReportRow mutator.
+type ContactImportReportRowFunc func(context.Context, *ent.ContactImportReportRowMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ContactImportReportRowFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ContactImportReportRowMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ContactImportReportRowMutation", m)
+}
+
 // The ContactTagFunc type is an adapter to allow the use of ordinary
 // function as ContactTag mutator.
 type ContactTagFunc func(context.Context, *ent.ContactTagMutation) (ent.Value, error)
@@ -295,6 +331,18 @@ func (f DefaultSendCapFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Val
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.DefaultSendCapMutation", m)
+}
+
+// The DownloadLinkFunc type is an adapter to allow the use of ordinary
+// function as DownloadLink mutator.
+type DownloadLinkFunc func(context.Context, *ent.DownloadLinkMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f DownloadLinkFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.DownloadLinkMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.DownloadLinkMutation", m)
 }
 
 // The EmailTemplateFunc type is an adapter to allow the use of ordinary

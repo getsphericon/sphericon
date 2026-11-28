@@ -15,6 +15,7 @@ import (
 	confirmation "github.com/getsphericon/sphericon/ent/confirmation"
 	consentrecord "github.com/getsphericon/sphericon/ent/consentrecord"
 	contact "github.com/getsphericon/sphericon/ent/contact"
+	contactimport "github.com/getsphericon/sphericon/ent/contactimport"
 	customfield "github.com/getsphericon/sphericon/ent/customfield"
 	engagementtrackingconsent "github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
 	invitation "github.com/getsphericon/sphericon/ent/invitation"
@@ -30,6 +31,9 @@ import (
 	site "github.com/getsphericon/sphericon/gen/site"
 	condition "github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	confirmations "github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
+	contactimports "github.com/getsphericon/sphericon/internal/domain/contacts/contactimports"
+	contacts "github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	contactsexport "github.com/getsphericon/sphericon/internal/domain/contacts/contactsexport"
 	engagementtracking "github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	orders "github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	brandkits "github.com/getsphericon/sphericon/internal/domain/content/brandkits"
@@ -58,6 +62,7 @@ import (
 	automationstep "github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	channels "github.com/getsphericon/sphericon/internal/kernel/channels"
 	conditiontree "github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	csvimport "github.com/getsphericon/sphericon/internal/kernel/csvimport"
 	datetrigger "github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 	deferralcause "github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 	emailrender "github.com/getsphericon/sphericon/internal/kernel/emailrender"
@@ -1047,6 +1052,12 @@ func (c *ConverterImpl) ConnectionsToResources(source []*ent.ApiToken) []site.Si
 	}
 	return siteapiSiteConnectionResourceList
 }
+func (c *ConverterImpl) ContactCsvExportLink(source contactsexport.Link) *site.SiteContactCsvExportLink {
+	var siteapiSiteContactCsvExportLink site.SiteContactCsvExportLink
+	siteapiSiteContactCsvExportLink.URL = contactCsvExportURL(source)
+	siteapiSiteContactCsvExportLink.ExpiresAt = timestamp(source.ExpiresAt)
+	return &siteapiSiteContactCsvExportLink
+}
 func (c *ConverterImpl) ContactEngagementTrackingToResource(source engagementtracking.ContactConsents) site.ContactEngagementTracking {
 	var siteapiContactEngagementTracking site.ContactEngagementTracking
 	if source.Destinations != nil {
@@ -1062,6 +1073,8 @@ func (c *ConverterImpl) ContactExportSourceToResource(source contact.Source) sit
 	switch source {
 	case contact.SourceAPI:
 		siteapiContactExportSource = site.ContactExportSourceAPI
+	case contact.SourceImport:
+		siteapiContactExportSource = site.ContactExportSourceImport
 	case contact.SourceManual:
 		siteapiContactExportSource = site.ContactExportSourceManual
 	case contact.SourceTracker:
@@ -1070,6 +1083,302 @@ func (c *ConverterImpl) ContactExportSourceToResource(source contact.Source) sit
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return siteapiContactExportSource
+}
+func (c *ConverterImpl) ContactImportConsentChannel(source channels.Channel) site.ContactImportConsentChannel {
+	var siteapiContactImportConsentChannel site.ContactImportConsentChannel
+	switch source {
+	case channels.Email:
+		siteapiContactImportConsentChannel = site.ContactImportConsentChannelEmail
+	case channels.SMS:
+		siteapiContactImportConsentChannel = site.ContactImportConsentChannelSMS
+	case channels.Telegram:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiContactImportConsentChannel
+}
+func (c *ConverterImpl) ContactImportCounts(source *ent.ContactImport) site.ContactImportCounts {
+	var siteapiContactImportCounts site.ContactImportCounts
+	if source != nil {
+		siteapiContactImportCounts.Processed = count((*source).Processed)
+		siteapiContactImportCounts.Created = count((*source).Created)
+		siteapiContactImportCounts.Updated = count((*source).Updated)
+		siteapiContactImportCounts.Refused = count((*source).Refused)
+		siteapiContactImportCounts.Dropped = count((*source).Dropped)
+		siteapiContactImportCounts.OptedOut = count((*source).OptedOut)
+		siteapiContactImportCounts.Suppressed = count((*source).Suppressed)
+	}
+	return siteapiContactImportCounts
+}
+func (c *ConverterImpl) ContactImportDateFormat(source csvimport.DateFormat) site.ContactImportDateFormat {
+	var siteapiContactImportDateFormat site.ContactImportDateFormat
+	switch source {
+	case csvimport.DateDMYDash:
+		siteapiContactImportDateFormat = site.ContactImportDateFormatDdMinusMmMinusYyyy
+	case csvimport.DateDMYDot:
+		siteapiContactImportDateFormat = site.ContactImportDateFormatDdDotMmDotYyyy
+	case csvimport.DateDMYSlash:
+		siteapiContactImportDateFormat = site.ContactImportDateFormatDdSlashMmSlashYyyy
+	case csvimport.DateISO:
+		siteapiContactImportDateFormat = site.ContactImportDateFormatYyyyMinusMmMinusDd
+	case csvimport.DateMDYDash:
+		siteapiContactImportDateFormat = site.ContactImportDateFormatMmMinusDdMinusYyyy
+	case csvimport.DateMDYDot:
+		siteapiContactImportDateFormat = site.ContactImportDateFormatMmDotDdDotYyyy
+	case csvimport.DateMDYSlash:
+		siteapiContactImportDateFormat = site.ContactImportDateFormatMmSlashDdSlashYyyy
+	case csvimport.DateTimeRFC3339:
+		siteapiContactImportDateFormat = site.ContactImportDateFormatRfc3339
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiContactImportDateFormat
+}
+func (c *ConverterImpl) ContactImportDelimiter(source contactimport.Delimiter) site.ContactImportDelimiter {
+	var siteapiContactImportDelimiter site.ContactImportDelimiter
+	switch source {
+	case contactimport.DelimiterComma:
+		siteapiContactImportDelimiter = site.ContactImportDelimiterComma
+	case contactimport.DelimiterSemicolon:
+		siteapiContactImportDelimiter = site.ContactImportDelimiterSemicolon
+	case contactimport.DelimiterTab:
+		siteapiContactImportDelimiter = site.ContactImportDelimiterTab
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiContactImportDelimiter
+}
+func (c *ConverterImpl) ContactImportIssueReason(source csvimport.Reason) site.ContactImportIssueReason {
+	var siteapiContactImportIssueReason site.ContactImportIssueReason
+	switch source {
+	case csvimport.ReasonCellCount:
+		siteapiContactImportIssueReason = site.ContactImportIssueReasonCellCount
+	case csvimport.ReasonKeysNameTwoContacts:
+		siteapiContactImportIssueReason = site.ContactImportIssueReasonKeysNameTwoContacts
+	case csvimport.ReasonNoDestination:
+		siteapiContactImportIssueReason = site.ContactImportIssueReasonNoDestination
+	case csvimport.ReasonNoEvidence:
+		siteapiContactImportIssueReason = site.ContactImportIssueReasonNoEvidence
+	case csvimport.ReasonNoKey:
+		siteapiContactImportIssueReason = site.ContactImportIssueReasonNoKey
+	case csvimport.ReasonNoTime:
+		siteapiContactImportIssueReason = site.ContactImportIssueReasonNoTime
+	case csvimport.ReasonNotBoolean:
+		siteapiContactImportIssueReason = site.ContactImportIssueReasonNotBoolean
+	case csvimport.ReasonNotCountry:
+		siteapiContactImportIssueReason = site.ContactImportIssueReasonNotCountry
+	case csvimport.ReasonNotDate:
+		siteapiContactImportIssueReason = site.ContactImportIssueReasonNotDate
+	case csvimport.ReasonNotEmail:
+		siteapiContactImportIssueReason = site.ContactImportIssueReasonNotEmail
+	case csvimport.ReasonNotImageURL:
+		siteapiContactImportIssueReason = site.ContactImportIssueReasonNotImageUrl
+	case csvimport.ReasonNotLocale:
+		siteapiContactImportIssueReason = site.ContactImportIssueReasonNotLocale
+	case csvimport.ReasonNotNumber:
+		siteapiContactImportIssueReason = site.ContactImportIssueReasonNotNumber
+	case csvimport.ReasonNotPhone:
+		siteapiContactImportIssueReason = site.ContactImportIssueReasonNotPhone
+	case csvimport.ReasonNotTag:
+		siteapiContactImportIssueReason = site.ContactImportIssueReasonNotTag
+	case csvimport.ReasonNotTimeZone:
+		siteapiContactImportIssueReason = site.ContactImportIssueReasonNotTimeZone
+	case csvimport.ReasonRefusalNotRecorded:
+		siteapiContactImportIssueReason = site.ContactImportIssueReasonRefusalNotRecorded
+	case csvimport.ReasonRefused:
+		siteapiContactImportIssueReason = site.ContactImportIssueReasonRefused
+	case csvimport.ReasonTimeInFuture:
+		siteapiContactImportIssueReason = site.ContactImportIssueReasonTimeInFuture
+	case csvimport.ReasonTooLong:
+		siteapiContactImportIssueReason = site.ContactImportIssueReasonTooLong
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiContactImportIssueReason
+}
+func (c *ConverterImpl) ContactImportIssueToResource(source csvimport.Issue) site.ContactImportIssue {
+	var siteapiContactImportIssue site.ContactImportIssue
+	siteapiContactImportIssue.Column = nilInt32(source.Column)
+	siteapiContactImportIssue.Reason = c.ContactImportIssueReason(source.Reason)
+	siteapiContactImportIssue.Message = source.Message
+	return siteapiContactImportIssue
+}
+func (c *ConverterImpl) ContactImportPreviewRowToResource(source contactimports.PreviewRow) site.ContactImportPreviewRow {
+	var siteapiContactImportPreviewRow site.ContactImportPreviewRow
+	siteapiContactImportPreviewRow.Row = count(source.Row)
+	siteapiContactImportPreviewRow.Cells = make([]string, len(source.Cells))
+	for i := 0; i < len(source.Cells); i++ {
+		siteapiContactImportPreviewRow.Cells[i] = source.Cells[i]
+	}
+	siteapiContactImportPreviewRow.Refusal = contactImportRefusal(c, source.Refusal)
+	siteapiContactImportPreviewRow.Dropped = make([]site.ContactImportIssue, len(source.Dropped))
+	for j := 0; j < len(source.Dropped); j++ {
+		siteapiContactImportPreviewRow.Dropped[j] = c.ContactImportIssueToResource(source.Dropped[j])
+	}
+	siteapiContactImportPreviewRow.Warnings = make([]site.ContactImportWarning, len(source.Warnings))
+	for k := 0; k < len(source.Warnings); k++ {
+		siteapiContactImportPreviewRow.Warnings[k] = c.ContactImportWarning(source.Warnings[k])
+	}
+	return siteapiContactImportPreviewRow
+}
+func (c *ConverterImpl) ContactImportPreviewToResource(source contactimports.Preview) site.SiteContactImportPreview {
+	var siteapiSiteContactImportPreview site.SiteContactImportPreview
+	siteapiSiteContactImportPreview.Rows = make([]site.ContactImportPreviewRow, len(source.Rows))
+	for i := 0; i < len(source.Rows); i++ {
+		siteapiSiteContactImportPreview.Rows[i] = c.ContactImportPreviewRowToResource(source.Rows[i])
+	}
+	siteapiSiteContactImportPreview.TotalRows = count(source.TotalRows)
+	siteapiSiteContactImportPreview.RowsWithoutKey = count(source.RowsWithoutKey)
+	siteapiSiteContactImportPreview.MalformedRows = count(source.MalformedRows)
+	siteapiSiteContactImportPreview.DistinctTags = count(source.DistinctTags)
+	siteapiSiteContactImportPreview.OptOuts = count(source.OptOuts)
+	siteapiSiteContactImportPreview.Suppressions = count(source.Suppressions)
+	siteapiSiteContactImportPreview.NewCustomFields = count(source.NewCustomFields)
+	return siteapiSiteContactImportPreview
+}
+func (c *ConverterImpl) ContactImportRefusal(source csvimport.Refusal) site.ContactImportRefusal {
+	var siteapiContactImportRefusal site.ContactImportRefusal
+	switch source {
+	case csvimport.RefusalBroadcasts:
+		siteapiContactImportRefusal = site.ContactImportRefusalUnsubscribeBroadcasts
+	case csvimport.RefusalEverything:
+		siteapiContactImportRefusal = site.ContactImportRefusalUnsubscribeEverything
+	case csvimport.RefusalSuppression:
+		siteapiContactImportRefusal = site.ContactImportRefusalSuppression
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiContactImportRefusal
+}
+func (c *ConverterImpl) ContactImportRefusalChannel(source channels.Channel) site.ContactImportRefusalChannel {
+	var siteapiContactImportRefusalChannel site.ContactImportRefusalChannel
+	switch source {
+	case channels.Email:
+		siteapiContactImportRefusalChannel = site.ContactImportRefusalChannelEmail
+	case channels.SMS:
+		siteapiContactImportRefusalChannel = site.ContactImportRefusalChannelSMS
+	case channels.Telegram:
+		siteapiContactImportRefusalChannel = site.ContactImportRefusalChannelTelegram
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiContactImportRefusalChannel
+}
+func (c *ConverterImpl) ContactImportReportLink(source contactimports.ReportLink) site.DownloadLink {
+	var siteapiDownloadLink site.DownloadLink
+	siteapiDownloadLink.URL = contactImportReportURL(source)
+	siteapiDownloadLink.ExpiresAt = timestamp(source.ExpiresAt)
+	return siteapiDownloadLink
+}
+func (c *ConverterImpl) ContactImportState(source contactimport.State) site.ContactImportState {
+	var siteapiContactImportState site.ContactImportState
+	switch source {
+	case contactimport.DefaultState:
+		siteapiContactImportState = site.ContactImportStateUploaded
+	case contactimport.StateCancelled:
+		siteapiContactImportState = site.ContactImportStateCancelled
+	case contactimport.StateDone:
+		siteapiContactImportState = site.ContactImportStateDone
+	case contactimport.StateFailed:
+		siteapiContactImportState = site.ContactImportStateFailed
+	case contactimport.StateReady:
+		siteapiContactImportState = site.ContactImportStateReady
+	case contactimport.StateRunning:
+		siteapiContactImportState = site.ContactImportStateRunning
+	// Skipped StateUploaded(uploaded) -> ContactImportStateUploaded(uploaded) because it duplicates DefaultState(uploaded) -> ContactImportStateUploaded(uploaded)
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiContactImportState
+}
+func (c *ConverterImpl) ContactImportToResource(source contactimports.View) site.SiteContactImport {
+	var siteapiSiteContactImport site.SiteContactImport
+	var pInt64 *int64
+	if source.Import != nil {
+		pInt64 = &source.Import.ID
+	}
+	if pInt64 != nil {
+		siteapiSiteContactImport.ID = site.EntityId(*pInt64)
+	}
+	var pContactimportState *contactimport.State
+	if source.Import != nil {
+		pContactimportState = &source.Import.State
+	}
+	if pContactimportState != nil {
+		siteapiSiteContactImport.State = c.ContactImportState(*pContactimportState)
+	}
+	var pContactimportDelimiter *contactimport.Delimiter
+	if source.Import != nil {
+		pContactimportDelimiter = &source.Import.Delimiter
+	}
+	if pContactimportDelimiter != nil {
+		siteapiSiteContactImport.Delimiter = c.ContactImportDelimiter(*pContactimportDelimiter)
+	}
+	var pStringList *[]string
+	if source.Import != nil {
+		pStringList = &source.Import.Header
+	}
+	if pStringList != nil {
+		siteapiSiteContactImport.Header = make([]string, len((*pStringList)))
+		for i := 0; i < len((*pStringList)); i++ {
+			siteapiSiteContactImport.Header[i] = (*pStringList)[i]
+		}
+	}
+	var pInt *int
+	if source.Import != nil {
+		pInt = &source.Import.RowCount
+	}
+	if pInt != nil {
+		siteapiSiteContactImport.Rows = count(*pInt)
+	}
+	var pInt2 *int
+	if source.Import != nil {
+		pInt2 = &source.Import.MalformedRows
+	}
+	if pInt2 != nil {
+		siteapiSiteContactImport.MalformedRows = count(*pInt2)
+	}
+	siteapiSiteContactImport.Mapping = contactImportMapping(c, source)
+	siteapiSiteContactImport.Counts = c.ContactImportCounts(source.Import)
+	siteapiSiteContactImport.ReportRows = count(source.ReportRows)
+	var pTimeTime *time.Time
+	if source.Import != nil {
+		pTimeTime = &source.Import.CreatedAt
+	}
+	siteapiSiteContactImport.CreatedAt = timestampOf(pTimeTime)
+	var pTimeTime2 *time.Time
+	if source.Import != nil {
+		pTimeTime2 = source.Import.StartedAt
+	}
+	siteapiSiteContactImport.StartedAt = nilTimestamp(pTimeTime2)
+	var pTimeTime3 *time.Time
+	if source.Import != nil {
+		pTimeTime3 = source.Import.EndedAt
+	}
+	siteapiSiteContactImport.EndedAt = nilTimestamp(pTimeTime3)
+	var pTimeTime4 *time.Time
+	if source.Import != nil {
+		pTimeTime4 = source.Import.CancelRequestedAt
+	}
+	siteapiSiteContactImport.CancelRequestedAt = nilTimestamp(pTimeTime4)
+	return siteapiSiteContactImport
+}
+func (c *ConverterImpl) ContactImportWarning(source contacts.Warning) site.ContactImportWarning {
+	var siteapiContactImportWarning site.ContactImportWarning
+	switch source {
+	case contacts.WarningConsentTimeInFuture:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	case contacts.WarningDisposableEmail:
+		siteapiContactImportWarning = site.ContactImportWarningDisposableEmail
+	case contacts.WarningKeysNameTwoContacts:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	case contacts.WarningRoleEmail:
+		siteapiContactImportWarning = site.ContactImportWarningRoleEmail
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiContactImportWarning
 }
 func (c *ConverterImpl) ContactToExport(source *ent.Contact) site.ContactExportContact {
 	var siteapiContactExportContact site.ContactExportContact
@@ -1964,6 +2273,8 @@ func (c *ConverterImpl) OptOutViaToResource(source unsubscribe.Via) site.OptOutV
 		siteapiOptOutVia = site.OptOutViaBlock
 	case unsubscribe.ViaButton:
 		siteapiOptOutVia = site.OptOutViaButton
+	case unsubscribe.ViaImported:
+		siteapiOptOutVia = site.OptOutViaImported
 	case unsubscribe.ViaKeyword:
 		siteapiOptOutVia = site.OptOutViaKeyword
 	case unsubscribe.ViaLink:
@@ -2153,6 +2464,8 @@ func (c *ConverterImpl) PermissionToResource(source memberships.Permission) site
 		siteapiPermission = site.PermissionContactsErase
 	case memberships.PermContactsExport:
 		siteapiPermission = site.PermissionContactsExport
+	case memberships.PermContactsImport:
+		siteapiPermission = site.PermissionContactsImport
 	case memberships.PermCustomFieldsManage:
 		siteapiPermission = site.PermissionCustomFieldsManage
 	case memberships.PermHoldsResolve:
@@ -2613,15 +2926,6 @@ func (c *ConverterImpl) RulesToResources(source []*ent.Rule) ([]site.SiteRuleRes
 		siteapiSiteRuleResourceList[i] = siteapiSiteRuleResource
 	}
 	return siteapiSiteRuleResourceList, nil
-}
-func (c *ConverterImpl) SegmentContactsListPage(source pagination.Page[*ent.Contact]) *site.SiteSegmentContactsListOK {
-	var siteapiSiteSegmentContactsListOK site.SiteSegmentContactsListOK
-	siteapiSiteSegmentContactsListOK.Items = c.ContactsToResources(source.Items)
-	siteapiSiteSegmentContactsListOK.Page = count(source.Page)
-	siteapiSiteSegmentContactsListOK.PageSize = count(source.PageSize)
-	siteapiSiteSegmentContactsListOK.TotalItems = count(source.TotalItems)
-	siteapiSiteSegmentContactsListOK.TotalPages = count(source.TotalPages)
-	return &siteapiSiteSegmentContactsListOK
 }
 func (c *ConverterImpl) SegmentToResource(source *ent.Segment) (site.SiteSegmentResource, error) {
 	var siteapiSiteSegmentResource site.SiteSegmentResource
@@ -3680,6 +3984,7 @@ func (c *ConverterImpl) analyticsreportNewPeoplePointToSiteapiSiteNewPeoplePoint
 	siteapiSiteNewPeoplePoint.Manual = count(source.Manual)
 	siteapiSiteNewPeoplePoint.API = count(source.API)
 	siteapiSiteNewPeoplePoint.Tracker = count(source.Tracker)
+	siteapiSiteNewPeoplePoint.Import = count(source.Import)
 	return siteapiSiteNewPeoplePoint
 }
 func (c *ConverterImpl) analyticsreportOwnerClicksToSiteapiSiteAnalyticsLinkOwner(source analyticsreport.OwnerClicks) site.SiteAnalyticsLinkOwner {

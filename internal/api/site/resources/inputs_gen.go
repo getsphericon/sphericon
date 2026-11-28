@@ -14,7 +14,9 @@ import (
 	workspace "github.com/getsphericon/sphericon/ent/workspace"
 	site "github.com/getsphericon/sphericon/gen/site"
 	confirmations "github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
+	contactimports "github.com/getsphericon/sphericon/internal/domain/contacts/contactimports"
 	contacts "github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	contactsexport "github.com/getsphericon/sphericon/internal/domain/contacts/contactsexport"
 	engagementtracking "github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	segments "github.com/getsphericon/sphericon/internal/domain/contacts/segments"
 	brandkits "github.com/getsphericon/sphericon/internal/domain/content/brandkits"
@@ -40,6 +42,7 @@ import (
 	automationstep "github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	channels "github.com/getsphericon/sphericon/internal/kernel/channels"
 	conditiontree "github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	csvimport "github.com/getsphericon/sphericon/internal/kernel/csvimport"
 	datetrigger "github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 	httpheader "github.com/getsphericon/sphericon/internal/kernel/httpheader"
 	localcalendar "github.com/getsphericon/sphericon/internal/kernel/localcalendar"
@@ -377,6 +380,7 @@ func (c *InputsImpl) ConsentEvidence(source *site.ConsentEvidence) confirmations
 		confirmationsEvidence.Wording = (*source).Wording
 		confirmationsEvidence.Source = (*source).Source
 		confirmationsEvidence.Brand = (*source).Brand
+		// confirmationsEvidence.OccurredAt: ignore
 	}
 	return confirmationsEvidence
 }
@@ -409,11 +413,164 @@ func (c *InputsImpl) ContactCreate(source *site.SiteCreateContactInput) contacts
 	}
 	return contactsCreateInput
 }
+func (c *InputsImpl) ContactCsvColumn(source site.ContactCsvColumn) contactsexport.Column {
+	var contactsexportColumn contactsexport.Column
+	switch source {
+	case site.ContactCsvColumnAvatar:
+		contactsexportColumn = contactsexport.ColumnAvatar
+	case site.ContactCsvColumnBirthday:
+		contactsexportColumn = contactsexport.ColumnBirthday
+	case site.ContactCsvColumnCity:
+		contactsexportColumn = contactsexport.ColumnCity
+	case site.ContactCsvColumnCountry:
+		contactsexportColumn = contactsexport.ColumnCountry
+	case site.ContactCsvColumnCreatedAt:
+		contactsexportColumn = contactsexport.ColumnCreatedAt
+	case site.ContactCsvColumnCustomFields:
+		contactsexportColumn = contactsexport.ColumnCustomFields
+	case site.ContactCsvColumnEmail:
+		contactsexportColumn = contactsexport.ColumnEmail
+	case site.ContactCsvColumnEmailChannel:
+		contactsexportColumn = contactsexport.ColumnEmailChannel
+	case site.ContactCsvColumnFirstName:
+		contactsexportColumn = contactsexport.ColumnFirstName
+	case site.ContactCsvColumnLastName:
+		contactsexportColumn = contactsexport.ColumnLastName
+	case site.ContactCsvColumnLocale:
+		contactsexportColumn = contactsexport.ColumnLocale
+	case site.ContactCsvColumnPhone:
+		contactsexportColumn = contactsexport.ColumnPhone
+	case site.ContactCsvColumnSmsChannel:
+		contactsexportColumn = contactsexport.ColumnSMSChannel
+	case site.ContactCsvColumnSource:
+		contactsexportColumn = contactsexport.ColumnSource
+	case site.ContactCsvColumnSubjectId:
+		contactsexportColumn = contactsexport.ColumnSubjectID
+	case site.ContactCsvColumnTags:
+		contactsexportColumn = contactsexport.ColumnTags
+	case site.ContactCsvColumnTelegramChannel:
+		contactsexportColumn = contactsexport.ColumnTelegramChannel
+	case site.ContactCsvColumnTimeZone:
+		contactsexportColumn = contactsexport.ColumnTimeZone
+	case site.ContactCsvColumnUpdatedAt:
+		contactsexportColumn = contactsexport.ColumnUpdatedAt
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return contactsexportColumn
+}
+func (c *InputsImpl) ContactCsvExport(source *site.SiteContactCsvExportInput) contactsexport.LinkInput {
+	var contactsexportLinkInput contactsexport.LinkInput
+	if source != nil {
+		contactsexportLinkInput.SegmentID = entityIDPtrIn((*source).SegmentId)
+		if (*source).Columns != nil {
+			contactsexportLinkInput.Columns = make([]contactsexport.Column, len((*source).Columns))
+			for i := 0; i < len((*source).Columns); i++ {
+				contactsexportLinkInput.Columns[i] = c.ContactCsvColumn((*source).Columns[i])
+			}
+		}
+		// contactsexportLinkInput.Session: ignore
+	}
+	return contactsexportLinkInput
+}
+func (c *InputsImpl) ContactCsvExportFollow(source site.SiteContactCsvExportsDownloadParams) contactsexport.OpenInput {
+	var contactsexportOpenInput contactsexport.OpenInput
+	contactsexportOpenInput.Token = source.Token
+	// contactsexportOpenInput.Session: ignore
+	return contactsexportOpenInput
+}
 func (c *InputsImpl) ContactExport(source site.SiteContactsExportParams) dataexport.OpenInput {
 	var dataexportOpenInput dataexport.OpenInput
 	dataexportOpenInput.ID = entityIDPtrIn(source.ID)
 	dataexportOpenInput.Email = emailPtrIn(source.Email)
 	return dataexportOpenInput
+}
+func (c *InputsImpl) ContactImportConsentChannelIn(source site.ContactImportConsentChannel) channels.Channel {
+	var channelsChannel channels.Channel
+	switch source {
+	case site.ContactImportConsentChannelEmail:
+		channelsChannel = channels.Email
+	case site.ContactImportConsentChannelSMS:
+		channelsChannel = channels.SMS
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return channelsChannel
+}
+func (c *InputsImpl) ContactImportDateFormatIn(source site.ContactImportDateFormat) csvimport.DateFormat {
+	var csvimportDateFormat csvimport.DateFormat
+	switch source {
+	case site.ContactImportDateFormatDdDotMmDotYyyy:
+		csvimportDateFormat = csvimport.DateDMYDot
+	case site.ContactImportDateFormatDdMinusMmMinusYyyy:
+		csvimportDateFormat = csvimport.DateDMYDash
+	case site.ContactImportDateFormatDdSlashMmSlashYyyy:
+		csvimportDateFormat = csvimport.DateDMYSlash
+	case site.ContactImportDateFormatMmDotDdDotYyyy:
+		csvimportDateFormat = csvimport.DateMDYDot
+	case site.ContactImportDateFormatMmMinusDdMinusYyyy:
+		csvimportDateFormat = csvimport.DateMDYDash
+	case site.ContactImportDateFormatMmSlashDdSlashYyyy:
+		csvimportDateFormat = csvimport.DateMDYSlash
+	case site.ContactImportDateFormatRfc3339:
+		csvimportDateFormat = csvimport.DateTimeRFC3339
+	case site.ContactImportDateFormatYyyyMinusMmMinusDd:
+		csvimportDateFormat = csvimport.DateISO
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return csvimportDateFormat
+}
+func (c *InputsImpl) ContactImportMapping(source *site.ContactImportMappingInput) contactimports.MappingInput {
+	var contactimportsMappingInput contactimports.MappingInput
+	if source != nil {
+		contactimportsMappingInput.Mapping = contactImportMappingIn(c, source)
+		contactimportsMappingInput.OnlyAddNew = (*source).OnlyAddNew
+		contactimportsMappingInput.AsNewSignUps = (*source).AsNewSignUps
+		// contactimportsMappingInput.Role: ignore
+	}
+	return contactimportsMappingInput
+}
+func (c *InputsImpl) ContactImportRefusalChannelIn(source site.ContactImportRefusalChannel) channels.Channel {
+	var channelsChannel channels.Channel
+	switch source {
+	case site.ContactImportRefusalChannelEmail:
+		channelsChannel = channels.Email
+	case site.ContactImportRefusalChannelSMS:
+		channelsChannel = channels.SMS
+	case site.ContactImportRefusalChannelTelegram:
+		channelsChannel = channels.Telegram
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return channelsChannel
+}
+func (c *InputsImpl) ContactImportRefusalIn(source site.ContactImportRefusal) csvimport.Refusal {
+	var csvimportRefusal csvimport.Refusal
+	switch source {
+	case site.ContactImportRefusalSuppression:
+		csvimportRefusal = csvimport.RefusalSuppression
+	case site.ContactImportRefusalUnsubscribeBroadcasts:
+		csvimportRefusal = csvimport.RefusalBroadcasts
+	case site.ContactImportRefusalUnsubscribeEverything:
+		csvimportRefusal = csvimport.RefusalEverything
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return csvimportRefusal
+}
+func (c *InputsImpl) ContactImportReport(source site.SiteContactImportsReportParams) contactimports.ReportInput {
+	var contactimportsReportInput contactimports.ReportInput
+	contactimportsReportInput.ImportID = int64(source.ImportId)
+	contactimportsReportInput.Token = source.Token
+	// contactimportsReportInput.Session: ignore
+	return contactimportsReportInput
+}
+func (c *InputsImpl) ContactImportUpload(source site.SiteContactImportsUploadReq) contactimports.UploadInput {
+	var contactimportsUploadInput contactimports.UploadInput
+	contactimportsUploadInput.File = fileIn(source.Data)
+	// contactimportsUploadInput.MembershipID: ignore
+	return contactimportsUploadInput
 }
 func (c *InputsImpl) ContactUpdate(source *site.SiteUpdateContactInput) contacts.UpdateInput {
 	var contactsUpdateInput contacts.UpdateInput
@@ -982,6 +1139,13 @@ func (c *InputsImpl) SecondFactorRequire(source *site.RevisionInput) workspacevi
 		// workspaceviewSetSecondFactorRequirementInput.Required: ignore
 	}
 	return workspaceviewSetSecondFactorRequirementInput
+}
+func (c *InputsImpl) SegmentContactsPage(source site.SiteSegmentContactsListParams) segments.PageInput {
+	var segmentsPageInput segments.PageInput
+	segmentsPageInput.SegmentID = int64(source.SegmentId)
+	segmentsPageInput.Cursor = stringIn(source.Cursor)
+	segmentsPageInput.Limit = limitIn(source.Limit)
+	return segmentsPageInput
 }
 func (c *InputsImpl) SegmentCreate(source *site.CreateSegmentInput) (segments.CreateInput, error) {
 	var segmentsCreateInput segments.CreateInput

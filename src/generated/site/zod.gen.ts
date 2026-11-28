@@ -102,6 +102,7 @@ export const zAuditAction = z.enum([
   'workspace.send_cap_change',
   'workspace.sending_rules_change',
   'contact.import',
+  'contact.export',
   'audit_log.export',
   'webhook_endpoint.test',
   'api_token.create',
@@ -381,13 +382,418 @@ export const zContactAttribute = z.enum([
 ]);
 
 /**
+ * A choice of columns of the CSV export of contacts. A key or a core attribute is one column, under
+ * its own name. `customFields` is a column per custom field of the workspace, `customFields.<key>`,
+ * in the order of the keys. `tags` is one column holding the contact's tag names as one CSV record.
+ * A channel (`email`, `sms`, `telegram`) is six columns of its state as a broadcast meets it:
+ * `<channel>.state` (`may_receive`, `needs_confirmation`, `opted_out`, `suppressed`, empty for no
+ * destination), `<channel>.optedOutScopes` (one CSV record of the scopes opted out of:
+ * `everything`, `broadcasts`, `automation:<id>`), `<channel>.optedOutAt` (the latest of them),
+ * `<channel>.suppressionReason`, `<channel>.confirmation` (its provenance) and
+ * `<channel>.confirmedAt`. Times are RFC 3339 in UTC. The headers are the import's own, so an
+ * export maps onto an import by itself.
+ */
+export const zContactCsvColumn = z.enum([
+  'subjectId',
+  'email',
+  'phone',
+  'firstName',
+  'lastName',
+  'timeZone',
+  'country',
+  'locale',
+  'birthday',
+  'city',
+  'avatar',
+  'source',
+  'createdAt',
+  'updatedAt',
+  'customFields',
+  'tags',
+  'emailChannel',
+  'smsChannel',
+  'telegramChannel'
+]);
+
+/**
  * How the contact first came to exist
  */
 export const zContactExportSource = z.enum([
   'manual',
   'api',
-  'tracker'
+  'tracker',
+  'import'
 ]);
+
+/**
+ * A core attribute a column of an import writes, by the contract's name (ADR 0072)
+ */
+export const zContactImportAttribute = z.enum([
+  'firstName',
+  'lastName',
+  'timeZone',
+  'country',
+  'locale',
+  'city',
+  'avatar',
+  'birthday'
+]);
+
+/**
+ * The Channel of a consent or Engagement tracking column: its Destination is the row's email address or phone
+ */
+export const zContactImportConsentChannel = z.enum(['email', 'sms']);
+
+/**
+ * The evidence of the consent a consent column records (ADR 0077): each part given once for every
+ * row as text, or read from the column it names on each row, exactly one of the two. A proposal
+ * leaves a part it has no source for null in both (the wording and brand of an export's
+ * Confirmations), and the mapping is not saved until the Member gives it
+ */
+export const zContactImportConsentEvidence = z.object({
+  wording: z.string().max(2000).nullable(),
+  wordingColumn: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
+  source: z.string().max(500).nullable(),
+  sourceColumn: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
+  brand: z.string().max(255).nullable(),
+  brandColumn: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable()
+});
+
+/**
+ * A column of the consent the Workspace collected: a row whose cell is one of the listed values
+ * records an imported Confirmation of its Destination on the Channel, which lifts no refusal; any
+ * other value records nothing
+ */
+export const zContactImportConsentColumn = z.object({
+  kind: z.enum(['consent']),
+  channel: zContactImportConsentChannel,
+  values: z.array(z.string()).min(1).max(50),
+  evidence: zContactImportConsentEvidence
+});
+
+/**
+ * The evidence of the consent a consent column records (ADR 0077): each part given once for every
+ * row as text, or read from the column it names on each row, exactly one of the two. A proposal
+ * leaves a part it has no source for null in both (the wording and brand of an export's
+ * Confirmations), and the mapping is not saved until the Member gives it
+ */
+export const zContactImportConsentEvidenceInput = z.strictObject({
+  wording: z.string().max(2000).nullable(),
+  wordingColumn: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
+  source: z.string().max(500).nullable(),
+  sourceColumn: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
+  brand: z.string().max(255).nullable(),
+  brandColumn: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable()
+});
+
+/**
+ * A column of the consent the Workspace collected, as a request writes it
+ */
+export const zContactImportConsentColumnInput = z.strictObject({
+  kind: z.enum(['consent']),
+  channel: zContactImportConsentChannel,
+  values: z.array(z.string()).min(1).max(50),
+  evidence: zContactImportConsentEvidenceInput
+});
+
+/**
+ * What an import's run has written so far
+ */
+export const zContactImportCounts = z.object({
+  processed: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  created: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  updated: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  refused: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  dropped: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  optedOut: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  suppressed: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
+ * How a column writes its dates, which the Member chooses (ADR 0138): a date by the order of its
+ * day, month and year and their separator, or `rfc3339` for a date and time with its offset. A date
+ * without an offset is read in the Workspace time zone.
+ */
+export const zContactImportDateFormat = z.enum([
+  'yyyy-mm-dd',
+  'dd/mm/yyyy',
+  'dd.mm.yyyy',
+  'dd-mm-yyyy',
+  'mm/dd/yyyy',
+  'mm.dd.yyyy',
+  'mm-dd-yyyy',
+  'rfc3339'
+]);
+
+/**
+ * A column whose cells write a core attribute
+ */
+export const zContactImportAttributeColumn = z.object({
+  kind: z.enum(['attribute']),
+  attribute: zContactImportAttribute,
+  dateFormat: zContactImportDateFormat.nullable()
+});
+
+/**
+ * A column whose cells write a core attribute
+ */
+export const zContactImportAttributeColumnInput = z.strictObject({
+  kind: z.enum(['attribute']),
+  attribute: zContactImportAttribute,
+  dateFormat: zContactImportDateFormat.nullable()
+});
+
+/**
+ * A column whose cells write a Custom field the Workspace has, by its key
+ */
+export const zContactImportCustomFieldColumn = z.object({
+  kind: z.enum(['customField']),
+  key: z.string(),
+  dateFormat: zContactImportDateFormat.nullable()
+});
+
+/**
+ * A column whose cells write a Custom field the Workspace has, by its key
+ */
+export const zContactImportCustomFieldColumnInput = z.strictObject({
+  kind: z.enum(['customField']),
+  key: z.string(),
+  dateFormat: zContactImportDateFormat.nullable()
+});
+
+/**
+ * The character a file's numbers write their decimals after: a point (`.`) or a comma (`,`)
+ */
+export const zContactImportDecimalSeparator = z.enum(['point', 'comma']);
+
+/**
+ * The character a file's cells are separated by, detected at upload
+ */
+export const zContactImportDelimiter = z.enum([
+  'comma',
+  'semicolon',
+  'tab'
+]);
+
+/**
+ * A column of Engagement tracking consent (ADR 0120): a row whose cell is one of the granted values
+ * records a grant at its Destination on the Channel, one of the denied values a refusal; any other
+ * value records nothing
+ */
+export const zContactImportEngagementTrackingColumn = z.object({
+  kind: z.enum(['engagementTracking']),
+  channel: zContactImportConsentChannel,
+  granted: z.array(z.string()).max(50),
+  denied: z.array(z.string()).max(50)
+});
+
+/**
+ * A column of Engagement tracking consent (ADR 0120): a row whose cell is one of the granted values
+ * records a grant at its Destination on the Channel, one of the denied values a refusal; any other
+ * value records nothing
+ */
+export const zContactImportEngagementTrackingColumnInput = z.strictObject({
+  kind: z.enum(['engagementTracking']),
+  channel: zContactImportConsentChannel,
+  granted: z.array(z.string()).max(50),
+  denied: z.array(z.string()).max(50)
+});
+
+/**
+ * A column the import does not read
+ */
+export const zContactImportIgnoreColumn = z.object({
+  kind: z.enum(['ignore'])
+});
+
+/**
+ * A column the import does not read
+ */
+export const zContactImportIgnoreColumnInput = z.strictObject({
+  kind: z.enum(['ignore'])
+});
+
+/**
+ * Why a value or a row of an import is not written
+ */
+export const zContactImportIssueReason = z.enum([
+  'noKey',
+  'cellCount',
+  'refused',
+  'tooLong',
+  'notNumber',
+  'notBoolean',
+  'notDate',
+  'notPhone',
+  'notEmail',
+  'notTimeZone',
+  'notCountry',
+  'notLocale',
+  'notImageUrl',
+  'notTag',
+  'noTime',
+  'timeInFuture',
+  'noDestination',
+  'noEvidence',
+  'refusalNotRecorded',
+  'keysNameTwoContacts'
+]);
+
+/**
+ * A value or a row of an import that is not written, or a row written with a warning, and why
+ */
+export const zContactImportIssue = z.object({
+  column: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
+  reason: zContactImportIssueReason,
+  message: z.string()
+});
+
+/**
+ * An alias key a column of an import fills, by the contract's name (ADR 0002)
+ */
+export const zContactImportKey = z.enum([
+  'subjectId',
+  'email',
+  'phone'
+]);
+
+/**
+ * A column whose cells fill an alias key
+ */
+export const zContactImportKeyColumn = z.object({
+  kind: z.enum(['key']),
+  key: zContactImportKey
+});
+
+/**
+ * A column whose cells fill an alias key
+ */
+export const zContactImportKeyColumnInput = z.strictObject({
+  kind: z.enum(['key']),
+  key: zContactImportKey
+});
+
+/**
+ * What a value of a refusal column records: an Unsubscribe of `everything` or of `broadcasts`
+ * (not on SMS, where a person stops everything), recorded as imported, which only the person can lift; or a Suppression of the
+ * `manual` reason, which needs `suppressions:manage`
+ */
+export const zContactImportRefusal = z.enum([
+  'unsubscribeEverything',
+  'unsubscribeBroadcasts',
+  'suppression'
+]);
+
+/**
+ * The Channel of a refusal column: its Destination is the row's email address or phone, or on Telegram the users of the Contact's Bindings
+ */
+export const zContactImportRefusalChannel = z.enum([
+  'email',
+  'sms',
+  'telegram'
+]);
+
+/**
+ * A cell value of a refusal column and what it records
+ */
+export const zContactImportRefusalValue = z.object({
+  value: z.string().min(1).max(255),
+  refusal: zContactImportRefusal
+});
+
+/**
+ * A column of the old platform's refusals: a row whose cell is one of the listed values records
+ * that refusal at its Destination on the Channel, whether its Contact is new or not; any other
+ * value records nothing
+ */
+export const zContactImportRefusalColumn = z.object({
+  kind: z.enum(['refusal']),
+  channel: zContactImportRefusalChannel,
+  values: z.array(zContactImportRefusalValue).min(1).max(50)
+});
+
+/**
+ * A cell value of a refusal column and what it records
+ */
+export const zContactImportRefusalValueInput = z.strictObject({
+  value: z.string().min(1).max(255),
+  refusal: zContactImportRefusal
+});
+
+/**
+ * A column of the old platform's refusals, as a request writes it
+ */
+export const zContactImportRefusalColumnInput = z.strictObject({
+  kind: z.enum(['refusal']),
+  channel: zContactImportRefusalChannel,
+  values: z.array(zContactImportRefusalValueInput).min(1).max(50)
+});
+
+/**
+ * Where an import stands: `uploaded` until a mapping is saved, `ready` to run, `running` while its
+ * job writes the rows, then `done`; `cancelled` and `failed` end it early, keeping what it wrote.
+ */
+export const zContactImportState = z.enum([
+  'uploaded',
+  'ready',
+  'running',
+  'cancelled',
+  'failed',
+  'done'
+]);
+
+/**
+ * A column whose cells name the Tags a row adds, separated by commas; a Tag holding a comma is quoted
+ */
+export const zContactImportTagsColumn = z.object({
+  kind: z.enum(['tags'])
+});
+
+/**
+ * A column whose cells name the Tags a row adds, separated by commas; a Tag holding a comma is quoted
+ */
+export const zContactImportTagsColumnInput = z.strictObject({
+  kind: z.enum(['tags'])
+});
+
+/**
+ * A column of when the fact of a refusal, consent or Engagement tracking column occurred (ADR
+ * 0154), so an older fact does not override a newer one: a time blank, unreadable or later than the
+ * run is dropped and reported, and the fact recorded as occurring now
+ */
+export const zContactImportTimeColumn = z.object({
+  kind: z.enum(['time']),
+  of: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
+  dateFormat: zContactImportDateFormat.nullable()
+});
+
+/**
+ * A column of when the fact of a refusal, consent or Engagement tracking column occurred (ADR
+ * 0154), so an older fact does not override a newer one: a time blank, unreadable or later than the
+ * run is dropped and reported, and the fact recorded as occurring now
+ */
+export const zContactImportTimeColumnInput = z.strictObject({
+  kind: z.enum(['time']),
+  of: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
+  dateFormat: zContactImportDateFormat.nullable()
+});
+
+/**
+ * A trait of a previewed row worth a look; the row is written all the same. `disposable_email` and
+ * `role_email` are ADR 0117's verdicts on its address.
+ */
+export const zContactImportWarning = z.enum(['disposable_email', 'role_email']);
+
+/**
+ * A row of the file as the import would write it
+ */
+export const zContactImportPreviewRow = z.object({
+  row: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  cells: z.array(z.string()),
+  refusal: zContactImportIssue.nullable(),
+  dropped: z.array(zContactImportIssue),
+  warnings: z.array(zContactImportWarning)
+});
 
 /**
  * An ISO 3166-1 alpha-2 country code, upper case (`US`, `DE`)
@@ -1032,6 +1438,88 @@ export const zApplyTagInput = z.strictObject({
 });
 
 /**
+ * A column whose cells write a Custom field the import creates (ADR 0138): its key, its label and
+ * the type the Member chooses, created when the import runs. Mapping one needs
+ * `custom_fields:manage`; a key the Workspace has already is refused.
+ */
+export const zContactImportNewCustomFieldColumn = z.object({
+  kind: z.enum(['newCustomField']),
+  key: z.string(),
+  label: zName,
+  type: zCustomFieldType,
+  dateFormat: zContactImportDateFormat.nullable()
+});
+
+/**
+ * What a column of the file is, by `kind`
+ */
+export const zContactImportColumn = z.discriminatedUnion('kind', [
+  zContactImportKeyColumn.extend({ kind: z.literal('key') }),
+  zContactImportAttributeColumn.extend({ kind: z.literal('attribute') }),
+  zContactImportCustomFieldColumn.extend({ kind: z.literal('customField') }),
+  zContactImportNewCustomFieldColumn.extend({ kind: z.literal('newCustomField') }),
+  zContactImportTagsColumn.extend({ kind: z.literal('tags') }),
+  zContactImportIgnoreColumn.extend({ kind: z.literal('ignore') }),
+  zContactImportRefusalColumn.extend({ kind: z.literal('refusal') }),
+  zContactImportConsentColumn.extend({ kind: z.literal('consent') }),
+  zContactImportEngagementTrackingColumn.extend({ kind: z.literal('engagementTracking') }),
+  zContactImportTimeColumn.extend({ kind: z.literal('time') })
+]);
+
+/**
+ * How an import reads its file: what each column is, and the choices that hold for every row
+ */
+export const zContactImportMapping = z.object({
+  columns: z.array(zContactImportColumn),
+  decimalSeparator: zContactImportDecimalSeparator,
+  defaultCountry: zCountryCode.nullable(),
+  tag: zName.nullable(),
+  onlyAddNew: z.boolean(),
+  asNewSignUps: z.boolean()
+});
+
+/**
+ * A column whose cells write a Custom field the import creates (ADR 0138): its key, its label and
+ * the type the Member chooses, created when the import runs. Mapping one needs
+ * `custom_fields:manage`; a key the Workspace has already is refused.
+ */
+export const zContactImportNewCustomFieldColumnInput = z.strictObject({
+  kind: z.enum(['newCustomField']),
+  key: z.string(),
+  label: zName,
+  type: zCustomFieldType,
+  dateFormat: zContactImportDateFormat.nullable()
+});
+
+/**
+ * What a column of the file is, by `kind`, as a request writes it
+ */
+export const zContactImportColumnInput = z.discriminatedUnion('kind', [
+  zContactImportKeyColumnInput.extend({ kind: z.literal('key') }),
+  zContactImportAttributeColumnInput.extend({ kind: z.literal('attribute') }),
+  zContactImportCustomFieldColumnInput.extend({ kind: z.literal('customField') }),
+  zContactImportNewCustomFieldColumnInput.extend({ kind: z.literal('newCustomField') }),
+  zContactImportTagsColumnInput.extend({ kind: z.literal('tags') }),
+  zContactImportIgnoreColumnInput.extend({ kind: z.literal('ignore') }),
+  zContactImportRefusalColumnInput.extend({ kind: z.literal('refusal') }),
+  zContactImportConsentColumnInput.extend({ kind: z.literal('consent') }),
+  zContactImportEngagementTrackingColumnInput.extend({ kind: z.literal('engagementTracking') }),
+  zContactImportTimeColumnInput.extend({ kind: z.literal('time') })
+]);
+
+/**
+ * How an import reads its file, as a request writes it
+ */
+export const zContactImportMappingInput = z.strictObject({
+  columns: z.array(zContactImportColumnInput).max(200),
+  decimalSeparator: zContactImportDecimalSeparator,
+  defaultCountry: zCountryCode.nullable(),
+  tag: zName.nullable(),
+  onlyAddNew: z.boolean(),
+  asNewSignUps: z.boolean()
+});
+
+/**
  * Request body for creating a template
  */
 export const zCreateTemplateInput = z.strictObject({
@@ -1080,7 +1568,7 @@ export const zOnceEnrollmentOccurrence = z.object({
 });
 
 /**
- * How a person stopped on a Channel other than email (ADR 0077): a STOP keyword or `/stop` (keyword), a message's unsubscribe button (button) or link (link), a blocked bot (block), a send the provider refused because the person had stopped at the provider (refused_send), or an opt-out recorded by hand in the app or through the API, which reached the Workspace by another route (manual)
+ * How a person stopped on a Channel other than email (ADR 0077): a STOP keyword or `/stop` (keyword), a message's unsubscribe button (button) or link (link), a blocked bot (block), a send the provider refused because the person had stopped at the provider (refused_send), an opt-out recorded by hand in the app or through the API, which reached the Workspace by another route (manual), or one brought by an import from another platform (imported)
  */
 export const zOptOutVia = z.enum([
   'keyword',
@@ -1088,7 +1576,8 @@ export const zOptOutVia = z.enum([
   'block',
   'link',
   'refused_send',
-  'manual'
+  'manual',
+  'imported'
 ]);
 
 /**
@@ -1107,6 +1596,7 @@ export const zPermission = z.enum([
   'sending_domains:manage',
   'contacts:erase',
   'contacts:export',
+  'contacts:import',
   'custom_fields:manage',
   'suppressions:manage',
   'second_factor:manage',
@@ -1903,6 +2393,14 @@ export const zSiteConfirmationEmailResource = z.object({
 });
 
 /**
+ * What to export: a segment's contacts, or all of them, with the columns chosen
+ */
+export const zSiteContactCsvExportInput = z.strictObject({
+  segmentId: zEntityId.exactOptional(),
+  columns: z.array(zContactCsvColumn)
+});
+
+/**
  * What a Workspace holds for one email address, as counts only (a Privacy request lookup). Nothing held is all zeros and `contactHeld: false`.
  */
 export const zSiteContactHoldings = z.object({
@@ -1912,6 +2410,20 @@ export const zSiteContactHoldings = z.object({
   unsubscribes: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   suppressions: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   capturedMessages: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
+ * What an import would do with its saved mapping (ADR 0138): its first rows, and counts over the whole file
+ */
+export const zSiteContactImportPreview = z.object({
+  rows: z.array(zContactImportPreviewRow).max(20),
+  totalRows: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  rowsWithoutKey: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  malformedRows: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  distinctTags: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  optOuts: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  suppressions: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  newCustomFields: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
 });
 
 /**
@@ -2096,7 +2608,8 @@ export const zSiteNewPeoplePoint = z.object({
   date: z.string(),
   manual: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   api: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  tracker: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+  tracker: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  import: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
 });
 
 /**
@@ -3906,6 +4419,14 @@ export const zContactExportDocument = z.object({
 });
 
 /**
+ * A link a browser follows once, in the session that asked for it, within a minute
+ */
+export const zDownloadLink = z.object({
+  url: z.string(),
+  expiresAt: zTimestamp
+});
+
+/**
  * The Engagement tracking consent of one Destination on one Channel (ADR 0120)
  */
 export const zEngagementTrackingConsent = z.object({
@@ -4222,6 +4743,33 @@ export const zSiteConnectionResource = z.object({
 });
 
 /**
+ * A one-time link to the file: it works once, for the session that asked for it, within a minute
+ */
+export const zSiteContactCsvExportLink = z.object({
+  url: z.string(),
+  expiresAt: zTimestamp
+});
+
+/**
+ * A CSV import of Contacts (ADR 0138): its file's facts, its mapping and how far its run is
+ */
+export const zSiteContactImport = z.object({
+  id: zEntityId,
+  state: zContactImportState,
+  delimiter: zContactImportDelimiter,
+  header: z.array(z.string()),
+  rows: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  malformedRows: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  mapping: zContactImportMapping,
+  counts: zContactImportCounts,
+  reportRows: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  createdAt: zTimestamp,
+  startedAt: zTimestamp.nullable(),
+  endedAt: zTimestamp.nullable(),
+  cancelRequestedAt: zTimestamp.nullable()
+});
+
+/**
  * Contact resource used by the site UI
  */
 export const zSiteContactResource = z.object({
@@ -4460,6 +5008,14 @@ export const zSitePersonalTokenResource = z.object({
 export const zSiteCreatePersonalTokenResponse = z.object({
   token: z.string(),
   resource: zSitePersonalTokenResource
+});
+
+/**
+ * A page of the contacts a segment matches
+ */
+export const zSiteSegmentContactList = z.object({
+  items: z.array(zSiteContactResource),
+  nextCursor: z.string().nullable().exactOptional()
 });
 
 /**
@@ -7882,6 +8438,111 @@ export const zSiteConnectionsDeletePath = z.object({
  */
 export const zSiteConnectionsDeleteResponse = z.void();
 
+export const zSiteContactCsvExportsCreateBody = zSiteContactCsvExportInput;
+
+export const zSiteContactCsvExportsCreatePath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded and a new resource has been created as a result.
+ */
+export const zSiteContactCsvExportsCreateResponse = zSiteContactCsvExportLink;
+
+export const zSiteContactCsvExportsDownloadPath = z.object({
+  workspaceId: zWorkspaceId,
+  token: z.string()
+});
+
+/**
+ * The CSV file of the export, streamed as it is read
+ */
+export const zSiteContactCsvExportsDownloadResponse = z.instanceof(Blob);
+
+export const zSiteContactImportsUploadBody = z.instanceof(Blob);
+
+export const zSiteContactImportsUploadPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteContactImportsUploadResponse = zSiteContactImport;
+
+export const zSiteContactImportsGetPath = z.object({
+  workspaceId: zWorkspaceId,
+  importId: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteContactImportsGetResponse = zSiteContactImport;
+
+export const zSiteContactImportsCancelPath = z.object({
+  workspaceId: zWorkspaceId,
+  importId: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteContactImportsCancelResponse = zSiteContactImport;
+
+export const zSiteContactImportsSaveMappingBody = zContactImportMappingInput;
+
+export const zSiteContactImportsSaveMappingPath = z.object({
+  workspaceId: zWorkspaceId,
+  importId: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteContactImportsSaveMappingResponse = zSiteContactImport;
+
+export const zSiteContactImportsPreviewPath = z.object({
+  workspaceId: zWorkspaceId,
+  importId: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteContactImportsPreviewResponse = zSiteContactImportPreview;
+
+export const zSiteContactImportsReportLinkPath = z.object({
+  workspaceId: zWorkspaceId,
+  importId: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteContactImportsReportLinkResponse = zDownloadLink;
+
+export const zSiteContactImportsReportPath = z.object({
+  workspaceId: zWorkspaceId,
+  importId: zEntityId,
+  token: z.string()
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteContactImportsReportResponse = z.instanceof(Blob);
+
+export const zSiteContactImportsRunPath = z.object({
+  workspaceId: zWorkspaceId,
+  importId: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteContactImportsRunResponse = zSiteContactImport;
+
 export const zSiteContactsListPath = z.object({
   workspaceId: zWorkspaceId
 });
@@ -8582,20 +9243,14 @@ export const zSiteSegmentContactsListPath = z.object({
 });
 
 export const zSiteSegmentContactsListQuery = z.object({
-  page: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
-  pageSize: z.int().gte(1).lte(100).optional().default(25)
+  cursor: z.string().exactOptional(),
+  limit: z.int().gte(1).lte(100).optional().default(25)
 });
 
 /**
- * Paginated response
+ * The request has succeeded.
  */
-export const zSiteSegmentContactsListResponse = z.object({
-  items: z.array(zSiteContactResource),
-  page: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  totalItems: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  totalPages: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
-});
+export const zSiteSegmentContactsListResponse = zSiteSegmentContactList;
 
 export const zSiteSendingDomainsListPath = z.object({
   workspaceId: zWorkspaceId

@@ -16,7 +16,9 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contactimports"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contactsexport"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
 	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
@@ -43,6 +45,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
+	"github.com/getsphericon/sphericon/internal/kernel/csvimport"
 	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 	"github.com/getsphericon/sphericon/internal/kernel/localcalendar"
@@ -212,6 +215,8 @@ type Inputs interface {
 	TemplateCreate(source *siteapi.CreateTemplateInput) emailtemplates.CreateInput
 	TemplateUpdate(source *siteapi.UpdateTemplateInput) emailtemplates.UpdateInput
 
+	// The app records SMS consent as given now: it states no time.
+	// goverter:ignore OccurredAt
 	ConsentEvidence(source *siteapi.ConsentEvidence) confirmations.Evidence
 	// A member's Engagement tracking observation of one of a Contact's Destinations (ADR 0120).
 	EngagementTrackingByMember(source *siteapi.SiteRecordEngagementTrackingInput) engagementtracking.MemberInput
@@ -251,6 +256,21 @@ type Inputs interface {
 	SkippedEntriesFilter(source siteapi.SiteSkippedEntriesListParams) automations.SkippedEntriesFilter
 	// The Contact a Data export names by its id or its email.
 	ContactExport(source siteapi.SiteContactsExportParams) dataexport.OpenInput
+	// The page of a Segment's Contacts a list reads after its cursor (ADR 0138).
+	// goverter:map SegmentId SegmentID
+	// goverter:map Cursor | stringIn
+	// goverter:map Limit | limitIn
+	SegmentContactsPage(source siteapi.SiteSegmentContactsListParams) segments.PageInput
+	// The Contacts a CSV export takes and its columns (ADR 0138). The session is the request's,
+	// which the handler assigns.
+	// goverter:map SegmentId SegmentID
+	// goverter:ignore Session
+	ContactCsvExport(source *siteapi.SiteContactCsvExportInput) contactsexport.LinkInput
+	// goverter:enum:transform value
+	ContactCsvColumn(source siteapi.ContactCsvColumn) contactsexport.Column
+	// The link of a CSV export followed. The session is the request's, which the handler assigns.
+	// goverter:ignore Session
+	ContactCsvExportFollow(source siteapi.SiteContactCsvExportsDownloadParams) contactsexport.OpenInput
 
 	WebhookCreate(source *siteapi.CreateWebhookInput) webhookendpoints.CreateInput
 	WebhookUpdate(source *siteapi.UpdateWebhookInput) webhookendpoints.UpdateInput
@@ -339,6 +359,26 @@ type Inputs interface {
 	// The Membership changed is the path's, not the request's: the handler sets it.
 	// goverter:ignore ID
 	MembershipRoleChange(source *siteapi.SiteUpdateMembershipInput) memberships.ChangeRoleInput
+	// The Member who uploads is the caller, whose Membership the handler sets.
+	// goverter:map Data File | fileIn
+	// goverter:ignore MembershipID
+	ContactImportUpload(source siteapi.SiteContactImportsUploadReq) contactimports.UploadInput
+	// The role a mapping is saved with is the caller's, which the handler sets.
+	// goverter:map . Mapping | contactImportMappingIn
+	// The Role of the Member who saves is the caller's, which the handler sets.
+	// goverter:ignore Role
+	ContactImportMapping(source *siteapi.ContactImportMappingInput) contactimports.MappingInput
+	// The session a link is followed in is the request's, which the handler sets.
+	// goverter:ignore Session
+	ContactImportReport(source siteapi.SiteContactImportsReportParams) contactimports.ReportInput
+	// goverter:enum:transform value
+	ContactImportDateFormatIn(source siteapi.ContactImportDateFormat) csvimport.DateFormat
+	// goverter:enum:transform value
+	ContactImportRefusalIn(source siteapi.ContactImportRefusal) csvimport.Refusal
+	// goverter:enum:transform value
+	ContactImportRefusalChannelIn(source siteapi.ContactImportRefusalChannel) channels.Channel
+	// goverter:enum:transform value
+	ContactImportConsentChannelIn(source siteapi.ContactImportConsentChannel) channels.Channel
 	// The optional consent changed is the path's key, not the request's: the handler sets it.
 	// goverter:ignore Key
 	OptionalConsentChange(source *siteapi.SiteOptionalConsentChange) consentrecords.SetOptionalConsentInput
@@ -1061,3 +1101,6 @@ func revisionPtrIn(v siteapi.Revision) *int64 {
 	r := int64(v)
 	return &r
 }
+
+// limitIn is a page's size, 0 when the request names none.
+func limitIn(o siteapi.OptInt32) int { return int(o.Or(0)) }

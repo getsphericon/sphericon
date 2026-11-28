@@ -25,6 +25,8 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -238,4 +240,23 @@ func TestExternalContactsExportNeedsExactlyOneIdentifier(t *testing.T) {
 		Email: externalapi.NewOptEmailAddress(fixtures.ContactExportSubjectEmail),
 	})
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
+}
+
+// An export through a token is audited as contact.export, naming the Contact (ADR 0022).
+func TestExternalContactsExportIsAudited(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.ExternalScoped(t, apitokens.ScopeContactsExport)
+
+	_, err := c.ContactsExport(t.Context(), externalapi.ContactsExportParams{
+		ID: externalapi.NewOptEntityId(entityIDString(fixtures.ContactExportSubjectID)),
+	})
+	require.NoError(t, err)
+	entries := lo.Filter(testhelper.Queued[*events.AuditEntry](t, env, events.NameAuditEntry), func(e *events.AuditEntry, _ int) bool {
+		return e.Action == events.ActionContactExport
+	})
+
+	require.Len(t, entries, 1)
+	assert.Equal(t, contact.Label, entries[0].TargetType)
+	assert.Equal(t, publicid.Encode(fixtures.ContactExportSubjectID), entries[0].TargetID)
+	assert.Equal(t, events.ActorAPIToken, entries[0].Actor.Kind)
 }

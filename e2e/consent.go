@@ -178,3 +178,18 @@ func (w *Workspace) ConfirmFromEmail(msg Message) {
 	err := w.anonymousSite().SitePublicConfirmationsPerform(w.t.Context(), siteapi.SitePublicConfirmationsPerformParams{Token: token})
 	require.NoError(w.t, err, "the confirmation page's Confirm")
 }
+
+// ImportRefusals imports a CSV file of Contacts as ImportCSV does, but with its column at mapped
+// as a refusal column of email: a cell that is one of values records an Unsubscribe of
+// everything, `via: imported` (ADR 0138). It returns the import as it ended.
+func (w *Workspace) ImportRefusals(file string, at int, values ...string) *siteapi.SiteContactImport {
+	w.t.Helper()
+	return w.importCSV(file, func(m *siteapi.ContactImportMappingInput) {
+		m.Columns[at] = siteapi.ContactImportColumnInput{OneOf: siteapi.NewContactImportRefusalColumnInputContactImportColumnInputSum(siteapi.ContactImportRefusalColumnInput{
+			Kind: siteapi.ContactImportRefusalColumnInputKindRefusal, Channel: siteapi.ContactImportRefusalChannelEmail,
+			Values: lo.Map(values, func(v string, _ int) siteapi.ContactImportRefusalValueInput {
+				return siteapi.ContactImportRefusalValueInput{Value: v, Refusal: siteapi.ContactImportRefusalUnsubscribeEverything}
+			}),
+		})}
+	})
+}

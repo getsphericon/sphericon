@@ -291,3 +291,8 @@ func newFiringsStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.O2M, false, FiringsTable, FiringsColumn),
 	)
 }
+
+// Values is every value of the Status enum, in the schema's order.
+func (Status) Values() []string {
+	return []string{"active", "inactive"}
+}

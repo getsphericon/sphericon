@@ -103,13 +103,9 @@ func (m *Module) Check(ctx context.Context, s *ent.Scoped, in CheckInput) (Decis
 			sel.SelectExpr(sql.ExprFunc(func(b *sql.Builder) {
 				b.WriteString("CASE WHEN NOT EXISTS (SELECT 1 FROM ").Ident(workspace.Table).
 					WriteString(" WHERE ").Ident(workspace.FieldID).WriteString(" = ").Arg(s.WorkspaceID()).
-					WriteString(") THEN ").Arg(workspaceMissing)
-				for _, l := range layers(r, channel, mode) {
-					b.WriteString(" WHEN ")
-					b.Join(l.blocks)
-					b.WriteString(" THEN ").Arg(string(l.reason))
-				}
-				b.WriteString(" ELSE '' END")
+					WriteString(") THEN ").Arg(workspaceMissing).WriteString(" ELSE ")
+				firstBlocking(b, layers(r, channel, mode), func(l layer) string { return string(l.reason) }, "")
+				b.WriteString(" END")
 			}))
 			// raw sql: a constant HAVING turns the select into one group; ent has no HAVING TRUE.
 			sel.Having(sql.P(func(b *sql.Builder) { b.WriteString("TRUE") }))
@@ -309,10 +305,25 @@ func contactRef(s *sql.Selector) ref {
 }
 
 // layer is one rule of the eligibility model: blocks is true when the layer
-// forbids the send, reason is what the Decision reports.
+// forbids the send, reason is what the Decision reports, and state the Channel state a
+// Destination it blocks is in (ChannelStates).
 type layer struct {
 	reason skipreason.Reason
+	state  State
 	blocks *sql.Predicate
+}
+
+// firstBlocking writes a CASE that yields the label of the first of ls that blocks, in their
+// precedence, and otherwise when none does: the one expression a single Check and the Channel
+// states select.
+func firstBlocking(b *sql.Builder, ls []layer, label func(layer) string, otherwise string) {
+	b.WriteString("CASE")
+	for _, l := range ls {
+		b.WriteString(" WHEN ")
+		b.Join(l.blocks)
+		b.WriteString(" THEN ").Arg(label(l))
+	}
+	b.WriteString(" ELSE ").Arg(otherwise).WriteString(" END")
 }
 
 // store names the columns of one destination-keyed table a layer reads.
@@ -335,10 +346,12 @@ var (
 func layers(r ref, channel channels.Channel, mode Mode) []layer {
 	suppressed := layer{
 		reason: skipreason.Suppressed,
+		state:  StateSuppressed,
 		blocks: sql.Exists(match(r, suppressionStore, channel)),
 	}
 	everything := layer{
 		reason: skipreason.UnsubscribedEverything,
+		state:  StateOptedOut,
 		blocks: sql.Exists(match(r, unsubscribes, channel, unsubscribe.FieldSendingSource, SourceEverything)),
 	}
 	switch mode.Kind() {
@@ -352,6 +365,7 @@ func layers(r ref, channel channels.Channel, mode Mode) []layer {
 	out = append(out, suppressed, everything,
 		layer{
 			reason: skipreason.UnsubscribedSource,
+			state:  StateOptedOut,
 			blocks: sql.Exists(match(r, unsubscribes, channel, unsubscribe.FieldSendingSource, mode.Source())),
 		})
 	unconfirmed := sql.NotExists(match(r, confirmations, channel))
@@ -362,10 +376,11 @@ func layers(r ref, channel channels.Channel, mode Mode) []layer {
 	case channels.SMS:
 		// A text asks for a Confirmation always (ADR 0077): the Workspace's confirmed-opt-in
 		// setting is about email only, and turning it off never relaxes sms.
-		return append(out, layer{reason: skipreason.Unconfirmed, blocks: unconfirmed})
+		return append(out, layer{reason: skipreason.Unconfirmed, state: StateNeedsConfirmation, blocks: unconfirmed})
 	case channels.Email:
 		return append(out, layer{
 			reason: skipreason.Unconfirmed,
+			state:  StateNeedsConfirmation,
 			// Only when the workspace has confirmed opt-in on (ADR 0013): the flag is
 			// read in SQL so the default single-opt-in path never touches the
 			// confirmation store and no caller can forget to pass it.
@@ -373,7 +388,7 @@ func layers(r ref, channel channels.Channel, mode Mode) []layer {
 		})
 	}
 	// A Channel no case names yet asks for a Confirmation always: closed until its rule is written.
-	return append(out, layer{reason: skipreason.Unconfirmed, blocks: unconfirmed})
+	return append(out, layer{reason: skipreason.Unconfirmed, state: StateNeedsConfirmation, blocks: unconfirmed})
 }
 
 // match builds SELECT id FROM store WHERE workspace/destination/channel equal the

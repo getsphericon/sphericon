@@ -31,7 +31,11 @@ import (
 	"github.com/getsphericon/sphericon/ent/consentstamp"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/contactdate"
+	"github.com/getsphericon/sphericon/ent/contactimport"
+	"github.com/getsphericon/sphericon/ent/contactimportchunk"
+	"github.com/getsphericon/sphericon/ent/contactimportreportrow"
 	"github.com/getsphericon/sphericon/ent/customfield"
+	"github.com/getsphericon/sphericon/ent/downloadlink"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
 	"github.com/getsphericon/sphericon/ent/erasure"
@@ -797,6 +801,21 @@ func (_u *WorkspaceUpdate) AddStartTokens(v ...*StartToken) *WorkspaceUpdate {
 	return _u.AddStartTokenIDs(ids...)
 }
 
+// AddDownloadLinkIDs adds the "download_links" edge to the DownloadLink entity by IDs.
+func (_u *WorkspaceUpdate) AddDownloadLinkIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.AddDownloadLinkIDs(ids...)
+	return _u
+}
+
+// AddDownloadLinks adds the "download_links" edges to the DownloadLink entity.
+func (_u *WorkspaceUpdate) AddDownloadLinks(v ...*DownloadLink) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddDownloadLinkIDs(ids...)
+}
+
 // AddAPITokenIDs adds the "api_tokens" edge to the ApiToken entity by IDs.
 func (_u *WorkspaceUpdate) AddAPITokenIDs(ids ...int64) *WorkspaceUpdate {
 	_u.mutation.AddAPITokenIDs(ids...)
@@ -960,6 +979,51 @@ func (_u *WorkspaceUpdate) AddFrequencyCounts(v ...*FrequencyCount) *WorkspaceUp
 		ids[i] = v[i].ID
 	}
 	return _u.AddFrequencyCountIDs(ids...)
+}
+
+// AddContactImportIDs adds the "contact_imports" edge to the ContactImport entity by IDs.
+func (_u *WorkspaceUpdate) AddContactImportIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.AddContactImportIDs(ids...)
+	return _u
+}
+
+// AddContactImports adds the "contact_imports" edges to the ContactImport entity.
+func (_u *WorkspaceUpdate) AddContactImports(v ...*ContactImport) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddContactImportIDs(ids...)
+}
+
+// AddContactImportChunkIDs adds the "contact_import_chunks" edge to the ContactImportChunk entity by IDs.
+func (_u *WorkspaceUpdate) AddContactImportChunkIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.AddContactImportChunkIDs(ids...)
+	return _u
+}
+
+// AddContactImportChunks adds the "contact_import_chunks" edges to the ContactImportChunk entity.
+func (_u *WorkspaceUpdate) AddContactImportChunks(v ...*ContactImportChunk) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddContactImportChunkIDs(ids...)
+}
+
+// AddContactImportReportRowIDs adds the "contact_import_report_rows" edge to the ContactImportReportRow entity by IDs.
+func (_u *WorkspaceUpdate) AddContactImportReportRowIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.AddContactImportReportRowIDs(ids...)
+	return _u
+}
+
+// AddContactImportReportRows adds the "contact_import_report_rows" edges to the ContactImportReportRow entity.
+func (_u *WorkspaceUpdate) AddContactImportReportRows(v ...*ContactImportReportRow) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddContactImportReportRowIDs(ids...)
 }
 
 // AddSendingWindowIDs adds the "sending_windows" edge to the SendingWindow entity by IDs.
@@ -1784,6 +1848,27 @@ func (_u *WorkspaceUpdate) RemoveStartTokens(v ...*StartToken) *WorkspaceUpdate 
 	return _u.RemoveStartTokenIDs(ids...)
 }
 
+// ClearDownloadLinks clears all "download_links" edges to the DownloadLink entity.
+func (_u *WorkspaceUpdate) ClearDownloadLinks() *WorkspaceUpdate {
+	_u.mutation.ClearDownloadLinks()
+	return _u
+}
+
+// RemoveDownloadLinkIDs removes the "download_links" edge to DownloadLink entities by IDs.
+func (_u *WorkspaceUpdate) RemoveDownloadLinkIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.RemoveDownloadLinkIDs(ids...)
+	return _u
+}
+
+// RemoveDownloadLinks removes "download_links" edges to DownloadLink entities.
+func (_u *WorkspaceUpdate) RemoveDownloadLinks(v ...*DownloadLink) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveDownloadLinkIDs(ids...)
+}
+
 // ClearAPITokens clears all "api_tokens" edges to the ApiToken entity.
 func (_u *WorkspaceUpdate) ClearAPITokens() *WorkspaceUpdate {
 	_u.mutation.ClearAPITokens()
@@ -2013,6 +2098,69 @@ func (_u *WorkspaceUpdate) RemoveFrequencyCounts(v ...*FrequencyCount) *Workspac
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveFrequencyCountIDs(ids...)
+}
+
+// ClearContactImports clears all "contact_imports" edges to the ContactImport entity.
+func (_u *WorkspaceUpdate) ClearContactImports() *WorkspaceUpdate {
+	_u.mutation.ClearContactImports()
+	return _u
+}
+
+// RemoveContactImportIDs removes the "contact_imports" edge to ContactImport entities by IDs.
+func (_u *WorkspaceUpdate) RemoveContactImportIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.RemoveContactImportIDs(ids...)
+	return _u
+}
+
+// RemoveContactImports removes "contact_imports" edges to ContactImport entities.
+func (_u *WorkspaceUpdate) RemoveContactImports(v ...*ContactImport) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveContactImportIDs(ids...)
+}
+
+// ClearContactImportChunks clears all "contact_import_chunks" edges to the ContactImportChunk entity.
+func (_u *WorkspaceUpdate) ClearContactImportChunks() *WorkspaceUpdate {
+	_u.mutation.ClearContactImportChunks()
+	return _u
+}
+
+// RemoveContactImportChunkIDs removes the "contact_import_chunks" edge to ContactImportChunk entities by IDs.
+func (_u *WorkspaceUpdate) RemoveContactImportChunkIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.RemoveContactImportChunkIDs(ids...)
+	return _u
+}
+
+// RemoveContactImportChunks removes "contact_import_chunks" edges to ContactImportChunk entities.
+func (_u *WorkspaceUpdate) RemoveContactImportChunks(v ...*ContactImportChunk) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveContactImportChunkIDs(ids...)
+}
+
+// ClearContactImportReportRows clears all "contact_import_report_rows" edges to the ContactImportReportRow entity.
+func (_u *WorkspaceUpdate) ClearContactImportReportRows() *WorkspaceUpdate {
+	_u.mutation.ClearContactImportReportRows()
+	return _u
+}
+
+// RemoveContactImportReportRowIDs removes the "contact_import_report_rows" edge to ContactImportReportRow entities by IDs.
+func (_u *WorkspaceUpdate) RemoveContactImportReportRowIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.RemoveContactImportReportRowIDs(ids...)
+	return _u
+}
+
+// RemoveContactImportReportRows removes "contact_import_report_rows" edges to ContactImportReportRow entities.
+func (_u *WorkspaceUpdate) RemoveContactImportReportRows(v ...*ContactImportReportRow) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveContactImportReportRowIDs(ids...)
 }
 
 // ClearSendingWindows clears all "sending_windows" edges to the SendingWindow entity.
@@ -3617,6 +3765,51 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.DownloadLinksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.DownloadLinksTable,
+			Columns: []string{workspace.DownloadLinksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(downloadlink.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedDownloadLinksIDs(); len(nodes) > 0 && !_u.mutation.DownloadLinksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.DownloadLinksTable,
+			Columns: []string{workspace.DownloadLinksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(downloadlink.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.DownloadLinksIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.DownloadLinksTable,
+			Columns: []string{workspace.DownloadLinksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(downloadlink.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _u.mutation.APITokensCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -4105,6 +4298,141 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(frequencycount.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ContactImportsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ContactImportsTable,
+			Columns: []string{workspace.ContactImportsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contactimport.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedContactImportsIDs(); len(nodes) > 0 && !_u.mutation.ContactImportsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ContactImportsTable,
+			Columns: []string{workspace.ContactImportsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contactimport.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ContactImportsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ContactImportsTable,
+			Columns: []string{workspace.ContactImportsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contactimport.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ContactImportChunksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ContactImportChunksTable,
+			Columns: []string{workspace.ContactImportChunksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contactimportchunk.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedContactImportChunksIDs(); len(nodes) > 0 && !_u.mutation.ContactImportChunksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ContactImportChunksTable,
+			Columns: []string{workspace.ContactImportChunksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contactimportchunk.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ContactImportChunksIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ContactImportChunksTable,
+			Columns: []string{workspace.ContactImportChunksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contactimportchunk.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ContactImportReportRowsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ContactImportReportRowsTable,
+			Columns: []string{workspace.ContactImportReportRowsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contactimportreportrow.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedContactImportReportRowsIDs(); len(nodes) > 0 && !_u.mutation.ContactImportReportRowsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ContactImportReportRowsTable,
+			Columns: []string{workspace.ContactImportReportRowsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contactimportreportrow.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ContactImportReportRowsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ContactImportReportRowsTable,
+			Columns: []string{workspace.ContactImportReportRowsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contactimportreportrow.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -6445,6 +6773,21 @@ func (_u *WorkspaceUpdateOne) AddStartTokens(v ...*StartToken) *WorkspaceUpdateO
 	return _u.AddStartTokenIDs(ids...)
 }
 
+// AddDownloadLinkIDs adds the "download_links" edge to the DownloadLink entity by IDs.
+func (_u *WorkspaceUpdateOne) AddDownloadLinkIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.AddDownloadLinkIDs(ids...)
+	return _u
+}
+
+// AddDownloadLinks adds the "download_links" edges to the DownloadLink entity.
+func (_u *WorkspaceUpdateOne) AddDownloadLinks(v ...*DownloadLink) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddDownloadLinkIDs(ids...)
+}
+
 // AddAPITokenIDs adds the "api_tokens" edge to the ApiToken entity by IDs.
 func (_u *WorkspaceUpdateOne) AddAPITokenIDs(ids ...int64) *WorkspaceUpdateOne {
 	_u.mutation.AddAPITokenIDs(ids...)
@@ -6608,6 +6951,51 @@ func (_u *WorkspaceUpdateOne) AddFrequencyCounts(v ...*FrequencyCount) *Workspac
 		ids[i] = v[i].ID
 	}
 	return _u.AddFrequencyCountIDs(ids...)
+}
+
+// AddContactImportIDs adds the "contact_imports" edge to the ContactImport entity by IDs.
+func (_u *WorkspaceUpdateOne) AddContactImportIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.AddContactImportIDs(ids...)
+	return _u
+}
+
+// AddContactImports adds the "contact_imports" edges to the ContactImport entity.
+func (_u *WorkspaceUpdateOne) AddContactImports(v ...*ContactImport) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddContactImportIDs(ids...)
+}
+
+// AddContactImportChunkIDs adds the "contact_import_chunks" edge to the ContactImportChunk entity by IDs.
+func (_u *WorkspaceUpdateOne) AddContactImportChunkIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.AddContactImportChunkIDs(ids...)
+	return _u
+}
+
+// AddContactImportChunks adds the "contact_import_chunks" edges to the ContactImportChunk entity.
+func (_u *WorkspaceUpdateOne) AddContactImportChunks(v ...*ContactImportChunk) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddContactImportChunkIDs(ids...)
+}
+
+// AddContactImportReportRowIDs adds the "contact_import_report_rows" edge to the ContactImportReportRow entity by IDs.
+func (_u *WorkspaceUpdateOne) AddContactImportReportRowIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.AddContactImportReportRowIDs(ids...)
+	return _u
+}
+
+// AddContactImportReportRows adds the "contact_import_report_rows" edges to the ContactImportReportRow entity.
+func (_u *WorkspaceUpdateOne) AddContactImportReportRows(v ...*ContactImportReportRow) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddContactImportReportRowIDs(ids...)
 }
 
 // AddSendingWindowIDs adds the "sending_windows" edge to the SendingWindow entity by IDs.
@@ -7432,6 +7820,27 @@ func (_u *WorkspaceUpdateOne) RemoveStartTokens(v ...*StartToken) *WorkspaceUpda
 	return _u.RemoveStartTokenIDs(ids...)
 }
 
+// ClearDownloadLinks clears all "download_links" edges to the DownloadLink entity.
+func (_u *WorkspaceUpdateOne) ClearDownloadLinks() *WorkspaceUpdateOne {
+	_u.mutation.ClearDownloadLinks()
+	return _u
+}
+
+// RemoveDownloadLinkIDs removes the "download_links" edge to DownloadLink entities by IDs.
+func (_u *WorkspaceUpdateOne) RemoveDownloadLinkIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.RemoveDownloadLinkIDs(ids...)
+	return _u
+}
+
+// RemoveDownloadLinks removes "download_links" edges to DownloadLink entities.
+func (_u *WorkspaceUpdateOne) RemoveDownloadLinks(v ...*DownloadLink) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveDownloadLinkIDs(ids...)
+}
+
 // ClearAPITokens clears all "api_tokens" edges to the ApiToken entity.
 func (_u *WorkspaceUpdateOne) ClearAPITokens() *WorkspaceUpdateOne {
 	_u.mutation.ClearAPITokens()
@@ -7661,6 +8070,69 @@ func (_u *WorkspaceUpdateOne) RemoveFrequencyCounts(v ...*FrequencyCount) *Works
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveFrequencyCountIDs(ids...)
+}
+
+// ClearContactImports clears all "contact_imports" edges to the ContactImport entity.
+func (_u *WorkspaceUpdateOne) ClearContactImports() *WorkspaceUpdateOne {
+	_u.mutation.ClearContactImports()
+	return _u
+}
+
+// RemoveContactImportIDs removes the "contact_imports" edge to ContactImport entities by IDs.
+func (_u *WorkspaceUpdateOne) RemoveContactImportIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.RemoveContactImportIDs(ids...)
+	return _u
+}
+
+// RemoveContactImports removes "contact_imports" edges to ContactImport entities.
+func (_u *WorkspaceUpdateOne) RemoveContactImports(v ...*ContactImport) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveContactImportIDs(ids...)
+}
+
+// ClearContactImportChunks clears all "contact_import_chunks" edges to the ContactImportChunk entity.
+func (_u *WorkspaceUpdateOne) ClearContactImportChunks() *WorkspaceUpdateOne {
+	_u.mutation.ClearContactImportChunks()
+	return _u
+}
+
+// RemoveContactImportChunkIDs removes the "contact_import_chunks" edge to ContactImportChunk entities by IDs.
+func (_u *WorkspaceUpdateOne) RemoveContactImportChunkIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.RemoveContactImportChunkIDs(ids...)
+	return _u
+}
+
+// RemoveContactImportChunks removes "contact_import_chunks" edges to ContactImportChunk entities.
+func (_u *WorkspaceUpdateOne) RemoveContactImportChunks(v ...*ContactImportChunk) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveContactImportChunkIDs(ids...)
+}
+
+// ClearContactImportReportRows clears all "contact_import_report_rows" edges to the ContactImportReportRow entity.
+func (_u *WorkspaceUpdateOne) ClearContactImportReportRows() *WorkspaceUpdateOne {
+	_u.mutation.ClearContactImportReportRows()
+	return _u
+}
+
+// RemoveContactImportReportRowIDs removes the "contact_import_report_rows" edge to ContactImportReportRow entities by IDs.
+func (_u *WorkspaceUpdateOne) RemoveContactImportReportRowIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.RemoveContactImportReportRowIDs(ids...)
+	return _u
+}
+
+// RemoveContactImportReportRows removes "contact_import_report_rows" edges to ContactImportReportRow entities.
+func (_u *WorkspaceUpdateOne) RemoveContactImportReportRows(v ...*ContactImportReportRow) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveContactImportReportRowIDs(ids...)
 }
 
 // ClearSendingWindows clears all "sending_windows" edges to the SendingWindow entity.
@@ -9295,6 +9767,51 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.DownloadLinksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.DownloadLinksTable,
+			Columns: []string{workspace.DownloadLinksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(downloadlink.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedDownloadLinksIDs(); len(nodes) > 0 && !_u.mutation.DownloadLinksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.DownloadLinksTable,
+			Columns: []string{workspace.DownloadLinksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(downloadlink.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.DownloadLinksIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.DownloadLinksTable,
+			Columns: []string{workspace.DownloadLinksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(downloadlink.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _u.mutation.APITokensCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -9783,6 +10300,141 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(frequencycount.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ContactImportsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ContactImportsTable,
+			Columns: []string{workspace.ContactImportsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contactimport.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedContactImportsIDs(); len(nodes) > 0 && !_u.mutation.ContactImportsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ContactImportsTable,
+			Columns: []string{workspace.ContactImportsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contactimport.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ContactImportsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ContactImportsTable,
+			Columns: []string{workspace.ContactImportsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contactimport.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ContactImportChunksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ContactImportChunksTable,
+			Columns: []string{workspace.ContactImportChunksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contactimportchunk.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedContactImportChunksIDs(); len(nodes) > 0 && !_u.mutation.ContactImportChunksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ContactImportChunksTable,
+			Columns: []string{workspace.ContactImportChunksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contactimportchunk.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ContactImportChunksIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ContactImportChunksTable,
+			Columns: []string{workspace.ContactImportChunksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contactimportchunk.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ContactImportReportRowsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ContactImportReportRowsTable,
+			Columns: []string{workspace.ContactImportReportRowsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contactimportreportrow.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedContactImportReportRowsIDs(); len(nodes) > 0 && !_u.mutation.ContactImportReportRowsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ContactImportReportRowsTable,
+			Columns: []string{workspace.ContactImportReportRowsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contactimportreportrow.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ContactImportReportRowsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ContactImportReportRowsTable,
+			Columns: []string{workspace.ContactImportReportRowsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contactimportreportrow.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

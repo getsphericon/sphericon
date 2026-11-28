@@ -61,7 +61,7 @@ func TestAnInvalidValueOfACoreAttributeIsDropped(t *testing.T) {
 }
 
 func TestATraitOfAnAliasKeyIsDropped(t *testing.T) {
-	core, fields := contacts.FromTraits(map[string]any{"email": "a@example.com", "phone": "+1", "subjectId": "u-1"})
+	core, fields := contacts.FromTraits(map[string]any{fieldname.Email: "a@example.com", fieldname.Phone: "+1", fieldname.SubjectID: "u-1"})
 
 	assert.Equal(t, contacts.Core{}, core)
 	assert.Empty(t, fields, "Identify carries its alias keys itself")

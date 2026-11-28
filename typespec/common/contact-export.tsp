@@ -9,6 +9,7 @@ enum ContactExportSource {
   manual,
   api,
   tracker,
+  `import`,
 }
 
 /** The contact itself */

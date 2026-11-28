@@ -165,9 +165,12 @@ type Result struct {
 	// reads it), nil when it asserted none. It is not the Contact's when the Contact had one
 	// already: an upsert fills an alias key, never overwrites it.
 	Phone *string
-	// Flags are the traits of the address a Contact intake row asserted that the importer should
-	// see (ADR 0117): a disposable address, a role's. Only UpsertBatch sets them.
-	Flags []addresscheck.Flag
+	// Warnings are what of a Contact intake row the importer should see (ADR 0117, ADR 0138): a
+	// disposable address, a role's, a consent time dropped. Only the Contact intake sets them.
+	Warnings []Warning
+	// Kept is true when a Contact intake row that only adds new Contacts found the Contact it names
+	// and left it as it was but for the refusals the row carries (ImportInput.OnlyAddNew).
+	Kept bool
 }
 
 // Module is the contacts module.
@@ -332,13 +335,15 @@ func (m *Module) Upsert(ctx context.Context, s *ent.Scoped, src contact.Source, 
 	return res, nil
 }
 
-// changes says whether an upsert records the changes of the Custom fields it writes: every
-// upsert does but an import's (importIn).
-type changes bool
+// changes says whether an upsert records the changes of the Custom fields it writes (every upsert
+// does but an import's, importIn) and whether it writes into a Contact it finds at all (an import
+// that only adds new Contacts does not).
+type changes int
 
 const (
-	recordChanges changes = true
-	importChanges changes = false
+	recordChanges changes = iota
+	importChanges
+	importNewOnly
 )
 
 // importSummary counts the rows of one import.
@@ -388,13 +393,29 @@ func (m *Module) UpsertIn(ctx context.Context, s *ent.Scoped, src contact.Source
 }
 
 // importIn is UpsertIn for one row of an import (ADR 0022), inside the row's transaction of the
-// Contact intake (UpsertBatch): it brings earlier state rather than something happening now, so it records no
-// contact.field_changed (#897). Its refusals are the domain errors Upsert returns (ErrEmailTaken
-// and its kin, ErrNotFound).
-func (m *Module) importIn(ctx context.Context, s *ent.Scoped, src contact.Source, in UpsertInput) (Result, error) {
-	res, err := m.upsertIn(ctx, s, src, in, importChanges)
+// Contact intake (UpsertBatch, Import): it brings earlier state rather than something happening now, so it records no
+// contact.field_changed (#897). With mode.onlyNew it leaves a Contact the row resolves to as it is
+// (Result.Kept, ADR 0138); with mode.rankKeys a row whose keys name two Contacts is written to the
+// one their rank picks, without the keys of the other (WarningKeysNameTwoContacts). Its refusals are the domain errors Upsert returns (ErrEmailTaken and its
+// kin, ErrNotFound).
+func (m *Module) importIn(ctx context.Context, s *ent.Scoped, src contact.Source, in UpsertInput, mode intakeMode) (Result, error) {
+	ch := importChanges
+	if mode.onlyNew {
+		ch = importNewOnly
+	}
+	twoContacts := false
+	if mode.rankKeys {
+		var err error
+		if in, twoContacts, err = rankedKeys(ctx, s, in); err != nil {
+			return Result{}, err
+		}
+	}
+	res, err := m.upsertIn(ctx, s, src, in, ch)
 	if err != nil {
 		return Result{}, db.NotFoundAs(err, ErrNotFound)
+	}
+	if twoContacts {
+		res.Warnings = append(res.Warnings, WarningKeysNameTwoContacts)
 	}
 	return res, nil
 }
@@ -422,6 +443,9 @@ func (m *Module) upsertIn(ctx context.Context, s *ent.Scoped, src contact.Source
 	existing, err := resolve(ctx, s, AliasKeys{SubjectID: in.SubjectID, Email: in.Email, Phone: in.Phone})
 	if err != nil {
 		return Result{}, err
+	}
+	if existing != nil && ch == importNewOnly {
+		return Result{Contact: existing, Phone: in.Phone, Kept: true}, nil
 	}
 	if existing != nil {
 		c, err := m.enrich(ctx, s, existing.ID, in, typed, ch)
@@ -610,6 +634,16 @@ func (m *Module) Resolve(ctx context.Context, s *ent.Scoped, keys AliasKeys) (*e
 }
 
 func resolve(ctx context.Context, s *ent.Scoped, by AliasKeys) (*ent.Contact, error) {
+	rows, a, err := matches(ctx, s, by)
+	if err != nil {
+		return nil, err
+	}
+	return ranked(rows, a), nil
+}
+
+// matches are the Contacts any of the keys names, and the keys as normalized to match them: a
+// phone is read as an international number, and one that is none resolves nothing.
+func matches(ctx context.Context, s *ent.Scoped, by AliasKeys) ([]*ent.Contact, Attributes, error) {
 	a := Attributes{SubjectID: by.SubjectID, Email: by.Email, Phone: by.Phone}.normalized()
 	if a.Phone != nil {
 		if p, err := e164(a.Phone, nil); err == nil {
@@ -629,14 +663,16 @@ func resolve(ctx context.Context, s *ent.Scoped, by AliasKeys) (*ent.Contact, er
 		keys = append(keys, contact.Phone(*a.Phone))
 	}
 	if len(keys) == 0 {
-		return nil, nil
+		return nil, a, nil
 	}
-	// One query for all the keys: each is unique in the Workspace, so it matches a row at most,
-	// and the row of the first key in the order above wins.
+	// One query for all the keys: each is unique in the Workspace, so it matches a row at most.
 	rows, err := s.Contact().Query().Where(contact.Or(keys...)).All(ctx)
-	if err != nil {
-		return nil, err
-	}
+	return rows, a, err
+}
+
+// ranked is the Contact of rows the keys' rank picks: the one of the subject_id, then the email,
+// then the phone. nil when rows is empty.
+func ranked(rows []*ent.Contact, a Attributes) *ent.Contact {
 	rank := func(c *ent.Contact) int {
 		switch {
 		case a.SubjectID != nil && lo.FromPtr(c.SubjectID) == *a.SubjectID:
@@ -647,7 +683,34 @@ func resolve(ctx context.Context, s *ent.Scoped, by AliasKeys) (*ent.Contact, er
 			return 2
 		}
 	}
-	return lo.MinBy(rows, func(x, y *ent.Contact) bool { return rank(x) < rank(y) }), nil
+	return lo.MinBy(rows, func(x, y *ent.Contact) bool { return rank(x) < rank(y) })
+}
+
+// rankedKeys is in without the alias keys that name another Contact than the one the keys' rank
+// picks, and whether it left any out (ADR 0138): the row is then written to that one Contact, with
+// a warning, until ADR 0128 makes such a row a Duplicate candidate. A row whose keys name one
+// Contact, or none, stays as it is.
+func rankedKeys(ctx context.Context, s *ent.Scoped, in UpsertInput) (UpsertInput, bool, error) {
+	rows, a, err := matches(ctx, s, AliasKeys{SubjectID: in.SubjectID, Email: in.Email, Phone: in.Phone})
+	if err != nil || len(rows) < 2 {
+		return in, false, err
+	}
+	picked := ranked(rows, a)
+	for _, other := range rows {
+		if other.ID == picked.ID {
+			continue
+		}
+		if a.SubjectID != nil && lo.FromPtr(other.SubjectID) == *a.SubjectID {
+			in.SubjectID = nil
+		}
+		if a.Email != nil && lo.FromPtr(other.Email) == *a.Email {
+			in.Email = nil
+		}
+		if a.Phone != nil && lo.FromPtr(other.Phone) == *a.Phone {
+			in.Phone = nil
+		}
+	}
+	return in, true, nil
 }
 
 // ResolveID resolves an existing Contact by any present alias key (subject_id

@@ -191,6 +191,7 @@ export const AuditAction = {
   WORKSPACE_SEND_CAP_CHANGE: 'workspace.send_cap_change',
   WORKSPACE_SENDING_RULES_CHANGE: 'workspace.sending_rules_change',
   CONTACT_IMPORT: 'contact.import',
+  CONTACT_EXPORT: 'contact.export',
   AUDIT_LOG_EXPORT: 'audit_log.export',
   WEBHOOK_ENDPOINT_TEST: 'webhook_endpoint.test',
   API_TOKEN_CREATE: 'api_token.create',
@@ -2015,7 +2016,7 @@ export type ContactBatchItemResult = {
    */
   error?: string;
   /**
-   * Traits of the item's email address worth a look; absent when there are none or the item failed
+   * Traits of the item worth a look; absent when there are none or the item failed
    */
   warnings?: Array<ContactBatchWarning>;
 };
@@ -2035,16 +2036,20 @@ export const ContactBatchStatus = {
 export type ContactBatchStatus = typeof ContactBatchStatus[keyof typeof ContactBatchStatus];
 
 /**
- * A trait of an item's email address worth the importer's attention; the contact is stored all the
- * same. `disposable_email`: an address at a throwaway mailbox provider. `role_email`: an address of
- * a function rather than a person, such as info
+ * A trait of an item worth the importer's attention; the contact is stored all the same.
+ * `disposable_email`: an address at a throwaway mailbox provider. `role_email`: an address of a
+ * function rather than a person, such as info
  */
-export const ContactBatchWarning = { DISPOSABLE_EMAIL: 'disposable_email', ROLE_EMAIL: 'role_email' } as const;
+export const ContactBatchWarning = {
+  DISPOSABLE_EMAIL: 'disposable_email',
+  ROLE_EMAIL: 'role_email',
+  CONSENT_TIME_IN_FUTURE: 'consent_time_in_future'
+} as const;
 
 /**
- * A trait of an item's email address worth the importer's attention; the contact is stored all the
- * same. `disposable_email`: an address at a throwaway mailbox provider. `role_email`: an address of
- * a function rather than a person, such as info
+ * A trait of an item worth the importer's attention; the contact is stored all the same.
+ * `disposable_email`: an address at a throwaway mailbox provider. `role_email`: an address of a
+ * function rather than a person, such as info
  */
 export type ContactBatchWarning = typeof ContactBatchWarning[keyof typeof ContactBatchWarning];
 
@@ -2429,7 +2434,8 @@ export type ContactExportOutboundMessage = {
 export const ContactExportSource = {
   MANUAL: 'manual',
   API: 'api',
-  TRACKER: 'tracker'
+  TRACKER: 'tracker',
+  IMPORT: 'import'
 } as const;
 
 /**
@@ -2675,11 +2681,11 @@ export type CreateBroadcastInput = {
  */
 export type CreateConfirmationInput = {
   /**
-   * The Channel the consent is for. Only `sms` takes a recorded consent: email is confirmed by its own double opt-in link, and a Telegram chat is its own opt-in
+   * The Channel the consent is for: `email` or `sms`. A Telegram chat is its own opt-in and takes none
    */
   channel: ConsentChannel;
   /**
-   * The phone number that consented, with its country code; stored in E.164
+   * What consented: an email address on `email`, a phone number with its country code on `sms` (stored in E.164)
    */
   destination: string;
   /**
@@ -2694,6 +2700,10 @@ export type CreateConfirmationInput = {
    * The brand the person agreed to hear from
    */
   brand: string;
+  /**
+   * When the person gave the consent; now when omitted. A time in the future is taken as now. Consent given before the destination last withdrew it changes nothing
+   */
+  occurredAt?: Timestamp | null;
 };
 
 /**
@@ -4848,6 +4858,28 @@ export type HttpStepInput = {
 export type ImageUrl = string;
 
 /**
+ * The evidence of consent collected outside sphericon (ADR 0077), with when the person gave it (ADR 0154)
+ */
+export type ImportedConsentEvidence = {
+  /**
+   * The consent wording the person was shown and agreed to
+   */
+  wording: string;
+  /**
+   * Where the consent was collected: a form, a page, a checkout, a verification service
+   */
+  source: string;
+  /**
+   * The brand the person agreed to hear from
+   */
+  brand: string;
+  /**
+   * When the person gave the consent; now when omitted. A time in the future is taken as now. Consent given before the destination last withdrew it changes nothing
+   */
+  occurredAt?: Timestamp | null;
+};
+
+/**
  * The Test inbox has no settings
  */
 export type InboxConfig = {
@@ -5326,7 +5358,7 @@ export type OnceEnrollmentOccurrence = {
 };
 
 /**
- * How a person stopped on a Channel other than email (ADR 0077): a STOP keyword or `/stop` (keyword), a message's unsubscribe button (button) or link (link), a blocked bot (block), a send the provider refused because the person had stopped at the provider (refused_send), or an opt-out recorded by hand in the app or through the API, which reached the Workspace by another route (manual)
+ * How a person stopped on a Channel other than email (ADR 0077): a STOP keyword or `/stop` (keyword), a message's unsubscribe button (button) or link (link), a blocked bot (block), a send the provider refused because the person had stopped at the provider (refused_send), an opt-out recorded by hand in the app or through the API, which reached the Workspace by another route (manual), or one brought by an import from another platform (imported)
  */
 export const OptOutVia = {
   KEYWORD: 'keyword',
@@ -5334,11 +5366,12 @@ export const OptOutVia = {
   BLOCK: 'block',
   LINK: 'link',
   REFUSED_SEND: 'refused_send',
-  MANUAL: 'manual'
+  MANUAL: 'manual',
+  IMPORTED: 'imported'
 } as const;
 
 /**
- * How a person stopped on a Channel other than email (ADR 0077): a STOP keyword or `/stop` (keyword), a message's unsubscribe button (button) or link (link), a blocked bot (block), a send the provider refused because the person had stopped at the provider (refused_send), or an opt-out recorded by hand in the app or through the API, which reached the Workspace by another route (manual)
+ * How a person stopped on a Channel other than email (ADR 0077): a STOP keyword or `/stop` (keyword), a message's unsubscribe button (button) or link (link), a blocked bot (block), a send the provider refused because the person had stopped at the provider (refused_send), an opt-out recorded by hand in the app or through the API, which reached the Workspace by another route (manual), or one brought by an import from another platform (imported)
  */
 export type OptOutVia = typeof OptOutVia[keyof typeof OptOutVia];
 
@@ -5416,6 +5449,7 @@ export const Permission = {
   SENDING_DOMAINS_MANAGE: 'sending_domains:manage',
   CONTACTS_ERASE: 'contacts:erase',
   CONTACTS_EXPORT: 'contacts:export',
+  CONTACTS_IMPORT: 'contacts:import',
   CUSTOM_FIELDS_MANAGE: 'custom_fields:manage',
   SUPPRESSIONS_MANAGE: 'suppressions:manage',
   SECOND_FACTOR_MANAGE: 'second_factor:manage',
@@ -7154,7 +7188,7 @@ export type SmsLeafInput = {
  */
 export type SmsOptOut = {
   /**
-   * How the person stopped: a STOP texted to the Workspace (keyword), a text's unsubscribe link (link), a send Twilio refused because the number had texted STOP to the sender there (refused_send), or recorded by hand (manual)
+   * How the person stopped: a STOP texted to the Workspace (keyword), a text's unsubscribe link (link), a send Twilio refused because the number had texted STOP to the sender there (refused_send), recorded by hand (manual), or brought by an import (imported)
    */
   via: OptOutVia;
   /**
@@ -8485,15 +8519,29 @@ export type UpsertContactInput = {
    * key's first value sets the field's type: a boolean, a number, a date (an ISO string:
    * `2026-01-15T10:00:00Z`, `2026-01-15T10:00:00` or `2026-01-15`, the last two read in the
    * Workspace time zone) or text. Send a date without time as a `YYYY-MM-DD` string, not a
-   * JavaScript `Date`: that serializes as UTC and lands on the previous day east of UTC
+   * JavaScript `Date`: that serializes as UTC and lands on the previous day east of UTC. A value
+   * of a field the workspace has whose type does not read it (`"42"` for a number field, any
+   * object, list or null) fails the item, naming the field
    */
   customFields?: JsonObject | null;
+  /**
+   * Names of Tags to add to the contact, each created on first use. A Tag the contact has stays as
+   * it is, and none is removed
+   */
+  tags?: Array<string>;
+  /**
+   * The evidence of the email consent the contact's address gave outside sphericon: records an
+   * `imported` email confirmation for the address, as `POST /confirmations` does, which a workspace
+   * requiring confirmed opt-in needs to mail it. It lifts no opt-out, and a confirmation already
+   * standing that is stronger stays. An item with it and no email fails
+   */
+  emailConsent?: ImportedConsentEvidence;
   /**
    * The evidence of the SMS consent the contact's phone gave outside sphericon: records an
    * `imported` SMS confirmation for the phone, as `POST /confirmations` does. Without it a phone
    * stays unreachable on SMS. An item with it and no phone fails
    */
-  smsConsent?: ConsentEvidence;
+  smsConsent?: ImportedConsentEvidence;
   /**
    * The Engagement tracking consent the contact's Destinations gave outside sphericon, recorded as
    * `imported`, as `POST /engagement-tracking-consents` does. An item with consent for its email

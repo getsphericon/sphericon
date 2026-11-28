@@ -63,6 +63,10 @@ func (Membership) Edges() []ent.Edge {
 			Annotations(entsql.OnDelete(entsql.Cascade)),
 		edge.To("oauth_codes", OAuthCode.Type).
 			Annotations(entsql.OnDelete(entsql.Cascade)),
+		// A CSV import outlives the Member who ran it, its Contacts and its report kept; its run
+		// stops (ADR 0138).
+		edge.To("contact_imports", ContactImport.Type).
+			Annotations(entsql.OnDelete(entsql.SetNull)),
 	}
 }
 

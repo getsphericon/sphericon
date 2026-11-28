@@ -39,7 +39,7 @@ function NewPeopleReport() {
       <SimpleGrid cols={{ base: 2, sm: 4 }}>
         <StatCard label={t(($) => $.analytics.newPeople.total)} value={report.total} />
       </SimpleGrid>
-      {report.total === 0 ? (
+      {report.timeseries.every((p) => p.manual + p.api + p.tracker + p.import === 0) ? (
         <CenteredEmptyState
           height={300}
           icon={<IconChartBar />}
@@ -58,6 +58,7 @@ function NewPeopleReport() {
             { name: 'manual', label: t(($) => $.analytics.sources.manual), color: 'blue.6' },
             { name: 'api', label: t(($) => $.analytics.sources.api), color: 'teal.6' },
             { name: 'tracker', label: t(($) => $.analytics.sources.tracker), color: 'grape.6' },
+            { name: 'import', label: t(($) => $.analytics.sources.import), color: 'orange.6' },
           ]}
         />
       )}

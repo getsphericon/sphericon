@@ -229,11 +229,12 @@ func (c *InputsImpl) ConsentChannel(source external.ConsentChannel) channels.Cha
 	}
 	return channelsChannel
 }
-func (c *InputsImpl) ConsentEvidence(source external.ConsentEvidence) confirmations.Evidence {
+func (c *InputsImpl) ConsentEvidence(source external.ImportedConsentEvidence) confirmations.Evidence {
 	var confirmationsEvidence confirmations.Evidence
 	confirmationsEvidence.Wording = source.Wording
 	confirmationsEvidence.Source = source.Source
 	confirmationsEvidence.Brand = source.Brand
+	confirmationsEvidence.OccurredAt = timestampIn(source.OccurredAt)
 	return confirmationsEvidence
 }
 func (c *InputsImpl) ContactAttributes(source external.CreateContactInput) contacts.Attributes {
@@ -275,7 +276,14 @@ func (c *InputsImpl) ContactExport(source external.ContactsExportParams) dataexp
 func (c *InputsImpl) ContactIntake(source external.UpsertContactInput) contacts.IntakeInput {
 	var contactsIntakeInput contacts.IntakeInput
 	contactsIntakeInput.UpsertInput = c.ContactUpsert(source)
-	contactsIntakeInput.SMSConsent = smsConsentIn(c, source.SmsConsent)
+	if source.Tags != nil {
+		contactsIntakeInput.Tags = make([]string, len(source.Tags))
+		for i := 0; i < len(source.Tags); i++ {
+			contactsIntakeInput.Tags[i] = source.Tags[i]
+		}
+	}
+	contactsIntakeInput.EmailConsent = consentIn(c, source.EmailConsent)
+	contactsIntakeInput.SMSConsent = consentIn(c, source.SmsConsent)
 	contactsIntakeInput.EngagementTracking = engagementTrackingIn(c, source.EngagementTracking)
 	return contactsIntakeInput
 }
@@ -540,6 +548,8 @@ func (c *InputsImpl) OptOut(source *external.CreateUnsubscribeInput) unsubscribe
 		// unsubscriberecordingOptOutInput.Channel: ignore
 		unsubscriberecordingOptOutInput.Destination = (*source).Destination
 		unsubscriberecordingOptOutInput.Source = stringIn((*source).SendingSource)
+		// unsubscriberecordingOptOutInput.Via: ignore
+		// unsubscriberecordingOptOutInput.At: ignore
 	}
 	return unsubscriberecordingOptOutInput
 }
@@ -957,6 +967,7 @@ func (c *InputsImpl) externalapiCreateConfirmationInputToConfirmationsEvidence(s
 	confirmationsEvidence.Wording = source.Wording
 	confirmationsEvidence.Source = source.Source
 	confirmationsEvidence.Brand = source.Brand
+	confirmationsEvidence.OccurredAt = timestampIn(source.OccurredAt)
 	return confirmationsEvidence
 }
 func (c *InputsImpl) externalapiRuleActionInputToRuleactionAction(source external.RuleActionInput) ruleaction.Action {

@@ -287,6 +287,10 @@ func TestExplicitAuditPathsAreAllListed(t *testing.T) {
 		Contacts: []externalapi.UpsertContactInput{{Email: externalapi.NewOptNilEmailAddress("explicit.import@example.org")}}})
 	require.NoError(t, err)
 
+	_, err = owner.SiteContactsExport(ctx, siteapi.SiteContactsExportParams{ // contact.export
+		WorkspaceId: fixtures.AcmePublicID, ID: siteapi.NewOptEntityId(siteapi.EntityId(fixtures.ContactExportSubjectID))})
+	require.NoError(t, err)
+
 	_, err = owner.SiteAuditExport(ctx, siteapi.SiteAuditExportParams{WorkspaceId: fixtures.AcmePublicID}) // audit_log.export
 	require.NoError(t, err)
 
@@ -311,7 +315,7 @@ func TestExplicitAuditPathsAreAllListed(t *testing.T) {
 	slices.Sort(want)
 	assert.Equal(t, want, seen)
 
-	assert.Equal(t, []string{"ee/domain/insights/auditentries/export.go", "internal/domain/contacts/contacts/contacts.go", "internal/domain/identity/invitations/invitations.go", "internal/domain/identity/memberships/creation.go", "internal/domain/identity/memberships/membershipsunchecked/membershipsunchecked.go", "internal/domain/identity/memberships/role_change.go", "internal/domain/identity/suspension/suspension.go", "internal/domain/identity/users/acceptance.go", "internal/domain/identity/users/users.go", "internal/domain/identity/workspaces/deletion.go", "internal/domain/identity/workspaces/sendingrules.go", "internal/domain/orchestration/webhookendpoints/webhookendpoints.go", "internal/usecase/workspaceview/confirmedoptin.go", "internal/usecase/workspaceview/restore.go"},
+	assert.Equal(t, []string{"ee/domain/insights/auditentries/export.go", "internal/domain/contacts/contactimports/run.go", "internal/domain/contacts/contacts/contacts.go", "internal/domain/contacts/contactsexport/contactsexport.go", "internal/domain/identity/invitations/invitations.go", "internal/domain/identity/memberships/creation.go", "internal/domain/identity/memberships/membershipsunchecked/membershipsunchecked.go", "internal/domain/identity/memberships/role_change.go", "internal/domain/identity/suspension/suspension.go", "internal/domain/identity/users/acceptance.go", "internal/domain/identity/users/users.go", "internal/domain/identity/workspaces/deletion.go", "internal/domain/identity/workspaces/sendingrules.go", "internal/domain/insights/dataexport/dataexport.go", "internal/domain/orchestration/webhookendpoints/webhookendpoints.go", "internal/usecase/workspaceview/confirmedoptin.go", "internal/usecase/workspaceview/restore.go"},
 		recordAuditCallSites(t), "a new explicit RecordAudit call site: list its actions and drive them above")
 }
 

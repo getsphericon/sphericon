@@ -1,14 +1,19 @@
-import { Avatar, Group, Stack, Text, Title } from '@mantine/core'
-import { useSuspenseQuery } from '@tanstack/react-query'
+import { Avatar, Button, Group, Stack, Text, Title } from '@mantine/core'
+import { useDisclosure } from '@mantine/hooks'
+import { useQuery, useSuspenseInfiniteQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
+import { DataTable } from 'mantine-datatable'
 import { useTranslation } from 'react-i18next'
 
-import { PagedTable } from '../../components/PagedTable.tsx'
+import { CenteredEmptyState } from '../../components/CenteredEmptyState.tsx'
+import { ContactCsvExportModal } from '../../components/ContactCsvExportModal.tsx'
+import { LoadMore } from '../../components/LoadMore.tsx'
 import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
-import { PageSkeleton } from '../../components/Skeletons.tsx'
+import { PageSkeleton, TableSkeleton } from '../../components/Skeletons.tsx'
 import {
-  siteSegmentContactsListOptions,
+  siteSegmentContactsListInfiniteOptions,
+  siteSegmentContactsListQueryKey,
   siteSegmentsGetOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteContactResource } from '../../generated/site/types.gen.ts'
@@ -16,9 +21,13 @@ import { Route as contactsDetailRoute } from '../../routes/workspaces/$workspace
 import { Route as segmentsEditRoute } from '../../routes/workspaces/$workspaceId/segments/$segmentId/edit.tsx'
 import { Route as segmentsDetailRoute } from '../../routes/workspaces/$workspaceId/segments/$segmentId/index.tsx'
 import { Route as segmentsRoute } from '../../routes/workspaces/$workspaceId/segments/index.tsx'
-import { withPage } from '../../searchSchemas.ts'
 import { contactName } from '../../utils/contactName.ts'
+import { can } from '../../utils/permissions.ts'
+import { suspenseInfinite } from '../../utils/suspenseInfinite.ts'
 import type { FieldColumn } from '../../utils/tableColumns.ts'
+import { workspaceOptions } from '../../utils/workspace.ts'
+
+const PAGE_SIZE = 25
 
 export function SegmentDetailPage() {
   const { t } = useTranslation()
@@ -33,20 +42,32 @@ export function SegmentDetailPage() {
 }
 
 function SegmentDetail() {
-  const { page } = segmentsDetailRoute.useSearch()
-  const pageNavigate = segmentsDetailRoute.useNavigate()
   const { t } = useTranslation()
   const { workspaceId, segmentId } = segmentsDetailRoute.useParams()
-  const navigate = useNavigate()
   const segmentQuery = useSuspenseQuery(
     siteSegmentsGetOptions({ path: { workspaceId, id: segmentId } }),
   )
+  const { data: workspace } = useQuery(workspaceOptions(workspaceId))
+  const [exportOpened, { open: openExport, close: closeExport }] = useDisclosure(false)
 
   return (
-    <Stack>
+    // It grows into the page's free height, so an empty list's state sits in the page's middle.
+    <Stack flex={1}>
+      <ContactCsvExportModal
+        workspaceId={workspaceId}
+        segmentId={segmentId}
+        opened={exportOpened}
+        onClose={closeExport}
+      />
       <Group justify="space-between" align="flex-start" wrap="wrap">
         <Title order={4}>{segmentQuery.data.name}</Title>
         <Group gap="xs">
+          {/* The export of the Segment's Contacts is offered only with contacts:export. */}
+          {can(workspace, 'contacts:export') ? (
+            <Button variant="default" onClick={openExport}>
+              {t(($) => $.contactCsvExport.action)}
+            </Button>
+          ) : null}
           {segmentQuery.data.archivedAt ? null : (
             <ButtonLink
               variant="default"
@@ -62,17 +83,49 @@ function SegmentDetail() {
         </Group>
       </Group>
 
-      <PagedTable
-        page={page}
-        onPageChange={(next) =>
-          void pageNavigate({ search: withPage(next), viewTransition: false })
+      <Text fw={600}>{t(($) => $.segments.matchingContacts)}</Text>
+      <QueryBoundary fallback={<TableSkeleton />} errorTitle={t(($) => $.alerts.loadErrorTitle)}>
+        <SegmentContacts workspaceId={workspaceId} segmentId={segmentId} />
+      </QueryBoundary>
+    </Stack>
+  )
+}
+
+// The Contacts the Segment matches, read a page at a time by cursor: the first under the page's
+// boundary, each next one beneath the rows already shown.
+function SegmentContacts({ workspaceId, segmentId }: { workspaceId: string; segmentId: string }) {
+  const { t } = useTranslation()
+  const navigate = useNavigate()
+  const options = { path: { workspaceId, segmentId }, query: { limit: PAGE_SIZE } }
+  const query = useSuspenseInfiniteQuery({
+    ...suspenseInfinite(
+      siteSegmentContactsListInfiniteOptions(options),
+      siteSegmentContactsListQueryKey(options),
+    ),
+    // The empty cursor is the first Contact.
+    initialPageParam: '',
+    getNextPageParam: (page) => page.nextCursor ?? undefined,
+  })
+  const records = query.data.pages.flatMap((page) => page.items)
+
+  if (records.length === 0) {
+    return <CenteredEmptyState title={t(($) => $.segments.noMatchingContacts)} />
+  }
+
+  return (
+    <Stack>
+      <DataTable<SiteContactResource>
+        withTableBorder
+        // Striped, so the eye keeps its row across the columns (docs/standards/ui.md).
+        striped
+        highlightOnHover
+        onRowClick={({ record }) =>
+          void navigate({
+            to: contactsDetailRoute.to,
+            params: { workspaceId, contactId: record.id },
+          })
         }
-        options={(query) =>
-          siteSegmentContactsListOptions({ path: { workspaceId, segmentId }, query })
-        }
-        loadErrorTitle={t(($) => $.alerts.loadErrorTitle)}
-        collection={t(($) => $.segments.matchingContacts)}
-        empty={{ title: t(($) => $.segments.noMatchingContacts) }}
+        records={records}
         columns={[
           {
             accessor: 'email',
@@ -99,12 +152,11 @@ function SegmentDetail() {
             title: t(($) => $.table.lastName),
           } satisfies FieldColumn<SiteContactResource>,
         ]}
-        onRowClick={(record) =>
-          void navigate({
-            to: contactsDetailRoute.to,
-            params: { workspaceId, contactId: record.id },
-          })
-        }
+      />
+      <LoadMore
+        query={query}
+        label={t(($) => $.segments.loadMoreContacts)}
+        errorTitle={t(($) => $.alerts.loadErrorTitle)}
       />
     </Stack>
   )

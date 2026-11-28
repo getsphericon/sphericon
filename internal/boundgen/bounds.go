@@ -12,16 +12,17 @@ const (
 
 // The names the lists repeat: a bound's, an owner's, a parameter's and a schema's.
 const (
-	contactCity       = "ContactCity"
-	city              = "city"
-	contactOwner      = "Contact"
-	limit             = "limit"
-	telemetryReport   = "TelemetryReport"
-	httpcallOwner     = "internal/infra/httpcall"
-	consentDest       = "ConsentDestination"
-	destination       = "destination"
-	automationVersion = "AutomationVersion"
-	workspaceOwner    = "Workspace"
+	contactCity        = "ContactCity"
+	city               = "city"
+	contactOwner       = "Contact"
+	limit              = "limit"
+	telemetryReport    = "TelemetryReport"
+	httpcallOwner      = "internal/infra/httpcall"
+	consentDest        = "ConsentDestination"
+	destination        = "destination"
+	automationVersion  = "AutomationVersion"
+	workspaceOwner     = "Workspace"
+	contactImportOwner = "ContactImport"
 )
 
 // Bounds are the contract's bounds on the input of a domain write, in the order they are written.
@@ -165,16 +166,19 @@ var Bounds = []Bound{
 		Spec: site, Schema: "ConsentEvidence", Property: "wording", Owners: []string{"Confirmation"},
 	},
 	{Name: "ConsentWording", Spec: external, Schema: "CreateConfirmationInput", Property: "wording"},
+	{Name: "ConsentWording", Spec: external, Schema: "ImportedConsentEvidence", Property: "wording"},
 	{
 		Name: "ConsentSource", Doc: "is where a person consented.",
 		Spec: site, Schema: "ConsentEvidence", Property: "source", Owners: []string{"Confirmation"},
 	},
 	{Name: "ConsentSource", Spec: external, Schema: "CreateConfirmationInput", Property: "source"},
+	{Name: "ConsentSource", Spec: external, Schema: "ImportedConsentEvidence", Property: "source"},
 	{
 		Name: "ConsentBrand", Doc: "is the brand a person consented to hear from.",
 		Spec: site, Schema: "ConsentEvidence", Property: "brand", Owners: []string{"Confirmation"},
 	},
 	{Name: "ConsentBrand", Spec: external, Schema: "CreateConfirmationInput", Property: "brand"},
+	{Name: "ConsentBrand", Spec: external, Schema: "ImportedConsentEvidence", Property: "brand"},
 	{
 		Name: "TrackingDomainHost", Doc: "is the host a Workspace serves its links and tracker on, as typed.",
 		Spec: site, Schema: "SetTrackingDomainInput", Property: "host", Owners: []string{"TrackingDomain"},
@@ -232,6 +236,39 @@ var Bounds = []Bound{
 	{
 		Name: "ContactBatch", Doc: "are the Contacts one request of the external API upserts.",
 		Spec: external, Schema: "UpsertContactsInput", Property: "contacts", Owners: []string{contactOwner},
+	},
+	{
+		Name: "ContactImportColumns", Doc: "are the columns a CSV import of Contacts maps: a file of more is refused at upload.",
+		Spec: site, Schema: "ContactImportMappingInput", Property: "columns", Owners: []string{contactImportOwner},
+	},
+	{
+		Name: "ContactImportRefusalValues", Doc: "are the values a refusal column of a CSV import lists.",
+		Spec: site, Schema: "ContactImportRefusalColumnInput", Property: "values", Owners: []string{contactImportOwner},
+	},
+	{
+		Name: "ContactImportRefusalValue", Doc: "is a value a refusal column of a CSV import lists.",
+		Spec: site, Schema: "ContactImportRefusalValueInput", Property: "value", Owners: []string{contactImportOwner},
+	},
+	{
+		Name: "ContactImportConsentValues", Doc: "are the values a consent column of a CSV import lists.",
+		Spec: site, Schema: "ContactImportConsentColumnInput", Property: "values", Owners: []string{contactImportOwner},
+	},
+	{
+		Name: "ContactImportTrackingValues", Doc: "are the values an Engagement tracking column of a CSV import lists for a grant or a refusal.",
+		Spec: site, Schema: "ContactImportEngagementTrackingColumnInput", Property: "granted", Owners: []string{contactImportOwner},
+	},
+	{Name: "ContactImportTrackingValues", Spec: site, Schema: "ContactImportEngagementTrackingColumnInput", Property: "denied"},
+	{
+		Name: "ContactImportEvidenceWording", Doc: "is the consent wording a consent column of a CSV import gives once.",
+		Spec: site, Schema: "ContactImportConsentEvidenceInput", Property: "wording", Owners: []string{contactImportOwner},
+	},
+	{
+		Name: "ContactImportEvidenceSource", Doc: "is the consent source a consent column of a CSV import gives once.",
+		Spec: site, Schema: "ContactImportConsentEvidenceInput", Property: "source", Owners: []string{contactImportOwner},
+	},
+	{
+		Name: "ContactImportEvidenceBrand", Doc: "is the consent brand a consent column of a CSV import gives once.",
+		Spec: site, Schema: "ContactImportConsentEvidenceInput", Property: "brand", Owners: []string{contactImportOwner},
 	},
 	{
 		Name: "IdentifyPhone", Doc: "is the phone an Identify of the tracker names its Contact by.",
@@ -347,6 +384,7 @@ var TransportOnly = []TransportBound{
 	{Spec: external, Operation: "AuditEntries_list", Parameter: limit, Doc: "is the size of a page of the Audit log a read returns."},
 	{Spec: external, Operation: "SendingDomainRates_list", Parameter: "windowDays", Doc: "is how many days of a Sending domain's rates a read returns."},
 	{Spec: site, Operation: "SiteAudit_list", Parameter: limit, Doc: "is the size of a page of the Audit log a read returns."},
+	{Spec: site, Operation: "SiteSegmentContacts_list", Parameter: limit, Doc: "is the size of a page of a Segment's Contacts a read returns."},
 	{Spec: site, Operation: "SiteContacts_lookup", Parameter: "email", Doc: "is the address a read looks a Contact up by."},
 	{Spec: site, Operation: "SiteContacts_erase", Parameter: "email", Doc: "is the address an erasure finds its Contact by; it writes no address."},
 	{Spec: service, Parameter: "UsagePeriodQuery", Doc: "is the period a read of the usage covers."},

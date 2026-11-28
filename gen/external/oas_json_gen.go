@@ -1585,6 +1585,8 @@ func (s *AuditAction) Decode(d *jx.Decoder) error {
 		*s = AuditActionWorkspaceSendingRulesChange
 	case AuditActionContactImport:
 		*s = AuditActionContactImport
+	case AuditActionContactExport:
+		*s = AuditActionContactExport
 	case AuditActionAuditLogExport:
 		*s = AuditActionAuditLogExport
 	case AuditActionWebhookEndpointTest:
@@ -14474,136 +14476,6 @@ func (s *ConsentChannel) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
-// Encode implements json.Marshaler.
-func (s *ConsentEvidence) Encode(e *jx.Encoder) {
-	e.ObjStart()
-	s.encodeFields(e)
-	e.ObjEnd()
-}
-
-// encodeFields encodes fields.
-func (s *ConsentEvidence) encodeFields(e *jx.Encoder) {
-	{
-		e.FieldStart("wording")
-		e.Str(s.Wording)
-	}
-	{
-		e.FieldStart("source")
-		e.Str(s.Source)
-	}
-	{
-		e.FieldStart("brand")
-		e.Str(s.Brand)
-	}
-}
-
-var jsonFieldsNameOfConsentEvidence = [3]string{
-	0: "wording",
-	1: "source",
-	2: "brand",
-}
-
-// Decode decodes ConsentEvidence from json.
-func (s *ConsentEvidence) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode ConsentEvidence to nil")
-	}
-	var requiredBitSet [1]uint8
-
-	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
-		switch string(k) {
-		case "wording":
-			requiredBitSet[0] |= 1 << 0
-			if err := func() error {
-				v, err := d.Str()
-				s.Wording = string(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"wording\"")
-			}
-		case "source":
-			requiredBitSet[0] |= 1 << 1
-			if err := func() error {
-				v, err := d.Str()
-				s.Source = string(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"source\"")
-			}
-		case "brand":
-			requiredBitSet[0] |= 1 << 2
-			if err := func() error {
-				v, err := d.Str()
-				s.Brand = string(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"brand\"")
-			}
-		default:
-			return errors.Errorf("unexpected field %q", k)
-		}
-		return nil
-	}); err != nil {
-		return errors.Wrap(err, "decode ConsentEvidence")
-	}
-	// Validate required fields.
-	var failures []validate.FieldError
-	for i, mask := range [1]uint8{
-		0b00000111,
-	} {
-		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
-			// Mask only required fields and check equality to mask using XOR.
-			//
-			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
-			// Bits of fields which would be set are actually bits of missed fields.
-			missed := bits.OnesCount8(result)
-			for bitN := 0; bitN < missed; bitN++ {
-				bitIdx := bits.TrailingZeros8(result)
-				fieldIdx := i*8 + bitIdx
-				var name string
-				if fieldIdx < len(jsonFieldsNameOfConsentEvidence) {
-					name = jsonFieldsNameOfConsentEvidence[fieldIdx]
-				} else {
-					name = strconv.Itoa(fieldIdx)
-				}
-				failures = append(failures, validate.FieldError{
-					Name:  name,
-					Error: validate.ErrFieldRequired,
-				})
-				// Reset bit.
-				result &^= 1 << bitIdx
-			}
-		}
-	}
-	if len(failures) > 0 {
-		return &validate.Error{Fields: failures}
-	}
-
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s *ConsentEvidence) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *ConsentEvidence) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
 // Encode encodes ContactAttribute as json.
 func (s ContactAttribute) Encode(e *jx.Encoder) {
 	e.Str(string(s))
@@ -14893,6 +14765,8 @@ func (s *ContactBatchWarning) Decode(d *jx.Decoder) error {
 		*s = ContactBatchWarningDisposableEmail
 	case ContactBatchWarningRoleEmail:
 		*s = ContactBatchWarningRoleEmail
+	case ContactBatchWarningConsentTimeInFuture:
+		*s = ContactBatchWarningConsentTimeInFuture
 	default:
 		*s = ContactBatchWarning(v)
 	}
@@ -16958,6 +16832,8 @@ func (s *ContactExportSource) Decode(d *jx.Decoder) error {
 		*s = ContactExportSourceAPI
 	case ContactExportSourceTracker:
 		*s = ContactExportSourceTracker
+	case ContactExportSourceImport:
+		*s = ContactExportSourceImport
 	default:
 		*s = ContactExportSource(v)
 	}
@@ -18747,14 +18623,21 @@ func (s *CreateConfirmationInput) encodeFields(e *jx.Encoder) {
 		e.FieldStart("brand")
 		e.Str(s.Brand)
 	}
+	{
+		if s.OccurredAt.Set {
+			e.FieldStart("occurredAt")
+			s.OccurredAt.Encode(e)
+		}
+	}
 }
 
-var jsonFieldsNameOfCreateConfirmationInput = [5]string{
+var jsonFieldsNameOfCreateConfirmationInput = [6]string{
 	0: "channel",
 	1: "destination",
 	2: "wording",
 	3: "source",
 	4: "brand",
+	5: "occurredAt",
 }
 
 // Decode decodes CreateConfirmationInput from json.
@@ -18823,6 +18706,16 @@ func (s *CreateConfirmationInput) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"brand\"")
+			}
+		case "occurredAt":
+			if err := func() error {
+				s.OccurredAt.Reset()
+				if err := s.OccurredAt.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"occurredAt\"")
 			}
 		default:
 			return errors.Errorf("unexpected field %q", k)
@@ -31612,6 +31505,153 @@ func (s *ImageUrl) UnmarshalJSON(data []byte) error {
 }
 
 // Encode implements json.Marshaler.
+func (s *ImportedConsentEvidence) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *ImportedConsentEvidence) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("wording")
+		e.Str(s.Wording)
+	}
+	{
+		e.FieldStart("source")
+		e.Str(s.Source)
+	}
+	{
+		e.FieldStart("brand")
+		e.Str(s.Brand)
+	}
+	{
+		if s.OccurredAt.Set {
+			e.FieldStart("occurredAt")
+			s.OccurredAt.Encode(e)
+		}
+	}
+}
+
+var jsonFieldsNameOfImportedConsentEvidence = [4]string{
+	0: "wording",
+	1: "source",
+	2: "brand",
+	3: "occurredAt",
+}
+
+// Decode decodes ImportedConsentEvidence from json.
+func (s *ImportedConsentEvidence) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ImportedConsentEvidence to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "wording":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := d.Str()
+				s.Wording = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"wording\"")
+			}
+		case "source":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.Source = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"source\"")
+			}
+		case "brand":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Str()
+				s.Brand = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"brand\"")
+			}
+		case "occurredAt":
+			if err := func() error {
+				s.OccurredAt.Reset()
+				if err := s.OccurredAt.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"occurredAt\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode ImportedConsentEvidence")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfImportedConsentEvidence) {
+					name = jsonFieldsNameOfImportedConsentEvidence[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *ImportedConsentEvidence) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ImportedConsentEvidence) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
 func (s *InboxConfig) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
@@ -36209,39 +36249,6 @@ func (s *OptConsentChannel) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
-// Encode encodes ConsentEvidence as json.
-func (o OptConsentEvidence) Encode(e *jx.Encoder) {
-	if !o.Set {
-		return
-	}
-	o.Value.Encode(e)
-}
-
-// Decode decodes ConsentEvidence from json.
-func (o *OptConsentEvidence) Decode(d *jx.Decoder) error {
-	if o == nil {
-		return errors.New("invalid: unable to decode OptConsentEvidence to nil")
-	}
-	o.Set = true
-	if err := o.Value.Decode(d); err != nil {
-		return err
-	}
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s OptConsentEvidence) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *OptConsentEvidence) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
 // Encode encodes ContactEngagementTrackingInput as json.
 func (o OptContactEngagementTrackingInput) Encode(e *jx.Encoder) {
 	if !o.Set {
@@ -36635,6 +36642,39 @@ func (s OptEventTriggerInputEntryPolicy) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *OptEventTriggerInputEntryPolicy) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ImportedConsentEvidence as json.
+func (o OptImportedConsentEvidence) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes ImportedConsentEvidence from json.
+func (o *OptImportedConsentEvidence) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptImportedConsentEvidence to nil")
+	}
+	o.Set = true
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptImportedConsentEvidence) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptImportedConsentEvidence) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -37949,6 +37989,8 @@ func (s *OptOutVia) Decode(d *jx.Decoder) error {
 		*s = OptOutViaRefusedSend
 	case OptOutViaManual:
 		*s = OptOutViaManual
+	case OptOutViaImported:
+		*s = OptOutViaImported
 	default:
 		*s = OptOutVia(v)
 	}
@@ -62818,6 +62860,22 @@ func (s *UpsertContactInput) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.Tags != nil {
+			e.FieldStart("tags")
+			e.ArrStart()
+			for _, elem := range s.Tags {
+				e.Str(elem)
+			}
+			e.ArrEnd()
+		}
+	}
+	{
+		if s.EmailConsent.Set {
+			e.FieldStart("emailConsent")
+			s.EmailConsent.Encode(e)
+		}
+	}
+	{
 		if s.SmsConsent.Set {
 			e.FieldStart("smsConsent")
 			s.SmsConsent.Encode(e)
@@ -62831,7 +62889,7 @@ func (s *UpsertContactInput) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfUpsertContactInput = [14]string{
+var jsonFieldsNameOfUpsertContactInput = [16]string{
 	0:  "subjectId",
 	1:  "email",
 	2:  "phone",
@@ -62844,8 +62902,10 @@ var jsonFieldsNameOfUpsertContactInput = [14]string{
 	9:  "city",
 	10: "avatar",
 	11: "customFields",
-	12: "smsConsent",
-	13: "engagementTracking",
+	12: "tags",
+	13: "emailConsent",
+	14: "smsConsent",
+	15: "engagementTracking",
 }
 
 // Decode decodes UpsertContactInput from json.
@@ -62975,6 +63035,35 @@ func (s *UpsertContactInput) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"customFields\"")
+			}
+		case "tags":
+			if err := func() error {
+				s.Tags = make([]string, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem string
+					v, err := d.Str()
+					elem = string(v)
+					if err != nil {
+						return err
+					}
+					s.Tags = append(s.Tags, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"tags\"")
+			}
+		case "emailConsent":
+			if err := func() error {
+				s.EmailConsent.Reset()
+				if err := s.EmailConsent.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"emailConsent\"")
 			}
 		case "smsConsent":
 			if err := func() error {

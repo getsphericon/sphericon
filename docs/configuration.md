@@ -92,6 +92,8 @@ answered `413`.
    - `SPHERICON_COLLECT_MAX_BODY_BYTES` (default: `512000`) - The largest `/collect` batch (`POST /collect/events`), in bytes; a larger one is answered `413`.
    - `SPHERICON_COLLECT_MAX_EVENT_BYTES` (default: `32768`) - The largest single `/collect` event, in bytes: an identify body, or each event of a batch; a
 larger one is answered `413`.
+   - `SPHERICON_CSV_IMPORT_MAX_BYTES` (default: `52428800`) - The largest CSV file of Contacts a Member uploads to import, in bytes (50 MiB by default); a
+larger one is answered `413` with the limit. Raise it for a large migration.
  - The per-policy rate limits (ADR 0025); `0` disables a limit.
    - `SPHERICON_RATE_LIMIT_HUMAN_PER_MINUTE` (default: `60`) - Requests per minute per client IP and endpoint on the public human-facing endpoints
 (signup, invitation accept, consent confirm); over it `429` with `Retry-After`.

@@ -91,6 +91,9 @@ enum AuditAction {
   /** Imported contacts */
   contactImport: "contact.import",
 
+  /** Exported contacts: one contact's data, or a segment's or every contact as CSV */
+  contactExport: "contact.export",
+
   /** Exported the audit log */
   auditLogExport: "audit_log.export",
 

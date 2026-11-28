@@ -284,6 +284,7 @@ func (p *txPublisher) Publish(ctx context.Context, ev DomainEvent) (err error) {
 		DedupKey:    dedupKey,
 		CausedBy:    causeOf(ctx),
 		SendLocked:  IsSendLocked(ctx),
+		Cause:       causeIn(ctx),
 	}
 	stamp(ctx, &env)
 	first, err := p.claimExternal(ctx, env)
@@ -291,7 +292,7 @@ func (p *txPublisher) Publish(ctx context.Context, ev DomainEvent) (err error) {
 		return err
 	}
 	if projected {
-		first, err := storeEvent(ctx, p.client, env, ev, projection)
+		first, err := storeEvent(ctx, p.client, env, projection)
 		if err != nil {
 			return err
 		}

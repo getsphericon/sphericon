@@ -225,3 +225,8 @@ func newPendingSignupsStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.O2M, false, PendingSignupsTable, PendingSignupsColumn),
 	)
 }
+
+// Values is every value of the Role enum, in the schema's order.
+func (Role) Values() []string {
+	return []string{"admin", "member"}
+}

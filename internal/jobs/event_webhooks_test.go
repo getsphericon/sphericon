@@ -34,8 +34,8 @@ func TestEveryLiveEventAndAuditEntryIsHandedToTheWebhooksConsumer(t *testing.T) 
 		handed := webhooks.Wants(env, ev)
 		assert.Equal(t, reachesEndpoints, handed, "%s: only an Event or an Audit entry leaves through an endpoint", name)
 	}
-	history := &events.CollectedEvent{WorkspaceID: fixtures.AcmeID, Action: "purchase", Backfill: true}
-	historyWanted := webhooks.Wants(events.Envelope{Name: events.NameCollected}, history)
+	history := &events.CollectedEvent{WorkspaceID: fixtures.AcmeID, Action: "purchase"}
+	historyWanted := webhooks.Wants(events.Envelope{Name: events.NameCollected, Cause: events.Backfill()}, history)
 	assert.False(t, historyWanted, "loaded history is never delivered")
 }
 
@@ -118,8 +118,8 @@ func TestTheErasedContactsDeliveryCarriesItsSubject(t *testing.T) {
 // reaches the endpoint.
 func TestABackfilledEventReachesNoWebhook(t *testing.T) {
 	env := testhelper.Setup(t)
-	history := &events.CollectedEvent{WorkspaceID: fixtures.InitechID, ContactID: fixtures.ContactErasableID, SubjectID: "s-7", Action: "purchase", Backfill: true}
-	publishEvent(t, env, history)
+	history := &events.CollectedEvent{WorkspaceID: fixtures.InitechID, ContactID: fixtures.ContactErasableID, SubjectID: "s-7", Action: "purchase"}
+	publishIn(events.WithCause(t.Context(), events.Backfill()), t, env, history)
 	historyJobs := env.EventJobs(t, jobs.WebhookEventArgs{}.Kind())
 	assert.Empty(t, historyJobs)
 

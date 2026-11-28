@@ -29,9 +29,11 @@ import (
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/visitor"
+	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/phone"
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
@@ -57,10 +59,11 @@ type Download struct {
 // as each surface has the contract's members of its own.
 type Exporter struct {
 	mapper Mapper
+	bus    *events.Bus
 }
 
-// New builds the exporter over the surface's Mapper.
-func New(m Mapper) *Exporter { return &Exporter{mapper: m} }
+// New builds the exporter over the surface's Mapper and the bus its Audit entry is recorded on.
+func New(m Mapper, bus *events.Bus) *Exporter { return &Exporter{mapper: m, bus: bus} }
 
 // OpenInput names the Contact to export by exactly one of its id or its email; the other is nil.
 type OpenInput struct {
@@ -70,10 +73,24 @@ type OpenInput struct {
 
 // Open is the Data export of the Contact in.ID or in.Email names, inside the Workspace of s:
 // another Workspace's Contact is not found. Its two refusals (ErrIdentifier,
-// ErrNotFound) come before any chunk and answer alike on both surfaces. The Contact and every
-// member are read through s, so nothing outside the Workspace can appear.
+// ErrNotFound) come before any chunk and answer alike on both surfaces. The export is recorded as
+// a `contact.export` Audit entry of the scope's actor, naming the Contact, before any chunk too
+// (ADR 0022, ADR 0138). The Contact and every member are read through s, so nothing outside the
+// Workspace can appear.
 func (e *Exporter) Open(ctx context.Context, s *ent.Scoped, in OpenInput) (Download, error) {
 	c, err := find(ctx, s, in.ID, in.Email)
+	if err != nil {
+		return Download{}, err
+	}
+	err = e.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
+		return events.RecordAudit(ctx, pub, &events.AuditEntry{
+			WorkspaceID: ts.WorkspaceID(),
+			Actor:       ts.Actor(),
+			Action:      events.ActionContactExport,
+			TargetType:  contact.Label,
+			TargetID:    publicid.Encode(c.ID),
+		})
+	})
 	if err != nil {
 		return Download{}, err
 	}

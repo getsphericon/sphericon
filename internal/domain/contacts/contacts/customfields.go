@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/internal/infra/db"
+	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/localcalendar"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
@@ -19,6 +20,32 @@ import (
 
 // ErrReservedKey means a Custom field was given the key of a core attribute or an alias key.
 var ErrReservedKey = validation.Refuse("contacts: a custom field key names a contact attribute", i18n.ErrorsCustomFieldKeyReserved)
+
+// ErrCustomFieldType means a Contact intake row gave a Custom field the Workspace has a value its
+// type does not read (TypeReads, ADR 0138): the refusal names the field and its type.
+var ErrCustomFieldType = validation.RefuseField(fieldname.CustomFields, "contacts: a custom field value is not of the field's type", i18n.ErrorsCustomFieldTypeMismatch)
+
+// checkFieldTypes refuses a value of kv whose Custom field the Workspace has and whose type does not
+// read it (ErrCustomFieldType, naming the first such field by key). A key the Workspace has no field
+// of is declared by its use (EnsureCustomFields), typed from its value.
+func checkFieldTypes(ctx context.Context, s *ent.Scoped, kv map[string]any) error {
+	if len(kv) == 0 {
+		return nil
+	}
+	defined, err := s.CustomField().Query().Where(customfield.KeyIn(lo.Keys(kv)...)).Order(ent.Asc(customfield.FieldKey)).All(ctx)
+	if err != nil {
+		return fmt.Errorf("read custom fields: %w", err)
+	}
+	for _, field := range defined {
+		if TypeReads(field.Type, kv[field.Key]) {
+			continue
+		}
+		return ErrCustomFieldType.
+			Args(map[string]any{"Field": field.Key, "Type": string(field.Type)}).
+			On(validation.Nested(fieldname.CustomFields, field.Key))
+	}
+	return nil
+}
 
 // EnsureCustomFields implements declared-by-use Custom fields (ADR 0006): for each
 // key in the incoming attribute map it auto-creates a typed CustomField definition
@@ -161,4 +188,29 @@ func inferFieldType(v any) customfield.Type {
 	default:
 		return customfield.TypeString
 	}
+}
+
+// TypeReads reports whether a Custom field of type t reads value, the one type check of a Custom
+// field's value (ADR 0125): strict JSON types, no coercion. A number field reads a JSON number, a
+// boolean field a JSON boolean, a string field a JSON string, and a datetime field a string in an
+// ISO form ingest reads as a datetime (localcalendar.IsISODate). An object, a list and null are
+// read by no type, and "42" is no number.
+func TypeReads(t customfield.Type, value any) bool {
+	switch t {
+	case customfield.TypeNumber:
+		switch value.(type) {
+		case float64, float32, int, int64, json.Number:
+			return true
+		}
+	case customfield.TypeBool:
+		_, ok := value.(bool)
+		return ok
+	case customfield.TypeString:
+		_, ok := value.(string)
+		return ok
+	case customfield.TypeDatetime:
+		s, ok := value.(string)
+		return ok && localcalendar.IsISODate(s)
+	}
+	return false
 }

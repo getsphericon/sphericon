@@ -197,3 +197,8 @@ func newVersionsStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.O2M, false, VersionsTable, VersionsColumn),
 	)
 }
+
+// Values is every value of the Kind enum, in the schema's order.
+func (Kind) Values() []string {
+	return []string{"required_acceptance", "optional_consent", "notice"}
+}

@@ -44,6 +44,9 @@ enum Permission {
   /** Exporting Contacts */
   contactsExport: "contacts:export",
 
+  /** Importing a CSV file of Contacts, and its refused rows' report */
+  contactsImport: "contacts:import",
+
   /** Renaming a Custom field and changing its type */
   customFieldsManage: "custom_fields:manage",
 

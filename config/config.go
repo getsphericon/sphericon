@@ -307,7 +307,8 @@ type Keyset struct {
 // BodyLimits are the request body caps in bytes. /collect is the public tracking
 // ingestion (its key ships in customer pages, so anyone can post to it): Collect
 // caps a batch (POST /collect/events), CollectEvent one event (an identify body, or
-// each event inside a batch). Default applies to every other surface.
+// each event inside a batch). CSVImport caps the upload of a CSV import (ADR 0138). Default
+// applies to every other surface.
 type BodyLimits struct {
 	// The largest request body, in bytes, accepted on every surface but `/collect`; a larger one is
 	// answered `413`.
@@ -317,6 +318,9 @@ type BodyLimits struct {
 	// The largest single `/collect` event, in bytes: an identify body, or each event of a batch; a
 	// larger one is answered `413`.
 	CollectEvent int64 `env:"SPHERICON_COLLECT_MAX_EVENT_BYTES" envDefault:"32768"`
+	// The largest CSV file of Contacts a Member uploads to import, in bytes (50 MiB by default); a
+	// larger one is answered `413` with the limit. Raise it for a large migration.
+	CSVImport int64 `env:"SPHERICON_CSV_IMPORT_MAX_BYTES" envDefault:"52428800"`
 }
 
 // RateLimits are the per-policy request budgets (ADR 0025). Every limit has a default and 0

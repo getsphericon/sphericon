@@ -391,13 +391,14 @@ export const capturedMessagesGet = <ThrowOnError extends boolean = false>(option
 });
 
 /**
- * Record consent a phone number gave outside sphericon (a form of your own, a verification
- * service), as an `imported` confirmation with its evidence: the wording shown, where it was
- * collected and the brand. The evidence is kept in the immutable `sms.confirmed` event.
- * A number already confirmed keeps its confirmation unless the new one is stronger, so the
- * answer is the confirmation that stands. It does not lift an opt-out: only the person can, by
- * texting START. Consent recorded before the number last withdrew it changes nothing and is
- * refused with a conflict.
+ * Record consent an email address or a phone number gave outside sphericon (a form of your own,
+ * a verification service), as an `imported` confirmation with its evidence: the wording shown,
+ * where it was collected and the brand. The evidence is kept in the immutable
+ * `marketing.confirmed` or `sms.confirmed` event. A destination already confirmed keeps its
+ * confirmation unless the new one is stronger, so the answer is the confirmation that stands.
+ * It does not lift an opt-out: only the person can, by a confirmation link or by texting START.
+ * Consent given before the destination last withdrew it changes nothing and is refused with a
+ * conflict.
  */
 export const confirmationsCreate = <ThrowOnError extends boolean = false>(options: Options<ConfirmationsCreateData, ThrowOnError>): RequestResult<ConfirmationsCreateResponses, ConfirmationsCreateErrors, ThrowOnError> => (options.client ?? client).post<ConfirmationsCreateResponses, ConfirmationsCreateErrors, ThrowOnError>({
   security: [{ scheme: 'bearer', type: 'http' }],

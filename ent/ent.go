@@ -33,9 +33,13 @@ import (
 	"github.com/getsphericon/sphericon/ent/consentstamp"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/contactdate"
+	"github.com/getsphericon/sphericon/ent/contactimport"
+	"github.com/getsphericon/sphericon/ent/contactimportchunk"
+	"github.com/getsphericon/sphericon/ent/contactimportreportrow"
 	"github.com/getsphericon/sphericon/ent/contacttag"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/defaultsendcap"
+	"github.com/getsphericon/sphericon/ent/downloadlink"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
 	"github.com/getsphericon/sphericon/ent/erasure"
@@ -180,9 +184,13 @@ func checkColumn(t, c string) error {
 			consentstamp.Table:               consentstamp.ValidColumn,
 			contact.Table:                    contact.ValidColumn,
 			contactdate.Table:                contactdate.ValidColumn,
+			contactimport.Table:              contactimport.ValidColumn,
+			contactimportchunk.Table:         contactimportchunk.ValidColumn,
+			contactimportreportrow.Table:     contactimportreportrow.ValidColumn,
 			contacttag.Table:                 contacttag.ValidColumn,
 			customfield.Table:                customfield.ValidColumn,
 			defaultsendcap.Table:             defaultsendcap.ValidColumn,
+			downloadlink.Table:               downloadlink.ValidColumn,
 			emailtemplate.Table:              emailtemplate.ValidColumn,
 			engagementtrackingconsent.Table:  engagementtrackingconsent.ValidColumn,
 			erasure.Table:                    erasure.ValidColumn,
