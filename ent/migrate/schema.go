@@ -1250,6 +1250,7 @@ var (
 		{Name: "id", Type: field.TypeInt64, Increment: true},
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "member_name", Type: field.TypeString},
 		{Name: "state", Type: field.TypeEnum, Enums: []string{"uploaded", "ready", "running", "cancelled", "failed", "done"}, Default: "uploaded"},
 		{Name: "delimiter", Type: field.TypeEnum, Enums: []string{"comma", "semicolon", "tab"}},
 		{Name: "header", Type: field.TypeJSON},
@@ -1286,13 +1287,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "contact_imports_memberships_contact_imports",
-				Columns:    []*schema.Column{ContactImportsColumns[28]},
+				Columns:    []*schema.Column{ContactImportsColumns[29]},
 				RefColumns: []*schema.Column{MembershipsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "contact_imports_workspaces_contact_imports",
-				Columns:    []*schema.Column{ContactImportsColumns[29]},
+				Columns:    []*schema.Column{ContactImportsColumns[30]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1301,17 +1302,17 @@ var (
 			{
 				Name:    "contactimport_workspace_id_membership_id",
 				Unique:  false,
-				Columns: []*schema.Column{ContactImportsColumns[29], ContactImportsColumns[28]},
+				Columns: []*schema.Column{ContactImportsColumns[30], ContactImportsColumns[29]},
 			},
 			{
 				Name:    "contactimport_workspace_id_state",
 				Unique:  false,
-				Columns: []*schema.Column{ContactImportsColumns[29], ContactImportsColumns[3]},
+				Columns: []*schema.Column{ContactImportsColumns[30], ContactImportsColumns[4]},
 			},
 			{
 				Name:    "contact_imports_one_running",
 				Unique:  true,
-				Columns: []*schema.Column{ContactImportsColumns[29]},
+				Columns: []*schema.Column{ContactImportsColumns[30]},
 				Annotation: &entsql.IndexAnnotation{
 					Where: "state = 'running'",
 				},

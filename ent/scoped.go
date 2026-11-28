@@ -29516,6 +29516,14 @@ func (x *ContactImportScopedCreate) SetNillableMembershipID(v *int64) *ContactIm
 
 const RoleOf_ContactImportScopedCreate_SetNillableMembershipID = RoleStep
 
+// SetMemberName sets the "member_name" field.
+func (x *ContactImportScopedCreate) SetMemberName(v string) *ContactImportScopedCreate {
+	x.set = append(x.set, func(b *ContactImportCreate) { b.SetMemberName(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetMemberName = RoleStep
+
 // SetState sets the "state" field.
 func (x *ContactImportScopedCreate) SetState(v contactimport.State) *ContactImportScopedCreate {
 	x.set = append(x.set, func(b *ContactImportCreate) { b.SetState(v) })

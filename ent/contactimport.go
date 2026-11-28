@@ -29,6 +29,8 @@ type ContactImport struct {
 	WorkspaceID int64 `json:"workspace_id,omitempty"`
 	// MembershipID holds the value of the "membership_id" field.
 	MembershipID *int64 `json:"membership_id,omitempty"`
+	// MemberName holds the value of the "member_name" field.
+	MemberName string `json:"member_name,omitempty"`
 	// State holds the value of the "state" field.
 	State contactimport.State `json:"state,omitempty"`
 	// Delimiter holds the value of the "delimiter" field.
@@ -151,7 +153,7 @@ func (*ContactImport) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case contactimport.FieldID, contactimport.FieldWorkspaceID, contactimport.FieldMembershipID, contactimport.FieldSize, contactimport.FieldRowCount, contactimport.FieldMalformedRows, contactimport.FieldCheckpointRow, contactimport.FieldCheckpointChunk, contactimport.FieldCheckpointOffset, contactimport.FieldCheckpointContactFloor, contactimport.FieldRecoveries, contactimport.FieldProcessed, contactimport.FieldCreated, contactimport.FieldUpdated, contactimport.FieldRefused, contactimport.FieldDropped, contactimport.FieldOptedOut, contactimport.FieldSuppressed:
 			values[i] = new(sql.NullInt64)
-		case contactimport.FieldState, contactimport.FieldDelimiter:
+		case contactimport.FieldMemberName, contactimport.FieldState, contactimport.FieldDelimiter:
 			values[i] = new(sql.NullString)
 		case contactimport.FieldCreatedAt, contactimport.FieldUpdatedAt, contactimport.FieldStartedAt, contactimport.FieldEndedAt, contactimport.FieldCancelRequestedAt, contactimport.FieldReportExpiresAt:
 			values[i] = new(sql.NullTime)
@@ -200,6 +202,12 @@ func (_m *ContactImport) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.MembershipID = new(int64)
 				*_m.MembershipID = value.Int64
+			}
+		case contactimport.FieldMemberName:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field member_name", values[i])
+			} else if value.Valid {
+				_m.MemberName = value.String
 			}
 		case contactimport.FieldState:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -428,6 +436,9 @@ func (_m *ContactImport) String() string {
 		builder.WriteString("membership_id=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
+	builder.WriteString(", ")
+	builder.WriteString("member_name=")
+	builder.WriteString(_m.MemberName)
 	builder.WriteString(", ")
 	builder.WriteString("state=")
 	builder.WriteString(fmt.Sprintf("%v", _m.State))

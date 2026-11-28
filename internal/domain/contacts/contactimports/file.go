@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contactimport"
 	"github.com/getsphericon/sphericon/ent/contactimportchunk"
+	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
@@ -60,10 +61,15 @@ func (m *Module) Upload(ctx context.Context, s *ent.Scoped, in UploadInput) (Vie
 		return View{}, err
 	}
 	data = facts.Body
+	ms, err := s.Membership().Query().Where(membership.ID(in.MembershipID)).WithUser().Only(ctx)
+	if err != nil {
+		return View{}, err
+	}
 	var imp *ent.ContactImport
 	err = m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		imp, err = ts.ContactImport().Create().
 			SetMembershipID(in.MembershipID).
+			SetMemberName(ms.Edges.User.Name).
 			SetDelimiter(facts.Delimiter).
 			SetHeader(facts.Header).
 			SetSize(int64(len(data))).

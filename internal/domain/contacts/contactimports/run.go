@@ -309,9 +309,9 @@ func (m *Module) membership(ctx context.Context, s *ent.Scoped, imp *ent.Contact
 }
 
 // end moves the running imp by t, stamping its end and its report's expiry, and deletes its
-// file, in one transaction; while its Member is in the Workspace (member) it records its one
-// contact.import Audit entry as member, with how it ended, what it wrote, its mapping and its
-// choices.
+// file, in one transaction, and records its one contact.import Audit entry: as its Member while
+// they are in the Workspace (member), else as the system; with the Member who ran it, how it
+// ended, what it wrote, its mapping and its choices.
 func (m *Module) end(ctx context.Context, s *ent.Scoped, imp *ent.ContactImport, t trigger, member *ent.Scoped) error {
 	now := m.now()
 	return m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
@@ -324,19 +324,22 @@ func (m *Module) end(ctx context.Context, s *ent.Scoped, imp *ent.ContactImport,
 		if _, err := ts.ContactImportChunk().Delete().Where(contactimportchunk.ContactImportID(imp.ID)).Exec(ctx); err != nil {
 			return err
 		}
-		if member == nil {
-			return nil
-		}
 		done, err := ts.ContactImport().Get(ctx, imp.ID)
 		if err != nil {
 			return err
 		}
+		// A Member who left no longer acts: the system ends the run, and the entry names them.
+		actor := events.Actor{Kind: events.ActorSystem}
+		if member != nil {
+			actor = member.Actor()
+		}
 		return events.RecordAudit(ctx, pub, &events.AuditEntry{
 			WorkspaceID: ts.WorkspaceID(),
-			Actor:       member.Actor(),
+			Actor:       actor,
 			Action:      events.ActionContactImport,
 			TargetType:  contact.Label,
 			Diff: map[string]any{
+				auditMember:                     done.MemberName,
 				contactimport.FieldState:        done.State,
 				contactimport.FieldCreated:      done.Created,
 				contactimport.FieldUpdated:      done.Updated,
@@ -351,6 +354,10 @@ func (m *Module) end(ctx context.Context, s *ent.Scoped, imp *ent.ContactImport,
 		})
 	})
 }
+
+// auditMember is the key of the contact.import Audit entry's diff that names the Member who ran
+// the import, as they were named at upload.
+const auditMember = "member"
 
 // mappingSummary is what each column of a file wrote, for the Audit entry: "<header>: <target>",
 // an ignored column left out.

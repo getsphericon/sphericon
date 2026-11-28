@@ -75,6 +75,11 @@ func MembershipID(v int64) predicate.ContactImport {
 	return predicate.ContactImport(sql.FieldEQ(FieldMembershipID, v))
 }
 
+// MemberName applies equality check predicate on the "member_name" field. It's identical to MemberNameEQ.
+func MemberName(v string) predicate.ContactImport {
+	return predicate.ContactImport(sql.FieldEQ(FieldMemberName, v))
+}
+
 // Size applies equality check predicate on the "size" field. It's identical to SizeEQ.
 func Size(v int64) predicate.ContactImport {
 	return predicate.ContactImport(sql.FieldEQ(FieldSize, v))
@@ -308,6 +313,71 @@ func MembershipIDIsNil() predicate.ContactImport {
 // MembershipIDNotNil applies the NotNil predicate on the "membership_id" field.
 func MembershipIDNotNil() predicate.ContactImport {
 	return predicate.ContactImport(sql.FieldNotNull(FieldMembershipID))
+}
+
+// MemberNameEQ applies the EQ predicate on the "member_name" field.
+func MemberNameEQ(v string) predicate.ContactImport {
+	return predicate.ContactImport(sql.FieldEQ(FieldMemberName, v))
+}
+
+// MemberNameNEQ applies the NEQ predicate on the "member_name" field.
+func MemberNameNEQ(v string) predicate.ContactImport {
+	return predicate.ContactImport(sql.FieldNEQ(FieldMemberName, v))
+}
+
+// MemberNameIn applies the In predicate on the "member_name" field.
+func MemberNameIn(vs ...string) predicate.ContactImport {
+	return predicate.ContactImport(sql.FieldIn(FieldMemberName, vs...))
+}
+
+// MemberNameNotIn applies the NotIn predicate on the "member_name" field.
+func MemberNameNotIn(vs ...string) predicate.ContactImport {
+	return predicate.ContactImport(sql.FieldNotIn(FieldMemberName, vs...))
+}
+
+// MemberNameGT applies the GT predicate on the "member_name" field.
+func MemberNameGT(v string) predicate.ContactImport {
+	return predicate.ContactImport(sql.FieldGT(FieldMemberName, v))
+}
+
+// MemberNameGTE applies the GTE predicate on the "member_name" field.
+func MemberNameGTE(v string) predicate.ContactImport {
+	return predicate.ContactImport(sql.FieldGTE(FieldMemberName, v))
+}
+
+// MemberNameLT applies the LT predicate on the "member_name" field.
+func MemberNameLT(v string) predicate.ContactImport {
+	return predicate.ContactImport(sql.FieldLT(FieldMemberName, v))
+}
+
+// MemberNameLTE applies the LTE predicate on the "member_name" field.
+func MemberNameLTE(v string) predicate.ContactImport {
+	return predicate.ContactImport(sql.FieldLTE(FieldMemberName, v))
+}
+
+// MemberNameContains applies the Contains predicate on the "member_name" field.
+func MemberNameContains(v string) predicate.ContactImport {
+	return predicate.ContactImport(sql.FieldContains(FieldMemberName, v))
+}
+
+// MemberNameHasPrefix applies the HasPrefix predicate on the "member_name" field.
+func MemberNameHasPrefix(v string) predicate.ContactImport {
+	return predicate.ContactImport(sql.FieldHasPrefix(FieldMemberName, v))
+}
+
+// MemberNameHasSuffix applies the HasSuffix predicate on the "member_name" field.
+func MemberNameHasSuffix(v string) predicate.ContactImport {
+	return predicate.ContactImport(sql.FieldHasSuffix(FieldMemberName, v))
+}
+
+// MemberNameEqualFold applies the EqualFold predicate on the "member_name" field.
+func MemberNameEqualFold(v string) predicate.ContactImport {
+	return predicate.ContactImport(sql.FieldEqualFold(FieldMemberName, v))
+}
+
+// MemberNameContainsFold applies the ContainsFold predicate on the "member_name" field.
+func MemberNameContainsFold(v string) predicate.ContactImport {
+	return predicate.ContactImport(sql.FieldContainsFold(FieldMemberName, v))
 }
 
 // StateEQ applies the EQ predicate on the "state" field.
