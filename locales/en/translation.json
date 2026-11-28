@@ -1368,7 +1368,7 @@
         "time": "Time of a consent or refusal"
       },
       "optOutsFinal": "An imported unsubscribe cannot be undone: only the person can opt back in. Check the values each refusal column lists before you run the import.",
-      "previewRefusals": "The file would record {{optOuts}} opt-outs and {{suppressions}} suppressions.",
+      "previewRefusals": "The file would record up to {{optOuts}} opt-outs and {{suppressions}} suppressions.",
       "records": "Records",
       "recordsOf": "What value {{at}} of {{column}} records",
       "refusals": {

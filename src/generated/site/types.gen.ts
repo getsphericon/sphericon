@@ -2713,7 +2713,7 @@ export type ContactImportPreviewRow = {
 
 /**
  * What a value of a refusal column records: an Unsubscribe of `everything` or of `broadcasts`
- * (email only), recorded as imported, which only the person can lift; or a Suppression of the
+ * (not on SMS, where a person stops everything), recorded as imported, which only the person can lift; or a Suppression of the
  * `manual` reason, which needs `suppressions:manage`
  */
 export const ContactImportRefusal = {
@@ -2724,7 +2724,7 @@ export const ContactImportRefusal = {
 
 /**
  * What a value of a refusal column records: an Unsubscribe of `everything` or of `broadcasts`
- * (email only), recorded as imported, which only the person can lift; or a Suppression of the
+ * (not on SMS, where a person stops everything), recorded as imported, which only the person can lift; or a Suppression of the
  * `manual` reason, which needs `suppressions:manage`
  */
 export type ContactImportRefusal = typeof ContactImportRefusal[keyof typeof ContactImportRefusal];
@@ -7803,7 +7803,7 @@ export type SiteContactImportPreview = {
    */
   distinctTags: number;
   /**
-   * Opt-outs the refusal columns would record over the whole file: the rows with a Destination on the column's Channel whose value means an Unsubscribe (on Telegram, the rows that name a key). An imported Unsubscribe cannot be undone: only the person lifts it
+   * Opt-outs the refusal columns would record over the whole file, at most: the rows with a Destination on the column's Channel whose value means an Unsubscribe (on Telegram, the rows that name a key, whose Contact may have no Binding to record it at). An imported Unsubscribe cannot be undone: only the person lifts it
    */
   optOuts: number;
   /**

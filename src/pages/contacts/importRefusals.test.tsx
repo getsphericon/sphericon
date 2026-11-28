@@ -99,7 +99,7 @@ test('maps a status column as refusals, and the preview counts them with the war
       values: [{ value: 'unsubscribed', refusal: 'unsubscribeEverything' }],
     })
   await expect
-    .element(screen.getByText('The file would record 1 opt-outs and 0 suppressions.'))
+    .element(screen.getByText('The file would record up to 1 opt-outs and 0 suppressions.'))
     .toBeVisible()
   await expect.element(screen.getByText(/cannot be undone/)).toBeVisible()
 })

@@ -15728,7 +15728,7 @@
       "ContactImportRefusal": {
         "type": "string",
         "enum": ["unsubscribeEverything", "unsubscribeBroadcasts", "suppression"],
-        "description": "What a value of a refusal column records: an Unsubscribe of `everything` or of `broadcasts`\n(email only), recorded as imported, which only the person can lift; or a Suppression of the\n`manual` reason, which needs `suppressions:manage`"
+        "description": "What a value of a refusal column records: an Unsubscribe of `everything` or of `broadcasts`\n(not on SMS, where a person stops everything), recorded as imported, which only the person can lift; or a Suppression of the\n`manual` reason, which needs `suppressions:manage`"
       },
       "ContactImportRefusalChannel": {
         "type": "string",
@@ -22777,7 +22777,7 @@
           "optOuts": {
             "type": "integer",
             "format": "int32",
-            "description": "Opt-outs the refusal columns would record over the whole file: the rows with a Destination on the column's Channel whose value means an Unsubscribe (on Telegram, the rows that name a key). An imported Unsubscribe cannot be undone: only the person lifts it"
+            "description": "Opt-outs the refusal columns would record over the whole file, at most: the rows with a Destination on the column's Channel whose value means an Unsubscribe (on Telegram, the rows that name a key, whose Contact may have no Binding to record it at). An imported Unsubscribe cannot be undone: only the person lifts it"
           },
           "suppressions": {
             "type": "integer",

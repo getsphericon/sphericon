@@ -149,7 +149,7 @@
   "errors.contact_import_decimal_separator": "the decimal separator is a point or a comma",
   "errors.contact_import_default_country": "the default country must be a two-letter country code",
   "errors.contact_import_values_required": "list the values that mean a refusal or consent in this column",
-  "errors.contact_import_broadcasts_on_email_only": "an opt-out of broadcasts is on email only: on SMS and Telegram a person stops everything",
+  "errors.contact_import_broadcasts_not_on_sms": "an opt-out of broadcasts is not recorded on SMS: there a person stops everything",
   "errors.contact_import_evidence_part": "give the wording, source and brand once, or name the column that holds each",
   "errors.contact_import_time_of": "a time column times one refusal, consent or tracking column, and no other time column times it",
   "errors.contact_import_report_pending": "the import has not ended; its report is ready when it does",

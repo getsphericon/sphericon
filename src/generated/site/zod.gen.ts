@@ -675,7 +675,7 @@ export const zContactImportKeyColumnInput = z.strictObject({
 
 /**
  * What a value of a refusal column records: an Unsubscribe of `everything` or of `broadcasts`
- * (email only), recorded as imported, which only the person can lift; or a Suppression of the
+ * (not on SMS, where a person stops everything), recorded as imported, which only the person can lift; or a Suppression of the
  * `manual` reason, which needs `suppressions:manage`
  */
 export const zContactImportRefusal = z.enum([

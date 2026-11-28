@@ -98,7 +98,7 @@ export function FactColumnEditor({
       label: refusalLabels[value],
       disabled:
         (value === 'suppression' && !canSuppress) ||
-        (value === 'unsubscribeBroadcasts' && fact.channel !== 'email'),
+        (value === 'unsubscribeBroadcasts' && fact.channel === 'sms'),
     }))
     const setValue = (at: number, patch: Partial<FactSettings['refusals'][number]>) =>
       set({ refusals: fact.refusals.map((v, i) => (i === at ? { ...v, ...patch } : v)) })

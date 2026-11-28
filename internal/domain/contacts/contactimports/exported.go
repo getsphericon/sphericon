@@ -23,20 +23,20 @@ import (
 // field's, and each Channel's state.
 
 // exportedRefusals are the opted-out scopes of an export that a refusal column records, by Channel:
-// `everything`, and `broadcasts` on email; an opt-out of one Automation (its scope
-// `automation:<id>`) means nothing in another Workspace and is not listed. Off email a person stops
-// everything (ADR 0138), so an SMS or Telegram opt-out of broadcasts is recorded as one of
-// everything: a refusal comes back no narrower than it was.
+// `everything`, and `broadcasts` where an opt-out keeps that scope (email, Telegram); an opt-out of
+// one Automation (its scope `automation:<id>`) means nothing in another Workspace and is not
+// listed. On SMS a person stops everything (ADR 0138), so an SMS opt-out of broadcasts is recorded
+// as one of everything: a refusal comes back no narrower than it was.
 func exportedRefusals(channel channels.Channel) []csvimport.RefusalValue {
-	if channel == channels.Email {
-		return []csvimport.RefusalValue{
-			{Value: eligibility.SourceEverything, Refusal: csvimport.RefusalEverything},
-			{Value: eligibility.SourceBroadcasts, Refusal: csvimport.RefusalBroadcasts},
-		}
+	broadcasts := csvimport.RefusalBroadcasts
+	switch channel {
+	case channels.SMS:
+		broadcasts = csvimport.RefusalEverything
+	case channels.Email, channels.Telegram:
 	}
 	return []csvimport.RefusalValue{
 		{Value: eligibility.SourceEverything, Refusal: csvimport.RefusalEverything},
-		{Value: eligibility.SourceBroadcasts, Refusal: csvimport.RefusalEverything},
+		{Value: eligibility.SourceBroadcasts, Refusal: broadcasts},
 	}
 }
 

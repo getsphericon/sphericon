@@ -175,7 +175,7 @@ var (
 	ErrorsContactExportIdentifier                         = ID{key: "errors.contact_export_identifier"}
 	ErrorsContactExportNoColumns                          = ID{key: "errors.contact_export_no_columns"}
 	ErrorsContactIdentityRequired                         = ID{key: "errors.contact_identity_required"}
-	ErrorsContactImportBroadcastsOnEmailOnly              = ID{key: "errors.contact_import_broadcasts_on_email_only"}
+	ErrorsContactImportBroadcastsNotOnSms                 = ID{key: "errors.contact_import_broadcasts_not_on_sms"}
 	ErrorsContactImportColumnCount                        = ID{key: "errors.contact_import_column_count"}
 	ErrorsContactImportDateFormatRequired                 = ID{key: "errors.contact_import_date_format_required"}
 	ErrorsContactImportDecimalSeparator                   = ID{key: "errors.contact_import_decimal_separator"}

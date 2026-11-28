@@ -28,9 +28,9 @@ var (
 	// ErrValuesRequired means a refusal, consent or tracking column lists no value that means
 	// anything: any other value records nothing, so a column of none would record nothing.
 	ErrValuesRequired = validation.RefuseField(fieldname.Values, "contactimports: list the values that mean a refusal or consent", i18n.ErrorsContactImportValuesRequired)
-	// ErrBroadcastsOnEmailOnly means an Unsubscribe of `broadcasts` off email: on sms and
-	// Telegram a person stops everything.
-	ErrBroadcastsOnEmailOnly = validation.RefuseField(fieldname.Values, "contactimports: an opt-out of broadcasts is on email only", i18n.ErrorsContactImportBroadcastsOnEmailOnly)
+	// ErrBroadcastsNotOnSMS means an Unsubscribe of `broadcasts` on SMS, where a person stops
+	// everything; email and Telegram keep an opt-out of broadcasts.
+	ErrBroadcastsNotOnSMS = validation.RefuseField(fieldname.Values, "contactimports: an opt-out of broadcasts is not recorded on sms", i18n.ErrorsContactImportBroadcastsNotOnSms)
 	// ErrEvidencePart means a part of a consent column's evidence is neither given once nor read
 	// from a column of the file, or is both.
 	ErrEvidencePart = validation.RefuseField(fieldname.Evidence, "contactimports: give each part of the evidence once, or name the column that holds it", i18n.ErrorsContactImportEvidencePart)
@@ -79,7 +79,7 @@ func checkedFactColumn(col *csvimport.Column) (csvimport.Column, error) {
 }
 
 // checkedRefusal is a refusal column's fact: its Channel, and each value non-blank and recording
-// an Unsubscribe (of `broadcasts` on email only) or a Suppression.
+// an Unsubscribe (of `broadcasts` off SMS only) or a Suppression.
 func checkedRefusal(in csvimport.Fact) (csvimport.Fact, error) {
 	channel := channels.Channel(in.Channel)
 	if !lo.Contains(refusalChannels, channel) {
@@ -96,8 +96,10 @@ func checkedRefusal(in csvimport.Fact) (csvimport.Fact, error) {
 		}
 		switch v.Refusal {
 		case csvimport.RefusalBroadcasts:
-			if channel != channels.Email {
-				return in, ErrBroadcastsOnEmailOnly
+			switch channel {
+			case channels.SMS:
+				return in, ErrBroadcastsNotOnSMS
+			case channels.Email, channels.Telegram:
 			}
 		case csvimport.RefusalEverything, csvimport.RefusalSuppression:
 		default:
