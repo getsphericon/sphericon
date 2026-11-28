@@ -1505,6 +1505,7 @@ func ScopedEntities() []*ScopedEntity {
 				b.SetCheckpointChunk(src.CheckpointChunk)
 				b.SetCheckpointOffset(src.CheckpointOffset)
 				b.SetCheckpointContactFloor(src.CheckpointContactFloor)
+				b.SetRecoveries(src.Recoveries)
 				b.SetProcessed(src.Processed)
 				b.SetCreated(src.Created)
 				b.SetUpdated(src.Updated)

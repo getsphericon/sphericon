@@ -757,8 +757,9 @@ var testPresets = sync.OnceValues(func() (*preset.Registry, error) {
 })
 
 // addScheduled registers the workers of the scheduled work a test runs: the Integration quota
-// refresh, the release of a deleted Telegram bot's webhook, the Sending domain check, and message
-// retention's daily tick with the prune of one Workspace it queues (ADR 0143).
+// refresh, the release of a deleted Telegram bot's webhook, the Sending domain check, message
+// retention's daily tick with the prune of one Workspace it queues (ADR 0143), and the CSV
+// import's run with its hourly sweep (ADR 0138).
 func addScheduled(tb testing.TB, p performers, sqlDB *sql.DB, client *ent.Client, injector do.Injector) {
 	tb.Helper()
 	ws := do.MustInvoke[*workspaces.Module](injector)
@@ -766,6 +767,7 @@ func addScheduled(tb testing.TB, p performers, sqlDB *sql.DB, client *ent.Client
 	add(tb, p, sqlDB, ws, jobs.NewReleaseWebhookWorker(client, do.MustInvoke[*integrations.Module](injector)))
 	add(tb, p, sqlDB, ws, jobs.NewVerifySendingDomainWorker(client, do.MustInvoke[*sendingdomains.Module](injector)))
 	add(tb, p, sqlDB, ws, jobs.NewRunContactImportWorker(client, do.MustInvoke[*contactimports.Module](injector), do.MustInvoke[app.Clock](injector)))
+	add(tb, p, sqlDB, ws, jobs.NewSweepContactImportsWorker(do.MustInvoke[*contactimports.Module](injector), client))
 	retention := do.MustInvoke[*messageretention.UseCase](injector)
 	add(tb, p, sqlDB, ws, jobs.NewPruneMessagesWorker(retention))
 	add(tb, p, sqlDB, ws, jobs.NewPruneWorkspaceMessagesWorker(retention))

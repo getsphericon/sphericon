@@ -55,6 +55,8 @@ type ContactImport struct {
 	CheckpointOffset int64 `json:"checkpoint_offset,omitempty"`
 	// CheckpointContactFloor holds the value of the "checkpoint_contact_floor" field.
 	CheckpointContactFloor int64 `json:"checkpoint_contact_floor,omitempty"`
+	// Recoveries holds the value of the "recoveries" field.
+	Recoveries int `json:"recoveries,omitempty"`
 	// Processed holds the value of the "processed" field.
 	Processed int `json:"processed,omitempty"`
 	// Created holds the value of the "created" field.
@@ -147,7 +149,7 @@ func (*ContactImport) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case contactimport.FieldOnlyAddNew, contactimport.FieldAsNewSignUps:
 			values[i] = new(sql.NullBool)
-		case contactimport.FieldID, contactimport.FieldWorkspaceID, contactimport.FieldMembershipID, contactimport.FieldSize, contactimport.FieldRowCount, contactimport.FieldMalformedRows, contactimport.FieldCheckpointRow, contactimport.FieldCheckpointChunk, contactimport.FieldCheckpointOffset, contactimport.FieldCheckpointContactFloor, contactimport.FieldProcessed, contactimport.FieldCreated, contactimport.FieldUpdated, contactimport.FieldRefused, contactimport.FieldDropped, contactimport.FieldOptedOut, contactimport.FieldSuppressed:
+		case contactimport.FieldID, contactimport.FieldWorkspaceID, contactimport.FieldMembershipID, contactimport.FieldSize, contactimport.FieldRowCount, contactimport.FieldMalformedRows, contactimport.FieldCheckpointRow, contactimport.FieldCheckpointChunk, contactimport.FieldCheckpointOffset, contactimport.FieldCheckpointContactFloor, contactimport.FieldRecoveries, contactimport.FieldProcessed, contactimport.FieldCreated, contactimport.FieldUpdated, contactimport.FieldRefused, contactimport.FieldDropped, contactimport.FieldOptedOut, contactimport.FieldSuppressed:
 			values[i] = new(sql.NullInt64)
 		case contactimport.FieldState, contactimport.FieldDelimiter:
 			values[i] = new(sql.NullString)
@@ -280,6 +282,12 @@ func (_m *ContactImport) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field checkpoint_contact_floor", values[i])
 			} else if value.Valid {
 				_m.CheckpointContactFloor = value.Int64
+			}
+		case contactimport.FieldRecoveries:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field recoveries", values[i])
+			} else if value.Valid {
+				_m.Recoveries = int(value.Int64)
 			}
 		case contactimport.FieldProcessed:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -459,6 +467,9 @@ func (_m *ContactImport) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("checkpoint_contact_floor=")
 	builder.WriteString(fmt.Sprintf("%v", _m.CheckpointContactFloor))
+	builder.WriteString(", ")
+	builder.WriteString("recoveries=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Recoveries))
 	builder.WriteString(", ")
 	builder.WriteString("processed=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Processed))

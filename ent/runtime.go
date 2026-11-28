@@ -812,32 +812,36 @@ func init() {
 	contactimportDescCheckpointContactFloor := contactimportFields[14].Descriptor()
 	// contactimport.DefaultCheckpointContactFloor holds the default value on creation for the checkpoint_contact_floor field.
 	contactimport.DefaultCheckpointContactFloor = contactimportDescCheckpointContactFloor.Default.(int64)
+	// contactimportDescRecoveries is the schema descriptor for recoveries field.
+	contactimportDescRecoveries := contactimportFields[15].Descriptor()
+	// contactimport.DefaultRecoveries holds the default value on creation for the recoveries field.
+	contactimport.DefaultRecoveries = contactimportDescRecoveries.Default.(int)
 	// contactimportDescProcessed is the schema descriptor for processed field.
-	contactimportDescProcessed := contactimportFields[15].Descriptor()
+	contactimportDescProcessed := contactimportFields[16].Descriptor()
 	// contactimport.DefaultProcessed holds the default value on creation for the processed field.
 	contactimport.DefaultProcessed = contactimportDescProcessed.Default.(int)
 	// contactimportDescCreated is the schema descriptor for created field.
-	contactimportDescCreated := contactimportFields[16].Descriptor()
+	contactimportDescCreated := contactimportFields[17].Descriptor()
 	// contactimport.DefaultCreated holds the default value on creation for the created field.
 	contactimport.DefaultCreated = contactimportDescCreated.Default.(int)
 	// contactimportDescUpdated is the schema descriptor for updated field.
-	contactimportDescUpdated := contactimportFields[17].Descriptor()
+	contactimportDescUpdated := contactimportFields[18].Descriptor()
 	// contactimport.DefaultUpdated holds the default value on creation for the updated field.
 	contactimport.DefaultUpdated = contactimportDescUpdated.Default.(int)
 	// contactimportDescRefused is the schema descriptor for refused field.
-	contactimportDescRefused := contactimportFields[18].Descriptor()
+	contactimportDescRefused := contactimportFields[19].Descriptor()
 	// contactimport.DefaultRefused holds the default value on creation for the refused field.
 	contactimport.DefaultRefused = contactimportDescRefused.Default.(int)
 	// contactimportDescDropped is the schema descriptor for dropped field.
-	contactimportDescDropped := contactimportFields[19].Descriptor()
+	contactimportDescDropped := contactimportFields[20].Descriptor()
 	// contactimport.DefaultDropped holds the default value on creation for the dropped field.
 	contactimport.DefaultDropped = contactimportDescDropped.Default.(int)
 	// contactimportDescOptedOut is the schema descriptor for opted_out field.
-	contactimportDescOptedOut := contactimportFields[20].Descriptor()
+	contactimportDescOptedOut := contactimportFields[21].Descriptor()
 	// contactimport.DefaultOptedOut holds the default value on creation for the opted_out field.
 	contactimport.DefaultOptedOut = contactimportDescOptedOut.Default.(int)
 	// contactimportDescSuppressed is the schema descriptor for suppressed field.
-	contactimportDescSuppressed := contactimportFields[21].Descriptor()
+	contactimportDescSuppressed := contactimportFields[22].Descriptor()
 	// contactimport.DefaultSuppressed holds the default value on creation for the suppressed field.
 	contactimport.DefaultSuppressed = contactimportDescSuppressed.Default.(int)
 	contactimportchunkMixin := schema.ContactImportChunk{}.Mixin()

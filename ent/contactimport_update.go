@@ -220,6 +220,27 @@ func (_u *ContactImportUpdate) AddCheckpointContactFloor(v int64) *ContactImport
 	return _u
 }
 
+// SetRecoveries sets the "recoveries" field.
+func (_u *ContactImportUpdate) SetRecoveries(v int) *ContactImportUpdate {
+	_u.mutation.ResetRecoveries()
+	_u.mutation.SetRecoveries(v)
+	return _u
+}
+
+// SetNillableRecoveries sets the "recoveries" field if the given value is not nil.
+func (_u *ContactImportUpdate) SetNillableRecoveries(v *int) *ContactImportUpdate {
+	if v != nil {
+		_u.SetRecoveries(*v)
+	}
+	return _u
+}
+
+// AddRecoveries adds value to the "recoveries" field.
+func (_u *ContactImportUpdate) AddRecoveries(v int) *ContactImportUpdate {
+	_u.mutation.AddRecoveries(v)
+	return _u
+}
+
 // SetProcessed sets the "processed" field.
 func (_u *ContactImportUpdate) SetProcessed(v int) *ContactImportUpdate {
 	_u.mutation.ResetProcessed()
@@ -655,6 +676,12 @@ func (_u *ContactImportUpdate) sqlSave(ctx context.Context) (_node int, err erro
 	if value, ok := _u.mutation.AddedCheckpointContactFloor(); ok {
 		_spec.AddField(contactimport.FieldCheckpointContactFloor, field.TypeInt64, value)
 	}
+	if value, ok := _u.mutation.Recoveries(); ok {
+		_spec.SetField(contactimport.FieldRecoveries, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedRecoveries(); ok {
+		_spec.AddField(contactimport.FieldRecoveries, field.TypeInt, value)
+	}
 	if value, ok := _u.mutation.Processed(); ok {
 		_spec.SetField(contactimport.FieldProcessed, field.TypeInt, value)
 	}
@@ -1074,6 +1101,27 @@ func (_u *ContactImportUpdateOne) SetNillableCheckpointContactFloor(v *int64) *C
 // AddCheckpointContactFloor adds value to the "checkpoint_contact_floor" field.
 func (_u *ContactImportUpdateOne) AddCheckpointContactFloor(v int64) *ContactImportUpdateOne {
 	_u.mutation.AddCheckpointContactFloor(v)
+	return _u
+}
+
+// SetRecoveries sets the "recoveries" field.
+func (_u *ContactImportUpdateOne) SetRecoveries(v int) *ContactImportUpdateOne {
+	_u.mutation.ResetRecoveries()
+	_u.mutation.SetRecoveries(v)
+	return _u
+}
+
+// SetNillableRecoveries sets the "recoveries" field if the given value is not nil.
+func (_u *ContactImportUpdateOne) SetNillableRecoveries(v *int) *ContactImportUpdateOne {
+	if v != nil {
+		_u.SetRecoveries(*v)
+	}
+	return _u
+}
+
+// AddRecoveries adds value to the "recoveries" field.
+func (_u *ContactImportUpdateOne) AddRecoveries(v int) *ContactImportUpdateOne {
+	_u.mutation.AddRecoveries(v)
 	return _u
 }
 
@@ -1541,6 +1589,12 @@ func (_u *ContactImportUpdateOne) sqlSave(ctx context.Context) (_node *ContactIm
 	}
 	if value, ok := _u.mutation.AddedCheckpointContactFloor(); ok {
 		_spec.AddField(contactimport.FieldCheckpointContactFloor, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.Recoveries(); ok {
+		_spec.SetField(contactimport.FieldRecoveries, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedRecoveries(); ok {
+		_spec.AddField(contactimport.FieldRecoveries, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.Processed(); ok {
 		_spec.SetField(contactimport.FieldProcessed, field.TypeInt, value)

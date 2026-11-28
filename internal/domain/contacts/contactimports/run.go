@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/riverqueue/river"
+	"github.com/riverqueue/river/rivertype"
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -43,6 +44,10 @@ var (
 	ErrNotRunning = validation.Conflict("contactimports: the import is not running", i18n.ErrorsContactImportNotRunning)
 )
 
+// RunRecoveries is how many times a run whose job is gone is queued again (Recover) before it
+// fails.
+const RunRecoveries = 3
+
 // RunArgs is the job of an import's run.
 type RunArgs struct {
 	jobkind.Workspace
@@ -53,8 +58,17 @@ type RunArgs struct {
 func (RunArgs) Kind() string { return "run_contact_import" }
 
 // InsertOpts tries an import's job RunAttempts times: a try that fails is resumed from the
-// import's checkpoint by the next, and the last one's failure fails the import.
-func (RunArgs) InsertOpts() river.InsertOpts { return river.InsertOpts{MaxAttempts: RunAttempts} }
+// import's checkpoint by the next, and the last one's failure fails the import. An import has one
+// job that has not ended at a time: a second is not inserted beside it.
+func (RunArgs) InsertOpts() river.InsertOpts {
+	return river.InsertOpts{
+		MaxAttempts: RunAttempts,
+		UniqueOpts: river.UniqueOpts{ByArgs: true, ByState: []rivertype.JobState{
+			rivertype.JobStateAvailable, rivertype.JobStatePending, rivertype.JobStateRetryable,
+			rivertype.JobStateRunning, rivertype.JobStateScheduled,
+		}},
+	}
+}
 
 // Run runs the ready import id as a Member of role: it is `running`, its start stamped and the
 // Workspace's newest Contact kept as its checkpoint's floor, the Custom fields its mapping creates
@@ -89,6 +103,30 @@ func (m *Module) Run(ctx context.Context, s *ent.Scoped, id int64, role membersh
 		return View{}, err
 	}
 	return m.Get(ctx, s, id)
+}
+
+// Recover queues again the run of the running import id whose job is gone (a process killed on
+// the job's last try, which river gives up on without its worker): the run resumes from its
+// checkpoint. After RunRecoveries it fails instead, keeping what it wrote and its report, so it no
+// longer holds the Workspace's one run. An import no longer running is left as it is.
+func (m *Module) Recover(ctx context.Context, s *ent.Scoped, id int64) error {
+	imp, err := load(ctx, s, id)
+	if err != nil || imp.State != contactimport.StateRunning {
+		return err
+	}
+	if imp.Recoveries >= RunRecoveries {
+		return m.fail(ctx, s, id)
+	}
+	return m.bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher, q events.Enqueuer) error {
+		n, err := ts.ContactImport().Update().
+			Where(contactimport.ID(id), contactimport.StateEQ(contactimport.StateRunning), contactimport.Recoveries(imp.Recoveries)).
+			AddRecoveries(1).
+			Save(ctx)
+		if err != nil || n == 0 {
+			return err
+		}
+		return q.Enqueue(ctx, RunArgs{WorkspaceID: ts.WorkspaceID(), ImportID: id}, nil)
+	})
 }
 
 // Cancel asks the running import id to stop: its job stops after the batch it is writing, and the

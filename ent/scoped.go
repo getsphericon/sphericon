@@ -29700,6 +29700,24 @@ func (x *ContactImportScopedCreate) SetNillableCheckpointContactFloor(v *int64) 
 
 const RoleOf_ContactImportScopedCreate_SetNillableCheckpointContactFloor = RoleStep
 
+// SetRecoveries sets the "recoveries" field.
+func (x *ContactImportScopedCreate) SetRecoveries(v int) *ContactImportScopedCreate {
+	x.set = append(x.set, func(b *ContactImportCreate) { b.SetRecoveries(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetRecoveries = RoleStep
+
+// SetNillableRecoveries sets the "recoveries" field if the given value is not nil.
+func (x *ContactImportScopedCreate) SetNillableRecoveries(v *int) *ContactImportScopedCreate {
+	if v != nil {
+		x.SetRecoveries(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedCreate_SetNillableRecoveries = RoleStep
+
 // SetProcessed sets the "processed" field.
 func (x *ContactImportScopedCreate) SetProcessed(v int) *ContactImportScopedCreate {
 	x.set = append(x.set, func(b *ContactImportCreate) { b.SetProcessed(v) })
@@ -30254,6 +30272,30 @@ func (u *ContactImportScopedUpsert) UpdateCheckpointContactFloor() *ContactImpor
 }
 
 const RoleOf_ContactImportScopedUpsert_UpdateCheckpointContactFloor = RoleStep
+
+// SetRecoveries sets the "recoveries" field.
+func (u *ContactImportScopedUpsert) SetRecoveries(v int) *ContactImportScopedUpsert {
+	u.u.Set(contactimport.FieldRecoveries, v)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_SetRecoveries = RoleStep
+
+// AddRecoveries adds v to the "recoveries" field.
+func (u *ContactImportScopedUpsert) AddRecoveries(v int) *ContactImportScopedUpsert {
+	u.u.Add(contactimport.FieldRecoveries, v)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_AddRecoveries = RoleStep
+
+// UpdateRecoveries sets the "recoveries" field to the value that was provided on create.
+func (u *ContactImportScopedUpsert) UpdateRecoveries() *ContactImportScopedUpsert {
+	u.u.SetExcluded(contactimport.FieldRecoveries)
+	return u
+}
+
+const RoleOf_ContactImportScopedUpsert_UpdateRecoveries = RoleStep
 
 // SetProcessed sets the "processed" field.
 func (u *ContactImportScopedUpsert) SetProcessed(v int) *ContactImportScopedUpsert {
@@ -30945,6 +30987,32 @@ func (x *ContactImportScopedUpdateOne) AddCheckpointContactFloor(v int64) *Conta
 }
 
 const RoleOf_ContactImportScopedUpdateOne_AddCheckpointContactFloor = RoleStep
+
+// SetRecoveries sets the "recoveries" field.
+func (x *ContactImportScopedUpdateOne) SetRecoveries(v int) *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.SetRecoveries(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_SetRecoveries = RoleStep
+
+// SetNillableRecoveries sets the "recoveries" field if the given value is not nil.
+func (x *ContactImportScopedUpdateOne) SetNillableRecoveries(v *int) *ContactImportScopedUpdateOne {
+	if v != nil {
+		x.SetRecoveries(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_SetNillableRecoveries = RoleStep
+
+// AddRecoveries adds value to the "recoveries" field.
+func (x *ContactImportScopedUpdateOne) AddRecoveries(v int) *ContactImportScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactImportUpdateOne) { b.AddRecoveries(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdateOne_AddRecoveries = RoleStep
 
 // SetProcessed sets the "processed" field.
 func (x *ContactImportScopedUpdateOne) SetProcessed(v int) *ContactImportScopedUpdateOne {
@@ -31638,6 +31706,32 @@ func (x *ContactImportScopedUpdate) AddCheckpointContactFloor(v int64) *ContactI
 }
 
 const RoleOf_ContactImportScopedUpdate_AddCheckpointContactFloor = RoleStep
+
+// SetRecoveries sets the "recoveries" field.
+func (x *ContactImportScopedUpdate) SetRecoveries(v int) *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.SetRecoveries(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_SetRecoveries = RoleStep
+
+// SetNillableRecoveries sets the "recoveries" field if the given value is not nil.
+func (x *ContactImportScopedUpdate) SetNillableRecoveries(v *int) *ContactImportScopedUpdate {
+	if v != nil {
+		x.SetRecoveries(*v)
+	}
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_SetNillableRecoveries = RoleStep
+
+// AddRecoveries adds value to the "recoveries" field.
+func (x *ContactImportScopedUpdate) AddRecoveries(v int) *ContactImportScopedUpdate {
+	x.set = append(x.set, func(b *ContactImportUpdate) { b.AddRecoveries(v) })
+	return x
+}
+
+const RoleOf_ContactImportScopedUpdate_AddRecoveries = RoleStep
 
 // SetProcessed sets the "processed" field.
 func (x *ContactImportScopedUpdate) SetProcessed(v int) *ContactImportScopedUpdate {

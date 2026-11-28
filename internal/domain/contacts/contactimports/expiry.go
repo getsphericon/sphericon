@@ -43,3 +43,24 @@ func (m *Module) Expire(ctx context.Context, client *ent.Client) (Expired, error
 	}
 	return Expired{Uploads: uploads, Reports: len(ids)}, nil
 }
+
+// Running is an import that runs, by its id and its Workspace's.
+type Running struct {
+	ID, WorkspaceID int64
+}
+
+// RunningIn are the running imports of every Workspace, for the sweep that finds a run whose job
+// is gone (Recover). It is Instance-wide, so it reads through the raw client its river job hands
+// it.
+func (m *Module) RunningIn(ctx context.Context, client *ent.Client) ([]Running, error) {
+	imps, err := client.ContactImport.Query().Where(contactimport.StateEQ(contactimport.StateRunning)).
+		Select(contactimport.FieldID, contactimport.FieldWorkspaceID).All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]Running, len(imps))
+	for i, imp := range imps {
+		out[i] = Running{ID: imp.ID, WorkspaceID: imp.WorkspaceID}
+	}
+	return out, nil
+}

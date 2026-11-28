@@ -67,6 +67,22 @@ func (env *TestEnv) EnqueueJob(t *testing.T, args river.JobArgs) {
 	require.NoError(t, err)
 }
 
+// DeleteJobs deletes the jobs of the kinds of only that have not ended, as a job is gone when
+// river gives up on it unseen (a process killed on its last try, whose job the rescuer discards):
+// no worker runs them again.
+func (env *TestEnv) DeleteJobs(t *testing.T, only ...river.JobArgs) {
+	t.Helper()
+	require.NotEmpty(t, only)
+	rc := env.riverClient(t)
+	res, err := rc.JobList(t.Context(), river.NewJobListParams().Kinds(kindsOf(only)...).
+		States(rivertype.JobStateAvailable, rivertype.JobStateScheduled, rivertype.JobStateRetryable).First(maxQueuedJobs))
+	require.NoError(t, err)
+	for _, job := range res.Jobs {
+		_, err := rc.JobDelete(t.Context(), job.ID)
+		require.NoError(t, err)
+	}
+}
+
 // EnqueueJobs puts one available job of each args into the queue, in one insert.
 func (env *TestEnv) EnqueueJobs(t *testing.T, args ...river.JobArgs) {
 	t.Helper()

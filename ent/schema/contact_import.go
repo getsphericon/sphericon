@@ -24,6 +24,7 @@ type ContactImport struct {
 func (ContactImport) Annotations() []schema.Annotation {
 	a := TableWithEnumChecks("contact_imports", ContactImport{}.Fields())
 	a.Checks["contact_imports_header_check"] = jsonCheck("header", "array")
+	a.Checks["contact_imports_recoveries_check"] = "recoveries >= 0"
 	a.Checks["contact_imports_counts_check"] = "row_count >= 0 AND malformed_rows >= 0 AND processed >= 0 AND created >= 0 AND updated >= 0 AND refused >= 0 AND dropped >= 0 AND opted_out >= 0 AND suppressed >= 0"
 	return []schema.Annotation{a}
 }
@@ -88,6 +89,10 @@ func (ContactImport) Fields() []ent.Field {
 		// Contact each batch wrote. A batch run again after a restart counts a Contact its first
 		// try made as created, as an uninterrupted run counts it.
 		field.Int64("checkpoint_contact_floor").
+			Default(0),
+		// How many times the periodic sweep queued the run again after its job was gone (a process
+		// killed on the job's last try); past contact imports' bound the run fails instead.
+		field.Int("recoveries").
 			Default(0),
 		// What the run has written so far: rows read, Contacts created and updated, rows refused,
 		// values dropped, opt-outs and Suppressions recorded.
