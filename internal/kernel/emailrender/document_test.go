@@ -29,7 +29,7 @@ func TestFromDocumentBuildsAStorableBody(t *testing.T) {
 	for _, tag := range []string{"{{ first_name }}", "{{ contact.id }}", "{{ token | url_encode }}", "{{ cta_url }}"} {
 		assert.Contains(t, got.Body, tag)
 	}
-	require.NoError(t, emailrender.Lint("", got.Body, nil).Error)
+	require.NoError(t, emailrender.Lint(emailrender.Message{Body: got.Body}).Error)
 }
 
 func TestFromDocumentRefusesWhatCannotBeRendered(t *testing.T) {

@@ -217,7 +217,7 @@ func (d *Delivery) plan(ctx context.Context, s *ent.Scoped, id int64, t trigger)
 func renderable(content outboundmessages.Content) error {
 	switch c := content.(type) {
 	case outboundmessages.EmailContent:
-		return emailrender.Lint(c.Subject, c.Body, nil).Error
+		return emailrender.Lint(emailrender.Message{Subject: c.Subject, Body: c.Body}).Error
 	case outboundmessages.TelegramContent:
 		return telegramrender.Check(c.Text)
 	case outboundmessages.SMSContent:

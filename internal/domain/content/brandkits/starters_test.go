@@ -39,7 +39,7 @@ func TestStartersCarryTheBrandKitInTheirStoredBodies(t *testing.T) {
 
 			kit := brandedKit()
 			kit.Saved = true
-			report := emailrender.Lint(subject, got.Body, kit.Brand())
+			report := emailrender.Lint(emailrender.Message{Subject: subject, Body: got.Body, Brand: kit.Brand()})
 			require.NoError(t, report.Error)
 			for _, w := range report.Warnings {
 				assert.Equal(t, emailrender.CodeLowContrast, w.Code, "a starter is made of its own Brand kit: only the test kit's orange button can warn: %v", w)

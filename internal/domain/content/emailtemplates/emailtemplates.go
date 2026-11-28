@@ -67,6 +67,9 @@ type LintInput struct {
 	Body    *string
 	// Doc is the editor's JSON document, rendered as a save renders it (Prepare).
 	Doc json.RawMessage
+	// FromEmail is the address the message goes out with, checked as its sender; "" for none (a
+	// Template's).
+	FromEmail string
 }
 
 // Lint is the lint of ADR 0040 without a save, against the Workspace's Brand kit: of the body as it
@@ -88,16 +91,17 @@ func (m *Module) Lint(ctx context.Context, s *ent.Scoped, in LintInput) (emailre
 		}
 		body = &authored.Body
 	}
-	return m.lint(ctx, s, subject, *body)
+	return m.lint(ctx, s, emailrender.Message{Subject: subject, Body: *body, From: in.FromEmail})
 }
 
 // lint runs emailrender.Lint over a message against the Workspace's Brand kit.
-func (m *Module) lint(ctx context.Context, s *ent.Scoped, subject, body string) (emailrender.Report, error) {
+func (m *Module) lint(ctx context.Context, s *ent.Scoped, msg emailrender.Message) (emailrender.Report, error) {
 	brand, err := m.brands.Brand(ctx, s)
 	if err != nil {
 		return emailrender.Report{}, err
 	}
-	return emailrender.Lint(subject, body, brand), nil
+	msg.Brand = brand
+	return emailrender.Lint(msg), nil
 }
 
 // CreateInput is a new Template; nil Subject and Body keep their defaults.

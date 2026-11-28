@@ -211,7 +211,7 @@ func validate(steps automationstep.Path, linkLength int) error {
 func validateStep(st *automationstep.Step, linkLength int) error {
 	switch s := st.Payload.(type) {
 	case automationstep.Email:
-		if err := emailrender.Lint(s.Subject, s.Body, nil).Error; err != nil {
+		if err := emailrender.Lint(emailrender.Message{Subject: s.Subject, Body: s.Body}).Error; err != nil {
 			return refuse(st, err.Error())
 		}
 	case automationstep.Telegram:

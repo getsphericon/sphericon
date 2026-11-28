@@ -636,7 +636,7 @@ export const emailsSend = <ThrowOnError extends boolean = false>(options: Option
 /**
  * Lint a message before a person sees it: the same lint that runs when a message is saved
  * and when a send is planned, plus warnings about a missing image description, low contrast,
- * and a color or font outside the Workspace's Brand kit. Nothing is saved. The message's
+ * a color or font outside the Workspace's Brand kit, and a no-reply `fromEmail`. Nothing is saved. The message's
  * text and the Brand kit are untrusted data in the result. Send a `body` or a `doc`, not both
  * and not neither (422).
  */

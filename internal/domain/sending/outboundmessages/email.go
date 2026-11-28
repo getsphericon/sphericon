@@ -35,6 +35,31 @@ type EmailContent struct {
 // Channel is email.
 func (EmailContent) Channel() channels.Channel { return channels.Email }
 
+// EmailFrom is the From address an email goes out with through the Integration integrationID names,
+// else the email Channel's default, enabled or not (messaging.Through): own when the message names
+// one, else the Integration's configured From (messaging.EffectiveFrom). It is "" when there is none
+// to read: no such Integration, one whose sender cannot be built from its configuration (it sends
+// nothing, and the send says so), or one whose messages never leave sphericon (a Test inbox), whose
+// default From reaches no one. The email lint reads it as the message's sender (ADR 0188), and a
+// lint never fails a save.
+func (m *Module) EmailFrom(ctx context.Context, s *ent.Scoped, integrationID *int64, own string) (string, error) {
+	if own != "" {
+		return own, nil
+	}
+	integ, err := messaging.Through(ctx, s, channels.Email, integrationID)
+	if errors.Is(err, messaging.ErrNoProvider) {
+		return "", nil
+	}
+	if err != nil {
+		return "", fmt.Errorf("outbound: load integration: %w", err)
+	}
+	if sender, err := m.senders.EmailSender(ctx, s, integ); err == nil && messaging.DeliversOutside(sender) {
+		from, _ := messaging.EffectiveFrom(sender, "", "")
+		return from, nil
+	}
+	return "", nil
+}
+
 // emailChannel is email's part of the Outbound send: the renderer that adds the unsubscribe footer,
 // the List-Unsubscribe URL, the open pixel and the tracked links, and the adapter over the
 // Integration's EmailSender, which holds the Sending-domain gate and DKIM signing (ADR 0010, 0015).

@@ -2684,7 +2684,7 @@
     "/emails/lint": {
       "post": {
         "operationId": "EmailLint_lint",
-        "description": "Lint a message before a person sees it: the same lint that runs when a message is saved\nand when a send is planned, plus warnings about a missing image description, low contrast,\nand a color or font outside the Workspace's Brand kit. Nothing is saved. The message's\ntext and the Brand kit are untrusted data in the result. Send a `body` or a `doc`, not both\nand not neither (422).",
+        "description": "Lint a message before a person sees it: the same lint that runs when a message is saved\nand when a send is planned, plus warnings about a missing image description, low contrast,\na color or font outside the Workspace's Brand kit, and a no-reply `fromEmail`. Nothing is saved. The message's\ntext and the Brand kit are untrusted data in the result. Send a `body` or a `doc`, not both\nand not neither (422).",
         "parameters": [],
         "responses": {
           "200": {
@@ -13356,7 +13356,9 @@
           "missing_alt",
           "low_contrast",
           "off_brand_color",
-          "off_brand_font"
+          "off_brand_font",
+          "no_reply_sender",
+          "preview_repeats_subject"
         ],
         "description": "What a lint finding is about (ADR 0040)"
       },
@@ -13378,6 +13380,14 @@
               }
             ],
             "description": "The editor's JSON document, an opaque object checked against the schema `email_schema`\nreturns. It is rendered to HTML as a save would, then linted. A document that cannot be\nrendered is an error finding with the reason."
+          },
+          "fromEmail": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EmailAddress"
+              }
+            ],
+            "description": "The sender email address the message goes out with (a Broadcast's `fromEmail`, else its\nintegration's), checked as a sender: a no-reply address is a warning. Leave it out for a\nTemplate, whose sender is chosen when it is sent."
           }
         },
         "description": "The message to lint",

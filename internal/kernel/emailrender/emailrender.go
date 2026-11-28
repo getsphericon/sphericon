@@ -246,12 +246,12 @@ func dropHidden(n *html.Node) {
 // the broadcasts and templates modules): it refuses content that cannot render (Lint). The body is
 // stored as it was written (ADR 0118). A nil field is not provided, so it is not checked.
 func CheckFields(subject, body *string) error {
-	var s, b string
+	var msg Message
 	if subject != nil {
-		s = *subject
+		msg.Subject = *subject
 	}
 	if body != nil {
-		b = *body
+		msg.Body = *body
 	}
-	return Lint(s, b, nil).Error
+	return Lint(msg).Error
 }

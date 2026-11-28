@@ -18363,7 +18363,9 @@
           "missing_alt",
           "low_contrast",
           "off_brand_color",
-          "off_brand_font"
+          "off_brand_font",
+          "no_reply_sender",
+          "preview_repeats_subject"
         ],
         "description": "What a lint finding is about (ADR 0040)"
       },

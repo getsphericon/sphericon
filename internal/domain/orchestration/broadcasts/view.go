@@ -165,8 +165,9 @@ func (v *Views) detailed(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (
 }
 
 // saved builds the view of a Broadcast a save stored, with its figures and the lint warnings of its
-// content against the Workspace's Brand kit. Only email is linted, its stored body: as it was
-// written, or a document's rendered HTML. A message that cannot render was refused by the save.
+// content against the Workspace's Brand kit and of the From it goes out with (Outbound send's
+// EmailFrom). Only email is linted, its stored body: as it was written, or a document's rendered
+// HTML. A message that cannot render was refused by the save.
 func (v *Views) saved(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (View, error) {
 	view, err := v.figured(ctx, s, b)
 	if err != nil || b.Channel != channels.Email {
@@ -176,6 +177,12 @@ func (v *Views) saved(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (Vie
 	if err != nil {
 		return View{}, err
 	}
-	view.Warnings = emailrender.Lint(lo.FromPtr(b.Subject), lo.FromPtr(b.Body), brand).Warnings
+	from, err := v.m.out.EmailFrom(ctx, s, b.IntegrationID, lo.FromPtr(b.FromEmail))
+	if err != nil {
+		return View{}, err
+	}
+	view.Warnings = emailrender.Lint(emailrender.Message{
+		Subject: lo.FromPtr(b.Subject), Body: lo.FromPtr(b.Body), From: from, Brand: brand,
+	}).Warnings
 	return view, nil
 }

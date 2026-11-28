@@ -48,7 +48,7 @@ func (v *Views) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateIn
 // saved lints what a save stored: the body as it was written, or a document's rendered HTML. A
 // message that cannot render was refused by the save.
 func (v *Views) saved(ctx context.Context, s *ent.Scoped, tpl *ent.EmailTemplate) (Saved, error) {
-	report, err := v.m.lint(ctx, s, tpl.Subject, tpl.Body)
+	report, err := v.m.lint(ctx, s, emailrender.Message{Subject: tpl.Subject, Body: tpl.Body})
 	if err != nil {
 		return Saved{}, err
 	}

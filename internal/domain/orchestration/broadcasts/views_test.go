@@ -50,3 +50,44 @@ func TestViewsCreateReturnsTheWarningsOfTheBodyAsWritten(t *testing.T) {
 	assert.ElementsMatch(t, []emailrender.Code{emailrender.CodeOffBrandFont, emailrender.CodeMissingAlt}, codes)
 	assert.Equal(t, body, *got.Broadcast.Body, "stored as written")
 }
+
+// A save's lint reads the From the Broadcast goes out with (ADR 0188): its own, else its
+// Integration's; a no-reply address is a warning and an address that only looks like one is not.
+func TestViewsWarnOnANoReplySender(t *testing.T) {
+	env := testhelper.Setup(t)
+	v := broadcasts.NewViews(testhelper.Module[*broadcasts.Module](env))
+	s := env.DB.Scoped(fixtures.AcmeID)
+	senderFindings := func(t *testing.T, from *string) []string {
+		t.Helper()
+		name, subject, body := "Sender", "Hi", "<p>Hello</p>"
+		got, err := v.Create(t.Context(), s, broadcasts.CreateInput{
+			Name: &name, Content: broadcasts.EmailContentInput{Subject: &subject, Body: &body, FromEmail: from},
+		})
+		require.NoError(t, err)
+		return lo.FilterMap(got.Warnings, func(f emailrender.Finding, _ int) (string, bool) {
+			return f.Detail, f.Code == emailrender.CodeNoReplySender
+		})
+	}
+
+	noReply := "no-reply@" + fixtures.SendingDomainVerifiedDomain
+	assert.Equal(t, []string{noReply}, senderFindings(t, &noReply))
+	assert.Empty(t, senderFindings(t, lo.ToPtr("reply@"+fixtures.SendingDomainVerifiedDomain)))
+	assert.Empty(t, senderFindings(t, lo.ToPtr("noreplies@"+fixtures.SendingDomainVerifiedDomain)))
+	assert.Empty(t, senderFindings(t, nil), "no From of its own: the default Integration's hello@ is read")
+}
+
+// A Test inbox delivers nothing outside sphericon, so its own default From (a reserved noreply@
+// address) is no sender to warn about.
+func TestViewsReadNoSenderFromATestInbox(t *testing.T) {
+	env := testhelper.Setup(t)
+	v := broadcasts.NewViews(testhelper.Module[*broadcasts.Module](env))
+	name, subject, body := "Inbox", "Hi", "<p>Hello</p>"
+	inbox := int64(fixtures.IntegrationGlobexInboxID)
+
+	got, err := v.Create(t.Context(), env.DB.Scoped(fixtures.GlobexID), broadcasts.CreateInput{
+		Name: &name, IntegrationID: &inbox, Content: broadcasts.EmailContentInput{Subject: &subject, Body: &body},
+	})
+	require.NoError(t, err)
+	codes := lo.Map(got.Warnings, func(f emailrender.Finding, _ int) emailrender.Code { return f.Code })
+	assert.NotContains(t, codes, emailrender.CodeNoReplySender)
+}

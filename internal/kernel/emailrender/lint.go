@@ -28,6 +28,10 @@ const (
 	CodeOffBrandColor Code = "off_brand_color"
 	// CodeOffBrandFont: a font is not one of the Brand kit's.
 	CodeOffBrandFont Code = "off_brand_font"
+	// CodeNoReplySender: the From's local part is a no-reply word (ADR 0188).
+	CodeNoReplySender Code = "no_reply_sender"
+	// CodePreviewRepeatsSubject: a document's preview text is its subject again (ADR 0188).
+	CodePreviewRepeatsSubject Code = "preview_repeats_subject"
 )
 
 // Finding is one result of Lint. Message is fixed text of the server; Element and Detail quote
@@ -54,6 +58,23 @@ type Brand struct {
 	TextColor, BackgroundColor string
 }
 
+// Message is what Lint reads of one message: its content as the author wrote it, who sends it and
+// the Brand kit it is compared to. A check reads the field it needs; a field that is empty has
+// nothing to check.
+type Message struct {
+	// Subject and Body are the message as written, with Liquid merge tags; Body is HTML.
+	Subject, Body string
+	// From is the address the message goes out with: its own From, else its Integration's
+	// default (a Broadcast, an Automation's email step). "" when it has none to check: a Template,
+	// whose sender is its sender's to choose at send time.
+	From string
+	// PreviewText is a document's preview text, "" when it has none: a raw HTML body has no
+	// preview text to compare.
+	PreviewText string
+	// Brand is the Workspace's Brand kit; nil switches the brand warnings off.
+	Brand *Brand
+}
+
 // Report is the result of Lint over one message.
 type Report struct {
 	// Error is non-nil only when the message cannot render (ErrInvalidContent wrapped): it
@@ -68,9 +89,11 @@ const maxWarnings = 50
 
 // Lint is the one lint of a message (ADR 0040), over its rendered HTML: the save paths and
 // the send planner use its Error, the editor's responses and the MCP tool email_lint return its
-// Warnings too. Error is a Liquid syntax error or HTML that does not parse; the warnings are a
-// missing image description, low contrast, and a color or font outside the Brand kit. It runs on
-// the message as the author wrote it, with no recipient data: unbound merge tags render empty.
+// Warnings too. Error is a Liquid syntax error or HTML that does not parse; the warnings are the
+// Content checks (ADR 0188): of the message itself (a no-reply sender, a preview text that repeats
+// the subject), then of its HTML (a missing image description, low contrast, and a color or font
+// outside the Brand kit). It runs on the message as the author wrote it, with no recipient data:
+// unbound merge tags render empty.
 //
 // Message weight is deliberately not checked: no first-party source gives a size at which a mail
 // client clips or penalizes a message (the only figure found is Beefree's own 80 KB setting).
@@ -79,8 +102,8 @@ const maxWarnings = 50
 // text, 3:1 for large text (at least 18 pt, or 14 pt bold), with the relative luminance and
 // contrast ratio formulas of https://www.w3.org/TR/WCAG22/#dfn-relative-luminance and
 // https://www.w3.org/TR/WCAG22/#dfn-contrast-ratio.
-func Lint(subject, body string, brand *Brand) Report {
-	_, rendered, err := renderBoth(subject, body, map[string]any{})
+func Lint(msg Message) Report {
+	_, rendered, err := renderBoth(msg.Subject, msg.Body, map[string]any{})
 	if err != nil {
 		return Report{Error: fmt.Errorf("%w: %w", ErrInvalidContent, err)}
 	}
@@ -91,15 +114,32 @@ func Lint(subject, body string, brand *Brand) Report {
 	if err != nil {
 		return Report{Error: fmt.Errorf("%w: %w", ErrInvalidContent, err)}
 	}
-	l := linter{brand: brand.normalized(), seen: map[Finding]bool{}}
+	l := linter{msg: msg, brand: msg.Brand.normalized(), seen: map[Finding]bool{}}
+	l.message()
 	l.walk(root)
 	return Report{Warnings: l.found}
 }
 
 type linter struct {
+	// msg is the message linted; brand is its Brand kit normalized.
+	msg   Message
 	brand *Brand
 	found []Finding
 	seen  map[Finding]bool
+}
+
+// noReplyWords are the local parts of a From that refuses replies, lower-case (ADR 0188).
+var noReplyWords = []string{"noreply", "no-reply", "donotreply", "do-not-reply"}
+
+// message checks what the message is beside its HTML: its sender and its preview text. It runs
+// before the walk, so a body that fills the report cannot crowd these out.
+func (l *linter) message() {
+	if at := strings.LastIndex(l.msg.From, "@"); at > 0 && slices.Contains(noReplyWords, strings.ToLower(l.msg.From[:at])) {
+		l.add(Finding{Code: CodeNoReplySender, Message: "the From address refuses replies; replies tell mailbox providers the message is wanted", Element: "From", Detail: l.msg.From})
+	}
+	if preview := strings.TrimSpace(l.msg.PreviewText); preview != "" && strings.EqualFold(preview, strings.TrimSpace(l.msg.Subject)) {
+		l.add(Finding{Code: CodePreviewRepeatsSubject, Message: "the preview text repeats the subject; it is the line a recipient reads next", Element: "preview text", Detail: l.msg.PreviewText})
+	}
 }
 
 func (l *linter) add(f Finding) {

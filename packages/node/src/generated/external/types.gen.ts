@@ -5090,7 +5090,9 @@ export const LintCode = {
   MISSING_ALT: 'missing_alt',
   LOW_CONTRAST: 'low_contrast',
   OFF_BRAND_COLOR: 'off_brand_color',
-  OFF_BRAND_FONT: 'off_brand_font'
+  OFF_BRAND_FONT: 'off_brand_font',
+  NO_REPLY_SENDER: 'no_reply_sender',
+  PREVIEW_REPEATS_SUBJECT: 'preview_repeats_subject'
 } as const;
 
 /**
@@ -5116,6 +5118,12 @@ export type LintEmailInput = {
    * rendered is an error finding with the reason.
    */
   doc?: EditorDocument;
+  /**
+   * The sender email address the message goes out with (a Broadcast's `fromEmail`, else its
+   * integration's), checked as a sender: a no-reply address is a warning. Leave it out for a
+   * Template, whose sender is chosen when it is sent.
+   */
+  fromEmail?: EmailAddress;
 };
 
 /**

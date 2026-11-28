@@ -23,7 +23,7 @@ func TestLintTakesTheTriggeringEventsMergeTags(t *testing.T) {
 	body := `<p>Your payment of {{ event.properties.amount }} for {{ event.properties["plan name"] }} failed.</p>` +
 		`{% if event.properties.amount %}<p>{{ event.properties.amount | upcase }}</p>{% endif %}`
 
-	report := emailrender.Lint("Your {{ event.action }}", body, nil)
+	report := emailrender.Lint(emailrender.Message{Subject: "Your {{ event.action }}", Body: body})
 
 	require.NoError(t, report.Error)
 	assert.Empty(t, report.Warnings)
@@ -43,9 +43,9 @@ func TestRenderEmailHTML(t *testing.T) {
 }
 
 func TestLintAcceptsRenderableContent(t *testing.T) {
-	require.NoError(t, emailrender.Lint("Hi {{ first_name }}", sampleHTML, nil).Error, "unbound merge tags are fine")
-	require.NoError(t, emailrender.Lint("s", "", nil).Error, "an empty body parses")
-	require.NoError(t, emailrender.Lint("s", "plain <b>text</b> with <!-- a comment --> and &amp; entities", nil).Error)
+	require.NoError(t, emailrender.Lint(emailrender.Message{Subject: "Hi {{ first_name }}", Body: sampleHTML}).Error, "unbound merge tags are fine")
+	require.NoError(t, emailrender.Lint(emailrender.Message{Subject: "s", Body: ""}).Error, "an empty body parses")
+	require.NoError(t, emailrender.Lint(emailrender.Message{Subject: "s", Body: "plain <b>text</b> with <!-- a comment --> and &amp; entities"}).Error)
 }
 
 func TestLintRefusesWhatCannotRender(t *testing.T) {
@@ -58,7 +58,7 @@ func TestLintRefusesWhatCannotRender(t *testing.T) {
 		"unclosed container":          {"s", "<table><tr><td>hi</td></tr>", "<table> is never closed"},
 	} {
 		t.Run(name, func(t *testing.T) {
-			err := emailrender.Lint(tc.subject, tc.body, nil).Error
+			err := emailrender.Lint(emailrender.Message{Subject: tc.subject, Body: tc.body}).Error
 			require.ErrorIs(t, err, emailrender.ErrInvalidContent)
 			assert.ErrorContains(t, err, tc.reason)
 		})

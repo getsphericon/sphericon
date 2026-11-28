@@ -375,6 +375,7 @@ func (c *InputsImpl) EmailLint(source *external.LintEmailInput) emailtemplates.L
 		emailtemplatesLintInput.Subject = stringIn((*source).Subject)
 		emailtemplatesLintInput.Body = stringPtrIn((*source).Body)
 		emailtemplatesLintInput.Doc = documentIn((*source).Doc)
+		emailtemplatesLintInput.FromEmail = emailIn((*source).FromEmail)
 	}
 	return emailtemplatesLintInput
 }

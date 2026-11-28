@@ -100,3 +100,18 @@ func TestMCPEmailLintWithoutABrandKitHasNoBrandWarnings(t *testing.T) {
 	require.NoError(t, json.Unmarshal([]byte(text(t, res)), &got))
 	assert.Empty(t, got.Warnings)
 }
+
+// The sender the agent names is checked (ADR 0188): a no-reply From is a warning, quoted as
+// untrusted data; a message linted without one (a Template) has no sender to check.
+func TestMCPEmailLintWarnsOnANoReplySender(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	got := lint(t, env, map[string]any{"subject": "Hi", "body": "<p>Hello</p>", "fromEmail": "no-reply@acme.com"}, "templates:read")
+	require.Equal(t, []string{string(emailrender.CodeNoReplySender)}, codes(got.Warnings))
+	assert.Equal(t, map[string]any{"untrusted_data": "no-reply@acme.com"}, got.Warnings[0]["detail"])
+
+	got = lint(t, env, map[string]any{"subject": "Hi", "body": "<p>Hello</p>", "fromEmail": "reply@acme.com"}, "templates:read")
+	assert.Empty(t, got.Warnings)
+	got = lint(t, env, map[string]any{"subject": "Hi", "body": "<p>Hello</p>"}, "templates:read")
+	assert.Empty(t, got.Warnings)
+}

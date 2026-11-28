@@ -27,7 +27,7 @@ func TestLintReadsEveryFormOfACSSColorForContrast(t *testing.T) {
 		"!important":         `<p style="color:yellow !important">Pale</p>`,
 	} {
 		t.Run(name, func(t *testing.T) {
-			report := emailrender.Lint("Hi", body, nil)
+			report := emailrender.Lint(emailrender.Message{Subject: "Hi", Body: body})
 			require.NoError(t, report.Error)
 			assert.Len(t, details(report, emailrender.CodeLowContrast), 1, "a pale text on the default white background")
 		})
@@ -35,7 +35,7 @@ func TestLintReadsEveryFormOfACSSColorForContrast(t *testing.T) {
 }
 
 func TestLintReadsTheColorAfterAMalformedDeclaration(t *testing.T) {
-	report := emailrender.Lint("Hi", `<p style="bogus;color:yellow">Pale</p>`, nil)
+	report := emailrender.Lint(emailrender.Message{Subject: "Hi", Body: `<p style="bogus;color:yellow">Pale</p>`})
 	lowContrast := details(report, emailrender.CodeLowContrast)
 
 	require.NoError(t, report.Error)
@@ -43,7 +43,7 @@ func TestLintReadsTheColorAfterAMalformedDeclaration(t *testing.T) {
 }
 
 func TestLintSkipsATransparentBackground(t *testing.T) {
-	report := emailrender.Lint("Hi", `<div style="background:#000000"><p style="background-color:rgba(0, 0, 0, 0);color:#ffffff">Light on dark</p></div>`, nil)
+	report := emailrender.Lint(emailrender.Message{Subject: "Hi", Body: `<div style="background:#000000"><p style="background-color:rgba(0, 0, 0, 0);color:#ffffff">Light on dark</p></div>`})
 
 	require.NoError(t, report.Error)
 	assert.Empty(t, details(report, emailrender.CodeLowContrast), "the black behind the transparent paragraph is what the text is read against")
@@ -52,7 +52,7 @@ func TestLintSkipsATransparentBackground(t *testing.T) {
 func TestLintFindsTheColorInsideABackgroundShorthand(t *testing.T) {
 	brand := &emailrender.Brand{Colors: []string{"#1a73e8"}, Fonts: []string{"Arial"}, TextColor: "#202124", BackgroundColor: "#ffffff"}
 
-	report := emailrender.Lint("Hi", `<table><tbody><tr><td style="background:url(https://cdn.example.com/a.png) no-repeat center hsl(120, 100%, 25%);color:#ffffff;font-family:Arial, sans-serif">Green</td></tr></tbody></table>`, brand)
+	report := emailrender.Lint(emailrender.Message{Subject: "Hi", Body: `<table><tbody><tr><td style="background:url(https://cdn.example.com/a.png) no-repeat center hsl(120, 100%, 25%);color:#ffffff;font-family:Arial, sans-serif">Green</td></tr></tbody></table>`, Brand: brand})
 
 	require.NoError(t, report.Error)
 	assert.Equal(t, []string{"#008000"}, details(report, emailrender.CodeOffBrandColor))

@@ -2105,10 +2105,14 @@ func (c *ConverterImpl) LintCodeToResource(source emailrender.Code) site.LintCod
 		siteapiLintCode = site.LintCodeLowContrast
 	case emailrender.CodeMissingAlt:
 		siteapiLintCode = site.LintCodeMissingAlt
+	case emailrender.CodeNoReplySender:
+		siteapiLintCode = site.LintCodeNoReplySender
 	case emailrender.CodeOffBrandColor:
 		siteapiLintCode = site.LintCodeOffBrandColor
 	case emailrender.CodeOffBrandFont:
 		siteapiLintCode = site.LintCodeOffBrandFont
+	case emailrender.CodePreviewRepeatsSubject:
+		siteapiLintCode = site.LintCodePreviewRepeatsSubject
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}

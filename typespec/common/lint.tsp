@@ -20,6 +20,12 @@ enum LintCode {
 
   /** A font is not one of the Workspace's Brand kit fonts */
   off_brand_font,
+
+  /** The From address is a no-reply address (`noreply`, `no-reply`, `donotreply`, `do-not-reply`), which refuses the replies that tell mailbox providers a message is wanted */
+  no_reply_sender,
+
+  /** A document's preview text is its subject again, ignoring case and surrounding spaces */
+  preview_repeats_subject,
 }
 
 /**

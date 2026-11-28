@@ -18091,11 +18091,13 @@ func (s *LinkClicks) SetClicks(val int32) {
 type LintCode string
 
 const (
-	LintCodeInvalidContent LintCode = "invalid_content"
-	LintCodeMissingAlt     LintCode = "missing_alt"
-	LintCodeLowContrast    LintCode = "low_contrast"
-	LintCodeOffBrandColor  LintCode = "off_brand_color"
-	LintCodeOffBrandFont   LintCode = "off_brand_font"
+	LintCodeInvalidContent        LintCode = "invalid_content"
+	LintCodeMissingAlt            LintCode = "missing_alt"
+	LintCodeLowContrast           LintCode = "low_contrast"
+	LintCodeOffBrandColor         LintCode = "off_brand_color"
+	LintCodeOffBrandFont          LintCode = "off_brand_font"
+	LintCodeNoReplySender         LintCode = "no_reply_sender"
+	LintCodePreviewRepeatsSubject LintCode = "preview_repeats_subject"
 )
 
 // AllValues returns all LintCode values.
@@ -18106,6 +18108,8 @@ func (LintCode) AllValues() []LintCode {
 		LintCodeLowContrast,
 		LintCodeOffBrandColor,
 		LintCodeOffBrandFont,
+		LintCodeNoReplySender,
+		LintCodePreviewRepeatsSubject,
 	}
 }
 
@@ -18121,6 +18125,10 @@ func (s LintCode) MarshalText() ([]byte, error) {
 	case LintCodeOffBrandColor:
 		return []byte(s), nil
 	case LintCodeOffBrandFont:
+		return []byte(s), nil
+	case LintCodeNoReplySender:
+		return []byte(s), nil
+	case LintCodePreviewRepeatsSubject:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -18145,6 +18153,12 @@ func (s *LintCode) UnmarshalText(data []byte) error {
 	case LintCodeOffBrandFont:
 		*s = LintCodeOffBrandFont
 		return nil
+	case LintCodeNoReplySender:
+		*s = LintCodeNoReplySender
+		return nil
+	case LintCodePreviewRepeatsSubject:
+		*s = LintCodePreviewRepeatsSubject
+		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
 	}
@@ -18161,6 +18175,10 @@ type LintEmailInput struct {
 	// is rendered to HTML as a save would, then linted. A document that cannot be rendered is an error
 	// finding with the reason.
 	Doc OptEditorDocument `json:"doc"`
+	// The sender email address the message goes out with (a Broadcast's `fromEmail`, else its
+	// integration's), checked as a sender: a no-reply address is a warning. Leave it out for a Template,
+	// whose sender is chosen when it is sent.
+	FromEmail OptEmailAddress `json:"fromEmail"`
 }
 
 // GetSubject returns the value of Subject.
@@ -18178,6 +18196,11 @@ func (s *LintEmailInput) GetDoc() OptEditorDocument {
 	return s.Doc
 }
 
+// GetFromEmail returns the value of FromEmail.
+func (s *LintEmailInput) GetFromEmail() OptEmailAddress {
+	return s.FromEmail
+}
+
 // SetSubject sets the value of Subject.
 func (s *LintEmailInput) SetSubject(val OptString) {
 	s.Subject = val
@@ -18191,6 +18214,11 @@ func (s *LintEmailInput) SetBody(val OptString) {
 // SetDoc sets the value of Doc.
 func (s *LintEmailInput) SetDoc(val OptEditorDocument) {
 	s.Doc = val
+}
+
+// SetFromEmail sets the value of FromEmail.
+func (s *LintEmailInput) SetFromEmail(val OptEmailAddress) {
+	s.FromEmail = val
 }
 
 // What the lint found in a message.

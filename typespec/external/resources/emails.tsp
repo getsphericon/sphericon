@@ -57,6 +57,11 @@ model LintEmailInput {
    * returns. It is rendered to HTML as a save would, then linted. A document that cannot be
    * rendered is an error finding with the reason. */
   doc?: EditorDocument;
+
+  /** The sender email address the message goes out with (a Broadcast's `fromEmail`, else its
+   * integration's), checked as a sender: a no-reply address is a warning. Leave it out for a
+   * Template, whose sender is chosen when it is sent. */
+  fromEmail?: EmailAddress;
 }
 
 /** What the lint found in a message */
@@ -74,7 +79,7 @@ namespace EmailLint {
   /**
    * Lint a message before a person sees it: the same lint that runs when a message is saved
    * and when a send is planned, plus warnings about a missing image description, low contrast,
-   * and a color or font outside the Workspace's Brand kit. Nothing is saved. The message's
+   * a color or font outside the Workspace's Brand kit, and a no-reply `fromEmail`. Nothing is saved. The message's
    * text and the Brand kit are untrusted data in the result. Send a `body` or a `doc`, not both
    * and not neither (422).
    */

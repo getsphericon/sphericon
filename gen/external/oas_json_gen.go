@@ -33474,6 +33474,10 @@ func (s *LintCode) Decode(d *jx.Decoder) error {
 		*s = LintCodeOffBrandColor
 	case LintCodeOffBrandFont:
 		*s = LintCodeOffBrandFont
+	case LintCodeNoReplySender:
+		*s = LintCodeNoReplySender
+	case LintCodePreviewRepeatsSubject:
+		*s = LintCodePreviewRepeatsSubject
 	default:
 		*s = LintCode(v)
 	}
@@ -33521,12 +33525,19 @@ func (s *LintEmailInput) encodeFields(e *jx.Encoder) {
 			s.Doc.Encode(e)
 		}
 	}
+	{
+		if s.FromEmail.Set {
+			e.FieldStart("fromEmail")
+			s.FromEmail.Encode(e)
+		}
+	}
 }
 
-var jsonFieldsNameOfLintEmailInput = [3]string{
+var jsonFieldsNameOfLintEmailInput = [4]string{
 	0: "subject",
 	1: "body",
 	2: "doc",
+	3: "fromEmail",
 }
 
 // Decode decodes LintEmailInput from json.
@@ -33566,6 +33577,16 @@ func (s *LintEmailInput) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"doc\"")
+			}
+		case "fromEmail":
+			if err := func() error {
+				s.FromEmail.Reset()
+				if err := s.FromEmail.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"fromEmail\"")
 			}
 		default:
 			return errors.Errorf("unexpected field %q", k)
