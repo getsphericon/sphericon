@@ -1,6 +1,7 @@
 package site
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"io"
@@ -31,7 +32,9 @@ func delivered(ctx context.Context, chunks iter.Seq2[[]byte, error], done func(c
 		if !ok {
 			return
 		}
-		if err := rc.Flush(); err != nil {
+		// A writer that only flushes (the access log's wrapper) reports no error: a client gone by
+		// then has cancelled the request's context, which keeps the download too.
+		if err := cmp.Or(rc.Flush(), ctx.Err()); err != nil {
 			slog.WarnContext(ctx, "a download was not confirmed delivered and is kept", "err", err)
 			return
 		}
