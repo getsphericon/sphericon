@@ -23,6 +23,12 @@ enum LintCode {
 
   /** A link or an image is at a name reserved for examples and tests (RFC 2606, RFC 6761), such as `example.com` or a host ending in `.test`; a host a merge tag gives is not checked (ADR 0188) */
   reserved_host,
+
+  /** An element hidden by inline style holds text, other than the preheader and a block a media query of the message shows (ADR 0188) */
+  hidden_text,
+
+  /** The subject or the visible text holds an invisible character used to hide text: a Unicode tag character outside an emoji flag, or U+200B, U+2060 or U+FEFF (ADR 0188) */
+  hidden_characters,
 }
 
 /**

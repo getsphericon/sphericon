@@ -3,6 +3,7 @@ package brandkits_test
 import (
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -62,6 +63,27 @@ func TestStartersCarryTheBrandKitInTheirStoredBodies(t *testing.T) {
 	}
 	assert.Contains(t, bodies["Welcome"], "Georgia, serif")
 	assert.Contains(t, bodies["Welcome"], "{{ first_name }}")
+}
+
+// ADR 0188: a check that fires on what the app itself produces is wrong.
+func TestStartersHoldNoHiddenTextOrInvisibleCharacters(t *testing.T) {
+	for _, s := range append(brandkits.Starters(brandedKit()), brandkits.Starters(brandkits.Defaults())...) {
+		t.Run(s.Name, func(t *testing.T) {
+			subject := s.Subject
+			got, err := emailrender.FromDocument(t.Context(), testhelper.RealRenderer(), &subject, s.Doc)
+			require.NoError(t, err)
+
+			report := emailrender.Lint(subject, got.Body, nil)
+
+			require.NoError(t, report.Error)
+			assert.NotContains(t, codesOf(report), emailrender.CodeHiddenText)
+			assert.NotContains(t, codesOf(report), emailrender.CodeHiddenCharacters)
+		})
+	}
+}
+
+func codesOf(report emailrender.Report) []emailrender.Code {
+	return lo.Map(report.Warnings, func(w emailrender.Finding, _ int) emailrender.Code { return w.Code })
 }
 
 func TestStartersWithoutALogoOrFooterOmitThem(t *testing.T) {

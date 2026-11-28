@@ -18513,12 +18513,14 @@ type LinkIdentityHost string
 type LintCode string
 
 const (
-	LintCodeInvalidContent LintCode = "invalid_content"
-	LintCodeMissingAlt     LintCode = "missing_alt"
-	LintCodeLowContrast    LintCode = "low_contrast"
-	LintCodeOffBrandColor  LintCode = "off_brand_color"
-	LintCodeOffBrandFont   LintCode = "off_brand_font"
-	LintCodeReservedHost   LintCode = "reserved_host"
+	LintCodeInvalidContent   LintCode = "invalid_content"
+	LintCodeMissingAlt       LintCode = "missing_alt"
+	LintCodeLowContrast      LintCode = "low_contrast"
+	LintCodeOffBrandColor    LintCode = "off_brand_color"
+	LintCodeOffBrandFont     LintCode = "off_brand_font"
+	LintCodeReservedHost     LintCode = "reserved_host"
+	LintCodeHiddenText       LintCode = "hidden_text"
+	LintCodeHiddenCharacters LintCode = "hidden_characters"
 )
 
 // AllValues returns all LintCode values.
@@ -18530,6 +18532,8 @@ func (LintCode) AllValues() []LintCode {
 		LintCodeOffBrandColor,
 		LintCodeOffBrandFont,
 		LintCodeReservedHost,
+		LintCodeHiddenText,
+		LintCodeHiddenCharacters,
 	}
 }
 
@@ -18547,6 +18551,10 @@ func (s LintCode) MarshalText() ([]byte, error) {
 	case LintCodeOffBrandFont:
 		return []byte(s), nil
 	case LintCodeReservedHost:
+		return []byte(s), nil
+	case LintCodeHiddenText:
+		return []byte(s), nil
+	case LintCodeHiddenCharacters:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -18573,6 +18581,12 @@ func (s *LintCode) UnmarshalText(data []byte) error {
 		return nil
 	case LintCodeReservedHost:
 		*s = LintCodeReservedHost
+		return nil
+	case LintCodeHiddenText:
+		*s = LintCodeHiddenText
+		return nil
+	case LintCodeHiddenCharacters:
+		*s = LintCodeHiddenCharacters
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)

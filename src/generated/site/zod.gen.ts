@@ -1258,7 +1258,9 @@ export const zLintCode = z.enum([
   'low_contrast',
   'off_brand_color',
   'off_brand_font',
-  'reserved_host'
+  'reserved_host',
+  'hidden_text',
+  'hidden_characters'
 ]);
 
 /**

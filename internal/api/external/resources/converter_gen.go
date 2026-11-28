@@ -1308,6 +1308,10 @@ func (c *ConverterImpl) KeptEventsToResources(source []automations.KeptEvent) []
 func (c *ConverterImpl) LintCodeToResource(source emailrender.Code) external.LintCode {
 	var externalapiLintCode external.LintCode
 	switch source {
+	case emailrender.CodeHiddenCharacters:
+		externalapiLintCode = external.LintCodeHiddenCharacters
+	case emailrender.CodeHiddenText:
+		externalapiLintCode = external.LintCodeHiddenText
 	case emailrender.CodeInvalidContent:
 		externalapiLintCode = external.LintCodeInvalidContent
 	case emailrender.CodeLowContrast:

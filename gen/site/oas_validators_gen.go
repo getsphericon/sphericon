@@ -9316,6 +9316,10 @@ func (s LintCode) Validate() error {
 		return nil
 	case "reserved_host":
 		return nil
+	case "hidden_text":
+		return nil
+	case "hidden_characters":
+		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
 	}
