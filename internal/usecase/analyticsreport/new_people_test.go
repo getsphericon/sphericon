@@ -42,14 +42,14 @@ func TestNewPeopleAreCountedPerReportDayAndSplitBySource(t *testing.T) {
 	assert.Equal(t, analyticsreport.NewPeoplePoint{Date: "2026-03-08", API: 2, Tracker: 1, Import: 1}, days["2026-03-08"])
 	assert.Equal(t, analyticsreport.NewPeoplePoint{Date: "2026-03-09", Manual: 1}, days["2026-03-09"])
 	assert.Equal(t, analyticsreport.NewPeoplePoint{Date: "2026-03-10"}, days["2026-03-10"], "an empty day is all zeros")
-	assert.Equal(t, 6, report.Total)
+	assert.Equal(t, 5, report.Total, "an imported Contact is not a sign-up of the window")
 }
 
 func TestNewPeopleOfAWindowLeavesOutContactsBeforeIt(t *testing.T) {
 	env := testhelper.Setup(t)
 	report := newPeopleAt(t, env, fixtures.GothamID, analyticsreport.Window7Days, time.Date(2026, 3, 8, 12, 0, 0, 0, time.UTC))
 
-	assert.Equal(t, 5, report.Total, "the last day of the window ends at midnight EDT; the 9 March sign-up and the 2 January ones are outside it")
+	assert.Equal(t, 4, report.Total, "the last day of the window ends at midnight EDT; the 9 March sign-up and the 2 January ones are outside it, the import is no sign-up")
 }
 
 func TestAZoneChangeMovesNewPeopleToOtherDays(t *testing.T) {

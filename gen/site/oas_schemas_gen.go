@@ -38472,7 +38472,7 @@ func (s *SiteNewPeoplePoint) SetImport(val int32) {
 // New people: Contacts created in the selected range, per Report day and by Contact source.
 // Ref: #/components/schemas/SiteNewPeopleReport
 type SiteNewPeopleReport struct {
-	// Contacts created within the range.
+	// Contacts who signed up within the range: those a CSV import created are in the series, not here.
 	Total int32 `json:"total"`
 	// One point per Report day in the range, oldest first.
 	Timeseries []SiteNewPeoplePoint `json:"timeseries"`

@@ -13,8 +13,9 @@ import { NewPeoplePage } from './newPeople.tsx'
 const base = routeMount(newPeopleRoute, { workspaceId: 'TestWs01' })
 const mount = { ...base, initialPath: `${base.initialPath}?range=30d` }
 
+// The total counts sign-ups: the CSV import's Contact is in the series only.
 const report = {
-  total: 8,
+  total: 7,
   timeseries: [
     { date: '2026-03-07', manual: 3, api: 2, tracker: 2, import: 1 },
     { date: '2026-03-08', manual: 0, api: 0, tracker: 0, import: 0 },
@@ -26,7 +27,7 @@ test('shows how many people joined in the window and the legend of the sources',
 
   const { screen } = await renderWithRouter(<NewPeoplePage />, mount)
 
-  await expect.element(screen.getByText('8', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('7', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByText('Manual')).toBeInTheDocument()
   await expect.element(screen.getByText('Tracker')).toBeInTheDocument()
   await expect.element(screen.getByText('CSV import')).toBeInTheDocument()
@@ -53,6 +54,21 @@ test('a window without new people shows the empty state instead of the chart', a
   const { screen } = await renderWithRouter(<NewPeoplePage />, mount)
 
   await expect.element(screen.getByText('No new people in this window')).toBeInTheDocument()
+})
+
+test('a window whose only new people were imported shows the chart, not the empty state', async () => {
+  worker.use(
+    handleSiteAnalyticsNewPeople({
+      body: {
+        total: 0,
+        timeseries: [{ date: '2026-03-07', manual: 0, api: 0, tracker: 0, import: 4 }],
+      },
+    }),
+  )
+  const { screen } = await renderWithRouter(<NewPeoplePage />, mount)
+
+  await expect.element(screen.getByText('CSV import')).toBeInTheDocument()
+  await expect.element(screen.getByText('No new people in this window')).not.toBeInTheDocument()
 })
 
 test('shows an error alert when the report fails to load', async () => {

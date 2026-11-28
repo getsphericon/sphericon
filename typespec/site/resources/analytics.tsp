@@ -204,7 +204,7 @@ model SiteNewPeoplePoint {
 
 /** New people: Contacts created in the selected range, per Report day and by Contact source */
 model SiteNewPeopleReport {
-  /** Contacts created within the range */
+  /** Contacts who signed up within the range: those a CSV import created are in the series, not here */
   total: int32;
 
   /** One point per Report day in the range, oldest first */

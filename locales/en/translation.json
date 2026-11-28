@@ -163,7 +163,7 @@
     },
     "newPeople": {
       "empty": "No new people in this window",
-      "note": "Contacts created per day in your workspace time zone, by how each one first came to exist.",
+      "note": "Contacts created per day in your workspace time zone, by how each one first came to exist. The total leaves out imported contacts: they are not new sign-ups.",
       "total": "New people"
     },
     "opensByHour": {

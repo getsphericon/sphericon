@@ -8712,7 +8712,7 @@ export type SiteNewPeoplePoint = {
  */
 export type SiteNewPeopleReport = {
   /**
-   * Contacts created within the range
+   * Contacts who signed up within the range: those a CSV import created are in the series, not here
    */
   total: number;
   /**
