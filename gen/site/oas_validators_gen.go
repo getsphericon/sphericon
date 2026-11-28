@@ -9314,6 +9314,8 @@ func (s LintCode) Validate() error {
 		return nil
 	case "off_brand_font":
 		return nil
+	case "reserved_host":
+		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
 	}
@@ -17565,6 +17567,29 @@ func (s *SiteSaveBrandKitInput) Validate() error {
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
 			Name:  "logoUrl",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := (validate.String{
+			MinLength:     0,
+			MinLengthSet:  false,
+			MaxLength:     2048,
+			MaxLengthSet:  true,
+			Email:         false,
+			Hostname:      false,
+			Regex:         nil,
+			MinNumeric:    0,
+			MinNumericSet: false,
+			MaxNumeric:    0,
+			MaxNumericSet: false,
+		}).Validate(string(s.WebsiteUrl)); err != nil {
+			return errors.Wrap(err, "string")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "websiteUrl",
 			Error: err,
 		})
 	}

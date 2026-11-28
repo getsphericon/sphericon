@@ -2,8 +2,9 @@
 
 namespace Sphericon;
 
-/** The Workspace's Brand kit (ADR 0040): its colors, fonts, logo, button style and footer. It sets
- * the palette the editor offers and what an agent is told to use: write a message in these values.
+/** The Workspace's Brand kit (ADR 0040): its colors, fonts, logo, website, button style and footer.
+ * It sets the palette the editor offers and what an agent is told to use: write a message in these
+ * values.
  * Its values are written into a message when the message is authored, so saving it never changes a
  * message already written. A Workspace that has not saved one has the defaults and `saved` false. */
 model BrandKitResource {
@@ -30,6 +31,10 @@ model BrandKitResource {
   /** Address (http or https) of the logo image; empty for none */
   @untrusted
   logoUrl: string;
+
+  /** Address (https) of the business's website, where the starter Templates' buttons link; empty for none. Link a message there rather than to a placeholder */
+  @untrusted
+  websiteUrl: string;
 
   /** Color of the text on a button, `#rrggbb` */
   buttonTextColor: string;

@@ -25,6 +25,7 @@ func brandKitInput() *siteapi.SiteSaveBrandKitInput {
 		HeadingFont:     "Georgia, serif",
 		BodyFont:        "Verdana, sans-serif",
 		LogoUrl:         "https://cdn.example.com/logo.png",
+		WebsiteUrl:      "https://vandelay.industries/shop",
 		ButtonTextColor: "#fefefe",
 		ButtonRadius:    12,
 		FooterText:      "Vandelay Industries, 1 Main St",
@@ -62,6 +63,7 @@ func TestSiteBrandKitIsTheDefaultsUntilItsFirstSave(t *testing.T) {
 	assert.True(t, saved.Saved)
 	assert.Equal(t, "#ff5500", saved.AccentColor, "colors are stored in lower case")
 	assert.Equal(t, int32(12), saved.ButtonRadius)
+	assert.Equal(t, "https://vandelay.industries/shop", saved.WebsiteUrl)
 
 	again := getBrandKit(t, c, fixtures.VandelayPublicID)
 	assert.Equal(t, *saved, *again)
@@ -89,7 +91,11 @@ func TestSiteBrandKitFirstSaveMakesTheStarterTemplatesAndLaterSavesDoNot(t *test
 		assert.Contains(t, string(tpl.Doc), "Verdana, sans-serif", "%s carries the body font", tpl.Name)
 		assert.Contains(t, string(tpl.Doc), "https://cdn.example.com/logo.png", "%s carries the logo", tpl.Name)
 		assert.Contains(t, string(tpl.Doc), "Vandelay Industries, 1 Main St", "%s carries the footer", tpl.Name)
+		assert.NotContains(t, string(tpl.Doc), "example.com\"", "%s links no button to a placeholder", tpl.Name)
 	}
+	welcome := lo.Filter(starters, func(tpl *ent.EmailTemplate, _ int) bool { return tpl.Name == "Welcome" })
+	require.Len(t, welcome, 1)
+	assert.Contains(t, string(welcome[0].Doc), `"href": "https://vandelay.industries/shop"`, "the button links to the Brand kit's website")
 	assert.ElementsMatch(t, []string{"Welcome", "Receipt", "Digest", "One button"}, names)
 
 	changed := brandKitInput()
@@ -138,6 +144,11 @@ func TestSiteBrandKitRecreateMakesNewStartersInTheSavedBrandAndTouchesNothing(t 
 		assert.Contains(t, doc, "#fafafa", "made in Initech's brand")
 		assert.Contains(t, doc, "Initech, 4120 Freidrich Lane")
 	}
+	buttons := lo.Filter(made, func(tpl siteapi.SiteEmailTemplateResource, _ int) bool { return tpl.Name == "One button" })
+	require.Len(t, buttons, 1)
+	button, err := s.EmailTemplate().Get(ctx, int64(buttons[0].ID))
+	require.NoError(t, err)
+	assert.Contains(t, string(button.Doc), `"href": "https://www.initech.test"`, "the button links to the saved Brand kit's website")
 	assert.Len(t, s.EmailTemplate().Query().AllX(ctx), len(before)+4)
 
 	// Recreating again adds another set and still rewrites nothing.
@@ -238,6 +249,11 @@ func TestSiteBrandKitRefusesAValueThatCannotBeWrittenIntoAMessage(t *testing.T) 
 		"logo is javascript":   func(in *siteapi.SiteSaveBrandKitInput) { in.LogoUrl = "javascript:alert(1)" },
 		"logo has a quote":     func(in *siteapi.SiteSaveBrandKitInput) { in.LogoUrl = `https://x.test/a" onerror="b` },
 		"logo is liquid":       func(in *siteapi.SiteSaveBrandKitInput) { in.LogoUrl = "https://x.test/{{ a }}" },
+		"website is http":      func(in *siteapi.SiteSaveBrandKitInput) { in.WebsiteUrl = "http://vandelay.industries" },
+		"website is relative":  func(in *siteapi.SiteSaveBrandKitInput) { in.WebsiteUrl = "/shop" },
+		"website has no host":  func(in *siteapi.SiteSaveBrandKitInput) { in.WebsiteUrl = "https:shop" },
+		"website has a quote":  func(in *siteapi.SiteSaveBrandKitInput) { in.WebsiteUrl = `https://x.test/a" onclick="b` },
+		"website is liquid":    func(in *siteapi.SiteSaveBrandKitInput) { in.WebsiteUrl = "https://{{ host }}" },
 		"footer is liquid":     func(in *siteapi.SiteSaveBrandKitInput) { in.FooterText = "{% if %}" },
 		"footer has a newline": func(in *siteapi.SiteSaveBrandKitInput) { in.FooterText = "a\nb" },
 	} {

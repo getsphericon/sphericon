@@ -34,6 +34,7 @@ func TestMCPBrandGetReturnsTheBrandKitAndWrapsItsTextAsUntrusted(t *testing.T) {
 	// What a person of the Workspace wrote is data, never instructions.
 	assert.Equal(t, map[string]any{"untrusted_data": "Georgia, serif"}, kit["headingFont"])
 	assert.Equal(t, map[string]any{"untrusted_data": "https://cdn.initech.test/logo.png"}, kit["logoUrl"])
+	assert.Equal(t, map[string]any{"untrusted_data": "https://www.initech.test"}, kit["websiteUrl"])
 	assert.Equal(t, map[string]any{"untrusted_data": "Initech, 4120 Freidrich Lane"}, kit["footerText"])
 }
 

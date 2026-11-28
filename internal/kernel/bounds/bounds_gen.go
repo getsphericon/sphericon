@@ -155,6 +155,12 @@ const (
 	BrandKitLogoURLMaxLength = 2048
 )
 
+// BrandKitWebsiteURL is the URL of a Brand kit's website.
+// From site SiteSaveBrandKitInput.websiteUrl.
+const (
+	BrandKitWebsiteURLMaxLength = 2048
+)
+
 // BrandKitButtonRadius is the corner radius of a Brand kit's buttons, in pixels.
 // From site SiteSaveBrandKitInput.buttonRadius.
 const (
@@ -538,6 +544,7 @@ var Owners = map[string][]string{
 	"ImageURLMaxLength":                     {"Contact"},
 	"ImageURLPattern":                       {"Contact"},
 	"BrandKitLogoURLMaxLength":              {"BrandKit"},
+	"BrandKitWebsiteURLMaxLength":           {"BrandKit"},
 	"BrandKitButtonRadiusMin":               {"BrandKit"},
 	"BrandKitButtonRadiusMax":               {"BrandKit"},
 	"BrandKitFooterTextMaxLength":           {"BrandKit"},

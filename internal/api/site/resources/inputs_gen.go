@@ -231,6 +231,7 @@ func (c *InputsImpl) BrandKitSave(source *site.SiteSaveBrandKitInput) brandkits.
 		brandkitsInput.HeadingFont = (*source).HeadingFont
 		brandkitsInput.BodyFont = (*source).BodyFont
 		brandkitsInput.LogoURL = (*source).LogoUrl
+		brandkitsInput.WebsiteURL = (*source).WebsiteUrl
 		brandkitsInput.ButtonTextColor = (*source).ButtonTextColor
 		brandkitsInput.ButtonRadius = int32ToInt((*source).ButtonRadius)
 		brandkitsInput.FooterText = (*source).FooterText

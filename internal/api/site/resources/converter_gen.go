@@ -698,6 +698,7 @@ func (c *ConverterImpl) BrandKitToResource(source brandkits.Kit) site.BrandKitRe
 	siteapiBrandKitResource.HeadingFont = source.HeadingFont
 	siteapiBrandKitResource.BodyFont = source.BodyFont
 	siteapiBrandKitResource.LogoUrl = source.LogoURL
+	siteapiBrandKitResource.WebsiteUrl = source.WebsiteURL
 	siteapiBrandKitResource.ButtonTextColor = source.ButtonTextColor
 	siteapiBrandKitResource.ButtonRadius = count(source.ButtonRadius)
 	siteapiBrandKitResource.FooterText = source.FooterText
@@ -2109,6 +2110,8 @@ func (c *ConverterImpl) LintCodeToResource(source emailrender.Code) site.LintCod
 		siteapiLintCode = site.LintCodeOffBrandColor
 	case emailrender.CodeOffBrandFont:
 		siteapiLintCode = site.LintCodeOffBrandFont
+	case emailrender.CodeReservedHost:
+		siteapiLintCode = site.LintCodeReservedHost
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}

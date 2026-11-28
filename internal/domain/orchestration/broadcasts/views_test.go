@@ -41,7 +41,7 @@ func TestViewsCreateReturnsTheWarningsOfTheBodyAsWritten(t *testing.T) {
 	env := testhelper.Setup(t)
 	v := broadcasts.NewViews(testhelper.Module[*broadcasts.Module](env))
 	name, subject, from := "Warned", "Hi", "a@"+fixtures.SendingDomainVerifiedDomain
-	body := `<p style="font-family:Georgia, serif">Sale</p><img src="https://cdn.example.com/a.png">`
+	body := `<p style="font-family:Georgia, serif">Sale</p><img src="https://cdn.acme.co/a.png">`
 
 	got, err := v.Create(t.Context(), env.DB.Scoped(fixtures.AcmeID),
 		broadcasts.CreateInput{Name: &name, Content: broadcasts.EmailContentInput{Subject: &subject, Body: &body, FromEmail: &from}})

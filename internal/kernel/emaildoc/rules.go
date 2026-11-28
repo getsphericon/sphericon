@@ -189,7 +189,7 @@ func checkNodeAttrs(name string, attrs, node map[string]any, where string) error
 func checkButton(attrs, node map[string]any, where string) error {
 	href, _ := attrs["href"].(string)
 	if href == "" || href == "#" {
-		return invalidf("%s: a button needs attrs.href, the address it opens, like {\"type\":\"button\",\"attrs\":{\"href\":\"https://example.com\"},\"content\":[{\"type\":\"text\",\"text\":\"Label\"}]}. Its label is text in \"content\", not an attribute.", where)
+		return invalidf("%s: a button needs attrs.href, the address it opens: the absolute https URL of the page it leads to, such as the Brand kit's website, in {\"type\":\"button\",\"attrs\":{\"href\":<the address>},\"content\":[{\"type\":\"text\",\"text\":<the label>}]}. Its label is text in \"content\", not an attribute.", where)
 	}
 	if err := checkURL(href, "href", where, false); err != nil {
 		return err
@@ -273,7 +273,7 @@ func checkMarks(value any, where string) error {
 		if name == markLink {
 			href, _ := attrs["href"].(string)
 			if href == "" {
-				return invalidf("%s: a link needs attrs.href, the address it opens, like {\"type\":\"link\",\"attrs\":{\"href\":\"https://example.com\"}}.", here)
+				return invalidf("%s: a link needs attrs.href, the address it opens: the absolute https URL of the page it leads to, in {\"type\":\"link\",\"attrs\":{\"href\":<the address>}}.", here)
 			}
 			if err := checkURL(href, "href", here, true); err != nil {
 				return err

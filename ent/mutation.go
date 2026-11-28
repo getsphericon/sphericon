@@ -15119,6 +15119,7 @@ type BrandKitMutation struct {
 	heading_font      *string
 	body_font         *string
 	logo_url          *string
+	website_url       *string
 	button_text_color *string
 	button_radius     *int
 	addbutton_radius  *int
@@ -15615,6 +15616,42 @@ func (m *BrandKitMutation) ResetLogoURL() {
 	m.logo_url = nil
 }
 
+// SetWebsiteURL sets the "website_url" field.
+func (m *BrandKitMutation) SetWebsiteURL(s string) {
+	m.website_url = &s
+}
+
+// WebsiteURL returns the value of the "website_url" field in the mutation.
+func (m *BrandKitMutation) WebsiteURL() (r string, exists bool) {
+	v := m.website_url
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWebsiteURL returns the old "website_url" field's value of the BrandKit entity.
+// If the BrandKit object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BrandKitMutation) OldWebsiteURL(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWebsiteURL is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWebsiteURL requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWebsiteURL: %w", err)
+	}
+	return oldValue.WebsiteURL, nil
+}
+
+// ResetWebsiteURL resets all changes to the "website_url" field.
+func (m *BrandKitMutation) ResetWebsiteURL() {
+	m.website_url = nil
+}
+
 // SetButtonTextColor sets the "button_text_color" field.
 func (m *BrandKitMutation) SetButtonTextColor(s string) {
 	m.button_text_color = &s
@@ -15804,7 +15841,7 @@ func (m *BrandKitMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BrandKitMutation) Fields() []string {
-	fields := make([]string, 0, 13)
+	fields := make([]string, 0, 14)
 	if m.created_at != nil {
 		fields = append(fields, brandkit.FieldCreatedAt)
 	}
@@ -15834,6 +15871,9 @@ func (m *BrandKitMutation) Fields() []string {
 	}
 	if m.logo_url != nil {
 		fields = append(fields, brandkit.FieldLogoURL)
+	}
+	if m.website_url != nil {
+		fields = append(fields, brandkit.FieldWebsiteURL)
 	}
 	if m.button_text_color != nil {
 		fields = append(fields, brandkit.FieldButtonTextColor)
@@ -15872,6 +15912,8 @@ func (m *BrandKitMutation) Field(name string) (ent.Value, bool) {
 		return m.BodyFont()
 	case brandkit.FieldLogoURL:
 		return m.LogoURL()
+	case brandkit.FieldWebsiteURL:
+		return m.WebsiteURL()
 	case brandkit.FieldButtonTextColor:
 		return m.ButtonTextColor()
 	case brandkit.FieldButtonRadius:
@@ -15907,6 +15949,8 @@ func (m *BrandKitMutation) OldField(ctx context.Context, name string) (ent.Value
 		return m.OldBodyFont(ctx)
 	case brandkit.FieldLogoURL:
 		return m.OldLogoURL(ctx)
+	case brandkit.FieldWebsiteURL:
+		return m.OldWebsiteURL(ctx)
 	case brandkit.FieldButtonTextColor:
 		return m.OldButtonTextColor(ctx)
 	case brandkit.FieldButtonRadius:
@@ -15991,6 +16035,13 @@ func (m *BrandKitMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetLogoURL(v)
+		return nil
+	case brandkit.FieldWebsiteURL:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWebsiteURL(v)
 		return nil
 	case brandkit.FieldButtonTextColor:
 		v, ok := value.(string)
@@ -16118,6 +16169,9 @@ func (m *BrandKitMutation) ResetField(name string) error {
 		return nil
 	case brandkit.FieldLogoURL:
 		m.ResetLogoURL()
+		return nil
+	case brandkit.FieldWebsiteURL:
+		m.ResetWebsiteURL()
 		return nil
 	case brandkit.FieldButtonTextColor:
 		m.ResetButtonTextColor()

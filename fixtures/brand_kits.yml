@@ -25,6 +25,7 @@
   heading_font: Georgia, serif
   body_font: Verdana, sans-serif
   logo_url: https://cdn.initech.test/logo.png
+  website_url: https://www.initech.test
   button_text_color: '#ffffff'
   button_radius: 8
   footer_text: Initech, 4120 Freidrich Lane

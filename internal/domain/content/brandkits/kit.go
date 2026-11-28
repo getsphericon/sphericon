@@ -1,5 +1,5 @@
 // Package brandkits holds a Workspace's Brand kit (GLOSSARY "Brand kit", ADR 0040): its colors,
-// fonts, logo, button style and footer, as data. It sets the palette the editor offers and what an
+// fonts, logo, website, button style and footer, as data. It sets the palette the editor offers and what an
 // agent is told to use, and the starter Templates are made from it.
 //
 // The kit's values are written into a message when the message is authored; nothing resolves them
@@ -31,6 +31,9 @@ type Kit struct {
 	BodyFont    string
 	// LogoURL is the absolute http(s) URL of the logo image; empty for none.
 	LogoURL string
+	// WebsiteURL is the absolute https URL of the business's website, where the starter Templates'
+	// buttons link; empty for none.
+	WebsiteURL string
 	// ButtonTextColor and ButtonRadius (in pixels) are the button style; the button's own color
 	// is AccentColor.
 	ButtonTextColor string

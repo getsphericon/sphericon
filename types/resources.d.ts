@@ -665,7 +665,9 @@ export default interface Resources {
       "recreated": "Starter templates created",
       "saved": "Brand kit saved",
       "textColorLabel": "Text color",
-      "title": "Brand kit"
+      "title": "Brand kit",
+      "websiteUrlDescription": "The https address of your site, where the starter templates' buttons link",
+      "websiteUrlLabel": "Website"
     },
     "broadcasts": {
       "addBroadcast": "New broadcast",

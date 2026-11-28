@@ -41,6 +41,10 @@ func (BrandKit) Fields() []ent.Field {
 		// Absolute http(s) URL of the logo image; empty for none.
 		field.String("logo_url").
 			Default(""),
+		// Absolute https URL of the business's website, where the starter Templates' buttons
+		// link; empty for none.
+		field.String("website_url").
+			Default(""),
 		field.String("button_text_color"),
 		// The button's corner radius in pixels.
 		field.Int("button_radius"),

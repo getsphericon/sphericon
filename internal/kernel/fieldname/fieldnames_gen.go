@@ -235,6 +235,7 @@ const (
 	Variables                 = "variables"
 	Version                   = "version"
 	VisitorID                 = "visitorId"
+	WebsiteURL                = "websiteUrl"
 	Weekdays                  = "weekdays"
 	Weight                    = "weight"
 	WindowDays                = "windowDays"

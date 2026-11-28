@@ -20,6 +20,9 @@ enum LintCode {
 
   /** A font is not one of the Workspace's Brand kit fonts */
   off_brand_font,
+
+  /** A link or an image is at a name reserved for examples and tests (RFC 2606, RFC 6761), such as `example.com` or a host ending in `.test`; a host a merge tag gives is not checked (ADR 0188) */
+  reserved_host,
 }
 
 /**

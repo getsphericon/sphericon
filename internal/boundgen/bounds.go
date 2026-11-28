@@ -127,6 +127,10 @@ var Bounds = []Bound{
 		Spec: site, Schema: "SiteSaveBrandKitInput", Property: "logoUrl", Owners: []string{"BrandKit"},
 	},
 	{
+		Name: "BrandKitWebsiteURL", Doc: "is the URL of a Brand kit's website.",
+		Spec: site, Schema: "SiteSaveBrandKitInput", Property: "websiteUrl", Owners: []string{"BrandKit"},
+	},
+	{
 		Name: "BrandKitButtonRadius", Doc: "is the corner radius of a Brand kit's buttons, in pixels.",
 		Spec: site, Schema: "SiteSaveBrandKitInput", Property: "buttonRadius", Owners: []string{"BrandKit"},
 	},

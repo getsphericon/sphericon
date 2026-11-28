@@ -1257,7 +1257,8 @@ export const zLintCode = z.enum([
   'missing_alt',
   'low_contrast',
   'off_brand_color',
-  'off_brand_font'
+  'off_brand_font',
+  'reserved_host'
 ]);
 
 /**
@@ -2970,6 +2971,7 @@ export const zSiteSaveBrandKitInput = z.strictObject({
   headingFont: z.string(),
   bodyFont: z.string(),
   logoUrl: z.string().max(2048),
+  websiteUrl: z.string().max(2048),
   buttonTextColor: z.string(),
   buttonRadius: z.int().gte(0).lte(32),
   footerText: z.string().max(500)
@@ -4240,8 +4242,9 @@ export const zAuditEntryList = z.object({
 });
 
 /**
- * The Workspace's Brand kit (ADR 0040): its colors, fonts, logo, button style and footer. It sets
- * the palette the editor offers and what an agent is told to use: write a message in these values.
+ * The Workspace's Brand kit (ADR 0040): its colors, fonts, logo, website, button style and footer.
+ * It sets the palette the editor offers and what an agent is told to use: write a message in these
+ * values.
  * Its values are written into a message when the message is authored, so saving it never changes a
  * message already written. A Workspace that has not saved one has the defaults and `saved` false.
  */
@@ -4253,6 +4256,7 @@ export const zBrandKitResource = z.object({
   headingFont: z.string(),
   bodyFont: z.string(),
   logoUrl: z.string(),
+  websiteUrl: z.string(),
   buttonTextColor: z.string(),
   buttonRadius: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   footerText: z.string(),

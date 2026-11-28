@@ -18,7 +18,8 @@ func brandedKit() brandkits.Kit {
 	k.BackgroundColor = "#f0f4f8"
 	k.HeadingFont = "Georgia, serif"
 	k.BodyFont = "Verdana, sans-serif"
-	k.LogoURL = "https://cdn.example.com/logo.png"
+	k.LogoURL = "https://cdn.acme.co/logo.png"
+	k.WebsiteURL = "https://acme.co/shop"
 	k.ButtonTextColor = "#fefefe"
 	k.ButtonRadius = 12
 	k.FooterText = "Acme Inc, 1 Main St"
@@ -45,7 +46,7 @@ func TestStartersCarryTheBrandKitInTheirStoredBodies(t *testing.T) {
 				assert.Equal(t, emailrender.CodeLowContrast, w.Code, "a starter is made of its own Brand kit: only the test kit's orange button can warn: %v", w)
 			}
 			for _, brand := range []string{
-				"#f0f4f8", "#102030", "Verdana, sans-serif", "https://cdn.example.com/logo.png", "Acme Inc, 1 Main St",
+				"#f0f4f8", "#102030", "Verdana, sans-serif", "https://cdn.acme.co/logo.png", "Acme Inc, 1 Main St",
 			} {
 				assert.Contains(t, got.Body, brand)
 			}
@@ -57,6 +58,7 @@ func TestStartersCarryTheBrandKitInTheirStoredBodies(t *testing.T) {
 		assert.Contains(t, bodies[name], "#ff5500", name)
 		assert.Contains(t, bodies[name], "#fefefe", name)
 		assert.Contains(t, bodies[name], "border-radius:12px", name)
+		assert.Contains(t, bodies[name], `href="https://acme.co/shop"`, name+" links its button to the website")
 	}
 	assert.Contains(t, bodies["Welcome"], "Georgia, serif")
 	assert.Contains(t, bodies["Welcome"], "{{ first_name }}")

@@ -6237,10 +6237,11 @@ func (s *BranchUnknownPathResult) SetNeeded(val bool) {
 	s.Needed = val
 }
 
-// The Workspace's Brand kit (ADR 0040): its colors, fonts, logo, button style and footer. It sets the
-// palette the editor offers and what an agent is told to use: write a message in these values. Its
-// values are written into a message when the message is authored, so saving it never changes a message
-// already written. A Workspace that has not saved one has the defaults and `saved` false.
+// The Workspace's Brand kit (ADR 0040): its colors, fonts, logo, website, button style and footer. It
+// sets the palette the editor offers and what an agent is told to use: write a message in these
+// values. Its values are written into a message when the message is authored, so saving it never
+// changes a message already written. A Workspace that has not saved one has the defaults and `saved`
+// false.
 // Ref: #/components/schemas/BrandKitResource
 type BrandKitResource struct {
 	// False until the Brand kit is first saved; the values are then the defaults.
@@ -6257,6 +6258,9 @@ type BrandKitResource struct {
 	BodyFont string `json:"bodyFont"`
 	// Address (http or https) of the logo image; empty for none.
 	LogoUrl string `json:"logoUrl"`
+	// Address (https) of the business's website, where the starter Templates' buttons link; empty for
+	// none. Link a message there rather than to a placeholder.
+	WebsiteUrl string `json:"websiteUrl"`
 	// Color of the text on a button, `#rrggbb`.
 	ButtonTextColor string `json:"buttonTextColor"`
 	// Corner radius of a button in pixels, 0 to 32.
@@ -6303,6 +6307,11 @@ func (s *BrandKitResource) GetBodyFont() string {
 // GetLogoUrl returns the value of LogoUrl.
 func (s *BrandKitResource) GetLogoUrl() string {
 	return s.LogoUrl
+}
+
+// GetWebsiteUrl returns the value of WebsiteUrl.
+func (s *BrandKitResource) GetWebsiteUrl() string {
+	return s.WebsiteUrl
 }
 
 // GetButtonTextColor returns the value of ButtonTextColor.
@@ -6363,6 +6372,11 @@ func (s *BrandKitResource) SetBodyFont(val string) {
 // SetLogoUrl sets the value of LogoUrl.
 func (s *BrandKitResource) SetLogoUrl(val string) {
 	s.LogoUrl = val
+}
+
+// SetWebsiteUrl sets the value of WebsiteUrl.
+func (s *BrandKitResource) SetWebsiteUrl(val string) {
+	s.WebsiteUrl = val
 }
 
 // SetButtonTextColor sets the value of ButtonTextColor.
@@ -18504,6 +18518,7 @@ const (
 	LintCodeLowContrast    LintCode = "low_contrast"
 	LintCodeOffBrandColor  LintCode = "off_brand_color"
 	LintCodeOffBrandFont   LintCode = "off_brand_font"
+	LintCodeReservedHost   LintCode = "reserved_host"
 )
 
 // AllValues returns all LintCode values.
@@ -18514,6 +18529,7 @@ func (LintCode) AllValues() []LintCode {
 		LintCodeLowContrast,
 		LintCodeOffBrandColor,
 		LintCodeOffBrandFont,
+		LintCodeReservedHost,
 	}
 }
 
@@ -18529,6 +18545,8 @@ func (s LintCode) MarshalText() ([]byte, error) {
 	case LintCodeOffBrandColor:
 		return []byte(s), nil
 	case LintCodeOffBrandFont:
+		return []byte(s), nil
+	case LintCodeReservedHost:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -18552,6 +18570,9 @@ func (s *LintCode) UnmarshalText(data []byte) error {
 		return nil
 	case LintCodeOffBrandFont:
 		*s = LintCodeOffBrandFont
+		return nil
+	case LintCodeReservedHost:
+		*s = LintCodeReservedHost
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -41313,6 +41334,9 @@ type SiteSaveBrandKitInput struct {
 	BodyFont string `json:"bodyFont"`
 	// Address (http or https) of the logo image; empty for none.
 	LogoUrl string `json:"logoUrl"`
+	// Absolute https address of the business's website, where the starter Templates' buttons link; empty
+	// for none.
+	WebsiteUrl string `json:"websiteUrl"`
 	// Color of the text on a button, `#rrggbb`.
 	ButtonTextColor string `json:"buttonTextColor"`
 	// Corner radius of a button in pixels, 0 to 32.
@@ -41354,6 +41378,11 @@ func (s *SiteSaveBrandKitInput) GetBodyFont() string {
 // GetLogoUrl returns the value of LogoUrl.
 func (s *SiteSaveBrandKitInput) GetLogoUrl() string {
 	return s.LogoUrl
+}
+
+// GetWebsiteUrl returns the value of WebsiteUrl.
+func (s *SiteSaveBrandKitInput) GetWebsiteUrl() string {
+	return s.WebsiteUrl
 }
 
 // GetButtonTextColor returns the value of ButtonTextColor.
@@ -41404,6 +41433,11 @@ func (s *SiteSaveBrandKitInput) SetBodyFont(val string) {
 // SetLogoUrl sets the value of LogoUrl.
 func (s *SiteSaveBrandKitInput) SetLogoUrl(val string) {
 	s.LogoUrl = val
+}
+
+// SetWebsiteUrl sets the value of WebsiteUrl.
+func (s *SiteSaveBrandKitInput) SetWebsiteUrl(val string) {
+	s.WebsiteUrl = val
 }
 
 // SetButtonTextColor sets the value of ButtonTextColor.

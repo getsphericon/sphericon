@@ -187,6 +187,11 @@ func (m *BrandKitMutation) unchanged(ctx context.Context) (*BrandKit, bool, erro
 			return nil, false, nil
 		}
 	}
+	if v, ok := m.WebsiteURL(); ok {
+		if !reflect.DeepEqual(v, row.WebsiteURL) {
+			return nil, false, nil
+		}
+	}
 	if v, ok := m.ButtonTextColor(); ok {
 		if !reflect.DeepEqual(v, row.ButtonTextColor) {
 			return nil, false, nil

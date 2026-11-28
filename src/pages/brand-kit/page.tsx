@@ -41,7 +41,7 @@ import { workspaceOptions } from '../../utils/workspace.ts'
 const RADIUS = boundsOf(zSiteSaveBrandKitInput.shape.buttonRadius)
 const FOOTER = zSiteSaveBrandKitInput.shape.footerText
 
-// A save is the whole kit: every value, an empty logo or footer meaning none. The revision is the
+// A save is the whole kit: every value, an empty logo, website or footer meaning none. The revision is the
 // session's to add (withRevision).
 const zBrandKitBody = zSiteSaveBrandKitInput.omit({ revision: true })
 type BrandKitValues = z.output<typeof zBrandKitBody>
@@ -54,6 +54,7 @@ function valuesOf(kit: BrandKitResource): BrandKitValues {
     headingFont: kit.headingFont,
     bodyFont: kit.bodyFont,
     logoUrl: kit.logoUrl,
+    websiteUrl: kit.websiteUrl,
     buttonTextColor: kit.buttonTextColor,
     buttonRadius: kit.buttonRadius,
     footerText: kit.footerText,
@@ -61,12 +62,13 @@ function valuesOf(kit: BrandKitResource): BrandKitValues {
 }
 
 // Unlike resourceFormSchema, an emptied text stays empty rather than leaving the field out: a save
-// replaces every value. The fonts and the logo are trimmed.
+// replaces every value. The fonts, the logo and the website are trimmed.
 const brandKitBody = z
   .custom<BrandKitValues>((value) => typeof value === 'object' && value !== null)
   .transform((values) => ({
     ...values,
     logoUrl: values.logoUrl.trim(),
+    websiteUrl: values.websiteUrl.trim(),
     headingFont: values.headingFont.trim(),
     bodyFont: values.bodyFont.trim(),
   }))
@@ -80,6 +82,7 @@ const brandKitSchema: ResourceFormSchema<BrandKitValues, BrandKitValues> = {
     headingFont: '',
     bodyFont: '',
     logoUrl: '',
+    websiteUrl: '',
     buttonTextColor: '',
     buttonRadius: 0,
     footerText: '',
@@ -93,6 +96,7 @@ const brandKitSchema: ResourceFormSchema<BrandKitValues, BrandKitValues> = {
     headingFont: kit.headingFont ?? '',
     bodyFont: kit.bodyFont ?? '',
     logoUrl: kit.logoUrl ?? '',
+    websiteUrl: kit.websiteUrl ?? '',
     buttonTextColor: kit.buttonTextColor ?? '',
     buttonRadius: kit.buttonRadius ?? 0,
     footerText: kit.footerText ?? '',
@@ -154,6 +158,11 @@ function BrandKitFields({
             label={t(($) => $.brandKit.logoUrlLabel)}
             description={t(($) => $.brandKit.logoUrlDescription)}
             {...form.getInputProps('logoUrl')}
+          />
+          <TextInput
+            label={t(($) => $.brandKit.websiteUrlLabel)}
+            description={t(($) => $.brandKit.websiteUrlDescription)}
+            {...form.getInputProps('websiteUrl')}
           />
         </SimpleGrid>
         <Textarea
@@ -251,8 +260,8 @@ function BrandKitActions({
   )
 }
 
-// BrandKitPage edits the Workspace's Brand kit (ADR 0040): the colors, fonts, logo, button
-// style and footer the editor offers. Saving it needs brand_kit:manage; every member sees it.
+// BrandKitPage edits the Workspace's Brand kit (ADR 0040): the colors, fonts, logo, website,
+// button style and footer the editor offers. Saving it needs brand_kit:manage; every member sees it.
 // Saving it changes no message already written.
 export function BrandKitPage() {
   const { t } = useTranslation()

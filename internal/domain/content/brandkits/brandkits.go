@@ -52,6 +52,7 @@ type Input struct {
 	HeadingFont     string
 	BodyFont        string
 	LogoURL         string
+	WebsiteURL      string
 	ButtonTextColor string
 	ButtonRadius    int
 	FooterText      string
@@ -141,6 +142,7 @@ func (m *Module) save(ctx context.Context, s *ent.Scoped, in Input, starters []r
 				SetHeadingFont(in.HeadingFont).
 				SetBodyFont(in.BodyFont).
 				SetLogoURL(in.LogoURL).
+				SetWebsiteURL(in.WebsiteURL).
 				SetButtonTextColor(in.ButtonTextColor).
 				SetButtonRadius(in.ButtonRadius).
 				SetFooterText(in.FooterText).
@@ -177,6 +179,7 @@ func (m *Module) save(ctx context.Context, s *ent.Scoped, in Input, starters []r
 			SetHeadingFont(in.HeadingFont).
 			SetBodyFont(in.BodyFont).
 			SetLogoURL(in.LogoURL).
+			SetWebsiteURL(in.WebsiteURL).
 			SetButtonTextColor(in.ButtonTextColor).
 			SetButtonRadius(in.ButtonRadius).
 			SetFooterText(in.FooterText).
@@ -255,6 +258,7 @@ func kitOfInput(in Input) Kit {
 		HeadingFont:     in.HeadingFont,
 		BodyFont:        in.BodyFont,
 		LogoURL:         in.LogoURL,
+		WebsiteURL:      in.WebsiteURL,
 		ButtonTextColor: in.ButtonTextColor,
 		ButtonRadius:    in.ButtonRadius,
 		FooterText:      in.FooterText,
@@ -270,6 +274,7 @@ func kitOf(row *ent.BrandKit) Kit {
 		HeadingFont:     row.HeadingFont,
 		BodyFont:        row.BodyFont,
 		LogoURL:         row.LogoURL,
+		WebsiteURL:      row.WebsiteURL,
 		ButtonTextColor: row.ButtonTextColor,
 		ButtonRadius:    row.ButtonRadius,
 		FooterText:      row.FooterText,
@@ -315,6 +320,12 @@ func validate(in Input) (Input, error) {
 	if !validLogo(in.LogoURL) {
 		return in, ErrInvalidLogo
 	}
+	if err := validation.MaxLength(fieldname.WebsiteURL, in.WebsiteURL, bounds.BrandKitWebsiteURLMaxLength); err != nil {
+		return in, err
+	}
+	if !validWebsite(in.WebsiteURL) {
+		return in, ErrInvalidWebsite
+	}
 	if err := validation.Range(fieldname.ButtonRadius, in.ButtonRadius,
 		bounds.BrandKitButtonRadiusMin, bounds.BrandKitButtonRadiusMax); err != nil {
 		return in, err
@@ -330,23 +341,44 @@ func validate(in Input) (Input, error) {
 
 // The refusals of a Brand kit's values.
 var (
-	ErrInvalidColor  = validation.Refuse("brandkits: invalid color", i18n.ErrorsBrandkitColor)
-	ErrInvalidFont   = validation.Refuse("brandkits: invalid font", i18n.ErrorsBrandkitFont)
-	ErrInvalidLogo   = validation.RefuseField(fieldname.LogoURL, "brandkits: invalid logo", i18n.ErrorsBrandkitLogo)
-	ErrInvalidFooter = validation.RefuseField(fieldname.FooterText, "brandkits: invalid footer", i18n.ErrorsBrandkitFooter)
+	ErrInvalidColor   = validation.Refuse("brandkits: invalid color", i18n.ErrorsBrandkitColor)
+	ErrInvalidFont    = validation.Refuse("brandkits: invalid font", i18n.ErrorsBrandkitFont)
+	ErrInvalidLogo    = validation.RefuseField(fieldname.LogoURL, "brandkits: invalid logo", i18n.ErrorsBrandkitLogo)
+	ErrInvalidWebsite = validation.RefuseField(fieldname.WebsiteURL, "brandkits: invalid website", i18n.ErrorsBrandkitWebsite)
+	ErrInvalidFooter  = validation.RefuseField(fieldname.FooterText, "brandkits: invalid footer", i18n.ErrorsBrandkitFooter)
 )
 
-// validLogo accepts no logo, or an absolute http(s) URL with no character that could leave the
-// attribute it is written into or start Liquid markup.
+// validLogo accepts no logo, or an absolute http(s) URL that can be written into an attribute
+// (attributeURL).
 func validLogo(raw string) bool {
 	if raw == "" {
 		return true
 	}
+	u, ok := attributeURL(raw)
+	return ok && (u.Scheme == "http" || u.Scheme == "https")
+}
+
+// validWebsite accepts no website, or an absolute https URL that can be written into an attribute
+// (attributeURL): the starter Templates link their buttons to it.
+func validWebsite(raw string) bool {
+	if raw == "" {
+		return true
+	}
+	u, ok := attributeURL(raw)
+	return ok && u.Scheme == "https"
+}
+
+// attributeURL parses an absolute URL with a host and no character that could leave the attribute
+// it is written into or start Liquid markup.
+func attributeURL(raw string) (*url.URL, bool) {
 	if strings.ContainsAny(raw, "{}\"'<>\\` \t\r\n") {
-		return false
+		return nil, false
 	}
 	u, err := url.Parse(raw)
-	return err == nil && (u.Scheme == "http" || u.Scheme == "https") && u.Host != ""
+	if err != nil || u.Host == "" {
+		return nil, false
+	}
+	return u, true
 }
 
 // validFooter accepts plain text: no control characters and no Liquid markup (the footer is

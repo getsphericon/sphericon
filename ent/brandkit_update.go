@@ -155,6 +155,20 @@ func (_u *BrandKitUpdate) SetNillableLogoURL(v *string) *BrandKitUpdate {
 	return _u
 }
 
+// SetWebsiteURL sets the "website_url" field.
+func (_u *BrandKitUpdate) SetWebsiteURL(v string) *BrandKitUpdate {
+	_u.mutation.SetWebsiteURL(v)
+	return _u
+}
+
+// SetNillableWebsiteURL sets the "website_url" field if the given value is not nil.
+func (_u *BrandKitUpdate) SetNillableWebsiteURL(v *string) *BrandKitUpdate {
+	if v != nil {
+		_u.SetWebsiteURL(*v)
+	}
+	return _u
+}
+
 // SetButtonTextColor sets the "button_text_color" field.
 func (_u *BrandKitUpdate) SetButtonTextColor(v string) *BrandKitUpdate {
 	_u.mutation.SetButtonTextColor(v)
@@ -313,6 +327,9 @@ func (_u *BrandKitUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.LogoURL(); ok {
 		_spec.SetField(brandkit.FieldLogoURL, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.WebsiteURL(); ok {
+		_spec.SetField(brandkit.FieldWebsiteURL, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.ButtonTextColor(); ok {
 		_spec.SetField(brandkit.FieldButtonTextColor, field.TypeString, value)
@@ -498,6 +515,20 @@ func (_u *BrandKitUpdateOne) SetLogoURL(v string) *BrandKitUpdateOne {
 func (_u *BrandKitUpdateOne) SetNillableLogoURL(v *string) *BrandKitUpdateOne {
 	if v != nil {
 		_u.SetLogoURL(*v)
+	}
+	return _u
+}
+
+// SetWebsiteURL sets the "website_url" field.
+func (_u *BrandKitUpdateOne) SetWebsiteURL(v string) *BrandKitUpdateOne {
+	_u.mutation.SetWebsiteURL(v)
+	return _u
+}
+
+// SetNillableWebsiteURL sets the "website_url" field if the given value is not nil.
+func (_u *BrandKitUpdateOne) SetNillableWebsiteURL(v *string) *BrandKitUpdateOne {
+	if v != nil {
+		_u.SetWebsiteURL(*v)
 	}
 	return _u
 }
@@ -690,6 +721,9 @@ func (_u *BrandKitUpdateOne) sqlSave(ctx context.Context) (_node *BrandKit, err 
 	}
 	if value, ok := _u.mutation.LogoURL(); ok {
 		_spec.SetField(brandkit.FieldLogoURL, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.WebsiteURL(); ok {
+		_spec.SetField(brandkit.FieldWebsiteURL, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.ButtonTextColor(); ok {
 		_spec.SetField(brandkit.FieldButtonTextColor, field.TypeString, value)

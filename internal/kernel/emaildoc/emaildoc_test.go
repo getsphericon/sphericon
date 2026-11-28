@@ -9,6 +9,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
@@ -260,6 +261,31 @@ func TestValidationGivesReasons(t *testing.T) {
 
 			_, err = shared().Render(t.Context(), tc.doc)
 			require.ErrorIs(t, err, emaildoc.ErrInvalid, "Render refuses what Validate refuses")
+		})
+	}
+}
+
+// The refusal of a button or a link with no address says what the field holds without naming an
+// example host, which an agent would copy into the message as a placeholder (ADR 0188).
+func TestTheRefusalOfAMissingLinkNamesNoExampleHost(t *testing.T) {
+	for name, tc := range map[string]struct {
+		doc    []byte
+		reason string
+	}{
+		"a button": {
+			doc(node{"type": "button", "content": []any{text("Go")}}), "a button needs attrs.href, the address it opens",
+		},
+		"a link": {
+			doc(node{"type": "paragraph", "content": []any{node{"type": "text", "text": "go", "marks": []any{node{"type": "link"}}}}}),
+			"a link needs attrs.href, the address it opens",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			err := shared().Validate(t.Context(), tc.doc)
+
+			require.ErrorIs(t, err, emaildoc.ErrInvalid)
+			require.ErrorContains(t, err, tc.reason)
+			assert.NotContains(t, err.Error(), "example")
 		})
 	}
 }

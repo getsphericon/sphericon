@@ -38,6 +38,8 @@ type BrandKit struct {
 	BodyFont string `json:"body_font,omitempty"`
 	// LogoURL holds the value of the "logo_url" field.
 	LogoURL string `json:"logo_url,omitempty"`
+	// WebsiteURL holds the value of the "website_url" field.
+	WebsiteURL string `json:"website_url,omitempty"`
 	// ButtonTextColor holds the value of the "button_text_color" field.
 	ButtonTextColor string `json:"button_text_color,omitempty"`
 	// ButtonRadius holds the value of the "button_radius" field.
@@ -77,7 +79,7 @@ func (*BrandKit) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case brandkit.FieldID, brandkit.FieldWorkspaceID, brandkit.FieldRevision, brandkit.FieldButtonRadius:
 			values[i] = new(sql.NullInt64)
-		case brandkit.FieldAccentColor, brandkit.FieldTextColor, brandkit.FieldBackgroundColor, brandkit.FieldHeadingFont, brandkit.FieldBodyFont, brandkit.FieldLogoURL, brandkit.FieldButtonTextColor, brandkit.FieldFooterText:
+		case brandkit.FieldAccentColor, brandkit.FieldTextColor, brandkit.FieldBackgroundColor, brandkit.FieldHeadingFont, brandkit.FieldBodyFont, brandkit.FieldLogoURL, brandkit.FieldWebsiteURL, brandkit.FieldButtonTextColor, brandkit.FieldFooterText:
 			values[i] = new(sql.NullString)
 		case brandkit.FieldCreatedAt, brandkit.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -161,6 +163,12 @@ func (_m *BrandKit) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field logo_url", values[i])
 			} else if value.Valid {
 				_m.LogoURL = value.String
+			}
+		case brandkit.FieldWebsiteURL:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field website_url", values[i])
+			} else if value.Valid {
+				_m.WebsiteURL = value.String
 			}
 		case brandkit.FieldButtonTextColor:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -250,6 +258,9 @@ func (_m *BrandKit) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("logo_url=")
 	builder.WriteString(_m.LogoURL)
+	builder.WriteString(", ")
+	builder.WriteString("website_url=")
+	builder.WriteString(_m.WebsiteURL)
 	builder.WriteString(", ")
 	builder.WriteString("button_text_color=")
 	builder.WriteString(_m.ButtonTextColor)

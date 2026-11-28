@@ -8567,6 +8567,8 @@ func (s LintCode) Validate() error {
 		return nil
 	case "off_brand_font":
 		return nil
+	case "reserved_host":
+		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
 	}

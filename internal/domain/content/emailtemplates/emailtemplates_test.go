@@ -175,7 +175,7 @@ func TestUpdateRefusesAWhitespaceName(t *testing.T) {
 
 // warnedBody breaks two warning rules against Acme's saved Brand kit (Arial): a font outside it and
 // an image with no alt attribute.
-const warnedBody = `<p style="font-family:Georgia, serif">Sale</p><img src="https://cdn.example.com/a.png">`
+const warnedBody = `<p style="font-family:Georgia, serif">Sale</p><img src="https://cdn.acme.co/a.png">`
 
 func codes(fs []emailrender.Finding) []emailrender.Code {
 	out := make([]emailrender.Code, len(fs))
@@ -239,7 +239,7 @@ func TestUpdateOfTheSubjectAloneLintsTheStoredBody(t *testing.T) {
 	ctx := t.Context()
 	v := testhelper.Module[*emailtemplates.Views](env)
 	s := env.DB.Scoped(fixtures.AcmeID)
-	created, err := v.Create(ctx, s, emailtemplates.CreateInput{Name: "Warned", Body: new(`<img src="https://cdn.example.com/a.png">`)})
+	created, err := v.Create(ctx, s, emailtemplates.CreateInput{Name: "Warned", Body: new(`<img src="https://cdn.acme.co/a.png">`)})
 	require.NoError(t, err)
 
 	saved, err := v.Update(ctx, s, created.Template.ID, emailtemplates.UpdateInput{Revision: created.Template.Revision, Subject: patch.Set("Hello")})

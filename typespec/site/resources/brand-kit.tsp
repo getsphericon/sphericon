@@ -28,6 +28,10 @@ model SiteSaveBrandKitInput {
   @maxLength(2048)
   logoUrl: string;
 
+  /** Absolute https address of the business's website, where the starter Templates' buttons link; empty for none */
+  @maxLength(2048)
+  websiteUrl: string;
+
   /** Color of the text on a button, `#rrggbb` */
   buttonTextColor: string;
 

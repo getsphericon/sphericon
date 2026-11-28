@@ -467,8 +467,12 @@ func init() {
 	brandkitDescLogoURL := brandkitFields[6].Descriptor()
 	// brandkit.DefaultLogoURL holds the default value on creation for the logo_url field.
 	brandkit.DefaultLogoURL = brandkitDescLogoURL.Default.(string)
+	// brandkitDescWebsiteURL is the schema descriptor for website_url field.
+	brandkitDescWebsiteURL := brandkitFields[7].Descriptor()
+	// brandkit.DefaultWebsiteURL holds the default value on creation for the website_url field.
+	brandkit.DefaultWebsiteURL = brandkitDescWebsiteURL.Default.(string)
 	// brandkitDescFooterText is the schema descriptor for footer_text field.
-	brandkitDescFooterText := brandkitFields[9].Descriptor()
+	brandkitDescFooterText := brandkitFields[10].Descriptor()
 	// brandkit.DefaultFooterText holds the default value on creation for the footer_text field.
 	brandkit.DefaultFooterText = brandkitDescFooterText.Default.(string)
 	broadcastMixin := schema.Broadcast{}.Mixin()

@@ -1174,10 +1174,10 @@ written without design, not a separate format or entity.
 _Avoid_: Plain-text email, text template, text version
 
 **Brand kit**:
-A Workspace's visual identity as data — colors, fonts, logo, button style and footer. It sets
-the palette the editor offers and what an agent is told to use. Its values are written into a
-message when the message is authored, so changing the Brand kit never changes a message that is
-already written. The **Preference page** reads it live, as the sender's page.
+A Workspace's visual identity as data — colors, fonts, logo, website, button style and footer. It
+sets the palette the editor offers, where the starter Templates link, and what an agent is told to
+use. Its values are written into a message when the message is authored, so changing the Brand kit
+never changes a message that is already written. The **Preference page** reads it live, as the sender's page.
 _Avoid_: Theme, style guide
 
 ### Operational

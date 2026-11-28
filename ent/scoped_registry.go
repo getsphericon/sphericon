@@ -847,6 +847,7 @@ func ScopedEntities() []*ScopedEntity {
 				b.SetHeadingFont(src.HeadingFont)
 				b.SetBodyFont(src.BodyFont)
 				b.SetLogoURL(src.LogoURL)
+				b.SetWebsiteURL(src.WebsiteURL)
 				b.SetButtonTextColor(src.ButtonTextColor)
 				b.SetButtonRadius(src.ButtonRadius)
 				b.SetFooterText(src.FooterText)

@@ -34,6 +34,8 @@ const (
 	FieldBodyFont = "body_font"
 	// FieldLogoURL holds the string denoting the logo_url field in the database.
 	FieldLogoURL = "logo_url"
+	// FieldWebsiteURL holds the string denoting the website_url field in the database.
+	FieldWebsiteURL = "website_url"
 	// FieldButtonTextColor holds the string denoting the button_text_color field in the database.
 	FieldButtonTextColor = "button_text_color"
 	// FieldButtonRadius holds the string denoting the button_radius field in the database.
@@ -66,6 +68,7 @@ var Columns = []string{
 	FieldHeadingFont,
 	FieldBodyFont,
 	FieldLogoURL,
+	FieldWebsiteURL,
 	FieldButtonTextColor,
 	FieldButtonRadius,
 	FieldFooterText,
@@ -94,6 +97,8 @@ var (
 	RevisionValidator func(int64) error
 	// DefaultLogoURL holds the default value on creation for the "logo_url" field.
 	DefaultLogoURL string
+	// DefaultWebsiteURL holds the default value on creation for the "website_url" field.
+	DefaultWebsiteURL string
 	// DefaultFooterText holds the default value on creation for the "footer_text" field.
 	DefaultFooterText string
 )
@@ -154,6 +159,11 @@ func ByBodyFont(opts ...sql.OrderTermOption) OrderOption {
 // ByLogoURL orders the results by the logo_url field.
 func ByLogoURL(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldLogoURL, opts...).ToFunc()
+}
+
+// ByWebsiteURL orders the results by the website_url field.
+func ByWebsiteURL(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldWebsiteURL, opts...).ToFunc()
 }
 
 // ByButtonTextColor orders the results by the button_text_color field.

@@ -130,9 +130,22 @@ func (b brand) footer() node {
 	return element("paragraph", styled(style), text(b.kit.FooterText))
 }
 
+// placeholderLink is where a button links when the Brand kit has no website: a name reserved for
+// examples, which the lint warns about until the author links the button to a real address
+// (ADR 0188).
+const placeholderLink = "https://example.com"
+
+// link is where the starters' buttons go: the kit's website, else placeholderLink.
+func (b brand) link() string {
+	if b.kit.WebsiteURL == "" {
+		return placeholderLink
+	}
+	return b.kit.WebsiteURL
+}
+
 func (b brand) button(label string) node {
 	attrs := node{
-		"href":      "https://example.com",
+		"href":      b.link(),
 		"alignment": "left",
 		"style": fmt.Sprintf("background-color:%s;color:%s;border-radius:%dpx;font-family:%s",
 			b.kit.AccentColor, b.kit.ButtonTextColor, b.kit.ButtonRadius, b.kit.BodyFont),

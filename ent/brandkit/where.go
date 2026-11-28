@@ -105,6 +105,11 @@ func LogoURL(v string) predicate.BrandKit {
 	return predicate.BrandKit(sql.FieldEQ(FieldLogoURL, v))
 }
 
+// WebsiteURL applies equality check predicate on the "website_url" field. It's identical to WebsiteURLEQ.
+func WebsiteURL(v string) predicate.BrandKit {
+	return predicate.BrandKit(sql.FieldEQ(FieldWebsiteURL, v))
+}
+
 // ButtonTextColor applies equality check predicate on the "button_text_color" field. It's identical to ButtonTextColorEQ.
 func ButtonTextColor(v string) predicate.BrandKit {
 	return predicate.BrandKit(sql.FieldEQ(FieldButtonTextColor, v))
@@ -648,6 +653,71 @@ func LogoURLEqualFold(v string) predicate.BrandKit {
 // LogoURLContainsFold applies the ContainsFold predicate on the "logo_url" field.
 func LogoURLContainsFold(v string) predicate.BrandKit {
 	return predicate.BrandKit(sql.FieldContainsFold(FieldLogoURL, v))
+}
+
+// WebsiteURLEQ applies the EQ predicate on the "website_url" field.
+func WebsiteURLEQ(v string) predicate.BrandKit {
+	return predicate.BrandKit(sql.FieldEQ(FieldWebsiteURL, v))
+}
+
+// WebsiteURLNEQ applies the NEQ predicate on the "website_url" field.
+func WebsiteURLNEQ(v string) predicate.BrandKit {
+	return predicate.BrandKit(sql.FieldNEQ(FieldWebsiteURL, v))
+}
+
+// WebsiteURLIn applies the In predicate on the "website_url" field.
+func WebsiteURLIn(vs ...string) predicate.BrandKit {
+	return predicate.BrandKit(sql.FieldIn(FieldWebsiteURL, vs...))
+}
+
+// WebsiteURLNotIn applies the NotIn predicate on the "website_url" field.
+func WebsiteURLNotIn(vs ...string) predicate.BrandKit {
+	return predicate.BrandKit(sql.FieldNotIn(FieldWebsiteURL, vs...))
+}
+
+// WebsiteURLGT applies the GT predicate on the "website_url" field.
+func WebsiteURLGT(v string) predicate.BrandKit {
+	return predicate.BrandKit(sql.FieldGT(FieldWebsiteURL, v))
+}
+
+// WebsiteURLGTE applies the GTE predicate on the "website_url" field.
+func WebsiteURLGTE(v string) predicate.BrandKit {
+	return predicate.BrandKit(sql.FieldGTE(FieldWebsiteURL, v))
+}
+
+// WebsiteURLLT applies the LT predicate on the "website_url" field.
+func WebsiteURLLT(v string) predicate.BrandKit {
+	return predicate.BrandKit(sql.FieldLT(FieldWebsiteURL, v))
+}
+
+// WebsiteURLLTE applies the LTE predicate on the "website_url" field.
+func WebsiteURLLTE(v string) predicate.BrandKit {
+	return predicate.BrandKit(sql.FieldLTE(FieldWebsiteURL, v))
+}
+
+// WebsiteURLContains applies the Contains predicate on the "website_url" field.
+func WebsiteURLContains(v string) predicate.BrandKit {
+	return predicate.BrandKit(sql.FieldContains(FieldWebsiteURL, v))
+}
+
+// WebsiteURLHasPrefix applies the HasPrefix predicate on the "website_url" field.
+func WebsiteURLHasPrefix(v string) predicate.BrandKit {
+	return predicate.BrandKit(sql.FieldHasPrefix(FieldWebsiteURL, v))
+}
+
+// WebsiteURLHasSuffix applies the HasSuffix predicate on the "website_url" field.
+func WebsiteURLHasSuffix(v string) predicate.BrandKit {
+	return predicate.BrandKit(sql.FieldHasSuffix(FieldWebsiteURL, v))
+}
+
+// WebsiteURLEqualFold applies the EqualFold predicate on the "website_url" field.
+func WebsiteURLEqualFold(v string) predicate.BrandKit {
+	return predicate.BrandKit(sql.FieldEqualFold(FieldWebsiteURL, v))
+}
+
+// WebsiteURLContainsFold applies the ContainsFold predicate on the "website_url" field.
+func WebsiteURLContainsFold(v string) predicate.BrandKit {
+	return predicate.BrandKit(sql.FieldContainsFold(FieldWebsiteURL, v))
 }
 
 // ButtonTextColorEQ applies the EQ predicate on the "button_text_color" field.

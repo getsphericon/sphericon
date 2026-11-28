@@ -15696,6 +15696,24 @@ func (x *BrandKitScopedCreate) SetNillableLogoURL(v *string) *BrandKitScopedCrea
 
 const RoleOf_BrandKitScopedCreate_SetNillableLogoURL = RoleStep
 
+// SetWebsiteURL sets the "website_url" field.
+func (x *BrandKitScopedCreate) SetWebsiteURL(v string) *BrandKitScopedCreate {
+	x.set = append(x.set, func(b *BrandKitCreate) { b.SetWebsiteURL(v) })
+	return x
+}
+
+const RoleOf_BrandKitScopedCreate_SetWebsiteURL = RoleStep
+
+// SetNillableWebsiteURL sets the "website_url" field if the given value is not nil.
+func (x *BrandKitScopedCreate) SetNillableWebsiteURL(v *string) *BrandKitScopedCreate {
+	if v != nil {
+		x.SetWebsiteURL(*v)
+	}
+	return x
+}
+
+const RoleOf_BrandKitScopedCreate_SetNillableWebsiteURL = RoleStep
+
 // SetButtonTextColor sets the "button_text_color" field.
 func (x *BrandKitScopedCreate) SetButtonTextColor(v string) *BrandKitScopedCreate {
 	x.set = append(x.set, func(b *BrandKitCreate) { b.SetButtonTextColor(v) })
@@ -15982,6 +16000,22 @@ func (u *BrandKitScopedUpsert) UpdateLogoURL() *BrandKitScopedUpsert {
 }
 
 const RoleOf_BrandKitScopedUpsert_UpdateLogoURL = RoleStep
+
+// SetWebsiteURL sets the "website_url" field.
+func (u *BrandKitScopedUpsert) SetWebsiteURL(v string) *BrandKitScopedUpsert {
+	u.u.Set(brandkit.FieldWebsiteURL, v)
+	return u
+}
+
+const RoleOf_BrandKitScopedUpsert_SetWebsiteURL = RoleStep
+
+// UpdateWebsiteURL sets the "website_url" field to the value that was provided on create.
+func (u *BrandKitScopedUpsert) UpdateWebsiteURL() *BrandKitScopedUpsert {
+	u.u.SetExcluded(brandkit.FieldWebsiteURL)
+	return u
+}
+
+const RoleOf_BrandKitScopedUpsert_UpdateWebsiteURL = RoleStep
 
 // SetButtonTextColor sets the "button_text_color" field.
 func (u *BrandKitScopedUpsert) SetButtonTextColor(v string) *BrandKitScopedUpsert {
@@ -16455,6 +16489,24 @@ func (x *BrandKitScopedUpdateOne) SetNillableLogoURL(v *string) *BrandKitScopedU
 
 const RoleOf_BrandKitScopedUpdateOne_SetNillableLogoURL = RoleStep
 
+// SetWebsiteURL sets the "website_url" field.
+func (x *BrandKitScopedUpdateOne) SetWebsiteURL(v string) *BrandKitScopedUpdateOne {
+	x.set = append(x.set, func(b *BrandKitUpdateOne) { b.SetWebsiteURL(v) })
+	return x
+}
+
+const RoleOf_BrandKitScopedUpdateOne_SetWebsiteURL = RoleStep
+
+// SetNillableWebsiteURL sets the "website_url" field if the given value is not nil.
+func (x *BrandKitScopedUpdateOne) SetNillableWebsiteURL(v *string) *BrandKitScopedUpdateOne {
+	if v != nil {
+		x.SetWebsiteURL(*v)
+	}
+	return x
+}
+
+const RoleOf_BrandKitScopedUpdateOne_SetNillableWebsiteURL = RoleStep
+
 // SetButtonTextColor sets the "button_text_color" field.
 func (x *BrandKitScopedUpdateOne) SetButtonTextColor(v string) *BrandKitScopedUpdateOne {
 	x.set = append(x.set, func(b *BrandKitUpdateOne) { b.SetButtonTextColor(v) })
@@ -16724,6 +16776,24 @@ func (x *BrandKitScopedUpdate) SetNillableLogoURL(v *string) *BrandKitScopedUpda
 }
 
 const RoleOf_BrandKitScopedUpdate_SetNillableLogoURL = RoleStep
+
+// SetWebsiteURL sets the "website_url" field.
+func (x *BrandKitScopedUpdate) SetWebsiteURL(v string) *BrandKitScopedUpdate {
+	x.set = append(x.set, func(b *BrandKitUpdate) { b.SetWebsiteURL(v) })
+	return x
+}
+
+const RoleOf_BrandKitScopedUpdate_SetWebsiteURL = RoleStep
+
+// SetNillableWebsiteURL sets the "website_url" field if the given value is not nil.
+func (x *BrandKitScopedUpdate) SetNillableWebsiteURL(v *string) *BrandKitScopedUpdate {
+	if v != nil {
+		x.SetWebsiteURL(*v)
+	}
+	return x
+}
+
+const RoleOf_BrandKitScopedUpdate_SetNillableWebsiteURL = RoleStep
 
 // SetButtonTextColor sets the "button_text_color" field.
 func (x *BrandKitScopedUpdate) SetButtonTextColor(v string) *BrandKitScopedUpdate {

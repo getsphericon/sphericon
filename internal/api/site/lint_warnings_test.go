@@ -52,6 +52,8 @@ func TestSiteTemplateSaveReturnsWarningsAndStoresTheContent(t *testing.T) {
 	assert.Contains(t, got[siteapi.LintCodeOffBrandColor][1], "#eeeeee")
 	require.Len(t, got[siteapi.LintCodeOffBrandFont], 1)
 	assert.Contains(t, got[siteapi.LintCodeOffBrandFont][0], "Sale")
+	assert.Equal(t, []string{`<img src="https://cdn.example.com/hero.png"> https://cdn.example.com/hero.png`},
+		got[siteapi.LintCodeReservedHost], "the image is at a name reserved for examples")
 
 	// Warnings never block: the template is stored as written.
 	row := env.DB.EmailTemplate.GetX(ctx, int64(res.ID))
@@ -103,6 +105,7 @@ func TestSiteBroadcastSaveReturnsWarnings(t *testing.T) {
 	got := findings(res.Warnings)
 	assert.Len(t, got[siteapi.LintCodeMissingAlt], 1)
 	assert.Len(t, got[siteapi.LintCodeOffBrandFont], 1)
+	assert.Len(t, got[siteapi.LintCodeReservedHost], 1)
 
 	// A write of the subject alone lints what is stored.
 	updated, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(res.ID))), Content: testhelper.SiteEmailEdit(siteapi.EmailBroadcastContentInput{Subject: siteapi.NewOptString("Hello")})},
@@ -118,7 +121,7 @@ func TestSiteTemplateSaveOfACleanMessageHasNoWarnings(t *testing.T) {
 
 	created, err := c.SiteTemplatesCreate(t.Context(), &siteapi.CreateTemplateInput{
 		Name: "Clean", Body: siteapi.NewOptString(
-			`<p style="color:#202124;font-family:Arial, sans-serif">Hi</p><img src="https://cdn.example.com/a.png" alt="A">`),
+			`<p style="color:#202124;font-family:Arial, sans-serif">Hi</p><img src="https://cdn.acme.co/a.png" alt="A">`),
 	}, siteapi.SiteTemplatesCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	res := created

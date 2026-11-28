@@ -42,7 +42,8 @@ const KIT: BrandKitResource = {
   backgroundColor: hex('f0f4f8'),
   headingFont: 'Georgia, serif',
   bodyFont: 'Verdana, sans-serif',
-  logoUrl: 'https://cdn.example.com/logo.png',
+  logoUrl: 'https://cdn.acme.co/logo.png',
+  websiteUrl: 'https://acme.co',
   buttonTextColor: hex('fefefe'),
   buttonRadius: 12,
   footerText: 'Acme Inc',
@@ -55,6 +56,7 @@ const UNSAVED: BrandKitResource = {
   saved: false,
   accentColor: hex('2563eb'),
   logoUrl: '',
+  websiteUrl: '',
   footerText: '',
   updatedAt: null,
   revision: 1,
@@ -76,6 +78,7 @@ test('brand_kit:manage saves the Brand kit and the first save announces the star
     .element(screen.getByRole('button', { name: 'Recreate the starter templates' }))
     .not.toBeInTheDocument()
   await screen.getByLabelText('Footer').fill('Acme Inc')
+  await screen.getByLabelText('Website').fill(' https://acme.co/shop ')
   await screen.getByRole('button', { name: 'Save' }).click()
 
   await expect
@@ -89,6 +92,7 @@ test('brand_kit:manage saves the Brand kit and the first save announces the star
         headingFont: 'Georgia, serif',
         bodyFont: 'Verdana, sans-serif',
         logoUrl: '',
+        websiteUrl: 'https://acme.co/shop',
         buttonTextColor: hex('fefefe'),
         buttonRadius: 12,
         footerText: 'Acme Inc',

@@ -28,6 +28,9 @@ const (
 	CodeOffBrandColor Code = "off_brand_color"
 	// CodeOffBrandFont: a font is not one of the Brand kit's.
 	CodeOffBrandFont Code = "off_brand_font"
+	// CodeReservedHost: a link or an image is at a name reserved for examples and tests
+	// (RFC 2606, RFC 6761), such as example.com, unless a merge tag gives its host (ADR 0188).
+	CodeReservedHost Code = "reserved_host"
 )
 
 // Finding is one result of Lint. Message is fixed text of the server; Element and Detail quote
@@ -69,7 +72,8 @@ const maxWarnings = 50
 // Lint is the one lint of a message (ADR 0040), over its rendered HTML: the save paths and
 // the send planner use its Error, the editor's responses and the MCP tool email_lint return its
 // Warnings too. Error is a Liquid syntax error or HTML that does not parse; the warnings are a
-// missing image description, low contrast, and a color or font outside the Brand kit. It runs on
+// missing image description, low contrast, a color or font outside the Brand kit, and a link or an
+// image at a name reserved for examples (lint_urls.go). It runs on
 // the message as the author wrote it, with no recipient data: unbound merge tags render empty.
 //
 // Message weight is deliberately not checked: no first-party source gives a size at which a mail
@@ -130,6 +134,7 @@ func (l *linter) element(n *html.Node) {
 	if hasOwnText(n) {
 		l.contrast(n, el)
 	}
+	l.urlChecks(n, el)
 }
 
 func (l *linter) brandCheck(n *html.Node, el string) {

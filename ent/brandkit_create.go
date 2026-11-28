@@ -115,6 +115,20 @@ func (_c *BrandKitCreate) SetNillableLogoURL(v *string) *BrandKitCreate {
 	return _c
 }
 
+// SetWebsiteURL sets the "website_url" field.
+func (_c *BrandKitCreate) SetWebsiteURL(v string) *BrandKitCreate {
+	_c.mutation.SetWebsiteURL(v)
+	return _c
+}
+
+// SetNillableWebsiteURL sets the "website_url" field if the given value is not nil.
+func (_c *BrandKitCreate) SetNillableWebsiteURL(v *string) *BrandKitCreate {
+	if v != nil {
+		_c.SetWebsiteURL(*v)
+	}
+	return _c
+}
+
 // SetButtonTextColor sets the "button_text_color" field.
 func (_c *BrandKitCreate) SetButtonTextColor(v string) *BrandKitCreate {
 	_c.mutation.SetButtonTextColor(v)
@@ -203,6 +217,10 @@ func (_c *BrandKitCreate) defaults() {
 		v := brandkit.DefaultLogoURL
 		_c.mutation.SetLogoURL(v)
 	}
+	if _, ok := _c.mutation.WebsiteURL(); !ok {
+		v := brandkit.DefaultWebsiteURL
+		_c.mutation.SetWebsiteURL(v)
+	}
 	if _, ok := _c.mutation.FooterText(); !ok {
 		v := brandkit.DefaultFooterText
 		_c.mutation.SetFooterText(v)
@@ -245,6 +263,9 @@ func (_c *BrandKitCreate) check() error {
 	}
 	if _, ok := _c.mutation.LogoURL(); !ok {
 		return &ValidationError{Name: "logo_url", err: errors.New(`ent: missing required field "BrandKit.logo_url"`)}
+	}
+	if _, ok := _c.mutation.WebsiteURL(); !ok {
+		return &ValidationError{Name: "website_url", err: errors.New(`ent: missing required field "BrandKit.website_url"`)}
 	}
 	if _, ok := _c.mutation.ButtonTextColor(); !ok {
 		return &ValidationError{Name: "button_text_color", err: errors.New(`ent: missing required field "BrandKit.button_text_color"`)}
@@ -326,6 +347,10 @@ func (_c *BrandKitCreate) createSpec() (*BrandKit, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.LogoURL(); ok {
 		_spec.SetField(brandkit.FieldLogoURL, field.TypeString, value)
 		_node.LogoURL = value
+	}
+	if value, ok := _c.mutation.WebsiteURL(); ok {
+		_spec.SetField(brandkit.FieldWebsiteURL, field.TypeString, value)
+		_node.WebsiteURL = value
 	}
 	if value, ok := _c.mutation.ButtonTextColor(); ok {
 		_spec.SetField(brandkit.FieldButtonTextColor, field.TypeString, value)
@@ -519,6 +544,18 @@ func (u *BrandKitUpsert) SetLogoURL(v string) *BrandKitUpsert {
 // UpdateLogoURL sets the "logo_url" field to the value that was provided on create.
 func (u *BrandKitUpsert) UpdateLogoURL() *BrandKitUpsert {
 	u.SetExcluded(brandkit.FieldLogoURL)
+	return u
+}
+
+// SetWebsiteURL sets the "website_url" field.
+func (u *BrandKitUpsert) SetWebsiteURL(v string) *BrandKitUpsert {
+	u.Set(brandkit.FieldWebsiteURL, v)
+	return u
+}
+
+// UpdateWebsiteURL sets the "website_url" field to the value that was provided on create.
+func (u *BrandKitUpsert) UpdateWebsiteURL() *BrandKitUpsert {
+	u.SetExcluded(brandkit.FieldWebsiteURL)
 	return u
 }
 
@@ -745,6 +782,20 @@ func (u *BrandKitUpsertOne) SetLogoURL(v string) *BrandKitUpsertOne {
 func (u *BrandKitUpsertOne) UpdateLogoURL() *BrandKitUpsertOne {
 	return u.Update(func(s *BrandKitUpsert) {
 		s.UpdateLogoURL()
+	})
+}
+
+// SetWebsiteURL sets the "website_url" field.
+func (u *BrandKitUpsertOne) SetWebsiteURL(v string) *BrandKitUpsertOne {
+	return u.Update(func(s *BrandKitUpsert) {
+		s.SetWebsiteURL(v)
+	})
+}
+
+// UpdateWebsiteURL sets the "website_url" field to the value that was provided on create.
+func (u *BrandKitUpsertOne) UpdateWebsiteURL() *BrandKitUpsertOne {
+	return u.Update(func(s *BrandKitUpsert) {
+		s.UpdateWebsiteURL()
 	})
 }
 
@@ -1144,6 +1195,20 @@ func (u *BrandKitUpsertBulk) SetLogoURL(v string) *BrandKitUpsertBulk {
 func (u *BrandKitUpsertBulk) UpdateLogoURL() *BrandKitUpsertBulk {
 	return u.Update(func(s *BrandKitUpsert) {
 		s.UpdateLogoURL()
+	})
+}
+
+// SetWebsiteURL sets the "website_url" field.
+func (u *BrandKitUpsertBulk) SetWebsiteURL(v string) *BrandKitUpsertBulk {
+	return u.Update(func(s *BrandKitUpsert) {
+		s.SetWebsiteURL(v)
+	})
+}
+
+// UpdateWebsiteURL sets the "website_url" field to the value that was provided on create.
+func (u *BrandKitUpsertBulk) UpdateWebsiteURL() *BrandKitUpsertBulk {
+	return u.Update(func(s *BrandKitUpsert) {
+		s.UpdateWebsiteURL()
 	})
 }
 

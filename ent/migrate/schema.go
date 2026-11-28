@@ -722,6 +722,7 @@ var (
 		{Name: "heading_font", Type: field.TypeString},
 		{Name: "body_font", Type: field.TypeString},
 		{Name: "logo_url", Type: field.TypeString, Default: ""},
+		{Name: "website_url", Type: field.TypeString, Default: ""},
 		{Name: "button_text_color", Type: field.TypeString},
 		{Name: "button_radius", Type: field.TypeInt},
 		{Name: "footer_text", Type: field.TypeString, Default: ""},
@@ -735,7 +736,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "brand_kits_workspaces_brand_kits",
-				Columns:    []*schema.Column{BrandKitsColumns[13]},
+				Columns:    []*schema.Column{BrandKitsColumns[14]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -744,7 +745,7 @@ var (
 			{
 				Name:    "brandkit_workspace_id",
 				Unique:  true,
-				Columns: []*schema.Column{BrandKitsColumns[13]},
+				Columns: []*schema.Column{BrandKitsColumns[14]},
 			},
 		},
 	}

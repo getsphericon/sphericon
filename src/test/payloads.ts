@@ -49,6 +49,7 @@ export const UNSAVED_BRAND_KIT: BrandKitResource = {
   headingFont: 'Arial, Helvetica, sans-serif',
   bodyFont: 'Arial, Helvetica, sans-serif',
   logoUrl: '',
+  websiteUrl: '',
   buttonTextColor: hex('ffffff'),
   buttonRadius: 4,
   footerText: '',

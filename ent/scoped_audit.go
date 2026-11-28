@@ -273,6 +273,7 @@ func (e *BrandKit) auditFields() map[string]any {
 		"heading_font":      e.HeadingFont,
 		"body_font":         e.BodyFont,
 		"logo_url":          e.LogoURL,
+		"website_url":       e.WebsiteURL,
 		"button_text_color": e.ButtonTextColor,
 		"button_radius":     e.ButtonRadius,
 		"footer_text":       e.FooterText,
