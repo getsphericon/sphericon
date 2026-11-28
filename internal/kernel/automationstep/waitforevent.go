@@ -269,3 +269,27 @@ func WaitsForEvents(p Path) iter.Seq2[*Step, *WaitForEvent] {
 		}
 	}
 }
+
+// Named is a Step whose name later Steps read what it kept by: a Wait for event, read as
+// `awaited.<name>` (ADR 0136), or an HTTP step, read as `http.<name>` (ADR 0161). A name belongs to
+// one Step id of the Automation, whatever its kind.
+type Named interface {
+	Payload
+	// StepName is the Step's name.
+	StepName() string
+}
+
+func (w WaitForEvent) StepName() string { return w.Name }
+func (p HTTP) StepName() string         { return p.Name }
+
+// NamedSteps yields each named Step of the tree with its payload, in the walker's order (All).
+func NamedSteps(p Path) iter.Seq2[*Step, Named] {
+	return func(yield func(*Step, Named) bool) {
+		for _, st := range All(p) {
+			n, ok := st.Payload.(Named)
+			if ok && !yield(st, n) {
+				return
+			}
+		}
+	}
+}

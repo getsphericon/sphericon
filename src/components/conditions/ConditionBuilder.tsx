@@ -30,6 +30,7 @@ import { useEventActionLabel } from '../../hooks/useEventActionLabel.ts'
 import { useTimeZone } from '../../hooks/useFormat.ts'
 import {
   awaitedFieldId,
+  httpFieldId,
   customFieldId,
   eventFieldPrefix,
   eventPresets,
@@ -180,6 +181,16 @@ function awaitedFields(t: TFunction, names: readonly string[]): Field[] {
   }))
 }
 
+// The fields of the tests of the bodies earlier HTTP steps kept of their responses (ADR 0161), one
+// per HTTP step by its name, the key typed beside it as an Event's property.
+function httpFields(t: TFunction, names: readonly string[]): Field[] {
+  return names.map((name) => ({
+    name: httpFieldId(name),
+    label: t(($) => $.conditions.httpProperty, { name }),
+    operators: propertyOperators(t),
+  }))
+}
+
 // What a place reads of the Workspace's catalogue to offer the Contact's fields: an Event filter
 // offers none.
 function testsContact(place: ConditionPlace): boolean {
@@ -214,6 +225,9 @@ interface ConditionBuilderProps {
   // The names of the Wait for events whose arrived Event a Branch path's Condition may test (ADR
   // 0136): those an Enrollment may have passed when it reaches the Branch.
   awaitedNames?: readonly string[]
+  // The names of the HTTP steps whose kept response a Branch path's Condition may test (ADR 0161):
+  // those an Enrollment may have passed when it reaches the Branch. No other place tests one.
+  httpNames?: readonly string[]
 }
 
 // ConditionBuilder is the visual Condition editor (react-querybuilder + the official
@@ -229,6 +243,7 @@ export function ConditionBuilder({
   filterFields,
   messageSteps,
   awaitedNames,
+  httpNames,
 }: ConditionBuilderProps) {
   const { t } = useTranslation()
   const labelOf = useEventActionLabel()
@@ -273,6 +288,7 @@ export function ConditionBuilder({
       ...(filterFields ?? []),
       ...messageFields(t, messageSteps ?? []),
       ...awaitedFields(t, awaitedNames ?? []),
+      ...httpFields(t, httpNames ?? []),
     ]
   }, [
     actionsQuery.data,
@@ -283,6 +299,7 @@ export function ConditionBuilder({
     filterFields,
     messageSteps,
     awaitedNames,
+    httpNames,
   ])
   // What the value editors read: the values and keys a property test is offered, and, where an
   // event test is edited, the Workspace, the editor of its filter and how far back Events are kept.

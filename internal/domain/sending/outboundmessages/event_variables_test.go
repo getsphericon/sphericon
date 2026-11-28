@@ -33,7 +33,7 @@ func TestAnEmptyEventRendersEveryTagEmpty(t *testing.T) {
 	c := &ent.Contact{CustomFields: map[string]any{"event": map[string]any{"action": "forged"}}}
 
 	email, err := emailrender.RenderEmail("[{{ event.action }}]", "<p>[{{ event.properties.amount }}]</p>",
-		outboundmessages.Bindings(c, outboundmessages.EnrollmentVariables(nil, nil)))
+		outboundmessages.Bindings(c, outboundmessages.EnrollmentVariables(nil, outboundmessages.Kept{})))
 
 	require.NoError(t, err)
 	assert.Equal(t, "[]", email.Subject)
@@ -56,7 +56,7 @@ func TestAwaitedEventsRenderByNameAndACustomFieldNeverStandsIn(t *testing.T) {
 		"no properties": {map[string]outboundmessages.AwaitedEvent{"purchase": {Action: "order.created"}}, "<p>[order.created|]</p>"},
 	} {
 		t.Run(name, func(t *testing.T) {
-			email, err := emailrender.RenderEmail("Thanks", body, outboundmessages.Bindings(c, outboundmessages.EnrollmentVariables(nil, tc.awaited)))
+			email, err := emailrender.RenderEmail("Thanks", body, outboundmessages.Bindings(c, outboundmessages.EnrollmentVariables(nil, outboundmessages.Kept{Awaited: tc.awaited})))
 
 			require.NoError(t, err)
 			assert.Contains(t, email.HTML, tc.renders)
@@ -69,7 +69,7 @@ func TestAKeptSystemEventBindsItsKeysByTheirPublicForm(t *testing.T) {
 	awaited := map[string]outboundmessages.AwaitedEvent{"click": {Action: systemevent.EmailClicked, Properties: map[string]any{"outboundMessageId": float64(42)}}}
 
 	email, err := emailrender.RenderEmail("Clicked", "<p>[{{ awaited.click.properties.outboundMessageId }}]</p>",
-		outboundmessages.Bindings(&ent.Contact{}, outboundmessages.EnrollmentVariables(nil, awaited)))
+		outboundmessages.Bindings(&ent.Contact{}, outboundmessages.EnrollmentVariables(nil, outboundmessages.Kept{Awaited: awaited})))
 
 	require.NoError(t, err)
 	assert.Contains(t, email.HTML, "<p>["+publicid.Encode(42)+"]</p>")

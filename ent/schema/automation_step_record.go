@@ -36,14 +36,16 @@ func (AutomationStepRecord) Annotations() []schema.Annotation {
 	a.Checks["automation_step_records_skipped_check"] = variantCheck("outcome", stepOutcome)
 	a.Checks["automation_step_records_wait_check"] = "due_at IS NULL OR went_on IS NULL"
 	a.Checks["automation_step_records_awaited_check"] = "(awaited_event_id IS NULL) = (awaited_action IS NULL)"
+	a.Checks["automation_step_records_http_body_check"] = "http_body IS NULL OR (http_status IS NOT NULL AND http_dropped IS NULL)"
 	return []schema.Annotation{a}
 }
 
 // stepOutcome is the column that explains each outcome: a skipped Step its reason, a fork the
 // path it sent the Enrollment down and, at a Branch, each path's outcome and, at a Wait for event
-// that arrived on an Event, the copy of that Event.
+// that arrived on an Event, the copy of that Event; an HTTP step that is done, the response it kept
+// and why it dropped the body.
 var stepOutcome = []variant{
-	{value: "done"},
+	{value: "done", optional: []string{"http_status", "http_body", "http_dropped"}},
 	{value: "skipped", required: []string{"skip_reason"}},
 	{value: "path", required: []string{"path_id"}, optional: []string{"path_outcomes", "awaited_event_id", "awaited_action", "awaited_properties"}},
 }
@@ -154,6 +156,22 @@ func (AutomationStepRecord) Fields() []ent.Field {
 		// waits, and an Event deleted since is no candidate of the timeout anyway.
 		field.JSON("declined_event_ids", []int64{}).
 			Optional(),
+		// At an HTTP step that is done, the response the Steps after it read under its name (ADR
+		// 0161): its status code, a 2xx, and its body when it was a JSON object within the bounds of
+		// an Event's properties (events.BoundedProperties), else null with http_dropped saying why.
+		// Written once, in the latch of left_at with the outcome `done`. The status and the body are
+		// cleared in the move that ends the Enrollment, whatever its end, as an awaited Event's copy
+		// is, since nothing reads them after and the body is a stranger's data; http_dropped stays,
+		// as the record of what the Step did. Null for any other Step.
+		field.Int32("http_status").
+			Optional().
+			Nillable(),
+		field.JSON("http_body", map[string]any{}).
+			Optional(),
+		field.Enum("http_dropped").
+			GoType(automationstep.BodyDropped("")).
+			Optional().
+			Nillable(),
 	}
 }
 

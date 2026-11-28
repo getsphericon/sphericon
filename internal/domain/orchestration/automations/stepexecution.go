@@ -364,8 +364,9 @@ func splitRound(run *ent.AutomationRun) int {
 }
 
 // branch decides a Branch for the Enrollment (ADR 0124): every path's Condition is read for its
-// Contact, on its live data now, in one read, the Enrollment's `event` copy and the copies of the
-// Events its Wait for event Steps arrived on given to the property tests (ADR 0180, ADR 0136), and
+// Contact, on its live data now, in one read, the Enrollment's `event` copy, the copies of the
+// Events its Wait for event Steps arrived on and the bodies its HTTP steps kept given to the
+// property tests (ADR 0180, ADR 0136, ADR 0161), and
 // the first path whose Condition is not false decides: true takes it, unknown takes the unknown
 // path, and none takes otherwise. The move down the path, the Branch's
 // record of the path and of every path's outcome, and the reach of the Step it leads to commit in
@@ -378,12 +379,12 @@ func (m *StepExecution) branch(ctx context.Context, s *ent.Scoped, run *ent.Auto
 		return err
 	}
 	conds := b.Conditions()
-	awaited, err := awaitedFor(ctx, s, run.ID, at.index, lo.Map(conds, func(c conditiontree.Branch, _ int) conditiontree.Group { return c.Group })...)
+	kept, err := keptFor(ctx, s, run.ID, at.index, lo.Map(conds, func(c conditiontree.Branch, _ int) conditiontree.Group { return c.Group })...)
 	if err != nil {
 		return err
 	}
 	truths, err := m.conditions.Outcomes(ctx, s, condition.OutcomesInput{
-		ContactID: run.ContactID, Conditions: conds, Properties: run.EventProperties, Awaited: awaited, Messages: messages,
+		ContactID: run.ContactID, Conditions: conds, Properties: run.EventProperties, Awaited: kept.awaited, HTTP: kept.http, Messages: messages,
 	})
 	if errors.Is(err, condition.ErrStorage) {
 		return err
@@ -492,7 +493,7 @@ func (m *StepExecution) send(ctx context.Context, s *ent.Scoped, a *ent.Automati
 	if err != nil {
 		return err
 	}
-	awaited, err := keptOn(ctx, s, run.ID, at.index)
+	kept, err := keptOn(ctx, s, run.ID, at.index)
 	if err != nil {
 		return err
 	}
@@ -501,7 +502,7 @@ func (m *StepExecution) send(ctx context.Context, s *ent.Scoped, a *ent.Automati
 	var res outboundmessages.Result
 	err = m.fence(ctx, s, run.ID, func(ctx context.Context) error {
 		var sendErr error
-		res, sendErr = m.out.Send(ctx, s, outboundmessages.AutomationStep(a, run, awaited, at.step, st.Step.Integration(), c, content, waitedOf(run)))
+		res, sendErr = m.out.Send(ctx, s, outboundmessages.AutomationStep(a, run, kept, at.step, st.Step.Integration(), c, content, waitedOf(run)))
 		return sendErr
 	})
 	if stale(err) {
@@ -654,7 +655,8 @@ func (m *StepExecution) end(ctx context.Context, s *ent.Scoped, runID int64, at 
 
 // completeOn completes the Enrollment on the Step of the id, which it leaves at now as how says, in
 // the transaction s is bound to. A Wait for event it leaves keeps no copy of the Event it arrived
-// on: the end clears every copy (clearKept), and no Step comes after to read it.
+// on, and an HTTP step no response, only why it dropped the body: the end clears every copy and
+// response (clearKept), and no Step comes after to read them.
 func completeOn(ctx context.Context, s *ent.Scoped, pub events.Publisher, runID int64, step automationstep.ID, now time.Time, how leaving) error {
 	if err := completeRun(ctx, s, pub, runID, step, now); err != nil {
 		return err
@@ -663,6 +665,9 @@ func completeOn(ctx context.Context, s *ent.Scoped, pub events.Publisher, runID 
 		path := *how.path
 		path.kept = nil
 		how.path = &path
+	}
+	if how.response != nil {
+		how.response = &responseKept{dropped: how.response.dropped}
 	}
 	return leave(ctx, s, runID, step, now, how)
 }

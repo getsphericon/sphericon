@@ -334,8 +334,8 @@ var Bounds = []Bound{
 		Spec: site, Schema: "SplitPathInput", Property: "weight", Owners: []string{automationVersion},
 	},
 	{
-		Name: "WaitForEventName", Doc: "is the name of a Wait for event, which later Steps read its kept Event by (ADR 0136).",
-		Spec: site, Schema: "WaitForEventName", Owners: []string{automationVersion},
+		Name: "StepName", Doc: "is the name of a Wait for event or an HTTP step, which later Steps read what it kept by (ADR 0136, ADR 0161).",
+		Spec: site, Schema: "StepName", Owners: []string{automationVersion},
 	},
 	{
 		Name: "WaitForEventTimeout", Doc: "is how long a Wait for event waits, in seconds from the moment the Enrollment reaches it (ADR 0124).",

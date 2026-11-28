@@ -1063,7 +1063,7 @@ export type AwaitedSource = {
   /**
    * The Wait for event's name
    */
-  name: WaitForEventName;
+  name: StepName;
 };
 
 /**
@@ -1077,7 +1077,7 @@ export type AwaitedSourceInput = {
   /**
    * The Wait for event's name
    */
-  name: WaitForEventName;
+  name: StepName;
 };
 
 /**
@@ -1311,23 +1311,29 @@ export type BranchPropertyLeafInput = {
 
 /**
  * Whose properties a Branch path's property test reads, by `kind`: the Event the Enrollment
- * began with, or the one an earlier Wait for event arrived on
+ * began with, the one an earlier Wait for event arrived on, or the body an earlier HTTP step
+ * answered with
  */
 export type BranchPropertySource = ({
   kind: 'trigger';
 } & TriggerSource) | ({
   kind: 'awaited';
-} & AwaitedSource);
+} & AwaitedSource) | ({
+  kind: 'http';
+} & HttpSource);
 
 /**
  * Whose properties a Branch path's property test reads, by `kind`: the Event the Enrollment
- * began with, or the one an earlier Wait for event arrived on
+ * began with, the one an earlier Wait for event arrived on, or the body an earlier HTTP step
+ * answered with
  */
 export type BranchPropertySourceInput = ({
   kind: 'trigger';
 } & TriggerSourceInput) | ({
   kind: 'awaited';
-} & AwaitedSourceInput);
+} & AwaitedSourceInput) | ({
+  kind: 'http';
+} & HttpSourceInput);
 
 /**
  * A Step that sends each Enrollment down the first of its paths whose Condition holds, on the
@@ -3876,6 +3882,10 @@ export type EnrollmentResource = {
    */
   awaited: Array<KeptEvent>;
   /**
+   * The responses its HTTP steps received, by name (ADR 0161): kept while the Enrollment runs, and cleared when it ends, so empty once it ended
+   */
+  http: Array<KeptResponse>;
+  /**
    * When the Contact was enrolled
    */
   createdAt: Timestamp;
@@ -4799,6 +4809,52 @@ export const HoldReason = {
 export type HoldReason = typeof HoldReason[keyof typeof HoldReason];
 
 /**
+ * Why an HTTP step kept no body of a 2xx response (ADR 0161): it was not JSON (or held a NUL
+ * character, which cannot be stored), it was JSON but not an object, or it weighed more than an
+ * Event's properties may (32 KiB).
+ */
+export const HttpBodyDropped = {
+  NOT_JSON: 'not_json',
+  NOT_OBJECT: 'not_object',
+  TOO_LARGE: 'too_large'
+} as const;
+
+/**
+ * Why an HTTP step kept no body of a 2xx response (ADR 0161): it was not JSON (or held a NUL
+ * character, which cannot be stored), it was JSON but not an object, or it weighed more than an
+ * Event's properties may (32 KiB).
+ */
+export type HttpBodyDropped = typeof HttpBodyDropped[keyof typeof HttpBodyDropped];
+
+/**
+ * The JSON object an HTTP step of the Automation answered with, kept by the Enrollment under the
+ * HTTP step's name (ADR 0161), whose keys a property test reads. The HTTP step must be one that can
+ * come before the Branch holding the test. Where the Enrollment keeps no body of it (the path never
+ * passed it, or its body was not a JSON object it could keep), the test fails.
+ */
+export type HttpSource = {
+  kind: 'http';
+  /**
+   * The HTTP step's name
+   */
+  name: StepName;
+};
+
+/**
+ * The JSON object an HTTP step of the Automation answered with, kept by the Enrollment under the
+ * HTTP step's name (ADR 0161), whose keys a property test reads. The HTTP step must be one that can
+ * come before the Branch holding the test. Where the Enrollment keeps no body of it (the path never
+ * passed it, or its body was not a JSON object it could keep), the test fails.
+ */
+export type HttpSourceInput = {
+  kind: 'http';
+  /**
+   * The HTTP step's name
+   */
+  name: StepName;
+};
+
+/**
  * A Step that POSTs a JSON body to a hook URL (ADR 0039). Its URL, header values and signing secret are secrets: never returned.
  */
 export type HttpStep = {
@@ -4807,6 +4863,11 @@ export type HttpStep = {
    */
   id: StepId;
   type: 'http';
+  /**
+   * The Step's name, fixed when it is created: later Steps read the response it kept as
+   * `http.<name>` (ADR 0161)
+   */
+  name: StepName;
   /**
    * The Liquid JSON request body, bound as an email Step's body is
    */
@@ -4830,6 +4891,12 @@ export type HttpStepInput = {
    */
   id?: StepId;
   type: 'http';
+  /**
+   * The Step's name, fixed when it is created: later Steps read the response it kept as
+   * `http.<name>` (ADR 0161). A save that renames the Step, or gives it a name another HTTP step
+   * or Wait for event of the Automation holds, in any version, is refused, naming the Step.
+   */
+  name: StepName;
   /**
    * The Liquid JSON request body: strings JSON-escaped, up to 64 KiB, must render to valid JSON, also with every tag empty
    */
@@ -5066,6 +5133,29 @@ export type KeptEvent = {
    * The Event's properties, bounded at 32 KiB as the triggering Event's copy is: empty when they weighed more
    */
   properties: JsonObject;
+};
+
+/**
+ * The response an Enrollment keeps of one of its HTTP steps (ADR 0161), which later Steps read as
+ * `http.<name>`: its status and, when it was a JSON object it could keep, its body.
+ */
+export type KeptResponse = {
+  /**
+   * The name of the HTTP step that received it
+   */
+  name: string;
+  /**
+   * The response's status code, a 2xx
+   */
+  status: number;
+  /**
+   * The JSON object the response carried; absent when it was dropped
+   */
+  body?: JsonObject;
+  /**
+   * Why the body was dropped; absent when it was kept
+   */
+  dropped?: HttpBodyDropped;
 };
 
 /**
@@ -7475,6 +7565,14 @@ export type StepMessageLeafInput = {
 };
 
 /**
+ * The name of a Wait for event (ADR 0136) or an HTTP step (ADR 0161), which later Steps read what
+ * it kept by, as `awaited.<name>` or `http.<name>`: lower-case letters, digits and underscores,
+ * starting with a letter. It belongs to one Step id across every version of its Automation, and no
+ * other Wait for event or HTTP step there holds it.
+ */
+export type StepName = string;
+
+/**
  * A Channel a destination can be suppressed on
  */
 export const SuppressionChannel = {
@@ -8733,12 +8831,6 @@ export type WaitForEventConditionNodeInput = ({
 } & WaitForEventPropertyLeafInput);
 
 /**
- * The name of a Wait for event (ADR 0136): lower-case letters, digits and underscores, starting
- * with a letter. It belongs to one Step id across every version of its Automation.
- */
-export type WaitForEventName = string;
-
-/**
  * A test of one property of an Event: whose it is in `of`, its key in a field of its own, so a
  * key holding a dot is one key
  */
@@ -8819,7 +8911,7 @@ export type WaitForEventStep = {
   /**
    * The Step's name, fixed when it is created
    */
-  name: WaitForEventName;
+  name: StepName;
   /**
    * How long the Step waits, in seconds from the moment the Enrollment reaches it
    */
@@ -8858,7 +8950,7 @@ export type WaitForEventStepInput = {
    * The Step's name, fixed when it is created: a save that renames the Step, or gives two Wait for
    * event Steps of the Automation the same name, is refused, naming the Step
    */
-  name: WaitForEventName;
+  name: StepName;
   /**
    * How long the Step waits, in seconds, as a wait's delay is: at least one
    */

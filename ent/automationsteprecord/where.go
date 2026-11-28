@@ -120,6 +120,11 @@ func AwaitedAction(v string) predicate.AutomationStepRecord {
 	return predicate.AutomationStepRecord(sql.FieldEQ(FieldAwaitedAction, v))
 }
 
+// HTTPStatus applies equality check predicate on the "http_status" field. It's identical to HTTPStatusEQ.
+func HTTPStatus(v int32) predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldEQ(FieldHTTPStatus, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.AutomationStepRecord {
 	return predicate.AutomationStepRecord(sql.FieldEQ(FieldCreatedAt, v))
@@ -915,6 +920,106 @@ func DeclinedEventIdsIsNil() predicate.AutomationStepRecord {
 // DeclinedEventIdsNotNil applies the NotNil predicate on the "declined_event_ids" field.
 func DeclinedEventIdsNotNil() predicate.AutomationStepRecord {
 	return predicate.AutomationStepRecord(sql.FieldNotNull(FieldDeclinedEventIds))
+}
+
+// HTTPStatusEQ applies the EQ predicate on the "http_status" field.
+func HTTPStatusEQ(v int32) predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldEQ(FieldHTTPStatus, v))
+}
+
+// HTTPStatusNEQ applies the NEQ predicate on the "http_status" field.
+func HTTPStatusNEQ(v int32) predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldNEQ(FieldHTTPStatus, v))
+}
+
+// HTTPStatusIn applies the In predicate on the "http_status" field.
+func HTTPStatusIn(vs ...int32) predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldIn(FieldHTTPStatus, vs...))
+}
+
+// HTTPStatusNotIn applies the NotIn predicate on the "http_status" field.
+func HTTPStatusNotIn(vs ...int32) predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldNotIn(FieldHTTPStatus, vs...))
+}
+
+// HTTPStatusGT applies the GT predicate on the "http_status" field.
+func HTTPStatusGT(v int32) predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldGT(FieldHTTPStatus, v))
+}
+
+// HTTPStatusGTE applies the GTE predicate on the "http_status" field.
+func HTTPStatusGTE(v int32) predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldGTE(FieldHTTPStatus, v))
+}
+
+// HTTPStatusLT applies the LT predicate on the "http_status" field.
+func HTTPStatusLT(v int32) predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldLT(FieldHTTPStatus, v))
+}
+
+// HTTPStatusLTE applies the LTE predicate on the "http_status" field.
+func HTTPStatusLTE(v int32) predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldLTE(FieldHTTPStatus, v))
+}
+
+// HTTPStatusIsNil applies the IsNil predicate on the "http_status" field.
+func HTTPStatusIsNil() predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldIsNull(FieldHTTPStatus))
+}
+
+// HTTPStatusNotNil applies the NotNil predicate on the "http_status" field.
+func HTTPStatusNotNil() predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldNotNull(FieldHTTPStatus))
+}
+
+// HTTPBodyIsNil applies the IsNil predicate on the "http_body" field.
+func HTTPBodyIsNil() predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldIsNull(FieldHTTPBody))
+}
+
+// HTTPBodyNotNil applies the NotNil predicate on the "http_body" field.
+func HTTPBodyNotNil() predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldNotNull(FieldHTTPBody))
+}
+
+// HTTPDroppedEQ applies the EQ predicate on the "http_dropped" field.
+func HTTPDroppedEQ(v automationstep.BodyDropped) predicate.AutomationStepRecord {
+	vc := v
+	return predicate.AutomationStepRecord(sql.FieldEQ(FieldHTTPDropped, vc))
+}
+
+// HTTPDroppedNEQ applies the NEQ predicate on the "http_dropped" field.
+func HTTPDroppedNEQ(v automationstep.BodyDropped) predicate.AutomationStepRecord {
+	vc := v
+	return predicate.AutomationStepRecord(sql.FieldNEQ(FieldHTTPDropped, vc))
+}
+
+// HTTPDroppedIn applies the In predicate on the "http_dropped" field.
+func HTTPDroppedIn(vs ...automationstep.BodyDropped) predicate.AutomationStepRecord {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.AutomationStepRecord(sql.FieldIn(FieldHTTPDropped, v...))
+}
+
+// HTTPDroppedNotIn applies the NotIn predicate on the "http_dropped" field.
+func HTTPDroppedNotIn(vs ...automationstep.BodyDropped) predicate.AutomationStepRecord {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.AutomationStepRecord(sql.FieldNotIn(FieldHTTPDropped, v...))
+}
+
+// HTTPDroppedIsNil applies the IsNil predicate on the "http_dropped" field.
+func HTTPDroppedIsNil() predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldIsNull(FieldHTTPDropped))
+}
+
+// HTTPDroppedNotNil applies the NotNil predicate on the "http_dropped" field.
+func HTTPDroppedNotNil() predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldNotNull(FieldHTTPDropped))
 }
 
 // HasWorkspace applies the HasEdge predicate on the "workspace" edge.

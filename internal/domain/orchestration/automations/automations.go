@@ -241,6 +241,9 @@ func validateStep(st *automationstep.Step, linkLength int) error {
 			return refuse(st, err.Error())
 		}
 	case automationstep.HTTP:
+		if err := validateStepName(st, s.Name); err != nil {
+			return err
+		}
 	case automationstep.Wait:
 		if s.Seconds < 0 {
 			return refuse(st, "a wait cannot be negative")
@@ -1121,8 +1124,8 @@ func (v versioned) Merge(ctx context.Context, l *ent.WorkspaceLocked, base *ent.
 	return v.mergeTree(ctx, ts, base, e, def, stored)
 }
 
-// mergeTree lays the steps the edit writes over def (mergeSteps), each Wait for event keeping the
-// name its Step id holds in the Automation (checkWaitNamesHeld), and checks, once the steps, the
+// mergeTree lays the steps the edit writes over def (mergeSteps), each Wait for event and HTTP step keeping the
+// name its Step id holds in the Automation (checkStepNamesHeld), and checks, once the steps, the
 // exits or the goal changed, that no Wait for event awaits what an exit or the goal ends the
 // Enrollment on with no filter (checkAwaitedEndings). A refusal of a Step is placed at its location
 // in the request.
@@ -1139,7 +1142,7 @@ func (v versioned) mergeTree(ctx context.Context, ts *ent.Scoped, base *ent.Auto
 			return definition{}, place(err)
 		}
 		if base != nil {
-			if err := checkWaitNamesHeld(ctx, ts, base.AutomationID, steps); err != nil {
+			if err := checkStepNamesHeld(ctx, ts, base.AutomationID, steps); err != nil {
 				return definition{}, place(err)
 			}
 		}
@@ -1167,7 +1170,7 @@ func (v versioned) mergeSteps(ctx context.Context, ts *ent.Scoped, steps, stored
 	if err := checkEnds(steps); err != nil {
 		return automationstep.Path{}, err
 	}
-	if err := checkWaitNames(steps); err != nil {
+	if err := checkStepNames(steps); err != nil {
 		return automationstep.Path{}, err
 	}
 	if err := checkStepMessages(steps); err != nil {

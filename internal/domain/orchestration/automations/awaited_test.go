@@ -215,6 +215,7 @@ func TestAnHTTPStepAfterTheWaitSendsTheAwaitedEvent(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			f := awaitThen(t, automationstep.HTTP{
+				Name: "notify",
 				URL:  "https://hooks.example.com/orders",
 				Body: `{"product": "{{ awaited.purchase.properties.product }}", "trigger": "{{ event.action }}"}`,
 			})
@@ -320,7 +321,7 @@ func TestTheKeptEventIsClearedWhenTheEnrollmentEnds(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			env, clock := awaitedEnv(t)
 			f := awaitThenOn(t, env, clock, ending{exits: []eventmatcher.Matcher{{Action: cancelled}}, goal: &eventmatcher.Matcher{Action: upgraded}},
-				automationstep.Wait{Seconds: 3600}, automationstep.HTTP{URL: "https://hooks.example.com/orders", Body: "{}"})
+				automationstep.Wait{Seconds: 3600}, automationstep.HTTP{Name: "notify", URL: "https://hooks.example.com/orders", Body: "{}"})
 			contact := enrollable(t, env.DB.Scoped(fixtures.AcmeID), 0)
 			runID := f.enroll(t, contact)
 			f.clock.Advance(time.Minute)

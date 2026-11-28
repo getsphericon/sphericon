@@ -29,7 +29,7 @@ func TestStoredStepsKeepTheIDAndTheFieldsOfEachStepKind(t *testing.T) {
 		{ID: "c", Payload: automationstep.ApplyTag{Tag: "  vip "}},
 		{ID: "d", Payload: automationstep.RemoveTag{Tag: "old"}},
 		{ID: "e", Payload: automationstep.SMS{Text: "Hi", LinkTracking: new(true)}},
-		{ID: "f", Payload: automationstep.HTTP{Body: "{}", URL: "sealed", ClearSecret: true}},
+		{ID: "f", Payload: automationstep.HTTP{Name: "notify", Body: "{}", URL: "sealed", ClearSecret: true}},
 	}})
 	assert.JSONEq(t, `{"id":"p","steps":[
 		{"id":"a","type":"email","subject":"Hi","body":"b"},
@@ -37,7 +37,7 @@ func TestStoredStepsKeepTheIDAndTheFieldsOfEachStepKind(t *testing.T) {
 		{"id":"c","type":"apply_tag","tag":"vip"},
 		{"id":"d","type":"remove_tag","tag":"old"},
 		{"id":"e","type":"sms","text":"Hi"},
-		{"id":"f","type":"http","url":"sealed","body":"{}"}
+		{"id":"f","type":"http","name":"notify","url":"sealed","body":"{}"}
 	]}`, testhelper.Document(t, def))
 
 	none := automations.StoredSteps(automationstep.Path{ID: "p"})

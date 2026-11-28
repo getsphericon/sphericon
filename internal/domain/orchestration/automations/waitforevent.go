@@ -39,7 +39,7 @@ import (
 // kernel's form); and it awaits at least one Event matcher, each one a matcher an
 // Automation may start or end on (matcherProblem), and none twice. What the matchers' filters and
 // its Condition name in the Workspace is checkWaits'. Whether its name is its own across the
-// Automation is checkWaitNames' and checkWaitNamesHeld's, and whether an exit or goal ends the
+// Automation is checkStepNames' and checkStepNamesHeld's, and whether an exit or goal ends the
 // Enrollment on what it awaits is checkAwaitedEndings'. One on an Event takes no unknown path, which
 // it could never take; whether the message one on an open or a click names can come before it is
 // checkStepMessages', and its unknown path is Publish's (checkUnknownPaths).
@@ -47,13 +47,8 @@ func validateWaitForEvent(st *automationstep.Step, w automationstep.WaitForEvent
 	if w.TimeoutSeconds < bounds.WaitForEventTimeoutMin {
 		return refuse(st, fmt.Sprintf("the timeout is %d seconds, and a wait for event waits at least %d", w.TimeoutSeconds, bounds.WaitForEventTimeoutMin))
 	}
-	for _, err := range []error{
-		validation.MaxLength(fieldname.Name, w.Name, bounds.WaitForEventNameMaxLength),
-		validation.Pattern(fieldname.Name, w.Name, bounds.WaitForEventNamePattern),
-	} {
-		if bound, ok := boundRefusal(err); ok {
-			return &stepRefusalError{step: st.ID, bound: bound, boundAt: bound.Field()}
-		}
+	if err := validateStepName(st, w.Name); err != nil {
+		return err
 	}
 	switch a := w.Awaits.(type) {
 	case automationstep.AwaitedEvent:
@@ -146,25 +141,41 @@ func (m *Module) checkWaits(ctx context.Context, s *ent.Scoped, steps automation
 	return nil
 }
 
-// checkWaitNames refuses, naming the second, two Wait for event Steps of the tree with one name
-// (ADR 0136): a name means one Step.
-func checkWaitNames(steps automationstep.Path) error {
-	named := map[string]automationstep.ID{}
-	for st, w := range automationstep.WaitsForEvents(steps) {
-		if held, ok := named[w.Name]; ok {
-			return refuse(st, fmt.Sprintf("the name %q is step %s's", w.Name, held))
+// validateStepName checks the name of a Wait for event or an HTTP step on its own: within the
+// contract's bounds (bounds.StepName), the form later Steps read it by (ADR 0136, ADR 0161).
+func validateStepName(st *automationstep.Step, name string) error {
+	for _, err := range []error{
+		validation.MaxLength(fieldname.Name, name, bounds.StepNameMaxLength),
+		validation.Pattern(fieldname.Name, name, bounds.StepNamePattern),
+	} {
+		if bound, ok := boundRefusal(err); ok {
+			return &stepRefusalError{step: st.ID, bound: bound, boundAt: bound.Field()}
 		}
-		named[w.Name] = st.ID
 	}
 	return nil
 }
 
-// checkWaitNamesHeld refuses, naming the Step, a Wait for event that the steps rename, or that
-// takes a name another Step id holds, in any version of the Automation automationID, the draft
-// being written over and a Wait for event removed since included (ADR 0136): a name belongs to one
-// Step id for the Automation's whole life, so `awaited.<name>` never means two Steps. Called under
-// the Workspace lock, so a concurrent save of the Automation cannot slip a version past it.
-func checkWaitNamesHeld(ctx context.Context, s *ent.Scoped, automationID int64, steps automationstep.Path) error {
+// checkStepNames refuses, naming the second, two named Steps of the tree with one name, Wait for
+// events and HTTP steps alike (ADR 0136, ADR 0161): a name means one Step of the Automation.
+func checkStepNames(steps automationstep.Path) error {
+	named := map[string]automationstep.ID{}
+	for st, n := range automationstep.NamedSteps(steps) {
+		name := n.StepName()
+		if held, ok := named[name]; ok {
+			return refuse(st, fmt.Sprintf("the name %q is step %s's", name, held))
+		}
+		named[name] = st.ID
+	}
+	return nil
+}
+
+// checkStepNamesHeld refuses, naming the Step, a Wait for event or an HTTP step that the steps
+// rename, or that takes a name another named Step id holds, in any version of the Automation
+// automationID, the draft being written over and a Step removed since included (ADR 0136, ADR
+// 0161): a name belongs to one Step id for the Automation's whole life, so `awaited.<name>` or
+// `http.<name>` never means two Steps. Called under the Workspace lock, so a concurrent save of the
+// Automation cannot slip a version past it.
+func checkStepNamesHeld(ctx context.Context, s *ent.Scoped, automationID int64, steps automationstep.Path) error {
 	versions, err := s.AutomationVersion().Query().
 		Where(automationversion.AutomationID(automationID)).
 		Select(automationversion.FieldSteps).
@@ -175,16 +186,17 @@ func checkWaitNamesHeld(ctx context.Context, s *ent.Scoped, automationID int64, 
 	nameOf := map[automationstep.ID]string{}
 	holderOf := map[string]automationstep.ID{}
 	for _, v := range versions {
-		for st, w := range automationstep.WaitsForEvents(v.Steps) {
-			nameOf[st.ID], holderOf[w.Name] = w.Name, st.ID
+		for st, n := range automationstep.NamedSteps(v.Steps) {
+			nameOf[st.ID], holderOf[n.StepName()] = n.StepName(), st.ID
 		}
 	}
-	for st, w := range automationstep.WaitsForEvents(steps) {
-		if was, ok := nameOf[st.ID]; ok && was != w.Name {
+	for st, n := range automationstep.NamedSteps(steps) {
+		name := n.StepName()
+		if was, ok := nameOf[st.ID]; ok && was != name {
 			return refuse(st, fmt.Sprintf("its name is %q, fixed when it was created", was))
 		}
-		if holder, ok := holderOf[w.Name]; ok && holder != st.ID {
-			return refuse(st, fmt.Sprintf("the name %q is step %s's, in a version of the automation", w.Name, holder))
+		if holder, ok := holderOf[name]; ok && holder != st.ID {
+			return refuse(st, fmt.Sprintf("the name %q is step %s's, in a version of the automation", name, holder))
 		}
 	}
 	return nil
@@ -240,11 +252,11 @@ func (m *StepExecution) conditionHolds(ctx context.Context, s *ent.Scoped, run *
 	if cond == nil {
 		return true, nil
 	}
-	awaited, err := awaitedFor(ctx, s, run.ID, index, cond.Group)
+	kept, err := keptFor(ctx, s, run.ID, index, cond.Group)
 	if err != nil {
 		return false, fmt.Errorf("%w: read the kept events: %w", condition.ErrStorage, err)
 	}
-	return m.conditions.Holds(ctx, s, condition.WaitForEventInput{ContactID: run.ContactID, Condition: *cond, Properties: run.EventProperties, Awaited: awaited})
+	return m.conditions.Holds(ctx, s, condition.WaitForEventInput{ContactID: run.ContactID, Condition: *cond, Properties: run.EventProperties, Awaited: kept.awaited})
 }
 
 // awaitWindow is what an Event must be to satisfy a Wait for event an Enrollment stands on: the

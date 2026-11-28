@@ -340,8 +340,8 @@ export default interface Resources {
       "applyTagNodeDescription": "Add a tag to the contact.",
       "awaitedWarning": {
         "node": "Not every path passes {{names}}",
-        "panel": "Not every path to this step passes the Wait for event {{names}}. On a path that skips it, what this step reads of its event renders empty and a test of it fails." | "Not every path to this step passes the Wait for events {{names}}. On a path that skips one, what this step reads of its event renders empty and a test of it fails.",
-        "title": "A Wait for event may be skipped"
+        "panel": "Not every path to this step passes the step that keeps {{names}}. On a path that skips it, what this step reads of it renders empty and a test of it fails." | "Not every path to this step passes the steps that keep {{names}}. On a path that skips one, what this step reads of it renders empty and a test of it fails.",
+        "title": "A step this one reads from may be skipped"
       },
       "bounced": "Bounced",
       "branchNodeDescription": "Send each contact down the first path whose condition holds.",
@@ -433,6 +433,10 @@ export default interface Resources {
       "httpDryRunRendered": "The request body this contact would get (nothing was sent):",
       "httpHeadersLabel": "Headers (up to 5)",
       "httpInsertMergeTag": "Insert a merge tag",
+      "httpNameFormat": "Use lower-case letters, digits and underscores, starting with a letter.",
+      "httpNameHint": "Later steps read the response it gets by this name, as http.<name>. Lower-case letters, digits and underscores, starting with a letter.",
+      "httpNameLabel": "Name",
+      "httpNameLocked": "The name is fixed once the step is saved, so that later steps reading its response by it keep working.",
       "httpNodeDescription": "POST a JSON body to a URL such as a Slack or Zapier hook.",
       "httpSecretHint": "Optional. Signs the request; leave empty to keep the saved one.",
       "httpSecretLabel": "Signing secret",
@@ -863,6 +867,7 @@ export default interface Resources {
         "doesNotHave": "does not have",
         "has": "has"
       },
+      "httpProperty": "Key of http.{{name}}.body",
       "messageEngagements": {
         "clicked": "was clicked",
         "opened": "was opened"

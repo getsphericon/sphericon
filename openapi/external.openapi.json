@@ -7276,7 +7276,7 @@
           "name": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/WaitForEventName"
+                "$ref": "#/components/schemas/StepName"
               }
             ],
             "description": "The Wait for event's name"
@@ -7295,7 +7295,7 @@
           "name": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/WaitForEventName"
+                "$ref": "#/components/schemas/StepName"
               }
             ],
             "description": "The Wait for event's name"
@@ -7707,16 +7707,20 @@
           },
           {
             "$ref": "#/components/schemas/AwaitedSource"
+          },
+          {
+            "$ref": "#/components/schemas/HttpSource"
           }
         ],
         "discriminator": {
           "propertyName": "kind",
           "mapping": {
             "trigger": "#/components/schemas/TriggerSource",
-            "awaited": "#/components/schemas/AwaitedSource"
+            "awaited": "#/components/schemas/AwaitedSource",
+            "http": "#/components/schemas/HttpSource"
           }
         },
-        "description": "Whose properties a Branch path's property test reads, by `kind`: the Event the Enrollment\nbegan with, or the one an earlier Wait for event arrived on"
+        "description": "Whose properties a Branch path's property test reads, by `kind`: the Event the Enrollment\nbegan with, the one an earlier Wait for event arrived on, or the body an earlier HTTP step\nanswered with"
       },
       "BranchPropertySourceInput": {
         "type": "object",
@@ -7726,16 +7730,20 @@
           },
           {
             "$ref": "#/components/schemas/AwaitedSourceInput"
+          },
+          {
+            "$ref": "#/components/schemas/HttpSourceInput"
           }
         ],
         "discriminator": {
           "propertyName": "kind",
           "mapping": {
             "trigger": "#/components/schemas/TriggerSourceInput",
-            "awaited": "#/components/schemas/AwaitedSourceInput"
+            "awaited": "#/components/schemas/AwaitedSourceInput",
+            "http": "#/components/schemas/HttpSourceInput"
           }
         },
-        "description": "Whose properties a Branch path's property test reads, by `kind`: the Event the Enrollment\nbegan with, or the one an earlier Wait for event arrived on"
+        "description": "Whose properties a Branch path's property test reads, by `kind`: the Event the Enrollment\nbegan with, the one an earlier Wait for event arrived on, or the body an earlier HTTP step\nanswered with"
       },
       "BranchStep": {
         "type": "object",
@@ -11417,6 +11425,7 @@
           "status",
           "ordinal",
           "awaited",
+          "http",
           "createdAt",
           "updatedAt"
         ],
@@ -11517,6 +11526,13 @@
               "$ref": "#/components/schemas/KeptEvent"
             },
             "description": "The Events its Wait for event Steps arrived on, by name (ADR 0136): kept while the Enrollment runs, and cleared when it ends, so empty once it ended"
+          },
+          "http": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/KeptResponse"
+            },
+            "description": "The responses its HTTP steps received, by name (ADR 0161): kept while the Enrollment runs, and cleared when it ends, so empty once it ended"
           },
           "createdAt": {
             "allOf": [
@@ -12919,9 +12935,53 @@
         ],
         "description": "Why a send is held (a Hold). A hold is reversible and not a failure: a held Broadcast keeps its\nstatus and its remaining recipients send once it lifts, and an Automation's email steps wait."
       },
+      "HttpBodyDropped": {
+        "type": "string",
+        "enum": ["not_json", "not_object", "too_large"],
+        "description": "Why an HTTP step kept no body of a 2xx response (ADR 0161): it was not JSON (or held a NUL\ncharacter, which cannot be stored), it was JSON but not an object, or it weighed more than an\nEvent's properties may (32 KiB)."
+      },
+      "HttpSource": {
+        "type": "object",
+        "required": ["kind", "name"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["http"]
+          },
+          "name": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StepName"
+              }
+            ],
+            "description": "The HTTP step's name"
+          }
+        },
+        "description": "The JSON object an HTTP step of the Automation answered with, kept by the Enrollment under the\nHTTP step's name (ADR 0161), whose keys a property test reads. The HTTP step must be one that can\ncome before the Branch holding the test. Where the Enrollment keeps no body of it (the path never\npassed it, or its body was not a JSON object it could keep), the test fails."
+      },
+      "HttpSourceInput": {
+        "type": "object",
+        "required": ["kind", "name"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["http"]
+          },
+          "name": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StepName"
+              }
+            ],
+            "description": "The HTTP step's name"
+          }
+        },
+        "description": "The JSON object an HTTP step of the Automation answered with, kept by the Enrollment under the\nHTTP step's name (ADR 0161), whose keys a property test reads. The HTTP step must be one that can\ncome before the Branch holding the test. Where the Enrollment keeps no body of it (the path never\npassed it, or its body was not a JSON object it could keep), the test fails.",
+        "additionalProperties": false
+      },
       "HttpStep": {
         "type": "object",
-        "required": ["id", "type", "body", "headers", "hasSecret"],
+        "required": ["id", "type", "name", "body", "headers", "hasSecret"],
         "properties": {
           "id": {
             "allOf": [
@@ -12934,6 +12994,14 @@
           "type": {
             "type": "string",
             "enum": ["http"]
+          },
+          "name": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StepName"
+              }
+            ],
+            "description": "The Step's name, fixed when it is created: later Steps read the response it kept as\n`http.<name>` (ADR 0161)"
           },
           "body": {
             "type": "string",
@@ -12955,7 +13023,7 @@
       },
       "HttpStepInput": {
         "type": "object",
-        "required": ["type", "body"],
+        "required": ["type", "name", "body"],
         "properties": {
           "id": {
             "allOf": [
@@ -12968,6 +13036,14 @@
           "type": {
             "type": "string",
             "enum": ["http"]
+          },
+          "name": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StepName"
+              }
+            ],
+            "description": "The Step's name, fixed when it is created: later Steps read the response it kept as\n`http.<name>` (ADR 0161). A save that renames the Step, or gives it a name another HTTP step\nor Wait for event of the Automation holds, in any version, is refused, naming the Step."
           },
           "body": {
             "type": "string",
@@ -13332,6 +13408,39 @@
           }
         },
         "description": "The copy an Enrollment keeps of the Event one of its Wait for event Steps arrived on (ADR 0136), which later Steps read as `awaited.<name>`."
+      },
+      "KeptResponse": {
+        "type": "object",
+        "required": ["name", "status"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The name of the HTTP step that received it"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The response's status code, a 2xx"
+          },
+          "body": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/JsonObject"
+              }
+            ],
+            "description": "The JSON object the response carried; absent when it was dropped",
+            "x-untrusted": true
+          },
+          "dropped": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HttpBodyDropped"
+              }
+            ],
+            "description": "Why the body was dropped; absent when it was kept"
+          }
+        },
+        "description": "The response an Enrollment keeps of one of its HTTP steps (ADR 0161), which later Steps read as\n`http.<name>`: its status and, when it was a JSON object it could keep, its body."
       },
       "LinkClicks": {
         "type": "object",
@@ -16699,6 +16808,12 @@
         "description": "A test of the message a send Step of the Automation sent to this Enrollment (ADR 0122): whether\nit was opened or clicked, by the first human open or click stamped on it, so an open or click by\na machine never counts (ADR 0053). It is unknown, never false, when the message went out\nuntracked, when its tracking was withdrawn since (ADR 0120), when the Step was skipped and when\nthe Enrollment never passed it, so a Branch holding it needs its unknown path. The Step must be a\nsend Step that can come before the Branch: an email Step for `opened`, any send Step for\n`clicked`. A Step a test names cannot be removed.",
         "additionalProperties": false
       },
+      "StepName": {
+        "type": "string",
+        "maxLength": 64,
+        "pattern": "^[a-z][a-z0-9_]*$",
+        "description": "The name of a Wait for event (ADR 0136) or an HTTP step (ADR 0161), which later Steps read what\nit kept by, as `awaited.<name>` or `http.<name>`: lower-case letters, digits and underscores,\nstarting with a letter. It belongs to one Step id across every version of its Automation, and no\nother Wait for event or HTTP step there holds it."
+      },
       "SuppressionChannel": {
         "type": "string",
         "enum": ["email", "telegram", "sms"],
@@ -18471,12 +18586,6 @@
         },
         "description": "An entry of a Wait for event's Condition, by `kind`: a Rule's, and the property test reading\nthe Event the Enrollment began with. The test of the Enrollment's own message is a Branch's\nonly: a Wait for event on an open or click waits for one."
       },
-      "WaitForEventName": {
-        "type": "string",
-        "maxLength": 64,
-        "pattern": "^[a-z][a-z0-9_]*$",
-        "description": "The name of a Wait for event (ADR 0136): lower-case letters, digits and underscores, starting\nwith a letter. It belongs to one Step id across every version of its Automation."
-      },
       "WaitForEventPropertyLeaf": {
         "type": "object",
         "required": ["kind", "of", "key", "test"],
@@ -18597,7 +18706,7 @@
           "name": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/WaitForEventName"
+                "$ref": "#/components/schemas/StepName"
               }
             ],
             "description": "The Step's name, fixed when it is created"
@@ -18662,7 +18771,7 @@
           "name": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/WaitForEventName"
+                "$ref": "#/components/schemas/StepName"
               }
             ],
             "description": "The Step's name, fixed when it is created: a save that renames the Step, or gives two Wait for\nevent Steps of the Automation the same name, is refused, naming the Step"

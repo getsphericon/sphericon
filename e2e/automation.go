@@ -107,6 +107,7 @@ func (w *Workspace) PublishHTTPAutomation(a HTTPAutomation) {
 	w.t.Helper()
 	ctx := w.t.Context()
 	httpStep := externalapi.HttpStepInput{
+		Name: "hook",
 		URL:  externalapi.NewOptString(a.Hook.URL),
 		Body: a.Body,
 	}
@@ -321,7 +322,7 @@ func (w *Workspace) PublishWaitForEventAutomation(a WaitForEventAutomation) exte
 	email := func(subject string) externalapi.AutomationStepInput { return emailWith(subject, subject) }
 	wait := externalapi.WaitForEventStepInput{
 		Type:           externalapi.WaitForEventStepInputTypeWaitForEvent,
-		Name:           externalapi.WaitForEventName(a.Name),
+		Name:           externalapi.StepName(a.Name),
 		TimeoutSeconds: narrow.Int32(int64(a.Timeout / time.Second)),
 		Awaits: externalapi.WaitForEventAwaitsInput{OneOf: externalapi.NewAwaitedEventInputWaitForEventAwaitsInputSum(
 			externalapi.AwaitedEventInput{Kind: externalapi.AwaitedEventInputKindEvent, Matchers: []externalapi.EventMatcherInput{{Action: a.Awaited}}},

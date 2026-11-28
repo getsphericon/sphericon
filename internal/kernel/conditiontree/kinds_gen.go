@@ -137,6 +137,7 @@ type Source string
 const (
 	SourceTrigger Source = "trigger"
 	SourceAwaited Source = "awaited"
+	SourceHttp    Source = "http"
 )
 
 // RuleSources is every Source a Rule's property leaf reads.
@@ -148,6 +149,7 @@ var RuleSources = []Source{
 var BranchSources = []Source{
 	SourceTrigger,
 	SourceAwaited,
+	SourceHttp,
 }
 
 // WaitForEventSources is every Source a Wait for event's property leaf reads.

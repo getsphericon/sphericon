@@ -34,7 +34,7 @@ func automationEmailTo(t *testing.T, env *testhelper.TestEnv, contactID int64, s
 	automation := env.DB.Automation.GetX(ctx, fixtures.AutomationWelcomeSeriesID)
 	run := env.DB.AutomationRun.GetX(ctx, fixtures.AutomationRunWelcomeCompletedID)
 	c := env.DB.Contact.GetX(ctx, contactID)
-	return outboundmessages.AutomationStep(automation, run, nil, stepID, nil, c, outboundmessages.EmailContent{Subject: "Hi", Body: htmlBody}, waited)
+	return outboundmessages.AutomationStep(automation, run, outboundmessages.Kept{}, stepID, nil, c, outboundmessages.EmailContent{Subject: "Hi", Body: htmlBody}, waited)
 }
 
 // sendTo sends req through m and requires no error.

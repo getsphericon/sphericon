@@ -191,12 +191,12 @@ test('a Step using awaited.purchase after a Branch path that skips the wait is w
   const text = 'Your {{ awaited.purchase.properties.product }}'
   const { screen, saved } = await editing([branch([purchase()]), sms(50, text)])
 
-  await expect.element(screen.getByText('Not every path passes purchase')).toBeVisible()
+  await expect.element(screen.getByText('Not every path passes awaited.purchase')).toBeVisible()
   await nodeButton(screen, 'Send SMS').click()
   await expect
     .element(
       panelOf(screen, 'Send SMS').getByText(
-        'Not every path to this step passes the Wait for event purchase.',
+        'Not every path to this step passes the step that keeps awaited.purchase.',
         { exact: false },
       ),
     )

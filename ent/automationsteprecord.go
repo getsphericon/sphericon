@@ -59,6 +59,12 @@ type AutomationStepRecord struct {
 	AwaitedProperties map[string]interface{} `json:"awaited_properties,omitempty"`
 	// DeclinedEventIds holds the value of the "declined_event_ids" field.
 	DeclinedEventIds []int64 `json:"declined_event_ids,omitempty"`
+	// HTTPStatus holds the value of the "http_status" field.
+	HTTPStatus *int32 `json:"http_status,omitempty"`
+	// HTTPBody holds the value of the "http_body" field.
+	HTTPBody map[string]interface{} `json:"http_body,omitempty"`
+	// HTTPDropped holds the value of the "http_dropped" field.
+	HTTPDropped *automationstep.BodyDropped `json:"http_dropped,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the AutomationStepRecordQuery when eager-loading is set.
 	Edges        AutomationStepRecordEdges `json:"edges"`
@@ -103,11 +109,11 @@ func (*AutomationStepRecord) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case automationsteprecord.FieldPathOutcomes, automationsteprecord.FieldAwaitedProperties, automationsteprecord.FieldDeclinedEventIds:
+		case automationsteprecord.FieldPathOutcomes, automationsteprecord.FieldAwaitedProperties, automationsteprecord.FieldDeclinedEventIds, automationsteprecord.FieldHTTPBody:
 			values[i] = new([]byte)
-		case automationsteprecord.FieldID, automationsteprecord.FieldWorkspaceID, automationsteprecord.FieldRunID, automationsteprecord.FieldAwaitedEventID:
+		case automationsteprecord.FieldID, automationsteprecord.FieldWorkspaceID, automationsteprecord.FieldRunID, automationsteprecord.FieldAwaitedEventID, automationsteprecord.FieldHTTPStatus:
 			values[i] = new(sql.NullInt64)
-		case automationsteprecord.FieldStepID, automationsteprecord.FieldOutcome, automationsteprecord.FieldSkipReason, automationsteprecord.FieldPathID, automationsteprecord.FieldWentOn, automationsteprecord.FieldDecidedPathID, automationsteprecord.FieldAwaitedAction:
+		case automationsteprecord.FieldStepID, automationsteprecord.FieldOutcome, automationsteprecord.FieldSkipReason, automationsteprecord.FieldPathID, automationsteprecord.FieldWentOn, automationsteprecord.FieldDecidedPathID, automationsteprecord.FieldAwaitedAction, automationsteprecord.FieldHTTPDropped:
 			values[i] = new(sql.NullString)
 		case automationsteprecord.FieldCreatedAt, automationsteprecord.FieldUpdatedAt, automationsteprecord.FieldReachedAt, automationsteprecord.FieldLeftAt, automationsteprecord.FieldDueAt:
 			values[i] = new(sql.NullTime)
@@ -255,6 +261,28 @@ func (_m *AutomationStepRecord) assignValues(columns []string, values []any) err
 					return fmt.Errorf("unmarshal field declined_event_ids: %w", err)
 				}
 			}
+		case automationsteprecord.FieldHTTPStatus:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field http_status", values[i])
+			} else if value.Valid {
+				_m.HTTPStatus = new(int32)
+				*_m.HTTPStatus = int32(value.Int64)
+			}
+		case automationsteprecord.FieldHTTPBody:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field http_body", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.HTTPBody); err != nil {
+					return fmt.Errorf("unmarshal field http_body: %w", err)
+				}
+			}
+		case automationsteprecord.FieldHTTPDropped:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field http_dropped", values[i])
+			} else if value.Valid {
+				_m.HTTPDropped = new(automationstep.BodyDropped)
+				*_m.HTTPDropped = automationstep.BodyDropped(value.String)
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -372,6 +400,19 @@ func (_m *AutomationStepRecord) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("declined_event_ids=")
 	builder.WriteString(fmt.Sprintf("%v", _m.DeclinedEventIds))
+	builder.WriteString(", ")
+	if v := _m.HTTPStatus; v != nil {
+		builder.WriteString("http_status=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("http_body=")
+	builder.WriteString(fmt.Sprintf("%v", _m.HTTPBody))
+	builder.WriteString(", ")
+	if v := _m.HTTPDropped; v != nil {
+		builder.WriteString("http_dropped=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }

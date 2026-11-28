@@ -186,7 +186,7 @@ func TestASendSkippedBeforeTheClaimKeepsItsWait(t *testing.T) {
 	run := env.DB.AutomationRun.GetX(ctx, fixtures.AutomationRunWelcomeCompletedID)
 	c := env.DB.Contact.GetX(ctx, fixtures.ContactJobsNoEmailID)
 	since := time.Date(2030, time.March, 4, 10, 0, 0, 0, time.UTC)
-	req := outboundmessages.AutomationStep(automation, run, nil, "6f0e7a52-3d0e-5c3b-9d55-0a4f2f6c1b11", nil, c,
+	req := outboundmessages.AutomationStep(automation, run, outboundmessages.Kept{}, "6f0e7a52-3d0e-5c3b-9d55-0a4f2f6c1b11", nil, c,
 		outboundmessages.EmailContent{Subject: "Hi", Body: htmlBody}, outboundmessages.Waited{Since: since, Cause: deferralcause.SendCap})
 
 	res, err := newModule(env, time.Now).Send(ctx, s, req)

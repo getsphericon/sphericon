@@ -251,7 +251,8 @@ type entry struct {
 }
 
 // source is a property test's `of`: whose properties it reads, by its `kind`, and the name of the
-// Wait for event whose arrival an `awaited` source reads.
+// Wait for event whose arrival an `awaited` source reads or of the HTTP step whose response an
+// `http` source reads.
 type source struct {
 	Kind conditiontree.Source `json:"kind"`
 	Name string               `json:"name"`
@@ -370,6 +371,10 @@ func decodeProperty(e entry, sources []conditiontree.Source) (node, error) {
 	case conditiontree.SourceAwaited:
 		if name = e.Of.Name; name == "" {
 			return nil, errors.New("a test of the awaited event names no wait for event")
+		}
+	case conditiontree.SourceHttp:
+		if name = e.Of.Name; name == "" {
+			return nil, errors.New("a test of an http step's response names no http step")
 		}
 	case conditiontree.SourceTrigger:
 	}

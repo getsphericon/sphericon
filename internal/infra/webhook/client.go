@@ -85,20 +85,36 @@ type Call struct {
 // NewClientAllowing. It returns a *DeliveryError for a transport failure or a non-2xx
 // answer; the latter carries the first ExcerptBytes of the receiver's response.
 func Post(ctx context.Context, client Doer, c Call) error {
+	_, err := Exchange(ctx, client, c)
+	return err
+}
+
+// Answer is what a receiver answered a call with a 2xx: the status code and the body, read up to
+// maxResponseBytes. Cut is set when the body went on past that, so Body holds only its start.
+type Answer struct {
+	Status int
+	Body   []byte
+	Cut    bool
+}
+
+// Exchange makes the call as Post does and returns the answer of a 2xx: an HTTP step keeps it for
+// later Steps (ADR 0161). A body that could not be read to its end is returned as far as it was
+// read, as it was before the limit.
+func Exchange(ctx context.Context, client Doer, c Call) (Answer, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.URL, bytes.NewReader(c.Body))
 	if err != nil {
-		return err
+		return Answer{}, err
 	}
 	req.Header.Set("Content-Type", "application/json")
 	if c.Secret != "" {
 		wh, err := standardwebhooks.NewWebhook(c.Secret)
 		if err != nil {
-			return fmt.Errorf("webhook secret: %w", err)
+			return Answer{}, fmt.Errorf("webhook secret: %w", err)
 		}
 		ts := c.At
 		sig, err := wh.Sign(c.ID, ts, c.Body)
 		if err != nil {
-			return fmt.Errorf("sign webhook: %w", err)
+			return Answer{}, fmt.Errorf("sign webhook: %w", err)
 		}
 		req.Header.Set(standardwebhooks.HeaderWebhookID, c.ID)
 		req.Header.Set(standardwebhooks.HeaderWebhookTimestamp, strconv.FormatInt(ts.Unix(), 10))
@@ -110,12 +126,15 @@ func Post(ctx context.Context, client Doer, c Call) error {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return transportError(err)
+		return Answer{}, transportError(err)
 	}
 	defer func() { _ = resp.Body.Close() }()
-	// Read the answer, up to the limit, whatever its status: a connection whose body was not read
-	// to the end is not reused.
-	answer, readErr := io.ReadAll(io.LimitReader(resp.Body, maxResponseBytes))
+	// Read the answer, up to the limit and one byte past it, whatever its status: the byte past
+	// tells a body cut by the limit from one that ends there, and a connection whose body was not
+	// read to the end is not reused.
+	answer, readErr := io.ReadAll(io.LimitReader(resp.Body, maxResponseBytes+1))
+	cut := len(answer) > maxResponseBytes
+	answer = answer[:min(len(answer), maxResponseBytes)]
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		failure := statusError(resp.StatusCode, resp.Header.Get("Retry-After"))
 		failure.Excerpt = excerpt(answer)
@@ -123,10 +142,10 @@ func Post(ctx context.Context, client Doer, c Call) error {
 			// The status already says what the endpoint answered; the excerpt only says it stopped early.
 			failure.Excerpt += " [the answer was cut short]"
 		}
-		return failure
+		return Answer{}, failure
 	}
 	cleanup.Report("read the endpoint's answer", readErr)
-	return nil
+	return Answer{Status: resp.StatusCode, Body: answer, Cut: cut}, nil
 }
 
 // excerpt is the first ExcerptBytes of an answer, with a character cut by the limit dropped.

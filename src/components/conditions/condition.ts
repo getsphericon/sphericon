@@ -17,6 +17,7 @@ import {
   TextOperator,
 } from '../../generated/site/types.gen.ts'
 import type {
+  BranchPropertySource,
   AttributeLeafInput,
   BirthdayLeafInput,
   BranchCondition,
@@ -118,6 +119,7 @@ const trackingFieldPrefix = 'engagementTracking:'
 const sentByFieldPrefix = 'sentBy:'
 const stepMessageFieldPrefix = 'stepMessage:'
 const awaitedFieldPrefix = 'awaited:'
+const httpFieldPrefix = 'http:'
 
 // A sent-by test is edited as a rule on the field "sentBy:<sender>", whose one operator names the
 // Broadcast or Automation picked as its value.
@@ -141,10 +143,53 @@ export function awaitedFieldId(name: string): string {
   return `${awaitedFieldPrefix}${name}`
 }
 
-// isPropertyField tells a field whose rule is a property test: of the triggering Event, or of an
-// awaited one.
+// httpFieldId is the field of a test of a key of the body the HTTP step of the name kept of its
+// response (ADR 0161, ADR 0181): the name is the field, the key is typed in the value, as an awaited
+// Event's property.
+export function httpFieldId(name: string): string {
+  return `${httpFieldPrefix}${name}`
+}
+
+// propertyFieldOf is the field of a property test by whose property it reads (none in a filter): an awaited Event's by
+// its Wait for event's name, an HTTP step's response by the step's name, else the triggering Event's.
+function propertyFieldOf(of: BranchPropertySource | undefined): string {
+  if (of === undefined) {
+    return subjectFields.property
+  }
+  let field: string
+  switch (of.kind) {
+    case 'awaited':
+      field = awaitedFieldId(of.name)
+      break
+    case 'http':
+      field = httpFieldId(of.name)
+      break
+    case 'trigger':
+      field = subjectFields.property
+      break
+  }
+  return field
+}
+
+// propertySourceOf is whose property a property test's field names, the reverse of propertyFieldOf.
+function propertySourceOf(field: string): BranchPropertySource {
+  if (field.startsWith(awaitedFieldPrefix)) {
+    return { kind: 'awaited', name: field.slice(awaitedFieldPrefix.length) }
+  }
+  if (field.startsWith(httpFieldPrefix)) {
+    return { kind: 'http', name: field.slice(httpFieldPrefix.length) }
+  }
+  return { kind: 'trigger' }
+}
+
+// isPropertyField tells a field whose rule is a property test: of the triggering Event, of an
+// awaited one, or of an HTTP step's response.
 export function isPropertyField(field: string): boolean {
-  return field === subjectFields.property || field.startsWith(awaitedFieldPrefix)
+  return (
+    field === subjectFields.property ||
+    field.startsWith(awaitedFieldPrefix) ||
+    field.startsWith(httpFieldPrefix)
+  )
 }
 
 export function customFieldId(key: string): string {
@@ -417,11 +462,11 @@ function toRule(
       break
     case 'property': {
       const { operator, value } = testRule(node.test, timeZone)
-      const field =
-        'of' in node && node.of.kind === 'awaited'
-          ? awaitedFieldId(node.of.name)
-          : subjectFields.property
-      rule = { field, operator, value: propertyValueOf(node.key, value) }
+      rule = {
+        field: propertyFieldOf('of' in node ? node.of : undefined),
+        operator,
+        value: propertyValueOf(node.key, value),
+      }
       break
     }
     case 'sentBy':
@@ -586,12 +631,9 @@ function toPropertyLeaf(rule: RuleType, timeZone?: string): NodeDraft[] {
   if (test === undefined) {
     return []
   }
-  // The field names whose property it is: an awaited Event's by its Wait for event's name, else the
-  // triggering Event's.
-  const of = rule.field.startsWith(awaitedFieldPrefix)
-    ? { kind: 'awaited' as const, name: rule.field.slice(awaitedFieldPrefix.length) }
-    : { kind: 'trigger' as const }
-  return [{ kind: 'property', of, ...(key === '' ? {} : { key }), test }]
+  return [
+    { kind: 'property', of: propertySourceOf(rule.field), ...(key === '' ? {} : { key }), test },
+  ]
 }
 
 const engagementByName = byName(MessageEngagement)
@@ -663,7 +705,7 @@ function leafKindOf(field: string): LeafKind | undefined {
   if (field.startsWith(stepMessageFieldPrefix)) {
     return 'stepMessage'
   }
-  if (field.startsWith(awaitedFieldPrefix)) {
+  if (field.startsWith(awaitedFieldPrefix) || field.startsWith(httpFieldPrefix)) {
     return 'property'
   }
   return attributeByName.has(field) ? 'attribute' : subjectKinds.get(field)

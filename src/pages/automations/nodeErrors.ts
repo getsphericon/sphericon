@@ -7,6 +7,7 @@ import type {
   Flow,
   FlowPath,
   FlowStep,
+  StepDrafts,
   TimeOfDayDraft,
   WaitForEventDraft,
 } from './definition.ts'
@@ -16,10 +17,11 @@ import type { ForkError } from './forkRules.ts'
 import { messageStepsOf } from './messageSteps.ts'
 import { namesDate, timeOfDaySchema, useDateSchema, useDatetimeFields } from './momentRules.ts'
 import { useStepInfo } from './stepKinds.ts'
+import { stepSchemas } from './stepSchemas.ts'
 import { useWaitForEventSchema } from './waitForEventRules.ts'
 
 // What is wrong with a node of the canvas: the Trigger's date, a fork's paths, a Wait until's
-// moment or what a Wait for event awaits, a send Step it names among them, which must come before
+// moment, an HTTP step's name or URL, or what a Wait for event awaits, a send Step it names among them, which must come before
 // it. A Save checks every node and sends nothing while one is wrong; the node shows its error once
 // it was checked (on blur or on Save), and its panel shows each under its field.
 export interface NodeError {
@@ -51,7 +53,14 @@ export function useNodeErrors(flow: Flow): (flow: Flow) => NodeError[] {
   }
 
   // The first thing wrong with a draft: a part left blank by its label, else the rule's own words.
-  const draftError = <T extends DateDraft | TimeOfDayDraft | WaitForEventDraft>(
+  const httpLabels: Record<'name' | 'url', string> = {
+    name: t(($) => $.automations.httpNameLabel),
+    url: t(($) => $.automations.httpUrlLabel),
+  }
+
+  const draftError = <
+    T extends DateDraft | TimeOfDayDraft | WaitForEventDraft | StepDrafts['http'],
+  >(
     schema: z.ZodType<unknown, T>,
     draft: T,
     named: Record<string, string>,
@@ -91,6 +100,10 @@ export function useNodeErrors(flow: Flow): (flow: Flow) => NodeError[] {
     if (step.kind === 'wait_for_event') {
       const schema = waitForEventSchema(messageStepsOf(infoOf, root, step.id))
       return draftError(schema, step.draft, waitForEventLabels)
+    }
+    // An HTTP step's name and a new one's URL, which a copy asks for again with its panel closed.
+    if (step.kind === 'http') {
+      return draftError(stepSchemas.http, step.draft, httpLabels)
     }
     if (isFork(step)) {
       const error = forkError(step)

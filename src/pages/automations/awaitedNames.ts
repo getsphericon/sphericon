@@ -1,75 +1,94 @@
-import { zWaitForEventName } from '../../generated/site/zod.gen.ts'
+import { zStepName } from '../../generated/site/zod.gen.ts'
 import { allSteps, forkPaths, stepsBefore } from './definition.ts'
 import type { FlowPath, FlowStep } from './definition.ts'
 
-// The names of the Wait for events whose arrived Event the Enrollment keeps (ADR 0136): later Steps
-// read it as `awaited.<name>` in their content and test it in a Condition. Where no copy is kept, on
-// a path that never passed the Wait for event, it renders nothing and a test of it fails, so the
-// editor offers only a name that can come before a Step and warns of one not every path before it
-// passes. The warning refuses nothing.
+// What an Enrollment keeps for its later Steps, under the names of the Steps that received it: the
+// Event a Wait for event arrived on, read as `awaited.<name>` (ADR 0136), and the response an HTTP
+// step got, read as `http.<name>` (ADR 0161), in content and in a Condition. Where nothing is kept,
+// on a path that never passed the Step, it renders nothing and a test of it fails, so the editor
+// offers only a name that can come before a Step and warns of one not every path before it passes.
+// The warning refuses nothing.
 
-// keptName is the name a Wait for event on an Event keeps its arrived Event under; null for any
-// other Step, for one on an open or click, which keeps none (ADR 0136), and for a name not of the
-// form the contract takes, which no later Step can read.
-function keptName(step: FlowStep): string | null {
-  if (step.kind !== 'wait_for_event' || step.draft.form !== 'event') {
+// The prefixes later Steps read what a Step kept under: a Wait for event's and an HTTP step's.
+type KeptKind = 'awaited' | 'http'
+
+// keptRef is what a Step keeps for later Steps, as they read it (`awaited.<name>`, `http.<name>`);
+// null for a Step that keeps nothing, a Wait for event on an open or click among them (ADR 0136),
+// and for a name not of the form the contract takes, which no later Step can read.
+function keptRef(step: FlowStep): string | null {
+  let kept: { kind: KeptKind; name: string }
+  if (step.kind === 'wait_for_event' && step.draft.form === 'event') {
+    kept = { kind: 'awaited', name: step.draft.name }
+  } else if (step.kind === 'http') {
+    kept = { kind: 'http', name: step.draft.name }
+  } else {
     return null
   }
-  const { name } = step.draft
-  return zWaitForEventName.safeParse(name).success ? name : null
+  return zStepName.safeParse(kept.name).success ? `${kept.kind}.${kept.name}` : null
+}
+
+// keptBefore are the names under the prefix that an Enrollment may have passed a Step keeping when
+// it reaches the Step of the id (stepsBefore), in the canvas's order.
+function keptBefore(root: FlowPath, id: string, kind: KeptKind): string[] {
+  return stepsBefore(root, id).flatMap((step) => {
+    const ref = keptRef(step)
+    return ref?.startsWith(`${kind}.`) ? [ref.slice(kind.length + 1)] : []
+  })
 }
 
 // awaitedBefore are the names of the Wait for events an Enrollment may have passed when it reaches
-// the Step of the id (stepsBefore), in the canvas's order: the ones its merge tags and its
-// Conditions may read.
+// the Step of the id, in the canvas's order: the ones its merge tags and its Conditions may read.
 export function awaitedBefore(root: FlowPath, id: string): string[] {
-  return stepsBefore(root, id).flatMap((step) => {
-    const name = keptName(step)
-    return name === null ? [] : [name]
-  })
+  return keptBefore(root, id, 'awaited')
+}
+
+// httpBefore are the names of the HTTP steps an Enrollment may have passed when it reaches the Step
+// of the id, in the canvas's order: the ones its merge tags and a Branch's Conditions may read.
+export function httpBefore(root: FlowPath, id: string): string[] {
+  return keptBefore(root, id, 'http')
 }
 
 // A Liquid output or tag, `{{ … }}` or `{% … %}`, whose text a merge tag lives in.
 const LIQUID = /\{\{([\s\S]*?)\}\}|\{%([\s\S]*?)%\}/g
-// `awaited.<word>` within it, not as a part of a longer path: a word that is a name of the form the
-// contract takes (zWaitForEventName) is a name read.
-const AWAITED = /(?<![\w.])awaited\.(\w+)/g
+// `awaited.<word>` or `http.<word>` within it, not as a part of a longer path: a word that is a name
+// of the form the contract takes (zStepName) is a name read.
+const KEPT = /(?<![\w.])(awaited|http)\.(\w+)/g
 
-// namesInText are the names a text's Liquid reads as `awaited.<name>`.
-function namesInText(text: string): string[] {
+// refsInText are what a text's Liquid reads as `awaited.<name>` or `http.<name>`.
+function refsInText(text: string): string[] {
   return [...text.matchAll(LIQUID)].flatMap((liquid) =>
-    [...(liquid[1] ?? liquid[2] ?? '').matchAll(AWAITED)]
-      .map((match) => match[1] ?? '')
-      .filter((name) => zWaitForEventName.safeParse(name).success),
+    [...(liquid[1] ?? liquid[2] ?? '').matchAll(KEPT)]
+      .filter((match) => zStepName.safeParse(match[2] ?? '').success)
+      .map((match) => `${match[1] ?? ''}.${match[2] ?? ''}`),
   )
 }
 
-// namesInCondition are the names a Condition's text (complete or still being typed) tests a
-// property of the awaited Event of, at any depth.
-function namesInCondition(text: string): string[] {
+// refsInCondition are what a Condition's text (complete or still being typed) tests a property of,
+// at any depth: an awaited Event or an HTTP step's response.
+function refsInCondition(text: string): string[] {
   if (text === '') {
     return []
   }
-  const names: string[] = []
-  // A Condition's text is JSON the editor wrote: each property test of an awaited Event holds its
-  // source `{"kind":"awaited","name":…}`, at whatever depth.
+  const refs: string[] = []
+  // A Condition's text is JSON the editor wrote: each property test of a kept Event or response
+  // holds its source `{"kind":"awaited"|"http","name":…}`, at whatever depth.
   JSON.parse(text, (key, value: unknown) => {
-    if (
-      typeof value === 'object' &&
-      value !== null &&
-      Reflect.get(value, 'kind') === 'awaited' &&
-      typeof Reflect.get(value, 'name') === 'string'
-    ) {
-      names.push(String(Reflect.get(value, 'name')))
+    if (typeof value === 'object' && value !== null) {
+      const kind: unknown = Reflect.get(value, 'kind')
+      const name: unknown = Reflect.get(value, 'name')
+      if ((kind === 'awaited' || kind === 'http') && typeof name === 'string') {
+        refs.push(`${kind}.${name}`)
+      }
     }
     return value
   })
-  return names
+  return refs
 }
 
-// namesUsed are the names a Step reads: in the content a send or HTTP step renders, in a Branch
-// path's Condition and in a Wait for event's own, each once, in the order it first appears.
-function namesUsed(step: FlowStep): string[] {
+// refsUsed are what a Step reads of what earlier Steps kept: in the content a send or HTTP step
+// renders, in a Branch path's Condition and in a Wait for event's own, each once, in the order it
+// first appears.
+function refsUsed(step: FlowStep): string[] {
   let names: string[]
   switch (step.kind) {
     case 'email':
@@ -77,14 +96,14 @@ function namesUsed(step: FlowStep): string[] {
     case 'sms':
     case 'http':
       // Every text the draft holds is content its Step renders, the merge tags in it included.
-      names = namesInText(JSON.stringify(step.draft))
+      names = refsInText(JSON.stringify(step.draft))
       break
     case 'branch':
-      names = step.paths.flatMap((path) => namesInCondition(path.conditionText))
+      names = step.paths.flatMap((path) => refsInCondition(path.conditionText))
       break
     case 'wait_for_event':
       // Only the Event form saves its Condition.
-      names = step.draft.form === 'event' ? namesInCondition(step.draft.conditionText) : []
+      names = step.draft.form === 'event' ? refsInCondition(step.draft.conditionText) : []
       break
     case 'wait':
     case 'wait_until':
@@ -99,14 +118,13 @@ function namesUsed(step: FlowStep): string[] {
   return [...new Set(names)]
 }
 
-// Where the walk of a path stands: it found the Step, with the names every path to it passes, or it
-// left the path with the names every path through it passes, none (null) when every way through it
-// ends.
+// Where the walk of a path stands: it found the Step, with what every path to it keeps, or it left
+// the path with what every path through it keeps, none (null) when every way through it ends.
 type Walk = { found: Set<string> } | { out: Set<string> | null }
 
-// passed walks the path for the Step of the id, `sure` being the names every path into it passes. A
-// fork's own name is passed in each of its paths; after the fork, a name is passed when every path
-// that goes on past it passed it.
+// passed walks the path for the Step of the id, `sure` being what every path into it keeps. What a
+// fork keeps is kept in each of its paths; after the fork, it is kept when every path that goes on
+// past it kept it.
 function passed(path: FlowPath, id: string, sure: Set<string>): Walk {
   let sofar = sure
   for (const step of path.steps) {
@@ -116,7 +134,7 @@ function passed(path: FlowPath, id: string, sure: Set<string>): Walk {
     if (step.kind === 'end') {
       return { out: null }
     }
-    const name = keptName(step)
+    const name = keptRef(step)
     const inside = name === null ? sofar : new Set([...sofar, name])
     const outs: Set<string>[] = []
     for (const nested of forkPaths(step)) {
@@ -138,13 +156,13 @@ function passed(path: FlowPath, id: string, sure: Set<string>): Walk {
   return { out: sofar }
 }
 
-// awaitedWarnings are, by Step id, the names a Step reads that not every path before it passes: on
-// a path that skips its Wait for event, the Step renders the name empty and a test of it fails.
-// A Step with nothing to warn of is not listed.
-export function awaitedWarnings(root: FlowPath): Map<string, string[]> {
+// keptWarnings are, by Step id, what a Step reads that not every path before it keeps
+// (`awaited.<name>`, `http.<name>`): on a path that skips the Step keeping it, the Step renders it
+// empty and a test of it fails. A Step with nothing to warn of is not listed.
+export function keptWarnings(root: FlowPath): Map<string, string[]> {
   const warnings = new Map<string, string[]>()
   for (const step of allSteps(root)) {
-    const used = namesUsed(step)
+    const used = refsUsed(step)
     if (used.length > 0) {
       const walk = passed(root, step.id, new Set())
       const sure = 'found' in walk ? walk.found : new Set<string>()

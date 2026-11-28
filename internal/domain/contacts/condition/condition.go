@@ -199,6 +199,10 @@ type compiler struct {
 	// each Step's name (ADR 0136), which a Branch's and a Wait for event's tests of the awaited
 	// Event read; a name absent from it has no copy, and its tests fail.
 	awaited map[string]map[string]any
+	// http is the bodies the Enrollment's HTTP steps kept of their responses, by each Step's name
+	// (ADR 0161), which a Branch's tests of an HTTP step's response read; a name absent from it has
+	// no body kept, and its tests fail.
+	http map[string]map[string]any
 	// messages is what a Branch's tests of the Enrollment's own messages read, by the send Step
 	// that sent each (ADR 0122); nil where none is read, as in a check, which reads them unknown.
 	messages map[automationstep.ID]SentMessage
@@ -303,8 +307,8 @@ func (c *compiler) since(days int) time.Time {
 
 // property is a test of one property of an Event: its SQL/JSON path, the one a filter compiles to
 // (ADR 0180), on the properties of the Event its source names bound to the query: the triggering
-// Event's, or the copy of the Event the Wait for event arrived on, an empty object when the
-// Enrollment keeps none, so the test fails (ADR 0136).
+// Event's, the copy of the Event the Wait for event arrived on (ADR 0136), or the body the HTTP step
+// kept of its response (ADR 0161), an empty object when the Enrollment keeps none, so the test fails.
 func (c *compiler) property(l propertyLeaf) (predicate.Contact, error) {
 	b := newPathBuilder()
 	path, err := b.path(b.property(l.key, l.test))
@@ -316,6 +320,10 @@ func (c *compiler) property(l propertyLeaf) (predicate.Contact, error) {
 	case conditiontree.SourceAwaited:
 		if doc, err = propertiesDocument(c.awaited[l.name]); err != nil {
 			return nil, fmt.Errorf("encode the properties of the awaited event %q: %w", l.name, err)
+		}
+	case conditiontree.SourceHttp:
+		if doc, err = propertiesDocument(c.http[l.name]); err != nil {
+			return nil, fmt.Errorf("encode the response of the http step %q: %w", l.name, err)
 		}
 	case conditiontree.SourceTrigger:
 	}
@@ -818,9 +826,23 @@ func StepMessageTests(g conditiontree.Group) []StepMessageTest {
 // save checks against the Wait for event Steps that can come before the Step holding the group,
 // and which of the Enrollment's copies the Step reads. A malformed entry names none.
 func AwaitedNames(g conditiontree.Group) []string {
+	return sourceNames(g, conditiontree.SourceAwaited)
+}
+
+// HTTPNames are the names of the HTTP steps the group's tests of an HTTP step's response read (ADR
+// 0161), as AwaitedNames reads the Wait for event Steps' names: what a save checks against the HTTP
+// steps that can come before the Branch holding the group, and which of the Enrollment's kept
+// responses the Branch reads.
+func HTTPNames(g conditiontree.Group) []string {
+	return sourceNames(g, conditiontree.SourceHttp)
+}
+
+// sourceNames are the names the group's property tests of the source read, each once, in the
+// tree's order, at any depth and under a negation too. A malformed entry names none.
+func sourceNames(g conditiontree.Group, of conditiontree.Source) []string {
 	var out []string
 	for n := range decodeSkipping(g).leaves() {
-		if l, ok := n.(propertyLeaf); ok && l.of == conditiontree.SourceAwaited && !slices.Contains(out, l.name) {
+		if l, ok := n.(propertyLeaf); ok && l.of == of && !slices.Contains(out, l.name) {
 			out = append(out, l.name)
 		}
 	}

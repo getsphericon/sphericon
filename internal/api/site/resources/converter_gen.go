@@ -648,6 +648,20 @@ func (c *ConverterImpl) BindingsToResources(source []bindings.Chat) []site.SiteB
 	}
 	return siteapiSiteBindingResourceList
 }
+func (c *ConverterImpl) BodyDroppedToResource(source automationstep.BodyDropped) site.HttpBodyDropped {
+	var siteapiHttpBodyDropped site.HttpBodyDropped
+	switch source {
+	case automationstep.BodyNotJSON:
+		siteapiHttpBodyDropped = site.HttpBodyDroppedNotJSON
+	case automationstep.BodyNotObject:
+		siteapiHttpBodyDropped = site.HttpBodyDroppedNotObject
+	case automationstep.BodyTooLarge:
+		siteapiHttpBodyDropped = site.HttpBodyDroppedTooLarge
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiHttpBodyDropped
+}
 func (c *ConverterImpl) BranchPathToResource(source automations.BranchPathView) (site.BranchPath, error) {
 	var siteapiBranchPath site.BranchPath
 	siteapiBranchPath.ID = c.automationstepIDToSiteapiStepId(source.ID)
@@ -1753,6 +1767,7 @@ func (c *ConverterImpl) EnrollmentToResource(source *ent.AutomationRun) site.Enr
 		siteapiEnrollmentResource.DeferralCause = optDeferralCause(c, (*source).DeferralCause)
 		siteapiEnrollmentResource.Failure = enrollmentFailure(c, (*source))
 		siteapiEnrollmentResource.Awaited = enrollmentAwaited(c, (*source))
+		siteapiEnrollmentResource.HTTP = enrollmentHTTP(c, (*source))
 		siteapiEnrollmentResource.CreatedAt = timestamp((*source).CreatedAt)
 		siteapiEnrollmentResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
@@ -1903,6 +1918,7 @@ func (c *ConverterImpl) HttpStepToResource(source automations.HTTPView) site.Htt
 	var siteapiHttpStep site.HttpStep
 	siteapiHttpStep.ID = c.automationstepIDToSiteapiStepId(source.ID)
 	siteapiHttpStep.Type = httpStepType(source.Type)
+	siteapiHttpStep.Name = stepName(source.Name)
 	siteapiHttpStep.Body = source.Body
 	if source.Headers != nil {
 		siteapiHttpStep.Headers = make([]site.AutomationHttpHeader, len(source.Headers))
@@ -2076,6 +2092,22 @@ func (c *ConverterImpl) KeptEventsToResources(source []automations.KeptEvent) []
 		siteapiKeptEventList[i] = c.KeptEventToResource(source[i])
 	}
 	return siteapiKeptEventList
+}
+func (c *ConverterImpl) KeptResponseToResource(source automations.KeptResponse) site.KeptResponse {
+	var siteapiKeptResponse site.KeptResponse
+	siteapiKeptResponse.Name = source.Name
+	siteapiKeptResponse.Status = source.Status
+	siteapiKeptResponse.Body = keptBody(source.Body)
+	siteapiKeptResponse.Dropped = keptDropped(c, source.Dropped)
+	return siteapiKeptResponse
+}
+func (c *ConverterImpl) KeptResponsesToResources(source []automations.KeptResponse) []site.KeptResponse {
+	var siteapiKeptResponseList []site.KeptResponse
+	siteapiKeptResponseList = make([]site.KeptResponse, len(source))
+	for i := 0; i < len(source); i++ {
+		siteapiKeptResponseList[i] = c.KeptResponseToResource(source[i])
+	}
+	return siteapiKeptResponseList
 }
 func (c *ConverterImpl) LegalDocumentToSite(source signupitems.Document) site.SiteLegalDocument {
 	var siteapiSiteLegalDocument site.SiteLegalDocument
@@ -3763,7 +3795,7 @@ func (c *ConverterImpl) WaitForEventStepToResource(source automations.WaitForEve
 	var siteapiWaitForEventStep site.WaitForEventStep
 	siteapiWaitForEventStep.ID = c.automationstepIDToSiteapiStepId(source.ID)
 	siteapiWaitForEventStep.Type = waitForEventStepType(source.Type)
-	siteapiWaitForEventStep.Name = waitForEventName(source.Name)
+	siteapiWaitForEventStep.Name = stepName(source.Name)
 	siteapiWaitForEventStep.TimeoutSeconds = count(source.TimeoutSeconds)
 	siteapiWaitForEventAwaits, err := waitForEventAwaits(c, source.Awaits)
 	if err != nil {

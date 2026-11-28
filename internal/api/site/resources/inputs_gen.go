@@ -746,6 +746,7 @@ func (c *InputsImpl) FrequencyCapIn(source site.FrequencyCapInput) workspaces.Fr
 }
 func (c *InputsImpl) HttpStepIn(source site.HttpStepInput) automationstep.HTTP {
 	var automationstepHTTP automationstep.HTTP
+	automationstepHTTP.Name = string(source.Name)
 	automationstepHTTP.URL = stringIn(source.URL)
 	if source.Headers != nil {
 		automationstepHTTP.Headers = make([]httpheader.Header, len(source.Headers))

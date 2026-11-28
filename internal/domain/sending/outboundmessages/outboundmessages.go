@@ -1129,22 +1129,48 @@ type AwaitedEvent struct {
 	Properties map[string]any
 }
 
+// KeptResponse is the response an Enrollment keeps of one of its HTTP steps (ADR 0161): its status
+// code and the JSON object it carried, nil when the body was dropped.
+type KeptResponse struct {
+	Status int
+	Body   map[string]any
+}
+
+// Kept is what an Enrollment received on its way and keeps for its later Steps, by the name of the
+// Step that received each: the Events its Wait for event Steps arrived on (ADR 0136) and the
+// responses of its HTTP steps (ADR 0161).
+type Kept struct {
+	Awaited map[string]AwaitedEvent
+	HTTP    map[string]KeptResponse
+}
+
 // EnrollmentVariables are the merge tags an Automation's steps bind besides the Contact's: `event`,
 // the copy of the Event the Enrollment began on (#752), empty for a nil run or one no Event began;
-// and `awaited`, the copies of the Events its Wait for event Steps arrived on, by each Step's name
-// (ADR 0136), as `event` is: `awaited.<name>.action` and `awaited.<name>.properties.<key>`. A name
-// with no copy is absent, and `awaited` is bound even when it holds none, so every `awaited.*` tag
-// then renders empty and a Contact's custom field named `awaited` never stands in for it.
-func EnrollmentVariables(run *ent.AutomationRun, awaited map[string]AwaitedEvent) map[string]any {
-	kept := make(map[string]any, len(awaited))
-	for name, a := range awaited {
-		kept[name] = EventVariables(a.Action, a.Properties)["event"]
+// `awaited`, the copies of the Events its Wait for event Steps arrived on, by each Step's name (ADR
+// 0136), as `event` is: `awaited.<name>.action` and `awaited.<name>.properties.<key>`; and `http`,
+// the responses its HTTP steps kept, by each Step's name (ADR 0161): `http.<name>.status` and
+// `http.<name>.body.<key>`, the body empty when it was dropped. A name with nothing kept is absent,
+// and `awaited` and `http` are bound even when they hold none, so every such tag then renders empty
+// and a Contact's custom field named `awaited` or `http` never stands in for it.
+func EnrollmentVariables(run *ent.AutomationRun, kept Kept) map[string]any {
+	awaited := make(map[string]any, len(kept.Awaited))
+	for name, a := range kept.Awaited {
+		awaited[name] = EventVariables(a.Action, a.Properties)["event"]
+	}
+	responses := make(map[string]any, len(kept.HTTP))
+	for name, r := range kept.HTTP {
+		body := r.Body
+		if body == nil {
+			body = map[string]any{}
+		}
+		responses[name] = map[string]any{"status": r.Status, "body": body}
 	}
 	vars := EventVariables("", nil)
 	if run != nil {
 		vars = EventVariables(lo.FromPtr(run.EventAction), run.EventProperties)
 	}
-	vars["awaited"] = kept
+	vars["awaited"] = awaited
+	vars["http"] = responses
 	return vars
 }
 

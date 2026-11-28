@@ -442,11 +442,11 @@ const (
 	SplitWeightMin = 1
 )
 
-// WaitForEventName is the name of a Wait for event, which later Steps read its kept Event by (ADR 0136).
-// From site WaitForEventName.
+// StepName is the name of a Wait for event or an HTTP step, which later Steps read what it kept by (ADR 0136, ADR 0161).
+// From site StepName.
 const (
-	WaitForEventNameMaxLength = 64
-	WaitForEventNamePattern   = `^[a-z][a-z0-9_]*$`
+	StepNameMaxLength = 64
+	StepNamePattern   = `^[a-z][a-z0-9_]*$`
 )
 
 // WaitForEventTimeout is how long a Wait for event waits, in seconds from the moment the Enrollment reaches it (ADR 0124).
@@ -605,8 +605,8 @@ var Owners = map[string][]string{
 	"SplitPathsMinItems":                    {"AutomationVersion"},
 	"SplitPathsMaxItems":                    {"AutomationVersion"},
 	"SplitWeightMin":                        {"AutomationVersion"},
-	"WaitForEventNameMaxLength":             {"AutomationVersion"},
-	"WaitForEventNamePattern":               {"AutomationVersion"},
+	"StepNameMaxLength":                     {"AutomationVersion"},
+	"StepNamePattern":                       {"AutomationVersion"},
 	"WaitForEventTimeoutMin":                {"AutomationVersion"},
 	"AwaitedMatchersMinItems":               {"AutomationVersion"},
 	"ConditionWithinDaysMin":                {"internal/domain/contacts/condition"},

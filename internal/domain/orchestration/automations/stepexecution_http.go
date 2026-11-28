@@ -69,29 +69,33 @@ func (m *StepExecution) ExecuteHTTP(ctx context.Context, s *ent.Scoped, in Execu
 	if err != nil {
 		return httpcall.Execution{}, err
 	}
-	awaited, err := keptOn(ctx, s, run.ID, index)
+	kept, err := keptOn(ctx, s, run.ID, index)
 	if err != nil {
 		return httpcall.Execution{}, err
 	}
-	body, err := renderBody(call.Body, c, run, awaited)
+	body, err := renderBody(call.Body, c, run, kept)
 	if err != nil {
 		return m.failHTTP(ctx, s, run.ID, failure{Kind: automationrun.FailureKindInvalidBody}, httpcall.Execution{Cancel: err})
 	}
 	// An exit committed before this fence prevents the call; an exit during it waits until
 	// the call returns. Release it before the lifecycle move, which takes the row's write lock.
+	var answer webhook.Answer
 	sendErr := m.fence(ctx, s, run.ID, func(ctx context.Context) error {
-		return webhook.Post(ctx, m.client, webhook.Call{
+		var err error
+		answer, err = webhook.Exchange(ctx, m.client, webhook.Call{
 			URL: opened.URL, Secret: opened.Secret, Headers: opened.Headers, Body: []byte(body), At: m.now(),
 			// The run and the id of the Step the Enrollment stands on, which every version keeps
 			// (ADR 0122).
 			ID: fmt.Sprintf("automation_%d_%s", run.ID, step),
 		})
+		return err
 	})
 	if stale(sendErr) {
 		return httpcall.Execution{}, nil
 	}
 	if sendErr == nil {
-		return httpcall.Execution{}, m.advance(ctx, s, run.ID, place{index: index, step: step}, stepMove{})
+		// The response is kept on the Step's record for the Steps after it (ADR 0161).
+		return httpcall.Execution{}, m.advance(ctx, s, run.ID, place{index: index, step: step}, stepMove{response: keptAnswer(answer)})
 	}
 	decision := httpcall.OneOff.Decide(sendErr, attempt, m.now())
 	switch {

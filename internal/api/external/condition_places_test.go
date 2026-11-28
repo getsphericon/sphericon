@@ -106,6 +106,17 @@ func TestExternalConditionRefusesWhatItsPlaceDoesNotAdmitByItsPath(t *testing.T)
 			"condition.entries.1.entries.1.filter.entries.0.of",
 		},
 		{
+			"a property test of an HTTP step's response in a Segment",
+			`{"kind":"property","of":{"kind":"http","name":"coupon"},"key":"code","test":{"kind":"text","operator":"eq","value":"X1"}}`,
+			"condition.entries.1.entries.1",
+		},
+		{
+			"a property test of an HTTP step's response in an Event filter",
+			`{"kind":"event","action":"order.created","operator":"atLeast","times":1,"filter":{"kind":"group","combinator":"and","entries":[` +
+				`{"kind":"property","of":{"kind":"http","name":"coupon"},"key":"code","test":{"kind":"text","operator":"eq","value":"X1"}}` + `]}}`,
+			"condition.entries.1.entries.1.filter.entries.0.of",
+		},
+		{
 			"a test of an Enrollment's own message in a Segment",
 			`{"kind":"stepMessage","step":"5a0f6d2e-8b1c-4e3a-9f7d-000000000002","engagement":"opened"}`,
 			"condition.entries.1.entries.1",
@@ -153,7 +164,8 @@ func TestExternalConditionRefusesWhatItsPlaceDoesNotAdmitByItsPath(t *testing.T)
 }
 
 // A Rule's Condition admits neither the test of an Enrollment's own message (ADR 0122) nor a test of
-// the Event a Wait for event arrived on (ADR 0136), an Automation's alone: the schema refuses each
+// the Event a Wait for event arrived on (ADR 0136) or of an HTTP step's response (ADR 0161), an
+// Automation's alone: the schema refuses each
 // with a 400 that names its path.
 func TestExternalRuleConditionRefusesWhatOnlyAnAutomationAdmitsByItsPath(t *testing.T) {
 	for _, tc := range []struct {
@@ -167,6 +179,11 @@ func TestExternalRuleConditionRefusesWhatOnlyAnAutomationAdmitsByItsPath(t *test
 		{
 			"a property test of the awaited Event",
 			`{"kind":"property","of":{"kind":"awaited","name":"purchase"},"key":"total","test":{"kind":"number","operator":"gt","value":100}}`,
+			"condition.entries.1.entries.1.of",
+		},
+		{
+			"a property test of an HTTP step's response",
+			`{"kind":"property","of":{"kind":"http","name":"coupon"},"key":"code","test":{"kind":"text","operator":"eq","value":"X1"}}`,
 			"condition.entries.1.entries.1.of",
 		},
 	} {

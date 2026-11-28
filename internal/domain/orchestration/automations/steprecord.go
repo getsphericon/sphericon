@@ -176,10 +176,21 @@ func reach(ctx context.Context, s *ent.Scoped, runID int64, stepID automationste
 }
 
 // leaving is how the Enrollment leaves a Step: done, skipped for a reason when skipped is set, or
-// down the path of a fork when path is set (ADR 0124).
+// down the path of a fork when path is set (ADR 0124); an HTTP step done with the response it
+// keeps when response is set (ADR 0161).
 type leaving struct {
-	skipped skipreason.Reason
-	path    *pathTaken
+	skipped  skipreason.Reason
+	path     *pathTaken
+	response *responseKept
+}
+
+// responseKept is what an HTTP step keeps of its 2xx response (ADR 0161): the status, and the body
+// when it was a JSON object the Step could keep, else why it dropped it. A Step that ends the
+// Enrollment keeps neither the status nor the body (nil), only why it dropped a body.
+type responseKept struct {
+	status  *int32
+	body    map[string]any
+	dropped *automationstep.BodyDropped
 }
 
 // pathTaken is the path a fork sent the Enrollment down, by its id; at a Branch, what each path's
@@ -250,6 +261,12 @@ func leave(ctx context.Context, s *ent.Scoped, runID int64, stepID automationste
 		switch {
 		case how.skipped != "":
 			u.SetOutcome(automationsteprecord.OutcomeSkipped).SetSkipReason(how.skipped)
+		case how.response != nil:
+			r := how.response
+			u.SetNillableHTTPDropped(r.dropped).SetNillableHTTPStatus(r.status)
+			if r.body != nil {
+				u.SetHTTPBody(r.body)
+			}
 		case how.path != nil:
 			u.SetOutcome(automationsteprecord.OutcomePath).SetPathID(how.path.id)
 			if how.path.outcomes != nil {
@@ -272,10 +289,18 @@ func leave(ctx context.Context, s *ent.Scoped, runID int64, stepID automationste
 }
 
 // clearKept clears the copies of the Events the Enrollment runID's Wait for event Steps arrived on
-// (ADR 0136), in the move that ends it: nothing reads them after, and an Enrollment's records are
-// kept for its reports. The rest of each record stays.
+// (ADR 0136) and the responses its HTTP steps kept (ADR 0161), in the move that ends it: nothing
+// reads them after, and an Enrollment's records are kept for its reports. The rest of each record
+// stays, why an HTTP step dropped a body included.
 func clearKept(ctx context.Context, s *ent.Scoped, runID int64) error {
-	return clearKeptWhere(ctx, s, automationsteprecord.RunID(runID), automationsteprecord.AwaitedEventIDNotNil())
+	if err := clearKeptWhere(ctx, s, automationsteprecord.RunID(runID), automationsteprecord.AwaitedEventIDNotNil()); err != nil {
+		return err
+	}
+	return s.AutomationStepRecord().Update().
+		Where(automationsteprecord.RunID(runID), automationsteprecord.HTTPStatusNotNil()).
+		ClearHTTPStatus().
+		ClearHTTPBody().
+		Exec(ctx)
 }
 
 // clearKeptWhere clears the copy of an awaited Event that each Step record where selects keeps,

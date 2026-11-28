@@ -1,15 +1,20 @@
 package automations
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
+	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/httpcall"
+	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/narrow"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
@@ -41,13 +46,13 @@ type DryRunResult struct {
 }
 
 // renderBody renders an HTTP step's Liquid body for a Contact (nil: no Contact bindings) and an
-// Enrollment run (nil: an empty `event`) that keeps the Events awaited (ADR 0136), and checks the
-// result is valid JSON within the size limit. It binds the Contact's fields, `event`, the copy of
-// the Event the Enrollment began on (#752), as a Rule's http Action binds the Event it fired on, and
-// `awaited`, as a send step does. Every value the body writes is JSON-escaped as it is written, so a
-// value holding quotes cannot change the structure.
-func renderBody(body string, c *ent.Contact, run *ent.AutomationRun, awaited map[string]outboundmessages.AwaitedEvent) (string, error) {
-	return httpcall.RenderBody(body, outboundmessages.Bindings(c, outboundmessages.EnrollmentVariables(run, awaited)))
+// Enrollment run (nil: an empty `event`) that keeps what its earlier Steps received (ADR 0136, ADR
+// 0161), and checks the result is valid JSON within the size limit. It binds the Contact's fields,
+// `event`, the copy of the Event the Enrollment began on (#752), as a Rule's http Action binds the
+// Event it fired on, and `awaited` and `http`, as a send step does. Every value the body writes is
+// JSON-escaped as it is written, so a value holding quotes cannot change the structure.
+func renderBody(body string, c *ent.Contact, run *ent.AutomationRun, kept outboundmessages.Kept) (string, error) {
+	return httpcall.RenderBody(body, outboundmessages.Bindings(c, outboundmessages.EnrollmentVariables(run, kept)))
 }
 
 func bodyDetail(err error) string {
@@ -55,7 +60,7 @@ func bodyDetail(err error) string {
 }
 
 // DryRun renders a body for a Contact of the Workspace and validates it without
-// calling anything. No Enrollment stands behind it, so its `event` and `awaited` are empty.
+// calling anything. No Enrollment stands behind it, so its `event`, `awaited` and `http` are empty.
 func (m *Module) DryRun(ctx context.Context, s *ent.Scoped, contactID int64, body string) (DryRunResult, error) {
 	c, err := s.Contact().Get(ctx, contactID)
 	if ent.IsNotFound(err) {
@@ -64,7 +69,7 @@ func (m *Module) DryRun(ctx context.Context, s *ent.Scoped, contactID int64, bod
 	if err != nil {
 		return DryRunResult{}, err
 	}
-	out, err := renderBody(body, c, nil, nil)
+	out, err := renderBody(body, c, nil, outboundmessages.Kept{})
 	if err != nil {
 		return DryRunResult{ErrorKind: ErrorKindInvalidBody, Detail: bodyDetail(err)}, nil
 	}
@@ -115,5 +120,50 @@ func (m *Module) sealHTTP(s, prev automationstep.HTTP) (automationstep.HTTP, err
 	if err != nil {
 		return automationstep.HTTP{}, err
 	}
-	return automationstep.HTTP{URL: sealed.URL, Headers: sealed.Headers, Body: sealed.Body, Secret: sealed.Secret}, err
+	return automationstep.HTTP{Name: s.Name, URL: sealed.URL, Headers: sealed.Headers, Body: sealed.Body, Secret: sealed.Secret}, err
+}
+
+// keptAnswer is what an HTTP step keeps of the 2xx answer a (ADR 0161): its status and, when the
+// body is a JSON object it can keep, the body, else why it dropped it.
+func keptAnswer(a webhook.Answer) *responseKept {
+	status := narrow.Int32(a.Status)
+	kept := &responseKept{status: &status}
+	body, dropped := keptBody(a)
+	if dropped != "" {
+		kept.dropped = &dropped
+		return kept
+	}
+	kept.body = body
+	return kept
+}
+
+// keptBody is the body of the answer a as the JSON object an HTTP step keeps, or why it keeps none:
+// one cut by the read limit, or weighing more than an Event's properties may
+// (events.BoundedProperties), is too large; one that is no JSON document, or holds a NUL character
+// PostgreSQL cannot store, is not JSON; and a JSON document other than an object is no object.
+func keptBody(a webhook.Answer) (map[string]any, automationstep.BodyDropped) {
+	if a.Cut {
+		return nil, automationstep.BodyTooLarge
+	}
+	var doc any
+	if err := json.Unmarshal(a.Body, &doc); err != nil {
+		return nil, automationstep.BodyNotJSON
+	}
+	body, ok := doc.(map[string]any)
+	if !ok {
+		return nil, automationstep.BodyNotObject
+	}
+	bounded := events.BoundedProperties(body)
+	if len(body) > 0 && bounded == nil {
+		return nil, automationstep.BodyTooLarge
+	}
+	encoded, err := json.Marshal(body)
+	if err != nil {
+		return nil, automationstep.BodyNotJSON
+	}
+	holdsNUL := bytes.Contains(encoded, []byte(`\u0000`))
+	if holdsNUL {
+		return nil, automationstep.BodyNotJSON
+	}
+	return body, ""
 }

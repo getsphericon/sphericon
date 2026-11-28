@@ -49,7 +49,7 @@ func TestAStoredPathRoundTripsWithItsIDsAndKinds(t *testing.T) {
 		`{"id":"5b0c6a52-4f0e-4f65-9a70-0d4a1c0e1a02","type":"email","subject":"Hi","body":"<p>Hi</p>","integrationId":7},` +
 		`{"id":"5b0c6a52-4f0e-4f65-9a70-0d4a1c0e1a03","type":"wait","seconds":60},` +
 		`{"id":"5b0c6a52-4f0e-4f65-9a70-0d4a1c0e1a04","type":"apply_tag","tag":"vip"},` +
-		`{"id":"5b0c6a52-4f0e-4f65-9a70-0d4a1c0e1a05","type":"http","url":"sealed","body":"{}"}]}`
+		`{"id":"5b0c6a52-4f0e-4f65-9a70-0d4a1c0e1a05","type":"http","name":"notify","url":"sealed","body":"{}"}]}`
 	var p automationstep.Path
 	require.NoError(t, json.Unmarshal([]byte(stored), &p))
 

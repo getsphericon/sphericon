@@ -66,7 +66,11 @@ function newEditedStep(kind: EditedKind): EditedStep {
     case 'sms':
       return { id, kind, draft: { integrationId: '', text: '', linkTracking: true } }
     case 'http':
-      return { id, kind, draft: { stored: false, url: '', headers: [], body: '{}', secret: '' } }
+      return {
+        id,
+        kind,
+        draft: { stored: false, name: '', url: '', headers: [], body: '{}', secret: '' },
+      }
     case 'wait':
       return { id, kind, draft: { seconds: NEW_WAIT_SECONDS } }
     // A new Wait until waits on a time of day, which it asks for.
@@ -195,7 +199,7 @@ export function nestedSteps(step: FlowStep): number {
 function copyOf(step: FlowStep): FlowStep {
   const id = newId()
   if (step.kind === 'http') {
-    return { ...step, id, draft: { ...structuredClone(step.draft), stored: false } }
+    return { ...step, id, draft: { ...structuredClone(step.draft), stored: false, name: '' } }
   }
   if (step.kind === 'wait_for_event') {
     return {

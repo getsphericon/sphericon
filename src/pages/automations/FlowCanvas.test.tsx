@@ -180,6 +180,10 @@ test('an HTTP step and an email step inserted on the canvas are edited in their 
 
   await screen.getByRole('button', { name: 'Add a step here' }).click()
   await screen.getByRole('menuitem', { name: 'Call a URL' }).click()
+  await screen
+    .getByRole('region', { name: 'Call a URL' })
+    .getByRole('textbox', { name: 'Name' })
+    .fill('coupon')
   await screen.getByRole('textbox', { name: 'URL' }).fill('https://hooks.example.com/x')
   await screen.getByRole('button', { name: 'Add a step here' }).last().click()
   await screen.getByRole('menuitem', { name: 'Send email' }).click()
@@ -191,6 +195,7 @@ test('an HTTP step and an email step inserted on the canvas are edited in their 
       {
         id: expect.stringMatching(UUID),
         type: 'http',
+        name: 'coupon',
         body: '{}',
         headers: [],
         url: 'https://hooks.example.com/x',

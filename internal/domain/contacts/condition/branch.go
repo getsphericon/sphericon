@@ -34,7 +34,9 @@ func (m *Module) CheckBranch(ctx context.Context, s *ent.Scoped, g conditiontree
 // OutcomesInput is what Outcomes reads: the Contact, the Conditions in order, the properties of
 // the Event the Enrollment began with (nil for none), which each test of the triggering Event
 // reads, the properties of the Events its Wait for event Steps arrived on by each Step's name,
-// which each test of the awaited Event reads (a name absent from it has no copy, ADR 0136), and the
+// which each test of the awaited Event reads (a name absent from it has no copy, ADR 0136), the
+// bodies its HTTP steps kept by each Step's name, which each test of an HTTP step's response reads
+// (a name absent from it kept no body, ADR 0161), and the
 // messages the Enrollment was sent by the send Step that sent each, which each test of its own
 // message reads (a Step absent from it sent none).
 type OutcomesInput struct {
@@ -42,6 +44,7 @@ type OutcomesInput struct {
 	Conditions []conditiontree.Branch
 	Properties map[string]any
 	Awaited    map[string]map[string]any
+	HTTP       map[string]map[string]any
 	Messages   map[automationstep.ID]SentMessage
 }
 
@@ -62,8 +65,8 @@ func (m *Module) Outcomes(ctx context.Context, s *ent.Scoped, in OutcomesInput) 
 		return nil, fmt.Errorf("encode the Enrollment's Event properties: %w", err)
 	}
 	now := m.now()
-	read := &compiler{s: s, now: now, trigger: trigger, awaited: in.Awaited, messages: in.Messages}
-	counted := &compiler{s: s, now: now, trigger: trigger, awaited: in.Awaited, messages: in.Messages, counted: true}
+	read := &compiler{s: s, now: now, trigger: trigger, awaited: in.Awaited, http: in.HTTP, messages: in.Messages}
+	counted := &compiler{s: s, now: now, trigger: trigger, awaited: in.Awaited, http: in.HTTP, messages: in.Messages, counted: true}
 	type judged struct{ held, asCounted predicate.Contact }
 	preds := make([]judged, len(conds))
 	for i, g := range conds {

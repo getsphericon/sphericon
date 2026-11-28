@@ -79,9 +79,11 @@ export interface StepDrafts {
   }
   sms: { integrationId: string; text: string; linkTracking: boolean }
   // The server never returns an HTTP step's URL, header values or signing secret: a `stored` step
-  // holds them blank, and a blank one keeps what is stored under the Step's id.
+  // holds them blank, and a blank one keeps what is stored under the Step's id. Its name, which
+  // later Steps read its response by, is fixed once the Step is saved (ADR 0161).
   http: {
     stored: boolean
+    name: string
     url: string
     headers: AutomationHttpHeader[]
     body: string
@@ -272,6 +274,7 @@ function flowStepOf(step: AutomationStep): FlowStep {
         kind: 'http',
         draft: {
           stored: true,
+          name: step.name,
           url: '',
           headers: step.headers.map(({ name }) => ({ name })),
           body: step.body,
@@ -504,15 +507,17 @@ function before(path: FlowPath, id: string, passed: FlowStep[]): FlowStep[] | un
   return undefined
 }
 
-// storedNames are the names of the Wait for event Steps the versions hold, at any depth, by Step id:
-// a name stored under its Step's id is fixed (ADR 0136).
+// storedNames are the names of the Wait for event Steps and the HTTP steps the versions hold, at
+// any depth, by Step id: a name stored under its Step's id is fixed (ADR 0136, ADR 0161).
 export function storedNames(versions: (AutomationVersion | null)[]): Map<string, string> {
   return new Map(
     versions.flatMap((version) =>
       version === null
         ? []
         : allSteps(flowPathOf(version.steps)).flatMap((step) =>
-            step.kind === 'wait_for_event' ? [[step.id, step.draft.name] as const] : [],
+            step.kind === 'wait_for_event' || step.kind === 'http'
+              ? [[step.id, step.draft.name] as const]
+              : [],
           ),
     ),
   )
@@ -694,6 +699,7 @@ function stepInputOf(step: EditedStep): AutomationStepInput | null {
       return {
         id,
         type: 'http',
+        name: step.draft.name,
         body: step.draft.body,
         headers: stepHeaders(step.draft.headers),
         ...(url === '' ? {} : { url }),

@@ -210,7 +210,9 @@ test('Save leaves a canvas edited meanwhile as edited, each node keeping its Ste
     ...DRAFT,
     steps: {
       id: stepId(1),
-      steps: [{ id: stepId(7), type: 'http', body: '{}', headers: [], hasSecret: false }],
+      steps: [
+        { id: stepId(7), type: 'http', name: 'notify', body: '{}', headers: [], hasSecret: false },
+      ],
     },
   })
   const canvas = startCanvas(flow)

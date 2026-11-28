@@ -88,6 +88,7 @@ test('shows the automation and the contacts enrolled in it', async () => {
             status: 'completed',
             ordinal: 1,
             awaited: [],
+            http: [],
             ...TIMESTAMPS,
           },
           {
@@ -97,6 +98,7 @@ test('shows the automation and the contacts enrolled in it', async () => {
             status: 'active',
             ordinal: 1,
             awaited: [],
+            http: [],
             currentStepId: stepId(2),
             resumeAt: WAIT_DUE,
             ...TIMESTAMPS,
@@ -418,7 +420,16 @@ test('shows what the live version does, its exit and goal events included, not t
           goalEvent: null,
           steps: {
             id: stepId(1),
-            steps: [{ id: stepId(11), type: 'http', body: '{}', headers: [], hasSecret: false }],
+            steps: [
+              {
+                id: stepId(11),
+                type: 'http',
+                name: 'notify',
+                body: '{}',
+                headers: [],
+                hasSecret: false,
+              },
+            ],
           },
         },
       },
