@@ -9,7 +9,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/api/site/resources"
 	"github.com/getsphericon/sphericon/internal/kernel/paths"
 	"github.com/getsphericon/sphericon/internal/kernel/publicid"
-	"github.com/getsphericon/sphericon/internal/kernel/seqreader"
 )
 
 // SiteContactImportsUpload keeps an uploaded CSV file of Contacts as a new import (ADR 0138), the
@@ -82,7 +81,7 @@ func (h *Handlers) SiteContactImportsReportLink(ctx context.Context, params site
 }
 
 // SiteContactImportsReport streams an import's refused rows' report, once, to the session its
-// link was issued in.
+// link was issued in; the report is deleted once it was delivered whole.
 func (h *Handlers) SiteContactImportsReport(ctx context.Context, params siteapi.SiteContactImportsReportParams) (*siteapi.SiteContactImportsReportOKHeaders, error) {
 	in := inputs.ContactImportReport(params)
 	in.Session = auth.GetSiteAuth(ctx).Token
@@ -92,7 +91,7 @@ func (h *Handlers) SiteContactImportsReport(ctx context.Context, params siteapi.
 	}
 	return &siteapi.SiteContactImportsReportOKHeaders{
 		ContentDisposition: `attachment; filename="` + d.Filename + `"`,
-		Response:           siteapi.SiteContactImportsReportOK{Data: seqreader.New(d.Chunks)},
+		Response:           siteapi.SiteContactImportsReportOK{Data: delivered(ctx, d.Chunks, d.Delivered)},
 	}, nil
 }
 
