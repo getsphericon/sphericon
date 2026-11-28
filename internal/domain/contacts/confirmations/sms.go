@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/consentstamps"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/bounds"
@@ -279,10 +280,20 @@ func (m *Module) ReadContactSMS(ctx context.Context, s *ent.Scoped, contactID in
 	if err != nil {
 		return ContactSMS{}, err
 	}
-	if stop != nil {
-		// Every SMS opt-out is recorded with its way (unsubscribes' AddSMS).
-		out.OptOut = &SMSOptOut{Via: lo.FromPtr(stop.Via), OptedOutAt: stop.CreatedAt}
+	if stop == nil {
+		return out, nil
 	}
+	// Every SMS opt-out is recorded with its way (unsubscribes' AddSMS), and when it occurred by
+	// its stamp (ADR 0154): an imported one at the time the import states, not when it was written.
+	stamped, err := m.stamps.Stamped(ctx, s, consentstamps.Key{Channel: channels.SMS, Destination: *c.Phone, Source: eligibility.SourceEverything}, consentstamps.OptOut)
+	if err != nil {
+		return ContactSMS{}, err
+	}
+	at := stop.CreatedAt
+	if stamped != nil {
+		at = stamped.At
+	}
+	out.OptOut = &SMSOptOut{Via: lo.FromPtr(stop.Via), OptedOutAt: at}
 	return out, nil
 }
 

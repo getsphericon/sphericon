@@ -92,6 +92,7 @@ func TestAnImportedOptOutIsRecordedViaImportedAtItsTime(t *testing.T) {
 	assert.True(t, left.Equal(imported.ObservedAt), "the time the import states")
 	require.NotNil(t, sms.OptOut)
 	assert.Equal(t, unsubscribe.ViaImported, sms.OptOut.Via)
+	assert.True(t, left.Equal(sms.OptOut.OptedOutAt), "the Contact's SMS consent shows the time the import states")
 }
 
 // The Channel states read an imported Confirmation and an imported opt-out at the times the import
