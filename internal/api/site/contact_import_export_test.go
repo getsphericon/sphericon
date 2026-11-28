@@ -116,7 +116,7 @@ func scopes(st eligibility.ChannelState) []string {
 // A Workspace's export imports into another Workspace as it is (ADR 0138): the mapping the app
 // proposes from the export's headers saves and runs unchanged, and brings the Contacts with their
 // keys, attributes, Tags and Custom fields (created in their types), the opt-outs of everything and
-// of broadcasts (off email, where a person stops everything, as one of everything), each
+// of broadcasts (on SMS, where a person stops everything, as one of everything), each
 // Suppression as a manual one and each Confirmation as an imported one; an opt-out of a single
 // Automation comes back as nothing.
 func TestAnExportImportsIntoAnotherWorkspaceAsItIs(t *testing.T) {
@@ -152,7 +152,7 @@ func TestAnExportImportsIntoAnotherWorkspaceAsItIs(t *testing.T) {
 	require.NotNil(t, states["liam.python@codebasics.dev"].Email.Confirmation)
 	assert.Equal(t, confirmation.ProvenanceImported, states["liam.python@codebasics.dev"].Email.Confirmation.Provenance)
 	assert.Equal(t, []string{eligibility.SourceEverything}, scopes(states["+13125557505"].SMS))
-	assert.Equal(t, []string{eligibility.SourceEverything}, scopes(states["+13125557504"].SMS), "off email an opt-out of broadcasts comes back as one of everything")
+	assert.Equal(t, []string{eligibility.SourceEverything}, scopes(states["+13125557504"].SMS), "on SMS an opt-out of broadcasts comes back as one of everything")
 }
 
 // proposedKinds are the kinds of the columns an upload's proposal maps, by the file's header.
