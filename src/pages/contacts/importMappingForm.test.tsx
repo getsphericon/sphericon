@@ -213,3 +213,16 @@ test('a save, a run or a preview refused as a whole is an alert', async () => {
   await expect.element(screen.getByText('Could not run the import')).toBeVisible()
   await expect.element(screen.getByText('Another import of the workspace runs.')).toBeVisible()
 })
+
+// A refusal of a choice for every row (the Tag) shows under that choice.
+test('a save refused for the Tag shows the refusal under it', async () => {
+  const sent: ContactImportMappingInput[] = []
+  const { screen } = await renderMapping(sent, { tag: ['The tag is too long.'] })
+  await screen.getByRole('combobox', { name: 'Date format of born' }).click()
+  await screen.getByRole('option', { name: 'dd/mm/yyyy' }).click()
+
+  await screen.getByRole('button', { name: 'Save and preview' }).click()
+
+  await expect.element(screen.getByText('The tag is too long.')).toBeVisible()
+  await expect.element(screen.getByText('Could not save the mapping')).not.toBeInTheDocument()
+})
