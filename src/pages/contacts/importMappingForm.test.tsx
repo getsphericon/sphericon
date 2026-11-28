@@ -158,6 +158,12 @@ test('a save refused for a column shows the refusal under the column', async () 
 
   await expect.element(screen.getByText('Two columns write the same value.')).toBeVisible()
   await expect.element(screen.getByText('Could not save the mapping')).not.toBeInTheDocument()
+  await screen.getByRole('combobox', { name: 'What status imports as' }).click()
+  await screen.getByRole('option', { name: 'Tags' }).click()
+
+  await expect
+    .element(screen.getByText('Two columns write the same value.'))
+    .not.toBeInTheDocument()
 })
 
 // A refusal column on Telegram turned into a consent column is never saved as one of email: the

@@ -114,4 +114,11 @@ test('offers no suppression to a Member who cannot manage suppressions', async (
   await expect
     .element(screen.getByRole('option', { name: 'A suppression (bounced, complained)' }))
     .toBeDisabled()
+  await expect
+    .element(
+      screen.getByText(
+        'Recording a suppression needs a role that manages suppressions: a column of them is left out.',
+      ),
+    )
+    .toBeVisible()
 })

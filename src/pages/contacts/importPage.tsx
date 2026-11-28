@@ -301,15 +301,18 @@ function MappingForm({ workspaceId, imp }: { workspaceId: string; imp: SiteConta
                               ? (choice.fact ?? emptyFact())
                               : undefined,
                           })
+                          // A refusal of the column was about what it imported before.
+                          form.clearFieldError(`columns.${at}.target`)
                         }}
                       />
                       {choice.target === newCustomField ? (
                         <NewFieldInputs
                           column={header}
                           field={choice.newField ?? newFieldFor(header)}
-                          onChange={(newField) =>
+                          onChange={(newField) => {
                             form.setFieldValue(`columns.${at}.newField`, newField)
-                          }
+                            form.clearFieldError(`columns.${at}.target`)
+                          }}
                         />
                       ) : null}
                     </Table.Td>
@@ -339,7 +342,10 @@ function MappingForm({ workspaceId, imp }: { workspaceId: string; imp: SiteConta
                           header={imp.header}
                           targets={values.columns.map((c) => c.target)}
                           canSuppress={can(workspace, 'suppressions:manage')}
-                          onChange={(next) => form.setFieldValue(`columns.${at}.fact`, next)}
+                          onChange={(next) => {
+                            form.setFieldValue(`columns.${at}.fact`, next)
+                            form.clearFieldError(`columns.${at}.target`)
+                          }}
                         />
                       </Table.Td>
                     </Table.Tr>
@@ -392,6 +398,10 @@ function MappingForm({ workspaceId, imp }: { workspaceId: string; imp: SiteConta
 
         {canCreateFields ? null : (
           <Text c="dimmed">{t(($) => $.contactImports.newCustomFieldNeedsPermission)}</Text>
+        )}
+        {/* The proposal leaves a column of Suppressions out for a Role that may not record them. */}
+        {can(workspace, 'suppressions:manage') ? null : (
+          <Text c="dimmed">{t(($) => $.contactImports.facts.suppressionNeedsPermission)}</Text>
         )}
         {saveError === null ? null : (
           <ApiErrorAlert error={saveError} title={t(($) => $.contactImports.saveError)} />

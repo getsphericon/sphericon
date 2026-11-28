@@ -1366,6 +1366,7 @@ export default interface Resources {
         },
         "removeValue": "Remove the value",
         "source": "Source",
+        "suppressionNeedsPermission": "Recording a suppression needs a role that manages suppressions: a column of them is left out.",
         "timeOf": "Times the column",
         "timeOfColumn": "The column {{column}} times",
         "timeOfHint": "A time that is blank, unreadable or in the future is dropped and reported, and the fact recorded as of now.",
