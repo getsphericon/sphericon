@@ -55,7 +55,7 @@ func importIntoGlobex(t *testing.T, env *testhelper.TestEnv, file string) *sitea
 }
 
 // globexStates are the Channel states of Globex's Contacts, by the Contact's email, else phone.
-func globexStates(t *testing.T, env *testhelper.TestEnv) (map[string]*ent.Contact, map[string]eligibility.ContactStates) {
+func globexStates(t *testing.T, env *testhelper.TestEnv) (byKey map[string]*ent.Contact, statesByKey map[string]eligibility.ContactStates) {
 	t.Helper()
 	globex := env.DB.Scoped(fixtures.GlobexID)
 	contacts, err := globex.Contact().Query().WithTags().All(t.Context())
@@ -63,8 +63,9 @@ func globexStates(t *testing.T, env *testhelper.TestEnv) (map[string]*ent.Contac
 	states, err := eligibility.New().ChannelStates(t.Context(), globex, contacts)
 	require.NoError(t, err)
 	key := func(c *ent.Contact) string { return lo.CoalesceOrEmpty(lo.FromPtr(c.Email), lo.FromPtr(c.Phone)) }
-	byKey := lo.SliceToMap(contacts, func(c *ent.Contact) (string, *ent.Contact) { return key(c), c })
-	return byKey, lo.SliceToMap(contacts, func(c *ent.Contact) (string, eligibility.ContactStates) { return key(c), states[c.ID] })
+	byKey = lo.SliceToMap(contacts, func(c *ent.Contact) (string, *ent.Contact) { return key(c), c })
+	statesByKey = lo.SliceToMap(contacts, func(c *ent.Contact) (string, eligibility.ContactStates) { return key(c), states[c.ID] })
+	return byKey, statesByKey
 }
 
 // scopes are the scopes a Channel state is opted out of.

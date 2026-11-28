@@ -124,7 +124,7 @@ func (e exported) column(header string, at int, cells []string) (csvimport.Colum
 			// The provenance is how the consent was collected, the closest an export holds to where.
 			Evidence: &csvimport.Evidence{
 				Wording: csvimport.EvidencePart{Text: exportedConsentWording},
-				Source:  csvimport.EvidencePart{Column: lo.ToPtr(at)},
+				Source:  csvimport.EvidencePart{Column: new(at)},
 				Brand:   csvimport.EvidencePart{Text: e.brand},
 			},
 		}}, true
@@ -196,6 +196,6 @@ func times(columns []csvimport.Column, header []string) {
 			*col = csvimport.Column{Kind: csvimport.KindIgnore}
 			continue
 		}
-		col.Fact.Of = lo.ToPtr(of)
+		col.Fact.Of = new(of)
 	}
 }
