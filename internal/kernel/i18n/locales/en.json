@@ -153,6 +153,8 @@
   "errors.contact_import_evidence_part": "give the wording, source and brand once, or name the column that holds each",
   "errors.contact_import_time_of": "a time column times one refusal, consent or tracking column, and no other time column times it",
   "errors.contact_import_report_pending": "the import has not ended; its report is ready when it does",
+  "errors.contact_import_running": "another import of this workspace is running; run this one when it ends",
+  "errors.contact_import_not_running": "the import is not running, or it is already stopping",
   "errors.contact_import_no_report": "the import has no report to download: nothing was refused or dropped, or it was downloaded or expired",
   "contact_import.reason.no_key": "the row names no subject ID, email or phone",
   "contact_import.reason.cell_count": "the row has another number of cells than the header",

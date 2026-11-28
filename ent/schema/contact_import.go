@@ -24,6 +24,7 @@ type ContactImport struct {
 func (ContactImport) Annotations() []schema.Annotation {
 	a := TableWithEnumChecks("contact_imports", ContactImport{}.Fields())
 	a.Checks["contact_imports_header_check"] = jsonCheck("header", "array")
+	a.Checks["contact_imports_recoveries_check"] = "recoveries >= 0"
 	a.Checks["contact_imports_counts_check"] = "row_count >= 0 AND malformed_rows >= 0 AND processed >= 0 AND created >= 0 AND updated >= 0 AND refused >= 0 AND dropped >= 0 AND opted_out >= 0 AND suppressed >= 0"
 	return []schema.Annotation{a}
 }
@@ -83,6 +84,16 @@ func (ContactImport) Fields() []ent.Field {
 			Default(0),
 		field.Int64("checkpoint_offset").
 			Default(0),
+		// The id above which a Contact of the source import was made by the batch after the
+		// checkpoint: the Workspace's newest Contact when the run began, raised to the newest
+		// Contact each batch wrote. A batch run again after a restart counts a Contact its first
+		// try made as created, as an uninterrupted run counts it.
+		field.Int64("checkpoint_contact_floor").
+			Default(0),
+		// How many times the periodic sweep queued the run again after its job was gone (a process
+		// killed on the job's last try); past contact imports' bound the run fails instead.
+		field.Int("recoveries").
+			Default(0),
 		// What the run has written so far: rows read, Contacts created and updated, rows refused,
 		// values dropped, opt-outs and Suppressions recorded.
 		field.Int("processed").
@@ -141,5 +152,10 @@ func (ContactImport) Indexes() []ent.Index {
 		index.Fields("workspace_id", "membership_id"),
 		// The imports of a Workspace in a state: the running one, the uploads to expire.
 		index.Fields("workspace_id", "state"),
+		// One import runs per Workspace at a time (ADR 0138).
+		index.Fields("workspace_id").
+			Unique().
+			StorageKey("contact_imports_one_running").
+			Annotations(entsql.IndexWhere("state = 'running'")),
 	}
 }

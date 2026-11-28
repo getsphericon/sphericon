@@ -186,7 +186,9 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 	river.AddWorker(workers, NewSendNoticeWorker(systemSender))
 	river.AddWorker(workers, NewRemindSecondFactorWorker(deps.SecondFactor))
 	river.AddWorker(workers, NewVerifySendingDomainWorker(entClient, deps.SendingDomains))
-	river.AddWorker(workers, NewRunContactImportWorker(entClient, deps.ContactImports))
+	river.AddWorker(workers, NewRunContactImportWorker(entClient, deps.ContactImports, now))
+	river.AddWorker(workers, NewSweepContactImportsWorker(deps.ContactImports, entClient))
+	river.AddWorker(workers, NewRecoverContactImportWorker(deps.ContactImports, entClient))
 	river.AddWorker(workers, NewRecheckSendingDomainsWorker(deps.SendingDomains))
 	river.AddWorker(workers, NewVerifyJoinDomainWorker(deps.JoinDomains))
 	river.AddWorker(workers, NewRecheckJoinDomainsWorker(deps.JoinDomains))
@@ -388,6 +390,9 @@ func periodicJobs(extra []*river.PeriodicJob) []*river.PeriodicJob {
 		dailyUTC(5, PrunePasskeyChallengesArgs{}),
 		// Delete the lapsed and used Start tokens (ADR 0076).
 		dailyUTC(4, PruneStartTokensArgs{}),
+		// Delete the CSV imports' abandoned uploads and expired reports, and queue again a run whose
+		// job is gone (ADR 0138).
+		every(time.Hour, SweepContactImportsArgs{}),
 		// Delete the expired pending sign-ups of the Sign-in providers hourly (ADR 0062).
 		every(pendingSignupsInterval, PrunePendingSignupsArgs{}),
 	}, extra...)

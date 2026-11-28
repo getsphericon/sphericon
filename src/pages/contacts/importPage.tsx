@@ -22,6 +22,7 @@ import { LeaveDialog } from '../../components/LeaveDialog.tsx'
 import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { PageSkeleton } from '../../components/Skeletons.tsx'
 import {
+  siteContactImportsCancelMutation,
   siteContactImportsGetOptions,
   siteContactImportsGetQueryKey,
   siteContactImportsPreviewOptions,
@@ -46,6 +47,8 @@ import {
   zContactImportDecimalSeparator,
   zCustomFieldType,
 } from '../../generated/site/zod.gen.ts'
+import { useConfirmation } from '../../hooks/useConfirmation.tsx'
+import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as importPageRoute } from '../../routes/workspaces/$workspaceId/contacts/imports/$importId.tsx'
 import { countryOptions } from '../../utils/countries.ts'
 import { can } from '../../utils/permissions.ts'
@@ -552,13 +555,12 @@ function RunView({ workspaceId, imp }: { workspaceId: string; imp: SiteContactIm
   const counts = imp.counts
   return (
     <Stack>
-      {imp.state === 'running' ? (
-        <Stack gap={4}>
-          <Progress value={imp.rows === 0 ? 0 : (100 * counts.processed) / imp.rows} />
-          <Text size="sm" c="dimmed">
-            {t(($) => $.contactImports.progress, { processed: counts.processed, rows: imp.rows })}
-          </Text>
-        </Stack>
+      {imp.state === 'running' ? <RunProgress workspaceId={workspaceId} imp={imp} /> : null}
+      {imp.state === 'cancelled' ? (
+        <Alert color="yellow">{t(($) => $.contactImports.cancelled)}</Alert>
+      ) : null}
+      {imp.state === 'failed' ? (
+        <Alert color="red">{t(($) => $.contactImports.failed)}</Alert>
       ) : null}
       <Text>
         {t(($) => $.contactImports.counts, {
@@ -593,6 +595,48 @@ function RunView({ workspaceId, imp }: { workspaceId: string; imp: SiteContactIm
       {link.isError ? (
         <ApiErrorAlert error={link.error} title={t(($) => $.contactImports.reportError)} />
       ) : null}
+    </Stack>
+  )
+}
+
+// A running import's progress, kept by its job across restarts, and the Cancel that stops it after
+// the batch it is writing.
+function RunProgress({ workspaceId, imp }: { workspaceId: string; imp: SiteContactImport }) {
+  const { t } = useTranslation()
+  const confirm = useConfirmation()
+  const cancel = useResourceMutation({
+    mutation: siteContactImportsCancelMutation(),
+    errorTitle: t(($) => $.contactImports.cancelError),
+  })
+  const stopping = imp.cancelRequestedAt !== null
+  const counts = imp.counts
+  return (
+    <Stack gap={4}>
+      <Progress value={imp.rows === 0 ? 0 : (100 * counts.processed) / imp.rows} />
+      <Group justify="space-between">
+        <Text size="sm" c="dimmed">
+          {stopping
+            ? t(($) => $.contactImports.stopping)
+            : t(($) => $.contactImports.progress, { processed: counts.processed, rows: imp.rows })}
+        </Text>
+        <Button
+          variant="default"
+          color="red"
+          disabled={stopping}
+          loading={cancel.isPending}
+          onClick={() =>
+            confirm({
+              title: t(($) => $.contactImports.cancelTitle),
+              description: t(($) => $.contactImports.cancelDescription),
+              confirmLabel: t(($) => $.contactImports.cancelConfirm),
+              cancelLabel: t(($) => $.contactImports.cancelKeep),
+              onConfirm: () => cancel.mutate({ path: { workspaceId, importId: imp.id } }),
+            })
+          }
+        >
+          {t(($) => $.contactImports.cancel)}
+        </Button>
+      </Group>
     </Stack>
   )
 }

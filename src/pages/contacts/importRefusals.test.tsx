@@ -48,6 +48,7 @@ const UPLOADED: SiteContactImport = {
   createdAt: TIMESTAMPS.createdAt,
   startedAt: null,
   endedAt: null,
+  cancelRequestedAt: null,
 }
 
 // The import's page for a Member holding permissions, its Workspace with no Custom field.

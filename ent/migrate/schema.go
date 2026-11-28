@@ -1262,6 +1262,8 @@ var (
 		{Name: "checkpoint_row", Type: field.TypeInt, Default: 0},
 		{Name: "checkpoint_chunk", Type: field.TypeInt, Default: 0},
 		{Name: "checkpoint_offset", Type: field.TypeInt64, Default: 0},
+		{Name: "checkpoint_contact_floor", Type: field.TypeInt64, Default: 0},
+		{Name: "recoveries", Type: field.TypeInt, Default: 0},
 		{Name: "processed", Type: field.TypeInt, Default: 0},
 		{Name: "created", Type: field.TypeInt, Default: 0},
 		{Name: "updated", Type: field.TypeInt, Default: 0},
@@ -1284,13 +1286,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "contact_imports_memberships_contact_imports",
-				Columns:    []*schema.Column{ContactImportsColumns[26]},
+				Columns:    []*schema.Column{ContactImportsColumns[28]},
 				RefColumns: []*schema.Column{MembershipsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "contact_imports_workspaces_contact_imports",
-				Columns:    []*schema.Column{ContactImportsColumns[27]},
+				Columns:    []*schema.Column{ContactImportsColumns[29]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1299,12 +1301,20 @@ var (
 			{
 				Name:    "contactimport_workspace_id_membership_id",
 				Unique:  false,
-				Columns: []*schema.Column{ContactImportsColumns[27], ContactImportsColumns[26]},
+				Columns: []*schema.Column{ContactImportsColumns[29], ContactImportsColumns[28]},
 			},
 			{
 				Name:    "contactimport_workspace_id_state",
 				Unique:  false,
-				Columns: []*schema.Column{ContactImportsColumns[27], ContactImportsColumns[3]},
+				Columns: []*schema.Column{ContactImportsColumns[29], ContactImportsColumns[3]},
+			},
+			{
+				Name:    "contact_imports_one_running",
+				Unique:  true,
+				Columns: []*schema.Column{ContactImportsColumns[29]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "state = 'running'",
+				},
 			},
 		},
 	}
@@ -4357,10 +4367,11 @@ func init() {
 		Table: "contact_imports",
 	}
 	ContactImportsTable.Annotation.Checks = map[string]string{
-		"contact_imports_counts_check":    "row_count >= 0 AND malformed_rows >= 0 AND processed >= 0 AND created >= 0 AND updated >= 0 AND refused >= 0 AND dropped >= 0 AND opted_out >= 0 AND suppressed >= 0",
-		"contact_imports_delimiter_check": "delimiter IN ('comma', 'semicolon', 'tab')",
-		"contact_imports_header_check":    "jsonb_typeof(header) = 'array'",
-		"contact_imports_state_check":     "state IN ('uploaded', 'ready', 'running', 'cancelled', 'failed', 'done')",
+		"contact_imports_counts_check":     "row_count >= 0 AND malformed_rows >= 0 AND processed >= 0 AND created >= 0 AND updated >= 0 AND refused >= 0 AND dropped >= 0 AND opted_out >= 0 AND suppressed >= 0",
+		"contact_imports_delimiter_check":  "delimiter IN ('comma', 'semicolon', 'tab')",
+		"contact_imports_header_check":     "jsonb_typeof(header) = 'array'",
+		"contact_imports_recoveries_check": "recoveries >= 0",
+		"contact_imports_state_check":      "state IN ('uploaded', 'ready', 'running', 'cancelled', 'failed', 'done')",
 	}
 	ContactImportChunksTable.ForeignKeys[0].RefTable = ContactImportsTable
 	ContactImportChunksTable.ForeignKeys[1].RefTable = WorkspacesTable

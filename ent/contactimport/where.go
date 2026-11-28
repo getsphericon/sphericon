@@ -115,6 +115,16 @@ func CheckpointOffset(v int64) predicate.ContactImport {
 	return predicate.ContactImport(sql.FieldEQ(FieldCheckpointOffset, v))
 }
 
+// CheckpointContactFloor applies equality check predicate on the "checkpoint_contact_floor" field. It's identical to CheckpointContactFloorEQ.
+func CheckpointContactFloor(v int64) predicate.ContactImport {
+	return predicate.ContactImport(sql.FieldEQ(FieldCheckpointContactFloor, v))
+}
+
+// Recoveries applies equality check predicate on the "recoveries" field. It's identical to RecoveriesEQ.
+func Recoveries(v int) predicate.ContactImport {
+	return predicate.ContactImport(sql.FieldEQ(FieldRecoveries, v))
+}
+
 // Processed applies equality check predicate on the "processed" field. It's identical to ProcessedEQ.
 func Processed(v int) predicate.ContactImport {
 	return predicate.ContactImport(sql.FieldEQ(FieldProcessed, v))
@@ -608,6 +618,86 @@ func CheckpointOffsetLT(v int64) predicate.ContactImport {
 // CheckpointOffsetLTE applies the LTE predicate on the "checkpoint_offset" field.
 func CheckpointOffsetLTE(v int64) predicate.ContactImport {
 	return predicate.ContactImport(sql.FieldLTE(FieldCheckpointOffset, v))
+}
+
+// CheckpointContactFloorEQ applies the EQ predicate on the "checkpoint_contact_floor" field.
+func CheckpointContactFloorEQ(v int64) predicate.ContactImport {
+	return predicate.ContactImport(sql.FieldEQ(FieldCheckpointContactFloor, v))
+}
+
+// CheckpointContactFloorNEQ applies the NEQ predicate on the "checkpoint_contact_floor" field.
+func CheckpointContactFloorNEQ(v int64) predicate.ContactImport {
+	return predicate.ContactImport(sql.FieldNEQ(FieldCheckpointContactFloor, v))
+}
+
+// CheckpointContactFloorIn applies the In predicate on the "checkpoint_contact_floor" field.
+func CheckpointContactFloorIn(vs ...int64) predicate.ContactImport {
+	return predicate.ContactImport(sql.FieldIn(FieldCheckpointContactFloor, vs...))
+}
+
+// CheckpointContactFloorNotIn applies the NotIn predicate on the "checkpoint_contact_floor" field.
+func CheckpointContactFloorNotIn(vs ...int64) predicate.ContactImport {
+	return predicate.ContactImport(sql.FieldNotIn(FieldCheckpointContactFloor, vs...))
+}
+
+// CheckpointContactFloorGT applies the GT predicate on the "checkpoint_contact_floor" field.
+func CheckpointContactFloorGT(v int64) predicate.ContactImport {
+	return predicate.ContactImport(sql.FieldGT(FieldCheckpointContactFloor, v))
+}
+
+// CheckpointContactFloorGTE applies the GTE predicate on the "checkpoint_contact_floor" field.
+func CheckpointContactFloorGTE(v int64) predicate.ContactImport {
+	return predicate.ContactImport(sql.FieldGTE(FieldCheckpointContactFloor, v))
+}
+
+// CheckpointContactFloorLT applies the LT predicate on the "checkpoint_contact_floor" field.
+func CheckpointContactFloorLT(v int64) predicate.ContactImport {
+	return predicate.ContactImport(sql.FieldLT(FieldCheckpointContactFloor, v))
+}
+
+// CheckpointContactFloorLTE applies the LTE predicate on the "checkpoint_contact_floor" field.
+func CheckpointContactFloorLTE(v int64) predicate.ContactImport {
+	return predicate.ContactImport(sql.FieldLTE(FieldCheckpointContactFloor, v))
+}
+
+// RecoveriesEQ applies the EQ predicate on the "recoveries" field.
+func RecoveriesEQ(v int) predicate.ContactImport {
+	return predicate.ContactImport(sql.FieldEQ(FieldRecoveries, v))
+}
+
+// RecoveriesNEQ applies the NEQ predicate on the "recoveries" field.
+func RecoveriesNEQ(v int) predicate.ContactImport {
+	return predicate.ContactImport(sql.FieldNEQ(FieldRecoveries, v))
+}
+
+// RecoveriesIn applies the In predicate on the "recoveries" field.
+func RecoveriesIn(vs ...int) predicate.ContactImport {
+	return predicate.ContactImport(sql.FieldIn(FieldRecoveries, vs...))
+}
+
+// RecoveriesNotIn applies the NotIn predicate on the "recoveries" field.
+func RecoveriesNotIn(vs ...int) predicate.ContactImport {
+	return predicate.ContactImport(sql.FieldNotIn(FieldRecoveries, vs...))
+}
+
+// RecoveriesGT applies the GT predicate on the "recoveries" field.
+func RecoveriesGT(v int) predicate.ContactImport {
+	return predicate.ContactImport(sql.FieldGT(FieldRecoveries, v))
+}
+
+// RecoveriesGTE applies the GTE predicate on the "recoveries" field.
+func RecoveriesGTE(v int) predicate.ContactImport {
+	return predicate.ContactImport(sql.FieldGTE(FieldRecoveries, v))
+}
+
+// RecoveriesLT applies the LT predicate on the "recoveries" field.
+func RecoveriesLT(v int) predicate.ContactImport {
+	return predicate.ContactImport(sql.FieldLT(FieldRecoveries, v))
+}
+
+// RecoveriesLTE applies the LTE predicate on the "recoveries" field.
+func RecoveriesLTE(v int) predicate.ContactImport {
+	return predicate.ContactImport(sql.FieldLTE(FieldRecoveries, v))
 }
 
 // ProcessedEQ applies the EQ predicate on the "processed" field.

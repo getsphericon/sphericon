@@ -29976,62 +29976,66 @@ func (m *ContactDateMutation) ResetEdge(name string) error {
 // ContactImportMutation represents an operation that mutates the ContactImport nodes in the graph.
 type ContactImportMutation struct {
 	config
-	op                   Op
-	typ                  string
-	id                   *int64
-	created_at           *time.Time
-	updated_at           *time.Time
-	state                *contactimport.State
-	delimiter            *contactimport.Delimiter
-	header               *[]string
-	appendheader         []string
-	size                 *int64
-	addsize              *int64
-	row_count            *int
-	addrow_count         *int
-	malformed_rows       *int
-	addmalformed_rows    *int
-	mapping              *csvimport.Mapping
-	only_add_new         *bool
-	as_new_sign_ups      *bool
-	checkpoint_row       *int
-	addcheckpoint_row    *int
-	checkpoint_chunk     *int
-	addcheckpoint_chunk  *int
-	checkpoint_offset    *int64
-	addcheckpoint_offset *int64
-	processed            *int
-	addprocessed         *int
-	created              *int
-	addcreated           *int
-	updated              *int
-	addupdated           *int
-	refused              *int
-	addrefused           *int
-	dropped              *int
-	adddropped           *int
-	opted_out            *int
-	addopted_out         *int
-	suppressed           *int
-	addsuppressed        *int
-	started_at           *time.Time
-	ended_at             *time.Time
-	cancel_requested_at  *time.Time
-	report_expires_at    *time.Time
-	clearedFields        map[string]struct{}
-	workspace            *int64
-	clearedworkspace     bool
-	membership           *int64
-	clearedmembership    bool
-	chunks               map[int64]struct{}
-	removedchunks        map[int64]struct{}
-	clearedchunks        bool
-	report_rows          map[int64]struct{}
-	removedreport_rows   map[int64]struct{}
-	clearedreport_rows   bool
-	done                 bool
-	oldValue             func(context.Context) (*ContactImport, error)
-	predicates           []predicate.ContactImport
+	op                          Op
+	typ                         string
+	id                          *int64
+	created_at                  *time.Time
+	updated_at                  *time.Time
+	state                       *contactimport.State
+	delimiter                   *contactimport.Delimiter
+	header                      *[]string
+	appendheader                []string
+	size                        *int64
+	addsize                     *int64
+	row_count                   *int
+	addrow_count                *int
+	malformed_rows              *int
+	addmalformed_rows           *int
+	mapping                     *csvimport.Mapping
+	only_add_new                *bool
+	as_new_sign_ups             *bool
+	checkpoint_row              *int
+	addcheckpoint_row           *int
+	checkpoint_chunk            *int
+	addcheckpoint_chunk         *int
+	checkpoint_offset           *int64
+	addcheckpoint_offset        *int64
+	checkpoint_contact_floor    *int64
+	addcheckpoint_contact_floor *int64
+	recoveries                  *int
+	addrecoveries               *int
+	processed                   *int
+	addprocessed                *int
+	created                     *int
+	addcreated                  *int
+	updated                     *int
+	addupdated                  *int
+	refused                     *int
+	addrefused                  *int
+	dropped                     *int
+	adddropped                  *int
+	opted_out                   *int
+	addopted_out                *int
+	suppressed                  *int
+	addsuppressed               *int
+	started_at                  *time.Time
+	ended_at                    *time.Time
+	cancel_requested_at         *time.Time
+	report_expires_at           *time.Time
+	clearedFields               map[string]struct{}
+	workspace                   *int64
+	clearedworkspace            bool
+	membership                  *int64
+	clearedmembership           bool
+	chunks                      map[int64]struct{}
+	removedchunks               map[int64]struct{}
+	clearedchunks               bool
+	report_rows                 map[int64]struct{}
+	removedreport_rows          map[int64]struct{}
+	clearedreport_rows          bool
+	done                        bool
+	oldValue                    func(context.Context) (*ContactImport, error)
+	predicates                  []predicate.ContactImport
 }
 
 var _ ent.Mutation = (*ContactImportMutation)(nil)
@@ -30875,6 +30879,118 @@ func (m *ContactImportMutation) ResetCheckpointOffset() {
 	m.addcheckpoint_offset = nil
 }
 
+// SetCheckpointContactFloor sets the "checkpoint_contact_floor" field.
+func (m *ContactImportMutation) SetCheckpointContactFloor(i int64) {
+	m.checkpoint_contact_floor = &i
+	m.addcheckpoint_contact_floor = nil
+}
+
+// CheckpointContactFloor returns the value of the "checkpoint_contact_floor" field in the mutation.
+func (m *ContactImportMutation) CheckpointContactFloor() (r int64, exists bool) {
+	v := m.checkpoint_contact_floor
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCheckpointContactFloor returns the old "checkpoint_contact_floor" field's value of the ContactImport entity.
+// If the ContactImport object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactImportMutation) OldCheckpointContactFloor(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCheckpointContactFloor is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCheckpointContactFloor requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCheckpointContactFloor: %w", err)
+	}
+	return oldValue.CheckpointContactFloor, nil
+}
+
+// AddCheckpointContactFloor adds i to the "checkpoint_contact_floor" field.
+func (m *ContactImportMutation) AddCheckpointContactFloor(i int64) {
+	if m.addcheckpoint_contact_floor != nil {
+		*m.addcheckpoint_contact_floor += i
+	} else {
+		m.addcheckpoint_contact_floor = &i
+	}
+}
+
+// AddedCheckpointContactFloor returns the value that was added to the "checkpoint_contact_floor" field in this mutation.
+func (m *ContactImportMutation) AddedCheckpointContactFloor() (r int64, exists bool) {
+	v := m.addcheckpoint_contact_floor
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetCheckpointContactFloor resets all changes to the "checkpoint_contact_floor" field.
+func (m *ContactImportMutation) ResetCheckpointContactFloor() {
+	m.checkpoint_contact_floor = nil
+	m.addcheckpoint_contact_floor = nil
+}
+
+// SetRecoveries sets the "recoveries" field.
+func (m *ContactImportMutation) SetRecoveries(i int) {
+	m.recoveries = &i
+	m.addrecoveries = nil
+}
+
+// Recoveries returns the value of the "recoveries" field in the mutation.
+func (m *ContactImportMutation) Recoveries() (r int, exists bool) {
+	v := m.recoveries
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRecoveries returns the old "recoveries" field's value of the ContactImport entity.
+// If the ContactImport object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactImportMutation) OldRecoveries(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRecoveries is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRecoveries requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRecoveries: %w", err)
+	}
+	return oldValue.Recoveries, nil
+}
+
+// AddRecoveries adds i to the "recoveries" field.
+func (m *ContactImportMutation) AddRecoveries(i int) {
+	if m.addrecoveries != nil {
+		*m.addrecoveries += i
+	} else {
+		m.addrecoveries = &i
+	}
+}
+
+// AddedRecoveries returns the value that was added to the "recoveries" field in this mutation.
+func (m *ContactImportMutation) AddedRecoveries() (r int, exists bool) {
+	v := m.addrecoveries
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetRecoveries resets all changes to the "recoveries" field.
+func (m *ContactImportMutation) ResetRecoveries() {
+	m.recoveries = nil
+	m.addrecoveries = nil
+}
+
 // SetProcessed sets the "processed" field.
 func (m *ContactImportMutation) SetProcessed(i int) {
 	m.processed = &i
@@ -31659,7 +31775,7 @@ func (m *ContactImportMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ContactImportMutation) Fields() []string {
-	fields := make([]string, 0, 27)
+	fields := make([]string, 0, 29)
 	if m.created_at != nil {
 		fields = append(fields, contactimport.FieldCreatedAt)
 	}
@@ -31707,6 +31823,12 @@ func (m *ContactImportMutation) Fields() []string {
 	}
 	if m.checkpoint_offset != nil {
 		fields = append(fields, contactimport.FieldCheckpointOffset)
+	}
+	if m.checkpoint_contact_floor != nil {
+		fields = append(fields, contactimport.FieldCheckpointContactFloor)
+	}
+	if m.recoveries != nil {
+		fields = append(fields, contactimport.FieldRecoveries)
 	}
 	if m.processed != nil {
 		fields = append(fields, contactimport.FieldProcessed)
@@ -31781,6 +31903,10 @@ func (m *ContactImportMutation) Field(name string) (ent.Value, bool) {
 		return m.CheckpointChunk()
 	case contactimport.FieldCheckpointOffset:
 		return m.CheckpointOffset()
+	case contactimport.FieldCheckpointContactFloor:
+		return m.CheckpointContactFloor()
+	case contactimport.FieldRecoveries:
+		return m.Recoveries()
 	case contactimport.FieldProcessed:
 		return m.Processed()
 	case contactimport.FieldCreated:
@@ -31844,6 +31970,10 @@ func (m *ContactImportMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldCheckpointChunk(ctx)
 	case contactimport.FieldCheckpointOffset:
 		return m.OldCheckpointOffset(ctx)
+	case contactimport.FieldCheckpointContactFloor:
+		return m.OldCheckpointContactFloor(ctx)
+	case contactimport.FieldRecoveries:
+		return m.OldRecoveries(ctx)
 	case contactimport.FieldProcessed:
 		return m.OldProcessed(ctx)
 	case contactimport.FieldCreated:
@@ -31987,6 +32117,20 @@ func (m *ContactImportMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetCheckpointOffset(v)
 		return nil
+	case contactimport.FieldCheckpointContactFloor:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCheckpointContactFloor(v)
+		return nil
+	case contactimport.FieldRecoveries:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRecoveries(v)
+		return nil
 	case contactimport.FieldProcessed:
 		v, ok := value.(int)
 		if !ok {
@@ -32090,6 +32234,12 @@ func (m *ContactImportMutation) AddedFields() []string {
 	if m.addcheckpoint_offset != nil {
 		fields = append(fields, contactimport.FieldCheckpointOffset)
 	}
+	if m.addcheckpoint_contact_floor != nil {
+		fields = append(fields, contactimport.FieldCheckpointContactFloor)
+	}
+	if m.addrecoveries != nil {
+		fields = append(fields, contactimport.FieldRecoveries)
+	}
 	if m.addprocessed != nil {
 		fields = append(fields, contactimport.FieldProcessed)
 	}
@@ -32131,6 +32281,10 @@ func (m *ContactImportMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedCheckpointChunk()
 	case contactimport.FieldCheckpointOffset:
 		return m.AddedCheckpointOffset()
+	case contactimport.FieldCheckpointContactFloor:
+		return m.AddedCheckpointContactFloor()
+	case contactimport.FieldRecoveries:
+		return m.AddedRecoveries()
 	case contactimport.FieldProcessed:
 		return m.AddedProcessed()
 	case contactimport.FieldCreated:
@@ -32195,6 +32349,20 @@ func (m *ContactImportMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddCheckpointOffset(v)
+		return nil
+	case contactimport.FieldCheckpointContactFloor:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCheckpointContactFloor(v)
+		return nil
+	case contactimport.FieldRecoveries:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddRecoveries(v)
 		return nil
 	case contactimport.FieldProcessed:
 		v, ok := value.(int)
@@ -32358,6 +32526,12 @@ func (m *ContactImportMutation) ResetField(name string) error {
 		return nil
 	case contactimport.FieldCheckpointOffset:
 		m.ResetCheckpointOffset()
+		return nil
+	case contactimport.FieldCheckpointContactFloor:
+		m.ResetCheckpointContactFloor()
+		return nil
+	case contactimport.FieldRecoveries:
+		m.ResetRecoveries()
 		return nil
 	case contactimport.FieldProcessed:
 		m.ResetProcessed()

@@ -47,6 +47,10 @@ const (
 	FieldCheckpointChunk = "checkpoint_chunk"
 	// FieldCheckpointOffset holds the string denoting the checkpoint_offset field in the database.
 	FieldCheckpointOffset = "checkpoint_offset"
+	// FieldCheckpointContactFloor holds the string denoting the checkpoint_contact_floor field in the database.
+	FieldCheckpointContactFloor = "checkpoint_contact_floor"
+	// FieldRecoveries holds the string denoting the recoveries field in the database.
+	FieldRecoveries = "recoveries"
 	// FieldProcessed holds the string denoting the processed field in the database.
 	FieldProcessed = "processed"
 	// FieldCreated holds the string denoting the created field in the database.
@@ -128,6 +132,8 @@ var Columns = []string{
 	FieldCheckpointRow,
 	FieldCheckpointChunk,
 	FieldCheckpointOffset,
+	FieldCheckpointContactFloor,
+	FieldRecoveries,
 	FieldProcessed,
 	FieldCreated,
 	FieldUpdated,
@@ -168,6 +174,10 @@ var (
 	DefaultCheckpointChunk int
 	// DefaultCheckpointOffset holds the default value on creation for the "checkpoint_offset" field.
 	DefaultCheckpointOffset int64
+	// DefaultCheckpointContactFloor holds the default value on creation for the "checkpoint_contact_floor" field.
+	DefaultCheckpointContactFloor int64
+	// DefaultRecoveries holds the default value on creation for the "recoveries" field.
+	DefaultRecoveries int
 	// DefaultProcessed holds the default value on creation for the "processed" field.
 	DefaultProcessed int
 	// DefaultCreated holds the default value on creation for the "created" field.
@@ -314,6 +324,16 @@ func ByCheckpointChunk(opts ...sql.OrderTermOption) OrderOption {
 // ByCheckpointOffset orders the results by the checkpoint_offset field.
 func ByCheckpointOffset(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCheckpointOffset, opts...).ToFunc()
+}
+
+// ByCheckpointContactFloor orders the results by the checkpoint_contact_floor field.
+func ByCheckpointContactFloor(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCheckpointContactFloor, opts...).ToFunc()
+}
+
+// ByRecoveries orders the results by the recoveries field.
+func ByRecoveries(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRecoveries, opts...).ToFunc()
 }
 
 // ByProcessed orders the results by the processed field.

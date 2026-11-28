@@ -203,6 +203,34 @@ func (_c *ContactImportCreate) SetNillableCheckpointOffset(v *int64) *ContactImp
 	return _c
 }
 
+// SetCheckpointContactFloor sets the "checkpoint_contact_floor" field.
+func (_c *ContactImportCreate) SetCheckpointContactFloor(v int64) *ContactImportCreate {
+	_c.mutation.SetCheckpointContactFloor(v)
+	return _c
+}
+
+// SetNillableCheckpointContactFloor sets the "checkpoint_contact_floor" field if the given value is not nil.
+func (_c *ContactImportCreate) SetNillableCheckpointContactFloor(v *int64) *ContactImportCreate {
+	if v != nil {
+		_c.SetCheckpointContactFloor(*v)
+	}
+	return _c
+}
+
+// SetRecoveries sets the "recoveries" field.
+func (_c *ContactImportCreate) SetRecoveries(v int) *ContactImportCreate {
+	_c.mutation.SetRecoveries(v)
+	return _c
+}
+
+// SetNillableRecoveries sets the "recoveries" field if the given value is not nil.
+func (_c *ContactImportCreate) SetNillableRecoveries(v *int) *ContactImportCreate {
+	if v != nil {
+		_c.SetRecoveries(*v)
+	}
+	return _c
+}
+
 // SetProcessed sets the "processed" field.
 func (_c *ContactImportCreate) SetProcessed(v int) *ContactImportCreate {
 	_c.mutation.SetProcessed(v)
@@ -470,6 +498,14 @@ func (_c *ContactImportCreate) defaults() {
 		v := contactimport.DefaultCheckpointOffset
 		_c.mutation.SetCheckpointOffset(v)
 	}
+	if _, ok := _c.mutation.CheckpointContactFloor(); !ok {
+		v := contactimport.DefaultCheckpointContactFloor
+		_c.mutation.SetCheckpointContactFloor(v)
+	}
+	if _, ok := _c.mutation.Recoveries(); !ok {
+		v := contactimport.DefaultRecoveries
+		_c.mutation.SetRecoveries(v)
+	}
 	if _, ok := _c.mutation.Processed(); !ok {
 		v := contactimport.DefaultProcessed
 		_c.mutation.SetProcessed(v)
@@ -553,6 +589,12 @@ func (_c *ContactImportCreate) check() error {
 	}
 	if _, ok := _c.mutation.CheckpointOffset(); !ok {
 		return &ValidationError{Name: "checkpoint_offset", err: errors.New(`ent: missing required field "ContactImport.checkpoint_offset"`)}
+	}
+	if _, ok := _c.mutation.CheckpointContactFloor(); !ok {
+		return &ValidationError{Name: "checkpoint_contact_floor", err: errors.New(`ent: missing required field "ContactImport.checkpoint_contact_floor"`)}
+	}
+	if _, ok := _c.mutation.Recoveries(); !ok {
+		return &ValidationError{Name: "recoveries", err: errors.New(`ent: missing required field "ContactImport.recoveries"`)}
 	}
 	if _, ok := _c.mutation.Processed(); !ok {
 		return &ValidationError{Name: "processed", err: errors.New(`ent: missing required field "ContactImport.processed"`)}
@@ -666,6 +708,14 @@ func (_c *ContactImportCreate) createSpec() (*ContactImport, *sqlgraph.CreateSpe
 	if value, ok := _c.mutation.CheckpointOffset(); ok {
 		_spec.SetField(contactimport.FieldCheckpointOffset, field.TypeInt64, value)
 		_node.CheckpointOffset = value
+	}
+	if value, ok := _c.mutation.CheckpointContactFloor(); ok {
+		_spec.SetField(contactimport.FieldCheckpointContactFloor, field.TypeInt64, value)
+		_node.CheckpointContactFloor = value
+	}
+	if value, ok := _c.mutation.Recoveries(); ok {
+		_spec.SetField(contactimport.FieldRecoveries, field.TypeInt, value)
+		_node.Recoveries = value
 	}
 	if value, ok := _c.mutation.Processed(); ok {
 		_spec.SetField(contactimport.FieldProcessed, field.TypeInt, value)
@@ -976,6 +1026,42 @@ func (u *ContactImportUpsert) UpdateCheckpointOffset() *ContactImportUpsert {
 // AddCheckpointOffset adds v to the "checkpoint_offset" field.
 func (u *ContactImportUpsert) AddCheckpointOffset(v int64) *ContactImportUpsert {
 	u.Add(contactimport.FieldCheckpointOffset, v)
+	return u
+}
+
+// SetCheckpointContactFloor sets the "checkpoint_contact_floor" field.
+func (u *ContactImportUpsert) SetCheckpointContactFloor(v int64) *ContactImportUpsert {
+	u.Set(contactimport.FieldCheckpointContactFloor, v)
+	return u
+}
+
+// UpdateCheckpointContactFloor sets the "checkpoint_contact_floor" field to the value that was provided on create.
+func (u *ContactImportUpsert) UpdateCheckpointContactFloor() *ContactImportUpsert {
+	u.SetExcluded(contactimport.FieldCheckpointContactFloor)
+	return u
+}
+
+// AddCheckpointContactFloor adds v to the "checkpoint_contact_floor" field.
+func (u *ContactImportUpsert) AddCheckpointContactFloor(v int64) *ContactImportUpsert {
+	u.Add(contactimport.FieldCheckpointContactFloor, v)
+	return u
+}
+
+// SetRecoveries sets the "recoveries" field.
+func (u *ContactImportUpsert) SetRecoveries(v int) *ContactImportUpsert {
+	u.Set(contactimport.FieldRecoveries, v)
+	return u
+}
+
+// UpdateRecoveries sets the "recoveries" field to the value that was provided on create.
+func (u *ContactImportUpsert) UpdateRecoveries() *ContactImportUpsert {
+	u.SetExcluded(contactimport.FieldRecoveries)
+	return u
+}
+
+// AddRecoveries adds v to the "recoveries" field.
+func (u *ContactImportUpsert) AddRecoveries(v int) *ContactImportUpsert {
+	u.Add(contactimport.FieldRecoveries, v)
 	return u
 }
 
@@ -1415,6 +1501,48 @@ func (u *ContactImportUpsertOne) AddCheckpointOffset(v int64) *ContactImportUpse
 func (u *ContactImportUpsertOne) UpdateCheckpointOffset() *ContactImportUpsertOne {
 	return u.Update(func(s *ContactImportUpsert) {
 		s.UpdateCheckpointOffset()
+	})
+}
+
+// SetCheckpointContactFloor sets the "checkpoint_contact_floor" field.
+func (u *ContactImportUpsertOne) SetCheckpointContactFloor(v int64) *ContactImportUpsertOne {
+	return u.Update(func(s *ContactImportUpsert) {
+		s.SetCheckpointContactFloor(v)
+	})
+}
+
+// AddCheckpointContactFloor adds v to the "checkpoint_contact_floor" field.
+func (u *ContactImportUpsertOne) AddCheckpointContactFloor(v int64) *ContactImportUpsertOne {
+	return u.Update(func(s *ContactImportUpsert) {
+		s.AddCheckpointContactFloor(v)
+	})
+}
+
+// UpdateCheckpointContactFloor sets the "checkpoint_contact_floor" field to the value that was provided on create.
+func (u *ContactImportUpsertOne) UpdateCheckpointContactFloor() *ContactImportUpsertOne {
+	return u.Update(func(s *ContactImportUpsert) {
+		s.UpdateCheckpointContactFloor()
+	})
+}
+
+// SetRecoveries sets the "recoveries" field.
+func (u *ContactImportUpsertOne) SetRecoveries(v int) *ContactImportUpsertOne {
+	return u.Update(func(s *ContactImportUpsert) {
+		s.SetRecoveries(v)
+	})
+}
+
+// AddRecoveries adds v to the "recoveries" field.
+func (u *ContactImportUpsertOne) AddRecoveries(v int) *ContactImportUpsertOne {
+	return u.Update(func(s *ContactImportUpsert) {
+		s.AddRecoveries(v)
+	})
+}
+
+// UpdateRecoveries sets the "recoveries" field to the value that was provided on create.
+func (u *ContactImportUpsertOne) UpdateRecoveries() *ContactImportUpsertOne {
+	return u.Update(func(s *ContactImportUpsert) {
+		s.UpdateRecoveries()
 	})
 }
 
@@ -2053,6 +2181,48 @@ func (u *ContactImportUpsertBulk) AddCheckpointOffset(v int64) *ContactImportUps
 func (u *ContactImportUpsertBulk) UpdateCheckpointOffset() *ContactImportUpsertBulk {
 	return u.Update(func(s *ContactImportUpsert) {
 		s.UpdateCheckpointOffset()
+	})
+}
+
+// SetCheckpointContactFloor sets the "checkpoint_contact_floor" field.
+func (u *ContactImportUpsertBulk) SetCheckpointContactFloor(v int64) *ContactImportUpsertBulk {
+	return u.Update(func(s *ContactImportUpsert) {
+		s.SetCheckpointContactFloor(v)
+	})
+}
+
+// AddCheckpointContactFloor adds v to the "checkpoint_contact_floor" field.
+func (u *ContactImportUpsertBulk) AddCheckpointContactFloor(v int64) *ContactImportUpsertBulk {
+	return u.Update(func(s *ContactImportUpsert) {
+		s.AddCheckpointContactFloor(v)
+	})
+}
+
+// UpdateCheckpointContactFloor sets the "checkpoint_contact_floor" field to the value that was provided on create.
+func (u *ContactImportUpsertBulk) UpdateCheckpointContactFloor() *ContactImportUpsertBulk {
+	return u.Update(func(s *ContactImportUpsert) {
+		s.UpdateCheckpointContactFloor()
+	})
+}
+
+// SetRecoveries sets the "recoveries" field.
+func (u *ContactImportUpsertBulk) SetRecoveries(v int) *ContactImportUpsertBulk {
+	return u.Update(func(s *ContactImportUpsert) {
+		s.SetRecoveries(v)
+	})
+}
+
+// AddRecoveries adds v to the "recoveries" field.
+func (u *ContactImportUpsertBulk) AddRecoveries(v int) *ContactImportUpsertBulk {
+	return u.Update(func(s *ContactImportUpsert) {
+		s.AddRecoveries(v)
+	})
+}
+
+// UpdateRecoveries sets the "recoveries" field to the value that was provided on create.
+func (u *ContactImportUpsertBulk) UpdateRecoveries() *ContactImportUpsertBulk {
+	return u.Update(func(s *ContactImportUpsert) {
+		s.UpdateRecoveries()
 	})
 }
 

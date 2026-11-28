@@ -720,6 +720,17 @@ func (UnimplementedHandler) SiteContactCsvExportsDownload(ctx context.Context, p
 	return r, ht.ErrNotImplemented
 }
 
+// SiteContactImportsCancel implements SiteContactImports_cancel operation.
+//
+// Stop a running import: its job stops after the batch it is writing and it ends `cancelled`, keeping
+// the Contacts it wrote and its report; its file is deleted. An import not running, or asked to stop
+// already, is refused (409).
+//
+// POST /workspaces/{workspaceId}/contact-imports/{importId}/cancel
+func (UnimplementedHandler) SiteContactImportsCancel(ctx context.Context, params SiteContactImportsCancelParams) (r *SiteContactImport, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteContactImportsGet implements SiteContactImports_get operation.
 //
 // Read an import: its state, its mapping and how far its run is.
@@ -764,7 +775,9 @@ func (UnimplementedHandler) SiteContactImportsReportLink(ctx context.Context, pa
 // starts nothing (its Events are history). A date column without a format is refused (422), and a
 // refusal column recording a Suppression without `suppressions:manage` (403). The new Custom fields
 // its mapping names are created first, which needs `custom_fields:manage` again (403); a key the
-// Workspace has taken since the mapping was saved is refused (409).
+// Workspace has taken since the mapping was saved is refused (409); so is a run while another import
+// of the Workspace runs (409): one runs at a time. A run resumes from its last batch after a restart,
+// and ends `failed` when its job's tries are spent.
 //
 // POST /workspaces/{workspaceId}/contact-imports/{importId}/run
 func (UnimplementedHandler) SiteContactImportsRun(ctx context.Context, params SiteContactImportsRunParams) (r *SiteContactImport, _ error) {
