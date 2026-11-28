@@ -28,3 +28,19 @@ func TestByIDOfNoRowsHasNoNilItems(t *testing.T) {
 	assert.NotNil(t, got.Items, "an empty page serializes as [], not null")
 	assert.Equal(t, int64(0), got.Next)
 }
+
+// An id cursor a page hands out reads back as its id; none is the first page; anything else is no
+// cursor a page handed out.
+func TestAnIDCursorReadsBackAsTheIDItWasGivenFor(t *testing.T) {
+	after, ok := pagination.ParseIDCursor(pagination.IDCursor(42))
+	first, firstOK := pagination.ParseIDCursor("")
+	_, garbled := pagination.ParseIDCursor("not a cursor!")
+	_, zero := pagination.ParseIDCursor(pagination.IDCursor(0))
+
+	assert.Equal(t, int64(42), after)
+	assert.True(t, ok)
+	assert.Zero(t, first)
+	assert.True(t, firstOK)
+	assert.False(t, garbled)
+	assert.False(t, zero)
+}

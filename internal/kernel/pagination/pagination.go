@@ -11,6 +11,7 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/internal/kernel/bounds"
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 )
 
 // DefaultPage and DefaultPageSize are what a caller that asks for no page gets: the contract's
@@ -205,6 +206,23 @@ func ByID[T any](rows []T, limit int, idOf func(T) int64) IDPage[T] {
 		page.Next = idOf(items[limit-1])
 	}
 	return page
+}
+
+// IDCursor is the cursor of the page after the row id, as an IDPage's Next is handed out: the
+// id's public form, so a cursor names no raw id.
+func IDCursor(id int64) string { return publicid.Encode(id) }
+
+// ParseIDCursor reads a cursor IDCursor handed out back as its row id: empty is the first page,
+// 0; ok is false for a cursor no page handed out, which each reader refuses in its own words.
+func ParseIDCursor(cursor string) (id int64, ok bool) {
+	if cursor == "" {
+		return 0, true
+	}
+	id, err := publicid.Decode(cursor)
+	if err != nil || id < 1 {
+		return 0, false
+	}
+	return id, true
 }
 
 // Direction is the direction of a list's order, the contract's SortDirection.

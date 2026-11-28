@@ -11,8 +11,6 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/getsphericon/sphericon/internal/kernel/publicid"
-
 	"github.com/go-faster/jx"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -27,18 +25,15 @@ var ErrBadCursor = validation.UnknownReference("auditapi: invalid cursor", i18n.
 
 // Cursor parses the optional cursor (empty starts from the newest entry).
 func Cursor(cursor string) (int64, error) {
-	if cursor == "" {
-		return 0, nil
-	}
-	after, err := publicid.Decode(cursor)
-	if err != nil || after < 1 {
+	after, ok := pagination.ParseIDCursor(cursor)
+	if !ok {
 		return 0, ErrBadCursor
 	}
 	return after, nil
 }
 
 // NextCursor renders the cursor of the next page.
-func NextCursor(next int64) string { return publicid.Encode(next) }
+func NextCursor(next int64) string { return pagination.IDCursor(next) }
 
 // View is an Audit entry as a customer sees it. A Staff member appears only as
 // events.StaffLabel, with no id.
