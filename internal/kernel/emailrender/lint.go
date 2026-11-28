@@ -28,6 +28,12 @@ const (
 	CodeOffBrandColor Code = "off_brand_color"
 	// CodeOffBrandFont: a font is not one of the Brand kit's.
 	CodeOffBrandFont Code = "off_brand_font"
+	// CodeHiddenText: an element hidden by inline style holds text, other than the preheader and a
+	// block a media query of the message shows (hidden.go).
+	CodeHiddenText Code = "hidden_text"
+	// CodeHiddenCharacters: the subject or the visible text holds an invisible character used to
+	// hide text (hidden.go).
+	CodeHiddenCharacters Code = "hidden_characters"
 )
 
 // Finding is one result of Lint. Message is fixed text of the server; Element and Detail quote
@@ -69,7 +75,8 @@ const maxWarnings = 50
 // Lint is the one lint of a message (ADR 0040), over its rendered HTML: the save paths and
 // the send planner use its Error, the editor's responses and the MCP tool email_lint return its
 // Warnings too. Error is a Liquid syntax error or HTML that does not parse; the warnings are a
-// missing image description, low contrast, and a color or font outside the Brand kit. It runs on
+// missing image description, low contrast, a color or font outside the Brand kit, and text the
+// reader cannot see (hidden text and invisible characters, ADR 0188, hidden.go). It runs on
 // the message as the author wrote it, with no recipient data: unbound merge tags render empty.
 //
 // Message weight is deliberately not checked: no first-party source gives a size at which a mail
@@ -80,7 +87,7 @@ const maxWarnings = 50
 // contrast ratio formulas of https://www.w3.org/TR/WCAG22/#dfn-relative-luminance and
 // https://www.w3.org/TR/WCAG22/#dfn-contrast-ratio.
 func Lint(subject, body string, brand *Brand) Report {
-	_, rendered, err := renderBoth(subject, body, map[string]any{})
+	renderedSubject, rendered, err := renderBoth(subject, body, map[string]any{})
 	if err != nil {
 		return Report{Error: fmt.Errorf("%w: %w", ErrInvalidContent, err)}
 	}
@@ -93,6 +100,7 @@ func Lint(subject, body string, brand *Brand) Report {
 	}
 	l := linter{brand: brand.normalized(), seen: map[Finding]bool{}}
 	l.walk(root)
+	l.hiddenContent(renderedSubject, root)
 	return Report{Warnings: l.found}
 }
 

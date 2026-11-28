@@ -227,13 +227,18 @@ func hidesElement(style string) bool {
 	return slices.Contains(zeroLengths, maxHeight) && overflow == "hidden"
 }
 
+// hiddenByStyle reports whether n is an element whose inline style hides it (hidesElement).
+func hiddenByStyle(n *html.Node) bool {
+	return n.Type == html.ElementNode && slices.ContainsFunc(n.Attr, func(a html.Attribute) bool {
+		return a.Key == "style" && hidesElement(a.Val)
+	})
+}
+
 // dropHidden removes, in place, every element whose inline style hides it.
 func dropHidden(n *html.Node) {
 	for c := n.FirstChild; c != nil; {
 		next := c.NextSibling
-		if c.Type == html.ElementNode && slices.ContainsFunc(c.Attr, func(a html.Attribute) bool {
-			return a.Key == "style" && hidesElement(a.Val)
-		}) {
+		if hiddenByStyle(c) {
 			n.RemoveChild(c)
 		} else {
 			dropHidden(c)

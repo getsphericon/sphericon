@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -99,4 +100,22 @@ func TestMCPEmailLintWithoutABrandKitHasNoBrandWarnings(t *testing.T) {
 	var got lintResult
 	require.NoError(t, json.Unmarshal([]byte(text(t, res)), &got))
 	assert.Empty(t, got.Warnings)
+}
+
+// ADR 0188: text the reader cannot see is warned about, and what quotes it stays untrusted.
+func TestMCPEmailLintWarnsOnHiddenTextAndInvisibleCharacters(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	got := lint(t, env, map[string]any{
+		"subject": "Fr\u200bee gift",
+		"body":    `<p>Hello</p><p style="display:none">Claim your prize</p>`,
+	}, "templates:read")
+
+	assert.Empty(t, got.Errors)
+	assert.ElementsMatch(t, []string{
+		string(emailrender.CodeHiddenCharacters), string(emailrender.CodeHiddenText),
+	}, codes(got.Warnings))
+	hidden, ok := lo.Find(got.Warnings, func(w map[string]any) bool { return w["code"] == "hidden_text" })
+	require.True(t, ok)
+	assert.Equal(t, map[string]any{"untrusted_data": "Claim your prize"}, hidden["detail"])
 }

@@ -2115,6 +2115,10 @@ func (c *ConverterImpl) LinkClicksToResource(source []linkclick.Clicks) []site.L
 func (c *ConverterImpl) LintCodeToResource(source emailrender.Code) site.LintCode {
 	var siteapiLintCode site.LintCode
 	switch source {
+	case emailrender.CodeHiddenCharacters:
+		siteapiLintCode = site.LintCodeHiddenCharacters
+	case emailrender.CodeHiddenText:
+		siteapiLintCode = site.LintCodeHiddenText
 	case emailrender.CodeInvalidContent:
 		siteapiLintCode = site.LintCodeInvalidContent
 	case emailrender.CodeLowContrast:
