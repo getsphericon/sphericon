@@ -66,6 +66,12 @@ const surface = (name: 'site' | 'staff' | 'staffee'): UserConfig => ({
                 .attr('regex')
                 .call(ctx.$.regexp('^[0-9]+$'))
             : undefined,
+        // A binary body (an uploaded file, `format: binary`) is a Blob in the browser: the stock
+        // output reads it as a string.
+        string: (ctx) =>
+          ctx.schema.format === 'binary'
+            ? ctx.$(ctx.plugin.imports.z).attr('instanceof').call(ctx.$.id('Blob'))
+            : undefined,
         object: (ctx) =>
           ctx.nodes.base({
             ...ctx,

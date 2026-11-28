@@ -8407,9 +8407,9 @@ export const zSiteContactCsvExportsDownloadPath = z.object({
 /**
  * The CSV file of the export, streamed as it is read
  */
-export const zSiteContactCsvExportsDownloadResponse = z.string();
+export const zSiteContactCsvExportsDownloadResponse = z.instanceof(Blob);
 
-export const zSiteContactImportsUploadBody = z.string();
+export const zSiteContactImportsUploadBody = z.instanceof(Blob);
 
 export const zSiteContactImportsUploadPath = z.object({
   workspaceId: zWorkspaceId
@@ -8481,7 +8481,7 @@ export const zSiteContactImportsReportPath = z.object({
 /**
  * The request has succeeded.
  */
-export const zSiteContactImportsReportResponse = z.string();
+export const zSiteContactImportsReportResponse = z.instanceof(Blob);
 
 export const zSiteContactImportsRunPath = z.object({
   workspaceId: zWorkspaceId,
