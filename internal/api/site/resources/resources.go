@@ -589,6 +589,12 @@ type Converter interface {
 	ContactImportIssueReason(source csvimport.Reason) siteapi.ContactImportIssueReason
 	// goverter:enum:transform value
 	ContactImportRefusal(source csvimport.Refusal) siteapi.ContactImportRefusal
+	// goverter:enum:transform value
+	ContactImportRefusalChannel(source channels.Channel) siteapi.ContactImportRefusalChannel
+	// A consent or tracking column is never of Telegram (the save refuses it).
+	// goverter:enum:transform value
+	// goverter:enum:map Telegram @panic
+	ContactImportConsentChannel(source channels.Channel) siteapi.ContactImportConsentChannel
 	// A preview carries only the address check's traits (ADR 0117): the consent and the
 	// two-Contacts warnings are the run's.
 	// goverter:enum:transform value

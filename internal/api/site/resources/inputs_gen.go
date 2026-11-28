@@ -485,6 +485,18 @@ func (c *InputsImpl) ContactExport(source site.SiteContactsExportParams) dataexp
 	dataexportOpenInput.Email = emailPtrIn(source.Email)
 	return dataexportOpenInput
 }
+func (c *InputsImpl) ContactImportConsentChannelIn(source site.ContactImportConsentChannel) channels.Channel {
+	var channelsChannel channels.Channel
+	switch source {
+	case site.ContactImportConsentChannelEmail:
+		channelsChannel = channels.Email
+	case site.ContactImportConsentChannelSMS:
+		channelsChannel = channels.SMS
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return channelsChannel
+}
 func (c *InputsImpl) ContactImportDateFormatIn(source site.ContactImportDateFormat) csvimport.DateFormat {
 	var csvimportDateFormat csvimport.DateFormat
 	switch source {
@@ -518,6 +530,20 @@ func (c *InputsImpl) ContactImportMapping(source *site.ContactImportMappingInput
 		// contactimportsMappingInput.Role: ignore
 	}
 	return contactimportsMappingInput
+}
+func (c *InputsImpl) ContactImportRefusalChannelIn(source site.ContactImportRefusalChannel) channels.Channel {
+	var channelsChannel channels.Channel
+	switch source {
+	case site.ContactImportRefusalChannelEmail:
+		channelsChannel = channels.Email
+	case site.ContactImportRefusalChannelSMS:
+		channelsChannel = channels.SMS
+	case site.ContactImportRefusalChannelTelegram:
+		channelsChannel = channels.Telegram
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return channelsChannel
 }
 func (c *InputsImpl) ContactImportRefusalIn(source site.ContactImportRefusal) csvimport.Refusal {
 	var csvimportRefusal csvimport.Refusal

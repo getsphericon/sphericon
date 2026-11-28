@@ -8,7 +8,6 @@ import (
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contactimports"
-	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
 	"github.com/getsphericon/sphericon/internal/kernel/csvimport"
 	"github.com/getsphericon/sphericon/internal/kernel/paths"
@@ -166,12 +165,12 @@ func contactImportFactColumn(c Converter, col csvimport.Column, format siteapi.N
 			values[i] = siteapi.ContactImportRefusalValue{Value: v.Value, Refusal: c.ContactImportRefusal(v.Refusal)}
 		}
 		return siteapi.ContactImportColumn{OneOf: siteapi.NewContactImportRefusalColumnContactImportColumnSum(siteapi.ContactImportRefusalColumn{
-			Kind: siteapi.ContactImportRefusalColumnKindRefusal, Channel: siteapi.ContactImportRefusalChannel(fact.Channel), Values: values,
+			Kind: siteapi.ContactImportRefusalColumnKindRefusal, Channel: c.ContactImportRefusalChannel(fact.Channel), Values: values,
 		})}
 	case csvimport.KindConsent:
 		ev := lo.FromPtr(fact.Evidence)
 		return siteapi.ContactImportColumn{OneOf: siteapi.NewContactImportConsentColumnContactImportColumnSum(siteapi.ContactImportConsentColumn{
-			Kind: siteapi.ContactImportConsentColumnKindConsent, Channel: siteapi.ContactImportConsentChannel(fact.Channel),
+			Kind: siteapi.ContactImportConsentColumnKindConsent, Channel: c.ContactImportConsentChannel(fact.Channel),
 			Values: lo.CoalesceSliceOrEmpty(fact.Values),
 			Evidence: siteapi.ContactImportConsentEvidence{
 				Wording: evidenceText(ev.Wording), WordingColumn: evidenceColumn(ev.Wording),
@@ -181,7 +180,7 @@ func contactImportFactColumn(c Converter, col csvimport.Column, format siteapi.N
 		})}
 	case csvimport.KindEngagementTracking:
 		return siteapi.ContactImportColumn{OneOf: siteapi.NewContactImportEngagementTrackingColumnContactImportColumnSum(siteapi.ContactImportEngagementTrackingColumn{
-			Kind: siteapi.ContactImportEngagementTrackingColumnKindEngagementTracking, Channel: siteapi.ContactImportConsentChannel(fact.Channel),
+			Kind: siteapi.ContactImportEngagementTrackingColumnKindEngagementTracking, Channel: c.ContactImportConsentChannel(fact.Channel),
 			Granted: lo.CoalesceSliceOrEmpty(fact.Values), Denied: lo.CoalesceSliceOrEmpty(fact.Denied),
 		})}
 	case csvimport.KindTime:
@@ -224,18 +223,18 @@ func contactImportFactColumnIn(c Inputs, col *siteapi.ContactImportColumnInput) 
 		for i, value := range v.Values {
 			values[i] = csvimport.RefusalValue{Value: value.Value, Refusal: c.ContactImportRefusalIn(value.Refusal)}
 		}
-		return csvimport.Column{Kind: csvimport.KindRefusal, Fact: &csvimport.Fact{Channel: channels.Channel(v.Channel), Refusals: values}}
+		return csvimport.Column{Kind: csvimport.KindRefusal, Fact: &csvimport.Fact{Channel: c.ContactImportRefusalChannelIn(v.Channel), Refusals: values}}
 	case siteapi.ContactImportConsentColumnInputContactImportColumnInputSum:
 		v := col.OneOf.ContactImportConsentColumnInput
 		ev := v.Evidence
-		return csvimport.Column{Kind: csvimport.KindConsent, Fact: &csvimport.Fact{Channel: channels.Channel(v.Channel), Values: v.Values, Evidence: &csvimport.Evidence{
+		return csvimport.Column{Kind: csvimport.KindConsent, Fact: &csvimport.Fact{Channel: c.ContactImportConsentChannelIn(v.Channel), Values: v.Values, Evidence: &csvimport.Evidence{
 			Wording: evidencePartIn(ev.Wording, ev.WordingColumn),
 			Source:  evidencePartIn(ev.Source, ev.SourceColumn),
 			Brand:   evidencePartIn(ev.Brand, ev.BrandColumn),
 		}}}
 	case siteapi.ContactImportEngagementTrackingColumnInputContactImportColumnInputSum:
 		v := col.OneOf.ContactImportEngagementTrackingColumnInput
-		return csvimport.Column{Kind: csvimport.KindEngagementTracking, Fact: &csvimport.Fact{Channel: channels.Channel(v.Channel), Values: v.Granted, Denied: v.Denied}}
+		return csvimport.Column{Kind: csvimport.KindEngagementTracking, Fact: &csvimport.Fact{Channel: c.ContactImportConsentChannelIn(v.Channel), Values: v.Granted, Denied: v.Denied}}
 	case siteapi.ContactImportTimeColumnInputContactImportColumnInputSum:
 		v := col.OneOf.ContactImportTimeColumnInput
 		var format csvimport.DateFormat

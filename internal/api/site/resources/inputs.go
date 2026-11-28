@@ -375,6 +375,10 @@ type Inputs interface {
 	ContactImportDateFormatIn(source siteapi.ContactImportDateFormat) csvimport.DateFormat
 	// goverter:enum:transform value
 	ContactImportRefusalIn(source siteapi.ContactImportRefusal) csvimport.Refusal
+	// goverter:enum:transform value
+	ContactImportRefusalChannelIn(source siteapi.ContactImportRefusalChannel) channels.Channel
+	// goverter:enum:transform value
+	ContactImportConsentChannelIn(source siteapi.ContactImportConsentChannel) channels.Channel
 	// The optional consent changed is the path's key, not the request's: the handler sets it.
 	// goverter:ignore Key
 	OptionalConsentChange(source *siteapi.SiteOptionalConsentChange) consentrecords.SetOptionalConsentInput
